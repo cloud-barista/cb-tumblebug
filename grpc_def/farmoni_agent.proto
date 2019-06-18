@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "barista.mon.ressourcestat";
+option java_outer_classname = "ResourceStatProto";
+
+// Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
+// 	* Cloud-Barista: https://github.com/cloud-barista 
+//
+// This Definition is interfaces between farMONI Master and Agent.
+//
+// by powerkim@powerkim.co.kr, 2019.03.15
+package resourcestat;
+
+// The Resource status service definition.
+service ResourceStat {
+  // Sends a request of Resource status
+  rpc GetResourceStat (ResourceStatRequest) returns (ResourceStatReply) {}
+}
+
+// The request message with empty
+message ResourceStatRequest {
+}
+
+// The response message containing the resouce status
+message ResourceStatReply {
+  string servername = 1;
+  string cpu = 2;
+  string mem = 3;
+  string dsk = 4;
+}
