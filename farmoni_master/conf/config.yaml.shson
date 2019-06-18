@@ -1,0 +1,69 @@
+#### Config for farmoni PoC ####
+
+# Infos of etcd server
+etcdserverport: "10.0.2.15:2379"
+
+## Config for AWS ##
+aws:
+
+# Infos of Region
+  region: ap-northeast-2
+# Infos for creating Instnaces
+  imageid: ami-078e96948945fc2c9
+  instancenameprefix: aws-etri-shson  # EC2's Tag Name for group instances' ID
+  instancetype: t2.micro
+  securitygroupid: sg-04c1c9c0e97125be9
+  subnetid: subnet-c3b446ab
+# for VM
+  username: ubuntu
+  keyname: aws.shson.key
+  keyfilepath: /home/son/.aws/awsshsonkey.pem 
+
+
+## Config for GCP ##
+gcp:
+
+# for credential
+  credentialfile: /home/son/.gce/credentials
+# Infos of Region
+  region: asia-northeast2
+  zone: asia-northeast2-a
+# Project & Prefix for GCP
+  projectid: etri-shson-test
+  prefix: https://www.googleapis.com/compute/v1/projects/etri-shson-test
+# Infos for creating Instnaces
+  imageid: projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20190514
+  instancenameprefix: etri-shson
+  instancetype: https://www.googleapis.com/compute/v1/projects/etri-shson-test/zones/asia-northeast2-a/machineTypes/n1-standard-1
+  subnetid: https://www.googleapis.com/compute/v1/projects/etri-shson-test/regions/asia-northeast2/subnetworks/default
+  networkname: https://www.googleapis.com/compute/v1/projects/etri-shson-test/global/networks/default
+  serviceAccoutsMail: default
+# for VM
+  username: shson
+  keyname: empty
+  keyfilepath: /home/son/.gce/gcevmkey
+
+
+
+## Config for AZURE ##
+azure:
+
+# for credential
+  credentialfile: /home/son/.azure/azure.auth
+
+  groupname: etri-shson-VMGroup
+  location: koreasouth
+  virtualnetworkname: virtualNetworkName
+  subnet1name: subnet1Name
+  subnet2name: subnet2Name
+  networksecuritygroupname: nsgName
+#  ipname: "ipName"
+#  nicname: "nicName"
+
+  basename: azureshson
+  username: shson
+  password: 
+  keyfilepath: /home/son/.azure/azurevmkey
+  publickeyfilepath: /home/son/.azure/azurevmkey.pub
+
+

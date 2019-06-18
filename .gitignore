@@ -10,3 +10,11 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+
+# Binaries
+farmoni_agent/farmoni_agent
+farmoni_master/farmoni_master
+
+# Config file for farmoni_master
+farmoni_master/conf/config.yaml

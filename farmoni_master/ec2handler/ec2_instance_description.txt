@@ -1,0 +1,104 @@
+Success {
+  Reservations: [{
+      Instances: [{
+          AmiLaunchIndex: 0,
+          Architecture: "x86_64",
+          BlockDeviceMappings: [{
+              DeviceName: "/dev/xvda",
+              Ebs: {
+                AttachTime: 2019-03-20 01:14:21 +0000 UTC,
+                DeleteOnTermination: true,
+                Status: "attached",
+                VolumeId: "vol-0647624d1d4537092"
+              }
+            }],
+          ClientToken: "",
+          CpuOptions: {
+            CoreCount: 1,
+            ThreadsPerCore: 1
+          },
+          EbsOptimized: false,
+          EnaSupport: true,
+          HibernationOptions: {
+            Configured: false
+          },
+          Hypervisor: "xen",
+          ImageId: "ami-047f7b46bd6dd5d84",
+          InstanceId: "i-03e7ad07d73707b59",
+          InstanceType: "t2.micro",
+          KeyName: "aws.powerkim.keypair",
+          LaunchTime: 2019-03-20 01:14:20 +0000 UTC,
+          Monitoring: {
+            State: "disabled"
+          },
+          NetworkInterfaces: [{
+              Association: {
+                IpOwnerId: "amazon",
+                PublicDnsName: "ec2-54-180-132-203.ap-northeast-2.compute.amazonaws.com",
+                PublicIp: "54.180.132.203"
+              },
+              Attachment: {
+                AttachTime: 2019-03-20 01:14:20 +0000 UTC,
+                AttachmentId: "eni-attach-03459a91367528f25",
+                DeleteOnTermination: true,
+                DeviceIndex: 0,
+                Status: "attached"
+              },
+              Description: "",
+              Groups: [{
+                  GroupId: "sg-2334584f",
+                  GroupName: "default"
+                }],
+              MacAddress: "02:5e:2a:e8:1a:22",
+              NetworkInterfaceId: "eni-084252b420f860cc1",
+              OwnerId: "949298122572",
+              PrivateDnsName: "ip-172-31-14-187.ap-northeast-2.compute.internal",
+              PrivateIpAddress: "172.31.14.187",
+              PrivateIpAddresses: [{
+                  Association: {
+                    IpOwnerId: "amazon",
+                    PublicDnsName: "ec2-54-180-132-203.ap-northeast-2.compute.amazonaws.com",
+                    PublicIp: "54.180.132.203"
+                  },
+                  Primary: true,
+                  PrivateDnsName: "ip-172-31-14-187.ap-northeast-2.compute.internal",
+                  PrivateIpAddress: "172.31.14.187"
+                }],
+              SourceDestCheck: true,
+              Status: "in-use",
+              SubnetId: "subnet-8c4a53e4",
+              VpcId: "vpc-3453bf5f"
+            }],
+          Placement: {
+            AvailabilityZone: "ap-northeast-2a",
+            GroupName: "",
+            Tenancy: "default"
+          },
+          PrivateDnsName: "ip-172-31-14-187.ap-northeast-2.compute.internal",
+          PrivateIpAddress: "172.31.14.187",
+          PublicDnsName: "ec2-54-180-132-203.ap-northeast-2.compute.amazonaws.com",
+          PublicIpAddress: "54.180.132.203",
+          RootDeviceName: "/dev/xvda",
+          RootDeviceType: "ebs",
+          SecurityGroups: [{
+              GroupId: "sg-2334584f",
+              GroupName: "default"
+            }],
+          SourceDestCheck: true,
+          State: {
+            Code: 16,
+            Name: "running"
+          },
+          StateTransitionReason: "",
+          SubnetId: "subnet-8c4a53e4",
+          Tags: [{
+              Key: "Name",
+              Value: "powerkimInstance_0"
+            }],
+          VirtualizationType: "hvm",
+          VpcId: "vpc-3453bf5f"
+        }],
+      OwnerId: "949298122572",
+      ReservationId: "r-0a1a240f9d6efb388"
+    }]
+}
