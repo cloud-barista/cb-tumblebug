@@ -13,8 +13,8 @@
 
 
 # Binaries
-farmoni_agent/farmoni_agent
-farmoni_master/farmoni_master
+mcism_agent/mcism_agent
+mcism_master/mcism_master
 
-# Config file for farmoni_master
-farmoni_master/conf/config.yaml
+# Config file for mcism_master
+mcism_master/conf/config.yaml
