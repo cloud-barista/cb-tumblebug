@@ -9,7 +9,7 @@
 
  import (
          "os"
-         "github.com/cloud-barista/poc-farmoni/localmoni/mem_usage"
+         "github.com/cloud-barista/poc-infraservice/localmoni/mem_usage"
          "strconv"
          "time"
  )
