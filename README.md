@@ -21,6 +21,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 - 환경 변수 설정
 - MCISM 소스 다운로드 (Git clone MCISM)
 - 의존 라이브러리 다운로드
+  - Cloud-Barista alliance 설치(cb-store)
   - 클라우드 Go 클라이언트 라이브러리
   - 기타 라이브러리
 - 클라우드 인증 키 생성 및 설정
@@ -68,6 +69,17 @@ export AZURE_AUTH_LOCATION=~/.azure/azure.auth
 
 
 - 의존 라이브러리 다운로드
+  - etcd 설치 및 실행
+```Shell
+# apt install etcd-server
+# etcd --version
+# ETCD_IP=<ETCD-Host-IPAddress>
+# etcd --name etcd-01 --initial-advertise-peer-urls http://$ETCD_IP:2380 --listen-peer-urls http://$ETCD_IP:2380 --listen-client-urls http://$ETCD_IP:2379,http://127.0.0.1:2379 --advertise-client-urls http://$ETCD_IP:2379 --initial-cluster-token "etcd-cluster-1" --initial-cluster etcd-01=http://$ETCD_IP:2380 --initial-cluster-state new  &
+```
+  - Cloud-Barista alliance 설치(cb-store)
+https://github.com/cloud-barista/cb-store
+README를 참고하여 설치 및 설정
+
   - 클라우드 Go 클라이언트 관련 라이브러리
 ```Shell
 # go get -u -v github.com/aws/aws-sdk-go
@@ -150,14 +162,6 @@ aws_secret_access_key = <YOUR_SECRET_ACCESS_KEY>
 # cp ~/.gcp/gce-vm-key ~/.azure/azure-vm-key
 # cp ~/.gcp/gce-vm-key.pub ~/.azure/azure-vm-key.pub
 # ssh -i “~/.azure/azure-vm-key" <username>@<VM IP addr>
-```
-
-### etcd 설치 및 실행
-```Shell
-# apt install etcd-server
-# etcd --version
-# ETCD_IP=<ETCD-Host-IPAddress>
-# etcd --name etcd-01 --initial-advertise-peer-urls http://$ETCD_IP:2380 --listen-peer-urls http://$ETCD_IP:2380 --listen-client-urls http://$ETCD_IP:2379,http://127.0.0.1:2379 --advertise-client-urls http://$ETCD_IP:2379 --initial-cluster-token "etcd-cluster-1" --initial-cluster etcd-01=http://$ETCD_IP:2380 --initial-cluster-state new  &
 ```
 
 ### mcism_master 환경 설정 (개인 환경에 맞춰 설정)
@@ -407,44 +411,44 @@ connected to etcd - 10.0.2.15:2379
 [azureshson0]
 2019-05-24 14:07:59.110989 I |   [CPU USG] C0:0.96%
 2019-05-24 14:07:59.110997 I |   [MEM USG] TOTAL: 646MB, USED: 244MB, FREE: 97MB
-2019-05-24 14:07:59.111000 I |   [DSK RAT]/dev/sda1: R/s:   82812928, W/s:   621621248	/dev/sdb1: R/s:   0, W/s:   0	
+2019-05-24 14:07:59.111000 I |   [DSK RAT]/dev/sda1: R/s:   82812928, W/s:   621621248	/dev/sdb1: R/s:   0, W/s:   0
 -----------
 [ip-172-31-4-191]
 2019-05-24 14:07:59.138355 I |   [CPU USG] C0:1.59%
 2019-05-24 14:07:59.138368 I |   [MEM USG] TOTAL: 983MB, USED: 96MB, FREE: 525MB
-2019-05-24 14:07:59.138375 I |   [DSK RAT]/dev/xvda1: R/s:   286658048, W/s:   244248576	/dev/loop0: R/s:   3213312, W/s:   0	/dev/loop1: R/s:   3756032, W/s:   0	
+2019-05-24 14:07:59.138375 I |   [DSK RAT]/dev/xvda1: R/s:   286658048, W/s:   244248576	/dev/loop0: R/s:   3213312, W/s:   0	/dev/loop1: R/s:   3756032, W/s:   0
 -----------
 [ip-172-31-4-246]
 2019-05-24 14:07:59.163055 I |   [CPU USG] C0:5.21%
 2019-05-24 14:07:59.163063 I |   [MEM USG] TOTAL: 983MB, USED: 97MB, FREE: 520MB
-2019-05-24 14:07:59.163065 I |   [DSK RAT]/dev/xvda1: R/s:   289209856, W/s:   244568064	
+2019-05-24 14:07:59.163065 I |   [DSK RAT]/dev/xvda1: R/s:   289209856, W/s:   244568064
 -----------
 [ip-172-31-0-32]
 2019-05-24 14:07:59.178435 I |   [CPU USG] C0:3.94%
 2019-05-24 14:07:59.178478 I |   [MEM USG] TOTAL: 983MB, USED: 94MB, FREE: 523MB
-2019-05-24 14:07:59.178488 I |   [DSK RAT]/dev/xvda1: R/s:   289177088, W/s:   244695040	
+2019-05-24 14:07:59.178488 I |   [DSK RAT]/dev/xvda1: R/s:   289177088, W/s:   244695040
 -----------
 ==============================
 connected to etcd - 10.0.2.15:2379
 [azureshson0]
 2019-05-24 14:08:00.224434 I |   [CPU USG] C0:1.79%
 2019-05-24 14:08:00.224442 I |   [MEM USG] TOTAL: 646MB, USED: 244MB, FREE: 97MB
-2019-05-24 14:08:00.224445 I |   [DSK RAT]/dev/sda1: R/s:   0, W/s:   4096	/dev/sdb1: R/s:   0, W/s:   0	
+2019-05-24 14:08:00.224445 I |   [DSK RAT]/dev/sda1: R/s:   0, W/s:   4096	/dev/sdb1: R/s:   0, W/s:   0
 -----------
 [ip-172-31-4-191]
 2019-05-24 14:08:00.241459 I |   [CPU USG] C0:0.00%
 2019-05-24 14:08:00.241482 I |   [MEM USG] TOTAL: 983MB, USED: 96MB, FREE: 524MB
-2019-05-24 14:08:00.241489 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096	/dev/loop0: R/s:   0, W/s:   0	/dev/loop1: R/s:   0, W/s:   0	
+2019-05-24 14:08:00.241489 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096	/dev/loop0: R/s:   0, W/s:   0	/dev/loop1: R/s:   0, W/s:   0
 -----------
 [ip-172-31-4-246]
 2019-05-24 14:08:00.260265 I |   [CPU USG] C0:0.00%
 2019-05-24 14:08:00.260272 I |   [MEM USG] TOTAL: 983MB, USED: 97MB, FREE: 520MB
-2019-05-24 14:08:00.260275 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096	
+2019-05-24 14:08:00.260275 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096
 -----------
 [ip-172-31-0-32]
 2019-05-24 14:08:00.280212 I |   [CPU USG] C0:0.00%
 2019-05-24 14:08:00.280228 I |   [MEM USG] TOTAL: 983MB, USED: 94MB, FREE: 523MB
-2019-05-24 14:08:00.280286 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096	
+2019-05-24 14:08:00.280286 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096
 -----------
 ==============================
 ```
