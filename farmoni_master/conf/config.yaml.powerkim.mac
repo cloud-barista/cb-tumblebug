@@ -1,0 +1,69 @@
+#### Config for farmoni PoC ####
+
+# Infos of etcd server
+#etcdserverport: "129.254.175.43:2379"
+etcdserverport: "10.0.1.8:2379"
+
+## Config for AWS ##
+aws:
+
+# Infos of Region
+  region: ap-northeast-2
+# Infos for creating Instnaces
+  imageid: ami-047f7b46bd6dd5d84 
+  instancenameprefix: awspowerkim  # EC2's Tag Name for group instances' ID
+  instancetype: t2.micro
+  securitygroupid: sg-07ec42983dbc5e36e
+  subnetid: subnet-c3b446ab
+# for VM
+  username: ec2-user
+  keyname: powerkimkeypair
+  keyfilepath: /Users/powerkim/.aws/powerkimkeypair.pem 
+
+
+## Config for GCP ##
+gcp:
+
+# for credential
+  credentialfile: /Users/powerkim/.gcp/credentials
+# Infos of Region
+  region: us-east1
+  zone: us-east1-c
+# Project & Prefix for GCP
+  projectid: powerkim-prj
+  prefix: https://www.googleapis.com/compute/v1/projects/powerkim-prj
+# Infos for creating Instnaces
+  imageid: projects/gce-uefi-images/global/images/centos-7-v20190326
+  instancenameprefix: gcepowerkim
+  instancetype: https://www.googleapis.com/compute/v1/projects/powerkim-prj/zones/us-east1-c/machineTypes/f1-micro
+  subnetid: https://www.googleapis.com/compute/v1/projects/powerkim-prj/regions/us-east1/subnetworks/default
+  networkname: https://www.googleapis.com/compute/v1/projects/powerkim-prj/global/networks/default
+  serviceAccoutsMail: default
+# for VM
+  username: byoungseob
+  keyname: empty
+  keyfilepath: /Users/powerkim/.gcp/gce-vm-key
+
+
+
+## Config for AZURE ##
+azure:
+
+# for credential
+  credentialfile: /Users/powerkim/.azure/credentials
+
+  groupname: VMGroupName
+  location: westus2
+  virtualnetworkname: virtualNetworkName
+  subnet1name: subnet1Name
+  subnet2name: subnet2Name
+  networksecuritygroupname: nsgName
+#  ipname: "ipName"
+#  nicname: "nicName"
+
+  basename: azurepowerkim
+  username: powerkim
+  password: powerkim
+  keyfilepath: /Users/powerkim/.azure/azurepowerkimkeypair.pem
+  publickeyfilepath: /Users/powerkim/.azure/azurepublickey.pem
+
