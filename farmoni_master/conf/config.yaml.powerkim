@@ -9,15 +9,16 @@ aws:
 # Infos of Region
   region: ap-northeast-2
 # Infos for creating Instnaces
-  imageid: ami-047f7b46bd6dd5d84 
+  imageid: ami-0d0bbf63
   instancenameprefix: awspowerkim  # EC2's Tag Name for group instances' ID
-  instancetype: t2.micro
-  securitygroupid: sg-2334584f
-  subnetid: subnet-8c4a53e4
+  instancetype: t2.medium
+  securitygroupid: sg-07ec42983dbc5e36e
+  subnetid: subnet-c3b446ab
 # for VM
-  username: ec2-user
-  keyname: aws.powerkim.keypair
-  keyfilepath: /root/.aws/awspowerkimkeypair.pem 
+  #username: ec2-user
+  username: ubuntu
+  keyname: powerkimkeypair
+  keyfilepath: /root/.aws/powerkimkeypair.pem 
 
 
 ## Config for GCP ##
@@ -29,19 +30,19 @@ gcp:
   region: us-east1
   zone: us-east1-c
 # Project & Prefix for GCP
-  projectid: ornate-course-236606
-  prefix: https://www.googleapis.com/compute/v1/projects/ornate-course-236606
+  projectid: powerkim-prj
+  prefix: https://www.googleapis.com/compute/v1/projects/powerkim-prj
 # Infos for creating Instnaces
-  imageid: projects/gce-uefi-images/global/images/centos-7-v20190326
+  imageid: projects/gce-uefi-images/global/images/ubuntu-1804-bionic-v20190617
   instancenameprefix: gcepowerkim
-  instancetype: https://www.googleapis.com/compute/v1/projects/ornate-course-236606/zones/us-east1-c/machineTypes/f1-micro
-  subnetid: https://www.googleapis.com/compute/v1/projects/ornate-course-236606/regions/us-east1/subnetworks/default
-  networkname: https://www.googleapis.com/compute/v1/projects/ornate-course-236606/global/networks/default
+  instancetype: https://www.googleapis.com/compute/v1/projects/powerkim-prj/zones/us-east1-c/machineTypes/n1-standard-2
+  subnetid: https://www.googleapis.com/compute/v1/projects/powerkim-prj/regions/us-east1/subnetworks/default
+  networkname: https://www.googleapis.com/compute/v1/projects/powerkim-prj/global/networks/default
   serviceAccoutsMail: default
 # for VM
   username: byoungseob
   keyname: empty
-  keyfilepath: /root/.gcp/gcppowerkimkeypair.pem 
+  keyfilepath: /root/.gcp/gce-vm-key
 
 
 

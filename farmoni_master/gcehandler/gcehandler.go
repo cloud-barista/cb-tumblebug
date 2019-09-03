@@ -147,7 +147,7 @@ func CreateInstances(computeService *compute.Service, region string, zone string
 	instanceIds :=  make([]*string, maxCount)
 	for i:=0; i<maxCount; i++ {
 		instanceName := baseName + strconv.Itoa(i)
-		diskName := "my-root-pd" + strconv.Itoa(i)
+		diskName := "my-root-pd" + "-" + baseName + strconv.Itoa(i)
 		rb := getRequestBody(instanceName, region, zone, projectID, imageURL, machineType,
 			diskName, minCount, maxCount, subNetwork, networkName, serviceAccoutsMail)
 
