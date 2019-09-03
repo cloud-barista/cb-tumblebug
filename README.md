@@ -41,13 +41,13 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   - `# apt install git`
 - 환경 변수 설정
   - `~/.bashrc` (또는 `~/.zshrc`) 하단에 아래 내용 추가
-```Shell
-export PATH=$PATH:/usr/local/go/bin
-export GOPATH=$HOME/go
-export PATH=$PATH:$HOME/go/src/github.com/protobuf/bin
-export MCISM_MASTER=~/go/src/github.com/cloud-barista/poc-infraservice/mcism_master
-export AZURE_AUTH_LOCATION=~/.azure/azure.auth
-```
+  ```Shell
+  export PATH=$PATH:/usr/local/go/bin
+  export GOPATH=$HOME/go
+  export PATH=$PATH:$HOME/go/src/github.com/protobuf/bin
+  export MCISM_MASTER=~/go/src/github.com/cloud-barista/poc-infraservice/mcism_master
+  export AZURE_AUTH_LOCATION=~/.azure/azure.auth
+  ```
 > 1행: Go 를 Ubuntu 패키지로 설치한다면 필요 없을 것임  
 2행: Go 를 Ubuntu 패키지로 설치한다면 필요 없을 것임  
 3행: golang-goprotobuf-dev 를 Ubuntu 패키지로 설치한다면 필요 없을 것임
@@ -59,44 +59,41 @@ export AZURE_AUTH_LOCATION=~/.azure/azure.auth
 
 - MCISM 소스 다운로드
   - `# go get github.com/cloud-barista/poc-infraservice`
-> 다음과 같은 메시지가 나오기는 함:  
-`“package github.com/cloud-barista/poc-infraservice: no Go files in /root/go/src/github.com/cloud-barista/poc-infraservice”`
+  > 다음과 같은 메시지가 나오기는 함:  
+  `“package github.com/cloud-barista/poc-infraservice: no Go files in /root/go/src/github.com/cloud-barista/poc-infraservice”`
 
-> `# go get github.com/cloud-barista/poc-infraservice` 명령을 실행하면, 다음의 명령들을 실행한 것과 같은 효과를 냄  
-> `# mkdir ~/go/src/github.com/cloud-barista`  
-> `# cd ~/go/src/github.com/cloud-barista`  
-> `# git clone https://github.com/cloud-barista/poc-infraservice.git`
-
+  > `# go get github.com/cloud-barista/poc-infraservice` 명령을 실행하면, 다음의 명령들을 실행한 것과 같은 효과를 냄  
+  > `# mkdir ~/go/src/github.com/cloud-barista`  
+  > `# cd ~/go/src/github.com/cloud-barista`  
+  > `# git clone https://github.com/cloud-barista/poc-infraservice.git`
 
 - 의존 라이브러리 다운로드
   - etcd 설치 및 실행
-```Shell
-# apt install etcd-server
-# etcd --version
-# ETCD_IP=<ETCD-Host-IPAddress>
-# etcd --name etcd-01 --initial-advertise-peer-urls http://$ETCD_IP:2380 --listen-peer-urls http://$ETCD_IP:2380 --listen-client-urls http://$ETCD_IP:2379,http://127.0.0.1:2379 --advertise-client-urls http://$ETCD_IP:2379 --initial-cluster-token "etcd-cluster-1" --initial-cluster etcd-01=http://$ETCD_IP:2380 --initial-cluster-state new  &
-```
+  ```Shell
+  # apt install etcd-server
+  # etcd --version
+  # ETCD_IP=<ETCD-Host-IPAddress>
+  # etcd --name etcd-01 --initial-advertise-peer-urls http://$ETCD_IP:2380 --listen-peer-urls http://$ETCD_IP:2380 --listen-client-urls http://$ETCD_IP:2379,http://127.0.0.1:2379 --advertise-client-urls http://$ETCD_IP:2379 --initial-cluster-token "etcd-cluster-1" --initial-cluster etcd-01=http://$ETCD_IP:2380 --initial-cluster-state new  &
+  ```
   - Cloud-Barista alliance 설치(cb-store)
-https://github.com/cloud-barista/cb-store
-README를 참고하여 설치 및 설정
-
+  https://github.com/cloud-barista/cb-store
+  README를 참고하여 설치 및 설정
   - 클라우드 Go 클라이언트 관련 라이브러리
-```Shell
-# go get -u -v github.com/aws/aws-sdk-go
-# go get -u -v cloud.google.com/go
-# go get -u -v github.com/Azure/azure-sdk-for-go
-# go get -u -v github.com/Azure/go-autorest/autorest
-```
-
+  ```Shell
+  # go get -u -v github.com/aws/aws-sdk-go
+  # go get -u -v cloud.google.com/go
+  # go get -u -v github.com/Azure/azure-sdk-for-go
+  # go get -u -v github.com/Azure/go-autorest/autorest
+  ```
   - 기타 라이브러리 다운로드
-```Shell
-# go get -u -v github.com/revel/revel
-# go get -u -v go.etcd.io/etcd/clientv3
-# go get -u -v github.com/bramvdbogaerde/go-scp
-# go get -u -v github.com/dimchansky/utfbom github.com/mitchellh/go-homedir
-# go get -u -v golang.org/x/oauth2 gopkg.in/yaml.v3
-# go get -u -v github.com/labstack/echo
-```
+  ```Shell
+  # go get -u -v github.com/revel/revel
+  # go get -u -v go.etcd.io/etcd/clientv3
+  # go get -u -v github.com/bramvdbogaerde/go-scp
+  # go get -u -v github.com/dimchansky/utfbom github.com/mitchellh/go-homedir
+  # go get -u -v golang.org/x/oauth2 gopkg.in/yaml.v3
+  # go get -u -v github.com/labstack/echo
+  ```
 
 ### 클라우드 인증 키 생성 및 설정
 #### AWS 인증 키 생성 및 설정
