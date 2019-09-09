@@ -8,7 +8,7 @@ package main
 
 
  import (
-         "github.com/cloud-barista/poc-infraservice/mcism_master/azurehandler"
+         "github.com/cloud-barista/poc-mcism/mcism_master/azurehandler"
  )
 
  func main() {

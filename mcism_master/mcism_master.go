@@ -8,13 +8,13 @@ package main
 
 import (
 	"flag"
-	"github.com/cloud-barista/poc-infraservice/mcism_master/ec2handler"
-	"github.com/cloud-barista/poc-infraservice/mcism_master/gcehandler"
-	"github.com/cloud-barista/poc-infraservice/mcism_master/azurehandler"
-	"github.com/cloud-barista/poc-infraservice/mcism_master/serverhandler/scp"
-	"github.com/cloud-barista/poc-infraservice/mcism_master/serverhandler/sshrun"
-	"github.com/cloud-barista/poc-infraservice/mcism_master/etcdhandler"
-	"github.com/cloud-barista/poc-infraservice/mcism_master/confighandler"
+	"github.com/cloud-barista/poc-mcism/mcism_master/ec2handler"
+	"github.com/cloud-barista/poc-mcism/mcism_master/gcehandler"
+	"github.com/cloud-barista/poc-mcism/mcism_master/azurehandler"
+	"github.com/cloud-barista/poc-mcism/mcism_master/serverhandler/scp"
+	"github.com/cloud-barista/poc-mcism/mcism_master/serverhandler/sshrun"
+	"github.com/cloud-barista/poc-mcism/mcism_master/etcdhandler"
+	"github.com/cloud-barista/poc-mcism/mcism_master/confighandler"
 
 	"fmt"
 	"os"
@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"encoding/json"
 	"google.golang.org/grpc"
-	pb "github.com/cloud-barista/poc-infraservice/grpc_def"
+	pb "github.com/cloud-barista/poc-mcism/grpc_def"
 
 	// REST API (echo)
 	"net/http"
@@ -154,7 +154,7 @@ func apiServer() {
 	e.Use(middleware.Recover())
 
 	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World! This is cloud-barista poc-infraservice")
+		return c.String(http.StatusOK, "Hello, World! This is cloud-barista poc-mcism")
 	})
 
 	// Routeso
@@ -1086,9 +1086,9 @@ func addVMaws(count int) ([]*string, []*string) {
 
 			// file info to copy
 			//sourceFile := "/root/go/src/mcism/mcism_agent/mcism_agent"
-			//sourceFile := "/root/go/src/github.com/cloud-barista/poc-infraservice/mcism_agent/mcism_agent"
+			//sourceFile := "/root/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
 			homePath := os.Getenv("HOME")
-			sourceFile := homePath + "/go/src/github.com/cloud-barista/poc-infraservice/mcism_agent/mcism_agent"
+			sourceFile := homePath + "/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
 			targetFile := "/tmp/mcism_agent"
 
 			// command for ssh run

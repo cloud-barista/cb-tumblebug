@@ -11,7 +11,7 @@ package main
 import (
         "fmt"
 
-	"github.com/cloud-barista/poc-infraservice/mcism_master/confighandler"
+	"github.com/cloud-barista/poc-mcism/mcism_master/confighandler"
 )
 
 func main() {
