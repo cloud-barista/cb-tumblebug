@@ -7,76 +7,76 @@
 package gcehandler
 
 import (
-    "golang.org/x/oauth2"
-    "golang.org/x/oauth2/google"
-    "google.golang.org/api/compute/v1"
-    "google.golang.org/api/googleapi"
-    "golang.org/x/oauth2/jwt"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/jwt"
+	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
 
-    "fmt"
-    "os"
-    "log"
-    "strings"
-    "io/ioutil"
-    "context"
-    "strconv"
-    "time"
+	"context"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func Connect(credentialFilePath string) *compute.Service {
 
-        // Use the downloaded JSON file in its entirety
-        //data, err := ioutil.ReadFile("/root/.gcp/credentials")
-        data, err := ioutil.ReadFile(credentialFilePath)
-        if err != nil {
-                log.Fatal(err)
-        }
+	// Use the downloaded JSON file in its entirety
+	//data, err := ioutil.ReadFile("/root/.gcp/credentials")
+	data, err := ioutil.ReadFile(credentialFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-        conf, err := google.JWTConfigFromJSON(data, "https://www.googleapis.com/auth/compute")
-        if err != nil {
-                log.Fatal(err)
-        }
+	conf, err := google.JWTConfigFromJSON(data, "https://www.googleapis.com/auth/compute")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-        client := conf.Client(oauth2.NoContext)
+	client := conf.Client(oauth2.NoContext)
 
 	// Create GCE service
-        computeService, err := compute.New(client)
+	computeService, err := compute.New(client)
 
-        if err != nil {
-                log.Fatal(err)
-        }
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return computeService
 }
 
 func ConnectByEnv() *compute.Service {
 
-        // Use the email & privateKey from the JSON file (good for ENV vars & CircleCI ;)
-        email := os.Getenv("GCE_EMAIL")
-        privateKey := os.Getenv("GCE_PRIVATE_KEY")
-        privateKey = strings.Replace(privateKey, "\\n", "\n", -1)
+	// Use the email & privateKey from the JSON file (good for ENV vars & CircleCI ;)
+	email := os.Getenv("GCE_EMAIL")
+	privateKey := os.Getenv("GCE_PRIVATE_KEY")
+	privateKey = strings.Replace(privateKey, "\\n", "\n", -1)
 
-        // this key will have a bunch of '\n's which must be removed and replaced with hard returns.
-        // paste result into CircleCI env var
+	// this key will have a bunch of '\n's which must be removed and replaced with hard returns.
+	// paste result into CircleCI env var
 
-        conf := &jwt.Config{
-                Email:      email,
-                PrivateKey: []byte(privateKey),
-                Scopes: []string{
-                        "https://www.googleapis.com/auth/compute",
-                },
-                TokenURL: google.JWTTokenURL,
-        }
-	
-        client := conf.Client(oauth2.NoContext)
+	conf := &jwt.Config{
+		Email:      email,
+		PrivateKey: []byte(privateKey),
+		Scopes: []string{
+			"https://www.googleapis.com/auth/compute",
+		},
+		TokenURL: google.JWTTokenURL,
+	}
 
-        // Create GCE service
-        computeService, err := compute.New(client)
-        if err != nil {
-                log.Fatal(err)
-        }
+	client := conf.Client(oauth2.NoContext)
 
-        return computeService
+	// Create GCE service
+	computeService, err := compute.New(client)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return computeService
 }
 
 /*
@@ -85,67 +85,66 @@ func Close() {
 */
 
 func getRequestBody(instanceName string, region string, zone string, projectID string, imageURL string, machineType string,
-                diskName string, minCount int, maxCount int, subNetwork string, networkName string, serviceAccoutsMail string) *compute.Instance {
+	diskName string, minCount int, maxCount int, subNetwork string, networkName string, serviceAccoutsMail string) *compute.Instance {
 
-        setFalse := false
+	setFalse := false
 
-        rb := &compute.Instance{
-                MachineType:        machineType, 
-                Name:               instanceName,
-                CanIpForward:       false,
-                DeletionProtection: false,
-                Disks: []*compute.AttachedDisk{
-                        {
-                                AutoDelete: true,
-                                Boot:       true,
-                                Type:       "PERSISTENT",
-                                Mode:       "READ_WRITE",
-                                DeviceName: "instance-1",
-                                InitializeParams: &compute.AttachedDiskInitializeParams{
-                                        DiskName:    diskName, 
-                                        SourceImage: imageURL,
-                                },
-                        },
-                },
-                NetworkInterfaces: []*compute.NetworkInterface{
-                        &compute.NetworkInterface{
-                                Subnetwork: subNetwork,
-                                AccessConfigs: []*compute.AccessConfig{
-                                        &compute.AccessConfig{
-                                                Type: "ONE_TO_ONE_NAT",
-                                                Name: "External NAT",
-                                        },
-                                },
-                                Network: networkName,
-                        },
-                },
-                ServiceAccounts: []*compute.ServiceAccount{
-                        {
-                                //Email: email,
-                                Email: "default",
-                                Scopes: []string{
-                                        compute.ComputeScope,
-                                },
-                        },
-                },
-                Scheduling: &compute.Scheduling{
-                        Preemptible:       true,
-                        OnHostMaintenance: "TERMINATE",
-                        AutomaticRestart:  &setFalse,
-                },
-        }
+	rb := &compute.Instance{
+		MachineType:        machineType,
+		Name:               instanceName,
+		CanIpForward:       false,
+		DeletionProtection: false,
+		Disks: []*compute.AttachedDisk{
+			{
+				AutoDelete: true,
+				Boot:       true,
+				Type:       "PERSISTENT",
+				Mode:       "READ_WRITE",
+				DeviceName: "instance-1",
+				InitializeParams: &compute.AttachedDiskInitializeParams{
+					DiskName:    diskName,
+					SourceImage: imageURL,
+				},
+			},
+		},
+		NetworkInterfaces: []*compute.NetworkInterface{
+			&compute.NetworkInterface{
+				Subnetwork: subNetwork,
+				AccessConfigs: []*compute.AccessConfig{
+					&compute.AccessConfig{
+						Type: "ONE_TO_ONE_NAT",
+						Name: "External NAT",
+					},
+				},
+				Network: networkName,
+			},
+		},
+		ServiceAccounts: []*compute.ServiceAccount{
+			{
+				//Email: email,
+				Email: "default",
+				Scopes: []string{
+					compute.ComputeScope,
+				},
+			},
+		},
+		Scheduling: &compute.Scheduling{
+			Preemptible:       true,
+			OnHostMaintenance: "TERMINATE",
+			AutomaticRestart:  &setFalse,
+		},
+	}
 	return rb
 }
 
-
-func CreateInstances(computeService *compute.Service, region string, zone string, projectID string, 
-		imageURL string, machineType string, minCount int, maxCount int, subNetwork string, 
-		networkName string, serviceAccoutsMail string, baseName string) []*string {
+func CreateInstances(computeService *compute.Service, region string, zone string, projectID string,
+	imageURL string, machineType string, minCount int, maxCount int, subNetwork string,
+	networkName string, serviceAccoutsMail string, baseName string) []*string {
 
 	ctx := context.Background()
 
-	instanceIds :=  make([]*string, maxCount)
-	for i:=0; i<maxCount; i++ {
+	instanceIds := make([]*string, maxCount)
+	for i := 0; i < maxCount; i++ {
 		instanceName := baseName + strconv.Itoa(i)
 		diskName := "my-root-pd" + "-" + baseName + strconv.Itoa(i)
 		rb := getRequestBody(instanceName, region, zone, projectID, imageURL, machineType,
@@ -167,8 +166,8 @@ func CreateInstances(computeService *compute.Service, region string, zone string
 		}
 
 	}
-	
-	return instanceIds 
+
+	return instanceIds
 }
 
 func GetPublicIP(computeService *compute.Service, zone string, projectID string, instanceName string) string {
@@ -180,7 +179,7 @@ func GetPublicIP(computeService *compute.Service, zone string, projectID string,
 		log.Fatal(err)
 	}
 
-	 //log.Printf("Got compute.Instance, err: %#v, %v", inst, err)
+	//log.Printf("Got compute.Instance, err: %#v, %v", inst, err)
 	if googleapi.IsNotModified(err) {
 		log.Printf("Instance not modified since insert.")
 	} else {
@@ -190,32 +189,33 @@ func GetPublicIP(computeService *compute.Service, zone string, projectID string,
 	// @TODO now, fetch just first Network Interface.
 	publicIP := inst.NetworkInterfaces[0].AccessConfigs[0].NatIP
 
-    return publicIP
+	return publicIP
 }
 
 // now, use GetPublicIP() for fast develop.
 func WaitForRun(computeService *compute.Service, zone string, projectID string, instanceName string) {
 
-    for i:=0; ; i++ {
-	publicIP := GetPublicIP(computeService, zone, projectID, instanceName)
-	if(i==30) { os.Exit(3) }
-	    if publicIP != "" {
-		break;
-	    }
-	    // Let's give some time for Gooble to attach Public IP to the VM
-	    time.Sleep(time.Second*3)
-    } // end of for
+	for i := 0; ; i++ {
+		publicIP := GetPublicIP(computeService, zone, projectID, instanceName)
+		if i == 30 {
+			os.Exit(3)
+		}
+		if publicIP != "" {
+			break
+		}
+		// Let's give some time for Gooble to attach Public IP to the VM
+		time.Sleep(time.Second * 3)
+	} // end of for
 }
 
 func DestroyInstances(computeService *compute.Service, zone string, projectID string, instanceNames []*string) {
 
 	ctx := context.Background()
-
 	for _, instanceName := range instanceNames {
+		fmt.Println("<for _, instanceName := range instanceNames : " + *instanceName + ">")
 		_, err := computeService.Instances.Delete(projectID, zone, *instanceName).Context(ctx).Do()
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 }
-
