@@ -39,8 +39,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// REST API
-
+// Structs for REST API
 type vmreq struct {
 	CSP string `json:"csp"`
 	IMG string `json:"img"`
@@ -61,99 +60,6 @@ var (
 	seqSvc = 1
 )
 
-/*
-type (
-svc struct {
-ID   int    `json:"id"`
-NAME string `json:"name"`
-SERVER []struct {
-CSP  string `json:"csp"`
-NUM  int    `json:"num"`
-VMID string `json:"vmid"`
-IP   string `json:"ip"`
-}`json:"server"`
-}
-)
-var (
-svcs = map[int]*svc{}
-seqSvc   = 1
-)
-*/
-
-// CB-Store
-
-var cblog *logrus.Logger
-var store icbs.Store
-
-func init() {
-	cblog = config.Cblogger
-	store = cbstore.GetStore()
-}
-
-const (
-	defaultServerName = "129.254.184.79"
-	port              = "2019"
-)
-
-var masterConfigInfos confighandler.MASTERCONFIGTYPE
-
-var etcdServerPort *string
-var fetchType *string
-
-var addServer *string
-var delServer *string
-
-var addVMNumAWS *int
-var delServerNumAWS *int
-
-var addVMNumGCP *int
-var delServerNumGCP *int
-
-var addVMNumAZURE *int
-
-var listvm *bool
-var monitoring *bool
-var delVMAWS *bool
-var delVMGCP *bool
-var delVMAZURE *bool
-
-func apiServer() {
-
-	e := echo.New()
-
-	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World! This is cloud-barista poc-mcism")
-	})
-
-	// Route
-	e.POST("/mcis", restPostMcis)
-	e.GET("/mcis/:id", restGetMcis)
-	e.GET("/mcis", restGetAllMcis)
-	e.PUT("/mcis/:id", restPutMcis)
-	e.DELETE("/mcis/:id", restDelMcis)
-	e.DELETE("/mcis", restDelAllMcis)
-
-	e.Logger.Fatal(e.Start(":1323"))
-
-}
-
-// API Handlers
-
-type server struct {
-	CSP        string `json:"csp"`
-	VMID       string `json:"vmid"`
-	IP         string `json:"ip"`
-	AGENT_PORT string `json:"agent_port"`
-}
-type stService struct {
-	ID     int      `json:"id"`
-	NAME   string   `json:"name"`
-	SERVER []server `json:"server"`
-}
 type mcisInfo struct {
 	Id             string `json:"id"`
 	Name           string `json:"name"`
@@ -189,6 +95,137 @@ type vmInfo struct {
 	Description    string `json:"description"`
 }
 
+// CB-Store
+var cblog *logrus.Logger
+var store icbs.Store
+
+func init() {
+	cblog = config.Cblogger
+	store = cbstore.GetStore()
+}
+
+const (
+	defaultName        = ""
+	defaultMonitorPort = ":2019"
+)
+
+var masterConfigInfos confighandler.MASTERCONFIGTYPE
+
+var etcdServerPort *string
+var fetchType *string
+
+var addServer *string
+var delServer *string
+
+var addVMNumAWS *int
+var delServerNumAWS *int
+
+var addVMNumGCP *int
+var delServerNumGCP *int
+
+var addVMNumAZURE *int
+
+var listvm *bool
+var monitoring *bool
+var delVMAWS *bool
+var delVMGCP *bool
+var delVMAZURE *bool
+
+// Main Body
+
+func apiServer() {
+
+	e := echo.New()
+
+	// Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	e.GET("/", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello, World! This is cloud-barista poc-mcism")
+	})
+
+	// Route
+	e.POST("/mcis", restPostMcis)
+	e.GET("/mcis/:id", restGetMcis)
+	e.GET("/mcis", restGetAllMcis)
+	e.PUT("/mcis/:id", restPutMcis)
+	e.DELETE("/mcis/:id", restDelMcis)
+	e.DELETE("/mcis", restDelAllMcis)
+
+	e.Logger.Fatal(e.Start(":1323"))
+
+}
+
+func main() {
+
+	fmt.Println("[ PoC-MCISM (Multi-Cloud Infra Service Management Framework) ]")
+	fmt.Println("// Initiating API Server ...")
+
+	fmt.Println("Ex) curl <ServerIP>:1323/mcis | json_pp")
+	fmt.Println("Ex) curl -X POST <ServerIP>:1323/mcis \n -H 'Content-Type: application/json' \n -d '{\"name\":\"mcis-3-t002\",\"vmnum\":3,\"vmreq\":[{\"csp\":\"aws\",\"img\":\"aws-ec2-ubuntu-image\"},{\"csp\":\"azure\",\"img\":\"azure-ubuntu-image\"},{\"csp\":\"gcp\",\"img\":\"gcp-ubuntu-image\"}]}' | json_pp")
+	fmt.Println("Ex) curl <ServerIP>:1323/mcis/<McisID> | json_pp")
+	fmt.Println("Ex) curl -X DELETE <ServerIP>:1323/mcis | json_pp")
+
+	// load config
+	// you can see the details of masterConfigInfos
+	// at confighander/confighandler.go:MASTERCONFIGTYPE.
+	masterConfigInfos = confighandler.GetMasterConfigInfos()
+
+	// dedicated option for PoC
+	// 1. parsing user's request.
+	//parseRequest()
+
+	// Get interactive command request
+	//getInteractiveRequest()
+	// Run API Server
+	apiServer()
+
+	/*
+		//<add servers in AWS/GCP/AZURE>
+		// 1.1. create Servers(VM).
+		if *addVMNumAWS != 0 {
+			fmt.Println("######### addVMaws....")
+			addVMaws(*addVMNumAWS)
+		}
+		if *addVMNumGCP != 0 {
+			fmt.Println("######### addVMgcp....")
+			addVMgcp(*addVMNumGCP)
+		}
+		if *addVMNumAZURE != 0 {
+			fmt.Println("######### addVMazure....")
+			addVMazure(*addVMNumAZURE)
+		}
+
+		//<get all server list>
+		if *listvm != false {
+			//fmt.Println("######### list of all servers....")
+			serverList()
+		}
+		// 2.2. fetch all agent's monitoring info.
+		if *monitoring != false {
+			fmt.Println("######### monitoring all servers....")
+			monitoringAll()
+		}
+
+		//<delete all servers inAWS/GCP/AZURE>
+		if *delVMAWS != false {
+			fmt.Println("######### delete all servers in AWS....")
+			delAllVMaws()
+		}
+		if *delVMGCP != false {
+			fmt.Println("######### delete all servers in GCP....")
+			delAllVMgcp()
+		}
+		if *delVMAZURE != false {
+			fmt.Println("######### delete all servers in AZURE....")
+			delAllVMazure()
+		}
+	*/
+
+}
+
+// MCIS API Proxy
 func restPostMcis(c echo.Context) error {
 	u := &svc{
 		ID: int(time.Now().UnixNano() / 1e6),
@@ -218,11 +255,9 @@ func restPostMcis(c echo.Context) error {
 	for _, k := range vmRequest {
 		fmt.Print(k.CSP)
 
-		//addServiceToEtcd(strconv.Itoa(u.ID), u.NAME)
-
 		if k.CSP == "aws" {
 			fmt.Println("######### addVMaws....")
-			instanceIds, publicIPs := addVMaws(1)
+			instanceIds, publicIPs := launchVmAws(1)
 
 			for i := 0; i < len(instanceIds) && i < len(publicIPs); i++ {
 				fmt.Println("[instanceIds=] " + string(*instanceIds[i]) + "[publicIPs]" + string(*publicIPs[i]))
@@ -232,7 +267,7 @@ func restPostMcis(c echo.Context) error {
 		}
 		if k.CSP == "gcp" {
 			fmt.Println("######### addVMgcp....")
-			instanceIds, publicIPs := addVMgcp(1)
+			instanceIds, publicIPs := launchVmGcp(1)
 
 			for i := 0; i < len(instanceIds) && i < len(publicIPs); i++ {
 				fmt.Println("[instanceIds=] " + string(*instanceIds[i]) + "[publicIPs]" + string(*publicIPs[i]))
@@ -242,7 +277,7 @@ func restPostMcis(c echo.Context) error {
 		}
 		if k.CSP == "azure" {
 			fmt.Println("######### addVMazure....")
-			instanceIds, publicIPs := addVMazure(1)
+			instanceIds, publicIPs := launchVmAzure(1)
 
 			for i := 0; i < len(instanceIds) && i < len(publicIPs); i++ {
 				fmt.Println("[instanceIds=] " + string(*instanceIds[i]) + "[publicIPs]" + string(*publicIPs[i]))
@@ -297,6 +332,22 @@ func restGetMcis(c echo.Context) error {
 		}
 
 		mapA := map[string]string{"message": "The MCIS has been terminated"}
+		return c.JSON(http.StatusOK, &mapA)
+
+	} else if action == "monitor" {
+		fmt.Println("[monitor MCIS]")
+
+		vmList := getVmList(mcisId)
+
+		for _, v := range vmList {
+			vmIp := getVmIp(mcisId, v)
+			vmIpPort := vmIp + defaultMonitorPort
+
+			statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+			fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
+		}
+
+		mapA := map[string]string{"message": "The MCIS monitoring"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else {
@@ -411,56 +462,27 @@ func restDelAllMcis(c echo.Context) error {
 
 }
 
-func delMcis(mcisId string) error {
-
-	fmt.Println("[Delete MCIS] " + mcisId)
-
-	// terminateMcis first
-	terminateMcis(mcisId)
-	// for deletion, need to wait untill termination is finished
-
-	key := "/mcis/" + mcisId
-	fmt.Println(key)
-
-	vmList := getVmList(mcisId)
-
-	// delete vms info
-	for _, v := range vmList {
-		vmKey := "/mcis/" + mcisId + "/vm/" + v
-		fmt.Println(vmKey)
-		err := store.Delete(vmKey)
-		if err != nil {
-			cblog.Error(err)
-			return err
-		}
-	}
-	// delete mcis info
-	err := store.Delete(key)
-	if err != nil {
-		cblog.Error(err)
-		return err
-	}
-
-	return nil
-}
+// MCIS Information Managemenet
 
 func addVmToMcis(svcId string, svcName string, provider string, instanceIds []*string, serverIPs []*string) {
 
-	etcdcli, err := etcdhandler.Connect(etcdServerPort)
-	if err != nil {
-		panic(err)
-	}
+	/*
+		etcdcli, err := etcdhandler.Connect(etcdServerPort)
+		if err != nil {
+			panic(err)
+		}
 
-	defer etcdhandler.Close(etcdcli)
+		defer etcdhandler.Close(etcdcli)
 
+	*/
 	//ctx := context.Background()
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	//ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	for i, v := range serverIPs {
 		serverPort := *v + ":2019" // 2019 Port is dedicated value for PoC.
 		fmt.Println("######### addServer...." + serverPort)
 		// /server/aws/i-1234567890abcdef0/129.254.175:2019  PULL
-		etcdhandler.AddServerToService(ctx, etcdcli, &svcId, &svcName, &provider, instanceIds[i], &serverPort, fetchType)
+		//etcdhandler.AddServerToService(ctx, etcdcli, &svcId, &svcName, &provider, instanceIds[i], &serverPort, fetchType)
 
 		// cb-store
 		vmId := strconv.Itoa(int(time.Now().UnixNano() / 1e6))
@@ -481,51 +503,6 @@ func addVmToMcis(svcId string, svcName string, provider string, instanceIds []*s
 
 	}
 
-}
-
-func addServiceToEtcd(svcId string, svcName string) {
-
-	etcdcli, err := etcdhandler.Connect(etcdServerPort)
-	if err != nil {
-		panic(err)
-	}
-
-	defer etcdhandler.Close(etcdcli)
-
-	//ctx := context.Background()
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-
-	etcdhandler.AddService(ctx, etcdcli, &svcId, &svcName, fetchType)
-}
-
-func getServersInServiceFromEtcd(svcId string) []*string {
-
-	etcdcli, err := etcdhandler.Connect(etcdServerPort)
-	if err != nil {
-		panic(err)
-	}
-
-	defer etcdhandler.Close(etcdcli)
-
-	//ctx := context.Background()
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-
-	return etcdhandler.GetServersInService(ctx, etcdcli, &svcId)
-}
-
-func delServicesFromEtcd() {
-	etcdcli, err := etcdhandler.Connect(etcdServerPort)
-	if err != nil {
-		panic(err)
-	}
-
-	defer etcdhandler.Close(etcdcli)
-
-	//ctx := context.Background()
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-
-	fmt.Println("######### delete  all Services....")
-	etcdhandler.DelAllSvcs(ctx, etcdcli)
 }
 
 func getMcisList() []string {
@@ -605,316 +582,49 @@ func getVmList(mcisId string) []string {
 
 }
 
-func parseRequest() {
+func delMcis(mcisId string) error {
 
-	etcdServerPort = &masterConfigInfos.ETCDSERVERPORT
+	fmt.Println("[Delete MCIS] " + mcisId)
 
-	//etcdServerPort = flag.String("etcdserver", "129.254.175.43:2379", "etcdserver=129.254.175.43:2379")
-	fetchType = flag.String("fetchtype", "PULL", "fetch type: -fetchtype=PUSH")
-	/*
-		addServer = flag.String("addserver", "none", "add a server: -addserver=192.168.0.10:5000")
-		delServer = flag.String("delserver", "none", "delete a server: -delserver=192.168.0.10")
-	*/
-	addVMNumAWS = flag.Int("addvm-aws", 0, "add servers in AWS: -addvm-aws=10")
-	delVMAWS = flag.Bool("delvm-aws", false, "delete all servers in AWS: -delvm-aws")
+	// terminateMcis first
+	terminateMcis(mcisId)
+	// for deletion, need to wait untill termination is finished
 
-	addVMNumGCP = flag.Int("addvm-gcp", 0, "add servers in GCP: -addvm-gcp=10")
-	delVMGCP = flag.Bool("delvm-gcp", false, "delete all servers in GCP: -delvm-gcp")
-
-	addVMNumAZURE = flag.Int("addvm-azure", 0, "add servers in AZURE: -addvm-azure=10")
-	delVMAZURE = flag.Bool("delvm-azure", false, "delete all servers in AZURE: -delvm-azure")
-
-	listvm = flag.Bool("listvm", false, "report server list: -listvm")
-	monitoring = flag.Bool("monitor", false, "report all server' resources status: -monitor")
-
-	flag.Parse()
-}
-
-func getInteractiveRequest() {
-
-	command := -1
-	fmt.Println("[Select opt (0:API-server, 1:create-vm, 2:delete-vm, 3:list-vm, 4:monitor-vm]")
-	fmt.Print("Your section : ")
-	fmt.Scanln(&command)
-	fmt.Println(command)
-
-	/*
-			if command != 0 {
-			fmt.Println("######### addVMaws....")
-			addVMaws(*addVMNumAWS)
-			if command
-		}
-	*/
-	switch {
-	case command == 0:
-		apiServer()
-	case command == 1:
-		selCsp := 0
-		fmt.Println("[Select cloud service provider (1:aws, 2:gcp, 3:azure, 4:TBD]")
-		fmt.Print("Your section : ")
-		fmt.Scanln(&selCsp)
-
-		selVmNum := 1
-		fmt.Println("[Provide the number of VM to create (e.g., 5)")
-		fmt.Print("Your section : ")
-		fmt.Scanln(&selVmNum)
-
-		switch {
-		case selCsp == 0:
-			fmt.Println("nothing was selected")
-		case selCsp == 1:
-			fmt.Println("Create VM(s) in aws")
-			*addVMNumAWS = selVmNum
-		case selCsp == 2:
-			fmt.Println("Create VM(s) in gcp")
-			*addVMNumGCP = selVmNum
-		case selCsp == 3:
-			fmt.Println("Create VM(s) in azure")
-			*addVMNumAZURE = selVmNum
-		case selCsp == 4:
-			fmt.Println("not implemented yet. will be provided soon")
-		default:
-			fmt.Println("select within 1-4")
-		}
-	case command == 2:
-		selCsp := -1
-		fmt.Println("[Select cloud service provider (0: all, 1:aws, 2:gcp, 3:azure, 4:TBD]")
-		fmt.Print("Your section : ")
-		fmt.Scanln(&selCsp)
-
-		switch {
-		case selCsp == -1:
-			fmt.Println("nothing was selected")
-		case selCsp == 0:
-			fmt.Println("Delete all VMs for all CPSs")
-			*delVMAWS = true
-			*delVMGCP = true
-			*delVMAZURE = true
-		case selCsp == 1:
-			fmt.Println("Delete all VMs in aws")
-			*delVMAWS = true
-		case selCsp == 2:
-			fmt.Println("Delete all VMs in gcp")
-			*delVMGCP = true
-		case selCsp == 3:
-			fmt.Println("Delete all VMs in azure")
-			*delVMAZURE = true
-		case selCsp == 4:
-			fmt.Println("not implemented yet. will be provided soon")
-		default:
-			fmt.Println("select within 1-4")
-		}
-	case command == 3:
-		*listvm = true
-	case command == 4:
-		*monitoring = true
-	default:
-		fmt.Println("select within 1-4")
-	}
-
-	/*
-	   fetchType = flag.String("fetchtype", "PULL", "fetch type: -fetchtype=PUSH")
-
-	   addVMNumAWS = flag.Int("addvm-aws", 0, "add servers in AWS: -addvm-aws=10")
-	   delVMAWS = flag.Bool("delvm-aws", false, "delete all servers in AWS: -delvm-aws")
-
-	   addVMNumGCP = flag.Int("addvm-gcp", 0, "add servers in GCP: -addvm-gcp=10")
-	   delVMGCP = flag.Bool("delvm-gcp", false, "delete all servers in GCP: -delvm-gcp")
-
-	   addVMNumAZURE = flag.Int("addvm-azure", 0, "add servers in AZURE: -addvm-azure=10")
-	   delVMAZURE = flag.Bool("delvm-azure", false, "delete all servers in AZURE: -delvm-azure")
-
-	   listvm = flag.Bool("listvm", false, "report server list: -listvm")
-	   monitoring = flag.Bool("monitor", false, "report all server' resources status: -monitor")
-
-	   flag.Parse()
-	*/
-}
-
-func main() {
-
-	fmt.Println("## examples ##")
-	fmt.Println("go run mcism_master.go -addvm-aws=10")
-	fmt.Println("go run mcism_master.go -addvm-gcp=5")
-	fmt.Println("go run mcism_master.go -addvm-azure=5")
-	fmt.Println("")
-	fmt.Println("go run mcism_master.go -listvm")
-	fmt.Println("go run mcism_master.go -monitor")
-
-	// to delete all servers in aws
-	fmt.Println("")
-	fmt.Println("go run mcism_master.go -delvm-aws")
-	fmt.Println("go run mcism_master.go -delvm-gcp")
-	fmt.Println("go run mcism_master.go -delvm-azure")
-	fmt.Println("")
-
-	// load config
-	// you can see the details of masterConfigInfos
-	// at confighander/confighandler.go:MASTERCONFIGTYPE.
-	masterConfigInfos = confighandler.GetMasterConfigInfos()
-
-	// dedicated option for PoC
-	// 1. parsing user's request.
-	parseRequest()
-
-	// Get interactive command request
-	getInteractiveRequest()
-
-	//<add servers in AWS/GCP/AZURE>
-	// 1.1. create Servers(VM).
-	if *addVMNumAWS != 0 {
-		fmt.Println("######### addVMaws....")
-		addVMaws(*addVMNumAWS)
-	}
-	if *addVMNumGCP != 0 {
-		fmt.Println("######### addVMgcp....")
-		addVMgcp(*addVMNumGCP)
-	}
-	if *addVMNumAZURE != 0 {
-		fmt.Println("######### addVMazure....")
-		addVMazure(*addVMNumAZURE)
-	}
-
-	//<get all server list>
-	if *listvm != false {
-		//fmt.Println("######### list of all servers....")
-		serverList()
-	}
-	// 2.2. fetch all agent's monitoring info.
-	if *monitoring != false {
-		fmt.Println("######### monitoring all servers....")
-		monitoringAll()
-	}
-
-	//<delete all servers inAWS/GCP/AZURE>
-	if *delVMAWS != false {
-		fmt.Println("######### delete all servers in AWS....")
-		delAllVMaws()
-	}
-	if *delVMGCP != false {
-		fmt.Println("######### delete all servers in GCP....")
-		delAllVMgcp()
-	}
-	if *delVMAZURE != false {
-		fmt.Println("######### delete all servers in AZURE....")
-		delAllVMazure()
-	}
-
-}
-
-func terminateMcis(mcisId string) {
-
-	fmt.Println("[terminateMcis]" + mcisId)
 	key := "/mcis/" + mcisId
 	fmt.Println(key)
-	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
 
 	vmList := getVmList(mcisId)
 
 	// delete vms info
 	for _, v := range vmList {
-		terminateVm(mcisId, v)
+		vmKey := "/mcis/" + mcisId + "/vm/" + v
+		fmt.Println(vmKey)
+		err := store.Delete(vmKey)
+		if err != nil {
+			cblog.Error(err)
+			return err
+		}
+	}
+	// delete mcis info
+	err := store.Delete(key)
+	if err != nil {
+		cblog.Error(err)
+		return err
 	}
 
-	//need to change status
-
+	return nil
 }
 
-func terminateVm(mcisId string, vmId string) {
+// MCIS Control
 
-	var content struct {
-		Cloud_id  string `json:"cloud_id"`
-		Csp_vm_id string `json:"csp_vm_id"`
-	}
+func launchVmAws(count int) ([]*string, []*string) {
 
-	fmt.Println("[terminateVm]" + vmId)
-	key := "/mcis/" + mcisId + "/vm/" + vmId
-	fmt.Println(key)
+	// 1.1. create Servers(VM).
+	// 1.2. get servers' public IP.
+	// 1.3. insert MCISM Agent into Servers.
+	// 1.4. execute Servers' Agent.
+	// 1.5. add server list into etcd.
 
-	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
-
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	fmt.Printf("%+v\n", content.Cloud_id)
-	fmt.Printf("%+v\n", content.Csp_vm_id)
-
-	if strings.Compare(content.Cloud_id, "aws") == 0 {
-		terminateVmAws(content.Csp_vm_id)
-	} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
-		terminateVmGcp(content.Csp_vm_id)
-	} else if strings.Compare(content.Cloud_id, "azure") == 0 {
-		terminateVmAzure(content.Csp_vm_id)
-	} else {
-		fmt.Println("==============ERROR=no matched provider_id=================")
-	}
-
-}
-
-func terminateVmAws(cspVmId string) {
-
-	idList := make([]*string, 1)
-	idList = append(idList, &cspVmId)
-	fmt.Println("<terminateVmAws cspVmId : " + *idList[1] + ">")
-
-	// (2) terminate AWS server
-	//region := "ap-northeast-2"
-	region := masterConfigInfos.AWS.REGION
-	svc := ec2handler.Connect(region)
-	//  destroy Servers(VMs).
-	ec2handler.DestroyInstances(svc, idList)
-
-}
-
-func terminateVmGcp(cspVmId string) {
-
-	idList := make([]*string, 1)
-	idList = append(idList, &cspVmId)
-	fmt.Println("<terminateVmGcp cspVmId : " + *idList[1] + ">")
-
-	//publicIPs[k] = &publicIP
-
-	// (2) terminate all GCP servers
-	credentialFile := masterConfigInfos.GCP.CREDENTIALFILE
-	svc := gcehandler.Connect(credentialFile)
-
-	//  destroy all Servers(VMs).
-	zone := masterConfigInfos.GCP.ZONE
-	projectID := masterConfigInfos.GCP.PROJECTID
-	gcehandler.DestroyInstances(svc, zone, projectID, idList)
-
-	// (3) remove all aws server list from etcd
-	//delProviderAllServersFromEtcd(string("gcp"))
-}
-
-func terminateVmAzure(cspVmId string) {
-
-	idList := make([]*string, 1)
-	idList = append(idList, &cspVmId)
-	fmt.Println("<terminateVmAzure cspVmId : " + *idList[1] + ">")
-
-	// (2) terminate all AZURE servers
-	credentialFile := masterConfigInfos.AZURE.CREDENTIALFILE
-	connInfo := azurehandler.Connect(credentialFile)
-
-	//  destroy all Servers(VMs).
-	groupName := masterConfigInfos.AZURE.GROUPNAME
-	//    azurehandler.DestroyInstances(connInfo, groupName, idList)  @todo now, just delete target Group for convenience.
-	azurehandler.DeleteGroup(connInfo, groupName)
-
-	// (3) remove all aws server list from etcd
-	//delProviderAllServersFromEtcd(string("azure"))
-}
-
-// 1.1. create Servers(VM).
-// 1.2. get servers' public IP.
-// 1.3. insert MCISM Agent into Servers.
-// 1.4. execute Servers' Agent.
-// 1.5. add server list into etcd.
-func addVMaws(count int) ([]*string, []*string) {
 	// ==> AWS-EC2
 	//region := "ap-northeast-2" // seoul region.
 	region := masterConfigInfos.AWS.REGION // seoul region.
@@ -975,167 +685,12 @@ func addVMaws(count int) ([]*string, []*string) {
 	} // end of for
 
 	// 1.5. add server list into etcd.
-	addServersToEtcd("aws", instanceIds, publicIPs)
+	//addServersToEtcd("aws", instanceIds, publicIPs)
 
 	return instanceIds, publicIPs
 }
 
-func delAllVMaws() {
-
-	// (1) get all AWS server id list from etcd
-	idList := getInstanceIdListAWS()
-
-	// (2) terminate all AWS servers
-	//region := "ap-northeast-2"
-	region := masterConfigInfos.AWS.REGION
-
-	svc := ec2handler.Connect(region)
-
-	//  destroy Servers(VMs).
-	ec2handler.DestroyInstances(svc, idList)
-
-	// (3) remove all aws server list from etcd
-	delProviderAllServersFromEtcd(string("aws"))
-}
-
-// (1) get all GCP server id list from etcd
-// (2) terminate all GCP servers
-// (3) remove server list from etcd
-func delAllVMgcp() {
-
-	// (1) get all GCP server id list from etcd
-	idList := getInstanceIdListGCP()
-
-	// (2) terminate all GCP servers
-	credentialFile := masterConfigInfos.GCP.CREDENTIALFILE
-	svc := gcehandler.Connect(credentialFile)
-
-	//  destroy all Servers(VMs).
-	zone := masterConfigInfos.GCP.ZONE
-	projectID := masterConfigInfos.GCP.PROJECTID
-	gcehandler.DestroyInstances(svc, zone, projectID, idList)
-
-	// (3) remove all aws server list from etcd
-	delProviderAllServersFromEtcd(string("gcp"))
-}
-
-// (1) get all AZURE server id list from etcd
-// (2) terminate all AZURE servers
-// (3) remove server list from etcd
-func delAllVMazure() {
-
-	// (1) get all AZURE server id list from etcd
-	// idList := getInstanceIdListAZURE()
-
-	// (2) terminate all AZURE servers
-	credentialFile := masterConfigInfos.AZURE.CREDENTIALFILE
-	connInfo := azurehandler.Connect(credentialFile)
-
-	//  destroy all Servers(VMs).
-	groupName := masterConfigInfos.AZURE.GROUPNAME
-	//    azurehandler.DestroyInstances(connInfo, groupName, idList)  @todo now, just delete target Group for convenience.
-	azurehandler.DeleteGroup(connInfo, groupName)
-
-	// (3) remove all aws server list from etcd
-	delProviderAllServersFromEtcd(string("azure"))
-}
-
-func addServersToEtcd(provider string, instanceIds []*string, serverIPs []*string) {
-
-	etcdcli, err := etcdhandler.Connect(etcdServerPort)
-	if err != nil {
-		panic(err)
-	}
-
-	defer etcdhandler.Close(etcdcli)
-
-	//ctx := context.Background()
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-
-	for i, v := range serverIPs {
-		serverPort := *v + ":2019" // 2019 Port is dedicated value for PoC.
-		fmt.Println("######### addServer...." + serverPort)
-		// /server/aws/i-1234567890abcdef0/129.254.175:2019  PULL
-		etcdhandler.AddServer(ctx, etcdcli, &provider, instanceIds[i], &serverPort, fetchType)
-	}
-
-}
-
-func delProviderAllServersFromEtcd(provider string) {
-	etcdcli, err := etcdhandler.Connect(etcdServerPort)
-	if err != nil {
-		panic(err)
-	}
-
-	defer etcdhandler.Close(etcdcli)
-
-	ctx := context.Background()
-
-	fmt.Println("######### delete " + provider + " all Server....")
-	etcdhandler.DelProviderAllServers(ctx, etcdcli, &provider)
-}
-
-func copyAndPlayAgent(serverIP string, userName string, keyPath string) error {
-
-	// server connection info
-	// some options are static for simple PoC.// some options are static for simple PoC.
-	// These must be prepared before.
-	//userName := "ec2-user"
-	port := ":22"
-	serverPort := serverIP + port
-
-	//keyPath := "/root/.aws/awspowerkimkeypair.pem"
-	//keyPath := masterConfigInfos.AWS.KEYFILEPATH
-
-	// file info to copy
-	//sourceFile := "/root/go/src/mcism/mcism_agent/mcism_agent"
-	//sourceFile := "/root/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
-	homePath := os.Getenv("HOME")
-	sourceFile := homePath + "/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
-	targetFile := "/tmp/mcism_agent"
-
-	// command for ssh run
-	cmd := "/tmp/mcism_agent &"
-
-	// Connect to the server for scp
-	scpCli, err := scp.Connect(userName, keyPath, serverPort)
-	if err != nil {
-		fmt.Println("Couldn't establisch a connection to the remote server ", err)
-		return err
-	}
-
-	// copy agent into the server.
-	if err := scp.Copy(scpCli, sourceFile, targetFile); err != nil {
-		fmt.Println("Error while copying file ", err)
-		return err
-	}
-
-	// close the session
-	scp.Close(scpCli)
-
-	// Connect to the server for ssh
-	sshCli, err := sshrun.Connect(userName, keyPath, serverPort)
-	if err != nil {
-		fmt.Println("Couldn't establisch a connection to the remote server ", err)
-		return err
-	}
-
-	if err := sshrun.RunCommand(sshCli, cmd); err != nil {
-		fmt.Println("Error while running cmd: "+cmd, err)
-		return err
-	}
-
-	sshrun.Close(sshCli)
-
-	return err
-}
-
-// 1.1. create Servers(VM).
-// 1.2. get servers' public IP.
-// 1.3. insert MCISM Agent into Servers.
-// 1.4. execute Servers' Agent.
-// 1.5. add server list into etcd.
-func addVMgcp(count int) ([]*string, []*string) {
+func launchVmGcp(count int) ([]*string, []*string) {
 	// ==> GCP-GCE
 
 	/*
@@ -1218,17 +773,12 @@ func addVMgcp(count int) ([]*string, []*string) {
 	} // end of for
 
 	// 1.5. add server list into etcd.
-	addServersToEtcd("gcp", instanceIds, publicIPs)
+	//addServersToEtcd("gcp", instanceIds, publicIPs)
 
 	return instanceIds, publicIPs
 }
 
-// 1.1. create Servers(VM).
-// 1.2. get servers' public IP.
-// 1.3. insert MCISM Agent into Servers.
-// 1.4. execute Servers' Agent.
-// 1.5. add server list into etcd.
-func addVMazure(count int) ([]*string, []*string) {
+func launchVmAzure(count int) ([]*string, []*string) {
 	// ==> AZURE-Compute
 
 	/*
@@ -1373,24 +923,334 @@ func addVMazure(count int) ([]*string, []*string) {
 	} // end of for
 
 	// 1.5. add server list into etcd.
-	addServersToEtcd("azure", instanceIds, publicIPs)
+	//addServersToEtcd("azure", instanceIds, publicIPs)
 
 	return instanceIds, publicIPs
 }
 
-func serverList() {
+func copyAndPlayAgent(serverIP string, userName string, keyPath string) error {
 
-	list := getServerList()
-	fmt.Print("######### all server list....(" + strconv.Itoa(len(list)) + ")\n")
+	// server connection info
+	// some options are static for simple PoC.// some options are static for simple PoC.
+	// These must be prepared before.
+	//userName := "ec2-user"
+	port := ":22"
+	serverPort := serverIP + port
 
-	for _, v := range list {
-		vs := strings.Split(string(*v), "/")
-		fmt.Println("[CSP] " + vs[0] + "\t/ [VmID] " + vs[1] + "\t/ [IP] " + vs[2])
+	//keyPath := "/root/.aws/awspowerkimkeypair.pem"
+	//keyPath := masterConfigInfos.AWS.KEYFILEPATH
+
+	// file info to copy
+	//sourceFile := "/root/go/src/mcism/mcism_agent/mcism_agent"
+	//sourceFile := "/root/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
+	homePath := os.Getenv("HOME")
+	sourceFile := homePath + "/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
+	targetFile := "/tmp/mcism_agent"
+
+	// command for ssh run
+	cmd := "/tmp/mcism_agent &"
+
+	// Connect to the server for scp
+	scpCli, err := scp.Connect(userName, keyPath, serverPort)
+	if err != nil {
+		fmt.Println("Couldn't establisch a connection to the remote server ", err)
+		return err
+	}
+
+	// copy agent into the server.
+	if err := scp.Copy(scpCli, sourceFile, targetFile); err != nil {
+		fmt.Println("Error while copying file ", err)
+		return err
+	}
+
+	// close the session
+	scp.Close(scpCli)
+
+	// Connect to the server for ssh
+	sshCli, err := sshrun.Connect(userName, keyPath, serverPort)
+	if err != nil {
+		fmt.Println("Couldn't establisch a connection to the remote server ", err)
+		return err
+	}
+
+	if err := sshrun.RunCommand(sshCli, cmd); err != nil {
+		fmt.Println("Error while running cmd: "+cmd, err)
+		return err
+	}
+
+	sshrun.Close(sshCli)
+
+	return err
+}
+
+func terminateMcis(mcisId string) {
+
+	fmt.Println("[terminateMcis]" + mcisId)
+	key := "/mcis/" + mcisId
+	fmt.Println(key)
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	vmList := getVmList(mcisId)
+
+	// delete vms info
+	for _, v := range vmList {
+		terminateVm(mcisId, v)
+	}
+
+	//need to change status
+
+}
+
+func terminateVm(mcisId string, vmId string) {
+
+	var content struct {
+		Cloud_id  string `json:"cloud_id"`
+		Csp_vm_id string `json:"csp_vm_id"`
+	}
+
+	fmt.Println("[terminateVm]" + vmId)
+	key := "/mcis/" + mcisId + "/vm/" + vmId
+	fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	fmt.Printf("%+v\n", content.Cloud_id)
+	fmt.Printf("%+v\n", content.Csp_vm_id)
+
+	if strings.Compare(content.Cloud_id, "aws") == 0 {
+		terminateVmAws(content.Csp_vm_id)
+	} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
+		terminateVmGcp(content.Csp_vm_id)
+	} else if strings.Compare(content.Cloud_id, "azure") == 0 {
+		terminateVmAzure(content.Csp_vm_id)
+	} else {
+		fmt.Println("==============ERROR=no matched provider_id=================")
+	}
+
+}
+
+func terminateVmAws(cspVmId string) {
+
+	//idList := make([]*string, 1)
+	//idList = append(idList, &cspVmId)
+	idList := []*string{&cspVmId}
+	fmt.Println("<terminateVmAws cspVmId : " + *idList[0] + ">" + strconv.Itoa(len(idList)))
+
+	// (2) terminate AWS server
+	//region := "ap-northeast-2"
+	region := masterConfigInfos.AWS.REGION
+	svc := ec2handler.Connect(region)
+	//  destroy Servers(VMs).
+	ec2handler.DestroyInstances(svc, idList)
+
+}
+
+func terminateVmGcp(cspVmId string) {
+
+	idList := []*string{&cspVmId}
+	fmt.Println("<terminateVmGcp cspVmId : " + *idList[0] + ">")
+
+	// (2) terminate all GCP servers
+	credentialFile := masterConfigInfos.GCP.CREDENTIALFILE
+	svc := gcehandler.Connect(credentialFile)
+
+	//  destroy Servers(VM).
+	zone := masterConfigInfos.GCP.ZONE
+	projectID := masterConfigInfos.GCP.PROJECTID
+	gcehandler.DestroyInstances(svc, zone, projectID, idList)
+
+}
+
+func terminateVmAzure(cspVmId string) {
+
+	idList := []*string{&cspVmId}
+	fmt.Println("<terminateVmAzure cspVmId : " + *idList[0] + ">")
+
+	// (2) terminate all AZURE servers
+	credentialFile := masterConfigInfos.AZURE.CREDENTIALFILE
+	connInfo := azurehandler.Connect(credentialFile)
+
+	//  destroy Servers(VMs).
+	groupName := masterConfigInfos.AZURE.GROUPNAME
+	//    azurehandler.DestroyInstances(connInfo, groupName, idList)  @todo now, just delete target Group for convenience.
+	azurehandler.DeleteGroup(connInfo, groupName)
+
+}
+
+// MCIS utilities
+
+func getVmIp(mcisId string, vmId string) string {
+
+	var content struct {
+		Public_ip string `json:"public_ip"`
+	}
+
+	fmt.Println("[getVmIp]" + vmId)
+	key := "/mcis/" + mcisId + "/vm/" + vmId
+	fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	fmt.Printf("%+v\n", content.Public_ip)
+
+	return content.Public_ip
+}
+
+func monitorVm(vmIpPort string) (string, string, string) {
+
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(vmIpPort, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewResourceStatClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Hour)
+	defer cancel()
+
+	r, err := c.GetResourceStat(ctx, &pb.ResourceStatRequest{})
+	if err != nil {
+		log.Fatalf("could not Fetch Resource Status Information: %v", err)
+	}
+	println("[" + r.Servername + "]")
+	log.Printf("%s", r.Cpu)
+	log.Printf("%s", r.Mem)
+	log.Printf("%s", r.Dsk)
+
+	return r.Cpu, r.Mem, r.Dsk
+
+}
+
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+// Appendix. Will be deplicated soon.
+
+func parseRequest() {
+
+	etcdServerPort = &masterConfigInfos.ETCDSERVERPORT
+
+	//etcdServerPort = flag.String("etcdserver", "129.254.175.43:2379", "etcdserver=129.254.175.43:2379")
+	fetchType = flag.String("fetchtype", "PULL", "fetch type: -fetchtype=PUSH")
+	/*
+		addServer = flag.String("addserver", "none", "add a server: -addserver=192.168.0.10:5000")
+		delServer = flag.String("delserver", "none", "delete a server: -delserver=192.168.0.10")
+	*/
+	addVMNumAWS = flag.Int("addvm-aws", 0, "add servers in AWS: -addvm-aws=10")
+	delVMAWS = flag.Bool("delvm-aws", false, "delete all servers in AWS: -delvm-aws")
+
+	addVMNumGCP = flag.Int("addvm-gcp", 0, "add servers in GCP: -addvm-gcp=10")
+	delVMGCP = flag.Bool("delvm-gcp", false, "delete all servers in GCP: -delvm-gcp")
+
+	addVMNumAZURE = flag.Int("addvm-azure", 0, "add servers in AZURE: -addvm-azure=10")
+	delVMAZURE = flag.Bool("delvm-azure", false, "delete all servers in AZURE: -delvm-azure")
+
+	listvm = flag.Bool("listvm", false, "report server list: -listvm")
+	monitoring = flag.Bool("monitor", false, "report all server' resources status: -monitor")
+
+	flag.Parse()
+}
+
+func getInteractiveRequest() {
+
+	command := -1
+	fmt.Println("[Select opt (0:API-server, 1:create-vm, 2:delete-vm, 3:list-vm, 4:monitor-vm]")
+	fmt.Print("Your section : ")
+
+	fmt.Scanln(&command)
+	fmt.Println(command)
+
+	switch {
+	case command == 0:
+		apiServer()
+	case command == 1:
+		selCsp := 0
+		fmt.Println("[Select cloud service provider (1:aws, 2:gcp, 3:azure, 4:TBD]")
+		fmt.Print("Your section : ")
+		fmt.Scanln(&selCsp)
+
+		selVmNum := 1
+		fmt.Println("[Provide the number of VM to create (e.g., 5)")
+		fmt.Print("Your section : ")
+		fmt.Scanln(&selVmNum)
+
+		switch {
+		case selCsp == 0:
+			fmt.Println("nothing was selected")
+		case selCsp == 1:
+			fmt.Println("Create VM(s) in aws")
+			*addVMNumAWS = selVmNum
+		case selCsp == 2:
+			fmt.Println("Create VM(s) in gcp")
+			*addVMNumGCP = selVmNum
+		case selCsp == 3:
+			fmt.Println("Create VM(s) in azure")
+			*addVMNumAZURE = selVmNum
+		case selCsp == 4:
+			fmt.Println("not implemented yet. will be provided soon")
+		default:
+			fmt.Println("select within 1-4")
+		}
+	case command == 2:
+		selCsp := -1
+		fmt.Println("[Select cloud service provider (0: all, 1:aws, 2:gcp, 3:azure, 4:TBD]")
+		fmt.Print("Your section : ")
+		fmt.Scanln(&selCsp)
+
+		switch {
+		case selCsp == -1:
+			fmt.Println("nothing was selected")
+		case selCsp == 0:
+			fmt.Println("Delete all VMs for all CPSs")
+			*delVMAWS = true
+			*delVMGCP = true
+			*delVMAZURE = true
+		case selCsp == 1:
+			fmt.Println("Delete all VMs in aws")
+			*delVMAWS = true
+		case selCsp == 2:
+			fmt.Println("Delete all VMs in gcp")
+			*delVMGCP = true
+		case selCsp == 3:
+			fmt.Println("Delete all VMs in azure")
+			*delVMAZURE = true
+		case selCsp == 4:
+			fmt.Println("not implemented yet. will be provided soon")
+		default:
+			fmt.Println("select within 1-4")
+		}
+	case command == 3:
+		*listvm = true
+	case command == 4:
+		*monitoring = true
+	default:
+		fmt.Println("select within 1-4")
 	}
 }
 
-func getServerList() []*string {
-
+func delProviderAllServersFromEtcd(provider string) {
 	etcdcli, err := etcdhandler.Connect(etcdServerPort)
 	if err != nil {
 		panic(err)
@@ -1398,9 +1258,70 @@ func getServerList() []*string {
 
 	defer etcdhandler.Close(etcdcli)
 
-	//ctx := context.Background()
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-	return etcdhandler.ServerList(ctx, etcdcli)
+	ctx := context.Background()
+
+	fmt.Println("######### delete " + provider + " all Server....")
+	etcdhandler.DelProviderAllServers(ctx, etcdcli, &provider)
+}
+
+func delAllVMaws() {
+
+	// (1) get all AWS server id list from etcd
+	idList := getInstanceIdListAWS()
+
+	// (2) terminate all AWS servers
+	//region := "ap-northeast-2"
+	region := masterConfigInfos.AWS.REGION
+
+	svc := ec2handler.Connect(region)
+
+	//  destroy Servers(VMs).
+	ec2handler.DestroyInstances(svc, idList)
+
+	// (3) remove all aws server list from etcd
+	delProviderAllServersFromEtcd(string("aws"))
+}
+
+// (1) get all GCP server id list from etcd
+// (2) terminate all GCP servers
+// (3) remove server list from etcd
+func delAllVMgcp() {
+
+	// (1) get all GCP server id list from etcd
+	idList := getInstanceIdListGCP()
+
+	// (2) terminate all GCP servers
+	credentialFile := masterConfigInfos.GCP.CREDENTIALFILE
+	svc := gcehandler.Connect(credentialFile)
+
+	//  destroy all Servers(VMs).
+	zone := masterConfigInfos.GCP.ZONE
+	projectID := masterConfigInfos.GCP.PROJECTID
+	gcehandler.DestroyInstances(svc, zone, projectID, idList)
+
+	// (3) remove all aws server list from etcd
+	delProviderAllServersFromEtcd(string("gcp"))
+}
+
+// (1) get all AZURE server id list from etcd
+// (2) terminate all AZURE servers
+// (3) remove server list from etcd
+func delAllVMazure() {
+
+	// (1) get all AZURE server id list from etcd
+	// idList := getInstanceIdListAZURE()
+
+	// (2) terminate all AZURE servers
+	credentialFile := masterConfigInfos.AZURE.CREDENTIALFILE
+	connInfo := azurehandler.Connect(credentialFile)
+
+	//  destroy all Servers(VMs).
+	groupName := masterConfigInfos.AZURE.GROUPNAME
+	//    azurehandler.DestroyInstances(connInfo, groupName, idList)  @todo now, just delete target Group for convenience.
+	azurehandler.DeleteGroup(connInfo, groupName)
+
+	// (3) remove all aws server list from etcd
+	delProviderAllServersFromEtcd(string("azure"))
 }
 
 func getInstanceIdListAWS() []*string {
@@ -1439,6 +1360,52 @@ func getInstanceIdListAZURE() []*string {
 	return etcdhandler.InstanceIDListAZURE(ctx, etcdcli)
 }
 
+func addServersToEtcd(provider string, instanceIds []*string, serverIPs []*string) {
+
+	etcdcli, err := etcdhandler.Connect(etcdServerPort)
+	if err != nil {
+		panic(err)
+	}
+
+	defer etcdhandler.Close(etcdcli)
+
+	//ctx := context.Background()
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
+	for i, v := range serverIPs {
+		serverPort := *v + ":2019" // 2019 Port is dedicated value for PoC.
+		fmt.Println("######### addServer...." + serverPort)
+		// /server/aws/i-1234567890abcdef0/129.254.175:2019  PULL
+		etcdhandler.AddServer(ctx, etcdcli, &provider, instanceIds[i], &serverPort, fetchType)
+	}
+
+}
+
+func serverList() {
+
+	list := getServerList()
+	fmt.Print("######### all server list....(" + strconv.Itoa(len(list)) + ")\n")
+
+	for _, v := range list {
+		vs := strings.Split(string(*v), "/")
+		fmt.Println("[CSP] " + vs[0] + "\t/ [VmID] " + vs[1] + "\t/ [IP] " + vs[2])
+	}
+}
+
+func getServerList() []*string {
+
+	etcdcli, err := etcdhandler.Connect(etcdServerPort)
+	if err != nil {
+		panic(err)
+	}
+
+	defer etcdhandler.Close(etcdcli)
+
+	//ctx := context.Background()
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	return etcdhandler.ServerList(ctx, etcdcli)
+}
+
 func monitoringAll() {
 
 	for {
@@ -1448,34 +1415,10 @@ func monitoringAll() {
 			println("-----monitoiring for------")
 			fmt.Println("[CSP] " + vs[0] + "\t/ [VmID] " + vs[1] + "\t/ [IP] " + vs[2])
 
-			monitoringServer(vs[2])
+			monitorVm(vs[2])
 			println("-----------")
 		}
 		println("==============================")
 		time.Sleep(time.Second)
 	} // end of for
-}
-
-func monitoringServer(serverPort string) {
-
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(serverPort, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	c := pb.NewResourceStatClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Hour)
-	defer cancel()
-
-	r, err := c.GetResourceStat(ctx, &pb.ResourceStatRequest{})
-	if err != nil {
-		log.Fatalf("could not Fetch Resource Status Information: %v", err)
-	}
-	println("[" + r.Servername + "]")
-	log.Printf("%s", r.Cpu)
-	log.Printf("%s", r.Mem)
-	log.Printf("%s", r.Dsk)
-
 }
