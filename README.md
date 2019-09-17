@@ -93,6 +93,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   # go get -u -v github.com/dimchansky/utfbom github.com/mitchellh/go-homedir
   # go get -u -v golang.org/x/oauth2 gopkg.in/yaml.v3
   # go get -u -v github.com/labstack/echo
+  # go get github.com/google/uuid
   ```
 
 ### 클라우드 인증 키 생성 및 설정
