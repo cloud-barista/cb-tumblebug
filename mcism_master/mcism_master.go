@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/cloud-barista/poc-mcism/grpc_def"
+	pb "github.com/cloud-barista/poc-mcism/mcism_agent/grpc_def"
 	"google.golang.org/grpc"
 
 	uuid "github.com/google/uuid"
