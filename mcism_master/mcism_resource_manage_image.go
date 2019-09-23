@@ -9,8 +9,20 @@ import (
 	"github.com/labstack/echo"
 )
 
+type nsReq struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type nsInfo struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type imageReq struct {
-	CbImageId    string `json:"cbImageId"`
+	Id           string `json:"id"`
 	Name         string `json:"name"`
 	CreationDate string `json:"creationDate"`
 	Csp          string `json:"csp"`
@@ -19,12 +31,168 @@ type imageReq struct {
 }
 
 type imageInfo struct {
-	CbImageId    string `json:"cbImageId"`
+	Id           string `json:"id"`
 	Name         string `json:"name"`
 	CreationDate string `json:"creationDate"`
 	Csp          string `json:"csp"`
 	CspImageId   string `json:"cspImageId"`
 	Description  string `json:"description"`
+}
+
+// MCIS API Proxy: Ns
+func restPostNs(c echo.Context) error {
+
+	u := &nsReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[Creating Ns]")
+	createNs(u)
+	return c.JSON(http.StatusCreated, u)
+
+}
+
+func restGetNs(c echo.Context) error {
+	id := c.Param("nsId")
+
+	content := nsInfo{}
+
+	fmt.Println("[Get ns for id]" + id)
+	key := "/ns/" + id
+	fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+	content.Id = id // Optional. Can be omitted.
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+func restGetAllNs(c echo.Context) error {
+
+	var content struct {
+		//Name string     `json:"name"`
+		Ns []nsInfo `json:"ns"`
+	}
+
+	nsList := getNsList()
+
+	for _, v := range nsList {
+
+		key := "/ns/" + v
+		fmt.Println(key)
+		keyValue, _ := store.Get(key)
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		nsTmp := nsInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &nsTmp)
+		nsTmp.Id = v
+		content.Ns = append(content.Ns, nsTmp)
+
+	}
+	fmt.Printf("content %+v\n", content)
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+func restPutNs(c echo.Context) error {
+	return nil
+}
+
+func restDelNs(c echo.Context) error {
+
+	id := c.Param("nsId")
+
+	err := delNs(id)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": "Failed to delete the ns"}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
+
+	mapA := map[string]string{"message": "The ns has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+}
+
+func restDelAllNs(c echo.Context) error {
+
+	nsList := getNsList()
+
+	for _, v := range nsList {
+		err := delNs(v)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete All nss"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+	}
+
+	mapA := map[string]string{"message": "All nss has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+
+}
+
+func createNs(u *nsReq) {
+
+	u.Id = genUuid()
+
+	// TODO here: implement the logic
+
+	fmt.Println("=========================== PUT createNs")
+	Key := "/ns/" + u.Id
+	mapA := map[string]string{"name": u.Name, "description": u.Description}
+	Val, _ := json.Marshal(mapA)
+	err := store.Put(string(Key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+	}
+	keyValue, _ := store.Get(string(Key))
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===========================")
+
+}
+
+func getNsList() []string {
+
+	fmt.Println("[Get nss")
+	key := "/ns"
+	fmt.Println(key)
+
+	keyValue, _ := store.GetList(key, true)
+	var nsList []string
+	for _, v := range keyValue {
+		//if !strings.Contains(v.Key, "vm") {
+		nsList = append(nsList, strings.TrimPrefix(v.Key, "/ns/"))
+		//}
+	}
+	for _, v := range nsList {
+		fmt.Println("<" + v + "> \n")
+	}
+	fmt.Println("===============================================")
+	return nsList
+
+}
+
+func delNs(Id string) error {
+
+	fmt.Println("[Delete ns] " + Id)
+
+	key := "/ns/" + Id
+	fmt.Println(key)
+
+	// delete mcis info
+	err := store.Delete(key)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	return nil
 }
 
 /* FYI
@@ -36,7 +204,7 @@ e.DELETE("/resources/image/:id", restDelImage)
 e.DELETE("/resources/image", restDelAllImage)
 */
 
-// MCIS API Proxy
+// MCIS API Proxy: Image
 func restPostImage(c echo.Context) error {
 
 	u := &imageReq{}
@@ -63,12 +231,12 @@ func restPostImage(c echo.Context) error {
 func restGetImage(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
-	cbImageId := c.Param("cbImageId")
+	id := c.Param("imageId")
 
 	content := imageInfo{}
 	/*
 		var content struct {
-			CbImageId    string `json:"cbImageId"`
+			Id    string `json:"id"`
 			Name         string `json:"name"`
 			CreationDate string `json:"creationDate"`
 			Csp          string `json:"csp"`
@@ -77,8 +245,8 @@ func restGetImage(c echo.Context) error {
 		}
 	*/
 
-	fmt.Println("[Get image for id]" + cbImageId)
-	key := "/resources/image/" + cbImageId
+	fmt.Println("[Get image for id]" + id)
+	key := "/resources/image/" + id
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -86,7 +254,7 @@ func restGetImage(c echo.Context) error {
 	fmt.Println("===============================================")
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.CbImageId = cbImageId // Optional. Can be omitted.
+	content.Id = id // Optional. Can be omitted.
 
 	return c.JSON(http.StatusOK, &content)
 
@@ -109,7 +277,7 @@ func restGetAllImage(c echo.Context) error {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		imageTmp := imageInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &imageTmp)
-		imageTmp.CbImageId = v
+		imageTmp.Id = v
 		content.Image = append(content.Image, imageTmp)
 
 	}
@@ -125,9 +293,9 @@ func restPutImage(c echo.Context) error {
 
 func restDelImage(c echo.Context) error {
 
-	cbImageId := c.Param("cbImageId")
+	id := c.Param("imageId")
 
-	err := delImage(cbImageId)
+	err := delImage(id)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the image"}
@@ -158,7 +326,7 @@ func restDelAllImage(c echo.Context) error {
 
 func createImage(u *imageReq) {
 
-	u.CbImageId = genUuid()
+	u.Id = genUuid()
 
 	// TODO here: implement the logic
 	// Option 1. Let the user upload an image file.
@@ -167,7 +335,7 @@ func createImage(u *imageReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createImage")
-	Key := "/resources/image/" + u.CbImageId
+	Key := "/resources/image/" + u.Id
 	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
@@ -182,14 +350,14 @@ func createImage(u *imageReq) {
 
 func registerImage(u *imageReq) {
 
-	u.CbImageId = genUuid()
+	u.Id = genUuid()
 
 	// TODO here: implement the logic
 	// - Fetch the image info from CSP.
 
 	// cb-store
 	fmt.Println("=========================== PUT registerImage")
-	Key := "/resources/image/" + u.CbImageId
+	Key := "/resources/image/" + u.Id
 	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
@@ -223,11 +391,11 @@ func getImageList() []string {
 
 }
 
-func delImage(CbImageId string) error {
+func delImage(Id string) error {
 
-	fmt.Println("[Delete image] " + CbImageId)
+	fmt.Println("[Delete image] " + Id)
 
-	key := "/resources/image/" + CbImageId
+	key := "/resources/image/" + Id
 	fmt.Println(key)
 
 	// delete mcis info
