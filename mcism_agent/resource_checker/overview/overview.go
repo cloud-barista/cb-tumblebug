@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"time"
 
-	cpuusage "github.com/cloud-barista/poc-mcism/mcism_agent/resource_checker/cpu_usage"
-	diskstat "github.com/cloud-barista/poc-mcism/mcism_agent/resource_checker/disk_stat"
-	memusage "github.com/cloud-barista/poc-mcism/mcism_agent/resource_checker/mem_usage"
+	cpuusage "github.com/cloud-barista/cb-tumblebug/mcism_agent/resource_checker/cpu_usage"
+	diskstat "github.com/cloud-barista/cb-tumblebug/mcism_agent/resource_checker/disk_stat"
+	memusage "github.com/cloud-barista/cb-tumblebug/mcism_agent/resource_checker/mem_usage"
 	"github.com/dustin/go-humanize"
 )
 

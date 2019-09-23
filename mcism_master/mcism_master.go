@@ -4,12 +4,12 @@
 package main
 
 import (
-	"github.com/cloud-barista/poc-mcism/mcism_master/azurehandler"
-	"github.com/cloud-barista/poc-mcism/mcism_master/confighandler"
-	"github.com/cloud-barista/poc-mcism/mcism_master/ec2handler"
-	"github.com/cloud-barista/poc-mcism/mcism_master/gcehandler"
-	"github.com/cloud-barista/poc-mcism/mcism_master/serverhandler/scp"
-	"github.com/cloud-barista/poc-mcism/mcism_master/serverhandler/sshrun"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/azurehandler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/confighandler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/ec2handler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/gcehandler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/serverhandler/scp"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/serverhandler/sshrun"
 
 	"context"
 	"encoding/json"
@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/cloud-barista/poc-mcism/mcism_agent/grpc_def"
+	pb "github.com/cloud-barista/cb-tumblebug/mcism_agent/grpc_def"
 	"google.golang.org/grpc"
 
 	uuid "github.com/google/uuid"
@@ -130,7 +130,7 @@ func apiServer() {
 	e.Use(middleware.Recover())
 
 	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World! This is cloud-barista poc-mcism")
+		return c.String(http.StatusOK, "Hello, World! This is cloud-barista cb-tumblebug")
 	})
 
 	// Route
@@ -196,7 +196,7 @@ func apiServer() {
 
 func main() {
 
-	fmt.Println("\n[PoC-MCISM (Multi-Cloud Infra Service Management Framework)]")
+	fmt.Println("\n[cb-tumblebug (Multi-Cloud Infra Service Management Framework)]")
 	fmt.Println("\nInitiating REST API Server ...")
 	fmt.Println("\n[REST API call examples]")
 
@@ -1047,9 +1047,9 @@ func insertAgent(serverIP string, userName string, keyPath string) error {
 
 	// file info to copy
 	//sourceFile := "/root/go/src/mcism/mcism_agent/mcism_agent"
-	//sourceFile := "/root/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
+	//sourceFile := "/root/go/src/github.com/cloud-barista/cb-tumblebug/mcism_agent/mcism_agent"
 	homePath := os.Getenv("HOME")
-	sourceFile := homePath + "/go/src/github.com/cloud-barista/poc-mcism/mcism_agent/mcism_agent"
+	sourceFile := homePath + "/go/src/github.com/cloud-barista/cb-tumblebug/mcism_agent/mcism_agent"
 	targetFile := "/tmp/mcism_agent"
 
 	// command for ssh run

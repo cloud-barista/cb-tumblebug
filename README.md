@@ -1,4 +1,4 @@
-# poc-mcism (Multi-Cloud Infra Service Management)
+# cb-tumblebug (Multi-Cloud Infra Service Management)
 Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 
 ***
@@ -45,7 +45,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   export PATH=$PATH:/usr/local/go/bin
   export GOPATH=$HOME/go
   export PATH=$PATH:$HOME/go/src/github.com/protobuf/bin
-  export MCISM_MASTER=~/go/src/github.com/cloud-barista/poc-mcism/mcism_master
+  export MCISM_MASTER=~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_master
   export AZURE_AUTH_LOCATION=~/.azure/azure.auth
   ```
 > 1행: Go 를 Ubuntu 패키지로 설치한다면 필요 없을 것임  
@@ -58,14 +58,14 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   - `. ~/.bashrc`
 
 - MCISM 소스 다운로드
-  - `# go get github.com/cloud-barista/poc-mcism`
+  - `# go get github.com/cloud-barista/cb-tumblebug`
   > 다음과 같은 메시지가 나오기는 함:  
-  `“package github.com/cloud-barista/poc-mcism: no Go files in /root/go/src/github.com/cloud-barista/poc-mcism”`
+  `“package github.com/cloud-barista/cb-tumblebug: no Go files in /root/go/src/github.com/cloud-barista/cb-tumblebug”`
 
-  > `# go get github.com/cloud-barista/poc-mcism` 명령을 실행하면, 다음의 명령들을 실행한 것과 같은 효과를 냄  
+  > `# go get github.com/cloud-barista/cb-tumblebug` 명령을 실행하면, 다음의 명령들을 실행한 것과 같은 효과를 냄  
   > `# mkdir ~/go/src/github.com/cloud-barista`  
   > `# cd ~/go/src/github.com/cloud-barista`  
-  > `# git clone https://github.com/cloud-barista/poc-mcism.git`
+  > `# git clone https://github.com/cloud-barista/cb-tumblebug.git`
 
 - 의존 라이브러리 다운로드
   - etcd 설치 및 실행
@@ -163,7 +163,7 @@ aws_secret_access_key = <YOUR_SECRET_ACCESS_KEY>
 ```
 
 ### mcism_master 환경 설정 (개인 환경에 맞춰 설정)
-- `~/go/src/github.com/cloud-barista/poc-mcism/mcism_master/conf/config.yaml` 파일을 수정
+- `~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_master/conf/config.yaml` 파일을 수정
 
 ```YAML
 #### Config for mcism PoC ####
@@ -239,11 +239,11 @@ azure:
 - mcism_agent 빌드
 ```Shell
 # apt install golang-goprotobuf-dev
-# bash ~/go/src/github.com/cloud-barista/poc-mcism/1.agent_protoc_build.sh
+# bash ~/go/src/github.com/cloud-barista/cb-tumblebug/1.agent_protoc_build.sh
 ```
 - mcism_master 빌드
 ```Shell
-# cd ~/go/src/github.com/cloud-barista/poc-mcism/mcism_master
+# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_master
 # go build
 ```
 > 패키지 관련 오류 발생 시, `go get` 명령을 통해 부족한 패키지를 추가

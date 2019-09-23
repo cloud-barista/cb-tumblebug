@@ -8,8 +8,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/cloud-barista/poc-mcism/mcism_master/serverhandler/scp"
-	"github.com/cloud-barista/poc-mcism/mcism_master/serverhandler/sshrun"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/serverhandler/scp"
+	"github.com/cloud-barista/cb-tumblebug/mcism_master/serverhandler/sshrun"
 )
 
 func main() {

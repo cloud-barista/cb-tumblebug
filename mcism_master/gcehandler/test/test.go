@@ -8,7 +8,7 @@ package main
 
 
  import (
-         "github.com/cloud-barista/poc-mcism/mcism_master/gcehandler"
+         "github.com/cloud-barista/cb-tumblebug/mcism_master/gcehandler"
 	 "fmt"
  )
 

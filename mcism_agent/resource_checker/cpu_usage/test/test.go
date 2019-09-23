@@ -9,7 +9,7 @@
 
  import (
          "os"
-         "github.com/cloud-barista/poc-farmoni/localmoni/cpu_usage"
+         "github.com/cloud-barista/cb-tumblebug/localmoni/cpu_usage"
          "strconv"
          "time"
  )

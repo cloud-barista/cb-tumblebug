@@ -15,16 +15,16 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	cpuusage "github.com/cloud-barista/poc-mcism/mcism_agent/resource_checker/cpu_usage"
-	diskstat "github.com/cloud-barista/poc-mcism/mcism_agent/resource_checker/disk_stat"
-	memusage "github.com/cloud-barista/poc-mcism/mcism_agent/resource_checker/mem_usage"
+	cpuusage "github.com/cloud-barista/cb-tumblebug/mcism_agent/resource_checker/cpu_usage"
+	diskstat "github.com/cloud-barista/cb-tumblebug/mcism_agent/resource_checker/disk_stat"
+	memusage "github.com/cloud-barista/cb-tumblebug/mcism_agent/resource_checker/mem_usage"
 
 	_ "os"
 	"strconv"
 
 	"github.com/dustin/go-humanize"
 
-	pb "github.com/cloud-barista/poc-farmoni/grpc_def"
+	pb "github.com/cloud-barista/cb-tumblebug/mcism_agent/grpc_def"
 )
 
 func cpu() string {

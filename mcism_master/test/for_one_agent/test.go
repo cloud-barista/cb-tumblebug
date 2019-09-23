@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 	"google.golang.org/grpc"
-	pb "github.com/cloud-barista/poc-mcism/grpc_def"
+	pb "github.com/cloud-barista/cb-tumblebug/grpc_def"
 )
 
 const (

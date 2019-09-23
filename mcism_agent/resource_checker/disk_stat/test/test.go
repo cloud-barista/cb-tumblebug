@@ -9,7 +9,7 @@
 
  import (
          "os"
-         "github.com/cloud-barista/poc-farmoni/localmoni/disk_stat"
+         "github.com/cloud-barista/cb-tumblebug/localmoni/disk_stat"
          "strconv"
  )
 
