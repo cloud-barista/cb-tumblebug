@@ -207,6 +207,8 @@ e.DELETE("/resources/image", restDelAllImage)
 // MCIS API Proxy: Image
 func restPostImage(c echo.Context) error {
 
+	nsId := c.Param("nsId")
+
 	u := &imageReq{}
 	if err := c.Bind(u); err != nil {
 		return err
@@ -216,12 +218,12 @@ func restPostImage(c echo.Context) error {
 	fmt.Println("[POST Image requested action: " + action)
 	if action == "create" {
 		fmt.Println("[Creating Image]")
-		createImage(u)
+		createImage(nsId, u)
 		return c.JSON(http.StatusCreated, u)
 
 	} else { //if action == "register" {
 		fmt.Println("[Registering Image]")
-		registerImage(u)
+		registerImage(nsId, u)
 		return c.JSON(http.StatusCreated, u)
 
 	}
@@ -229,7 +231,8 @@ func restPostImage(c echo.Context) error {
 }
 
 func restGetImage(c echo.Context) error {
-	//id, _ := strconv.Atoi(c.Param("id"))
+
+	nsId := c.Param("nsId")
 
 	id := c.Param("imageId")
 
@@ -246,7 +249,7 @@ func restGetImage(c echo.Context) error {
 	*/
 
 	fmt.Println("[Get image for id]" + id)
-	key := "/resources/image/" + id
+	key := "/ns/" + nsId + "/resources/image/" + id
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -262,16 +265,18 @@ func restGetImage(c echo.Context) error {
 
 func restGetAllImage(c echo.Context) error {
 
+	nsId := c.Param("nsId")
+
 	var content struct {
 		//Name string     `json:"name"`
 		Image []imageInfo `json:"image"`
 	}
 
-	imageList := getImageList()
+	imageList := getImageList(nsId)
 
 	for _, v := range imageList {
 
-		key := "/resources/image/" + v
+		key := "/ns/" + nsId + "/resources/image/" + v
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -288,14 +293,17 @@ func restGetAllImage(c echo.Context) error {
 }
 
 func restPutImage(c echo.Context) error {
+	//nsId := c.Param("nsId")
+
 	return nil
 }
 
 func restDelImage(c echo.Context) error {
 
+	nsId := c.Param("nsId")
 	id := c.Param("imageId")
 
-	err := delImage(id)
+	err := delImage(nsId, id)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the image"}
@@ -308,10 +316,12 @@ func restDelImage(c echo.Context) error {
 
 func restDelAllImage(c echo.Context) error {
 
-	imageList := getImageList()
+	nsId := c.Param("nsId")
+
+	imageList := getImageList(nsId)
 
 	for _, v := range imageList {
-		err := delImage(v)
+		err := delImage(nsId, v)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All images"}
@@ -324,7 +334,7 @@ func restDelAllImage(c echo.Context) error {
 
 }
 
-func createImage(u *imageReq) {
+func createImage(nsId string, u *imageReq) {
 
 	u.Id = genUuid()
 
@@ -335,7 +345,7 @@ func createImage(u *imageReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createImage")
-	Key := "/resources/image/" + u.Id
+	Key := "/ns/" + nsId + "/resources/image/" + u.Id
 	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
@@ -348,7 +358,7 @@ func createImage(u *imageReq) {
 
 }
 
-func registerImage(u *imageReq) {
+func registerImage(nsId string, u *imageReq) {
 
 	u.Id = genUuid()
 
@@ -357,7 +367,7 @@ func registerImage(u *imageReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerImage")
-	Key := "/resources/image/" + u.Id
+	Key := "/ns/" + nsId + "/resources/image/" + u.Id
 	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
@@ -370,17 +380,17 @@ func registerImage(u *imageReq) {
 
 }
 
-func getImageList() []string {
+func getImageList(nsId string) []string {
 
 	fmt.Println("[Get images")
-	key := "/resources/image"
+	key := "/ns/" + nsId + "/resources/image"
 	fmt.Println(key)
 
 	keyValue, _ := store.GetList(key, true)
 	var imageList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
-		imageList = append(imageList, strings.TrimPrefix(v.Key, "/resources/image/"))
+		imageList = append(imageList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/image/"))
 		//}
 	}
 	for _, v := range imageList {
@@ -391,11 +401,11 @@ func getImageList() []string {
 
 }
 
-func delImage(Id string) error {
+func delImage(nsId string, Id string) error {
 
 	fmt.Println("[Delete image] " + Id)
 
-	key := "/resources/image/" + Id
+	key := "/ns/" + nsId + "/resources/image/" + Id
 	fmt.Println(key)
 
 	// delete mcis info

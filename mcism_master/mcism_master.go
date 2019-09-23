@@ -135,10 +135,10 @@ func apiServer() {
 
 	// Route
 	e.POST("/ns/:nsId/mcis", restPostMcis)
-	e.GET("/ns/:nsId/mcis/:id", restGetMcis)
+	e.GET("/ns/:nsId/mcis/:mcisId", restGetMcis)
 	e.GET("/ns/:nsId/mcis", restGetAllMcis)
-	e.PUT("/ns/:nsId/mcis/:id", restPutMcis)
-	e.DELETE("/ns/:nsId/mcis/:id", restDelMcis)
+	e.PUT("/ns/:nsId/mcis/:mcisId", restPutMcis)
+	e.DELETE("/ns/:nsId/mcis/:mcisId", restDelMcis)
 	e.DELETE("/ns/:nsId/mcis", restDelAllMcis)
 
 	e.POST("/ns", restPostNs)
@@ -227,20 +227,23 @@ func main() {
 // MCIS API Proxy
 func restPostMcis(c echo.Context) error {
 
-	u := &mcisReq{}
-	if err := c.Bind(u); err != nil {
+	nsId := c.Param("nsId")
+
+	req := &mcisReq{}
+	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	createMcis(u)
+	createMcis(nsId, req)
 
-	return c.JSON(http.StatusCreated, u)
+	return c.JSON(http.StatusCreated, req)
 }
 
 func restGetMcis(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
-	mcisId := c.Param("id")
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
 
 	action := c.QueryParam("action")
 	fmt.Println("[Get MCIS requested action: " + action)
@@ -265,10 +268,10 @@ func restGetMcis(c echo.Context) error {
 	} else if action == "terminate" {
 		fmt.Println("[terminate MCIS]")
 
-		vmList := getVmList(mcisId)
+		vmList := getVmList(nsId, mcisId)
 
 		for _, v := range vmList {
-			terminateVm(mcisId, v)
+			terminateVm(nsId, mcisId, v)
 		}
 
 		mapA := map[string]string{"message": "The MCIS has been terminated"}
@@ -285,16 +288,16 @@ func restGetMcis(c echo.Context) error {
 
 		fmt.Println("[monitor MCIS]")
 
-		key := "/mcis/" + mcisId
+		key := "/ns/" + nsId + "/mcis/" + mcisId
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 
 		json.Unmarshal([]byte(keyValue.Value), &content)
 
-		vmList := getVmList(mcisId)
+		vmList := getVmList(nsId, mcisId)
 
 		for _, v := range vmList {
-			vmKey := "/mcis/" + mcisId + "/vm/" + v
+			vmKey := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + v
 			fmt.Println(vmKey)
 			vmKeyValue, _ := store.Get(vmKey)
 			fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
@@ -302,7 +305,7 @@ func restGetMcis(c echo.Context) error {
 			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 			vmTmp.Id = v
 
-			vmIp := getVmIp(mcisId, v)
+			vmIp := getVmIp(nsId, mcisId, v)
 			vmIpPort := vmIp + defaultMonitorPort
 			statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
 			fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
@@ -329,7 +332,7 @@ func restGetMcis(c echo.Context) error {
 		}
 
 		fmt.Println("[Get MCIS for id]" + mcisId)
-		key := "/mcis/" + mcisId
+		key := "/ns/" + nsId + "/mcis/" + mcisId
 		fmt.Println(key)
 
 		keyValue, _ := store.Get(key)
@@ -338,10 +341,10 @@ func restGetMcis(c echo.Context) error {
 
 		json.Unmarshal([]byte(keyValue.Value), &content)
 
-		vmList := getVmList(mcisId)
+		vmList := getVmList(nsId, mcisId)
 
 		for _, v := range vmList {
-			vmKey := "/mcis/" + mcisId + "/vm/" + v
+			vmKey := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + v
 			fmt.Println(vmKey)
 			vmKeyValue, _ := store.Get(vmKey)
 			fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
@@ -361,16 +364,18 @@ func restGetMcis(c echo.Context) error {
 
 func restGetAllMcis(c echo.Context) error {
 
+	nsId := c.Param("nsId")
+
 	var content struct {
 		//Name string     `json:"name"`
 		Mcis []mcisInfo `json:"mcis"`
 	}
 
-	mcisList := getMcisList()
+	mcisList := getMcisList(nsId)
 
 	for _, v := range mcisList {
 
-		key := "/mcis/" + v
+		key := "/ns/" + nsId + "/mcis/" + v
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -392,9 +397,10 @@ func restPutMcis(c echo.Context) error {
 
 func restDelMcis(c echo.Context) error {
 
-	mcisId := c.Param("id")
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
 
-	err := delMcis(mcisId)
+	err := delMcis(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the MCIS"}
@@ -406,11 +412,12 @@ func restDelMcis(c echo.Context) error {
 }
 
 func restDelAllMcis(c echo.Context) error {
+	nsId := c.Param("nsId")
 
-	mcisList := getMcisList()
+	mcisList := getMcisList(nsId)
 
 	for _, v := range mcisList {
-		err := delMcis(v)
+		err := delMcis(nsId, v)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All MCISs"}
@@ -425,9 +432,9 @@ func restDelAllMcis(c echo.Context) error {
 
 // MCIS Information Managemenet
 
-func addVmToMcis(mcisId string, vmInfoData vmInfo) {
+func addVmToMcis(nsId string, mcisId string, vmInfoData vmInfo) {
 
-	key := "/mcis/" + mcisId + "/vm/" + vmInfoData.Id
+	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmInfoData.Id
 	val, _ := json.Marshal(vmInfoData)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -440,8 +447,8 @@ func addVmToMcis(mcisId string, vmInfoData vmInfo) {
 
 }
 
-func updateVmInfo(mcisId string, vmInfoData vmInfo) {
-	key := "/mcis/" + mcisId + "/vm/" + vmInfoData.Id
+func updateVmInfo(nsId string, mcisId string, vmInfoData vmInfo) {
+	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmInfoData.Id
 	val, _ := json.Marshal(vmInfoData)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -453,17 +460,17 @@ func updateVmInfo(mcisId string, vmInfoData vmInfo) {
 	fmt.Println("===========================")
 }
 
-func getMcisList() []string {
+func getMcisList(nsId string) []string {
 
 	fmt.Println("[Get MCISs")
-	key := "/mcis"
+	key := "/ns/" + nsId + "/mcis"
 	fmt.Println(key)
 
 	keyValue, _ := store.GetList(key, true)
 	var mcisList []string
 	for _, v := range keyValue {
 		if !strings.Contains(v.Key, "vm") {
-			mcisList = append(mcisList, strings.TrimPrefix(v.Key, "/mcis/"))
+			mcisList = append(mcisList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/mcis/"))
 		}
 	}
 	for _, v := range mcisList {
@@ -474,10 +481,10 @@ func getMcisList() []string {
 
 }
 
-func getVmList(mcisId string) []string {
+func getVmList(nsId string, mcisId string) []string {
 
 	fmt.Println("[getVmList]")
-	key := "/mcis/" + mcisId
+	key := "/ns/" + nsId + "/mcis/" + mcisId
 	fmt.Println(key)
 
 	keyValue, _ := store.GetList(key, true)
@@ -495,22 +502,22 @@ func getVmList(mcisId string) []string {
 
 }
 
-func delMcis(mcisId string) error {
+func delMcis(nsId string, mcisId string) error {
 
 	fmt.Println("[Delete MCIS] " + mcisId)
 
 	// terminateMcis first
-	terminateMcis(mcisId)
+	terminateMcis(nsId, mcisId)
 	// for deletion, need to wait untill termination is finished
 
-	key := "/mcis/" + mcisId
+	key := "/ns/" + nsId + "/mcis/" + mcisId
 	fmt.Println(key)
 
-	vmList := getVmList(mcisId)
+	vmList := getVmList(nsId, mcisId)
 
 	// delete vms info
 	for _, v := range vmList {
-		vmKey := "/mcis/" + mcisId + "/vm/" + v
+		vmKey := key + "/vm/" + v
 		fmt.Println(vmKey)
 		err := store.Delete(vmKey)
 		if err != nil {
@@ -530,14 +537,13 @@ func delMcis(mcisId string) error {
 
 // MCIS Control
 
-func createMcis(u *mcisReq) {
+func createMcis(nsId string, u *mcisReq) {
 
 	u.Id = genUuid()
 	vmRequest := u.Vm_req
 
-	// cb-store
 	fmt.Println("=========================== Put createSvc")
-	Key := "/mcis/" + u.Id
+	Key := "/ns/" + nsId + "/mcis/" + u.Id
 	mapA := map[string]string{"name": u.Name, "description": u.Description, "status": "launching", "vm_num": u.Vm_num, "placement_algo": u.Placement_algo}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
@@ -579,14 +585,14 @@ func createMcis(u *mcisReq) {
 		vmInfoData.Domain_name = "Not assigned yet"
 		vmInfoData.Status = "Launching"
 
-		addVmToMcis(u.Id, vmInfoData)
+		addVmToMcis(nsId, u.Id, vmInfoData)
 
 		instanceIds, publicIPs := createVm(vmInfoData)
 
 		vmInfoData.Public_ip = string(*publicIPs[0])
 		vmInfoData.Csp_vm_id = string(*instanceIds[0])
 		vmInfoData.Status = "Running"
-		updateVmInfo(u.Id, vmInfoData)
+		updateVmInfo(nsId, u.Id, vmInfoData)
 
 	}
 
@@ -921,27 +927,27 @@ func createVmAzure(count int) ([]*string, []*string) {
 	return instanceIds, publicIPs
 }
 
-func terminateMcis(mcisId string) {
+func terminateMcis(nsId string, mcisId string) {
 
 	fmt.Println("[terminateMcis]" + mcisId)
-	key := "/mcis/" + mcisId
+	key := "/ns/" + nsId + "/mcis/" + mcisId
 	fmt.Println(key)
 	keyValue, _ := store.Get(key)
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
-	vmList := getVmList(mcisId)
+	vmList := getVmList(nsId, mcisId)
 
 	// delete vms info
 	for _, v := range vmList {
-		terminateVm(mcisId, v)
+		terminateVm(nsId, mcisId, v)
 	}
 
 	//need to change status
 
 }
 
-func terminateVm(mcisId string, vmId string) {
+func terminateVm(nsId string, mcisId string, vmId string) {
 
 	var content struct {
 		Cloud_id  string `json:"cloud_id"`
@@ -949,7 +955,7 @@ func terminateVm(mcisId string, vmId string) {
 	}
 
 	fmt.Println("[terminateVm]" + vmId)
-	key := "/mcis/" + mcisId + "/vm/" + vmId
+	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -1082,14 +1088,14 @@ func insertAgent(serverIP string, userName string, keyPath string) error {
 	return err
 }
 
-func getVmIp(mcisId string, vmId string) string {
+func getVmIp(nsId string, mcisId string, vmId string) string {
 
 	var content struct {
 		Public_ip string `json:"public_ip"`
 	}
 
 	fmt.Println("[getVmIp]" + vmId)
-	key := "/mcis/" + mcisId + "/vm/" + vmId
+	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
