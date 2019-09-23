@@ -195,6 +195,25 @@ func delNs(Id string) error {
 	return nil
 }
 
+func checkNs(Id string) (bool, error) {
+
+	fmt.Println("[Delete ns] " + Id)
+
+	key := "/ns/" + Id
+	fmt.Println(key)
+
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return false, err
+	}
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
+
+}
+
 /* FYI
 e.POST("/resources/image", restPostImage)
 e.GET("/resources/image/:id", restGetImage)

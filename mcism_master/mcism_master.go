@@ -134,26 +134,29 @@ func apiServer() {
 	})
 
 	// Route
-	e.POST("/ns/:nsId/mcis", restPostMcis)
-	e.GET("/ns/:nsId/mcis/:mcisId", restGetMcis)
-	e.GET("/ns/:nsId/mcis", restGetAllMcis)
-	e.PUT("/ns/:nsId/mcis/:mcisId", restPutMcis)
-	e.DELETE("/ns/:nsId/mcis/:mcisId", restDelMcis)
-	e.DELETE("/ns/:nsId/mcis", restDelAllMcis)
+	g := e.Group("/ns", nsValidation())
 
-	e.POST("/ns", restPostNs)
-	e.GET("/ns/:nsId", restGetNs)
-	e.GET("/ns", restGetAllNs)
-	e.PUT("/ns/:nsId", restPutNs)
-	e.DELETE("/ns/:nsId", restDelNs)
-	e.DELETE("/ns", restDelAllNs)
+	g.POST("/:nsId/mcis", restPostMcis)
+	g.GET("/:nsId/mcis/:mcisId", restGetMcis)
+	g.GET("/:nsId/mcis", restGetAllMcis)
+	g.PUT("/:nsId/mcis/:mcisId", restPutMcis)
+	g.DELETE("/:nsId/mcis/:mcisId", restDelMcis)
+	g.DELETE("/:nsId/mcis", restDelAllMcis)
 
-	e.POST("/ns/:nsId/resources/image", restPostImage)
-	e.GET("/ns/:nsId/resources/image/:imageId", restGetImage)
-	e.GET("/ns/:nsId/resources/image", restGetAllImage)
-	e.PUT("/ns/:nsId/resources/image/:imageId", restPutImage)
-	e.DELETE("/ns/:nsId/resources/image/:imageId", restDelImage)
-	e.DELETE("/ns/:nsId/resources/image", restDelAllImage)
+	g.POST("", restPostNs)
+	g.GET("/:nsId", restGetNs)
+	g.GET("", restGetAllNs)
+	g.PUT("/:nsId", restPutNs)
+	g.DELETE("/:nsId", restDelNs)
+	g.DELETE("", restDelAllNs)
+
+	g.POST("/:nsId/resources/image", restPostImage)
+	g.GET("/:nsId/resources/image/:imageId", restGetImage)
+	g.GET("/:nsId/resources/image", restGetAllImage)
+	g.PUT("/:nsId/resources/image/:imageId", restPutImage)
+	g.DELETE("/:nsId/resources/image/:imageId", restDelImage)
+	g.DELETE("/:nsId/resources/image", restDelAllImage)
+
 	/*
 		e.POST("/resources/spec", restPostSpec)
 		e.GET("/resources/spec/:id", restGetSpec)
@@ -225,6 +228,25 @@ func main() {
 }
 
 // MCIS API Proxy
+
+func nsValidation() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			fmt.Printf("%v\n", "[API request!]")
+			nsId := c.Param("nsId")
+			if nsId == "" {
+				return next(c)
+			}
+			check, _ := checkNs(nsId)
+
+			if !check {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Not valid namespace")
+			}
+			return next(c)
+		}
+	}
+}
+
 func restPostMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
