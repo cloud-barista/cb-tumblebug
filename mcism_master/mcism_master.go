@@ -129,6 +129,16 @@ func apiServer() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	/*
+		HTTP basic auth : disabled
+		e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+			if username == "user" && password == "cloud-barista" {
+				return true, nil
+			}
+			return false, nil
+		}))
+	*/
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World! This is cloud-barista cb-tumblebug")
 	})
