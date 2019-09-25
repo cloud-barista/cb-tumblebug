@@ -8,7 +8,6 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 1. [설치 개요](#설치-개요)
 2. [설치 절차](#설치-절차)
 3. [설치 & 실행 상세 정보](#설치--실행-상세-정보)
-4. [결과 확인](#결과-확인)
 
 ***
 
@@ -29,11 +28,11 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   - GCE 인증 키 생성 및 설정
   - Azure 인증 키 생성 및 설정
 - etcd 설치 및 실행
-- mcism_master 환경 설정
+- mcism_server 환경 설정
 - mcism 빌드
   - mcism_agent 빌드
-  - mcism_master 빌드
-- mcism_master 실행
+  - mcism_server 빌드
+- mcism_server 실행
 
 ## [설치 & 실행 상세 정보]
 - Go 설치 & Git 설치
@@ -45,7 +44,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   export PATH=$PATH:/usr/local/go/bin
   export GOPATH=$HOME/go
   export PATH=$PATH:$HOME/go/src/github.com/protobuf/bin
-  export MCISM_MASTER=~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_master
+  export MCISM_SERVER=~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_server
   export AZURE_AUTH_LOCATION=~/.azure/azure.auth
   ```
 > 1행: Go 를 Ubuntu 패키지로 설치한다면 필요 없을 것임  
@@ -162,8 +161,8 @@ aws_secret_access_key = <YOUR_SECRET_ACCESS_KEY>
 # ssh -i “~/.azure/azure-vm-key" <username>@<VM IP addr>
 ```
 
-### mcism_master 환경 설정 (개인 환경에 맞춰 설정)
-- `~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_master/conf/config.yaml` 파일을 수정
+### mcism_server 환경 설정 (개인 환경에 맞춰 설정)
+- `~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_server/conf/config.yaml` 파일을 수정
 
 ```YAML
 #### Config for mcism PoC ####
@@ -241,221 +240,25 @@ azure:
 # apt install golang-goprotobuf-dev
 # bash ~/go/src/github.com/cloud-barista/cb-tumblebug/1.agent_protoc_build.sh
 ```
-- mcism_master 빌드
+- mcism_server 빌드
 ```Shell
-# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_master
+# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_server
 # go build
 ```
 > 패키지 관련 오류 발생 시, `go get` 명령을 통해 부족한 패키지를 추가
 
-### mcism_master 실행
+### mcism_server 실행
 - 만약 AWS 관련 작업 시 에러가 발생하면 다음을 실행
 ```Shell
 # sudo apt-get --yes install ntpdate
 # sudo ntpdate 0.amazon.pool.ntp.org
 ```
 
-- 만약 `“panic: /debug/requests is already registered. You may have two independent copies of golang.org/x/net/trace in your binary, trying to maintain separate state. This may involve a vendored copy of golang.org/x/net/trace.”` 에러가 발생하면 다음을 실행 (mcism_master rebuild 가 필요할 수도 있음)
+- 만약 `“panic: /debug/requests is already registered. You may have two independent copies of golang.org/x/net/trace in your binary, trying to maintain separate state. This may involve a vendored copy of golang.org/x/net/trace.”` 에러가 발생하면 다음을 실행 (mcism_server rebuild 가 필요할 수도 있음)
 ```Shell
 # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
 ```
 
-- `# ./mcism_master` (또는 `# go run mcism_master.go`)
-  - Argument 없이 실행하여 Interactive mode 로 사용하면 됨
-  - 아래는 Argument-passing style 사용 예시
-```Shell
-# ./mcism_master -addvm-aws=10
-# ./mcism_master -addvm-gcp=5
-# ./mcism_master -addvm-azure=5
-# ./mcism_master -listvm
-# ./mcism_master -monitor
-# ./mcism_master -delvm-aws
-# ./mcism_master -delvm-gcp
-# ./mcism_master -delvm-azure
-```
-## [결과 확인]
-### Interactive 모드 ( `0` 옵션으로 API-server를 실행. API server는 실험적 옵션임)
-`$ ./mcism_master`
+- `# ./mcism_server` (또는 `# go run mcism_server.go`)
+  - API server가 실행됨
 
-> [Select opt (0:API-server, 1:create-vm, 2:delete-vm, 3:list-vm, 4:monitor-vm]  
-Your section : <font color=red>1</font>  
-1  
-[Select cloud service provider (1:aws, 2:gcp, 3:azure, 4:TBD]  
-Your section : <font color=red>1</font>  
-[Provide the number of VM to create (e.g., 5)  
-Your section : <font color=red>2</font>  
-Create VM(s) in aws  
-######### addVMaws....  
-Successfully tagged instance:aws-etri-shson0  
-Successfully tagged instance:aws-etri-shson1
-
-`$ ./mcism_master`
-> [Select opt (0:API-server, 1:create-vm, 2:delete-vm, 3:list-vm, 4:monitor-vm]  
-Your section : <font color=red>3</font>  
-3  
-connected to etcd - 10.0.2.15:2379  
-######### all server list....(2)  
-[CSP] aws	/ [VmID] i-0f6733dc8455fb3ac	/ [IP] <IP>:2019  
-[CSP] aws	/ [VmID] i-0e3b84c8cecba48a2	/ [IP] <IP>:2019
-
-
-### API SERVER 실행 시, 클라이언트에서 TEST 방법
-- 서비스 생성  
-`$ curl -X POST   -H 'Content-Type: application/json'   -d '{"name":"service-name07","csp":"aws","num":2}}'   localhost:1323/svcs | json_pp`
-```JSON
-{
-   "num" : 2,
-   "csp" : "aws",
-   "name" : "service-name07",
-   "id" : 1560324735351
-}
-```
-
-- 모든 서비스 조회  
-`$ curl localhost:1323/svcs | json_pp`
-```JSON
-{
-   "timestamp" : "2019-06-12T07:36:28.577639732Z",
-   "random" : 1000,
-   "service" : [
-      {
-         "name" : "service-name07",
-         "id" : 1560324735351,
-         "server" : [
-            {
-               "vmid" : "i-0ad6533ff5c66f542",
-               "csp" : "aws",
-               "ip" : "52.78.198.213:2019"
-            },
-            {
-               "vmid" : "i-00c530be08225b24c",
-               "csp" : "aws",
-               "ip" : "52.79.158.225:2019"
-            }
-         ]
-      },
-      {
-         "id" : 1560324644709,
-         "server" : [
-            {
-               "csp" : "aws",
-               "vmid" : "i-0c3d01f99c34e509d",
-               "ip" : "52.79.160.123:2019"
-            },
-            {
-               "vmid" : "i-08ff23437046535c1",
-               "csp" : "aws",
-               "ip" : "13.125.54.91:2019"
-            }
-         ],
-         "name" : "service-name03"
-      }
-   ],
-   "response" : "Sent via Cloud-Barista"
-}
-```
-
-- 모든 서비스 삭제  
-`$ curl -X DELETE localhost:1323/svcs | json_pp`
-
-### Non interactive 모드
-`$ go run mcism_master.go -addvm-aws=3`
-```
-## examples ##
-go run mcism_master.go -addvm-aws=10
-go run mcism_master.go -addvm-gcp=5
-go run mcism_master.go -addvm-azure=5
-
-go run mcism_master.go -listvm
-go run mcism_master.go -monitor
-
-go run mcism_master.go -delvm-aws
-go run mcism_master.go -delvm-gcp
-go run mcism_master.go -delvm-azure
-
-######### addVMaws....
-Successfully tagged instance:aws-etri-shson0
-Successfully tagged instance:aws-etri-shson1
-Successfully tagged instance:aws-etri-shson2
-==============> 54.180.134.106
-==============> 52.78.23.193
-==============> 52.78.80.176
-Couldn't establisch a connection to the remote server  dial tcp 54.180.134.106:22: connect: connection refused
-connected to etcd - 10.0.2.15:2379
-######### addServer....54.180.134.106:2019
-added a 54.180.134.106:2019 into the Server List...
-
-######### addServer....52.78.23.193:2019
-added a 52.78.23.193:2019 into the Server List...
-
-######### addServer....52.78.80.176:2019
-added a 52.78.80.176:2019 into the Server List...
-```
-
-`$ ./mcism_master -listvm`
-```
-connected to etcd - 10.0.2.15:2379
-######### all server list....(4)
-52.231.161.155:2019
-52.78.80.176:2019
-54.180.134.106:2019
-52.78.23.193:2019
-```
-
-`$ ./mcism_master –monitor`
-```
-######### monitoring all servers....
-connected to etcd - 10.0.2.15:2379
-[azureshson0]
-2019-05-24 14:07:59.110989 I |   [CPU USG] C0:0.96%
-2019-05-24 14:07:59.110997 I |   [MEM USG] TOTAL: 646MB, USED: 244MB, FREE: 97MB
-2019-05-24 14:07:59.111000 I |   [DSK RAT]/dev/sda1: R/s:   82812928, W/s:   621621248	/dev/sdb1: R/s:   0, W/s:   0
------------
-[ip-172-31-4-191]
-2019-05-24 14:07:59.138355 I |   [CPU USG] C0:1.59%
-2019-05-24 14:07:59.138368 I |   [MEM USG] TOTAL: 983MB, USED: 96MB, FREE: 525MB
-2019-05-24 14:07:59.138375 I |   [DSK RAT]/dev/xvda1: R/s:   286658048, W/s:   244248576	/dev/loop0: R/s:   3213312, W/s:   0	/dev/loop1: R/s:   3756032, W/s:   0
------------
-[ip-172-31-4-246]
-2019-05-24 14:07:59.163055 I |   [CPU USG] C0:5.21%
-2019-05-24 14:07:59.163063 I |   [MEM USG] TOTAL: 983MB, USED: 97MB, FREE: 520MB
-2019-05-24 14:07:59.163065 I |   [DSK RAT]/dev/xvda1: R/s:   289209856, W/s:   244568064
------------
-[ip-172-31-0-32]
-2019-05-24 14:07:59.178435 I |   [CPU USG] C0:3.94%
-2019-05-24 14:07:59.178478 I |   [MEM USG] TOTAL: 983MB, USED: 94MB, FREE: 523MB
-2019-05-24 14:07:59.178488 I |   [DSK RAT]/dev/xvda1: R/s:   289177088, W/s:   244695040
------------
-==============================
-connected to etcd - 10.0.2.15:2379
-[azureshson0]
-2019-05-24 14:08:00.224434 I |   [CPU USG] C0:1.79%
-2019-05-24 14:08:00.224442 I |   [MEM USG] TOTAL: 646MB, USED: 244MB, FREE: 97MB
-2019-05-24 14:08:00.224445 I |   [DSK RAT]/dev/sda1: R/s:   0, W/s:   4096	/dev/sdb1: R/s:   0, W/s:   0
------------
-[ip-172-31-4-191]
-2019-05-24 14:08:00.241459 I |   [CPU USG] C0:0.00%
-2019-05-24 14:08:00.241482 I |   [MEM USG] TOTAL: 983MB, USED: 96MB, FREE: 524MB
-2019-05-24 14:08:00.241489 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096	/dev/loop0: R/s:   0, W/s:   0	/dev/loop1: R/s:   0, W/s:   0
------------
-[ip-172-31-4-246]
-2019-05-24 14:08:00.260265 I |   [CPU USG] C0:0.00%
-2019-05-24 14:08:00.260272 I |   [MEM USG] TOTAL: 983MB, USED: 97MB, FREE: 520MB
-2019-05-24 14:08:00.260275 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096
------------
-[ip-172-31-0-32]
-2019-05-24 14:08:00.280212 I |   [CPU USG] C0:0.00%
-2019-05-24 14:08:00.280228 I |   [MEM USG] TOTAL: 983MB, USED: 94MB, FREE: 523MB
-2019-05-24 14:08:00.280286 I |   [DSK RAT]/dev/xvda1: R/s:   0, W/s:   4096
------------
-==============================
-```
-
-`$ ./mcism_master -delvm-aws`
-```
-######### delete all servers in AWS....
-connected to etcd - 10.0.2.15:2379
-connected to etcd - 10.0.2.15:2379
-######### delete aws all Server....
-deleted all aws server list...
-```
