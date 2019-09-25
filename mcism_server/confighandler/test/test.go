@@ -11,7 +11,7 @@ package main
 import (
         "fmt"
 
-	"github.com/cloud-barista/cb-tumblebug/mcism_master/confighandler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_server/confighandler"
 )
 
 func main() {

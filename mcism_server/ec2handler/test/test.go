@@ -8,7 +8,7 @@ package main
 
 
  import (
-         "github.com/cloud-barista/cb-tumblebug/mcism_master/ec2handler"
+         "github.com/cloud-barista/cb-tumblebug/mcism_server/ec2handler"
 	 "fmt"
  )
 

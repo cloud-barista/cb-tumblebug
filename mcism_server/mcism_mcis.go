@@ -1,15 +1,11 @@
-// Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
-//      * Cloud-Barista: https://github.com/cloud-barista
-
 package main
 
 import (
-	"github.com/cloud-barista/cb-tumblebug/mcism_master/azurehandler"
-	"github.com/cloud-barista/cb-tumblebug/mcism_master/confighandler"
-	"github.com/cloud-barista/cb-tumblebug/mcism_master/ec2handler"
-	"github.com/cloud-barista/cb-tumblebug/mcism_master/gcehandler"
-	"github.com/cloud-barista/cb-tumblebug/mcism_master/serverhandler/scp"
-	"github.com/cloud-barista/cb-tumblebug/mcism_master/serverhandler/sshrun"
+	"github.com/cloud-barista/cb-tumblebug/mcism_server/azurehandler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_server/ec2handler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_server/gcehandler"
+	"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/scp"
+	"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/sshrun"
 
 	"context"
 	"encoding/json"
@@ -29,13 +25,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
-
 	// CB-Store
-	cbstore "github.com/cloud-barista/cb-store"
-	"github.com/cloud-barista/cb-store/config"
-	icbs "github.com/cloud-barista/cb-store/interfaces"
-	"github.com/sirupsen/logrus"
 )
 
 // Structs for REST API
@@ -106,6 +96,7 @@ type vmStatusInfo struct {
 	Disk_status   string `json:"disk_status"`
 }
 
+<<<<<<< HEAD:mcism_master/mcism_master.go
 // CB-Store
 var cblog *logrus.Logger
 var store icbs.Store
@@ -239,25 +230,9 @@ func main() {
 
 }
 
+=======
+>>>>>>> Separate codes by file:mcism_server/mcism_mcis.go
 // MCIS API Proxy
-
-func nsValidation() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			fmt.Printf("%v\n", "[API request!]")
-			nsId := c.Param("nsId")
-			if nsId == "" {
-				return next(c)
-			}
-			check, _ := checkNs(nsId)
-
-			if !check {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Not valid namespace")
-			}
-			return next(c)
-		}
-	}
-}
 
 func restPostMcis(c echo.Context) error {
 
@@ -1059,12 +1034,6 @@ func terminateVmAzure(cspVmId string) {
 	//    azurehandler.DestroyInstances(connInfo, groupName, idList)  @todo now, just delete target Group for convenience.
 	azurehandler.DeleteGroup(connInfo, groupName)
 
-}
-
-// MCIS utilities
-
-func genUuid() string {
-	return uuid.New().String()
 }
 
 func insertAgent(serverIP string, userName string, keyPath string) error {
