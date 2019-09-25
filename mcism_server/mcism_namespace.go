@@ -62,7 +62,16 @@ func restGetNs(c echo.Context) error {
 	key := "/ns/" + id
 	fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Cannot find " + key}
+		return c.JSON(http.StatusOK, &mapA)
+	}
+
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
@@ -86,7 +95,12 @@ func restGetAllNs(c echo.Context) error {
 
 		key := "/ns/" + v
 		fmt.Println(key)
-		keyValue, _ := store.Get(key)
+		keyValue, err := store.Get(key)
+		if err != nil {
+			cblog.Error(err)
+			return err
+		}
+
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		nsTmp := nsInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &nsTmp)
