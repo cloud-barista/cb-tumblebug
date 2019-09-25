@@ -11,7 +11,7 @@
 
  import (
          "flag"
-         "github.com/cloud-barista/cb-tumblebug/mcism_master/etcdhandler"
+         "github.com/cloud-barista/cb-tumblebug/mcism_server/etcdhandler"
 	 "context"
          "fmt"
  )

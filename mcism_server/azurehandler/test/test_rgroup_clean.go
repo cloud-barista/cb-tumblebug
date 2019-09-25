@@ -8,7 +8,7 @@ package main
 
 
  import (
-         "github.com/cloud-barista/cb-tumblebug/mcism_master/azurehandler"
+         "github.com/cloud-barista/cb-tumblebug/mcism_server/azurehandler"
  )
 
  func main() {

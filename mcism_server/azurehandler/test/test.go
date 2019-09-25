@@ -8,7 +8,7 @@ package main
 
 
  import (
-         "github.com/cloud-barista/cb-tumblebug/mcism_master/azurehandler"
+         "github.com/cloud-barista/cb-tumblebug/mcism_server/azurehandler"
 	 "fmt"
 	 "strconv"
  )
@@ -100,7 +100,8 @@ type NICInfo struct {
 
     nicInfo := azurehandler.NICInfo{virtualNetworkName, subnet1Name, nsgName}
 
-    instanceIds := azurehandler.CreateInstances(connInfo, groupName, location, baseName, nicInfo, imageInfo, vmInfo, 3)
+    //instanceIds := azurehandler.CreateInstances(connInfo, groupName, location, baseName, nicInfo, imageInfo, vmInfo, 2)
+    instanceIds := azurehandler.CreateInstances(connInfo, groupName, location, baseName, nicInfo, imageInfo, vmInfo, 1)
 
     for _, v := range instanceIds {
 	fmt.Println("\tInstanceName: ", *v)
@@ -116,10 +117,9 @@ type NICInfo struct {
                 fmt.Println(err.Error())
 	    }
 
-	    fmt.Printf("[PublicIP] %s]\n", *publicIP.PublicIPAddressPropertiesFormat.IPAddress);
+//	    fmt.Printf("[PublicIP] %#v", publicIP);
+	    fmt.Printf("[PublicIP] %s", *publicIP.PublicIPAddressPropertiesFormat.IPAddress);
     }
-
-    azurehandler.DestroyInstances(connInfo, groupName, instanceIds)
 
  }
 
