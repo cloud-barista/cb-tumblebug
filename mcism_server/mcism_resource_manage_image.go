@@ -28,12 +28,12 @@ type imageInfo struct {
 }
 
 /* FYI
-e.POST("/resources/image", restPostImage)
-e.GET("/resources/image/:id", restGetImage)
-e.GET("/resources/image", restGetAllImage)
-e.PUT("/resources/image/:id", restPutImage)
-e.DELETE("/resources/image/:id", restDelImage)
-e.DELETE("/resources/image", restDelAllImage)
+g.POST("/:nsId/resources/image", restPostImage)
+g.GET("/:nsId/resources/image/:imageId", restGetImage)
+g.GET("/:nsId/resources/image", restGetAllImage)
+g.PUT("/:nsId/resources/image/:imageId", restPutImage)
+g.DELETE("/:nsId/resources/image/:imageId", restDelImage)
+g.DELETE("/:nsId/resources/image", restDelAllImage)
 */
 
 // MCIS API Proxy: Image
