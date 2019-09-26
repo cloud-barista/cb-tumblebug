@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-
 type imageReq struct {
 	Id           string `json:"id"`
 	Name         string `json:"name"`
@@ -27,8 +26,6 @@ type imageInfo struct {
 	CspImageId   string `json:"cspImageId"`
 	Description  string `json:"description"`
 }
-
-
 
 /* FYI
 e.POST("/resources/image", restPostImage)
@@ -56,11 +53,14 @@ func restPostImage(c echo.Context) error {
 		createImage(nsId, u)
 		return c.JSON(http.StatusCreated, u)
 
-	} else { //if action == "register" {
+	} else if action == "register" {
 		fmt.Println("[Registering Image]")
 		registerImage(nsId, u)
 		return c.JSON(http.StatusCreated, u)
 
+	} else {
+		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
+		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
 }
