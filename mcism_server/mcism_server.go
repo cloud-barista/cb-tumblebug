@@ -81,13 +81,15 @@ func apiServer() {
 	g.DELETE("/:nsId/resources/sshKey/:sshKeyId", restDelSshKey)
 	g.DELETE("/:nsId/resources/sshKey", restDelAllSshKey)
 
+	g.POST("/:nsId/resources/spec", restPostSpec)
+	g.GET("/:nsId/resources/spec/:specId", restGetSpec)
+	g.GET("/:nsId/resources/spec", restGetAllSpec)
+	g.PUT("/:nsId/resources/spec/:specId", restPutSpec)
+	g.DELETE("/:nsId/resources/spec/:specId", restDelSpec)
+	g.DELETE("/:nsId/resources/spec", restDelAllSpec)
+
 	/*
-		g.POST("/resources/spec", restPostSpec)
-		g.GET("/resources/spec/:id", restGetSpec)
-		g.GET("/resources/spec", restGetAllSpec)
-		g.PUT("/resources/spec/:id", restPutSpec)
-		g.DELETE("/resources/spec/:id", restDelSpec)
-		g.DELETE("/resources/spec", restDelAllSpec)
+
 
 		g.POST("/resources/network", restPostNetwork)
 		g.GET("/resources/network/:id", restGetNetwork)

@@ -32,12 +32,12 @@ type sshKeyInfo struct {
 }
 
 /* FYI
-e.POST("/:nsId/resources/sshKey", restPostSshKey)
-e.GET("/:nsId/resources/sshKey/:sshKeyId", restGetSshKey)
-e.GET("/:nsId/resources/sshKey", restGetAllSshKey)
-e.PUT("/:nsId/resources/sshKey/:sshKeyId", restPutSshKey)
-e.DELETE("/:nsId/resources/sshKey/:sshKeyId", restDelSshKey)
-e.DELETE("/:nsId/resources/sshKey", restDelAllSshKey)
+g.POST("/:nsId/resources/sshKey", restPostSshKey)
+g.GET("/:nsId/resources/sshKey/:sshKeyId", restGetSshKey)
+g.GET("/:nsId/resources/sshKey", restGetAllSshKey)
+g.PUT("/:nsId/resources/sshKey/:sshKeyId", restPutSshKey)
+g.DELETE("/:nsId/resources/sshKey/:sshKeyId", restDelSshKey)
+g.DELETE("/:nsId/resources/sshKey", restDelAllSshKey)
 */
 
 // MCIS API Proxy: SshKey
