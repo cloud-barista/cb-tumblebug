@@ -14,7 +14,7 @@
 
 # Binaries
 mcism_agent/mcism_agent
-mcism_master/mcism_master
+mcism_server/mcism_server
 
-# Config file for mcism_master
-mcism_master/conf/config.yaml
+# Config file for mcism_server
+mcism_server/conf/config.yaml
