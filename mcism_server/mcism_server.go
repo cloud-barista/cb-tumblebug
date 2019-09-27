@@ -74,6 +74,8 @@ func apiServer() {
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", restDelMcisVm)
 	//g.DELETE("/:nsId/mcis", restDelAllMcis)
 
+	g.POST("/:nsId/mcis/recommend", restPostMcisRecommand)
+
 	g.POST("/:nsId/resources/image", restPostImage)
 	g.GET("/:nsId/resources/image/:imageId", restGetImage)
 	g.GET("/:nsId/resources/image", restGetAllImage)
