@@ -84,7 +84,7 @@ func restGetImage(c echo.Context) error {
 	*/
 
 	fmt.Println("[Get image for id]" + id)
-	key := "/ns/" + nsId + "/resources/image/" + id
+	key := genResourceKey(nsId, "image", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -111,7 +111,7 @@ func restGetAllImage(c echo.Context) error {
 
 	for _, v := range imageList {
 
-		key := "/ns/" + nsId + "/resources/image/" + v
+		key := genResourceKey(nsId, "image", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -180,7 +180,7 @@ func createImage(nsId string, u *imageReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createImage")
-	Key := "/ns/" + nsId + "/resources/image/" + u.Id
+	Key := genResourceKey(nsId, "image", u.Id)
 	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
@@ -202,7 +202,7 @@ func registerImage(nsId string, u *imageReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerImage")
-	Key := "/ns/" + nsId + "/resources/image/" + u.Id
+	Key := genResourceKey(nsId, "image", u.Id)
 	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
@@ -240,7 +240,7 @@ func delImage(nsId string, Id string) error {
 
 	fmt.Println("[Delete image] " + Id)
 
-	key := "/ns/" + nsId + "/resources/image/" + Id
+	key := genResourceKey(nsId, "image", Id)
 	fmt.Println(key)
 
 	// delete mcis info
