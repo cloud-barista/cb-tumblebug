@@ -280,6 +280,9 @@ func registerSpec(nsId string, u *specReq) specInfo {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
+	// register information related with MCIS recommendation
+	registerRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+
 	return content
 }
 

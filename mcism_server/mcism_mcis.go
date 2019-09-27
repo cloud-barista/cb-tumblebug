@@ -36,6 +36,8 @@ type vmReq struct {
 
 	Location string `json:"location"`
 
+	Spec_id string `json:"spec_id"`
+
 	Vcpu_size   string `json:"vcpu_size"`
 	Memory_size string `json:"memory_size"`
 	Disk_size   string `json:"disk_size"`
@@ -70,6 +72,8 @@ type vmInfo struct {
 	Location      string `json:"location"`
 	Vm_image_name string `json:"vm_image_name"`
 
+	Spec_id string `json:"spec_id"`
+
 	Vcpu_size   string `json:"vcpu_size"`
 	Memory_size string `json:"memory_size"`
 	Disk_size   string `json:"disk_size"`
@@ -92,6 +96,16 @@ type vmStatusInfo struct {
 	Cpu_status    string `json:"cpu_status"`
 	Memory_status string `json:"memory_status"`
 	Disk_status   string `json:"disk_status"`
+}
+type vmPriority struct {
+	Priority string `json:"priority"`
+	Vm_spec  string `json:"vm_spec"`
+}
+type vmRecommendInfo struct {
+	Name           string       `json:"name"`
+	Vm_priority    []vmPriority `json:"vm_priority"`
+	Placement_algo string       `json:"placement_algo"`
+	Description    string       `json:"description"`
 }
 
 // MCIS API Proxy
@@ -389,6 +403,38 @@ func restDelAllMcis(c echo.Context) error {
 
 }
 
+func restPostMcisRecommand(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	req := &mcisReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	var content struct {
+		Vm_recommend   []vmRecommendInfo `json:"vm_recommend"`
+		Placement_algo string            `json:"placement_algo"`
+		Description    string            `json:"description"`
+	}
+	content.Placement_algo = req.Placement_algo
+	content.Description = req.Description
+	vmList := req.Vm_req
+
+	for _, v := range vmList {
+		vmTmp := vmRecommendInfo{}
+		vmTmp.Placement_algo = v.Placement_algo
+		vmTmp.Name = v.Name
+
+		vmTmp.Vm_priority = getRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
+
+		content.Vm_recommend = append(content.Vm_recommend, vmTmp)
+	}
+	fmt.Printf("%+v\n", content)
+
+	return c.JSON(http.StatusCreated, content)
+}
+
 // VM API Proxy
 
 func restPostMcisVm(c echo.Context) error {
@@ -411,6 +457,8 @@ func restPostMcisVm(c echo.Context) error {
 	vmInfoData.Location = req.Location
 	vmInfoData.Cloud_id = req.Csp
 	vmInfoData.Description = req.Description
+
+	vmInfoData.Spec_id = req.Spec_id
 
 	vmInfoData.Vcpu_size = req.Vcpu_size
 	vmInfoData.Memory_size = req.Memory_size
@@ -694,6 +742,44 @@ func delMcisVm(nsId string, mcisId string, vmId string) error {
 	return nil
 }
 
+//// Info manage for MCIS recommandation
+func getRecommendList(nsId string, cpuSize string, memSize string, diskSize string) []vmPriority {
+
+	//fmt.Println("[Get MCISs")
+	key := genMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
+	fmt.Println(key)
+
+	keyValue, _ := store.GetList(key, true)
+	var vmPriorityList []vmPriority
+	for cnt, v := range keyValue {
+		vmPriorityTmp := vmPriority{}
+		vmPriorityTmp.Priority = strconv.Itoa(cnt)
+		vmPriorityTmp.Vm_spec = v.Key
+		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
+	}
+
+	fmt.Println("===============================================")
+	return vmPriorityList
+
+}
+
+func registerRecommendList(nsId string, cpuSize string, memSize string, diskSize string, specId string, price string) error {
+
+	//fmt.Println("[Get MCISs")
+	key := genMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId
+	fmt.Println(key)
+
+	err := store.Put(string(key), string(price))
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	fmt.Println("===============================================")
+	return nil
+
+}
+
 // MCIS Control
 
 func createMcis(nsId string, req *mcisReq) string {
@@ -725,6 +811,8 @@ func createMcis(nsId string, req *mcisReq) string {
 		vmInfoData.Location = k.Location
 		vmInfoData.Cloud_id = k.Csp
 		vmInfoData.Description = k.Description
+
+		vmInfoData.Spec_id = k.Spec_id
 
 		vmInfoData.Vcpu_size = k.Vcpu_size
 		vmInfoData.Memory_size = k.Memory_size
