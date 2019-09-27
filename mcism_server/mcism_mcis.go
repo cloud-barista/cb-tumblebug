@@ -19,8 +19,6 @@ import (
 	pb "github.com/cloud-barista/cb-tumblebug/mcism_agent/grpc_def"
 	"google.golang.org/grpc"
 
-	uuid "github.com/google/uuid"
-
 	// REST API (echo)
 	"net/http"
 
@@ -29,6 +27,7 @@ import (
 
 // Structs for REST API
 type vmReq struct {
+	Id             string `json:"id"`
 	Csp            string `json:"csp"`
 	Vm_image_name  string `json:"vm_image_name"`
 	Placement_algo string `json:"placement_algo"`
@@ -106,9 +105,46 @@ func restPostMcis(c echo.Context) error {
 		return err
 	}
 
-	createMcis(nsId, req)
+	key := createMcis(nsId, req)
+	mcisId := req.Id
 
-	return c.JSON(http.StatusCreated, req)
+	keyValue, _ := store.Get(key)
+
+	var content struct {
+		Id             string   `json:"id"`
+		Name           string   `json:"name"`
+		Vm_num         string   `json:"vm_num"`
+		Status         string   `json:"status"`
+		Vm             []vmInfo `json:"vm"`
+		Placement_algo string   `json:"placement_algo"`
+		Description    string   `json:"description"`
+	}
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	vmList, err := getVmList(nsId, mcisId)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	for _, v := range vmList {
+		vmKey := genMcisKey(nsId, mcisId, v)
+		fmt.Println(vmKey)
+		vmKeyValue, _ := store.Get(vmKey)
+		if vmKeyValue == nil {
+			mapA := map[string]string{"message": "Cannot find " + key}
+			return c.JSON(http.StatusOK, &mapA)
+		}
+		fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+		vmTmp := vmInfo{}
+		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+		vmTmp.Id = v
+		content.Vm = append(content.Vm, vmTmp)
+	}
+	fmt.Printf("%+v\n", content)
+
+	return c.JSON(http.StatusCreated, content)
 }
 
 func restGetMcis(c echo.Context) error {
@@ -162,6 +198,7 @@ func restGetMcis(c echo.Context) error {
 	} else if action == "monitor" {
 
 		var content struct {
+			Id     string         `json:"id"`
 			Name   string         `json:"name"`
 			Vm_num string         `json:"vm_num"`
 			Status string         `json:"status"`
@@ -170,7 +207,7 @@ func restGetMcis(c echo.Context) error {
 
 		fmt.Println("[monitor MCIS]")
 
-		key := "/ns/" + nsId + "/mcis/" + mcisId
+		key := genMcisKey(nsId, mcisId, "")
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		if keyValue == nil {
@@ -192,7 +229,7 @@ func restGetMcis(c echo.Context) error {
 		}
 
 		for _, v := range vmList {
-			vmKey := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + v
+			vmKey := genMcisKey(nsId, mcisId, v)
 			fmt.Println(vmKey)
 			vmKeyValue, _ := store.Get(vmKey)
 			if vmKeyValue == nil {
@@ -223,6 +260,7 @@ func restGetMcis(c echo.Context) error {
 	} else {
 
 		var content struct {
+			Id             string   `json:"id"`
 			Name           string   `json:"name"`
 			Vm_num         string   `json:"vm_num"`
 			Status         string   `json:"status"`
@@ -232,7 +270,7 @@ func restGetMcis(c echo.Context) error {
 		}
 
 		fmt.Println("[Get MCIS for id]" + mcisId)
-		key := "/ns/" + nsId + "/mcis/" + mcisId
+		key := genMcisKey(nsId, mcisId, "")
 		fmt.Println(key)
 
 		keyValue, _ := store.Get(key)
@@ -252,7 +290,7 @@ func restGetMcis(c echo.Context) error {
 		}
 
 		for _, v := range vmList {
-			vmKey := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + v
+			vmKey := genMcisKey(nsId, mcisId, v)
 			fmt.Println(vmKey)
 			vmKeyValue, _ := store.Get(vmKey)
 			if vmKeyValue == nil {
@@ -351,11 +389,175 @@ func restDelAllMcis(c echo.Context) error {
 
 }
 
+// VM API Proxy
+
+func restPostMcisVm(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+
+	req := &vmReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	vmInfoData := vmInfo{}
+	vmInfoData.Id = genUuid()
+	req.Id = vmInfoData.Id
+	vmInfoData.Name = req.Name
+
+	vmInfoData.Placement_algo = req.Placement_algo
+
+	vmInfoData.Location = req.Location
+	vmInfoData.Cloud_id = req.Csp
+	vmInfoData.Description = req.Description
+
+	vmInfoData.Vcpu_size = req.Vcpu_size
+	vmInfoData.Memory_size = req.Memory_size
+	vmInfoData.Disk_size = req.Disk_size
+	vmInfoData.Disk_type = req.Disk_type
+
+	vmInfoData.Vm_image_name = req.Vm_image_name
+
+	vmInfoData.Net_security = "TBD"
+	vmInfoData.Network = "TBD"
+	vmInfoData.Subnet = "TBD"
+	vmInfoData.Vm_image = "TBD"
+	vmInfoData.Vm_spec = "TBD"
+
+	vmInfoData.Public_ip = "Not assigned yet"
+	vmInfoData.Csp_vm_id = "Not assigned yet"
+	vmInfoData.Domain_name = "Not assigned yet"
+	vmInfoData.Status = "Launching"
+
+	//createMcis(nsId, req)
+	err := addVmToMcis(nsId, mcisId, vmInfoData)
+	if err != nil {
+		mapA := map[string]string{"message": "Cannot find " + genMcisKey(nsId, mcisId, "")}
+		return c.JSON(http.StatusOK, &mapA)
+	}
+
+	return c.JSON(http.StatusCreated, req)
+}
+
+func restGetMcisVm(c echo.Context) error {
+	//id, _ := strconv.Atoi(c.Param("id"))
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	action := c.QueryParam("action")
+	fmt.Println("[Get VM requested action: " + action)
+	if action == "suspend" {
+		fmt.Println("[suspend VM]")
+
+		mapA := map[string]string{"message": "The VM has been suspended"}
+		return c.JSON(http.StatusOK, &mapA)
+
+	} else if action == "resume" {
+		fmt.Println("[resume VM]")
+
+		mapA := map[string]string{"message": "The VM has been resumed"}
+		return c.JSON(http.StatusOK, &mapA)
+
+	} else if action == "restart" {
+		fmt.Println("[restart VM]")
+
+		mapA := map[string]string{"message": "The VM has been restarted"}
+		return c.JSON(http.StatusOK, &mapA)
+
+	} else if action == "terminate" {
+		fmt.Println("[terminate VM]")
+
+		terminateVm(nsId, mcisId, vmId)
+
+		mapA := map[string]string{"message": "The VM has been terminated"}
+		return c.JSON(http.StatusOK, &mapA)
+
+	} else if action == "monitor" {
+
+		fmt.Println("[monitor VM]")
+
+		vmKey := genMcisKey(nsId, mcisId, vmId)
+		fmt.Println(vmKey)
+		vmKeyValue, _ := store.Get(vmKey)
+		if vmKeyValue == nil {
+			mapA := map[string]string{"message": "Cannot find " + vmKey}
+			return c.JSON(http.StatusOK, &mapA)
+		}
+
+		fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+		vmTmp := vmStatusInfo{}
+		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+		vmTmp.Id = vmId
+
+		vmIp := getVmIp(nsId, mcisId, vmId)
+		vmIpPort := vmIp + defaultMonitorPort
+		statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+		fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
+
+		vmTmp.Cpu_status = statusCpu
+		vmTmp.Memory_status = statusMem
+		vmTmp.Disk_status = statusDisk
+
+		fmt.Printf("%+v\n", vmTmp)
+
+		return c.JSON(http.StatusOK, &vmTmp)
+
+	} else {
+
+		fmt.Println("[Get MCIS for id]" + mcisId)
+		key := genMcisKey(nsId, mcisId, "")
+		fmt.Println(key)
+
+		vmKey := genMcisKey(nsId, mcisId, vmId)
+		fmt.Println(vmKey)
+		vmKeyValue, _ := store.Get(vmKey)
+		if vmKeyValue == nil {
+			mapA := map[string]string{"message": "Cannot find " + key}
+			return c.JSON(http.StatusOK, &mapA)
+		}
+		fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+		vmTmp := vmInfo{}
+		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+		vmTmp.Id = vmId
+
+		fmt.Printf("%+v\n", vmTmp)
+
+		//return by string
+		//return c.String(http.StatusOK, keyValue.Value)
+		return c.JSON(http.StatusOK, &vmTmp)
+
+	}
+}
+
+func restPutMcisVm(c echo.Context) error {
+	return nil
+}
+
+func restDelMcisVm(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	err := delMcisVm(nsId, mcisId, vmId)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": "Failed to delete the VM"}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
+
+	mapA := map[string]string{"message": "The VM has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+}
+
 // MCIS Information Managemenet
 
-func addVmToMcis(nsId string, mcisId string, vmInfoData vmInfo) {
+func addVmInfoToMcis(nsId string, mcisId string, vmInfoData vmInfo) {
 
-	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmInfoData.Id
+	key := genMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -369,7 +571,7 @@ func addVmToMcis(nsId string, mcisId string, vmInfoData vmInfo) {
 }
 
 func updateVmInfo(nsId string, mcisId string, vmInfoData vmInfo) {
-	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmInfoData.Id
+	key := genMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -405,7 +607,7 @@ func getMcisList(nsId string) []string {
 func getVmList(nsId string, mcisId string) ([]string, error) {
 
 	fmt.Println("[getVmList]")
-	key := "/ns/" + nsId + "/mcis/" + mcisId
+	key := genMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
 
 	keyValue, err := store.GetList(key, true)
@@ -439,7 +641,7 @@ func delMcis(nsId string, mcisId string) error {
 	}
 	// for deletion, need to wait untill termination is finished
 
-	key := "/ns/" + nsId + "/mcis/" + mcisId
+	key := genMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
 
 	vmList, err := getVmList(nsId, mcisId)
@@ -450,7 +652,7 @@ func delMcis(nsId string, mcisId string) error {
 
 	// delete vms info
 	for _, v := range vmList {
-		vmKey := key + "/vm/" + v
+		vmKey := genMcisKey(nsId, mcisId, v)
 		fmt.Println(vmKey)
 		err := store.Delete(vmKey)
 		if err != nil {
@@ -468,22 +670,46 @@ func delMcis(nsId string, mcisId string) error {
 	return nil
 }
 
+func delMcisVm(nsId string, mcisId string, vmId string) error {
+
+	fmt.Println("[Delete VM] " + vmId)
+
+	// terminateVm first
+	err := terminateVm(nsId, mcisId, vmId)
+
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+	// for deletion, need to wait untill termination is finished
+
+	// delete vms info
+	key := genMcisKey(nsId, mcisId, vmId)
+	err = store.Delete(key)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	return nil
+}
+
 // MCIS Control
 
-func createMcis(nsId string, u *mcisReq) {
+func createMcis(nsId string, req *mcisReq) string {
 
-	u.Id = genUuid()
-	vmRequest := u.Vm_req
+	req.Id = genUuid()
+	vmRequest := req.Vm_req
 
 	fmt.Println("=========================== Put createSvc")
-	Key := "/ns/" + nsId + "/mcis/" + u.Id
-	mapA := map[string]string{"name": u.Name, "description": u.Description, "status": "launching", "vm_num": u.Vm_num, "placement_algo": u.Placement_algo}
-	Val, _ := json.Marshal(mapA)
-	err := store.Put(string(Key), string(Val))
+	key := genMcisKey(nsId, req.Id, "")
+	mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
+	val, _ := json.Marshal(mapA)
+	err := store.Put(string(key), string(val))
 	if err != nil {
 		cblog.Error(err)
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := store.Get(string(key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -491,7 +717,7 @@ func createMcis(nsId string, u *mcisReq) {
 
 		//vmInfoData vmInfo
 		vmInfoData := vmInfo{}
-		vmInfoData.Id = uuid.New().String()
+		vmInfoData.Id = genUuid()
 		vmInfoData.Name = k.Name
 
 		vmInfoData.Placement_algo = k.Placement_algo
@@ -518,16 +744,30 @@ func createMcis(nsId string, u *mcisReq) {
 		vmInfoData.Domain_name = "Not assigned yet"
 		vmInfoData.Status = "Launching"
 
-		addVmToMcis(nsId, u.Id, vmInfoData)
-
-		instanceIds, publicIPs := createVm(vmInfoData)
-
-		vmInfoData.Public_ip = string(*publicIPs[0])
-		vmInfoData.Csp_vm_id = string(*instanceIds[0])
-		vmInfoData.Status = "Running"
-		updateVmInfo(nsId, u.Id, vmInfoData)
-
+		addVmToMcis(nsId, req.Id, vmInfoData)
 	}
+
+	return key
+}
+
+func addVmToMcis(nsId string, mcisId string, vmInfoData vmInfo) error {
+
+	key := genMcisKey(nsId, mcisId, "")
+	keyValue, _ := store.Get(key)
+	if keyValue == nil {
+		return fmt.Errorf("Cannot find %s", key)
+	}
+
+	addVmInfoToMcis(nsId, mcisId, vmInfoData)
+
+	instanceIds, publicIPs := createVm(vmInfoData)
+
+	vmInfoData.Public_ip = string(*publicIPs[0])
+	vmInfoData.Csp_vm_id = string(*instanceIds[0])
+	vmInfoData.Status = "Running"
+	updateVmInfo(nsId, mcisId, vmInfoData)
+
+	return nil
 
 }
 
@@ -863,7 +1103,7 @@ func createVmAzure(count int) ([]*string, []*string) {
 func terminateMcis(nsId string, mcisId string) error {
 
 	fmt.Println("[terminateMcis]" + mcisId)
-	key := "/ns/" + nsId + "/mcis/" + mcisId
+	key := genMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
 	keyValue, err := store.Get(key)
 	if err != nil {
@@ -894,7 +1134,7 @@ func terminateMcis(nsId string, mcisId string) error {
 
 }
 
-func terminateVm(nsId string, mcisId string, vmId string) {
+func terminateVm(nsId string, mcisId string, vmId string) error {
 
 	var content struct {
 		Cloud_id  string `json:"cloud_id"`
@@ -902,7 +1142,7 @@ func terminateVm(nsId string, mcisId string, vmId string) {
 	}
 
 	fmt.Println("[terminateVm]" + vmId)
-	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId
+	key := genMcisKey(nsId, mcisId, vmId)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -923,6 +1163,8 @@ func terminateVm(nsId string, mcisId string, vmId string) {
 	} else {
 		fmt.Println("==============ERROR=no matched provider_id=================")
 	}
+
+	return nil
 
 }
 
@@ -1036,7 +1278,7 @@ func getVmIp(nsId string, mcisId string, vmId string) string {
 	}
 
 	fmt.Println("[getVmIp]" + vmId)
-	key := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId
+	key := genMcisKey(nsId, mcisId, vmId)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)

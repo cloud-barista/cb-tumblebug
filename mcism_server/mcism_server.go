@@ -53,6 +53,13 @@ func apiServer() {
 	// Route
 	g := e.Group("/ns", nsValidation())
 
+	g.POST("", restPostNs)
+	g.GET("/:nsId", restGetNs)
+	g.GET("", restGetAllNs)
+	g.PUT("/:nsId", restPutNs)
+	g.DELETE("/:nsId", restDelNs)
+	g.DELETE("", restDelAllNs)
+
 	g.POST("/:nsId/mcis", restPostMcis)
 	g.GET("/:nsId/mcis/:mcisId", restGetMcis)
 	g.GET("/:nsId/mcis", restGetAllMcis)
@@ -60,12 +67,12 @@ func apiServer() {
 	g.DELETE("/:nsId/mcis/:mcisId", restDelMcis)
 	g.DELETE("/:nsId/mcis", restDelAllMcis)
 
-	g.POST("", restPostNs)
-	g.GET("/:nsId", restGetNs)
-	g.GET("", restGetAllNs)
-	g.PUT("/:nsId", restPutNs)
-	g.DELETE("/:nsId", restDelNs)
-	g.DELETE("", restDelAllNs)
+	g.POST("/:nsId/mcis/:mcisId/vm", restPostMcisVm)
+	g.GET("/:nsId/mcis/:mcisId/vm/:vmId", restGetMcisVm)
+	//g.GET("/:nsId/mcis", restGetAllMcis)
+	//g.PUT("/:nsId/mcis/:mcisId", restPutMcis)
+	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", restDelMcisVm)
+	//g.DELETE("/:nsId/mcis", restDelAllMcis)
 
 	g.POST("/:nsId/resources/image", restPostImage)
 	g.GET("/:nsId/resources/image/:imageId", restGetImage)
@@ -154,4 +161,18 @@ func main() {
 
 func genUuid() string {
 	return uuid.New().String()
+}
+
+func genMcisKey(nsId string, mcisId string, vmId string) string {
+
+	if vmId != "" {
+		return "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId
+	} else if mcisId != "" {
+		return "/ns/" + nsId + "/mcis/" + mcisId
+	} else if nsId != "" {
+		return "/ns/" + nsId
+	} else {
+		return ""
+	}
+
 }
