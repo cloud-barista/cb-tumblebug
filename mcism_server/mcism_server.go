@@ -95,29 +95,31 @@ func apiServer() {
 	g.DELETE("/:nsId/resources/spec/:specId", restDelSpec)
 	g.DELETE("/:nsId/resources/spec", restDelAllSpec)
 
+	g.POST("/:nsId/resources/securityGroup", restPostSecurityGroup)
+	g.GET("/:nsId/resources/securityGroup/:securityGroupId", restGetSecurityGroup)
+	g.GET("/:nsId/resources/securityGroup", restGetAllSecurityGroup)
+	g.PUT("/:nsId/resources/securityGroup/:securityGroupId", restPutSecurityGroup)
+	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId", restDelSecurityGroup)
+	g.DELETE("/:nsId/resources/securityGroup", restDelAllSecurityGroup)
+
 	/*
 
 
-		g.POST("/resources/network", restPostNetwork)
-		g.GET("/resources/network/:id", restGetNetwork)
-		g.GET("/resources/network", restGetAllNetwork)
-		g.PUT("/resources/network/:id", restPutNetwork)
-		g.DELETE("/resources/network/:id", restDelNetwork)
-		g.DELETE("/resources/network", restDelAllNetwork)
+		g.POST("/:nsId/resources/network", restPostNetwork)
+		g.GET("/:nsId/resources/network/:networkId", restGetNetwork)
+		g.GET("/:nsId/resources/network", restGetAllNetwork)
+		g.PUT("/:nsId/resources/network/:networkId", restPutNetwork)
+		g.DELETE("/:nsId/resources/network/:networkId", restDelNetwork)
+		g.DELETE("/:nsId/resources/network", restDelAllNetwork)
 
-		g.POST("/resources/subnet", restPostSubnet)
-		g.GET("/resources/subnet/:id", restGetSubnet)
-		g.GET("/resources/subnet", restGetAllSubnet)
-		g.PUT("/resources/subnet/:id", restPutSubnet)
-		g.DELETE("/resources/subnet/:id", restDelSubnet)
-		g.DELETE("/resources/subnet", restDelAllSubnet)
+		g.POST("/:nsId/resources/subnet", restPostSubnet)
+		g.GET("/:nsId/resources/subnet/:subnetId", restGetSubnet)
+		g.GET("/:nsId/resources/subnet", restGetAllSubnet)
+		g.PUT("/:nsId/resources/subnet/:subnetId", restPutSubnet)
+		g.DELETE("/:nsId/resources/subnet/:subnetId", restDelSubnet)
+		g.DELETE("/:nsId/resources/subnet", restDelAllSubnet)
 
-		g.POST("/resources/securityGroup", restPostSecurityGroup)
-		g.GET("/resources/securityGroup/:id", restGetSecurityGroup)
-		g.GET("/resources/securityGroup", restGetAllSecurityGroup)
-		g.PUT("/resources/securityGroup/:id", restPutSecurityGroup)
-		g.DELETE("/resources/securityGroup/:id", restDelSecurityGroup)
-		g.DELETE("/resources/securityGroup", restDelAllSecurityGroup)
+
 
 
 	*/
