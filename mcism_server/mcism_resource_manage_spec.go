@@ -108,7 +108,7 @@ func restGetSpec(c echo.Context) error {
 	*/
 
 	fmt.Println("[Get spec for id]" + id)
-	key := "/ns/" + nsId + "/resources/spec/" + id
+	key := genResourceKey(nsId, "spec", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -135,7 +135,7 @@ func restGetAllSpec(c echo.Context) error {
 
 	for _, v := range specList {
 
-		key := "/ns/" + nsId + "/resources/spec/" + v
+		key := genResourceKey(nsId, "spec", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -249,7 +249,7 @@ func registerSpec(nsId string, u *specReq) specInfo {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
-	Key := "/ns/" + nsId + "/resources/spec/" + content.Id
+	Key := genResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
 		"name":        content.Name,
 		"csp":         content.Csp,
@@ -308,7 +308,7 @@ func delSpec(nsId string, Id string) error {
 
 	fmt.Println("[Delete spec] " + Id)
 
-	key := "/ns/" + nsId + "/resources/spec/" + Id
+	key := genResourceKey(nsId, "spec", Id)
 	fmt.Println(key)
 
 	err := store.Delete(key)

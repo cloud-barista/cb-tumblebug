@@ -325,7 +325,7 @@ func restGetAllMcis(c echo.Context) error {
 
 	for _, v := range mcisList {
 
-		key := "/ns/" + nsId + "/mcis/" + v
+		key := genMcisKey(nsId, v, "")
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		if keyValue == nil {

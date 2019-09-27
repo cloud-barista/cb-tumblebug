@@ -90,7 +90,7 @@ func restGetSshKey(c echo.Context) error {
 	*/
 
 	fmt.Println("[Get sshKey for id]" + id)
-	key := "/ns/" + nsId + "/resources/sshKey/" + id
+	key := genResourceKey(nsId, "sshKey", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -117,7 +117,7 @@ func restGetAllSshKey(c echo.Context) error {
 
 	for _, v := range sshKeyList {
 
-		key := "/ns/" + nsId + "/resources/sshKey/" + v
+		key := genResourceKey(nsId, "sshKey", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -194,7 +194,7 @@ func createSshKey(nsId string, u *sshKeyReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createSshKey")
-	Key := "/ns/" + nsId + "/resources/sshKey/" + u.Id
+	Key := genResourceKey(nsId, "sshKey", u.Id)
 	mapA := map[string]string{"name": u.Name, "csp": u.Csp, "fingerprint": u.Fingerprint, "username": u.Username,
 		"publicKey": u.PublicKey, "privateKey": u.PrivateKey, "description": u.Description}
 	Val, _ := json.Marshal(mapA)
@@ -217,7 +217,7 @@ func registerSshKey(nsId string, u *sshKeyReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSshKey")
-	Key := "/ns/" + nsId + "/resources/sshKey/" + u.Id
+	Key := genResourceKey(nsId, "sshKey", u.Id)
 	mapA := map[string]string{"name": u.Name, "csp": u.Csp, "fingerprint": u.Fingerprint, "username": u.Username,
 		"publicKey": u.PublicKey, "privateKey": u.PrivateKey, "description": u.Description}
 	Val, _ := json.Marshal(mapA)
@@ -256,7 +256,7 @@ func delSshKey(nsId string, Id string) error {
 
 	fmt.Println("[Delete sshKey] " + Id)
 
-	key := "/ns/" + nsId + "/resources/sshKey/" + Id
+	key := genResourceKey(nsId, "sshKey", Id)
 	fmt.Println(key)
 
 	// delete mcis info

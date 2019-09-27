@@ -176,3 +176,18 @@ func genMcisKey(nsId string, mcisId string, vmId string) string {
 	}
 
 }
+
+func genResourceKey(nsId string, resourceType string, resourceId string) string {
+	//resourceType = strings.ToLower(resourceType)
+
+	if resourceType == "image" ||
+		resourceType == "sshKey" ||
+		resourceType == "spec" ||
+		resourceType == "network" ||
+		resourceType == "securityGroup" {
+		return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
+	} else {
+		return ""
+	}
+
+}
