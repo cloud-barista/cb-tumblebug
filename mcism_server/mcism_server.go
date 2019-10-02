@@ -111,22 +111,13 @@ func apiServer() {
 	g.DELETE("/:nsId/resources/subnet/:subnetId", restDelSubnet)
 	g.DELETE("/:nsId/resources/subnet", restDelAllSubnet)
 
-	/*
+	g.POST("/:nsId/resources/network", restPostNetwork)
+	g.GET("/:nsId/resources/network/:networkId", restGetNetwork)
+	g.GET("/:nsId/resources/network", restGetAllNetwork)
+	g.PUT("/:nsId/resources/network/:networkId", restPutNetwork)
+	g.DELETE("/:nsId/resources/network/:networkId", restDelNetwork)
+	g.DELETE("/:nsId/resources/network", restDelAllNetwork)
 
-
-		g.POST("/:nsId/resources/network", restPostNetwork)
-		g.GET("/:nsId/resources/network/:networkId", restGetNetwork)
-		g.GET("/:nsId/resources/network", restGetAllNetwork)
-		g.PUT("/:nsId/resources/network/:networkId", restPutNetwork)
-		g.DELETE("/:nsId/resources/network/:networkId", restDelNetwork)
-		g.DELETE("/:nsId/resources/network", restDelAllNetwork)
-
-
-
-
-
-
-	*/
 	e.Logger.Fatal(e.Start(":1323"))
 
 }
