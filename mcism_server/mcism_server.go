@@ -104,6 +104,13 @@ func apiServer() {
 	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId", restDelSecurityGroup)
 	g.DELETE("/:nsId/resources/securityGroup", restDelAllSecurityGroup)
 
+	g.POST("/:nsId/resources/subnet", restPostSubnet)
+	g.GET("/:nsId/resources/subnet/:subnetId", restGetSubnet)
+	g.GET("/:nsId/resources/subnet", restGetAllSubnet)
+	g.PUT("/:nsId/resources/subnet/:subnetId", restPutSubnet)
+	g.DELETE("/:nsId/resources/subnet/:subnetId", restDelSubnet)
+	g.DELETE("/:nsId/resources/subnet", restDelAllSubnet)
+
 	/*
 
 
@@ -114,12 +121,7 @@ func apiServer() {
 		g.DELETE("/:nsId/resources/network/:networkId", restDelNetwork)
 		g.DELETE("/:nsId/resources/network", restDelAllNetwork)
 
-		g.POST("/:nsId/resources/subnet", restPostSubnet)
-		g.GET("/:nsId/resources/subnet/:subnetId", restGetSubnet)
-		g.GET("/:nsId/resources/subnet", restGetAllSubnet)
-		g.PUT("/:nsId/resources/subnet/:subnetId", restPutSubnet)
-		g.DELETE("/:nsId/resources/subnet/:subnetId", restDelSubnet)
-		g.DELETE("/:nsId/resources/subnet", restDelAllSubnet)
+
 
 
 
@@ -188,6 +190,7 @@ func genResourceKey(nsId string, resourceType string, resourceId string) string 
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
 		resourceType == "network" ||
+		resourceType == "subnet" ||
 		resourceType == "securityGroup" {
 		return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
 	} else {
