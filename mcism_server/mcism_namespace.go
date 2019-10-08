@@ -196,10 +196,29 @@ func delNs(Id string) error {
 
 	fmt.Println("[Delete ns] " + Id)
 
+	// Forbid deleting NS when there is at least one MCIS or one of resources.
+	mcisList := getMcisList(Id)
+	imageList := getImageList(Id)
+	networkList := getNetworkList(Id)
+	securityGroupList := getSecurityGroupList(Id)
+	specList := getSpecList(Id)
+	sshKeyList := getSshKeyList(Id)
+	subnetList := getSubnetList(Id)
+
+	if len(mcisList)+len(imageList)+len(networkList)+len(securityGroupList)+len(specList)+len(sshKeyList)+len(subnetList) > 0 {
+		fmt.Println("Cannot delete NS " + Id + ", which is not empty. There exists at least one MCIS or one of resources.")
+		fmt.Printf(" len(mcisList): %d \n len(imageList): %d \n len(networkList): %d \n len(securityGroupList): %d \n len(specList): %d \n len(sshKeyList): %d \n len(subnetList): %d \n",
+			len(mcisList), len(imageList), len(networkList), len(securityGroupList), len(specList), len(sshKeyList), len(subnetList))
+
+		err := store.Delete("") // TODO: We don't need to call store.Delete("") to make an error object.
+		cblog.Error(err)
+		return err // TODO: Pass len(****List) to restDelNs() / restDelAllNs()
+	}
+
 	key := "/ns/" + Id
 	fmt.Println(key)
 
-	// delete mcis info
+	// delete ns info
 	err := store.Delete(key)
 	if err != nil {
 		cblog.Error(err)
