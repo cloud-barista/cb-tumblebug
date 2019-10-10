@@ -10,27 +10,27 @@ import (
 )
 
 type specReq struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Csp         string `json:"csp"`
-	Os_type     string `json:"os_type"`
-	Num_vCPU    string `json:"num_vCPU"`
-	Num_core    string `json:"num_core"`
-	Mem_GiB     string `json:"mem_GiB"`
-	Storage_GiB string `json:"storage_GiB"`
-	Description string `json:"description"`
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	Os_type        string `json:"os_type"`
+	Num_vCPU       string `json:"num_vCPU"`
+	Num_core       string `json:"num_core"`
+	Mem_GiB        string `json:"mem_GiB"`
+	Storage_GiB    string `json:"storage_GiB"`
+	Description    string `json:"description"`
 }
 
 type specInfo struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Csp         string `json:"csp"`
-	Os_type     string `json:"os_type"`
-	Num_vCPU    string `json:"num_vCPU"`
-	Num_core    string `json:"num_core"`
-	Mem_GiB     string `json:"mem_GiB"`
-	Storage_GiB string `json:"storage_GiB"`
-	Description string `json:"description"`
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	Os_type        string `json:"os_type"`
+	Num_vCPU       string `json:"num_vCPU"`
+	Num_core       string `json:"num_core"`
+	Mem_GiB        string `json:"mem_GiB"`
+	Storage_GiB    string `json:"storage_GiB"`
+	Description    string `json:"description"`
 
 	Cost_per_hour         string `json:"cost_per_hour"`
 	Num_storage           string `json:"num_storage"`
@@ -86,7 +86,7 @@ func restGetSpec(c echo.Context) error {
 		var content struct {
 			Id          string `json:"id"`
 			Name        string `json:"name"`
-			Csp         string `json:"csp"`
+			ConnectionName         string `json:"connectionName"`
 			Os_type     string `json:"os_type"`
 			Num_vCPU    string `json:"num_vCPU"`
 			Num_core    string `json:"num_core"`
@@ -214,7 +214,7 @@ func registerSpec(nsId string, u *specReq) specInfo {
 	// Temporary code
 	content.Id = genUuid()
 	content.Name = u.Name
-	content.Csp = u.Csp
+	content.ConnectionName = u.ConnectionName
 	content.Os_type = u.Os_type
 	content.Num_vCPU = u.Num_vCPU
 	content.Num_core = u.Num_core
@@ -226,7 +226,7 @@ func registerSpec(nsId string, u *specReq) specInfo {
 	type specInfo struct {
 		Id          string `json:"id"`
 		Name        string `json:"name"`
-		Csp         string `json:"csp"`
+		ConnectionName         string `json:"connectionName"`
 		Os_type     string `json:"os_type"`
 		Num_vCPU    string `json:"num_vCPU"`
 		Num_core    string `json:"num_core"`
@@ -251,14 +251,14 @@ func registerSpec(nsId string, u *specReq) specInfo {
 	fmt.Println("=========================== PUT registerSpec")
 	Key := genResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
-		"name":        content.Name,
-		"csp":         content.Csp,
-		"os_type":     content.Os_type,
-		"Num_vCPU":    content.Num_vCPU,
-		"Num_core":    content.Num_core,
-		"mem_GiB":     content.Mem_GiB,
-		"storage_GiB": content.Storage_GiB,
-		"description": content.Description,
+		"name":           content.Name,
+		"connectionName": content.ConnectionName,
+		"os_type":        content.Os_type,
+		"Num_vCPU":       content.Num_vCPU,
+		"Num_core":       content.Num_core,
+		"mem_GiB":        content.Mem_GiB,
+		"storage_GiB":    content.Storage_GiB,
+		"description":    content.Description,
 
 		"cost_per_hour":         content.Cost_per_hour,
 		"num_storage":           content.Num_storage,

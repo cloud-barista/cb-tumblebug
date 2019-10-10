@@ -10,21 +10,25 @@ import (
 )
 
 type imageReq struct {
-	Id           string `json:"id"`
-	Name         string `json:"name"`
-	CreationDate string `json:"creationDate"`
-	Csp          string `json:"csp"`
-	CspImageId   string `json:"cspImageId"`
-	Description  string `json:"description"`
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	CreationDate   string `json:"creationDate"`
+	ConnectionName string `json:"connectionName"`
+	CspImageId     string `json:"cspImageId"`
+	Description    string `json:"description"`
 }
 
 type imageInfo struct {
-	Id           string `json:"id"`
-	Name         string `json:"name"`
-	CreationDate string `json:"creationDate"`
-	Csp          string `json:"csp"`
-	CspImageId   string `json:"cspImageId"`
-	Description  string `json:"description"`
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	CreationDate   string `json:"creationDate"`
+	ConnectionName string `json:"connectionName"`
+	CspImageId     string `json:"cspImageId"`
+	Description    string `json:"description"`
+
+	GuestOS string `json:"guestOS"` // Windows7, Ubuntu etc.
+	Status  string `json:"status"`  // available, unavailable
+
 }
 
 /* FYI
@@ -74,12 +78,15 @@ func restGetImage(c echo.Context) error {
 	content := imageInfo{}
 	/*
 		var content struct {
-			Id    string `json:"id"`
-			Name         string `json:"name"`
-			CreationDate string `json:"creationDate"`
-			Csp          string `json:"csp"`
-			CspImageId   string `json:"cspImageId"`
-			Description  string `json:"description"`
+			Id             string `json:"id"`
+			Name           string `json:"name"`
+			CreationDate   string `json:"creationDate"`
+			ConnectionName string `json:"connectionName"`
+			CspImageId     string `json:"cspImageId"`
+			Description    string `json:"description"`
+
+			GuestOS string `json:"guestOS"` // Windows7, Ubuntu etc.
+			Status string  `json:"status"` // available, unavailable
 		}
 	*/
 
@@ -171,17 +178,44 @@ func restDelAllImage(c echo.Context) error {
 
 func createImage(nsId string, u *imageReq) {
 
-	u.Id = genUuid()
+	content := imageInfo{}
+	content.Id = genUuid()
+	content.Name = u.Name
+	content.CreationDate = u.CreationDate
+	content.ConnectionName = u.ConnectionName
+	content.CspImageId = u.CspImageId
+	content.Description = u.Description
 
 	// TODO here: implement the logic
 	// Option 1. Let the user upload an image file.
 	// Option 2. Let the user specify the URL of an image file.
 	// Option 3. Let the user snapshot specific VM for the new image file.
 
+	/* FYI
+	type imageInfo struct {
+		Id             string `json:"id"`
+		Name           string `json:"name"`
+		CreationDate   string `json:"creationDate"`
+		ConnectionName string `json:"connectionName"`
+		CspImageId     string `json:"cspImageId"`
+		Description    string `json:"description"`
+
+		GuestOS string `json:"guestOS"` // Windows7, Ubuntu etc.
+		Status string  `json:"status"` // available, unavailable
+	}
+	*/
+
 	// cb-store
 	fmt.Println("=========================== PUT createImage")
-	Key := genResourceKey(nsId, "image", u.Id)
-	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
+	Key := genResourceKey(nsId, "image", content.Id)
+	mapA := map[string]string{
+		"name":           content.Name,
+		"creationDate":   content.CreationDate,
+		"connectionName": content.ConnectionName,
+		"cspImageId":     content.CspImageId,
+		"description":    content.Description,
+		"guestOS":        content.GuestOS,
+		"status":         content.Status}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
@@ -195,15 +229,28 @@ func createImage(nsId string, u *imageReq) {
 
 func registerImage(nsId string, u *imageReq) {
 
-	u.Id = genUuid()
+	content := imageInfo{}
+	content.Id = genUuid()
+	content.Name = u.Name
+	content.CreationDate = u.CreationDate
+	content.ConnectionName = u.ConnectionName
+	content.CspImageId = u.CspImageId
+	content.Description = u.Description
 
 	// TODO here: implement the logic
 	// - Fetch the image info from CSP.
 
 	// cb-store
 	fmt.Println("=========================== PUT registerImage")
-	Key := genResourceKey(nsId, "image", u.Id)
-	mapA := map[string]string{"name": u.Name, "description": u.Description, "creationDate": u.CreationDate, "csp": u.Csp, "cspImageId": u.CspImageId}
+	Key := genResourceKey(nsId, "image", content.Id)
+	mapA := map[string]string{
+		"name":           content.Name,
+		"creationDate":   content.CreationDate,
+		"connectionName": content.ConnectionName,
+		"cspImageId":     content.CspImageId,
+		"description":    content.Description,
+		"guestOS":        content.GuestOS,
+		"status":         content.Status}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {

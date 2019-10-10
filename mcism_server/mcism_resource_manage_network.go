@@ -11,7 +11,7 @@ import (
 
 type networkReq struct {
 	Id                string `json:"id"`
-	Csp               string `json:"csp"`
+	ConnectionName    string `json:"connectionName"`
 	CspNetworkId      string `json:"cspNetworkId"`
 	CspNetworkName    string `json:"cspNetworkName"`
 	CidrBlock         string `json:"cidrBlock"`
@@ -22,13 +22,14 @@ type networkReq struct {
 
 type networkInfo struct {
 	Id                string `json:"id"`
-	Csp               string `json:"csp"`
+	ConnectionName    string `json:"connectionName"`
 	CspNetworkId      string `json:"cspNetworkId"`
 	CspNetworkName    string `json:"cspNetworkName"`
 	CidrBlock         string `json:"cidrBlock"`
 	Region            string `json:"region"`
 	ResourceGroupName string `json:"resourceGroupName"`
 	Description       string `json:"description"`
+	Status            string `json:"string"`
 }
 
 /* FYI
@@ -79,13 +80,14 @@ func restGetNetwork(c echo.Context) error {
 	/*
 		var content struct {
 			Id                string `json:"id"`
-			Csp               string `json:"csp"`
+			ConnectionName    string `json:"connectionName"`
 			CspNetworkId      string `json:"cspNetworkId"`
 			CspNetworkName    string `json:"cspNetworkName"`
 			CidrBlock         string `json:"cidrBlock"`
 			Region            string `json:"region"`
 			ResourceGroupName string `json:"resourceGroupName"`
 			Description       string `json:"description"`
+			Status            string `json:"string"`
 		}
 	*/
 
@@ -177,27 +179,43 @@ func restDelAllNetwork(c echo.Context) error {
 
 func createNetwork(nsId string, u *networkReq) {
 
-	u.Id = genUuid()
-
 	/* FYI
-	type networkReq struct {
+	type networkInfo struct {
 		Id                string `json:"id"`
-		Csp               string `json:"csp"`
+		ConnectionName    string `json:"connectionName"`
 		CspNetworkId      string `json:"cspNetworkId"`
 		CspNetworkName    string `json:"cspNetworkName"`
 		CidrBlock         string `json:"cidrBlock"`
 		Region            string `json:"region"`
 		ResourceGroupName string `json:"resourceGroupName"`
 		Description       string `json:"description"`
+
+		Status            string `json:"string"`
 	}
 	*/
 
+	content := networkInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = u.ConnectionName
+	content.CspNetworkId = u.CspNetworkId
+	content.CspNetworkName = u.CspNetworkName
+	content.CidrBlock = u.CidrBlock
+	content.Region = u.Region
+	content.ResourceGroupName = u.ResourceGroupName
+	content.Description = u.Description
+
 	// cb-store
 	fmt.Println("=========================== PUT createNetwork")
-	Key := genResourceKey(nsId, "network", u.Id)
-	mapA := map[string]string{"csp": u.Csp, "cspNetworkId": u.CspNetworkId, "cspNetworkName": u.CspNetworkName,
-		"cidrBlock": u.CidrBlock,
-		"region":    u.Region, "resourceGroupName": u.ResourceGroupName, "description": u.Description}
+	Key := genResourceKey(nsId, "network", content.Id)
+	mapA := map[string]string{
+		"connectionName":    content.ConnectionName,
+		"cspNetworkId":      content.CspNetworkId,
+		"cspNetworkName":    content.CspNetworkName,
+		"cidrBlock":         content.CidrBlock,
+		"region":            content.Region,
+		"resourceGroupName": content.ResourceGroupName,
+		"description":       content.Description,
+		"status":            content.Status}
 	Val, _ := json.Marshal(mapA)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
@@ -213,17 +231,31 @@ func createNetwork(nsId string, u *networkReq) {
 
 func registerNetwork(nsId string, u *networkReq) {
 
-	u.Id = genUuid()
+	content := networkInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = u.ConnectionName
+	content.CspNetworkId = u.CspNetworkId
+	content.CspNetworkName = u.CspNetworkName
+	content.CidrBlock = u.CidrBlock
+	content.Region = u.Region
+	content.ResourceGroupName = u.ResourceGroupName
+	content.Description = u.Description
 
 	// TODO here: implement the logic
 	// - Fetch the network info from CSP.
 
 	// cb-store
 	fmt.Println("=========================== PUT registerNetwork")
-	Key := genResourceKey(nsId, "network", u.Id)
-	mapA := map[string]string{"csp": u.Csp, "cspNetworkId": u.CspNetworkId, "cspNetworkName": u.CspNetworkName,
-		"cidrBlock": u.CidrBlock,
-		"region":    u.Region, "resourceGroupName": u.ResourceGroupName, "description": u.Description}
+	Key := genResourceKey(nsId, "network", content.Id)
+	mapA := map[string]string{
+		"connectionName":    content.ConnectionName,
+		"cspNetworkId":      content.CspNetworkId,
+		"cspNetworkName":    content.CspNetworkName,
+		"cidrBlock":         content.CidrBlock,
+		"region":            content.Region,
+		"resourceGroupName": content.ResourceGroupName,
+		"description":       content.Description,
+		"status":            content.Status}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {

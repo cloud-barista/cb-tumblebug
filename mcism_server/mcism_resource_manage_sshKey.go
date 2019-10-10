@@ -10,25 +10,25 @@ import (
 )
 
 type sshKeyReq struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Csp         string `json:"csp"`
-	Fingerprint string `json:"fingerprint"`
-	Username    string `json:"username"`
-	PublicKey   string `json:"publicKey"`
-	PrivateKey  string `json:"privateKey"`
-	Description string `json:"description"`
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	Fingerprint    string `json:"fingerprint"`
+	Username       string `json:"username"`
+	PublicKey      string `json:"publicKey"`
+	PrivateKey     string `json:"privateKey"`
+	Description    string `json:"description"`
 }
 
 type sshKeyInfo struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Csp         string `json:"csp"`
-	Fingerprint string `json:"fingerprint"`
-	Username    string `json:"username"`
-	PublicKey   string `json:"publicKey"`
-	PrivateKey  string `json:"privateKey"`
-	Description string `json:"description"`
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	Fingerprint    string `json:"fingerprint"`
+	Username       string `json:"username"`
+	PublicKey      string `json:"publicKey"`
+	PrivateKey     string `json:"privateKey"`
+	Description    string `json:"description"`
 }
 
 /* FYI
@@ -80,7 +80,7 @@ func restGetSshKey(c echo.Context) error {
 		var content struct {
 			Id          string `json:"id"`
 			Name        string `json:"name"`
-			Csp         string `json:"csp"`
+			ConnectionName         string `json:"connectionName"`
 			Fingerprint string `json:"fingerprint"`
 			Username    string `json:"username"`
 			PublicKey   string `json:"publicKey"`
@@ -177,13 +177,11 @@ func restDelAllSshKey(c echo.Context) error {
 
 func createSshKey(nsId string, u *sshKeyReq) {
 
-	u.Id = genUuid()
-
 	/* FYI
 	type sshKeyReq struct {
 		Id				string `json:"id"`
 		Name			string `json:"name"`
-		Csp				string `json:"csp"`
+		ConnectionName         string `json:"connectionName"`
 		Fingerprint		string `json:"fingerprint"`
 		Username		string `json:"username"`
 		PublicKey		string `json:"publicKey"`
@@ -192,11 +190,27 @@ func createSshKey(nsId string, u *sshKeyReq) {
 	}
 	*/
 
+	content := sshKeyInfo{}
+	content.Id = genUuid()
+	content.Name = u.Name
+	content.ConnectionName = u.ConnectionName
+	content.Fingerprint = u.Fingerprint
+	content.Username = u.Username
+	content.PublicKey = u.PublicKey
+	content.PrivateKey = u.PrivateKey
+	content.Description = u.Description
+
 	// cb-store
 	fmt.Println("=========================== PUT createSshKey")
-	Key := genResourceKey(nsId, "sshKey", u.Id)
-	mapA := map[string]string{"name": u.Name, "csp": u.Csp, "fingerprint": u.Fingerprint, "username": u.Username,
-		"publicKey": u.PublicKey, "privateKey": u.PrivateKey, "description": u.Description}
+	Key := genResourceKey(nsId, "sshKey", content.Id)
+	mapA := map[string]string{
+		"name":           content.Name,
+		"connectionName": content.ConnectionName,
+		"fingerprint":    content.Fingerprint,
+		"username":       content.Username,
+		"publicKey":      content.PublicKey,
+		"privateKey":     content.PrivateKey,
+		"description":    content.Description}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
@@ -210,16 +224,30 @@ func createSshKey(nsId string, u *sshKeyReq) {
 
 func registerSshKey(nsId string, u *sshKeyReq) {
 
-	u.Id = genUuid()
+	content := sshKeyInfo{}
+	content.Id = genUuid()
+	content.Name = u.Name
+	content.ConnectionName = u.ConnectionName
+	content.Fingerprint = u.Fingerprint
+	content.Username = u.Username
+	content.PublicKey = u.PublicKey
+	content.PrivateKey = u.PrivateKey
+	content.Description = u.Description
 
 	// TODO here: implement the logic
 	// - Fetch the sshKey info from CSP.
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSshKey")
-	Key := genResourceKey(nsId, "sshKey", u.Id)
-	mapA := map[string]string{"name": u.Name, "csp": u.Csp, "fingerprint": u.Fingerprint, "username": u.Username,
-		"publicKey": u.PublicKey, "privateKey": u.PrivateKey, "description": u.Description}
+	Key := genResourceKey(nsId, "sshKey", content.Id)
+	mapA := map[string]string{
+		"name":           content.Name,
+		"connectionName": content.ConnectionName,
+		"fingerprint":    content.Fingerprint,
+		"username":       content.Username,
+		"publicKey":      content.PublicKey,
+		"privateKey":     content.PrivateKey,
+		"description":    content.Description}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {

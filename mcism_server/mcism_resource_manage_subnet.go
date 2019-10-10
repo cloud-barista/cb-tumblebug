@@ -11,7 +11,7 @@ import (
 
 type subnetReq struct {
 	Id                 string `json:"id"`
-	Csp                string `json:"csp"`
+	ConnectionName     string `json:"connectionName"`
 	CspSubnetId        string `json:"cspSubnetId"`
 	CspSubnetName      string `json:"cspSubnetName"`
 	VirtualNetworkId   string `json:"virtualNetworkId"`
@@ -24,7 +24,7 @@ type subnetReq struct {
 
 type subnetInfo struct {
 	Id                 string `json:"id"`
-	Csp                string `json:"csp"`
+	ConnectionName     string `json:"connectionName"`
 	CspSubnetId        string `json:"cspSubnetId"`
 	CspSubnetName      string `json:"cspSubnetName"`
 	VirtualNetworkId   string `json:"virtualNetworkId"`
@@ -83,7 +83,7 @@ func restGetSubnet(c echo.Context) error {
 	/*
 		var content struct {
 			Id                 string `json:"id"`
-			Csp                string `json:"csp"`
+			ConnectionName                string `json:"connectionName"`
 			CspSubnetId        string `json:"cspSubnetId"`
 			CspSubnetName      string `json:"cspSubnetName"`
 			VirtualNetworkId   string `json:"virtualNetworkId"`
@@ -183,12 +183,22 @@ func restDelAllSubnet(c echo.Context) error {
 
 func createSubnet(nsId string, u *subnetReq) {
 
-	u.Id = genUuid()
+	content := subnetInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = u.ConnectionName
+	content.CspSubnetId = u.CspSubnetId
+	content.CspSubnetName = u.CspSubnetName
+	content.VirtualNetworkId = u.VirtualNetworkId
+	content.VirtualNetworkName = u.VirtualNetworkName
+	content.CidrBlock = u.CidrBlock
+	content.Region = u.Region
+	content.ResourceGroupName = u.ResourceGroupName
+	content.Description = u.Description
 
 	/* FYI
 	type subnetReq struct {
 		Id                 string `json:"id"`
-		Csp                string `json:"csp"`
+		ConnectionName                string `json:"connectionName"`
 		CspSubnetId        string `json:"cspSubnetId"`
 		CspSubnetName      string `json:"cspSubnetName"`
 		VirtualNetworkId   string `json:"virtualNetworkId"`
@@ -202,10 +212,17 @@ func createSubnet(nsId string, u *subnetReq) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createSubnet")
-	Key := genResourceKey(nsId, "subnet", u.Id)
-	mapA := map[string]string{"csp": u.Csp, "cspSubnetId": u.CspSubnetId, "cspSubnetName": u.CspSubnetName,
-		"virtualNetworkId": u.VirtualNetworkId, "virtualNetworkName": u.VirtualNetworkName, "cidrBlock": u.CidrBlock,
-		"region": u.Region, "resourceGroupName": u.ResourceGroupName, "description": u.Description}
+	Key := genResourceKey(nsId, "subnet", content.Id)
+	mapA := map[string]string{
+		"connectionName":     content.ConnectionName,
+		"cspSubnetId":        content.CspSubnetId,
+		"cspSubnetName":      content.CspSubnetName,
+		"virtualNetworkId":   content.VirtualNetworkId,
+		"virtualNetworkName": content.VirtualNetworkName,
+		"cidrBlock":          content.CidrBlock,
+		"region":             content.Region,
+		"resourceGroupName":  content.ResourceGroupName,
+		"description":        content.Description}
 	Val, _ := json.Marshal(mapA)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
@@ -221,17 +238,34 @@ func createSubnet(nsId string, u *subnetReq) {
 
 func registerSubnet(nsId string, u *subnetReq) {
 
-	u.Id = genUuid()
+	content := subnetInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = u.ConnectionName
+	content.CspSubnetId = u.CspSubnetId
+	content.CspSubnetName = u.CspSubnetName
+	content.VirtualNetworkId = u.VirtualNetworkId
+	content.VirtualNetworkName = u.VirtualNetworkName
+	content.CidrBlock = u.CidrBlock
+	content.Region = u.Region
+	content.ResourceGroupName = u.ResourceGroupName
+	content.Description = u.Description
 
 	// TODO here: implement the logic
 	// - Fetch the subnet info from CSP.
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSubnet")
-	Key := genResourceKey(nsId, "subnet", u.Id)
-	mapA := map[string]string{"csp": u.Csp, "cspSubnetId": u.CspSubnetId, "cspSubnetName": u.CspSubnetName,
-		"virtualNetworkId": u.VirtualNetworkId, "virtualNetworkName": u.VirtualNetworkName, "cidrBlock": u.CidrBlock,
-		"region": u.Region, "resourceGroupName": u.ResourceGroupName, "description": u.Description}
+	Key := genResourceKey(nsId, "subnet", content.Id)
+	mapA := map[string]string{
+		"connectionName":     content.ConnectionName,
+		"cspSubnetId":        content.CspSubnetId,
+		"cspSubnetName":      content.CspSubnetName,
+		"virtualNetworkId":   content.VirtualNetworkId,
+		"virtualNetworkName": content.VirtualNetworkName,
+		"cidrBlock":          content.CidrBlock,
+		"region":             content.Region,
+		"resourceGroupName":  content.ResourceGroupName,
+		"description":        content.Description}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
