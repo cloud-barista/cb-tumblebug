@@ -12,7 +12,7 @@ import (
 type securityGroupReq struct {
 	Id                 string `json:"id"`
 	Name               string `json:"name"`
-	Csp                string `json:"csp"`
+	ConnectionName     string `json:"connectionName"`
 	VirtualNetworkId   string `json:"virtualNetworkId"`
 	CspSecurityGroupId string `json:"cspSecurityGroupId"`
 	ResourceGroupName  string `json:"resourceGroupName"`
@@ -22,7 +22,7 @@ type securityGroupReq struct {
 type securityGroupInfo struct {
 	Id                 string `json:"id"`
 	Name               string `json:"name"`
-	Csp                string `json:"csp"`
+	ConnectionName     string `json:"connectionName"`
 	VirtualNetworkId   string `json:"virtualNetworkId"`
 	CspSecurityGroupId string `json:"cspSecurityGroupId"`
 	ResourceGroupName  string `json:"resourceGroupName"`
@@ -78,7 +78,7 @@ func restGetSecurityGroup(c echo.Context) error {
 		var content struct {
 			Id                 string `json:"id"`
 			Name               string `json:"name"`
-			Csp                string `json:"csp"`
+			ConnectionName                string `json:"connectionName"`
 			VirtualNetworkId   string `json:"virtualNetworkId"`
 			CspSecurityGroupId string `json:"cspSecurityGroupId"`
 			ResourceGroupName  string `json:"resourceGroupName"`
@@ -174,13 +174,11 @@ func restDelAllSecurityGroup(c echo.Context) error {
 
 func createSecurityGroup(nsId string, u *securityGroupReq) {
 
-	u.Id = genUuid()
-
 	/* FYI
-	type securityGroupReq struct {
+	type securityGroupInfo struct {
 		Id                 string `json:"id"`
 		Name               string `json:"name"`
-		Csp                string `json:"csp"`
+		ConnectionName                string `json:"connectionName"`
 		VirtualNetworkId   string `json:"virtualNetworkId"`
 		CspSecurityGroupId string `json:"cspSecurityGroupId"`
 		ResourceGroupName  string `json:"resourceGroupName"`
@@ -188,11 +186,25 @@ func createSecurityGroup(nsId string, u *securityGroupReq) {
 	}
 	*/
 
+	content := securityGroupInfo{}
+	content.Id = genUuid()
+	content.Name = u.Name
+	content.ConnectionName = u.ConnectionName
+	content.VirtualNetworkId = u.VirtualNetworkId
+	content.CspSecurityGroupId = u.CspSecurityGroupId
+	content.ResourceGroupName = u.ResourceGroupName
+	content.Description = u.Description
+
 	// cb-store
 	fmt.Println("=========================== PUT createSecurityGroup")
-	Key := genResourceKey(nsId, "securityGroup", u.Id)
-	mapA := map[string]string{"name": u.Name, "csp": u.Csp, "virtualNetworkId": u.VirtualNetworkId,
-		"cspSecurityGroupId": u.CspSecurityGroupId, "resourceGroupName": u.ResourceGroupName, "description": u.Description}
+	Key := genResourceKey(nsId, "securityGroup", content.Id)
+	mapA := map[string]string{
+		"name":               content.Name,
+		"connectionName":     content.ConnectionName,
+		"virtualNetworkId":   content.VirtualNetworkId,
+		"cspSecurityGroupId": content.CspSecurityGroupId,
+		"resourceGroupName":  content.ResourceGroupName,
+		"description":        content.Description}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
@@ -206,16 +218,28 @@ func createSecurityGroup(nsId string, u *securityGroupReq) {
 
 func registerSecurityGroup(nsId string, u *securityGroupReq) {
 
-	u.Id = genUuid()
+	content := securityGroupInfo{}
+	content.Id = genUuid()
+	content.Name = u.Name
+	content.ConnectionName = u.ConnectionName
+	content.VirtualNetworkId = u.VirtualNetworkId
+	content.CspSecurityGroupId = u.CspSecurityGroupId
+	content.ResourceGroupName = u.ResourceGroupName
+	content.Description = u.Description
 
 	// TODO here: implement the logic
 	// - Fetch the securityGroup info from CSP.
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSecurityGroup")
-	Key := genResourceKey(nsId, "securityGroup", u.Id)
-	mapA := map[string]string{"name": u.Name, "csp": u.Csp, "virtualNetworkId": u.VirtualNetworkId,
-		"cspSecurityGroupId": u.CspSecurityGroupId, "resourceGroupName": u.ResourceGroupName, "description": u.Description}
+	Key := genResourceKey(nsId, "securityGroup", content.Id)
+	mapA := map[string]string{
+		"name":               content.Name,
+		"connectionName":     content.ConnectionName,
+		"virtualNetworkId":   content.VirtualNetworkId,
+		"cspSecurityGroupId": content.CspSecurityGroupId,
+		"resourceGroupName":  content.ResourceGroupName,
+		"description":        content.Description}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {

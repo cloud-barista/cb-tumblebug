@@ -118,6 +118,22 @@ func apiServer() {
 	g.DELETE("/:nsId/resources/network/:networkId", restDelNetwork)
 	g.DELETE("/:nsId/resources/network", restDelAllNetwork)
 
+	/*
+		g.POST("/:nsId/resources/publicIp", restPostPublicIp)
+		g.GET("/:nsId/resources/publicIp/:publicIpId", restGetPublicIp)
+		g.GET("/:nsId/resources/publicIp", restGetAllPublicIp)
+		g.PUT("/:nsId/resources/publicIp/:publicIpId", restPutPublicIp)
+		g.DELETE("/:nsId/resources/publicIp/:publicIpId", restDelPublicIp)
+		g.DELETE("/:nsId/resources/publicIp", restDelAllPublicIp)
+
+		g.POST("/:nsId/resources/vNic", restPostVNic)
+		g.GET("/:nsId/resources/vNic/:vNicId", restGetVNic)
+		g.GET("/:nsId/resources/vNic", restGetAllVNic)
+		g.PUT("/:nsId/resources/vNic/:vNicId", restPutVNic)
+		g.DELETE("/:nsId/resources/vNic/:vNicId", restDelVNic)
+		g.DELETE("/:nsId/resources/vNic", restDelAllVNic)
+	*/
+
 	e.Logger.Fatal(e.Start(":1323"))
 
 }
@@ -182,10 +198,12 @@ func genResourceKey(nsId string, resourceType string, resourceId string) string 
 		resourceType == "spec" ||
 		resourceType == "network" ||
 		resourceType == "subnet" ||
-		resourceType == "securityGroup" {
+		resourceType == "securityGroup" ||
+		resourceType == "publicIp" ||
+		resourceType == "vNic" {
 		return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
 	} else {
-		return ""
+		return "/invalid_key"
 	}
 
 }
