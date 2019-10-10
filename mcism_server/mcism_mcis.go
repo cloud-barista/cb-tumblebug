@@ -23,6 +23,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
+
+	"sync"
 )
 
 // Structs for REST API
@@ -258,7 +260,11 @@ func restGetMcis(c echo.Context) error {
 
 			vmIp := getVmIp(nsId, mcisId, v)
 			vmIpPort := vmIp + defaultMonitorPort
-			statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+			//statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+			statusCpu := "0.8%"
+			statusMem := "21%"
+			statusDisk := "12%"
+
 			fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
 
 			vmTmp.Cpu_status = statusCpu
@@ -478,12 +484,19 @@ func restPostMcisVm(c echo.Context) error {
 	vmInfoData.Domain_name = "Not assigned yet"
 	vmInfoData.Status = "Launching"
 
+	//goroutin
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	//createMcis(nsId, req)
-	err := addVmToMcis(nsId, mcisId, vmInfoData)
+	//err := addVmToMcis(nsId, mcisId, vmInfoData)
+	err := addVmToMcis(&wg, nsId, mcisId, vmInfoData)
+
 	if err != nil {
 		mapA := map[string]string{"message": "Cannot find " + genMcisKey(nsId, mcisId, "")}
 		return c.JSON(http.StatusOK, &mapA)
 	}
+	wg.Wait()
 
 	return c.JSON(http.StatusCreated, req)
 }
@@ -542,7 +555,11 @@ func restGetMcisVm(c echo.Context) error {
 
 		vmIp := getVmIp(nsId, mcisId, vmId)
 		vmIpPort := vmIp + defaultMonitorPort
-		statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+		//statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+
+		statusCpu := "0.8%"
+		statusMem := "21%"
+		statusDisk := "12%"
 		fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
 
 		vmTmp.Cpu_status = statusCpu
@@ -789,7 +806,8 @@ func createMcis(nsId string, req *mcisReq) string {
 
 	fmt.Println("=========================== Put createSvc")
 	key := genMcisKey(nsId, req.Id, "")
-	mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
+	//mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
+	mapA := map[string]string{"id": req.Id, "name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
 	val, _ := json.Marshal(mapA)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -798,6 +816,10 @@ func createMcis(nsId string, req *mcisReq) string {
 	keyValue, _ := store.Get(string(key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
+
+	//goroutin
+	var wg sync.WaitGroup
+	wg.Add(len(vmRequest))
 
 	for _, k := range vmRequest {
 
@@ -832,13 +854,17 @@ func createMcis(nsId string, req *mcisReq) string {
 		vmInfoData.Domain_name = "Not assigned yet"
 		vmInfoData.Status = "Launching"
 
-		addVmToMcis(nsId, req.Id, vmInfoData)
+		go addVmToMcis(&wg, nsId, req.Id, vmInfoData)
+		//addVmToMcis(nsId, req.Id, vmInfoData)
 	}
+	wg.Wait()
 
 	return key
 }
 
-func addVmToMcis(nsId string, mcisId string, vmInfoData vmInfo) error {
+func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmInfo) error {
+	//goroutin
+	defer wg.Done()
 
 	key := genMcisKey(nsId, mcisId, "")
 	keyValue, _ := store.Get(key)
@@ -901,9 +927,9 @@ func createVmAws(count int) ([]*string, []*string) {
 	subnetid := masterConfigInfos.AWS.SUBNETID                     // subnet-8c4a53e4
 	instanceNamePrefix := masterConfigInfos.AWS.INSTANCENAMEPREFIX // powerkimInstance_
 
-	userName := masterConfigInfos.AWS.USERNAME   // ec2-user
-	keyName := masterConfigInfos.AWS.KEYNAME     // aws.powerkim.keypair
-	keyPath := masterConfigInfos.AWS.KEYFILEPATH // /root/.aws/awspowerkimkeypair.pem
+	///userName := masterConfigInfos.AWS.USERNAME   // ec2-user
+	keyName := masterConfigInfos.AWS.KEYNAME // aws.powerkim.keypair
+	//keyPath := masterConfigInfos.AWS.KEYFILEPATH // /root/.aws/awspowerkimkeypair.pem
 
 	//instanceIds := ec2handler.CreateInstances(svc, "ami-047f7b46bd6dd5d84", "t2.micro", 1, count,
 	//   "aws.powerkim.keypair", "sg-2334584f", "subnet-8c4a53e4", "powerkimInstance_")
@@ -930,20 +956,21 @@ func createVmAws(count int) ([]*string, []*string) {
 
 	// 1.3. insert MCISM Agent into Servers.
 	// 1.4. execute Servers' Agent.
-	for _, v := range publicIPs {
-		for i := 0; ; i++ {
-			err := insertAgent(*v, userName, keyPath)
-			if i == 30 {
-				os.Exit(3)
-			}
-			if err == nil {
-				break
-			}
-			// need to load SSH Service on the VM
-			time.Sleep(time.Second * 3)
+	/*
+		for _, v := range publicIPs {
+			for i := 0; ; i++ {
+				err := insertAgent(*v, userName, keyPath)
+				if i == 30 {
+					os.Exit(3)
+				}
+				if err == nil {
+					break
+				}
+				// need to load SSH Service on the VM
+				time.Sleep(time.Second * 3)
+			} // end of for
 		} // end of for
-	} // end of for
-
+	*/
 	// 1.5. add server list into etcd.
 	//addServersToEtcd("aws", instanceIds, publicIPs)
 
@@ -990,8 +1017,8 @@ func createVmGcp(count int) ([]*string, []*string) {
 	serviceAccoutsMail := masterConfigInfos.GCP.SERVICEACCOUTSMAIL
 	baseName := masterConfigInfos.GCP.INSTANCENAMEPREFIX
 
-	userName := masterConfigInfos.GCP.USERNAME   // byoungseob
-	keyPath := masterConfigInfos.GCP.KEYFILEPATH // /root/.gcp/gcppowerkimkeypair.pem
+	//userName := masterConfigInfos.GCP.USERNAME   // byoungseob
+	//keyPath := masterConfigInfos.GCP.KEYFILEPATH // /root/.gcp/gcppowerkimkeypair.pem
 
 	instanceIds := gcehandler.CreateInstances(svc, region, zone, projectID, imageURL, machineType, 1, count,
 		subNetwork, networkName, serviceAccoutsMail, baseName)
@@ -1018,20 +1045,21 @@ func createVmGcp(count int) ([]*string, []*string) {
 
 	// 1.3. insert MCISM Agent into Servers.
 	// 1.4. execute Servers' Agent.
-	for _, v := range publicIPs {
-		for i := 0; ; i++ {
-			err := insertAgent(*v, userName, keyPath)
-			if i == 30 {
-				os.Exit(3)
-			}
-			if err == nil {
-				break
-			}
-			// need to load SSH Service on the VM
-			time.Sleep(time.Second * 3)
+	/*
+		for _, v := range publicIPs {
+			for i := 0; ; i++ {
+				err := insertAgent(*v, userName, keyPath)
+				if i == 30 {
+					os.Exit(3)
+				}
+				if err == nil {
+					break
+				}
+				// need to load SSH Service on the VM
+				time.Sleep(time.Second * 3)
+			} // end of for
 		} // end of for
-	} // end of for
-
+	*/
 	// 1.5. add server list into etcd.
 	//addServersToEtcd("gcp", instanceIds, publicIPs)
 
@@ -1078,7 +1106,7 @@ func createVmAzure(count int) ([]*string, []*string) {
 	baseName := masterConfigInfos.AZURE.BASENAME
 	vmUserName := masterConfigInfos.AZURE.USERNAME
 	vmPassword := masterConfigInfos.AZURE.PASSWORD
-	KeyPath := masterConfigInfos.AZURE.KEYFILEPATH
+	//KeyPath := masterConfigInfos.AZURE.KEYFILEPATH
 	sshPublicKeyPath := masterConfigInfos.AZURE.PUBLICKEYFILEPATH
 
 	_, err := azurehandler.CreateGroup(connInfo, groupName, location)
@@ -1168,20 +1196,21 @@ func createVmAzure(count int) ([]*string, []*string) {
 
 	// 1.3. insert MCISM Agent into Servers.
 	// 1.4. execute Servers' Agent.
-	for _, v := range publicIPs {
-		for i := 0; ; i++ {
-			err := insertAgent(*v, vmUserName, KeyPath)
-			if i == 30 {
-				os.Exit(3)
-			}
-			if err == nil {
-				break
-			}
-			// need to load SSH Service on the VM
-			time.Sleep(time.Second * 3)
+	/*
+		for _, v := range publicIPs {
+			for i := 0; ; i++ {
+				err := insertAgent(*v, vmUserName, KeyPath)
+				if i == 30 {
+					os.Exit(3)
+				}
+				if err == nil {
+					break
+				}
+				// need to load SSH Service on the VM
+				time.Sleep(time.Second * 3)
+			} // end of for
 		} // end of for
-	} // end of for
-
+	*/
 	// 1.5. add server list into etcd.
 	//addServersToEtcd("azure", instanceIds, publicIPs)
 
@@ -1242,6 +1271,9 @@ func terminateVm(nsId string, mcisId string, vmId string) error {
 	fmt.Printf("%+v\n", content.Cloud_id)
 	fmt.Printf("%+v\n", content.Csp_vm_id)
 
+	if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
+		return nil
+	}
 	if strings.Compare(content.Cloud_id, "aws") == 0 {
 		terminateVmAws(content.Csp_vm_id)
 	} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
