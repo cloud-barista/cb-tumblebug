@@ -181,8 +181,12 @@ func getNsList() []string {
 	var nsList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
-		nsList = append(nsList, strings.TrimPrefix(v.Key, "/ns/"))
+		//nsList = append(nsList, strings.TrimPrefix(v.Key, "/ns/"))
 		//}
+		if !strings.Contains(v.Key, "mcis") && !strings.Contains(v.Key, "cpu") && !strings.Contains(v.Key, "resources") {
+			nsList = append(nsList, strings.TrimPrefix(v.Key, "/ns/"))
+		}
+
 	}
 	for _, v := range nsList {
 		fmt.Println("<" + v + "> \n")
