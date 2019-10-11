@@ -10,7 +10,7 @@ import (
 )
 
 type securityGroupReq struct {
-	Id                 string `json:"id"`
+	//Id                 string `json:"id"`
 	Name               string `json:"name"`
 	ConnectionName     string `json:"connectionName"`
 	VirtualNetworkId   string `json:"virtualNetworkId"`
@@ -52,13 +52,13 @@ func restPostSecurityGroup(c echo.Context) error {
 	fmt.Println("[POST SecurityGroup requested action: " + action)
 	if action == "create" {
 		fmt.Println("[Creating SecurityGroup]")
-		createSecurityGroup(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := createSecurityGroup(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else if action == "register" {
 		fmt.Println("[Registering SecurityGroup]")
-		registerSecurityGroup(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := registerSecurityGroup(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else {
 		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
@@ -172,7 +172,7 @@ func restDelAllSecurityGroup(c echo.Context) error {
 
 }
 
-func createSecurityGroup(nsId string, u *securityGroupReq) {
+func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, error) {
 
 	/* FYI
 	type securityGroupInfo struct {
@@ -209,14 +209,15 @@ func createSecurityGroup(nsId string, u *securityGroupReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
-func registerSecurityGroup(nsId string, u *securityGroupReq) {
+func registerSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, error) {
 
 	content := securityGroupInfo{}
 	content.Id = genUuid()
@@ -244,11 +245,12 @@ func registerSecurityGroup(nsId string, u *securityGroupReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
 func getSecurityGroupList(nsId string) []string {

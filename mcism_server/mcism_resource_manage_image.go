@@ -10,7 +10,7 @@ import (
 )
 
 type imageReq struct {
-	Id             string `json:"id"`
+	//Id             string `json:"id"`
 	Name           string `json:"name"`
 	CreationDate   string `json:"creationDate"`
 	ConnectionName string `json:"connectionName"`
@@ -54,13 +54,13 @@ func restPostImage(c echo.Context) error {
 	fmt.Println("[POST Image requested action: " + action)
 	if action == "create" {
 		fmt.Println("[Creating Image]")
-		createImage(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := createImage(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else if action == "register" {
 		fmt.Println("[Registering Image]")
-		registerImage(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := registerImage(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else {
 		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
@@ -176,7 +176,7 @@ func restDelAllImage(c echo.Context) error {
 
 }
 
-func createImage(nsId string, u *imageReq) {
+func createImage(nsId string, u *imageReq) (imageInfo, error) {
 
 	content := imageInfo{}
 	content.Id = genUuid()
@@ -220,14 +220,15 @@ func createImage(nsId string, u *imageReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
-func registerImage(nsId string, u *imageReq) {
+func registerImage(nsId string, u *imageReq) (imageInfo, error) {
 
 	content := imageInfo{}
 	content.Id = genUuid()
@@ -255,11 +256,12 @@ func registerImage(nsId string, u *imageReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
 func getImageList(nsId string) []string {

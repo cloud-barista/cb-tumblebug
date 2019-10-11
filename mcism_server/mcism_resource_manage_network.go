@@ -10,7 +10,7 @@ import (
 )
 
 type networkReq struct {
-	Id                string `json:"id"`
+	//Id                string `json:"id"`
 	ConnectionName    string `json:"connectionName"`
 	CspNetworkId      string `json:"cspNetworkId"`
 	CspNetworkName    string `json:"cspNetworkName"`
@@ -55,13 +55,13 @@ func restPostNetwork(c echo.Context) error {
 	fmt.Println("[POST Network requested action: " + action)
 	if action == "create" {
 		fmt.Println("[Creating Network]")
-		createNetwork(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := createNetwork(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else if action == "register" {
 		fmt.Println("[Registering Network]")
-		registerNetwork(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := registerNetwork(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else {
 		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
@@ -177,7 +177,7 @@ func restDelAllNetwork(c echo.Context) error {
 
 }
 
-func createNetwork(nsId string, u *networkReq) {
+func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 
 	/* FYI
 	type networkInfo struct {
@@ -222,14 +222,15 @@ func createNetwork(nsId string, u *networkReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
-func registerNetwork(nsId string, u *networkReq) {
+func registerNetwork(nsId string, u *networkReq) (networkInfo, error) {
 
 	content := networkInfo{}
 	content.Id = genUuid()
@@ -260,11 +261,12 @@ func registerNetwork(nsId string, u *networkReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
 func getNetworkList(nsId string) []string {

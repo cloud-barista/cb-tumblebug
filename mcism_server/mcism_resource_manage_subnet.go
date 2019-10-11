@@ -10,7 +10,7 @@ import (
 )
 
 type subnetReq struct {
-	Id                 string `json:"id"`
+	//Id                 string `json:"id"`
 	ConnectionName     string `json:"connectionName"`
 	CspSubnetId        string `json:"cspSubnetId"`
 	CspSubnetName      string `json:"cspSubnetName"`
@@ -58,13 +58,13 @@ func restPostSubnet(c echo.Context) error {
 	fmt.Println("[POST Subnet requested action: " + action)
 	if action == "create" {
 		fmt.Println("[Creating Subnet]")
-		createSubnet(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := createSubnet(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else if action == "register" {
 		fmt.Println("[Registering Subnet]")
-		registerSubnet(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := registerSubnet(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else {
 		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
@@ -181,7 +181,7 @@ func restDelAllSubnet(c echo.Context) error {
 
 }
 
-func createSubnet(nsId string, u *subnetReq) {
+func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	content := subnetInfo{}
 	content.Id = genUuid()
@@ -229,14 +229,15 @@ func createSubnet(nsId string, u *subnetReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
-func registerSubnet(nsId string, u *subnetReq) {
+func registerSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	content := subnetInfo{}
 	content.Id = genUuid()
@@ -270,11 +271,12 @@ func registerSubnet(nsId string, u *subnetReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
 func getSubnetList(nsId string) []string {

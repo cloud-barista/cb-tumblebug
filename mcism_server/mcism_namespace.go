@@ -30,8 +30,8 @@ func restPostNs(c echo.Context) error {
 	}
 
 	fmt.Println("[Creating Ns]")
-	createNs(u)
-	return c.JSON(http.StatusCreated, u)
+	content, _ := createNs(u)
+	return c.JSON(http.StatusCreated, content)
 
 }
 
@@ -151,24 +151,29 @@ func restDelAllNs(c echo.Context) error {
 
 }
 
-func createNs(u *nsReq) {
+func createNs(u *nsReq) (nsInfo, error) {
 
-	u.Id = genUuid()
+	//u.Id = genUuid()
+	content := nsInfo{}
+	content.Id = genUuid()
+	content.Name = u.Name
+	content.Description = u.Description
 
 	// TODO here: implement the logic
 
 	fmt.Println("=========================== PUT createNs")
-	Key := "/ns/" + u.Id
-	mapA := map[string]string{"name": u.Name, "description": u.Description}
+	Key := "/ns/" + content.Id
+	mapA := map[string]string{"name": content.Name, "description": content.Description}
 	Val, _ := json.Marshal(mapA)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
 func getNsList() []string {

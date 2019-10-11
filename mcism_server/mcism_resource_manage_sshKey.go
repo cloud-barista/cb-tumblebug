@@ -10,7 +10,7 @@ import (
 )
 
 type sshKeyReq struct {
-	Id             string `json:"id"`
+	//Id             string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	Fingerprint    string `json:"fingerprint"`
@@ -54,13 +54,13 @@ func restPostSshKey(c echo.Context) error {
 	fmt.Println("[POST SshKey requested action: " + action)
 	if action == "create" {
 		fmt.Println("[Creating SshKey]")
-		createSshKey(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := createSshKey(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else if action == "register" {
 		fmt.Println("[Registering SshKey]")
-		registerSshKey(nsId, u)
-		return c.JSON(http.StatusCreated, u)
+		content, _ := registerSshKey(nsId, u)
+		return c.JSON(http.StatusCreated, content)
 
 	} else {
 		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
@@ -175,7 +175,7 @@ func restDelAllSshKey(c echo.Context) error {
 
 }
 
-func createSshKey(nsId string, u *sshKeyReq) {
+func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 
 	/* FYI
 	type sshKeyReq struct {
@@ -215,14 +215,15 @@ func createSshKey(nsId string, u *sshKeyReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
-func registerSshKey(nsId string, u *sshKeyReq) {
+func registerSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 
 	content := sshKeyInfo{}
 	content.Id = genUuid()
@@ -252,11 +253,12 @@ func registerSshKey(nsId string, u *sshKeyReq) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-
+	return content, nil
 }
 
 func getSshKeyList(nsId string) []string {
