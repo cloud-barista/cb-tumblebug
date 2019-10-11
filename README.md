@@ -168,7 +168,7 @@ aws_secret_access_key = <YOUR_SECRET_ACCESS_KEY>
 #### Config for mcism PoC ####
 
 # Infos of etcd server
-etcdserverport: "<ETCD-Host-IPAddress>:2379"
+#etcdserverport: "<ETCD-Host-IPAddress>:2379"
 
 ## Config for AWS ##
 aws:
