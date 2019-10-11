@@ -10,7 +10,7 @@ import (
 )
 
 type specReq struct {
-	Id             string `json:"id"`
+	//Id             string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	Os_type        string `json:"os_type"`
@@ -65,7 +65,7 @@ func restPostSpec(c echo.Context) error {
 
 	if true { // if error not occurred
 		fmt.Println("[Registering Spec]")
-		content := registerSpec(nsId, u)
+		content, _ := registerSpec(nsId, u)
 		return c.JSON(http.StatusCreated, content)
 
 	} else { // if error occurred
@@ -193,7 +193,7 @@ func restDelAllSpec(c echo.Context) error {
 
 }
 
-func registerSpec(nsId string, u *specReq) specInfo {
+func registerSpec(nsId string, u *specReq) (specInfo, error) {
 
 	// TODO: Implement error check logic
 	// TODO: Implement spec retrieving logic
@@ -275,6 +275,7 @@ func registerSpec(nsId string, u *specReq) specInfo {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -283,7 +284,7 @@ func registerSpec(nsId string, u *specReq) specInfo {
 	// register information related with MCIS recommendation
 	registerRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
 
-	return content
+	return content, nil
 }
 
 func getSpecList(nsId string) []string {
