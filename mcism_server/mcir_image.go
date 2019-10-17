@@ -268,6 +268,21 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 
 func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
 
+	/* FYI
+	type imageInfo struct {
+		Id             string `json:"id"`
+		Name           string `json:"name"`
+		CreationDate   string `json:"creationDate"`
+		ConnectionName string `json:"connectionName"`
+		CspImageId     string `json:"cspImageId"`
+		Description    string `json:"description"`
+
+		GuestOS string `json:"guestOS"` // Windows7, Ubuntu etc.
+		Status  string `json:"status"`  // available, unavailable
+
+	}
+	*/
+
 	content.Id = genUuid()
 
 	// cb-store

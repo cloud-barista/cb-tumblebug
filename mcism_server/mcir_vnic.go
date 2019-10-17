@@ -40,7 +40,8 @@ type vNicReq struct {
 	CspVNetName string `json:"cspVNetName"`
 	PublicIpId  string `json:"publicIpId"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description string `json:"description"`
+	Description      string   `json:"description"`
+	SecurityGroupIds []string `json:"securityGroupIds"`
 }
 
 type vNicInfo struct {
@@ -51,11 +52,13 @@ type vNicInfo struct {
 	CspVNetName    string `json:"cspVNetName"`
 	PublicIpId     string `json:"publicIpId"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description string `json:"description"`
-	PublicIp    string `json:"publicIp"`
-	MacAddress  string `json:"macAddress"`
-	OwnedVmId   string `json:"ownedVmId"`
-	Status      string `json:"status"`
+	Description      string     `json:"description"`
+	PublicIp         string     `json:"publicIp"`
+	MacAddress       string     `json:"macAddress"`
+	OwnedVmId        string     `json:"ownedVmId"`
+	Status           string     `json:"status"`
+	SecurityGroupIds []string   `json:"securityGroupIds"`
+	KeyValueList     []KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -202,19 +205,8 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, error) {
 		PublicIpId  string `json:"publicIpId"`
 		//ResourceGroupName string `json:"resourceGroupName"`
 		Description string `json:"description"`
+		SecurityGroupIds []string `json:"securityGroupIds"`
 	}
-	*/
-
-	/* obsolete codes
-	content := vNicInfo{}
-	content.Id = genUuid()
-	content.ConnectionName = u.ConnectionName
-	//content.CspVNicId = u.CspVNicId
-	content.CspVNicName = u.CspVNicName
-	content.CspVNetName = u.CspVNetName
-	content.PublicIpId = u.PublicIpId
-	content.ResourceGroupName = u.ResourceGroupName
-	//content.Description = u.Description
 	*/
 
 	url := "https://testapi.io/api/jihoon-seo/vnic?connection_name=" + u.ConnectionName
@@ -223,26 +215,40 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, error) {
 
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
 
-	/*
-		type VNicReqInfo struct {
-			Name             string
-			VNetName         string
-			SecurityGroupIds []string
-			PublicIPid       string
-		}
-		tempReq := VNicReqInfo{}
-		tempReq.Name = u.CspVNicName
-		tempReq.VNetName = u.CspVNetName
-		//tempReq.SecurityGroupIds =
-		tempReq.PublicIPid = u.PublicIpId
+	/* Mark 1
+	type VNicReqInfo struct {
+		Name             string
+		VNetName         string
+		SecurityGroupIds []string
+		PublicIPid       string
+	}
+	tempReq := VNicReqInfo{}
+	tempReq.Name = u.CspVNicName
+	tempReq.VNetName = u.CspVNetName
+	//tempReq.SecurityGroupIds =
+	tempReq.PublicIPid = u.PublicIpId
 	*/
 
+	/* Mark 2
 	tempReq := map[string]string{
 		"Name":     u.CspVNicName,
 		"VNetName": u.CspVNetName,
 		//"SecurityGroupIds":    content.Fingerprint,
 		"PublicIPid": u.PublicIpId}
+	*/
 
+	// Mark 3
+	type VNicReqInfo struct {
+		Name             string
+		VNetName         string
+		SecurityGroupIds []string
+		PublicIPid       string
+	}
+	tempReq := VNicReqInfo{}
+	tempReq.Name = u.CspVNicName
+	tempReq.VNetName = u.CspVNetName
+	tempReq.SecurityGroupIds = u.SecurityGroupIds
+	tempReq.PublicIPid = u.PublicIpId
 	payload, _ := json.Marshal(tempReq)
 
 	client := &http.Client{
@@ -298,6 +304,8 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, error) {
 		MacAddress  string `json:"macAddress"`
 		OwnedVmId   string `json:"ownedVmId"`
 		Status      string `json:"status"`
+		SecurityGroupIds []string   `json:"securityGroupIds"`
+		KeyValueList     []KeyValue `json:"keyValueList"`
 	}
 	*/
 
@@ -313,23 +321,28 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, error) {
 	content.MacAddress = temp.MacAddress
 	content.OwnedVmId = temp.OwnedVMID
 	content.Status = temp.Status
+	content.SecurityGroupIds = temp.SecurityGroupIds
+	content.KeyValueList = temp.KeyValueList
 
 	// cb-store
 	fmt.Println("=========================== PUT createVNic")
 	Key := genResourceKey(nsId, "vNic", content.Id)
-	mapA := map[string]string{
-		"connectionName": content.ConnectionName,
-		"cspVNicId":      content.CspVNicId,
-		"cspVNicName":    content.CspVNicName,
-		"cspVNetName":    content.CspVNetName,
-		"publicIpId":     content.PublicIpId,
-		//"resourceGroupName": content.ResourceGroupName,
-		"description": content.Description,
-		"publicIp":    content.PublicIp,
-		"macAddress":  content.MacAddress,
-		"ownedVmId":   content.OwnedVmId,
-		"status":      content.Status}
-	Val, _ := json.Marshal(mapA)
+	/*
+		mapA := map[string]string{
+			"connectionName": content.ConnectionName,
+			"cspVNicId":      content.CspVNicId,
+			"cspVNicName":    content.CspVNicName,
+			"cspVNetName":    content.CspVNetName,
+			"publicIpId":     content.PublicIpId,
+			//"resourceGroupName": content.ResourceGroupName,
+			"description": content.Description,
+			"publicIp":    content.PublicIp,
+			"macAddress":  content.MacAddress,
+			"ownedVmId":   content.OwnedVmId,
+			"status":      content.Status}
+		Val, _ := json.Marshal(mapA)
+	*/
+	Val, _ := json.Marshal(content)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
 	cbStorePutErr := store.Put(string(Key), string(Val))

@@ -39,14 +39,15 @@ type sshKeyReq struct {
 }
 
 type sshKeyInfo struct {
-	Id             string `json:"id"`
-	ConnectionName string `json:"connectionName"`
-	CspSshKeyName  string `json:"cspSshKeyName"`
-	Fingerprint    string `json:"fingerprint"`
-	Username       string `json:"username"`
-	PublicKey      string `json:"publicKey"`
-	PrivateKey     string `json:"privateKey"`
-	Description    string `json:"description"`
+	Id             string     `json:"id"`
+	ConnectionName string     `json:"connectionName"`
+	CspSshKeyName  string     `json:"cspSshKeyName"`
+	Fingerprint    string     `json:"fingerprint"`
+	Username       string     `json:"username"`
+	PublicKey      string     `json:"publicKey"`
+	PrivateKey     string     `json:"privateKey"`
+	Description    string     `json:"description"`
+	KeyValueList   []KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -249,6 +250,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 		PublicKey      string `json:"publicKey"`
 		PrivateKey     string `json:"privateKey"`
 		Description    string `json:"description"`
+		KeyValueList []KeyValue `json:"keyValueList"`
 	}
 	*/
 
@@ -261,19 +263,23 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 	content.PublicKey = temp.PublicKey
 	content.PrivateKey = temp.PrivateKey
 	content.Description = u.Description
+	content.KeyValueList = temp.KeyValueList
 
 	// cb-store
 	fmt.Println("=========================== PUT createSshKey")
 	Key := genResourceKey(nsId, "sshKey", content.Id)
-	mapA := map[string]string{
-		"connectionName": content.ConnectionName,
-		"cspSshKeyName":  content.CspSshKeyName,
-		"fingerprint":    content.Fingerprint,
-		"username":       content.Username,
-		"publicKey":      content.PublicKey,
-		"privateKey":     content.PrivateKey,
-		"description":    content.Description}
-	Val, _ := json.Marshal(mapA)
+	/*
+		mapA := map[string]string{
+			"connectionName": content.ConnectionName,
+			"cspSshKeyName":  content.CspSshKeyName,
+			"fingerprint":    content.Fingerprint,
+			"username":       content.Username,
+			"publicKey":      content.PublicKey,
+			"privateKey":     content.PrivateKey,
+			"description":    content.Description}
+		Val, _ := json.Marshal(mapA)
+	*/
+	Val, _ := json.Marshal(content)
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
