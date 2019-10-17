@@ -35,7 +35,8 @@ type publicIpReq struct {
 	//PublicIp          string `json:"publicIp"`
 	//OwnedVmId         string `json:"ownedVmId"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description string `json:"description"`
+	Description  string     `json:"description"`
+	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
 type publicIpInfo struct {
@@ -46,8 +47,9 @@ type publicIpInfo struct {
 	PublicIp        string `json:"publicIp"`
 	OwnedVmId       string `json:"ownedVmId"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
+	Description  string     `json:"description"`
+	Status       string     `json:"status"`
+	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -194,6 +196,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
 		//OwnedVmId         string `json:"ownedVmId"`
 		//ResourceGroupName string `json:"resourceGroupName"`
 		Description string `json:"description"`
+		KeyValueList []KeyValue `json:"keyValueList"`
 	}
 	*/
 
@@ -201,14 +204,23 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
 
 	method := "POST"
 
-	payload := strings.NewReader("{ \"Name\": \"" + u.CspPublicIpName + "\"}")
+	//payload := strings.NewReader("{ \"Name\": \"" + u.CspPublicIpName + "\"}")
+	type PublicIPReqInfo struct {
+		Name         string
+		KeyValueList []KeyValue
+	}
+	tempReq := PublicIPReqInfo{}
+	tempReq.Name = u.CspPublicIpName
+	tempReq.KeyValueList = u.KeyValueList
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	fmt.Println("payload: " + string(payload)) // for debug
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(method, url, payload)
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 	if err != nil {
 		fmt.Println(err)
@@ -247,6 +259,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
 	content.OwnedVmId = temp.OwnedVMID
 	content.Description = u.Description
 	content.Status = temp.Status
+	content.KeyValueList = temp.KeyValueList
 
 	/* FYI
 	type publicIpInfo struct {
@@ -265,16 +278,19 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
 	// cb-store
 	fmt.Println("=========================== PUT createPublicIp")
 	Key := genResourceKey(nsId, "publicIp", content.Id)
-	mapA := map[string]string{
-		"connectionName": content.ConnectionName,
-		//"cspPublicIpId":     content.CspPublicIpId,
-		"cspPublicIpName": content.CspPublicIpName,
-		"publicIp":        content.PublicIp,
-		"ownedVmId":       content.OwnedVmId,
-		//"resourceGroupName": content.ResourceGroupName,
-		"description": content.Description,
-		"status":      content.Status}
-	Val, _ := json.Marshal(mapA)
+	/*
+		mapA := map[string]string{
+			"connectionName": content.ConnectionName,
+			//"cspPublicIpId":     content.CspPublicIpId,
+			"cspPublicIpName": content.CspPublicIpName,
+			"publicIp":        content.PublicIp,
+			"ownedVmId":       content.OwnedVmId,
+			//"resourceGroupName": content.ResourceGroupName,
+			"description": content.Description,
+			"status":      content.Status}
+		Val, _ := json.Marshal(mapA)
+	*/
+	Val, _ := json.Marshal(content)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
 	cbStorePutErr := store.Put(string(Key), string(Val))

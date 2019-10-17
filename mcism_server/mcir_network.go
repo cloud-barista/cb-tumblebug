@@ -52,8 +52,9 @@ type networkInfo struct {
 	CidrBlock      string `json:"cidrBlock"`
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description string `json:"description"`
-	Status      string `json:"string"`
+	Description  string     `json:"description"`
+	Status       string     `json:"string"`
+	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -253,15 +254,6 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 		fmt.Println("whoops:", err2)
 	}
 
-	content := networkInfo{}
-	content.Id = genUuid()
-	content.ConnectionName = u.ConnectionName
-	content.CspNetworkId = temp.Id
-	content.CspNetworkName = temp.Name // = u.CspNetworkName
-	content.CidrBlock = temp.AddressPrefix
-	content.Description = u.Description
-	content.Status = temp.Status
-
 	/* FYI
 	type networkInfo struct {
 		Id                string `json:"id"`
@@ -273,22 +265,38 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 		//ResourceGroupName string `json:"resourceGroupName"`
 		Description       string `json:"description"`
 		Status            string `json:"string"`
+		KeyValueList []KeyValue `json:"keyValueList"`
 	}
 	*/
+
+	content := networkInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = u.ConnectionName
+	content.CspNetworkId = temp.Id
+	content.CspNetworkName = temp.Name // = u.CspNetworkName
+	content.CidrBlock = temp.AddressPrefix
+	content.Description = u.Description
+	content.Status = temp.Status
+	content.KeyValueList = temp.KeyValueList
 
 	// cb-store
 	fmt.Println("=========================== PUT createNetwork")
 	Key := genResourceKey(nsId, "network", content.Id)
-	mapA := map[string]string{
-		"connectionName": content.ConnectionName,
-		"cspNetworkId":   content.CspNetworkId,
-		"cspNetworkName": content.CspNetworkName,
-		"cidrBlock":      content.CidrBlock,
-		//"region":            content.Region,
-		//"resourceGroupName": content.ResourceGroupName,
-		"description": content.Description,
-		"status":      content.Status}
-	Val, _ := json.Marshal(mapA)
+	/*
+		mapA := map[string]string{
+			"connectionName": content.ConnectionName,
+			"cspNetworkId":   content.CspNetworkId,
+			"cspNetworkName": content.CspNetworkName,
+			"cidrBlock":      content.CidrBlock,
+			//"region":            content.Region,
+			//"resourceGroupName": content.ResourceGroupName,
+			"description":  content.Description,
+			"status":       content.Status,
+			"keyValueList": content.KeyValueList}
+		Val, _ := json.Marshal(mapA)
+	*/
+	Val, _ := json.Marshal(content)
+
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
 	err3 := store.Put(string(Key), string(Val))
