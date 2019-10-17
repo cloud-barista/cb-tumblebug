@@ -3,11 +3,29 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/labstack/echo"
 )
+
+// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/PublicIPHandler.go
+/*
+type PublicIPReqInfo struct {
+	Name         string
+	KeyValueList []KeyValue
+}
+
+type PublicIPInfo struct {
+	Name      string
+	PublicIP  string
+	OwnedVMID string
+	Status    string
+
+	KeyValueList []KeyValue
+}
+*/
 
 type publicIpReq struct {
 	//Id                string `json:"id"`
@@ -16,20 +34,20 @@ type publicIpReq struct {
 	CspPublicIpName string `json:"cspPublicIpName"`
 	//PublicIp          string `json:"publicIp"`
 	//OwnedVmId         string `json:"ownedVmId"`
-	ResourceGroupName string `json:"resourceGroupName"`
-	//Description       string `json:"description"`
+	//ResourceGroupName string `json:"resourceGroupName"`
+	Description string `json:"description"`
 }
 
 type publicIpInfo struct {
-	Id                string `json:"id"`
-	ConnectionName    string `json:"connectionName"`
-	CspPublicIpId     string `json:"cspPublicIpId"`
-	CspPublicIpName   string `json:"cspPublicIpName"`
-	PublicIp          string `json:"publicIp"`
-	OwnedVmId         string `json:"ownedVmId"`
-	ResourceGroupName string `json:"resourceGroupName"`
-	Description       string `json:"description"`
-	Status            string `json:"string"`
+	Id             string `json:"id"`
+	ConnectionName string `json:"connectionName"`
+	//CspPublicIpId   string `json:"cspPublicIpId"`
+	CspPublicIpName string `json:"cspPublicIpName"`
+	PublicIp        string `json:"publicIp"`
+	OwnedVmId       string `json:"ownedVmId"`
+	//ResourceGroupName string `json:"resourceGroupName"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
 }
 
 /* FYI
@@ -57,14 +75,14 @@ func restPostPublicIp(c echo.Context) error {
 		fmt.Println("[Creating PublicIp]")
 		content, _ := createPublicIp(nsId, u)
 		return c.JSON(http.StatusCreated, content)
-
-	} else if action == "register" {
-		fmt.Println("[Registering PublicIp]")
-		content, _ := registerPublicIp(nsId, u)
-		return c.JSON(http.StatusCreated, content)
-
+		/*
+			} else if action == "register" {
+				fmt.Println("[Registering PublicIp]")
+				content, _ := registerPublicIp(nsId, u)
+				return c.JSON(http.StatusCreated, content)
+		*/
 	} else {
-		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
+		mapA := map[string]string{"message": "You must specify: action=create"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
@@ -77,19 +95,6 @@ func restGetPublicIp(c echo.Context) error {
 	id := c.Param("publicIpId")
 
 	content := publicIpInfo{}
-	/*
-		var content struct {
-			Id                string `json:"id"`
-			ConnectionName    string `json:"connectionName"`
-			CspPublicIpId      string `json:"cspPublicIpId"`
-			CspPublicIpName    string `json:"cspPublicIpName"`
-			CidrBlock         string `json:"cidrBlock"`
-			Region            string `json:"region"`
-			ResourceGroupName string `json:"resourceGroupName"`
-			Description       string `json:"description"`
-			Status            string `json:"string"`
-		}
-	*/
 
 	fmt.Println("[Get publicIp for id]" + id)
 	key := genResourceKey(nsId, "publicIp", id)
@@ -187,32 +192,73 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
 		CspPublicIpName string `json:"cspPublicIpName"`
 		//PublicIp          string `json:"publicIp"`
 		//OwnedVmId         string `json:"ownedVmId"`
-		ResourceGroupName string `json:"resourceGroupName"`
-		//Description       string `json:"description"`
+		//ResourceGroupName string `json:"resourceGroupName"`
+		Description string `json:"description"`
 	}
 	*/
+
+	url := "https://testapi.io/api/jihoon-seo/publicip?connection_name=" + u.ConnectionName
+
+	method := "POST"
+
+	payload := strings.NewReader("{ \"Name\": \"" + u.CspPublicIpName + "\"}")
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, payload)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	// jhseo 191016
+	//var s = new(imageInfo)
+	//s := imageInfo{}
+	type PublicIPInfo struct {
+		Name      string
+		PublicIP  string
+		OwnedVMID string
+		Status    string
+
+		KeyValueList []KeyValue
+	}
+	temp := PublicIPInfo{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+	}
 
 	content := publicIpInfo{}
 	content.Id = genUuid()
 	content.ConnectionName = u.ConnectionName
-	//content.CspPublicIpId = u.CspPublicIpId
-	content.CspPublicIpName = u.CspPublicIpName
-	//content.PublicIp = u.PublicIp
-	//content.OwnedVmId = u.OwnedVmId
-	content.ResourceGroupName = u.ResourceGroupName
-	//content.Description = u.Description
+	content.CspPublicIpName = temp.Name // = u.CspPublicIpName
+	content.PublicIp = temp.PublicIP
+	content.OwnedVmId = temp.OwnedVMID
+	content.Description = u.Description
+	content.Status = temp.Status
 
 	/* FYI
 	type publicIpInfo struct {
-		Id                string `json:"id"`
-		ConnectionName    string `json:"connectionName"`
-		CspPublicIpId     string `json:"cspPublicIpId"`
-		CspPublicIpName   string `json:"cspPublicIpName"`
-		PublicIp          string `json:"publicIp"`
-		OwnedVmId         string `json:"ownedVmId"`
-		ResourceGroupName string `json:"resourceGroupName"`
-		Description       string `json:"description"`
-		Status            string `json:"string"`
+		Id              string `json:"id"`
+		ConnectionName  string `json:"connectionName"`
+		//CspPublicIpId   string `json:"cspPublicIpId"`
+		CspPublicIpName string `json:"cspPublicIpName"`
+		PublicIp        string `json:"publicIp"`
+		OwnedVmId       string `json:"ownedVmId"`
+		//ResourceGroupName string `json:"resourceGroupName"`
+		Description string `json:"description"`
+		Status      string `json:"string"`
 	}
 	*/
 
@@ -220,60 +266,21 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
 	fmt.Println("=========================== PUT createPublicIp")
 	Key := genResourceKey(nsId, "publicIp", content.Id)
 	mapA := map[string]string{
-		"connectionName":    content.ConnectionName,
-		"cspPublicIpId":     content.CspPublicIpId,
-		"cspPublicIpName":   content.CspPublicIpName,
-		"publicIp":          content.PublicIp,
-		"ownedVmId":         content.OwnedVmId,
-		"resourceGroupName": content.ResourceGroupName,
-		"description":       content.Description,
-		"status":            content.Status}
+		"connectionName": content.ConnectionName,
+		//"cspPublicIpId":     content.CspPublicIpId,
+		"cspPublicIpName": content.CspPublicIpName,
+		"publicIp":        content.PublicIp,
+		"ownedVmId":       content.OwnedVmId,
+		//"resourceGroupName": content.ResourceGroupName,
+		"description": content.Description,
+		"status":      content.Status}
 	Val, _ := json.Marshal(mapA)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
-	err := store.Put(string(Key), string(Val))
-	if err != nil {
-		cblog.Error(err)
-		return content, err
-	}
-	keyValue, _ := store.Get(string(Key))
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
-	return content, nil
-}
-
-func registerPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
-
-	content := publicIpInfo{}
-	content.Id = genUuid()
-	content.ConnectionName = u.ConnectionName
-	//content.CspPublicIpId = u.CspPublicIpId
-	content.CspPublicIpName = u.CspPublicIpName
-	//content.PublicIp = u.PublicIp
-	//content.OwnedVmId = u.OwnedVmId
-	content.ResourceGroupName = u.ResourceGroupName
-	//content.Description = u.Description
-
-	// TODO here: implement the logic
-	// - Fetch the publicIp info from CSP.
-
-	// cb-store
-	fmt.Println("=========================== PUT registerPublicIp")
-	Key := genResourceKey(nsId, "publicIp", content.Id)
-	mapA := map[string]string{
-		"connectionName":    content.ConnectionName,
-		"cspPublicIpId":     content.CspPublicIpId,
-		"cspPublicIpName":   content.CspPublicIpName,
-		"publicIp":          content.PublicIp,
-		"ownedVmId":         content.OwnedVmId,
-		"resourceGroupName": content.ResourceGroupName,
-		"description":       content.Description,
-		"status":            content.Status}
-	Val, _ := json.Marshal(mapA)
-	err := store.Put(string(Key), string(Val))
-	if err != nil {
-		cblog.Error(err)
-		return content, err
+	cbStorePutErr := store.Put(string(Key), string(Val))
+	if cbStorePutErr != nil {
+		cblog.Error(cbStorePutErr)
+		return content, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -307,13 +314,46 @@ func delPublicIp(nsId string, Id string) error {
 	fmt.Println("[Delete publicIp] " + Id)
 
 	key := genResourceKey(nsId, "publicIp", Id)
-	fmt.Println(key)
+	fmt.Println("key: " + key)
 
-	// delete mcis info
-	err := store.Delete(key)
+	keyValue, _ := store.Get(key)
+	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
+	temp := publicIpInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+	fmt.Println("temp.CspPublicIpName: " + temp.CspPublicIpName) // Identifier is subject to change.
+
+	//url := "https://testapi.io/api/jihoon-seo/publicip/" + temp.CspPublicIpName + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	url := "https://testapi.io/api/jihoon-seo/publicip?connection_name=" + temp.ConnectionName // for testapi.io
+	fmt.Println("url: " + url)
+
+	method := "DELETE"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
 	if err != nil {
-		cblog.Error(err)
-		return err
+		fmt.Println(err)
+	}
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	// delete publicIp info
+	cbStoreDeleteErr := store.Delete(key)
+	if cbStoreDeleteErr != nil {
+		cblog.Error(cbStoreDeleteErr)
+		return cbStoreDeleteErr
 	}
 
 	return nil

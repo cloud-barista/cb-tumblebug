@@ -58,17 +58,19 @@ func restPostSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &specReq{}
-	if err := c.Bind(u); err != nil {
-		return err
-	}
+	action := c.QueryParam("action")
+	fmt.Println("[POST Spec requested action: " + action)
 
-	if true { // if error not occurred
-		fmt.Println("[Registering Spec]")
-		content, _ := registerSpec(nsId, u)
+	if action == "registerWithInfo" {
+		fmt.Println("[Registering Spec with info]")
+		u := &specInfo{}
+		if err := c.Bind(u); err != nil {
+			return err
+		}
+		content, _ := registerSpecWithInfo(nsId, u)
 		return c.JSON(http.StatusCreated, content)
 
-	} else { // if error occurred
+	} else {
 		mapA := map[string]string{"message": "lookupSpec(specRequest) failed."}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
@@ -82,30 +84,6 @@ func restGetSpec(c echo.Context) error {
 	id := c.Param("specId")
 
 	content := specInfo{}
-	/*
-		var content struct {
-			Id          string `json:"id"`
-			Name        string `json:"name"`
-			ConnectionName         string `json:"connectionName"`
-			Os_type     string `json:"os_type"`
-			Num_vCPU    string `json:"num_vCPU"`
-			Num_core    string `json:"num_core"`
-			Mem_GiB     string `json:"mem_GiB"`
-			Storage_GiB string `json:"storage_GiB"`
-			Description string `json:"description"`
-
-			Cost_per_hour         string `json:"cost_per_hour"`
-			Num_storage           string `json:"num_storage"`
-			Max_num_storage       string `json:"max_num_storage"`
-			Max_total_storage_TiB string `json:"max_total_storage_TiB"`
-			Net_bw_Gbps           string `json:"net_bw_Gbps"`
-			Ebs_bw_Mbps           string `json:"ebs_bw_Mbps"`
-			Gpu_model             string `json:"gpu_model"`
-			Num_gpu               string `json:"num_gpu"`
-			Gpumem_GiB            string `json:"gpumem_GiB"`
-			Gpu_p2p               string `json:"gpu_p2p"`
-		}
-	*/
 
 	fmt.Println("[Get spec for id]" + id)
 	key := genResourceKey(nsId, "spec", id)
@@ -193,23 +171,24 @@ func restDelAllSpec(c echo.Context) error {
 
 }
 
-func registerSpec(nsId string, u *specReq) (specInfo, error) {
+/* Optional
+func registerSpecWithCspFlavorName(nsId string, u *specReq) (specInfo, error) {
 
 	// TODO: Implement error check logic
 	// TODO: Implement spec retrieving logic
 
 	content := specInfo{}
 
-	/* TODO: Implement the code below
-	content, err := lookupSpec(u)
+	// TODO: Implement the code below
+	// content, err := lookupSpec(u)
 
-	if 1 { // if lookupSpec(u) succeeds
-		content.Id = genUuid()
-		...
-	} else { // if lookupSpec(u) fails
+	// if 1 { // if lookupSpec(u) succeeds
+	// 	content.Id = genUuid()
+	// 	...
+	// } else { // if lookupSpec(u) fails
 
-	}
-	*/
+	// }
+	//
 
 	// Temporary code
 	content.Id = genUuid()
@@ -221,6 +200,54 @@ func registerSpec(nsId string, u *specReq) (specInfo, error) {
 	content.Mem_GiB = u.Mem_GiB
 	content.Storage_GiB = u.Storage_GiB
 	content.Description = u.Description
+
+	// cb-store
+	fmt.Println("=========================== PUT registerSpec")
+	Key := genResourceKey(nsId, "spec", content.Id)
+	mapA := map[string]string{
+		"name":           content.Name,
+		"connectionName": content.ConnectionName,
+		"os_type":        content.Os_type,
+		"Num_vCPU":       content.Num_vCPU,
+		"Num_core":       content.Num_core,
+		"mem_GiB":        content.Mem_GiB,
+		"storage_GiB":    content.Storage_GiB,
+		"description":    content.Description,
+
+		"cost_per_hour":         content.Cost_per_hour,
+		"num_storage":           content.Num_storage,
+		"max_num_storage":       content.Max_num_storage,
+		"max_total_storage_TiB": content.Max_total_storage_TiB,
+		"net_bw_Gbps":           content.Net_bw_Gbps,
+		"ebs_bw_Mbps":           content.Ebs_bw_Mbps,
+		"gpu_model":             content.Gpu_model,
+		"num_gpu":               content.Num_gpu,
+		"gpumem_GiB":            content.Gpumem_GiB,
+		"gpu_p2p":               content.Gpu_p2p,
+	}
+	Val, _ := json.Marshal(mapA)
+	err := store.Put(string(Key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+		return content, err
+	}
+	keyValue, _ := store.Get(string(Key))
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===========================")
+
+	// register information related with MCIS recommendation
+	registerRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+
+	return content, nil
+}
+*/
+
+func registerSpecWithInfo(nsId string, content *specInfo) (specInfo, error) {
+
+	// TODO: Implement error check logic
+
+	// Temporary code
+	content.Id = genUuid()
 
 	/* FYI
 	type specInfo struct {
@@ -275,7 +302,7 @@ func registerSpec(nsId string, u *specReq) (specInfo, error) {
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
-		return content, err
+		return *content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -284,7 +311,7 @@ func registerSpec(nsId string, u *specReq) (specInfo, error) {
 	// register information related with MCIS recommendation
 	registerRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
 
-	return content, nil
+	return *content, nil
 }
 
 func getSpecList(nsId string) []string {

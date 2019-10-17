@@ -80,20 +80,6 @@ func restGetSubnet(c echo.Context) error {
 	id := c.Param("subnetId")
 
 	content := subnetInfo{}
-	/*
-		var content struct {
-			Id                 string `json:"id"`
-			ConnectionName                string `json:"connectionName"`
-			CspSubnetId        string `json:"cspSubnetId"`
-			CspSubnetName      string `json:"cspSubnetName"`
-			VirtualNetworkId   string `json:"virtualNetworkId"`
-			VirtualNetworkName string `json:"virtualNetworkName"`
-			CidrBlock          string `json:"cidrBlock"`
-			Region             string `json:"region"`
-			ResourceGroupName  string `json:"resourceGroupName"`
-			Description        string `json:"description"`
-		}
-	*/
 
 	fmt.Println("[Get subnet for id]" + id)
 	key := genResourceKey(nsId, "subnet", id)
