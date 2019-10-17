@@ -3,27 +3,45 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/labstack/echo"
 )
 
+// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/KeyPairHandler.go
+/* FYI
+type KeyPairReqInfo struct {
+        Name     string
+}
+
+type KeyPairInfo struct {
+     Name        string
+     Fingerprint string
+     PublicKey   string
+     PrivateKey  string
+     VMUserID      string
+
+     KeyValueList []KeyValue
+}
+*/
+
 type sshKeyReq struct {
 	//Id             string `json:"id"`
-	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
-	Fingerprint    string `json:"fingerprint"`
-	Username       string `json:"username"`
-	PublicKey      string `json:"publicKey"`
-	PrivateKey     string `json:"privateKey"`
-	Description    string `json:"description"`
+	CspSshKeyName  string `json:"cspSshKeyName"`
+	//Fingerprint    string `json:"fingerprint"`
+	//Username       string `json:"username"`
+	//PublicKey      string `json:"publicKey"`
+	//PrivateKey     string `json:"privateKey"`
+	Description string `json:"description"`
 }
 
 type sshKeyInfo struct {
 	Id             string `json:"id"`
-	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
+	CspSshKeyName  string `json:"cspSshKeyName"`
 	Fingerprint    string `json:"fingerprint"`
 	Username       string `json:"username"`
 	PublicKey      string `json:"publicKey"`
@@ -56,14 +74,14 @@ func restPostSshKey(c echo.Context) error {
 		fmt.Println("[Creating SshKey]")
 		content, _ := createSshKey(nsId, u)
 		return c.JSON(http.StatusCreated, content)
-
-	} else if action == "register" {
-		fmt.Println("[Registering SshKey]")
-		content, _ := registerSshKey(nsId, u)
-		return c.JSON(http.StatusCreated, content)
-
+		/*
+			} else if action == "register" {
+				fmt.Println("[Registering SshKey]")
+				content, _ := registerSshKey(nsId, u)
+				return c.JSON(http.StatusCreated, content)
+		*/
 	} else {
-		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
+		mapA := map[string]string{"message": "You must specify: action=create"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
@@ -76,18 +94,6 @@ func restGetSshKey(c echo.Context) error {
 	id := c.Param("sshKeyId")
 
 	content := sshKeyInfo{}
-	/*
-		var content struct {
-			Id          string `json:"id"`
-			Name        string `json:"name"`
-			ConnectionName         string `json:"connectionName"`
-			Fingerprint string `json:"fingerprint"`
-			Username    string `json:"username"`
-			PublicKey   string `json:"publicKey"`
-			PrivateKey  string `json:"privateKey"`
-			Description string `json:"description"`
-		}
-	*/
 
 	fmt.Println("[Get sshKey for id]" + id)
 	key := genResourceKey(nsId, "sshKey", id)
@@ -179,81 +185,99 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 
 	/* FYI
 	type sshKeyReq struct {
-		Id				string `json:"id"`
-		Name			string `json:"name"`
-		ConnectionName         string `json:"connectionName"`
-		Fingerprint		string `json:"fingerprint"`
-		Username		string `json:"username"`
-		PublicKey		string `json:"publicKey"`
-		PrivateKey		string `json:"privateKey"`
-		Description		string `json:"description"`
+		//Id             string `json:"id"`
+		ConnectionName string `json:"connectionName"`
+		CspSshKeyName  string `json:"cspSshKeyName"`
+		//Fingerprint    string `json:"fingerprint"`
+		//Username       string `json:"username"`
+		//PublicKey      string `json:"publicKey"`
+		//PrivateKey     string `json:"privateKey"`
+		Description string `json:"description"`
+	}
+	*/
+
+	url := "https://testapi.io/api/jihoon-seo/keypair?connection_name=" + u.ConnectionName
+
+	method := "POST"
+
+	payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, payload)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	// jhseo 191016
+	//var s = new(imageInfo)
+	//s := imageInfo{}
+	type KeyPairInfo struct {
+		Name        string
+		Fingerprint string
+		PublicKey   string
+		PrivateKey  string
+		VMUserID    string
+
+		KeyValueList []KeyValue
+	}
+	temp := KeyPairInfo{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+	}
+
+	/* FYI
+	type sshKeyInfo struct {
+		Id             string `json:"id"`
+		ConnectionName string `json:"connectionName"`
+		CspSshKeyName  string `json:"cspSshKeyName"`
+		Fingerprint    string `json:"fingerprint"`
+		Username       string `json:"username"`
+		PublicKey      string `json:"publicKey"`
+		PrivateKey     string `json:"privateKey"`
+		Description    string `json:"description"`
 	}
 	*/
 
 	content := sshKeyInfo{}
 	content.Id = genUuid()
-	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.Fingerprint = u.Fingerprint
-	content.Username = u.Username
-	content.PublicKey = u.PublicKey
-	content.PrivateKey = u.PrivateKey
+	content.CspSshKeyName = temp.Name // = u.CspSshKeyName
+	content.Fingerprint = temp.Fingerprint
+	content.Username = temp.VMUserID
+	content.PublicKey = temp.PublicKey
+	content.PrivateKey = temp.PrivateKey
 	content.Description = u.Description
 
 	// cb-store
 	fmt.Println("=========================== PUT createSshKey")
 	Key := genResourceKey(nsId, "sshKey", content.Id)
 	mapA := map[string]string{
-		"name":           content.Name,
 		"connectionName": content.ConnectionName,
+		"cspSshKeyName":  content.CspSshKeyName,
 		"fingerprint":    content.Fingerprint,
 		"username":       content.Username,
 		"publicKey":      content.PublicKey,
 		"privateKey":     content.PrivateKey,
 		"description":    content.Description}
 	Val, _ := json.Marshal(mapA)
-	err := store.Put(string(Key), string(Val))
-	if err != nil {
-		cblog.Error(err)
-		return content, err
-	}
-	keyValue, _ := store.Get(string(Key))
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
-	return content, nil
-}
-
-func registerSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
-
-	content := sshKeyInfo{}
-	content.Id = genUuid()
-	content.Name = u.Name
-	content.ConnectionName = u.ConnectionName
-	content.Fingerprint = u.Fingerprint
-	content.Username = u.Username
-	content.PublicKey = u.PublicKey
-	content.PrivateKey = u.PrivateKey
-	content.Description = u.Description
-
-	// TODO here: implement the logic
-	// - Fetch the sshKey info from CSP.
-
-	// cb-store
-	fmt.Println("=========================== PUT registerSshKey")
-	Key := genResourceKey(nsId, "sshKey", content.Id)
-	mapA := map[string]string{
-		"name":           content.Name,
-		"connectionName": content.ConnectionName,
-		"fingerprint":    content.Fingerprint,
-		"username":       content.Username,
-		"publicKey":      content.PublicKey,
-		"privateKey":     content.PrivateKey,
-		"description":    content.Description}
-	Val, _ := json.Marshal(mapA)
-	err := store.Put(string(Key), string(Val))
-	if err != nil {
-		cblog.Error(err)
-		return content, err
+	cbStorePutErr := store.Put(string(Key), string(Val))
+	if cbStorePutErr != nil {
+		cblog.Error(cbStorePutErr)
+		return content, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -287,13 +311,46 @@ func delSshKey(nsId string, Id string) error {
 	fmt.Println("[Delete sshKey] " + Id)
 
 	key := genResourceKey(nsId, "sshKey", Id)
-	fmt.Println(key)
+	fmt.Println("key: " + key)
 
-	// delete mcis info
-	err := store.Delete(key)
+	keyValue, _ := store.Get(key)
+	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
+	temp := sshKeyInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+	fmt.Println("temp.CspSshKeyName: " + temp.CspSshKeyName)
+
+	//url := "https://testapi.io/api/jihoon-seo/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	url := "https://testapi.io/api/jihoon-seo/keypair?connection_name=" + temp.ConnectionName // for testapi.io
+	fmt.Println("url: " + url)
+
+	method := "DELETE"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
 	if err != nil {
-		cblog.Error(err)
-		return err
+		fmt.Println(err)
+	}
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	// delete sshKey info
+	cbStoreDeleteErr := store.Delete(key)
+	if cbStoreDeleteErr != nil {
+		cblog.Error(cbStoreDeleteErr)
+		return cbStoreDeleteErr
 	}
 
 	return nil

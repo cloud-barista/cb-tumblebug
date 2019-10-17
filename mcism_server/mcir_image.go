@@ -9,6 +9,31 @@ import (
 	"github.com/labstack/echo"
 )
 
+// Ref: https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/ImageHandler.go
+/* 2019-10-16
+type ImageReqInfo struct {
+	Name string
+	Id   string
+	// @todo
+}
+
+type ImageInfo struct {
+     Id   string
+     Name string
+     GuestOS string // Windows7, Ubuntu etc.
+     Status string  // available, unavailable
+
+     KeyValueList []KeyValue
+}
+
+type ImageHandler interface {
+	CreateImage(imageReqInfo ImageReqInfo) (ImageInfo, error)
+	ListImage() ([]*ImageInfo, error)
+	GetImage(imageID string) (ImageInfo, error)
+	DeleteImage(imageID string) (bool, error)
+}
+*/
+
 type imageReq struct {
 	//Id             string `json:"id"`
 	Name           string `json:"name"`
@@ -45,25 +70,25 @@ func restPostImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &imageReq{}
-	if err := c.Bind(u); err != nil {
-		return err
-	}
-
 	action := c.QueryParam("action")
 	fmt.Println("[POST Image requested action: " + action)
-	if action == "create" {
-		fmt.Println("[Creating Image]")
-		content, _ := createImage(nsId, u)
-		return c.JSON(http.StatusCreated, content)
+	/*
+		if action == "create" {
+			fmt.Println("[Creating Image]")
+			content, _ := createImage(nsId, u)
+			return c.JSON(http.StatusCreated, content)
 
-	} else if action == "register" {
+		} else */if action == "registerWithInfo" {
 		fmt.Println("[Registering Image]")
-		content, _ := registerImage(nsId, u)
+		u := &imageInfo{}
+		if err := c.Bind(u); err != nil {
+			return err
+		}
+		content, _ := registerImageWithInfo(nsId, u)
 		return c.JSON(http.StatusCreated, content)
 
 	} else {
-		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
+		mapA := map[string]string{"message": "You must specify: action=registerWithInfo"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
@@ -76,19 +101,6 @@ func restGetImage(c echo.Context) error {
 	id := c.Param("imageId")
 
 	content := imageInfo{}
-	/*
-		var content struct {
-			Id             string `json:"id"`
-			Name           string `json:"name"`
-			CreationDate   string `json:"creationDate"`
-			ConnectionName string `json:"connectionName"`
-			CspImageId     string `json:"cspImageId"`
-			Description    string `json:"description"`
-
-			GuestOS string `json:"guestOS"` // Windows7, Ubuntu etc.
-			Status string  `json:"status"` // available, unavailable
-		}
-	*/
 
 	fmt.Println("[Get image for id]" + id)
 	key := genResourceKey(nsId, "image", id)
@@ -176,6 +188,7 @@ func restDelAllImage(c echo.Context) error {
 
 }
 
+/*
 func createImage(nsId string, u *imageReq) (imageInfo, error) {
 
 	content := imageInfo{}
@@ -190,20 +203,6 @@ func createImage(nsId string, u *imageReq) (imageInfo, error) {
 	// Option 1. Let the user upload an image file.
 	// Option 2. Let the user specify the URL of an image file.
 	// Option 3. Let the user snapshot specific VM for the new image file.
-
-	/* FYI
-	type imageInfo struct {
-		Id             string `json:"id"`
-		Name           string `json:"name"`
-		CreationDate   string `json:"creationDate"`
-		ConnectionName string `json:"connectionName"`
-		CspImageId     string `json:"cspImageId"`
-		Description    string `json:"description"`
-
-		GuestOS string `json:"guestOS"` // Windows7, Ubuntu etc.
-		Status string  `json:"status"` // available, unavailable
-	}
-	*/
 
 	// cb-store
 	fmt.Println("=========================== PUT createImage")
@@ -227,8 +226,10 @@ func createImage(nsId string, u *imageReq) (imageInfo, error) {
 	fmt.Println("===========================")
 	return content, nil
 }
+*/
 
-func registerImage(nsId string, u *imageReq) (imageInfo, error) {
+/* Optional
+func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 
 	content := imageInfo{}
 	content.Id = genUuid()
@@ -239,7 +240,7 @@ func registerImage(nsId string, u *imageReq) (imageInfo, error) {
 	content.Description = u.Description
 
 	// TODO here: implement the logic
-	// - Fetch the image info from CSP.
+	// - Fetch the image info from CSP via CB-Spider.
 
 	// cb-store
 	fmt.Println("=========================== PUT registerImage")
@@ -262,6 +263,34 @@ func registerImage(nsId string, u *imageReq) (imageInfo, error) {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	return content, nil
+}
+*/
+
+func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
+
+	content.Id = genUuid()
+
+	// cb-store
+	fmt.Println("=========================== PUT registerImage")
+	Key := genResourceKey(nsId, "image", content.Id)
+	mapA := map[string]string{
+		"name":           content.Name,
+		"creationDate":   content.CreationDate,
+		"connectionName": content.ConnectionName,
+		"cspImageId":     content.CspImageId,
+		"description":    content.Description,
+		"guestOS":        content.GuestOS,
+		"status":         content.Status}
+	Val, _ := json.Marshal(mapA)
+	err := store.Put(string(Key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+		return *content, err
+	}
+	keyValue, _ := store.Get(string(Key))
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===========================")
+	return *content, nil
 }
 
 func getImageList(nsId string) []string {

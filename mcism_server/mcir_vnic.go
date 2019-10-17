@@ -1,0 +1,415 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
+
+	"github.com/labstack/echo"
+)
+
+// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/VNicHandler.go
+/* FYI
+type VNicReqInfo struct {
+	Name             string
+	VNetName         string
+	SecurityGroupIds []string
+	PublicIPid       string
+}
+
+type VNicInfo struct {
+	Id               string
+	Name             string
+	PublicIP         string
+	MacAddress        string
+	OwnedVMID        string
+	SecurityGroupIds []string
+	Status           string
+
+	KeyValueList []KeyValue
+}
+*/
+
+type vNicReq struct {
+	//Id                string `json:"id"`
+	ConnectionName string `json:"connectionName"`
+	//CspVNicId     string `json:"cspVNicId"`
+	CspVNicName string `json:"cspVNicName"`
+	CspVNetName string `json:"cspVNetName"`
+	PublicIpId  string `json:"publicIpId"`
+	//ResourceGroupName string `json:"resourceGroupName"`
+	Description string `json:"description"`
+}
+
+type vNicInfo struct {
+	Id             string `json:"id"`
+	ConnectionName string `json:"connectionName"`
+	CspVNicId      string `json:"cspVNicId"`
+	CspVNicName    string `json:"cspVNicName"`
+	CspVNetName    string `json:"cspVNetName"`
+	PublicIpId     string `json:"publicIpId"`
+	//ResourceGroupName string `json:"resourceGroupName"`
+	Description string `json:"description"`
+	PublicIp    string `json:"publicIp"`
+	MacAddress  string `json:"macAddress"`
+	OwnedVmId   string `json:"ownedVmId"`
+	Status      string `json:"status"`
+}
+
+/* FYI
+g.POST("/:nsId/resources/vNic", restPostVNic)
+g.GET("/:nsId/resources/vNic/:vNicId", restGetVNic)
+g.GET("/:nsId/resources/vNic", restGetAllVNic)
+g.PUT("/:nsId/resources/vNic/:vNicId", restPutVNic)
+g.DELETE("/:nsId/resources/vNic/:vNicId", restDelVNic)
+g.DELETE("/:nsId/resources/vNic", restDelAllVNic)
+*/
+
+// MCIS API Proxy: VNic
+func restPostVNic(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	u := &vNicReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	action := c.QueryParam("action")
+	fmt.Println("[POST VNic requested action: " + action)
+	if action == "create" {
+		fmt.Println("[Creating VNic]")
+		content, _ := createVNic(nsId, u)
+		return c.JSON(http.StatusCreated, content)
+		/*
+			} else if action == "register" {
+				fmt.Println("[Registering VNic]")
+				content, _ := registerVNic(nsId, u)
+				return c.JSON(http.StatusCreated, content)
+		*/
+	} else {
+		mapA := map[string]string{"message": "You must specify: action=create"}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
+
+}
+
+func restGetVNic(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	id := c.Param("vNicId")
+
+	content := vNicInfo{}
+
+	fmt.Println("[Get vNic for id]" + id)
+	key := genResourceKey(nsId, "vNic", id)
+	fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+	content.Id = id // Optional. Can be omitted.
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+func restGetAllVNic(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	var content struct {
+		//Name string     `json:"name"`
+		VNic []vNicInfo `json:"vNic"`
+	}
+
+	vNicList := getVNicList(nsId)
+
+	for _, v := range vNicList {
+
+		key := genResourceKey(nsId, "vNic", v)
+		fmt.Println(key)
+		keyValue, _ := store.Get(key)
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		vNicTmp := vNicInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &vNicTmp)
+		vNicTmp.Id = v
+		content.VNic = append(content.VNic, vNicTmp)
+
+	}
+	fmt.Printf("content %+v\n", content)
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+func restPutVNic(c echo.Context) error {
+	//nsId := c.Param("nsId")
+
+	return nil
+}
+
+func restDelVNic(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	id := c.Param("vNicId")
+
+	err := delVNic(nsId, id)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": "Failed to delete the vNic"}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
+
+	mapA := map[string]string{"message": "The vNic has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+}
+
+func restDelAllVNic(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	vNicList := getVNicList(nsId)
+
+	for _, v := range vNicList {
+		err := delVNic(nsId, v)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete All vNics"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+	}
+
+	mapA := map[string]string{"message": "All vNics has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+
+}
+
+func createVNic(nsId string, u *vNicReq) (vNicInfo, error) {
+
+	/* FYI
+	type vNicReq struct {
+		//Id                string `json:"id"`
+		ConnectionName string `json:"connectionName"`
+		//CspVNicId     string `json:"cspVNicId"`
+		CspVNicName string `json:"cspVNicName"`
+		CspVNetName string `json:"cspVNetName"`
+		PublicIpId  string `json:"publicIpId"`
+		//ResourceGroupName string `json:"resourceGroupName"`
+		Description string `json:"description"`
+	}
+	*/
+
+	/* obsolete codes
+	content := vNicInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = u.ConnectionName
+	//content.CspVNicId = u.CspVNicId
+	content.CspVNicName = u.CspVNicName
+	content.CspVNetName = u.CspVNetName
+	content.PublicIpId = u.PublicIpId
+	content.ResourceGroupName = u.ResourceGroupName
+	//content.Description = u.Description
+	*/
+
+	url := "https://testapi.io/api/jihoon-seo/vnic?connection_name=" + u.ConnectionName
+
+	method := "POST"
+
+	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
+
+	/*
+		type VNicReqInfo struct {
+			Name             string
+			VNetName         string
+			SecurityGroupIds []string
+			PublicIPid       string
+		}
+		tempReq := VNicReqInfo{}
+		tempReq.Name = u.CspVNicName
+		tempReq.VNetName = u.CspVNetName
+		//tempReq.SecurityGroupIds =
+		tempReq.PublicIPid = u.PublicIpId
+	*/
+
+	tempReq := map[string]string{
+		"Name":     u.CspVNicName,
+		"VNetName": u.CspVNetName,
+		//"SecurityGroupIds":    content.Fingerprint,
+		"PublicIPid": u.PublicIpId}
+
+	payload, _ := json.Marshal(tempReq)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	// jhseo 191016
+	//var s = new(imageInfo)
+	//s := imageInfo{}
+	type VNicInfo struct {
+		Id               string
+		Name             string
+		PublicIP         string
+		MacAddress       string
+		OwnedVMID        string
+		SecurityGroupIds []string
+		Status           string
+
+		KeyValueList []KeyValue
+	}
+	temp := VNicInfo{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+	}
+
+	/* FYI
+	type vNicInfo struct {
+		Id             string `json:"id"`
+		ConnectionName string `json:"connectionName"`
+		CspVNicId      string `json:"cspVNicId"`
+		CspVNicName    string `json:"cspVNicName"`
+		CspVNetName    string `json:"cspVNetName"`
+		PublicIpId     string `json:"publicIpId"`
+		//ResourceGroupName string `json:"resourceGroupName"`
+		Description string `json:"description"`
+		PublicIp    string `json:"publicIp"`
+		MacAddress  string `json:"macAddress"`
+		OwnedVmId   string `json:"ownedVmId"`
+		Status      string `json:"status"`
+	}
+	*/
+
+	content := vNicInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = u.ConnectionName
+	content.CspVNicId = temp.Id
+	content.CspVNicName = temp.Name // = u.CspVNicName
+	content.CspVNetName = u.CspVNetName
+	content.PublicIpId = u.PublicIpId
+	content.Description = u.Description
+	content.PublicIp = temp.PublicIP
+	content.MacAddress = temp.MacAddress
+	content.OwnedVmId = temp.OwnedVMID
+	content.Status = temp.Status
+
+	// cb-store
+	fmt.Println("=========================== PUT createVNic")
+	Key := genResourceKey(nsId, "vNic", content.Id)
+	mapA := map[string]string{
+		"connectionName": content.ConnectionName,
+		"cspVNicId":      content.CspVNicId,
+		"cspVNicName":    content.CspVNicName,
+		"cspVNetName":    content.CspVNetName,
+		"publicIpId":     content.PublicIpId,
+		//"resourceGroupName": content.ResourceGroupName,
+		"description": content.Description,
+		"publicIp":    content.PublicIp,
+		"macAddress":  content.MacAddress,
+		"ownedVmId":   content.OwnedVmId,
+		"status":      content.Status}
+	Val, _ := json.Marshal(mapA)
+	fmt.Println("Key: ", Key)
+	fmt.Println("Val: ", Val)
+	cbStorePutErr := store.Put(string(Key), string(Val))
+	if cbStorePutErr != nil {
+		cblog.Error(cbStorePutErr)
+		return content, cbStorePutErr
+	}
+	keyValue, _ := store.Get(string(Key))
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===========================")
+	return content, nil
+}
+
+func getVNicList(nsId string) []string {
+
+	fmt.Println("[Get vNics")
+	key := "/ns/" + nsId + "/resources/vNic"
+	fmt.Println(key)
+
+	keyValue, _ := store.GetList(key, true)
+	var vNicList []string
+	for _, v := range keyValue {
+		//if !strings.Contains(v.Key, "vm") {
+		vNicList = append(vNicList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/vNic/"))
+		//}
+	}
+	for _, v := range vNicList {
+		fmt.Println("<" + v + "> \n")
+	}
+	fmt.Println("===============================================")
+	return vNicList
+
+}
+
+func delVNic(nsId string, Id string) error {
+
+	fmt.Println("[Delete vNic] " + Id)
+
+	key := genResourceKey(nsId, "vNic", Id)
+	fmt.Println("key: " + key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
+	temp := vNicInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+	fmt.Println("temp.CspVNicId: " + temp.CspVNicId)
+
+	//url := "https://testapi.io/api/jihoon-seo/vnic/" + temp.CspVNicId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	url := "https://testapi.io/api/jihoon-seo/vnic?connection_name=" + temp.ConnectionName // for testapi.io
+	fmt.Println("url: " + url)
+
+	method := "DELETE"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	// delete mcis info
+	cbStoreDeleteErr := store.Delete(key)
+	if cbStoreDeleteErr != nil {
+		cblog.Error(cbStoreDeleteErr)
+		return cbStoreDeleteErr
+	}
+
+	return nil
+}
