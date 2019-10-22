@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -30,20 +31,40 @@ import (
 // Structs for REST API
 type vmReq struct {
 	Id             string `json:"id"`
-	Csp            string `json:"csp"`
-	Vm_image_name  string `json:"vm_image_name"`
-	Placement_algo string `json:"placement_algo"`
-	Name           string `json:"name"`
-	Description    string `json:"description"`
+	ConnectionName string `json:"connectionName"`
 
+	// 1. Required by CB-Spider
+	CspVmName string `json:"cspVmName"`
+
+	CspImageName          string   `json:"cspImageName"`
+	CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
+	CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
+	CspPublicIPId         string   `json:"cspPublicIPId"`
+	CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
+	CspSpecId             string   `json:"cspSpecId"`
+	CspKeyPairName        string   `json:"cspKeyPairName"`
+
+	CbImageName          string   `json:"cbImageName"`
+	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
+	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
+	CbPublicIPId         string   `json:"cbPublicIPId"`
+	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
+	CbSpecId             string   `json:"cbSpecId"`
+	CbKeyPairName        string   `json:"cbKeyPairName"`
+
+	VMUserId     string `json:"vmUserId"`
+	VMUserPasswd string `json:"vmUserPasswd"`
+
+	// 2. Required by CB-Tumblebug
 	Location string `json:"location"`
-
-	Spec_id string `json:"spec_id"`
 
 	Vcpu_size   string `json:"vcpu_size"`
 	Memory_size string `json:"memory_size"`
 	Disk_size   string `json:"disk_size"`
 	Disk_type   string `json:"disk_type"`
+
+	Placement_algo string `json:"placement_algo"`
+	Description    string `json:"description"`
 }
 type mcisReq struct {
 	Id             string  `json:"id"`
@@ -62,34 +83,68 @@ type mcisInfo struct {
 	Placement_algo string `json:"placement_algo"`
 	Description    string `json:"description"`
 }
+
+type RegionInfo struct {
+	Region string
+	Zone   string
+}
+
 type vmInfo struct {
-	Id        string `json:"id"`
-	Csp_vm_id string `json:"csp_vm_id"`
-	Name      string `json:"name"`
-	Status    string `json:"status"`
+	Id             string `json:"id"`
+	ConnectionName string `json:"connectionName"`
 
-	Public_ip     string `json:"public_ip"`
-	Domain_name   string `json:"domain_name"`
-	Cloud_id      string `json:"cloud_id"`
-	Location      string `json:"location"`
-	Vm_image_name string `json:"vm_image_name"`
+	// 1. Variables in vmReq
+	CspVmName string `json:"cspVmName"`
 
-	Spec_id string `json:"spec_id"`
+	CspImageName          string   `json:"cspImageName"`
+	CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
+	CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
+	CspPublicIPId         string   `json:"cspPublicIPId"`
+	CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
+	CspSpecId             string   `json:"cspSpecId"`
+	CspKeyPairName        string   `json:"cspKeyPairName"`
+
+	CbImageName          string   `json:"cbImageName"`
+	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
+	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
+	CbPublicIPId         string   `json:"cbPublicIPId"`
+	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
+	CbSpecId             string   `json:"cbSpecId"`
+	CbKeyPairName        string   `json:"cbKeyPairName"`
+
+	VMUserId     string `json:"vmUserId"`
+	VMUserPasswd string `json:"vmUserPasswd"`
+
+	Location string `json:"location"`
 
 	Vcpu_size   string `json:"vcpu_size"`
 	Memory_size string `json:"memory_size"`
 	Disk_size   string `json:"disk_size"`
 	Disk_type   string `json:"disk_type"`
 
-	Vm_image     string `json:"vm_image"`
-	Vm_spec      string `json:"vm_spec"`
-	Network      string `json:"network"`
-	Subnet       string `json:"subnet"`
-	Net_security string `json:"net_security"`
-
 	Placement_algo string `json:"placement_algo"`
 	Description    string `json:"description"`
+
+	// 2. Provided by CB-Spider
+	CspVmId      string     `json:"cspVmId"`
+	StartTime    time.Time  `json:"startTime"`
+	Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP     string     `json:"publicIP"`
+	PublicDNS    string     `json:"publicDNS"`
+	PrivateIP    string     `json:"privateIP"`
+	PrivateDNS   string     `json:"privateDNS"`
+	VMBootDisk   string     `json:"vmBootDisk"` // ex) /dev/sda1
+	VMBlockDisk  string     `json:"vmBlockDisk"`
+	KeyValueList []KeyValue `json:"keyValueList"`
+
+	// 3. Required by CB-Tumblebug
+	Status string `json:"status"`
+
+	//Public_ip     string `json:"public_ip"`
+	//Domain_name   string `json:"domain_name"`
+	Cloud_id string `json:"cloud_id"`
 }
+
 type vmStatusInfo struct {
 	Id            string `json:"id"`
 	Csp_vm_id     string `json:"csp_vm_id"`
@@ -430,7 +485,7 @@ func restPostMcisRecommand(c echo.Context) error {
 	for _, v := range vmList {
 		vmTmp := vmRecommendInfo{}
 		vmTmp.Placement_algo = v.Placement_algo
-		vmTmp.Name = v.Name
+		vmTmp.Name = v.CspVmName
 
 		vmTmp.Vm_priority = getRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
 
@@ -456,32 +511,32 @@ func restPostMcisVm(c echo.Context) error {
 	vmInfoData := vmInfo{}
 	vmInfoData.Id = genUuid()
 	req.Id = vmInfoData.Id
-	vmInfoData.Name = req.Name
+	vmInfoData.CspVmName = req.CspVmName
 
 	vmInfoData.Placement_algo = req.Placement_algo
 
 	vmInfoData.Location = req.Location
-	vmInfoData.Cloud_id = req.Csp
+	//vmInfoData.Cloud_id = req.
 	vmInfoData.Description = req.Description
 
-	vmInfoData.Spec_id = req.Spec_id
+	vmInfoData.CspSpecId = req.CspSpecId
 
 	vmInfoData.Vcpu_size = req.Vcpu_size
 	vmInfoData.Memory_size = req.Memory_size
 	vmInfoData.Disk_size = req.Disk_size
 	vmInfoData.Disk_type = req.Disk_type
 
-	vmInfoData.Vm_image_name = req.Vm_image_name
+	vmInfoData.CspImageName = req.CspImageName
 
-	vmInfoData.Net_security = "TBD"
-	vmInfoData.Network = "TBD"
-	vmInfoData.Subnet = "TBD"
-	vmInfoData.Vm_image = "TBD"
-	vmInfoData.Vm_spec = "TBD"
+	vmInfoData.CspSecurityGroupIds = req.CspSecurityGroupIds
+	vmInfoData.CspVirtualNetworkId = "TBD"
+	//vmInfoData.Subnet = "TBD"
+	vmInfoData.CspImageName = "TBD"
+	vmInfoData.CspSpecId = "TBD"
 
-	vmInfoData.Public_ip = "Not assigned yet"
-	vmInfoData.Csp_vm_id = "Not assigned yet"
-	vmInfoData.Domain_name = "Not assigned yet"
+	vmInfoData.PublicIP = "Not assigned yet"
+	vmInfoData.CspVmId = "Not assigned yet"
+	vmInfoData.PublicDNS = "Not assigned yet"
 	vmInfoData.Status = "Launching"
 
 	//goroutin
@@ -826,32 +881,30 @@ func createMcis(nsId string, req *mcisReq) string {
 		//vmInfoData vmInfo
 		vmInfoData := vmInfo{}
 		vmInfoData.Id = genUuid()
-		vmInfoData.Name = k.Name
+		vmInfoData.CspVmName = k.CspVmName
 
 		vmInfoData.Placement_algo = k.Placement_algo
 
 		vmInfoData.Location = k.Location
-		vmInfoData.Cloud_id = k.Csp
+		//vmInfoData.Cloud_id = k.Csp
 		vmInfoData.Description = k.Description
 
-		vmInfoData.Spec_id = k.Spec_id
+		vmInfoData.CspSpecId = k.CspSpecId
 
 		vmInfoData.Vcpu_size = k.Vcpu_size
 		vmInfoData.Memory_size = k.Memory_size
 		vmInfoData.Disk_size = k.Disk_size
 		vmInfoData.Disk_type = k.Disk_type
 
-		vmInfoData.Vm_image_name = k.Vm_image_name
+		vmInfoData.CspImageName = k.CspImageName
 
-		vmInfoData.Net_security = "TBD"
-		vmInfoData.Network = "TBD"
-		vmInfoData.Subnet = "TBD"
-		vmInfoData.Vm_image = "TBD"
-		vmInfoData.Vm_spec = "TBD"
+		//vmInfoData.CspSecurityGroupIds = ["TBD"]
+		vmInfoData.CspVirtualNetworkId = "TBD"
+		//vmInfoData.Subnet = "TBD"
 
-		vmInfoData.Public_ip = "Not assigned yet"
-		vmInfoData.Csp_vm_id = "Not assigned yet"
-		vmInfoData.Domain_name = "Not assigned yet"
+		vmInfoData.PublicIP = "Not assigned yet"
+		vmInfoData.CspVmId = "Not assigned yet"
+		vmInfoData.PublicDNS = "Not assigned yet"
 		vmInfoData.Status = "Launching"
 
 		go addVmToMcis(&wg, nsId, req.Id, vmInfoData)
@@ -876,8 +929,8 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 
 	instanceIds, publicIPs := createVm(vmInfoData)
 
-	vmInfoData.Public_ip = string(*publicIPs[0])
-	vmInfoData.Csp_vm_id = string(*instanceIds[0])
+	vmInfoData.PublicIP = string(*publicIPs[0])
+	vmInfoData.CspVmId = string(*instanceIds[0])
 	vmInfoData.Status = "Running"
 	updateVmInfo(nsId, mcisId, vmInfoData)
 
@@ -888,19 +941,309 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 func createVm(vmInfoData vmInfo) ([]*string, []*string) {
 
 	fmt.Printf("%+v\n", vmInfoData.Cloud_id)
-	fmt.Printf("%+v\n", vmInfoData.Csp_vm_id)
+	fmt.Printf("%+v\n", vmInfoData.CspVmId)
 
-	if strings.Compare(vmInfoData.Cloud_id, "aws") == 0 {
-		return createVmAws(1)
-	} else if strings.Compare(vmInfoData.Cloud_id, "gcp") == 0 {
-		return createVmGcp(1)
-	} else if strings.Compare(vmInfoData.Cloud_id, "azure") == 0 {
-		return createVmAzure(1)
-	} else {
-		fmt.Println("==============ERROR=no matched provider_id=================")
-		return nil, nil
+	/*
+		if strings.Compare(vmInfoData.Cloud_id, "aws") == 0 {
+			return createVmAws(1)
+		} else if strings.Compare(vmInfoData.Cloud_id, "gcp") == 0 {
+			return createVmGcp(1)
+		} else if strings.Compare(vmInfoData.Cloud_id, "azure") == 0 {
+			return createVmAzure(1)
+		} else {
+			fmt.Println("==============ERROR=no matched provider_id=================")
+			return nil, nil
+		}
+	*/
+
+	/* FYI
+		type vmReq struct {
+		Id             string `json:"id"`
+		ConnectionName string `json:"connectionName"`
+
+		// 1. Required by CB-Spider
+		CspVmName string `json:"cspVmName"`
+
+		CspImageName          string   `json:"cspImageName"`
+		CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
+		CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
+		CspPublicIPId         string   `json:"cspPublicIPId"`
+		CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
+		CspSpecId             string   `json:"cspSpecId"`
+		CspKeyPairName        string   `json:"cspKeyPairName"`
+
+		CbImageName          string   `json:"cbImageName"`
+		CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
+		CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
+		CbPublicIPId         string   `json:"cbPublicIPId"`
+		CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
+		CbSpecId             string   `json:"cbSpecId"`
+		CbKeyPairName        string   `json:"cbKeyPairName"`
+
+		VMUserId     string `json:"vmUserId"`
+		VMUserPasswd string `json:"vmUserPasswd"`
+
+		// 2. Required by CB-Tumblebug
+		Location string `json:"location"`
+
+		Vcpu_size   string `json:"vcpu_size"`
+		Memory_size string `json:"memory_size"`
+		Disk_size   string `json:"disk_size"`
+		Disk_type   string `json:"disk_type"`
+
+		Placement_algo string `json:"placement_algo"`
+		Description    string `json:"description"`
+	}
+	*/
+
+	url := "https://testapi.io/api/jihoon-seo/vm?connection_name=" + vmInfoData.ConnectionName
+
+	method := "POST"
+
+	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
+
+	/* Mark 1
+	type VNicReqInfo struct {
+		Name             string
+		VNetName         string
+		SecurityGroupIds []string
+		PublicIPid       string
+	}
+	tempReq := VNicReqInfo{}
+	tempReq.Name = u.CspVNicName
+	tempReq.VNetName = u.CspVNetName
+	//tempReq.SecurityGroupIds =
+	tempReq.PublicIPid = u.PublicIpId
+	*/
+
+	/* Mark 2
+	tempReq := map[string]string{
+		"Name":     u.CspVNicName,
+		"VNetName": u.CspVNetName,
+		//"SecurityGroupIds":    content.Fingerprint,
+		"PublicIPid": u.PublicIpId}
+	*/
+
+	// Mark 3
+	type VMReqInfo struct {
+		VMName string
+
+		ImageId            string
+		VirtualNetworkId   string
+		NetworkInterfaceId string
+		PublicIPId         string
+		SecurityGroupIds   []string
+
+		VMSpecId string
+
+		KeyPairName  string
+		VMUserId     string
+		VMUserPasswd string
+	}
+	tempReq := VMReqInfo{}
+	tempReq.VMName = vmInfoData.CspVmName
+
+	tempReq.ImageId = vmInfoData.CspImageName
+	tempReq.VirtualNetworkId = vmInfoData.CspVirtualNetworkId
+	tempReq.NetworkInterfaceId = vmInfoData.CspNetworkInterfaceId
+	tempReq.PublicIPId = vmInfoData.CspPublicIPId
+	tempReq.SecurityGroupIds = vmInfoData.CspSecurityGroupIds
+
+	tempReq.VMSpecId = vmInfoData.CspSpecId
+
+	tempReq.KeyPairName = vmInfoData.CspKeyPairName
+	tempReq.VMUserId = vmInfoData.VMUserId
+	tempReq.VMUserPasswd = vmInfoData.VMUserPasswd
+
+	payload, _ := json.Marshal(tempReq)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	// jhseo 191016
+	//var s = new(imageInfo)
+	//s := imageInfo{}
+	type VMInfo struct {
+		Name      string    // AWS,
+		Id        string    // AWS,
+		StartTime time.Time // Timezone: based on cloud-barista server location.
+
+		Region           RegionInfo // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+		ImageId          string
+		VMSpecId         string   // AWS, instance type or flavour, etc... ex) t2.micro or f1.micro
+		VirtualNetworkId string   // AWS, ex) subnet-8c4a53e4
+		SecurityGroupIds []string // AWS, ex) sg-0b7452563e1121bb6
+
+		NetworkInterfaceId string // ex) eth0
+		PublicIP           string // ex) AWS, 13.125.43.21
+		PublicDNS          string // ex) AWS, ec2-13-125-43-0.ap-northeast-2.compute.amazonaws.com
+		PrivateIP          string // ex) AWS, ip-172-31-4-60.ap-northeast-2.compute.internal
+		PrivateDNS         string // ex) AWS, 172.31.4.60
+
+		KeyPairName  string // ex) AWS, powerkimKeyPair
+		VMUserId     string // ex) user1
+		VMUserPasswd string
+
+		VMBootDisk  string // ex) /dev/sda1
+		VMBlockDisk string // ex)
+
+		KeyValueList []KeyValue
+	}
+	temp := VMInfo{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
 	}
 
+	/* FYI
+	type vmInfo struct {
+		Id             string `json:"id"`
+		ConnectionName string `json:"connectionName"`
+
+		// 1. Variables in vmReq
+		CspVmName string `json:"cspVmName"`
+
+		CspImageName          string   `json:"cspImageName"`
+		CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
+		CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
+		CspPublicIPId         string   `json:"cspPublicIPId"`
+		CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
+		CspSpecId             string   `json:"cspSpecId"`
+		CspKeyPairName        string   `json:"cspKeyPairName"`
+
+		CbImageName          string   `json:"cbImageName"`
+		CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
+		CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
+		CbPublicIPId         string   `json:"cbPublicIPId"`
+		CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
+		CbSpecId             string   `json:"cbSpecId"`
+		CbKeyPairName        string   `json:"cbKeyPairName"`
+
+		VMUserId     string `json:"vmUserId"`
+		VMUserPasswd string `json:"vmUserPasswd"`
+
+		Location string `json:"location"`
+
+		Vcpu_size   string `json:"vcpu_size"`
+		Memory_size string `json:"memory_size"`
+		Disk_size   string `json:"disk_size"`
+		Disk_type   string `json:"disk_type"`
+
+		Placement_algo string `json:"placement_algo"`
+		Description    string `json:"description"`
+
+		// 2. Provided by CB-Spider
+		CspVmId      string     `json:"cspVmId"`
+		StartTime    time.Time  `json:"startTime"`
+		Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+		PublicIP     string     `json:"publicIP"`
+		PublicDNS    string     `json:"publicDNS"`
+		PrivateIP    string     `json:"privateIP"`
+		PrivateDNS   string     `json:"privateDNS"`
+		VMBootDisk   string     `json:"vmBootDisk"` // ex) /dev/sda1
+		VMBlockDisk  string     `json:"vmBlockDisk"`
+		KeyValueList []KeyValue `json:"keyValueList"`
+
+		// 3. Required by CB-Tumblebug
+		Status string `json:"status"`
+
+		//Public_ip     string `json:"public_ip"`
+		//Domain_name   string `json:"domain_name"`
+		Cloud_id string `json:"cloud_id"`
+	}
+	*/
+
+	content := vmInfo{}
+	content.Id = genUuid()
+	content.ConnectionName = vmInfoData.ConnectionName
+
+	// 1. Variables in vmReq
+	content.CspVmName = temp.Name // = u.CspVmName
+
+	content.CspImageName = temp.ImageId
+	content.CspVirtualNetworkId = temp.VirtualNetworkId
+	content.CspNetworkInterfaceId = temp.NetworkInterfaceId
+	content.CspPublicIPId = vmInfoData.CspPublicIPId
+	content.CspSecurityGroupIds = temp.SecurityGroupIds
+	content.CspSpecId = temp.VMSpecId
+	content.CspKeyPairName = temp.KeyPairName
+
+	content.CbImageName = vmInfoData.CbImageName
+	content.CbVirtualNetworkId = vmInfoData.CbVirtualNetworkId
+	content.CbNetworkInterfaceId = vmInfoData.CbNetworkInterfaceId
+	content.CbPublicIPId = vmInfoData.CbPublicIPId
+	content.CbSecurityGroupIds = vmInfoData.CbSecurityGroupIds
+	content.CbSpecId = vmInfoData.CbSpecId
+	content.CbKeyPairName = vmInfoData.CbKeyPairName
+
+	content.VMUserId = temp.VMUserId
+	content.VMUserPasswd = temp.VMUserPasswd
+
+	content.Location = vmInfoData.Location
+
+	content.Vcpu_size = vmInfoData.Vcpu_size
+	content.Memory_size = vmInfoData.Memory_size
+	content.Disk_size = vmInfoData.Disk_size
+	content.Disk_type = vmInfoData.Disk_type
+
+	content.Placement_algo = vmInfoData.Placement_algo
+	content.Description = vmInfoData.Description
+
+	// 2. Provided by CB-Spider
+	content.CspVmId = temp.Id
+	content.StartTime = temp.StartTime
+	content.Region = temp.Region
+	content.PublicIP = temp.PublicIP
+	content.PublicDNS = temp.PublicDNS
+	content.PrivateIP = temp.PrivateIP
+	content.PrivateDNS = temp.PrivateDNS
+	content.VMBootDisk = temp.VMBootDisk
+	content.VMBlockDisk = temp.VMBlockDisk
+	content.KeyValueList = temp.KeyValueList
+
+	//content.Status = temp.
+	//content.Cloud_id = temp.
+
+	// cb-store
+	fmt.Println("=========================== PUT createVM")
+	/*
+		Key := genResourceKey(nsId, "vm", content.Id)
+
+		Val, _ := json.Marshal(content)
+		fmt.Println("Key: ", Key)
+		fmt.Println("Val: ", Val)
+		cbStorePutErr := store.Put(string(Key), string(Val))
+		if cbStorePutErr != nil {
+			cblog.Error(cbStorePutErr)
+			return nil, nil
+		}
+		keyValue, _ := store.Get(string(Key))
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===========================")
+		return content, nil
+	*/
+
+	instanceIds := make([]*string, 1)
+	publicIPs := make([]*string, 1)
+	instanceIds[0] = &content.CspVmId
+	publicIPs[0] = &content.PublicIP
+	return instanceIds, publicIPs
 }
 
 func createVmAws(count int) ([]*string, []*string) {
@@ -1271,18 +1614,51 @@ func terminateVm(nsId string, mcisId string, vmId string) error {
 	fmt.Printf("%+v\n", content.Cloud_id)
 	fmt.Printf("%+v\n", content.Csp_vm_id)
 
-	if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
-		return nil
+	temp := vmInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
-	if strings.Compare(content.Cloud_id, "aws") == 0 {
-		terminateVmAws(content.Csp_vm_id)
-	} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
-		terminateVmGcp(content.Csp_vm_id)
-	} else if strings.Compare(content.Cloud_id, "azure") == 0 {
-		terminateVmAzure(content.Csp_vm_id)
-	} else {
-		fmt.Println("==============ERROR=no matched provider_id=================")
+	fmt.Println("temp.CspVmId: " + temp.CspVmId)
+
+	//url := "https://testapi.io/api/jihoon-seo/vm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	url := "https://testapi.io/api/jihoon-seo/vm?connection_name=" + temp.ConnectionName // for testapi.io
+	fmt.Println("url: " + url)
+
+	method := "DELETE"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	res, err := client.Do(req)
+	fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	/*
+		if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
+			return nil
+		}
+		if strings.Compare(content.Cloud_id, "aws") == 0 {
+			terminateVmAws(content.Csp_vm_id)
+		} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
+			terminateVmGcp(content.Csp_vm_id)
+		} else if strings.Compare(content.Cloud_id, "azure") == 0 {
+			terminateVmAzure(content.Csp_vm_id)
+		} else {
+			fmt.Println("==============ERROR=no matched provider_id=================")
+		}
+	*/
 
 	return nil
 
