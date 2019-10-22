@@ -212,7 +212,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	// port := "80"
 	// url := ip + ":" + port + "/vnetwork"
 
-	url := "https://testapi.io/api/jihoon-seo/vnetwork?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/vnetwork?connection_name=" + u.ConnectionName
 
 	method := "POST"
 
@@ -348,7 +348,7 @@ func delNetwork(nsId string, Id string) error {
 	fmt.Println("temp.CspNetworkId: " + temp.CspNetworkId)
 
 	//url := "https://testapi.io/api/jihoon-seo/vnetwork/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := "https://testapi.io/api/jihoon-seo/vnetwork?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/vnetwork?connection_name=" + temp.ConnectionName // for testapi.io
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

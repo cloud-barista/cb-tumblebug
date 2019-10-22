@@ -218,7 +218,7 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, e
 	}
 	*/
 
-	url := "https://testapi.io/api/jihoon-seo/securitygroup?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
 
 	method := "POST"
 
@@ -363,7 +363,7 @@ func delSecurityGroup(nsId string, Id string) error {
 	fmt.Println("temp.CspSecurityGroupId: " + temp.CspSecurityGroupId)
 
 	//url := "https://testapi.io/api/jihoon-seo/securitygroup/" + temp.CspSecurityGroupId + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := "https://testapi.io/api/jihoon-seo/securitygroup?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/securitygroup?connection_name=" + temp.ConnectionName // for testapi.io
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

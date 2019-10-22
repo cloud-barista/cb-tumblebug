@@ -200,7 +200,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, error) {
 	}
 	*/
 
-	url := "https://testapi.io/api/jihoon-seo/publicip?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/publicip?connection_name=" + u.ConnectionName
 
 	method := "POST"
 
@@ -342,7 +342,7 @@ func delPublicIp(nsId string, Id string) error {
 	fmt.Println("temp.CspPublicIpName: " + temp.CspPublicIpName) // Identifier is subject to change.
 
 	//url := "https://testapi.io/api/jihoon-seo/publicip/" + temp.CspPublicIpName + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := "https://testapi.io/api/jihoon-seo/publicip?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/publicip?connection_name=" + temp.ConnectionName // for testapi.io
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

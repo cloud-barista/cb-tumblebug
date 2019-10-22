@@ -4,6 +4,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/cloud-barista/cb-tumblebug/mcism_server/confighandler"
 
 	"fmt"
@@ -136,11 +138,15 @@ func apiServer() {
 
 }
 
+var SPIDER_URL string
+
 func main() {
 
 	fmt.Println("\n[cb-tumblebug (Multi-Cloud Infra Service Management Framework)]")
 	fmt.Println("\nInitiating REST API Server ...")
 	fmt.Println("\n[REST API call examples]")
+
+	SPIDER_URL = os.Getenv("SPIDER_URL")
 
 	/*
 		fmt.Println("[List MCISs]:\t\t curl <ServerIP>:1323/mcis")

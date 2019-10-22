@@ -215,7 +215,7 @@ func registerImageWithName(nsId string, u *imageReq) (imageInfo, error) {
 	tempReq.Id = u.CspImageId
 
 	// Step 2. Send a req to Spider and save the response.
-	url := "https://testapi.io/api/jihoon-seo/vmimage?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/vmimage?connection_name=" + u.ConnectionName
 
 	method := "POST"
 
