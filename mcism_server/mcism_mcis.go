@@ -44,13 +44,13 @@ type vmReq struct {
 	CspSpecId             string   `json:"cspSpecId"`
 	CspKeyPairName        string   `json:"cspKeyPairName"`
 
-	CbImageName          string   `json:"cbImageName"`
+	CbImageId            string   `json:"cbImageId"`
 	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
 	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
 	CbPublicIPId         string   `json:"cbPublicIPId"`
 	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
 	CbSpecId             string   `json:"cbSpecId"`
-	CbKeyPairName        string   `json:"cbKeyPairName"`
+	CbKeyPairId          string   `json:"cbKeyPairId"`
 
 	VMUserId     string `json:"vmUserId"`
 	VMUserPasswd string `json:"vmUserPasswd"`
@@ -104,13 +104,13 @@ type vmInfo struct {
 	CspSpecId             string   `json:"cspSpecId"`
 	CspKeyPairName        string   `json:"cspKeyPairName"`
 
-	CbImageName          string   `json:"cbImageName"`
+	CbImageId            string   `json:"cbImageId"`
 	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
 	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
 	CbPublicIPId         string   `json:"cbPublicIPId"`
 	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
 	CbSpecId             string   `json:"cbSpecId"`
-	CbKeyPairName        string   `json:"cbKeyPairName"`
+	CbKeyPairId          string   `json:"cbKeyPairId"`
 
 	VMUserId     string `json:"vmUserId"`
 	VMUserPasswd string `json:"vmUserPasswd"`
@@ -972,13 +972,13 @@ func createVm(vmInfoData vmInfo) ([]*string, []*string) {
 		CspSpecId             string   `json:"cspSpecId"`
 		CspKeyPairName        string   `json:"cspKeyPairName"`
 
-		CbImageName          string   `json:"cbImageName"`
+		CbImageId          string   `json:"cbImageId"`
 		CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
 		CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
 		CbPublicIPId         string   `json:"cbPublicIPId"`
 		CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
 		CbSpecId             string   `json:"cbSpecId"`
-		CbKeyPairName        string   `json:"cbKeyPairName"`
+		CbKeyPairId        string   `json:"cbKeyPairId"`
 
 		VMUserId     string `json:"vmUserId"`
 		VMUserPasswd string `json:"vmUserPasswd"`
@@ -1127,13 +1127,13 @@ func createVm(vmInfoData vmInfo) ([]*string, []*string) {
 		CspSpecId             string   `json:"cspSpecId"`
 		CspKeyPairName        string   `json:"cspKeyPairName"`
 
-		CbImageName          string   `json:"cbImageName"`
+		CbImageId          string   `json:"cbImageId"`
 		CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
 		CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
 		CbPublicIPId         string   `json:"cbPublicIPId"`
 		CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
 		CbSpecId             string   `json:"cbSpecId"`
-		CbKeyPairName        string   `json:"cbKeyPairName"`
+		CbKeyPairId        string   `json:"cbKeyPairId"`
 
 		VMUserId     string `json:"vmUserId"`
 		VMUserPasswd string `json:"vmUserPasswd"`
@@ -1184,13 +1184,13 @@ func createVm(vmInfoData vmInfo) ([]*string, []*string) {
 	content.CspSpecId = temp.VMSpecId
 	content.CspKeyPairName = temp.KeyPairName
 
-	content.CbImageName = vmInfoData.CbImageName
+	content.CbImageId = vmInfoData.CbImageId
 	content.CbVirtualNetworkId = vmInfoData.CbVirtualNetworkId
 	content.CbNetworkInterfaceId = vmInfoData.CbNetworkInterfaceId
 	content.CbPublicIPId = vmInfoData.CbPublicIPId
 	content.CbSecurityGroupIds = vmInfoData.CbSecurityGroupIds
 	content.CbSpecId = vmInfoData.CbSpecId
-	content.CbKeyPairName = vmInfoData.CbKeyPairName
+	content.CbKeyPairId = vmInfoData.CbKeyPairId
 
 	content.VMUserId = temp.VMUserId
 	content.VMUserPasswd = temp.VMUserPasswd
