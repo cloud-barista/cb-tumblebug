@@ -209,7 +209,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, error) {
 	}
 	*/
 
-	url := "https://testapi.io/api/jihoon-seo/vnic?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/vnic?connection_name=" + u.ConnectionName
 
 	method := "POST"
 
@@ -394,7 +394,7 @@ func delVNic(nsId string, Id string) error {
 	fmt.Println("temp.CspVNicId: " + temp.CspVNicId)
 
 	//url := "https://testapi.io/api/jihoon-seo/vnic/" + temp.CspVNicId + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := "https://testapi.io/api/jihoon-seo/vnic?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/vnic?connection_name=" + temp.ConnectionName // for testapi.io
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

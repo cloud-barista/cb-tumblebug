@@ -996,7 +996,7 @@ func createVm(vmInfoData vmInfo) ([]*string, []*string) {
 	}
 	*/
 
-	url := "https://testapi.io/api/jihoon-seo/vm?connection_name=" + vmInfoData.ConnectionName
+	url := SPIDER_URL + "/vm?connection_name=" + vmInfoData.ConnectionName
 
 	method := "POST"
 
@@ -1622,7 +1622,7 @@ func terminateVm(nsId string, mcisId string, vmId string) error {
 	fmt.Println("temp.CspVmId: " + temp.CspVmId)
 
 	//url := "https://testapi.io/api/jihoon-seo/vm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := "https://testapi.io/api/jihoon-seo/vm?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/vm?connection_name=" + temp.ConnectionName // for testapi.io
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

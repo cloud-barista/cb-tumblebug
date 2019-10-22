@@ -197,7 +197,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 	}
 	*/
 
-	url := "https://testapi.io/api/jihoon-seo/keypair?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/keypair?connection_name=" + u.ConnectionName
 
 	method := "POST"
 
@@ -329,7 +329,7 @@ func delSshKey(nsId string, Id string) error {
 	fmt.Println("temp.CspSshKeyName: " + temp.CspSshKeyName)
 
 	//url := "https://testapi.io/api/jihoon-seo/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := "https://testapi.io/api/jihoon-seo/keypair?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/keypair?connection_name=" + temp.ConnectionName // for testapi.io
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
