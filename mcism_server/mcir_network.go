@@ -76,23 +76,35 @@ func restPostNetwork(c echo.Context) error {
 		return err
 	}
 
-	action := c.QueryParam("action")
-	fmt.Println("[POST Network requested action: " + action)
-	if action == "create" {
-		fmt.Println("[Creating Network]")
-		content, _ := createNetwork(nsId, u)
-		return c.JSON(http.StatusCreated, content)
-		/*
-			} else if action == "register" {
-				fmt.Println("[Registering Network]")
-				content, _ := registerNetwork(nsId, u)
-				return c.JSON(http.StatusCreated, content)
-		*/
-	} else {
-		mapA := map[string]string{"message": "You must specify: action=create"}
+	/*
+		action := c.QueryParam("action")
+		fmt.Println("[POST Network requested action: " + action)
+		if action == "create" {
+			fmt.Println("[Creating Network]")
+			content, _ := createNetwork(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+		} else if action == "register" {
+			fmt.Println("[Registering Network]")
+			content, _ := registerNetwork(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+		} else {
+			mapA := map[string]string{"message": "You must specify: action=create"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+	*/
+
+	fmt.Println("[POST Network")
+	fmt.Println("[Creating Network]")
+	content, err := createNetwork(nsId, u)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{
+			"message": "Failed to create a network"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
-
+	return c.JSON(http.StatusCreated, content)
 }
 
 func restGetNetwork(c echo.Context) error {

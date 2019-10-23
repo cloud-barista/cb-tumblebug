@@ -69,23 +69,35 @@ func restPostSshKey(c echo.Context) error {
 		return err
 	}
 
-	action := c.QueryParam("action")
-	fmt.Println("[POST SshKey requested action: " + action)
-	if action == "create" {
-		fmt.Println("[Creating SshKey]")
-		content, _ := createSshKey(nsId, u)
-		return c.JSON(http.StatusCreated, content)
-		/*
-			} else if action == "register" {
-				fmt.Println("[Registering SshKey]")
-				content, _ := registerSshKey(nsId, u)
-				return c.JSON(http.StatusCreated, content)
-		*/
-	} else {
-		mapA := map[string]string{"message": "You must specify: action=create"}
+	/*
+		action := c.QueryParam("action")
+		fmt.Println("[POST SshKey requested action: " + action)
+		if action == "create" {
+			fmt.Println("[Creating SshKey]")
+			content, _ := createSshKey(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+				} else if action == "register" {
+					fmt.Println("[Registering SshKey]")
+					content, _ := registerSshKey(nsId, u)
+					return c.JSON(http.StatusCreated, content)
+
+		} else {
+			mapA := map[string]string{"message": "You must specify: action=create"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+	*/
+
+	fmt.Println("[POST SshKey")
+	fmt.Println("[Creating SshKey]")
+	content, err := createSshKey(nsId, u)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{
+			"message": "Failed to create a SshKey"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
-
+	return c.JSON(http.StatusCreated, content)
 }
 
 func restGetSshKey(c echo.Context) error {
