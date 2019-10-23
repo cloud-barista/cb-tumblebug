@@ -71,23 +71,35 @@ func restPostPublicIp(c echo.Context) error {
 		return err
 	}
 
-	action := c.QueryParam("action")
-	fmt.Println("[POST PublicIp requested action: " + action)
-	if action == "create" {
-		fmt.Println("[Creating PublicIp]")
-		content, _ := createPublicIp(nsId, u)
-		return c.JSON(http.StatusCreated, content)
-		/*
-			} else if action == "register" {
-				fmt.Println("[Registering PublicIp]")
-				content, _ := registerPublicIp(nsId, u)
-				return c.JSON(http.StatusCreated, content)
-		*/
-	} else {
-		mapA := map[string]string{"message": "You must specify: action=create"}
+	/*
+		action := c.QueryParam("action")
+		fmt.Println("[POST PublicIp requested action: " + action)
+		if action == "create" {
+			fmt.Println("[Creating PublicIp]")
+			content, _ := createPublicIp(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+		} else if action == "register" {
+			fmt.Println("[Registering PublicIp]")
+			content, _ := registerPublicIp(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+		} else {
+			mapA := map[string]string{"message": "You must specify: action=create"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+	*/
+
+	fmt.Println("[POST PublicIp")
+	fmt.Println("[Creating PublicIp]")
+	content, err := createPublicIp(nsId, u)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{
+			"message": "Failed to create a PublicIp"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
-
+	return c.JSON(http.StatusCreated, content)
 }
 
 func restGetPublicIp(c echo.Context) error {

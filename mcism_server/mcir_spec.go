@@ -58,23 +58,39 @@ func restPostSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	action := c.QueryParam("action")
-	fmt.Println("[POST Spec requested action: " + action)
+	/*
+		action := c.QueryParam("action")
+		fmt.Println("[POST Spec requested action: " + action)
 
-	if action == "registerWithInfo" {
-		fmt.Println("[Registering Spec with info]")
-		u := &specInfo{}
-		if err := c.Bind(u); err != nil {
-			return err
+		if action == "registerWithInfo" {
+			fmt.Println("[Registering Spec with info]")
+			u := &specInfo{}
+			if err := c.Bind(u); err != nil {
+				return err
+			}
+			content, _ := registerSpecWithInfo(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+		} else {
+			mapA := map[string]string{"message": "lookupSpec(specRequest) failed."}
+			return c.JSON(http.StatusFailedDependency, &mapA)
 		}
-		content, _ := registerSpecWithInfo(nsId, u)
-		return c.JSON(http.StatusCreated, content)
+	*/
 
-	} else {
-		mapA := map[string]string{"message": "lookupSpec(specRequest) failed."}
+	fmt.Println("[POST Spec")
+	fmt.Println("[Registering Spec]")
+	u := &specInfo{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	content, err := registerSpecWithInfo(nsId, u)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{
+			"message": "Failed to register a Spec"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
-
+	return c.JSON(http.StatusCreated, content)
 }
 
 func restGetSpec(c echo.Context) error {

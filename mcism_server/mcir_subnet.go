@@ -54,23 +54,35 @@ func restPostSubnet(c echo.Context) error {
 		return err
 	}
 
-	action := c.QueryParam("action")
-	fmt.Println("[POST Subnet requested action: " + action)
-	if action == "create" {
-		fmt.Println("[Creating Subnet]")
-		content, _ := createSubnet(nsId, u)
-		return c.JSON(http.StatusCreated, content)
+	/*
+		action := c.QueryParam("action")
+		fmt.Println("[POST Subnet requested action: " + action)
+		if action == "create" {
+			fmt.Println("[Creating Subnet]")
+			content, _ := createSubnet(nsId, u)
+			return c.JSON(http.StatusCreated, content)
 
-	} else if action == "register" {
-		fmt.Println("[Registering Subnet]")
-		content, _ := registerSubnet(nsId, u)
-		return c.JSON(http.StatusCreated, content)
+		} else if action == "register" {
+			fmt.Println("[Registering Subnet]")
+			content, _ := registerSubnet(nsId, u)
+			return c.JSON(http.StatusCreated, content)
 
-	} else {
-		mapA := map[string]string{"message": "You must specify: action=create or action=register"}
+		} else {
+			mapA := map[string]string{"message": "You must specify: action=create or action=register"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+	*/
+
+	fmt.Println("[POST Subnet")
+	fmt.Println("[Creating Subnet]")
+	content, err := createSubnet(nsId, u)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{
+			"message": "Failed to create a Subnet"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
-
+	return c.JSON(http.StatusCreated, content)
 }
 
 func restGetSubnet(c echo.Context) error {
@@ -223,6 +235,7 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 	return content, nil
 }
 
+/*
 func registerSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	content := subnetInfo{}
@@ -264,6 +277,7 @@ func registerSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 	fmt.Println("===========================")
 	return content, nil
 }
+*/
 
 func getSubnetList(nsId string) []string {
 

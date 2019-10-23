@@ -80,23 +80,35 @@ func restPostVNic(c echo.Context) error {
 		return err
 	}
 
-	action := c.QueryParam("action")
-	fmt.Println("[POST VNic requested action: " + action)
-	if action == "create" {
-		fmt.Println("[Creating VNic]")
-		content, _ := createVNic(nsId, u)
-		return c.JSON(http.StatusCreated, content)
-		/*
-			} else if action == "register" {
-				fmt.Println("[Registering VNic]")
-				content, _ := registerVNic(nsId, u)
-				return c.JSON(http.StatusCreated, content)
-		*/
-	} else {
-		mapA := map[string]string{"message": "You must specify: action=create"}
+	/*
+		action := c.QueryParam("action")
+		fmt.Println("[POST VNic requested action: " + action)
+		if action == "create" {
+			fmt.Println("[Creating VNic]")
+			content, _ := createVNic(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+		} else if action == "register" {
+			fmt.Println("[Registering VNic]")
+			content, _ := registerVNic(nsId, u)
+			return c.JSON(http.StatusCreated, content)
+
+		} else {
+			mapA := map[string]string{"message": "You must specify: action=create"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+	*/
+
+	fmt.Println("[POST VNic")
+	fmt.Println("[Creating VNic]")
+	content, err := createVNic(nsId, u)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{
+			"message": "Failed to create a VNic"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
-
+	return c.JSON(http.StatusCreated, content)
 }
 
 func restGetVNic(c echo.Context) error {
