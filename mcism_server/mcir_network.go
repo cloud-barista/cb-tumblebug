@@ -203,6 +203,11 @@ func restDelAllNetwork(c echo.Context) error {
 
 func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 
+	// TODO: Since Spider does not check duplication for vnet `Name` that already exists,
+	// Tumblebug should check duplication.
+	// Option 1: Lookup in Tumblebug's metadata store.
+	// Option 2: Ask to Spider.
+
 	/* FYI
 	type networkReq struct {
 		//Id                string `json:"id"`
@@ -243,11 +248,22 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	fmt.Println("Called mockAPI.")
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	//fmt.Println("Called mockAPI.")
+	if err != nil {
+		cblog.Error(err)
+		content := networkInfo{}
+		return content, err
+	}
 
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		content := networkInfo{}
+		return content, err
+	}
 
 	// jhseo 191016
 	//var s = new(imageInfo)
@@ -359,8 +375,8 @@ func delNetwork(nsId string, Id string) error {
 	}
 	fmt.Println("temp.CspNetworkId: " + temp.CspNetworkId)
 
-	//url := "https://testapi.io/api/jihoon-seo/vnetwork/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := SPIDER_URL + "/vnetwork?connection_name=" + temp.ConnectionName // for testapi.io
+	//url := SPIDER_URL + "/vnetwork?connection_name=" + temp.ConnectionName                           // for testapi.io
+	url := SPIDER_URL + "/vnetwork/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
@@ -377,13 +393,27 @@ func delNetwork(nsId string, Id string) error {
 	}
 
 	res, err := client.Do(req)
-	fmt.Println("Called mockAPI.")
 	defer res.Body.Close()
+	//fmt.Println("Called mockAPI.")
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+	if res.StatusCode == 400 || res.StatusCode == 401 {
+		fmt.Println("Status code 400 or 401.")
+		err := store.Delete("") // TODO: We don't need to call store.Delete("") to make an error object.
+		cblog.Error(err)
+		return err
+	}
+
 	body, err := ioutil.ReadAll(res.Body)
-
 	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
 
-	// delete mcis info
+	// delete network info
 	cbStoreDeleteErr := store.Delete(key)
 	if cbStoreDeleteErr != nil {
 		cblog.Error(cbStoreDeleteErr)
