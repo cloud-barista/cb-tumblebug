@@ -90,12 +90,17 @@ func restPostSshKey(c echo.Context) error {
 
 	fmt.Println("[POST SshKey")
 	fmt.Println("[Creating SshKey]")
-	content, err := createSshKey(nsId, u)
+	content, res, err := createSshKey(nsId, u)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{
-			"message": "Failed to create a SshKey"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		/*
+			mapA := map[string]string{
+				"message": "Failed to create a SshKey"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		*/
+		//return c.JSON(res.StatusCode, res)
+		body, _ := ioutil.ReadAll(res.Body)
+		return c.JSONBlob(res.StatusCode, body)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -163,15 +168,20 @@ func restDelSshKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	id := c.Param("sshKeyId")
 
-	err := delSshKey(nsId, id)
+	res, err := delSshKey(nsId, id)
+	body, _ := ioutil.ReadAll(res.Body)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the sshKey"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		/*
+			mapA := map[string]string{"message": "Failed to delete the sshKey"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		*/
+		return c.JSONBlob(res.StatusCode, body)
 	}
 
-	mapA := map[string]string{"message": "The sshKey has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
+	//mapA := map[string]string{"message": "The sshKey has been deleted"}
+	//return c.JSON(http.StatusOK, &mapA)
+	return c.JSON(http.StatusOK, body)
 }
 
 func restDelAllSshKey(c echo.Context) error {
@@ -181,11 +191,15 @@ func restDelAllSshKey(c echo.Context) error {
 	sshKeyList := getSshKeyList(nsId)
 
 	for _, v := range sshKeyList {
-		err := delSshKey(nsId, v)
+		res, err := delSshKey(nsId, v)
+		body, _ := ioutil.ReadAll(res.Body)
 		if err != nil {
 			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All sshKeys"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			/*
+				mapA := map[string]string{"message": "Failed to delete All sshKeys"}
+				return c.JSON(http.StatusFailedDependency, &mapA)
+			*/
+			return c.JSONBlob(res.StatusCode, body)
 		}
 	}
 
@@ -194,7 +208,7 @@ func restDelAllSshKey(c echo.Context) error {
 
 }
 
-func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
+func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error) {
 
 	/* FYI
 	type sshKeyReq struct {
@@ -228,11 +242,29 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	fmt.Println("Called mockAPI.")
 	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	//fmt.Println("Called mockAPI.")
+	if err != nil {
+		cblog.Error(err)
+		content := sshKeyInfo{}
+		return content, res, err
+	}
 
+	if res.StatusCode == 400 || res.StatusCode == 401 {
+		fmt.Println("Status code 400 Bad Request or 401 Unauthorized.")
+		fmt.Println("res.Body: ", res.Body)
+		//err := store.Delete("") // TODO: We don't need to call store.Delete("") to make an error object.
+		content := sshKeyInfo{}
+		return content, res, http.ErrBodyNotAllowed
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		content := sshKeyInfo{}
+		return content, res, err
+	}
 
 	// jhseo 191016
 	//var s = new(imageInfo)
@@ -295,12 +327,12 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, error) {
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, cbStorePutErr
+		return content, res, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, nil
+	return content, res, nil
 }
 
 func getSshKeyList(nsId string) []string {
@@ -324,7 +356,7 @@ func getSshKeyList(nsId string) []string {
 
 }
 
-func delSshKey(nsId string, Id string) error {
+func delSshKey(nsId string, Id string) (*http.Response, error) {
 
 	fmt.Println("[Delete sshKey] " + Id)
 
@@ -340,8 +372,8 @@ func delSshKey(nsId string, Id string) error {
 	}
 	fmt.Println("temp.CspSshKeyName: " + temp.CspSshKeyName)
 
-	//url := "https://testapi.io/api/jihoon-seo/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := SPIDER_URL + "/keypair?connection_name=" + temp.ConnectionName // for testapi.io
+	//url := SPIDER_URL + "/keypair?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
@@ -358,18 +390,26 @@ func delSshKey(nsId string, Id string) error {
 	}
 
 	res, err := client.Do(req)
-	fmt.Println("Called mockAPI.")
 	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
+	//fmt.Println("Called mockAPI.")
+	if err != nil {
+		cblog.Error(err)
+		return res, err
+	}
 
+	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		return res, err
+	}
 
 	// delete sshKey info
 	cbStoreDeleteErr := store.Delete(key)
 	if cbStoreDeleteErr != nil {
 		cblog.Error(cbStoreDeleteErr)
-		return cbStoreDeleteErr
+		return res, cbStoreDeleteErr
 	}
 
-	return nil
+	return res, nil
 }
