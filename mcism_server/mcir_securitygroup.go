@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -103,12 +104,12 @@ func restPostSecurityGroup(c echo.Context) error {
 
 	fmt.Println("[POST SecurityGroup")
 	fmt.Println("[Creating SecurityGroup]")
-	content, err := createSecurityGroup(nsId, u)
+	content, res, err := createSecurityGroup(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{
 			"message": "Failed to create a SecurityGroup"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(res.StatusCode, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -176,11 +177,11 @@ func restDelSecurityGroup(c echo.Context) error {
 	nsId := c.Param("nsId")
 	id := c.Param("securityGroupId")
 
-	err := delSecurityGroup(nsId, id)
+	res, err := delSecurityGroup(nsId, id)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the securityGroup"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(res.StatusCode, &mapA)
 	}
 
 	mapA := map[string]string{"message": "The securityGroup has been deleted"}
@@ -194,11 +195,11 @@ func restDelAllSecurityGroup(c echo.Context) error {
 	securityGroupList := getSecurityGroupList(nsId)
 
 	for _, v := range securityGroupList {
-		err := delSecurityGroup(nsId, v)
+		res, err := delSecurityGroup(nsId, v)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All securityGroups"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(res.StatusCode, &mapA)
 		}
 	}
 
@@ -207,7 +208,7 @@ func restDelAllSecurityGroup(c echo.Context) error {
 
 }
 
-func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, error) {
+func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, *http.Response, error) {
 
 	/* FYI
 	type firewallRuleInfo struct {
@@ -258,15 +259,31 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, e
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	fmt.Println("Called mockAPI.")
 	defer res.Body.Close()
+	//fmt.Println("Called mockAPI.")
+	if err != nil {
+		cblog.Error(err)
+		content := securityGroupInfo{}
+		return content, res, err
+	}
+
 	body, err := ioutil.ReadAll(res.Body)
-
 	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		content := securityGroupInfo{}
+		return content, res, err
+	}
 
-	// jhseo 191016
-	//var s = new(imageInfo)
-	//s := imageInfo{}
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		content := securityGroupInfo{}
+		return content, res, err
+	}
+
 	/*
 		type SecurityRuleInfo struct {
 			FromPort   string
@@ -329,12 +346,12 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, e
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, cbStorePutErr
+		return content, res, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, nil
+	return content, res, nil
 }
 
 func getSecurityGroupList(nsId string) []string {
@@ -358,7 +375,7 @@ func getSecurityGroupList(nsId string) []string {
 
 }
 
-func delSecurityGroup(nsId string, Id string) error {
+func delSecurityGroup(nsId string, Id string) (*http.Response, error) {
 
 	fmt.Println("[Delete securityGroup] " + Id)
 
@@ -374,8 +391,8 @@ func delSecurityGroup(nsId string, Id string) error {
 	}
 	fmt.Println("temp.CspSecurityGroupId: " + temp.CspSecurityGroupId)
 
-	//url := "https://testapi.io/api/jihoon-seo/securitygroup/" + temp.CspSecurityGroupId + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	url := SPIDER_URL + "/securitygroup?connection_name=" + temp.ConnectionName // for testapi.io
+	//url := SPIDER_URL + "/securitygroup?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
@@ -392,18 +409,50 @@ func delSecurityGroup(nsId string, Id string) error {
 	}
 
 	res, err := client.Do(req)
-	fmt.Println("Called mockAPI.")
 	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-
-	fmt.Println(string(body))
-
-	// delete securityGroup info
-	cbStoreDeleteErr := store.Delete(key)
-	if cbStoreDeleteErr != nil {
-		cblog.Error(cbStoreDeleteErr)
-		return cbStoreDeleteErr
+	//fmt.Println("Called mockAPI.")
+	if err != nil {
+		cblog.Error(err)
+		return res, err
 	}
 
-	return nil
+	body, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		return res, err
+	}
+
+	/*
+		if res.StatusCode == 400 || res.StatusCode == 401 {
+			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
+			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
+			cblog.Error(err)
+			return res, err
+		}
+
+		// delete securityGroup info
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res, cbStoreDeleteErr
+		}
+
+		return res, nil
+	*/
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		return res, err
+	default:
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res, cbStoreDeleteErr
+		}
+		return res, nil
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -256,9 +257,15 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, *http.Response, 
 
 	fmt.Println(string(body))
 
-	// jhseo 191016
-	//var s = new(imageInfo)
-	//s := imageInfo{}
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		content := publicIpInfo{}
+		return content, res, err
+	}
+
 	type PublicIPInfo struct {
 		Name      string
 		PublicIP  string
@@ -383,12 +390,36 @@ func delPublicIp(nsId string, Id string) (*http.Response, error) {
 		return res, err
 	}
 
-	// delete publicIp info
-	cbStoreDeleteErr := store.Delete(key)
-	if cbStoreDeleteErr != nil {
-		cblog.Error(cbStoreDeleteErr)
-		return res, cbStoreDeleteErr
-	}
+	/*
+		if res.StatusCode == 400 || res.StatusCode == 401 {
+			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
+			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
+			cblog.Error(err)
+			return res, err
+		}
 
-	return res, nil
+		// delete publicIp info
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res, cbStoreDeleteErr
+		}
+
+		return res, nil
+	*/
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		return res, err
+	default:
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res, cbStoreDeleteErr
+		}
+		return res, nil
+	}
 }

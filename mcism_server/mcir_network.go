@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -97,12 +98,12 @@ func restPostNetwork(c echo.Context) error {
 
 	fmt.Println("[POST Network")
 	fmt.Println("[Creating Network]")
-	content, err := createNetwork(nsId, u)
+	content, res, err := createNetwork(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{
 			"message": "Failed to create a network"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(res.StatusCode, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -170,11 +171,11 @@ func restDelNetwork(c echo.Context) error {
 	nsId := c.Param("nsId")
 	id := c.Param("networkId")
 
-	err := delNetwork(nsId, id)
+	res, err := delNetwork(nsId, id)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the network"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(res.StatusCode, &mapA)
 	}
 
 	mapA := map[string]string{"message": "The network has been deleted"}
@@ -188,11 +189,11 @@ func restDelAllNetwork(c echo.Context) error {
 	networkList := getNetworkList(nsId)
 
 	for _, v := range networkList {
-		err := delNetwork(nsId, v)
+		res, err := delNetwork(nsId, v)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All networks"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(res.StatusCode, &mapA)
 		}
 	}
 
@@ -201,7 +202,7 @@ func restDelAllNetwork(c echo.Context) error {
 
 }
 
-func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
+func createNetwork(nsId string, u *networkReq) (networkInfo, *http.Response, error) {
 
 	// TODO: Since Spider does not check duplication for vnet `Name` that already exists,
 	// Tumblebug should check duplication.
@@ -252,7 +253,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	if err != nil {
 		cblog.Error(err)
 		content := networkInfo{}
-		return content, err
+		return content, res, err
 	}
 
 	defer res.Body.Close()
@@ -262,12 +263,18 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	if err != nil {
 		cblog.Error(err)
 		content := networkInfo{}
-		return content, err
+		return content, res, err
 	}
 
-	// jhseo 191016
-	//var s = new(imageInfo)
-	//s := imageInfo{}
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		content := networkInfo{}
+		return content, res, err
+	}
+
 	type VNetworkInfo struct {
 		Id            string
 		Name          string
@@ -330,12 +337,12 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	err3 := store.Put(string(Key), string(Val))
 	if err3 != nil {
 		cblog.Error(err3)
-		return content, err3
+		return content, res, err3
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, nil
+	return content, res, nil
 }
 
 func getNetworkList(nsId string) []string {
@@ -359,7 +366,7 @@ func getNetworkList(nsId string) []string {
 
 }
 
-func delNetwork(nsId string, Id string) error {
+func delNetwork(nsId string, Id string) (*http.Response, error) {
 
 	fmt.Println("[Delete network] " + Id)
 
@@ -397,28 +404,46 @@ func delNetwork(nsId string, Id string) error {
 	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
-		return err
-	}
-	if res.StatusCode == 400 || res.StatusCode == 401 {
-		fmt.Println("Status code 400 or 401.")
-		err := store.Delete("") // TODO: We don't need to call store.Delete("") to make an error object.
-		cblog.Error(err)
-		return err
+		return res, err
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		return err
+		return res, err
 	}
 
-	// delete network info
-	cbStoreDeleteErr := store.Delete(key)
-	if cbStoreDeleteErr != nil {
-		cblog.Error(cbStoreDeleteErr)
-		return cbStoreDeleteErr
-	}
+	/*
+		if res.StatusCode == 400 || res.StatusCode == 401 {
+			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
+			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
+			cblog.Error(err)
+			return res, err
+		}
 
-	return nil
+		// delete network info
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res, cbStoreDeleteErr
+		}
+
+		return res, nil
+	*/
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		return res, err
+	default:
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res, cbStoreDeleteErr
+		}
+		return res, nil
+	}
 }
