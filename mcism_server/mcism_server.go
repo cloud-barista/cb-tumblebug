@@ -211,3 +211,12 @@ func genResourceKey(nsId string, resourceType string, resourceId string) string 
 	}
 
 }
+
+func lookupKeyValueList(kvl []KeyValue, key string) string {
+	for _, v := range kvl {
+		if v.Key == key {
+			return v.Value
+		}
+	}
+	return ""
+}

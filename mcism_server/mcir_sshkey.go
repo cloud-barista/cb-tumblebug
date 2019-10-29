@@ -100,6 +100,7 @@ func restPostSshKey(c echo.Context) error {
 		*/
 		//return c.JSON(res.StatusCode, res)
 		body, _ := ioutil.ReadAll(res.Body)
+		fmt.Println("body: ", string(body))
 		return c.JSONBlob(res.StatusCode, body)
 	}
 	return c.JSON(http.StatusCreated, content)
@@ -242,7 +243,8 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error)
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
+	//defer result.Body.Close() // commenting this line can cause mem leak.
+
 	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
@@ -252,10 +254,15 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error)
 
 	if res.StatusCode == 400 || res.StatusCode == 401 {
 		fmt.Println("Status code 400 Bad Request or 401 Unauthorized.")
-		fmt.Println("res.Body: ", res.Body)
+
+		//fmt.Println("res.Body: ", res.Body)
+
+		body, _ := ioutil.ReadAll(res.Body)
+		fmt.Println("body: ", string(body))
+
 		//err := store.Delete("") // TODO: We don't need to call store.Delete("") to make an error object.
 		content := sshKeyInfo{}
-		return content, res, http.ErrBodyNotAllowed
+		return content, res, fmt.Errorf("Status code 400 Bad Request or 401 Unauthorized.")
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
