@@ -48,7 +48,7 @@ type vmReq struct {
 	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
 	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
 	CbPublicIPId         string   `json:"cbPublicIPId"`
-	CbSecurityGroupIds   []string `string:"cbSecurityGroupIds"`
+	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
 	CbSpecId             string   `json:"cbSpecId"`
 	CbKeyPairId          string   `json:"cbKeyPairId"`
 
@@ -73,7 +73,7 @@ type vmReq struct {
 	Vnet_id            string   `json:"vnet_id"`
 	Vnic_id            string   `json:"vnic_id"`
 	Public_ip_id       string   `json:"public_ip_id"`
-	Security_group_ids []string `string:"security_group_ids"`
+	Security_group_ids []string `json:"security_group_ids"`
 	Ssh_key_id         string   `json:"ssh_key_id"`
 	Description        string   `json:"description"`
 	Vm_access_id       string   `json:"vm_access_id"`
