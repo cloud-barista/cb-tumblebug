@@ -307,7 +307,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, *http.Response, err
 	content := networkInfo{}
 	content.Id = genUuid()
 	content.ConnectionName = u.ConnectionName
-	content.CspNetworkId = temp.Id
+	content.CspNetworkId = temp.Id     // CspSubnetId
 	content.CspNetworkName = temp.Name // = u.CspNetworkName
 	content.CidrBlock = temp.AddressPrefix
 	content.Description = u.Description

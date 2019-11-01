@@ -253,19 +253,6 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error)
 		return content, res, err
 	}
 
-	if res.StatusCode == 400 || res.StatusCode == 401 {
-		fmt.Println("Status code 400 Bad Request or 401 Unauthorized.")
-
-		//fmt.Println("res.Body: ", res.Body)
-
-		body, _ := ioutil.ReadAll(res.Body)
-		fmt.Println("body: ", string(body))
-
-		//err := store.Delete("") // TODO: We don't need to call store.Delete("") to make an error object.
-		content := sshKeyInfo{}
-		return content, res, fmt.Errorf("Status code 400 Bad Request or 401 Unauthorized.")
-	}
-
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
@@ -278,6 +265,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error)
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("body: ", string(body))
 		cblog.Error(err)
 		content := sshKeyInfo{}
 		return content, res, err
@@ -404,7 +392,7 @@ func delSshKey(nsId string, Id string) (*http.Response, error) {
 	}
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
+	//defer res.Body.Close()
 	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
