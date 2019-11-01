@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 
 	"github.com/cloud-barista/cb-tumblebug/mcism_server/confighandler"
@@ -210,6 +211,53 @@ func genResourceKey(nsId string, resourceType string, resourceId string) string 
 		return "/invalid_key"
 	}
 
+}
+
+func getCspResourceId(nsId string, resourceType string, resourceId string) string {
+	key := genResourceKey(nsId, resourceType, resourceId)
+	if key == "/invalid_key" {
+		return "invalid nsId or resourceType or resourceId"
+	}
+	keyValue, _ := store.Get(key)
+
+	switch resourceType {
+	case "image":
+		content := imageInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspImageId
+	case "sshKey":
+		content := sshKeyInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspSshKeyName
+	case "spec":
+		content := specInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.Id
+	case "network":
+		content := networkInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspNetworkId // contains CspSubnetId
+	/*
+		case "subnet":
+			content := subnetInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			return content.CspSubnetId
+	*/
+	case "securityGroup":
+		content := securityGroupInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspSecurityGroupId
+	case "publicIp":
+		content := publicIpInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspPublicIpId
+	case "vNic":
+		content := vNicInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspVNicId
+	default:
+		return "invalid resourceType"
+	}
 }
 
 func lookupKeyValueList(kvl []KeyValue, key string) string {
