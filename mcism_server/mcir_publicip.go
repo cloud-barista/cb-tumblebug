@@ -93,12 +93,14 @@ func restPostPublicIp(c echo.Context) error {
 
 	fmt.Println("[POST PublicIp")
 	fmt.Println("[Creating PublicIp]")
-	content, res, err := createPublicIp(nsId, u)
+	content, responseCode, body, err := createPublicIp(nsId, u)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{
-			"message": "Failed to create a PublicIp"}
-		return c.JSON(res.StatusCode, &mapA)
+		/*
+			mapA := map[string]string{
+				"message": "Failed to create a PublicIp"}
+		*/
+		return c.JSONBlob(responseCode, body)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -166,11 +168,11 @@ func restDelPublicIp(c echo.Context) error {
 	nsId := c.Param("nsId")
 	id := c.Param("publicIpId")
 
-	res, err := delPublicIp(nsId, id)
+	responseCode, body, err := delPublicIp(nsId, id)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the publicIp"}
-		return c.JSON(res.StatusCode, &mapA)
+		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
+		return c.JSONBlob(responseCode, body)
 	}
 
 	mapA := map[string]string{"message": "The publicIp has been deleted"}
@@ -184,11 +186,11 @@ func restDelAllPublicIp(c echo.Context) error {
 	publicIpList := getPublicIpList(nsId)
 
 	for _, v := range publicIpList {
-		res, err := delPublicIp(nsId, v)
+		responseCode, body, err := delPublicIp(nsId, v)
 		if err != nil {
 			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All publicIps"}
-			return c.JSON(res.StatusCode, &mapA)
+			//mapA := map[string]string{"message": "Failed to delete All publicIps"}
+			return c.JSONBlob(responseCode, body)
 		}
 	}
 
@@ -197,7 +199,7 @@ func restDelAllPublicIp(c echo.Context) error {
 
 }
 
-func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, *http.Response, error) {
+func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, error) {
 
 	/* FYI
 	type publicIpReq struct {
@@ -241,18 +243,18 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, *http.Response, 
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
 	if err != nil {
 		cblog.Error(err)
 		content := publicIpInfo{}
-		return content, res, err
+		return content, res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		cblog.Error(err)
 		content := publicIpInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	fmt.Println(string(body))
@@ -263,7 +265,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, *http.Response, 
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
 		content := publicIpInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	type PublicIPInfo struct {
@@ -314,12 +316,12 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, *http.Response, 
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, res, cbStorePutErr
+		return content, res.StatusCode, body, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res, nil
+	return content, res.StatusCode, body, nil
 }
 
 func getPublicIpList(nsId string) []string {
@@ -343,7 +345,7 @@ func getPublicIpList(nsId string) []string {
 
 }
 
-func delPublicIp(nsId string, Id string) (*http.Response, error) {
+func delPublicIp(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("[Delete publicIp] " + Id)
 
@@ -377,17 +379,17 @@ func delPublicIp(nsId string, Id string) (*http.Response, error) {
 	}
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	}
 
 	/*
@@ -413,13 +415,13 @@ func delPublicIp(nsId string, Id string) (*http.Response, error) {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	default:
 		cbStoreDeleteErr := store.Delete(key)
 		if cbStoreDeleteErr != nil {
 			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
+			return res.StatusCode, body, cbStoreDeleteErr
 		}
-		return res, nil
+		return res.StatusCode, body, nil
 	}
 }

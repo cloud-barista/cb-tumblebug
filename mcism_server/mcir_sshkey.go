@@ -91,7 +91,7 @@ func restPostSshKey(c echo.Context) error {
 
 	fmt.Println("[POST SshKey")
 	fmt.Println("[Creating SshKey]")
-	content, res, err := createSshKey(nsId, u)
+	content, responseCode, body, err := createSshKey(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
@@ -100,9 +100,9 @@ func restPostSshKey(c echo.Context) error {
 			return c.JSON(http.StatusFailedDependency, &mapA)
 		*/
 		//return c.JSON(res.StatusCode, res)
-		body, _ := ioutil.ReadAll(res.Body)
+		//body, _ := ioutil.ReadAll(res.Body)
 		fmt.Println("body: ", string(body))
-		return c.JSONBlob(res.StatusCode, body)
+		return c.JSONBlob(responseCode, body)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -170,15 +170,15 @@ func restDelSshKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	id := c.Param("sshKeyId")
 
-	res, err := delSshKey(nsId, id)
-	body, _ := ioutil.ReadAll(res.Body)
+	responseCode, body, err := delSshKey(nsId, id)
+	//body, _ := ioutil.ReadAll(res.Body)
 	if err != nil {
 		cblog.Error(err)
 		/*
 			mapA := map[string]string{"message": "Failed to delete the sshKey"}
 			return c.JSON(http.StatusFailedDependency, &mapA)
 		*/
-		return c.JSONBlob(res.StatusCode, body)
+		return c.JSONBlob(responseCode, body)
 	}
 
 	//mapA := map[string]string{"message": "The sshKey has been deleted"}
@@ -193,15 +193,15 @@ func restDelAllSshKey(c echo.Context) error {
 	sshKeyList := getSshKeyList(nsId)
 
 	for _, v := range sshKeyList {
-		res, err := delSshKey(nsId, v)
-		body, _ := ioutil.ReadAll(res.Body)
+		responseCode, body, err := delSshKey(nsId, v)
+		//body, _ := ioutil.ReadAll(res.Body)
 		if err != nil {
 			cblog.Error(err)
 			/*
 				mapA := map[string]string{"message": "Failed to delete All sshKeys"}
 				return c.JSON(http.StatusFailedDependency, &mapA)
 			*/
-			return c.JSONBlob(res.StatusCode, body)
+			return c.JSONBlob(responseCode, body)
 		}
 	}
 
@@ -210,7 +210,7 @@ func restDelAllSshKey(c echo.Context) error {
 
 }
 
-func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error) {
+func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 
 	/* FYI
 	type sshKeyReq struct {
@@ -244,21 +244,19 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error)
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	//defer result.Body.Close() // commenting this line can cause mem leak.
-
-	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
 		content := sshKeyInfo{}
-		return content, res, err
+		return content, res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
 		content := sshKeyInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
@@ -268,7 +266,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error)
 		fmt.Println("body: ", string(body))
 		cblog.Error(err)
 		content := sshKeyInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	type KeyPairInfo struct {
@@ -329,12 +327,12 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, *http.Response, error)
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, res, cbStorePutErr
+		return content, res.StatusCode, body, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res, nil
+	return content, res.StatusCode, body, nil
 }
 
 func getSshKeyList(nsId string) []string {
@@ -358,7 +356,7 @@ func getSshKeyList(nsId string) []string {
 
 }
 
-func delSshKey(nsId string, Id string) (*http.Response, error) {
+func delSshKey(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("[Delete sshKey] " + Id)
 
@@ -392,18 +390,17 @@ func delSshKey(nsId string, Id string) (*http.Response, error) {
 	}
 
 	res, err := client.Do(req)
-	//defer res.Body.Close()
-	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	}
 
 	/*
@@ -429,13 +426,13 @@ func delSshKey(nsId string, Id string) (*http.Response, error) {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	default:
 		cbStoreDeleteErr := store.Delete(key)
 		if cbStoreDeleteErr != nil {
 			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
+			return res.StatusCode, body, cbStoreDeleteErr
 		}
-		return res, nil
+		return res.StatusCode, body, nil
 	}
 }

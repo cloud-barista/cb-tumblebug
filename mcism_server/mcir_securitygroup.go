@@ -104,12 +104,14 @@ func restPostSecurityGroup(c echo.Context) error {
 
 	fmt.Println("[POST SecurityGroup")
 	fmt.Println("[Creating SecurityGroup]")
-	content, res, err := createSecurityGroup(nsId, u)
+	content, responseCode, body, err := createSecurityGroup(nsId, u)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{
-			"message": "Failed to create a SecurityGroup"}
-		return c.JSON(res.StatusCode, &mapA)
+		/*
+			mapA := map[string]string{
+				"message": "Failed to create a SecurityGroup"}
+		*/
+		return c.JSONBlob(responseCode, body)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -177,11 +179,11 @@ func restDelSecurityGroup(c echo.Context) error {
 	nsId := c.Param("nsId")
 	id := c.Param("securityGroupId")
 
-	res, err := delSecurityGroup(nsId, id)
+	responseCode, body, err := delSecurityGroup(nsId, id)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the securityGroup"}
-		return c.JSON(res.StatusCode, &mapA)
+		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
+		return c.JSONBlob(responseCode, body)
 	}
 
 	mapA := map[string]string{"message": "The securityGroup has been deleted"}
@@ -195,11 +197,11 @@ func restDelAllSecurityGroup(c echo.Context) error {
 	securityGroupList := getSecurityGroupList(nsId)
 
 	for _, v := range securityGroupList {
-		res, err := delSecurityGroup(nsId, v)
+		responseCode, body, err := delSecurityGroup(nsId, v)
 		if err != nil {
 			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All securityGroups"}
-			return c.JSON(res.StatusCode, &mapA)
+			//mapA := map[string]string{"message": "Failed to delete All securityGroups"}
+			return c.JSONBlob(responseCode, body)
 		}
 	}
 
@@ -208,7 +210,7 @@ func restDelAllSecurityGroup(c echo.Context) error {
 
 }
 
-func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, *http.Response, error) {
+func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, int, []byte, error) {
 
 	/* FYI
 	type firewallRuleInfo struct {
@@ -259,20 +261,19 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, *
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
-	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
 		content := securityGroupInfo{}
-		return content, res, err
+		return content, res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
 		content := securityGroupInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
@@ -281,7 +282,7 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, *
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
 		content := securityGroupInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	/*
@@ -346,12 +347,12 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, *
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, res, cbStorePutErr
+		return content, res.StatusCode, body, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res, nil
+	return content, res.StatusCode, body, nil
 }
 
 func getSecurityGroupList(nsId string) []string {
@@ -375,7 +376,7 @@ func getSecurityGroupList(nsId string) []string {
 
 }
 
-func delSecurityGroup(nsId string, Id string) (*http.Response, error) {
+func delSecurityGroup(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("[Delete securityGroup] " + Id)
 
@@ -409,50 +410,31 @@ func delSecurityGroup(nsId string, Id string) (*http.Response, error) {
 	}
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
-	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	}
-
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete securityGroup info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	default:
 		cbStoreDeleteErr := store.Delete(key)
 		if cbStoreDeleteErr != nil {
 			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
+			return res.StatusCode, body, cbStoreDeleteErr
 		}
-		return res, nil
+		return res.StatusCode, body, nil
 	}
 }
