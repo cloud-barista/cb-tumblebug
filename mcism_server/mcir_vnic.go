@@ -102,12 +102,14 @@ func restPostVNic(c echo.Context) error {
 
 	fmt.Println("[POST VNic")
 	fmt.Println("[Creating VNic]")
-	content, res, err := createVNic(nsId, u)
+	content, responseCode, body, err := createVNic(nsId, u)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{
-			"message": "Failed to create a VNic"}
-		return c.JSON(res.StatusCode, &mapA)
+		/*
+			mapA := map[string]string{
+				"message": "Failed to create a VNic"}
+		*/
+		return c.JSONBlob(responseCode, body)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -175,11 +177,11 @@ func restDelVNic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	id := c.Param("vNicId")
 
-	res, err := delVNic(nsId, id)
+	responseCode, body, err := delVNic(nsId, id)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the vNic"}
-		return c.JSON(res.StatusCode, &mapA)
+		//mapA := map[string]string{"message": "Failed to delete the vNic"}
+		return c.JSONBlob(responseCode, body)
 	}
 
 	mapA := map[string]string{"message": "The vNic has been deleted"}
@@ -193,11 +195,11 @@ func restDelAllVNic(c echo.Context) error {
 	vNicList := getVNicList(nsId)
 
 	for _, v := range vNicList {
-		res, err := delVNic(nsId, v)
+		responseCode, body, err := delVNic(nsId, v)
 		if err != nil {
 			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All vNics"}
-			return c.JSON(res.StatusCode, &mapA)
+			//mapA := map[string]string{"message": "Failed to delete All vNics"}
+			return c.JSONBlob(responseCode, body)
 		}
 	}
 
@@ -206,7 +208,7 @@ func restDelAllVNic(c echo.Context) error {
 
 }
 
-func createVNic(nsId string, u *vNicReq) (vNicInfo, *http.Response, error) {
+func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 
 	/* FYI
 	type vNicReq struct {
@@ -277,20 +279,19 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, *http.Response, error) {
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	//fmt.Println("Called mockAPI.")
-	defer res.Body.Close()
 	if err != nil {
 		cblog.Error(err)
 		content := vNicInfo{}
-		return content, res, err
+		return content, res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
 		content := vNicInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
@@ -299,7 +300,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, *http.Response, error) {
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
 		content := vNicInfo{}
-		return content, res, err
+		return content, res.StatusCode, body, err
 	}
 
 	type VNicInfo struct {
@@ -377,12 +378,12 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, *http.Response, error) {
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, res, cbStorePutErr
+		return content, res.StatusCode, body, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res, nil
+	return content, res.StatusCode, body, nil
 }
 
 func getVNicList(nsId string) []string {
@@ -406,7 +407,7 @@ func getVNicList(nsId string) []string {
 
 }
 
-func delVNic(nsId string, Id string) (*http.Response, error) {
+func delVNic(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("[Delete vNic] " + Id)
 
@@ -440,18 +441,17 @@ func delVNic(nsId string, Id string) (*http.Response, error) {
 	}
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
-	//fmt.Println("Called mockAPI.")
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, nil, err
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	}
 
 	/*
@@ -477,13 +477,13 @@ func delVNic(nsId string, Id string) (*http.Response, error) {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
-		return res, err
+		return res.StatusCode, body, err
 	default:
 		cbStoreDeleteErr := store.Delete(key)
 		if cbStoreDeleteErr != nil {
 			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
+			return res.StatusCode, body, cbStoreDeleteErr
 		}
-		return res, nil
+		return res.StatusCode, body, nil
 	}
 }

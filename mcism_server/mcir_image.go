@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -93,7 +94,12 @@ func restPostImage(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return err
 		}
-		content, _ := registerImageWithName(nsId, u)
+		content, responseCode, body, err := registerImageWithName(nsId, u)
+		if err != nil {
+			cblog.Error(err)
+			fmt.Println("body: ", string(body))
+			return c.JSONBlob(responseCode, body)
+		}
 		return c.JSON(http.StatusCreated, content)
 	} else {
 		mapA := map[string]string{"message": "You must specify: action=registerWithInfo or action=registerWithName"}
@@ -202,7 +208,7 @@ func createImage(nsId string, u *imageReq) (imageInfo, error) {
 }
 */
 
-func registerImageWithName(nsId string, u *imageReq) (imageInfo, error) {
+func registerImageWithName(nsId string, u *imageReq) (imageInfo, int, []byte, error) {
 
 	// Step 1. Create a temp `ImageReqInfo (from Spider)` object.
 	type ImageReqInfo struct {
@@ -234,15 +240,31 @@ func registerImageWithName(nsId string, u *imageReq) (imageInfo, error) {
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
-	fmt.Println("Called mockAPI.")
+	if err != nil {
+		cblog.Error(err)
+		content := imageInfo{}
+		return content, res.StatusCode, nil, err
+	}
 	defer res.Body.Close()
+
 	body, err := ioutil.ReadAll(res.Body)
-
 	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		content := imageInfo{}
+		return content, res.StatusCode, body, err
+	}
 
-	// jhseo 191016
-	//var s = new(imageInfo)
-	//s := imageInfo{}
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("body: ", string(body))
+		cblog.Error(err)
+		content := imageInfo{}
+		return content, res.StatusCode, body, err
+	}
+
 	type ImageInfo struct {
 		Id      string
 		Name    string
@@ -289,12 +311,12 @@ func registerImageWithName(nsId string, u *imageReq) (imageInfo, error) {
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, cbStorePutErr
+		return content, res.StatusCode, body, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, nil
+	return content, res.StatusCode, body, nil
 }
 
 func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
