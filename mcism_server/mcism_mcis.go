@@ -178,13 +178,11 @@ type vmInfo struct {
 }
 
 type vmStatusInfo struct {
-	Id            string `json:"id"`
-	Csp_vm_id     string `json:"csp_vm_id"`
-	Name          string `json:"name"`
-	Status        string `json:"status"`
-	Cpu_status    string `json:"cpu_status"`
-	Memory_status string `json:"memory_status"`
-	Disk_status   string `json:"disk_status"`
+	Id        string `json:"id"`
+	Csp_vm_id string `json:"csp_vm_id"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+	Public_ip string `json:"public_ip"`
 }
 type vmPriority struct {
 	Priority string `json:"priority"`
@@ -303,7 +301,7 @@ func restGetMcis(c echo.Context) error {
 		mapA := map[string]string{"message": "The MCIS has been terminated"}
 		return c.JSON(http.StatusOK, &mapA)
 
-	} else if action == "monitor" {
+	} else if action == "status" {
 
 		var content struct {
 			Id     string         `json:"id"`
@@ -313,7 +311,7 @@ func restGetMcis(c echo.Context) error {
 			Vm     []vmStatusInfo `json:"vm"`
 		}
 
-		fmt.Println("[monitor MCIS]")
+		fmt.Println("[status MCIS]")
 
 		key := genMcisKey(nsId, mcisId, "")
 		fmt.Println(key)
@@ -332,39 +330,69 @@ func restGetMcis(c echo.Context) error {
 		}
 
 		if len(vmList) == 0 {
-			mapA := map[string]string{"message": "No VM to monitor in the MCIS"}
+			mapA := map[string]string{"message": "No VM to check in the MCIS"}
 			return c.JSON(http.StatusOK, &mapA)
 		}
-
-		for _, v := range vmList {
-			vmKey := genMcisKey(nsId, mcisId, v)
-			fmt.Println(vmKey)
-			vmKeyValue, _ := store.Get(vmKey)
-			if vmKeyValue == nil {
-				mapA := map[string]string{"message": "Cannot find " + vmKey}
-				return c.JSON(http.StatusOK, &mapA)
-			}
-
-			fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-			vmTmp := vmStatusInfo{}
-			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-			vmTmp.Id = v
-
-			vmIp := getVmIp(nsId, mcisId, v)
-			vmIpPort := vmIp + defaultMonitorPort
-			//statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
-			statusCpu := "0.8%"
-			statusMem := "21%"
-			statusDisk := "12%"
-
-			fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
-
-			vmTmp.Cpu_status = statusCpu
-			vmTmp.Memory_status = statusMem
-			vmTmp.Disk_status = statusDisk
-
-			content.Vm = append(content.Vm, vmTmp)
+		content.Vm, err = getMcisStatus(nsId, mcisId)
+		if err != nil {
+			cblog.Error(err)
+			return err
 		}
+		statusRunningFlag := 0
+		for _, v := range content.Vm {
+			if v.Status == "RUNNING" {
+				statusRunningFlag++
+			}
+			if v.Status == "SUSPENDED" {
+				statusRunningFlag--
+			}
+		}
+		if statusRunningFlag > 0 {
+			if statusRunningFlag == len(content.Vm) {
+				content.Status = "RUNNING"
+			} else {
+				content.Status = "PARTIAL-RUNNING"
+			}
+		} else {
+			if statusRunningFlag*(-1) == len(content.Vm) {
+				content.Status = "SUSPENDED"
+			} else {
+				content.Status = "PARTIAL-SUSPENDED"
+			}
+		}
+
+		/*
+			for _, v := range vmList {
+				vmKey := genMcisKey(nsId, mcisId, v)
+				fmt.Println(vmKey)
+				vmKeyValue, _ := store.Get(vmKey)
+				if vmKeyValue == nil {
+					mapA := map[string]string{"message": "Cannot find " + vmKey}
+					return c.JSON(http.StatusOK, &mapA)
+				}
+
+				fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+				vmTmp := vmStatusInfo{}
+				json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+				vmTmp.Id = v
+
+				vmIp := getVmIp(nsId, mcisId, v)
+				vmIpPort := vmIp + defaultMonitorPort
+				//statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+				statusCpu := "0.8%"
+				statusMem := "21%"
+				statusDisk := "12%"
+
+				fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
+
+				//vmTmp.Cpu_status = statusCpu
+				//vmTmp.Memory_status = statusMem
+				//vmTmp.Disk_status = statusDisk
+
+				content.Vm = append(content.Vm, vmTmp)
+			}
+		*/
+
 		fmt.Printf("%+v\n", content)
 
 		return c.JSON(http.StatusOK, &content)
@@ -574,7 +602,33 @@ func restPostMcisVm(c echo.Context) error {
 	vmInfoData.PublicIP = "Not assigned yet"
 	vmInfoData.CspVmId = "Not assigned yet"
 	vmInfoData.PublicDNS = "Not assigned yet"
-	vmInfoData.Status = "Launching"
+	vmInfoData.Status = "Creating"
+
+	///////////
+	/*
+		Name              string `json:"name"`
+		Config_name       string `json:"config_name"`
+		Spec_id           string `json:"spec_id"`
+		Image_id          string `json:"image_id"`
+		Vnet_id           string `json:"vnet_id"`
+		Vnic_id           string `json:"vnic_id"`
+		Security_group_id string `json:"security_group_id"`
+		Ssh_key_id        string `json:"ssh_key_id"`
+		Description       string `json:"description"`
+	*/
+
+	vmInfoData.Name = req.Name
+	vmInfoData.Config_name = req.Config_name
+	vmInfoData.Spec_id = req.Spec_id
+	vmInfoData.Image_id = req.Image_id
+	vmInfoData.Vnet_id = req.Vnet_id
+	vmInfoData.Vnic_id = req.Vnic_id
+	vmInfoData.Public_ip_id = req.Public_ip_id
+	vmInfoData.Security_group_ids = req.Security_group_ids
+	vmInfoData.Ssh_key_id = req.Ssh_key_id
+	vmInfoData.Description = req.Description
+
+	vmInfoData.ConnectionName = req.Config_name
 
 	//goroutin
 	var wg sync.WaitGroup
@@ -657,9 +711,9 @@ func restGetMcisVm(c echo.Context) error {
 		statusDisk := "12%"
 		fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
 
-		vmTmp.Cpu_status = statusCpu
-		vmTmp.Memory_status = statusMem
-		vmTmp.Disk_status = statusDisk
+		//vmTmp.Cpu_status = statusCpu
+		//vmTmp.Memory_status = statusMem
+		//vmTmp.Disk_status = statusDisk
 
 		fmt.Printf("%+v\n", vmTmp)
 
@@ -902,7 +956,7 @@ func createMcis(nsId string, req *mcisReq) string {
 	fmt.Println("=========================== Put createSvc")
 	key := genMcisKey(nsId, req.Id, "")
 	//mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
-	mapA := map[string]string{"id": req.Id, "name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
+	mapA := map[string]string{"id": req.Id, "name": req.Name, "description": req.Description, "status": "CREATING", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
 	val, _ := json.Marshal(mapA)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -945,7 +999,7 @@ func createMcis(nsId string, req *mcisReq) string {
 		vmInfoData.PublicIP = "Not assigned yet"
 		vmInfoData.CspVmId = "Not assigned yet"
 		vmInfoData.PublicDNS = "Not assigned yet"
-		vmInfoData.Status = "Launching"
+		vmInfoData.Status = "Creating"
 
 		///////////
 		/*
@@ -1776,6 +1830,126 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 	*/
 
 	return nil
+
+}
+
+func getMcisStatus(nsId string, mcisId string) ([]vmStatusInfo, error) {
+
+	fmt.Println("[getMcisStatus]" + mcisId)
+	key := genMcisKey(nsId, mcisId, "")
+	fmt.Println(key)
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return nil, err
+	}
+
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	vmList, err := getVmList(nsId, mcisId)
+	fmt.Println("=============================================== %#v", vmList)
+	if err != nil {
+		cblog.Error(err)
+		return nil, err
+	}
+	if len(vmList) == 0 {
+		return nil, nil
+	}
+	var mcisStatus []vmStatusInfo
+
+	var content struct {
+		CspVmId   string
+		CspVmName string
+		PublicIP  string
+	}
+
+	for _, v := range vmList {
+		key := genMcisKey(nsId, mcisId, v)
+		keyValue, _ := store.Get(key)
+		json.Unmarshal([]byte(keyValue.Value), &content)
+
+		vmStatusTmp := vmStatusInfo{}
+		vmStatusTmp.Id = v
+		vmStatusTmp.Name = content.CspVmName
+		vmStatusTmp.Csp_vm_id = content.CspVmId
+		vmStatusTmp.Public_ip = content.PublicIP
+		vmStatusTmp.Status, err = getVmStatus(nsId, mcisId, v)
+		if err != nil {
+			cblog.Error(err)
+			vmStatusTmp.Status = "FAILED"
+		}
+
+		mcisStatus = append(mcisStatus, vmStatusTmp)
+	}
+	return mcisStatus, nil
+
+	//need to change status
+
+}
+
+func getVmStatus(nsId string, mcisId string, vmId string) (string, error) {
+
+	var content struct {
+		Cloud_id  string `json:"cloud_id"`
+		Csp_vm_id string `json:"csp_vm_id"`
+	}
+
+	fmt.Println("[getVmStatus]" + vmId)
+	key := genMcisKey(nsId, mcisId, vmId)
+	fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	fmt.Printf("%+v\n", content.Cloud_id)
+	fmt.Printf("%+v\n", content.Csp_vm_id)
+
+	temp := vmInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+	fmt.Println("temp.CspVmId: " + temp.CspVmId)
+
+	url := SPIDER_URL + "/vmstatus/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=resume"
+	method := "GET"
+
+	fmt.Println("url: " + url)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	res, err := client.Do(req)
+	fmt.Println("Called CB-Spider API.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+
+	type statusResponse struct {
+		Status string
+	}
+	statusResponseTmp := statusResponse{}
+	err2 := json.Unmarshal(body, &statusResponseTmp)
+	if err2 != nil {
+		fmt.Println(err2)
+		return "", err2
+	}
+
+	return statusResponseTmp.Status, nil
 
 }
 
