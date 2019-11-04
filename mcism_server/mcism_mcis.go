@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/cloud-barista/cb-tumblebug/mcism_server/azurehandler"
 	"github.com/cloud-barista/cb-tumblebug/mcism_server/ec2handler"
 	"github.com/cloud-barista/cb-tumblebug/mcism_server/gcehandler"
@@ -27,6 +29,11 @@ import (
 
 	"sync"
 )
+
+const actionTerminate string = "Terminate"
+const actionSuspend string = "Suspend"
+const actionResume string = "Resume"
+const actionReboot string = "Reboot"
 
 // Structs for REST API
 type vmReq struct {
@@ -254,19 +261,24 @@ func restGetMcis(c echo.Context) error {
 	if action == "suspend" {
 		fmt.Println("[suspend MCIS]")
 
+		controlMcis(nsId, mcisId, actionSuspend)
 		mapA := map[string]string{"message": "The MCIS has been suspended"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "resume" {
 		fmt.Println("[resume MCIS]")
 
+		controlMcis(nsId, mcisId, actionResume)
+
 		mapA := map[string]string{"message": "The MCIS has been resumed"}
 		return c.JSON(http.StatusOK, &mapA)
 
-	} else if action == "restart" {
-		fmt.Println("[restart MCIS]")
+	} else if action == "reboot" {
+		fmt.Println("[reboot MCIS]")
 
-		mapA := map[string]string{"message": "The MCIS has been restarted"}
+		controlMcis(nsId, mcisId, actionReboot)
+
+		mapA := map[string]string{"message": "The MCIS has been rebooted"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "terminate" {
@@ -285,7 +297,7 @@ func restGetMcis(c echo.Context) error {
 		}
 
 		for _, v := range vmList {
-			terminateVm(nsId, mcisId, v)
+			controlVm(nsId, mcisId, v, actionTerminate)
 		}
 
 		mapA := map[string]string{"message": "The MCIS has been terminated"}
@@ -593,25 +605,28 @@ func restGetMcisVm(c echo.Context) error {
 	if action == "suspend" {
 		fmt.Println("[suspend VM]")
 
+		controlVm(nsId, mcisId, vmId, actionSuspend)
 		mapA := map[string]string{"message": "The VM has been suspended"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "resume" {
 		fmt.Println("[resume VM]")
 
+		controlVm(nsId, mcisId, vmId, actionResume)
 		mapA := map[string]string{"message": "The VM has been resumed"}
 		return c.JSON(http.StatusOK, &mapA)
 
-	} else if action == "restart" {
-		fmt.Println("[restart VM]")
+	} else if action == "reboot" {
+		fmt.Println("[reboot VM]")
 
+		controlVm(nsId, mcisId, vmId, actionReboot)
 		mapA := map[string]string{"message": "The VM has been restarted"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "terminate" {
 		fmt.Println("[terminate VM]")
 
-		terminateVm(nsId, mcisId, vmId)
+		controlVm(nsId, mcisId, vmId, actionTerminate)
 
 		mapA := map[string]string{"message": "The VM has been terminated"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -778,8 +793,8 @@ func delMcis(nsId string, mcisId string) error {
 
 	fmt.Println("[Delete MCIS] " + mcisId)
 
-	// terminateMcis first
-	err := terminateMcis(nsId, mcisId)
+	// controlMcis first
+	err := controlMcis(nsId, mcisId, actionTerminate)
 	if err != nil {
 		cblog.Error(err)
 		return err
@@ -819,8 +834,8 @@ func delMcisVm(nsId string, mcisId string, vmId string) error {
 
 	fmt.Println("[Delete VM] " + vmId)
 
-	// terminateVm first
-	err := terminateVm(nsId, mcisId, vmId)
+	// controlVm first
+	err := controlVm(nsId, mcisId, vmId, actionTerminate)
 
 	if err != nil {
 		cblog.Error(err)
@@ -1645,9 +1660,9 @@ func createVmAzure(count int) ([]*string, []*string) {
 	return instanceIds, publicIPs
 }
 
-func terminateMcis(nsId string, mcisId string) error {
+func controlMcis(nsId string, mcisId string, action string) error {
 
-	fmt.Println("[terminateMcis]" + mcisId)
+	fmt.Println("[controlMcis]" + mcisId + " to " + action)
 	key := genMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
 	keyValue, err := store.Get(key)
@@ -1671,7 +1686,7 @@ func terminateMcis(nsId string, mcisId string) error {
 
 	// delete vms info
 	for _, v := range vmList {
-		terminateVm(nsId, mcisId, v)
+		controlVm(nsId, mcisId, v, action)
 	}
 	return nil
 
@@ -1679,14 +1694,14 @@ func terminateMcis(nsId string, mcisId string) error {
 
 }
 
-func terminateVm(nsId string, mcisId string, vmId string) error {
+func controlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	var content struct {
 		Cloud_id  string `json:"cloud_id"`
 		Csp_vm_id string `json:"csp_vm_id"`
 	}
 
-	fmt.Println("[terminateVm]" + vmId)
+	fmt.Println("[controlVm]" + vmId)
 	key := genMcisKey(nsId, mcisId, vmId)
 	fmt.Println(key)
 
@@ -1706,11 +1721,25 @@ func terminateVm(nsId string, mcisId string, vmId string) error {
 	}
 	fmt.Println("temp.CspVmId: " + temp.CspVmId)
 
-	//url := SPIDER_URL + "/vm?connection_name=" + temp.ConnectionName // for testapi.io
-	url := SPIDER_URL + "/vm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName // for testapi.io
+	url := ""
+	method := ""
+	switch action {
+	case actionTerminate:
+		url = SPIDER_URL + "/vm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName
+		method = "DELETE"
+	case actionReboot:
+		url = SPIDER_URL + "/controlvm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=reboot"
+		method = "GET"
+	case actionSuspend:
+		url = SPIDER_URL + "/controlvm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=suspend"
+		method = "GET"
+	case actionResume:
+		url = SPIDER_URL + "/controlvm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=resume"
+		method = "GET"
+	default:
+		return errors.New(action + "is invalid actionType")
+	}
 	fmt.Println("url: " + url)
-
-	method := "DELETE"
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -1721,6 +1750,7 @@ func terminateVm(nsId string, mcisId string, vmId string) error {
 
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 
 	res, err := client.Do(req)
@@ -1735,11 +1765,11 @@ func terminateVm(nsId string, mcisId string, vmId string) error {
 			return nil
 		}
 		if strings.Compare(content.Cloud_id, "aws") == 0 {
-			terminateVmAws(content.Csp_vm_id)
+			controlVmAws(content.Csp_vm_id)
 		} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
-			terminateVmGcp(content.Csp_vm_id)
+			controlVmGcp(content.Csp_vm_id)
 		} else if strings.Compare(content.Cloud_id, "azure") == 0 {
-			terminateVmAzure(content.Csp_vm_id)
+			controlVmAzure(content.Csp_vm_id)
 		} else {
 			fmt.Println("==============ERROR=no matched provider_id=================")
 		}
@@ -1749,12 +1779,12 @@ func terminateVm(nsId string, mcisId string, vmId string) error {
 
 }
 
-func terminateVmAws(cspVmId string) {
+func controlVmAws(cspVmId string) {
 
 	//idList := make([]*string, 1)
 	//idList = append(idList, &cspVmId)
 	idList := []*string{&cspVmId}
-	fmt.Println("<terminateVmAws cspVmId : " + *idList[0] + ">" + strconv.Itoa(len(idList)))
+	fmt.Println("<controlVmAws cspVmId : " + *idList[0] + ">" + strconv.Itoa(len(idList)))
 
 	// (2) terminate AWS server
 	//region := "ap-northeast-2"
@@ -1765,10 +1795,10 @@ func terminateVmAws(cspVmId string) {
 
 }
 
-func terminateVmGcp(cspVmId string) {
+func controlVmGcp(cspVmId string) {
 
 	idList := []*string{&cspVmId}
-	fmt.Println("<terminateVmGcp cspVmId : " + *idList[0] + ">")
+	fmt.Println("<controlVmGcp cspVmId : " + *idList[0] + ">")
 
 	// (2) terminate all GCP servers
 	credentialFile := masterConfigInfos.GCP.CREDENTIALFILE
@@ -1781,10 +1811,10 @@ func terminateVmGcp(cspVmId string) {
 
 }
 
-func terminateVmAzure(cspVmId string) {
+func controlVmAzure(cspVmId string) {
 
 	idList := []*string{&cspVmId}
-	fmt.Println("<terminateVmAzure cspVmId : " + *idList[0] + ">")
+	fmt.Println("<controlVmAzure cspVmId : " + *idList[0] + ">")
 
 	// (2) terminate all AZURE servers
 	credentialFile := masterConfigInfos.AZURE.CREDENTIALFILE
