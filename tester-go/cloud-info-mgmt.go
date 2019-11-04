@@ -40,16 +40,16 @@ type cloudConnectionConfigCreateRequestInfo struct {
 	RegionName     string
 }
 
-func registerCloudInfo(resource string, param interface{}) error {
+func registerCloudInfo(resourceType string, param interface{}) error {
 	url := ""
 
-	if resource == "driver" ||
-		resource == "credential" ||
-		resource == "region" ||
-		resource == "connectionconfig" {
-		url = SPIDER_URL + "/" + resource
+	if resourceType == "driver" ||
+		resourceType == "credential" ||
+		resourceType == "region" ||
+		resourceType == "connectionconfig" {
+		url = SPIDER_URL + "/" + resourceType
 	} else {
-		err := fmt.Errorf("resource must be one of these: driver, credential, region, connectionconfig")
+		err := fmt.Errorf("resourceType must be one of these: driver, credential, region, connectionconfig")
 		return err
 	}
 
