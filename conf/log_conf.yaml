@@ -1,0 +1,18 @@
+#### Config for CB-Log Lib. ####
+
+cblog:
+  ## true | false
+  loopcheck: true # This temp method for development is busy wait. cf) cblogger.go:levelSetupLoop().
+
+  ## debug | info | warn | error
+  loglevel: error # If loopcheck is true, You can set this online.
+
+  ## true | false
+  logfile: false 
+
+## Config for File Output ##
+logfileinfo:
+  filename: ./log/cblogs.log
+  maxsize: 10 # megabytes
+  maxbackups: 50
+  maxage: 31 # days
