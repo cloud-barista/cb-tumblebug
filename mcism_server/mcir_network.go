@@ -54,7 +54,7 @@ type networkInfo struct {
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description  string     `json:"description"`
-	Status       string     `json:"string"`
+	Status       string     `json:"status"`
 	KeyValueList []KeyValue `json:"keyValueList"`
 }
 
