@@ -172,8 +172,9 @@ func restDelNetwork(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("networkId")
+	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delNetwork(nsId, id)
+	responseCode, body, err := delNetwork(nsId, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the network"}
@@ -187,11 +188,12 @@ func restDelNetwork(c echo.Context) error {
 func restDelAllNetwork(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	networkList := getNetworkList(nsId)
 
 	for _, v := range networkList {
-		responseCode, body, err := delNetwork(nsId, v)
+		responseCode, body, err := delNetwork(nsId, v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All networks"}
@@ -366,7 +368,7 @@ func getNetworkList(nsId string) []string {
 
 }
 
-func delNetwork(nsId string, Id string) (int, []byte, error) {
+func delNetwork(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete network] " + Id)
 
@@ -433,6 +435,13 @@ func delNetwork(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
+	case forceFlag == "true":
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res.StatusCode, body, cbStoreDeleteErr
+		}
+		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)

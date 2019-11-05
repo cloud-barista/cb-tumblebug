@@ -88,13 +88,13 @@ func restPostImage(c echo.Context) error {
 		}
 		content, _ := registerImageWithInfo(nsId, u)
 		return c.JSON(http.StatusCreated, content)
-	} else if action == "registerWithName" {
-		fmt.Println("[Registering Image with name]")
+	} else if action == "registerWithId" {
+		fmt.Println("[Registering Image with ID]")
 		u := &imageReq{}
 		if err := c.Bind(u); err != nil {
 			return err
 		}
-		content, responseCode, body, err := registerImageWithName(nsId, u)
+		content, responseCode, body, err := registerImageWithId(nsId, u)
 		if err != nil {
 			cblog.Error(err)
 			fmt.Println("body: ", string(body))
@@ -102,7 +102,7 @@ func restPostImage(c echo.Context) error {
 		}
 		return c.JSON(http.StatusCreated, content)
 	} else {
-		mapA := map[string]string{"message": "You must specify: action=registerWithInfo or action=registerWithName"}
+		mapA := map[string]string{"message": "You must specify: action=registerWithInfo or action=registerWithId"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
@@ -208,22 +208,24 @@ func createImage(nsId string, u *imageReq) (imageInfo, error) {
 }
 */
 
-func registerImageWithName(nsId string, u *imageReq) (imageInfo, int, []byte, error) {
+func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, error) {
 
-	// Step 1. Create a temp `ImageReqInfo (from Spider)` object.
-	type ImageReqInfo struct {
-		Name string
-		Id   string
-		// @todo
-	}
-	tempReq := ImageReqInfo{}
-	tempReq.Name = u.CspImageName
-	tempReq.Id = u.CspImageId
+	/*
+		// Step 1. Create a temp `ImageReqInfo (from Spider)` object.
+		type ImageReqInfo struct {
+			Name string
+			Id   string
+			// @todo
+		}
+		tempReq := ImageReqInfo{}
+		tempReq.Name = u.CspImageName
+		tempReq.Id = u.CspImageId
+	*/
 
 	// Step 2. Send a req to Spider and save the response.
-	url := SPIDER_URL + "/vmimage?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/vmimage/" + u.CspImageId + "?connection_name=" + u.ConnectionName
 
-	method := "POST"
+	method := "GET"
 
 	payload := strings.NewReader("{ \"Name\": \"" + u.CspImageName + "\"}")
 
@@ -298,8 +300,8 @@ func registerImageWithName(nsId string, u *imageReq) (imageInfo, int, []byte, er
 	content.ConnectionName = u.ConnectionName
 	content.CspImageId = temp.Id     // = u.CspImageId
 	content.CspImageName = temp.Name // = u.CspImageName
-	//content.CreationDate =
-	content.Description = u.Description
+	content.CreationDate = lookupKeyValueList(temp.KeyValueList, "CreationDate")
+	content.Description = lookupKeyValueList(temp.KeyValueList, "Description")
 	content.GuestOS = temp.GuestOS
 	content.Status = temp.Status
 	content.KeyValueList = temp.KeyValueList

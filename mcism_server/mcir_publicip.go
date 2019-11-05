@@ -167,8 +167,9 @@ func restDelPublicIp(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("publicIpId")
+	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delPublicIp(nsId, id)
+	responseCode, body, err := delPublicIp(nsId, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
@@ -182,11 +183,12 @@ func restDelPublicIp(c echo.Context) error {
 func restDelAllPublicIp(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	publicIpList := getPublicIpList(nsId)
 
 	for _, v := range publicIpList {
-		responseCode, body, err := delPublicIp(nsId, v)
+		responseCode, body, err := delPublicIp(nsId, v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All publicIps"}
@@ -345,7 +347,7 @@ func getPublicIpList(nsId string) []string {
 
 }
 
-func delPublicIp(nsId string, Id string) (int, []byte, error) {
+func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete publicIp] " + Id)
 
@@ -412,6 +414,13 @@ func delPublicIp(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
+	case forceFlag == "true":
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res.StatusCode, body, cbStoreDeleteErr
+		}
+		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)

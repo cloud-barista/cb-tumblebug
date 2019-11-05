@@ -178,8 +178,9 @@ func restDelSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("securityGroupId")
+	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delSecurityGroup(nsId, id)
+	responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
@@ -193,11 +194,12 @@ func restDelSecurityGroup(c echo.Context) error {
 func restDelAllSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	securityGroupList := getSecurityGroupList(nsId)
 
 	for _, v := range securityGroupList {
-		responseCode, body, err := delSecurityGroup(nsId, v)
+		responseCode, body, err := delSecurityGroup(nsId, v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All securityGroups"}
@@ -376,7 +378,7 @@ func getSecurityGroupList(nsId string) []string {
 
 }
 
-func delSecurityGroup(nsId string, Id string) (int, []byte, error) {
+func delSecurityGroup(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete securityGroup] " + Id)
 
@@ -425,6 +427,13 @@ func delSecurityGroup(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
+	case forceFlag == "true":
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res.StatusCode, body, cbStoreDeleteErr
+		}
+		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)

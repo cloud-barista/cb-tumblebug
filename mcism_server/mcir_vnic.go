@@ -176,8 +176,9 @@ func restDelVNic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("vNicId")
+	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delVNic(nsId, id)
+	responseCode, body, err := delVNic(nsId, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the vNic"}
@@ -191,11 +192,12 @@ func restDelVNic(c echo.Context) error {
 func restDelAllVNic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	vNicList := getVNicList(nsId)
 
 	for _, v := range vNicList {
-		responseCode, body, err := delVNic(nsId, v)
+		responseCode, body, err := delVNic(nsId, v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All vNics"}
@@ -407,7 +409,7 @@ func getVNicList(nsId string) []string {
 
 }
 
-func delVNic(nsId string, Id string) (int, []byte, error) {
+func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete vNic] " + Id)
 
@@ -474,6 +476,13 @@ func delVNic(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
+	case forceFlag == "true":
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res.StatusCode, body, cbStoreDeleteErr
+		}
+		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
