@@ -39,6 +39,37 @@ const defaultMonitorPort = ":2019"
 
 var masterConfigInfos confighandler.MASTERCONFIGTYPE
 
+const (
+	InfoColor    = "\033[1;34m%s\033[0m"
+	NoticeColor  = "\033[1;36m%s\033[0m"
+	WarningColor = "\033[1;33m%s\033[0m"
+	ErrorColor   = "\033[1;31m%s\033[0m"
+	DebugColor   = "\033[0;36m%s\033[0m"
+)
+
+const (
+	Version = " Version: Americano"
+	website = " Repository: https://github.com/cloud-barista/cb-tumblebug"
+	banner  = `
+
+  ██████╗██╗      ██████╗ ██╗   ██╗██████╗       ██████╗  █████╗ ██████╗ ██╗███████╗████████╗ █████╗
+ ██╔════╝██║     ██╔═══██╗██║   ██║██╔══██╗      ██╔══██╗██╔══██╗██╔══██╗██║██╔════╝╚══██╔══╝██╔══██╗
+ ██║     ██║     ██║   ██║██║   ██║██║  ██║█████╗██████╔╝███████║██████╔╝██║███████╗   ██║   ███████║
+ ██║     ██║     ██║   ██║██║   ██║██║  ██║╚════╝██╔══██╗██╔══██║██╔══██╗██║╚════██║   ██║   ██╔══██║
+ ╚██████╗███████╗╚██████╔╝╚██████╔╝██████╔╝      ██████╔╝██║  ██║██║  ██║██║███████║   ██║   ██║  ██║
+  ╚═════╝╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝       ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝
+
+ ████████╗██╗   ██╗███╗   ███╗██████╗ ██╗     ███████╗██████╗ ██╗   ██╗ ██████╗
+ ╚══██╔══╝██║   ██║████╗ ████║██╔══██╗██║     ██╔════╝██╔══██╗██║   ██║██╔════╝
+    ██║   ██║   ██║██╔████╔██║██████╔╝██║     █████╗  ██████╔╝██║   ██║██║  ███╗
+    ██║   ██║   ██║██║╚██╔╝██║██╔══██╗██║     ██╔══╝  ██╔══██╗██║   ██║██║   ██║
+    ██║   ╚██████╔╝██║ ╚═╝ ██║██████╔╝███████╗███████╗██████╔╝╚██████╔╝╚██████╔╝
+    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚══════╝╚══════╝╚═════╝  ╚═════╝  ╚═════╝              
+
+ Multi-cloud infra service managemenet framework
+ ________________________________________________`
+)
+
 // Main Body
 
 func apiServer() {
@@ -52,6 +83,20 @@ func apiServer() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World! This is cloud-barista cb-tumblebug")
 	})
+	e.HideBanner = true
+	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
+
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Println("")
+	fmt.Printf(banner)
+	fmt.Println("")
+	fmt.Printf(ErrorColor, Version)
+	fmt.Println("")
+	fmt.Printf(InfoColor, website)
+	fmt.Println("")
+	fmt.Println("")
 
 	// Route
 	g := e.Group("/ns", nsValidation())
@@ -143,9 +188,9 @@ var SPIDER_URL string
 
 func main() {
 
-	fmt.Println("\n[cb-tumblebug (Multi-Cloud Infra Service Management Framework)]")
-	fmt.Println("\nInitiating REST API Server ...")
-	fmt.Println("\n[REST API call examples]")
+	//fmt.Println("\n[cb-tumblebug (Multi-Cloud Infra Service Management Framework)]")
+	//fmt.Println("\nInitiating REST API Server ...")
+	//fmt.Println("\n[REST API call examples]")
 
 	SPIDER_URL = os.Getenv("SPIDER_URL")
 
