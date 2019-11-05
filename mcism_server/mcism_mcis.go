@@ -986,7 +986,7 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 	fmt.Printf("%+v\n", vmInfoData)
 
 	//instanceIds, publicIPs := createVm(&vmInfoData)
-	err := createVm(&vmInfoData)
+	err := createVm(nsId, mcisId, &vmInfoData)
 	if err != nil {
 		cblog.Error(err)
 		return err
@@ -1001,7 +1001,7 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 
 }
 
-func createVm(vmInfoData *vmInfo) error {
+func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	fmt.Printf("createVm(vmInfoData *vmInfo)\n")
 	fmt.Printf("%+v\n", vmInfoData)
@@ -1115,6 +1115,8 @@ func createVm(vmInfoData *vmInfo) error {
 		VMUserId     string
 		VMUserPasswd string
 	}
+
+	/* VM creation requtest with csp resource ids
 	tempReq := VMReqInfo{}
 	tempReq.VMName = vmInfoData.Name
 
@@ -1130,6 +1132,30 @@ func createVm(vmInfoData *vmInfo) error {
 
 	tempReq.VMUserId = vmInfoData.Vm_access_id
 	tempReq.VMUserPasswd = vmInfoData.Vm_access_passwd
+	*/
+
+	tempReq := VMReqInfo{}
+	tempReq.VMName = vmInfoData.Name
+
+	tempReq.ImageId = getCspResourceId(nsId, "image", vmInfoData.Image_id)
+	tempReq.VirtualNetworkId = getCspResourceId(nsId, "network", vmInfoData.Vnet_id)
+	tempReq.NetworkInterfaceId = getCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
+	tempReq.PublicIPId = getCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
+
+	var SecurityGroupIdsTmp []string
+	for _, v := range vmInfoData.Security_group_ids {
+		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, getCspResourceId(nsId, "securityGroup", v))
+	}
+	tempReq.SecurityGroupIds = SecurityGroupIdsTmp
+
+	tempReq.VMSpecId = getCspResourceId(nsId, "spec", vmInfoData.Spec_id)
+
+	tempReq.KeyPairName = getCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
+
+	tempReq.VMUserId = vmInfoData.Vm_access_id
+	tempReq.VMUserPasswd = vmInfoData.Vm_access_passwd
+
+	fmt.Printf("%+v\n", tempReq)
 
 	payload, _ := json.Marshal(tempReq)
 
