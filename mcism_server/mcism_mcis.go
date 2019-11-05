@@ -1963,6 +1963,10 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		statusResponseTmp.Status = statusSuspended
 	} else if statusResponseTmp.Status == "REBOOTING" {
 		statusResponseTmp.Status = statusRebooting
+	} else if statusResponseTmp.Status == "SHUTTING-DOWN" {
+		statusResponseTmp.Status = statusTerminating
+	} else if statusResponseTmp.Status == "TERMINATED" {
+		statusResponseTmp.Status = statusTerminated
 	} else {
 		statusResponseTmp.Status = "statusUndefined"
 	}
