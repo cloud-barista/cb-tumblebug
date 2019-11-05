@@ -277,7 +277,7 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 	case "spec":
 		content := specInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.Id
+		return content.Name
 	case "network":
 		content := networkInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
