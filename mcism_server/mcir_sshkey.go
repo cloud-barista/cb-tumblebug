@@ -169,8 +169,9 @@ func restDelSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("sshKeyId")
+	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delSshKey(nsId, id)
+	responseCode, body, err := delSshKey(nsId, id, forceFlag)
 	//body, _ := ioutil.ReadAll(res.Body)
 	if err != nil {
 		cblog.Error(err)
@@ -189,11 +190,12 @@ func restDelSshKey(c echo.Context) error {
 func restDelAllSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	sshKeyList := getSshKeyList(nsId)
 
 	for _, v := range sshKeyList {
-		responseCode, body, err := delSshKey(nsId, v)
+		responseCode, body, err := delSshKey(nsId, v, forceFlag)
 		//body, _ := ioutil.ReadAll(res.Body)
 		if err != nil {
 			cblog.Error(err)
@@ -356,7 +358,7 @@ func getSshKeyList(nsId string) []string {
 
 }
 
-func delSshKey(nsId string, Id string) (int, []byte, error) {
+func delSshKey(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete sshKey] " + Id)
 
@@ -423,6 +425,13 @@ func delSshKey(nsId string, Id string) (int, []byte, error) {
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
+	case forceFlag == "true":
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res.StatusCode, body, cbStoreDeleteErr
+		}
+		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)

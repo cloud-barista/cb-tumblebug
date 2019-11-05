@@ -147,8 +147,9 @@ func restDelSubnet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("subnetId")
+	forceFlag := c.QueryParam("force")
 
-	err := delSubnet(nsId, id)
+	err := delSubnet(nsId, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the subnet"}
@@ -162,11 +163,12 @@ func restDelSubnet(c echo.Context) error {
 func restDelAllSubnet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	subnetList := getSubnetList(nsId)
 
 	for _, v := range subnetList {
-		err := delSubnet(nsId, v)
+		err := delSubnet(nsId, v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All subnets"}
@@ -300,7 +302,7 @@ func getSubnetList(nsId string) []string {
 
 }
 
-func delSubnet(nsId string, Id string) error {
+func delSubnet(nsId string, Id string, forceFlag string) error {
 
 	fmt.Println("[Delete subnet] " + Id)
 
