@@ -35,6 +35,16 @@ const actionSuspend string = "Suspend"
 const actionResume string = "Resume"
 const actionReboot string = "Reboot"
 
+const statusRunning string = "Running"
+const statusSuspended string = "Suspended"
+const statusFailed string = "Failed"
+const statusTerminated string = "Terminated"
+const statusCreating string = "Creating"
+const statusSuspending string = "Suspending"
+const statusResuming string = "Resuming"
+const statusRebooting string = "Rebooting"
+const statusTerminating string = "Terminating"
+
 // Structs for REST API
 type vmReq struct {
 	Id             string `json:"id"`
@@ -177,6 +187,14 @@ type vmInfo struct {
 	Cloud_id string `json:"cloud_id"`
 }
 
+type mcisStatusInfo struct {
+	Id     string         `json:"id"`
+	Name   string         `json:"name"`
+	Vm_num string         `json:"vm_num"`
+	Status string         `json:"status"`
+	Vm     []vmStatusInfo `json:"vm"`
+}
+
 type vmStatusInfo struct {
 	Id        string `json:"id"`
 	Csp_vm_id string `json:"csp_vm_id"`
@@ -303,25 +321,7 @@ func restGetMcis(c echo.Context) error {
 
 	} else if action == "status" {
 
-		var content struct {
-			Id     string         `json:"id"`
-			Name   string         `json:"name"`
-			Vm_num string         `json:"vm_num"`
-			Status string         `json:"status"`
-			Vm     []vmStatusInfo `json:"vm"`
-		}
-
 		fmt.Println("[status MCIS]")
-
-		key := genMcisKey(nsId, mcisId, "")
-		fmt.Println(key)
-		keyValue, _ := store.Get(key)
-		if keyValue == nil {
-			mapA := map[string]string{"message": "Cannot find " + key}
-			return c.JSON(http.StatusOK, &mapA)
-		}
-
-		json.Unmarshal([]byte(keyValue.Value), &content)
 
 		vmList, err := getVmList(nsId, mcisId)
 		if err != nil {
@@ -333,69 +333,15 @@ func restGetMcis(c echo.Context) error {
 			mapA := map[string]string{"message": "No VM to check in the MCIS"}
 			return c.JSON(http.StatusOK, &mapA)
 		}
-		content.Vm, err = getMcisStatus(nsId, mcisId)
+		mcisStatusResponse, err := getMcisStatus(nsId, mcisId)
 		if err != nil {
 			cblog.Error(err)
 			return err
 		}
-		statusRunningFlag := 0
-		for _, v := range content.Vm {
-			if v.Status == "RUNNING" {
-				statusRunningFlag++
-			}
-			if v.Status == "SUSPENDED" {
-				statusRunningFlag--
-			}
-		}
-		if statusRunningFlag > 0 {
-			if statusRunningFlag == len(content.Vm) {
-				content.Status = "RUNNING"
-			} else {
-				content.Status = "PARTIAL-RUNNING"
-			}
-		} else {
-			if statusRunningFlag*(-1) == len(content.Vm) {
-				content.Status = "SUSPENDED"
-			} else {
-				content.Status = "PARTIAL-SUSPENDED"
-			}
-		}
 
-		/*
-			for _, v := range vmList {
-				vmKey := genMcisKey(nsId, mcisId, v)
-				fmt.Println(vmKey)
-				vmKeyValue, _ := store.Get(vmKey)
-				if vmKeyValue == nil {
-					mapA := map[string]string{"message": "Cannot find " + vmKey}
-					return c.JSON(http.StatusOK, &mapA)
-				}
+		fmt.Printf("%+v\n", mcisStatusResponse)
 
-				fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-				vmTmp := vmStatusInfo{}
-				json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-				vmTmp.Id = v
-
-				vmIp := getVmIp(nsId, mcisId, v)
-				vmIpPort := vmIp + defaultMonitorPort
-				//statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
-				statusCpu := "0.8%"
-				statusMem := "21%"
-				statusDisk := "12%"
-
-				fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
-
-				//vmTmp.Cpu_status = statusCpu
-				//vmTmp.Memory_status = statusMem
-				//vmTmp.Disk_status = statusDisk
-
-				content.Vm = append(content.Vm, vmTmp)
-			}
-		*/
-
-		fmt.Printf("%+v\n", content)
-
-		return c.JSON(http.StatusOK, &content)
+		return c.JSON(http.StatusOK, &mcisStatusResponse)
 
 	} else {
 
@@ -685,9 +631,9 @@ func restGetMcisVm(c echo.Context) error {
 		mapA := map[string]string{"message": "The VM has been terminated"}
 		return c.JSON(http.StatusOK, &mapA)
 
-	} else if action == "monitor" {
+	} else if action == "status" {
 
-		fmt.Println("[monitor VM]")
+		fmt.Println("[status VM]")
 
 		vmKey := genMcisKey(nsId, mcisId, vmId)
 		fmt.Println(vmKey)
@@ -697,27 +643,16 @@ func restGetMcisVm(c echo.Context) error {
 			return c.JSON(http.StatusOK, &mapA)
 		}
 
-		fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-		vmTmp := vmStatusInfo{}
-		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-		vmTmp.Id = vmId
+		vmStatusResponse, err := getVmStatus(nsId, mcisId, vmId)
 
-		vmIp := getVmIp(nsId, mcisId, vmId)
-		vmIpPort := vmIp + defaultMonitorPort
-		//statusCpu, statusMem, statusDisk := monitorVm(vmIpPort)
+		if err != nil {
+			cblog.Error(err)
+			return err
+		}
 
-		statusCpu := "0.8%"
-		statusMem := "21%"
-		statusDisk := "12%"
-		fmt.Println("[Status for MCIS] VM:" + vmIpPort + " CPU:" + statusCpu + " MEM:" + statusMem + " DISK:" + statusDisk)
+		fmt.Printf("%+v\n", vmStatusResponse)
 
-		//vmTmp.Cpu_status = statusCpu
-		//vmTmp.Memory_status = statusMem
-		//vmTmp.Disk_status = statusDisk
-
-		fmt.Printf("%+v\n", vmTmp)
-
-		return c.JSON(http.StatusOK, &vmTmp)
+		return c.JSON(http.StatusOK, &vmStatusResponse)
 
 	} else {
 
@@ -1833,7 +1768,7 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 
 }
 
-func getMcisStatus(nsId string, mcisId string) ([]vmStatusInfo, error) {
+func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 
 	fmt.Println("[getMcisStatus]" + mcisId)
 	key := genMcisKey(nsId, mcisId, "")
@@ -1841,58 +1776,100 @@ func getMcisStatus(nsId string, mcisId string) ([]vmStatusInfo, error) {
 	keyValue, err := store.Get(key)
 	if err != nil {
 		cblog.Error(err)
-		return nil, err
+		return mcisStatusInfo{}, err
 	}
 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
+	mcisStatus := mcisStatusInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mcisStatus)
+
 	vmList, err := getVmList(nsId, mcisId)
 	fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
 		cblog.Error(err)
-		return nil, err
+		return mcisStatusInfo{}, err
 	}
 	if len(vmList) == 0 {
-		return nil, nil
-	}
-	var mcisStatus []vmStatusInfo
-
-	var content struct {
-		CspVmId   string
-		CspVmName string
-		PublicIP  string
+		return mcisStatusInfo{}, nil
 	}
 
 	for _, v := range vmList {
-		key := genMcisKey(nsId, mcisId, v)
-		keyValue, _ := store.Get(key)
-		json.Unmarshal([]byte(keyValue.Value), &content)
-
-		vmStatusTmp := vmStatusInfo{}
-		vmStatusTmp.Id = v
-		vmStatusTmp.Name = content.CspVmName
-		vmStatusTmp.Csp_vm_id = content.CspVmId
-		vmStatusTmp.Public_ip = content.PublicIP
-		vmStatusTmp.Status, err = getVmStatus(nsId, mcisId, v)
+		vmStatusTmp, err := getVmStatus(nsId, mcisId, v)
 		if err != nil {
 			cblog.Error(err)
 			vmStatusTmp.Status = "FAILED"
+			return mcisStatus, err
 		}
-
-		mcisStatus = append(mcisStatus, vmStatusTmp)
+		mcisStatus.Vm = append(mcisStatus.Vm, vmStatusTmp)
 	}
+
+	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	statusFlagStr := []string{statusFailed, statusSuspended, statusRunning, statusTerminated, statusCreating, statusSuspending, statusResuming, statusRebooting, statusTerminating, "Include-NotDefinedStatus"}
+	for _, v := range mcisStatus.Vm {
+
+		switch v.Status {
+		case statusFailed:
+			statusFlag[0]++
+		case statusSuspended:
+			statusFlag[1]++
+		case statusRunning:
+			statusFlag[2]++
+		case statusTerminated:
+			statusFlag[3]++
+		case statusCreating:
+			statusFlag[4]++
+		case statusSuspending:
+			statusFlag[5]++
+		case statusResuming:
+			statusFlag[6]++
+		case statusRebooting:
+			statusFlag[7]++
+		case statusTerminating:
+			statusFlag[8]++
+		default:
+			statusFlag[9]++
+		}
+	}
+
+	tmpMax := 0
+	tmpMaxIndex := 0
+	for i, v := range statusFlag {
+		if v > tmpMax {
+			tmpMax = v
+			tmpMaxIndex = i
+		}
+	}
+
+	if tmpMax == len(mcisStatus.Vm) {
+		mcisStatus.Status = statusFlagStr[tmpMaxIndex]
+	} else if tmpMax < len(mcisStatus.Vm) {
+		mcisStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex]
+	} else {
+		mcisStatus.Status = statusFlagStr[9]
+	}
+	if statusFlag[0] > 0 {
+		mcisStatus.Status = statusFlagStr[0]
+	}
+	if statusFlag[9] > 0 {
+		mcisStatus.Status = statusFlagStr[9]
+	}
+
 	return mcisStatus, nil
 
 	//need to change status
 
 }
 
-func getVmStatus(nsId string, mcisId string, vmId string) (string, error) {
+func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) {
 
 	var content struct {
 		Cloud_id  string `json:"cloud_id"`
 		Csp_vm_id string `json:"csp_vm_id"`
+		CspVmId   string
+		CspVmName string
+		PublicIP  string
 	}
 
 	fmt.Println("[getVmStatus]" + vmId)
@@ -1929,7 +1906,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (string, error) {
 
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return vmStatusInfo{}, err
 	}
 
 	res, err := client.Do(req)
@@ -1946,10 +1923,38 @@ func getVmStatus(nsId string, mcisId string, vmId string) (string, error) {
 	err2 := json.Unmarshal(body, &statusResponseTmp)
 	if err2 != nil {
 		fmt.Println(err2)
-		return "", err2
+		return vmStatusInfo{}, err2
 	}
 
-	return statusResponseTmp.Status, nil
+	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
+	if statusResponseTmp.Status == "PENDING" {
+		statusResponseTmp.Status = statusCreating
+	} else if statusResponseTmp.Status == "RUNNING" {
+		statusResponseTmp.Status = statusRunning
+	} else if statusResponseTmp.Status == "STOPPING" {
+		statusResponseTmp.Status = statusSuspending
+	} else if statusResponseTmp.Status == "STOPPED" {
+		statusResponseTmp.Status = statusSuspended
+	} else if statusResponseTmp.Status == "REBOOTING" {
+		statusResponseTmp.Status = statusRebooting
+	} else {
+		statusResponseTmp.Status = "statusUndefined"
+	}
+
+	// End of Temporal CODE.
+
+	vmStatusTmp := vmStatusInfo{}
+	vmStatusTmp.Id = vmId
+	vmStatusTmp.Name = content.CspVmName
+	vmStatusTmp.Csp_vm_id = content.CspVmId
+	vmStatusTmp.Public_ip = content.PublicIP
+	vmStatusTmp.Status = statusResponseTmp.Status
+	if err != nil {
+		cblog.Error(err)
+		vmStatusTmp.Status = "FAILED"
+	}
+
+	return vmStatusTmp, nil
 
 }
 
