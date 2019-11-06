@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+
+	//"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // Ref: https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/ImageHandler.go
@@ -35,6 +37,11 @@ type ImageHandler interface {
 	DeleteImage(imageID string) (bool, error)
 }
 */
+
+type KeyValue struct {
+	Key   string
+	Value string
+}
 
 type imageReq struct {
 	//Id             string `json:"id"`
@@ -67,7 +74,7 @@ g.DELETE("/:nsId/resources/image", restDelAllImage)
 */
 
 // MCIS API Proxy: Image
-func restPostImage(c echo.Context) error {
+func RestPostImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -108,7 +115,7 @@ func restPostImage(c echo.Context) error {
 
 }
 
-func restGetImage(c echo.Context) error {
+func RestGetImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -131,7 +138,7 @@ func restGetImage(c echo.Context) error {
 
 }
 
-func restGetAllImage(c echo.Context) error {
+func RestGetAllImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -160,13 +167,13 @@ func restGetAllImage(c echo.Context) error {
 
 }
 
-func restPutImage(c echo.Context) error {
+func RestPutImage(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelImage(c echo.Context) error {
+func RestDelImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("imageId")
@@ -182,7 +189,7 @@ func restDelImage(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllImage(c echo.Context) error {
+func RestDelAllImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 

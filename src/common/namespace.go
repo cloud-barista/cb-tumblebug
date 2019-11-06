@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+
+	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
 )
 
 type nsReq struct {
@@ -22,7 +24,7 @@ type nsInfo struct {
 }
 
 // MCIS API Proxy: Ns
-func restPostNs(c echo.Context) error {
+func RestPostNs(c echo.Context) error {
 
 	u := &nsReq{}
 	if err := c.Bind(u); err != nil {
@@ -35,7 +37,7 @@ func restPostNs(c echo.Context) error {
 
 }
 
-func nsValidation() echo.MiddlewareFunc {
+func NsValidation() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			fmt.Printf("%v\n", "[API request!]")
@@ -53,7 +55,7 @@ func nsValidation() echo.MiddlewareFunc {
 	}
 }
 
-func restGetNs(c echo.Context) error {
+func RestGetNs(c echo.Context) error {
 	id := c.Param("nsId")
 
 	content := nsInfo{}
@@ -82,7 +84,7 @@ func restGetNs(c echo.Context) error {
 
 }
 
-func restGetAllNs(c echo.Context) error {
+func RestGetAllNs(c echo.Context) error {
 
 	var content struct {
 		//Name string     `json:"name"`
@@ -114,11 +116,11 @@ func restGetAllNs(c echo.Context) error {
 
 }
 
-func restPutNs(c echo.Context) error {
+func RestPutNs(c echo.Context) error {
 	return nil
 }
 
-func restDelNs(c echo.Context) error {
+func RestDelNs(c echo.Context) error {
 
 	id := c.Param("nsId")
 
@@ -133,7 +135,7 @@ func restDelNs(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllNs(c echo.Context) error {
+func RestDelAllNs(c echo.Context) error {
 
 	nsList := getNsList()
 
@@ -205,8 +207,9 @@ func delNs(Id string) error {
 
 	fmt.Println("[Delete ns] " + Id)
 
+	/*
 	// Forbid deleting NS when there is at least one MCIS or one of resources.
-	mcisList := getMcisList(Id)
+	mcisList := mcis.getMcisList(Id)
 	imageList := getImageList(Id)
 	networkList := getNetworkList(Id)
 	securityGroupList := getSecurityGroupList(Id)
@@ -223,6 +226,7 @@ func delNs(Id string) error {
 		cblog.Error(err)
 		return err // TODO: Pass len(****List) to restDelNs() / restDelAllNs()
 	}
+	*/
 
 	key := "/ns/" + Id
 	fmt.Println(key)

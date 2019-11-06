@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -45,7 +45,7 @@ g.DELETE("/:nsId/resources/subnet", restDelAllSubnet)
 */
 
 // MCIS API Proxy: Subnet
-func restPostSubnet(c echo.Context) error {
+func RestPostSubnet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -85,7 +85,7 @@ func restPostSubnet(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetSubnet(c echo.Context) error {
+func RestGetSubnet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -108,7 +108,7 @@ func restGetSubnet(c echo.Context) error {
 
 }
 
-func restGetAllSubnet(c echo.Context) error {
+func RestGetAllSubnet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -137,13 +137,13 @@ func restGetAllSubnet(c echo.Context) error {
 
 }
 
-func restPutSubnet(c echo.Context) error {
+func RestPutSubnet(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelSubnet(c echo.Context) error {
+func RestDelSubnet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("subnetId")
@@ -160,7 +160,7 @@ func restDelSubnet(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllSubnet(c echo.Context) error {
+func RestDelAllSubnet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")

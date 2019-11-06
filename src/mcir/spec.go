@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+
+	"github.com/cloud-barista/cb-tumblebug/src/mcis"
 )
 
 type specReq struct {
@@ -54,7 +56,7 @@ g.DELETE("/:nsId/resources/spec", restDelAllSpec)
 */
 
 // MCIS API Proxy: Spec
-func restPostSpec(c echo.Context) error {
+func RestPostSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -93,7 +95,7 @@ func restPostSpec(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetSpec(c echo.Context) error {
+func RestGetSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -116,7 +118,7 @@ func restGetSpec(c echo.Context) error {
 
 }
 
-func restGetAllSpec(c echo.Context) error {
+func RestGetAllSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -145,13 +147,13 @@ func restGetAllSpec(c echo.Context) error {
 
 }
 
-func restPutSpec(c echo.Context) error {
+func RestPutSpec(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelSpec(c echo.Context) error {
+func RestDelSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("specId")
@@ -167,7 +169,7 @@ func restDelSpec(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllSpec(c echo.Context) error {
+func RestDelAllSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -325,7 +327,7 @@ func registerSpecWithInfo(nsId string, content *specInfo) (specInfo, error) {
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	registerRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	mcis.RegisterRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
 
 	return *content, nil
 }

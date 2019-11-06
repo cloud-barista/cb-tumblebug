@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -61,7 +61,7 @@ g.DELETE("/:nsId/resources/sshKey", restDelAllSshKey)
 */
 
 // MCIS API Proxy: SshKey
-func restPostSshKey(c echo.Context) error {
+func RestPostSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -107,7 +107,7 @@ func restPostSshKey(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetSshKey(c echo.Context) error {
+func RestGetSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -130,7 +130,7 @@ func restGetSshKey(c echo.Context) error {
 
 }
 
-func restGetAllSshKey(c echo.Context) error {
+func RestGetAllSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -159,13 +159,13 @@ func restGetAllSshKey(c echo.Context) error {
 
 }
 
-func restPutSshKey(c echo.Context) error {
+func RestPutSshKey(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelSshKey(c echo.Context) error {
+func RestDelSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("sshKeyId")
@@ -187,7 +187,7 @@ func restDelSshKey(c echo.Context) error {
 	return c.JSON(http.StatusOK, body)
 }
 
-func restDelAllSshKey(c echo.Context) error {
+func RestDelAllSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")

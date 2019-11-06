@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -63,7 +63,7 @@ g.DELETE("/:nsId/resources/publicIp", restDelAllPublicIp)
 */
 
 // MCIS API Proxy: PublicIp
-func restPostPublicIp(c echo.Context) error {
+func RestPostPublicIp(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -105,7 +105,7 @@ func restPostPublicIp(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetPublicIp(c echo.Context) error {
+func RestGetPublicIp(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -128,7 +128,7 @@ func restGetPublicIp(c echo.Context) error {
 
 }
 
-func restGetAllPublicIp(c echo.Context) error {
+func RestGetAllPublicIp(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -157,13 +157,13 @@ func restGetAllPublicIp(c echo.Context) error {
 
 }
 
-func restPutPublicIp(c echo.Context) error {
+func RestPutPublicIp(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelPublicIp(c echo.Context) error {
+func RestDelPublicIp(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("publicIpId")
@@ -180,7 +180,7 @@ func restDelPublicIp(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllPublicIp(c echo.Context) error {
+func RestDelAllPublicIp(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")

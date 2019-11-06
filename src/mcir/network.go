@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -68,7 +68,7 @@ g.DELETE("/:nsId/resources/network", restDelAllNetwork)
 */
 
 // MCIS API Proxy: Network
-func restPostNetwork(c echo.Context) error {
+func RestPostNetwork(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -110,7 +110,7 @@ func restPostNetwork(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetNetwork(c echo.Context) error {
+func RestGetNetwork(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -133,7 +133,7 @@ func restGetNetwork(c echo.Context) error {
 
 }
 
-func restGetAllNetwork(c echo.Context) error {
+func RestGetAllNetwork(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -162,13 +162,13 @@ func restGetAllNetwork(c echo.Context) error {
 
 }
 
-func restPutNetwork(c echo.Context) error {
+func RestPutNetwork(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelNetwork(c echo.Context) error {
+func RestDelNetwork(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("networkId")
@@ -185,7 +185,7 @@ func restDelNetwork(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllNetwork(c echo.Context) error {
+func RestDelAllNetwork(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")

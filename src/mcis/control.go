@@ -1,4 +1,4 @@
-package main
+package mcis
 
 import (
 	"errors"
@@ -23,6 +23,8 @@ import (
 	"github.com/labstack/echo"
 
 	"sync"
+
+	//"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 const actionTerminate string = "Terminate"
@@ -39,6 +41,11 @@ const statusSuspending string = "Suspending"
 const statusResuming string = "Resuming"
 const statusRebooting string = "Rebooting"
 const statusTerminating string = "Terminating"
+
+type KeyValue struct {
+	Key   string
+	Value string
+}
 
 // Structs for REST API
 type vmReq struct {
@@ -210,7 +217,7 @@ type vmRecommendInfo struct {
 
 // MCIS API Proxy
 
-func restPostMcis(c echo.Context) error {
+func RestPostMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -261,7 +268,7 @@ func restPostMcis(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetMcis(c echo.Context) error {
+func RestGetMcis(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
 	nsId := c.Param("nsId")
@@ -393,7 +400,7 @@ func restGetMcis(c echo.Context) error {
 	}
 }
 
-func restGetAllMcis(c echo.Context) error {
+func RestGetAllMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -426,11 +433,11 @@ func restGetAllMcis(c echo.Context) error {
 
 }
 
-func restPutMcis(c echo.Context) error {
+func RestPutMcis(c echo.Context) error {
 	return nil
 }
 
-func restDelMcis(c echo.Context) error {
+func RestDelMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -446,7 +453,7 @@ func restDelMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllMcis(c echo.Context) error {
+func RestDelAllMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	mcisList := getMcisList(nsId)
@@ -470,7 +477,7 @@ func restDelAllMcis(c echo.Context) error {
 
 }
 
-func restPostMcisRecommand(c echo.Context) error {
+func RestPostMcisRecommand(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -504,7 +511,7 @@ func restPostMcisRecommand(c echo.Context) error {
 
 // VM API Proxy
 
-func restPostMcisVm(c echo.Context) error {
+func RestPostMcisVm(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -588,7 +595,7 @@ func restPostMcisVm(c echo.Context) error {
 	return c.JSON(http.StatusCreated, req)
 }
 
-func restGetMcisVm(c echo.Context) error {
+func RestGetMcisVm(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
 	nsId := c.Param("nsId")
@@ -676,11 +683,11 @@ func restGetMcisVm(c echo.Context) error {
 	}
 }
 
-func restPutMcisVm(c echo.Context) error {
+func RestPutMcisVm(c echo.Context) error {
 	return nil
 }
 
-func restDelMcisVm(c echo.Context) error {
+func RestDelMcisVm(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -859,7 +866,7 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 }
 
-func registerRecommendList(nsId string, cpuSize string, memSize string, diskSize string, specId string, price string) error {
+func RegisterRecommendList(nsId string, cpuSize string, memSize string, diskSize string, specId string, price string) error {
 
 	//fmt.Println("[Get MCISs")
 	key := genMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId
