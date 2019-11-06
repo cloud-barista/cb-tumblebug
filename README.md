@@ -20,13 +20,11 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 - 환경 변수 설정
 - MCISM 소스 다운로드 (Git clone MCISM)
 - 의존 라이브러리 다운로드
-  - Cloud-Barista alliance 설치(CB-Store)
-  - 클라우드 Go 클라이언트 라이브러리
+  - Cloud-Barista alliance 설치(CB-Store, CB-Log, CB-Spider)
   - 기타 라이브러리
 - mcism 빌드
-  - mcism_agent 빌드
-  - mcism_server 빌드
-- mcism_server 실행
+  - mcism_server 빌드 (go build)
+- mcism_server 실행 (./mcism_server)
 
 ## [설치 & 실행 상세 정보]
 - Go 설치 & Git 설치
@@ -37,20 +35,14 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   ```Shell
   export PATH=$PATH:/usr/local/go/bin
   export GOPATH=$HOME/go
-  export PATH=$PATH:$HOME/go/src/github.com/protobuf/bin
-  export AZURE_AUTH_LOCATION=~/.azure/azure.auth
   ```
 > 1행: Go 를 Ubuntu 패키지로 설치한다면 필요 없을 것임  
 2행: Go 를 Ubuntu 패키지로 설치한다면 필요 없을 것임  
-3행: golang-goprotobuf-dev 를 Ubuntu 패키지로 설치한다면 필요 없을 것임
 
 - `.bashrc` 에 기재한 내용을 적용하기 위해, 다음 중 하나를 수행
   - logoff 후 다시 login
   - `source ~/.bashrc`
   - `. ~/.bashrc`
-
-- CB-Tumblebug 실행에 필요한 환경변수 설정
-  - `source setup.env`
 
 - MCISM 소스 다운로드
   - `# go get github.com/cloud-barista/cb-tumblebug`
@@ -73,30 +65,32 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   - Cloud-Barista alliance 설치(cb-store)
   https://github.com/cloud-barista/cb-store
   README를 참고하여 설치 및 설정
+
+  - Cloud-Barista alliance 설치(cb-spider)
+  https://github.com/cloud-barista/cb-spider
+  README를 참고하여 설치 및 설정
+
   - 클라우드 Go 클라이언트 관련 라이브러리
   ```Shell
-  # go get -u -v github.com/aws/aws-sdk-go
   # go get -u -v cloud.google.com/go
-  # go get -u -v github.com/Azure/azure-sdk-for-go
   # go get -u -v github.com/Azure/go-autorest/autorest
   ```
   - 기타 라이브러리 다운로드
   ```Shell
   # go get -u -v github.com/revel/revel
   # go get -u -v go.etcd.io/etcd/clientv3
-  # go get -u -v github.com/bramvdbogaerde/go-scp
   # go get -u -v github.com/dimchansky/utfbom github.com/mitchellh/go-homedir
   # go get -u -v golang.org/x/oauth2 gopkg.in/yaml.v3
   # go get -u -v github.com/labstack/echo
   # go get -u -v github.com/google/uuid
   ```
 
+- CB-Tumblebug 실행에 필요한 환경변수 설정
+  - `source setup.env` (cb-tumblebug/에 setup.env)
+
+
 ### mcism 빌드
-- mcism_agent 빌드
-```Shell
-# apt install golang-goprotobuf-dev
-# bash ~/go/src/github.com/cloud-barista/cb-tumblebug/1.agent_protoc_build.sh
-```
+
 - mcism_server 빌드
 ```Shell
 # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/mcism_server
@@ -119,3 +113,10 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 - `# ./mcism_server` (또는 `# go run mcism_server.go`)
   - API server가 실행됨
 
+### mcism 테스트 방법
+
+- mcism_server 의 REST API를 사용하여 테스트
+> Cloud-Barista 사용자 API 리스트: https://github.com/cloud-barista/docs/blob/master/API-Specifications/User-REST-API(v0.30).md
+> 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
+> 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 MCIS 및 VM 생성을 위한 설정 자원 생성
+> 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 종료

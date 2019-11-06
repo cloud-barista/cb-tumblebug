@@ -3,13 +3,9 @@ package main
 import (
 	"errors"
 
-	"github.com/cloud-barista/cb-tumblebug/mcism_server/azurehandler"
-	"github.com/cloud-barista/cb-tumblebug/mcism_server/ec2handler"
-	"github.com/cloud-barista/cb-tumblebug/mcism_server/gcehandler"
-	"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/scp"
-	"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/sshrun"
+	//"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/scp"
+	//"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/sshrun"
 
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -19,12 +15,11 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/cloud-barista/cb-tumblebug/mcism_agent/grpc_def"
-	"google.golang.org/grpc"
-
 	// REST API (echo)
 	"net/http"
 
+	"github.com/cloud-barista/poc-farmoni/farmoni_master/serverhandler/scp"
+	"github.com/cloud-barista/poc-farmoni/farmoni_master/serverhandler/sshrun"
 	"github.com/labstack/echo"
 
 	"sync"
@@ -973,6 +968,7 @@ func createMcis(nsId string, req *mcisReq) string {
 }
 
 func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmInfo) error {
+	fmt.Printf("\n[addVmToMcis]\n")
 	//goroutin
 	defer wg.Done()
 
@@ -983,7 +979,7 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 	}
 
 	addVmInfoToMcis(nsId, mcisId, vmInfoData)
-	fmt.Printf("%+v\n", vmInfoData)
+	fmt.Printf("\n[vmInfoData]\n %+v\n", vmInfoData)
 
 	//instanceIds, publicIPs := createVm(&vmInfoData)
 	err := createVm(nsId, mcisId, &vmInfoData)
@@ -1003,8 +999,14 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 
 func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
-	fmt.Printf("createVm(vmInfoData *vmInfo)\n")
-	fmt.Printf("%+v\n", vmInfoData)
+	fmt.Printf("\n\n[createVm(vmInfoData *vmInfo)]\n\n")
+
+	prettyJSON, err := json.MarshalIndent(vmInfoData, "", "    ")
+	if err != nil {
+		log.Fatal("Failed to generate json", err)
+	}
+	fmt.Printf("%s\n", string(prettyJSON))
+
 	//fmt.Printf("%+v\n", vmInfoData.CspVmId)
 
 	/*
@@ -1361,320 +1363,6 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	return nil
 }
 
-func createVmAws(count int) ([]*string, []*string) {
-
-	// 1.1. create Servers(VM).
-	// 1.2. get servers' public IP.
-	// 1.3. insert MCISM Agent into Servers.
-	// 1.4. execute Servers' Agent.
-	// 1.5. add server list into etcd.
-
-	// ==> AWS-EC2
-	//region := "ap-northeast-2" // seoul region.
-	region := masterConfigInfos.AWS.REGION // seoul region.
-
-	svc := ec2handler.Connect(region)
-
-	// 1.1. create Servers(VM).
-	// some options are static for simple PoC.
-	// These must be prepared before.
-
-	imageId := masterConfigInfos.AWS.IMAGEID                       // ami-047f7b46bd6dd5d84
-	instanceType := masterConfigInfos.AWS.INSTANCETYPE             // t2.micro
-	securityGroupId := masterConfigInfos.AWS.SECURITYGROUPID       // sg-2334584f
-	subnetid := masterConfigInfos.AWS.SUBNETID                     // subnet-8c4a53e4
-	instanceNamePrefix := masterConfigInfos.AWS.INSTANCENAMEPREFIX // powerkimInstance_
-
-	///userName := masterConfigInfos.AWS.USERNAME   // ec2-user
-	keyName := masterConfigInfos.AWS.KEYNAME // aws.powerkim.keypair
-	//keyPath := masterConfigInfos.AWS.KEYFILEPATH // /root/.aws/awspowerkimkeypair.pem
-
-	//instanceIds := ec2handler.CreateInstances(svc, "ami-047f7b46bd6dd5d84", "t2.micro", 1, count,
-	//   "aws.powerkim.keypair", "sg-2334584f", "subnet-8c4a53e4", "powerkimInstance_")
-	instanceIds := ec2handler.CreateInstances(svc, imageId, instanceType, 1, count,
-		keyName, securityGroupId, subnetid, instanceNamePrefix)
-
-	publicIPs := make([]*string, len(instanceIds))
-
-	// 1.2. get servers' public IP.
-	// waiting for completion of new instance running.
-	// after then, can get publicIP.
-	for k, v := range instanceIds {
-		// wait until running status
-		ec2handler.WaitForRun(svc, *v)
-		// get public IP
-		publicIP, err := ec2handler.GetPublicIP(svc, *v)
-		if err != nil {
-			fmt.Println("Error", err)
-			return nil, nil
-		}
-		fmt.Println("==============> " + publicIP)
-		publicIPs[k] = &publicIP
-	}
-
-	// 1.3. insert MCISM Agent into Servers.
-	// 1.4. execute Servers' Agent.
-	/*
-		for _, v := range publicIPs {
-			for i := 0; ; i++ {
-				err := insertAgent(*v, userName, keyPath)
-				if i == 30 {
-					os.Exit(3)
-				}
-				if err == nil {
-					break
-				}
-				// need to load SSH Service on the VM
-				time.Sleep(time.Second * 3)
-			} // end of for
-		} // end of for
-	*/
-	// 1.5. add server list into etcd.
-	//addServersToEtcd("aws", instanceIds, publicIPs)
-
-	return instanceIds, publicIPs
-}
-
-func createVmGcp(count int) ([]*string, []*string) {
-	// ==> GCP-GCE
-
-	/*
-		credentialFile := "/root/.gcp/credentials"
-		svc := gcehandler.Connect(credentialFile)
-
-		region := "us-east1"
-		zone := "us-east1-c"
-		projectID := "ornate-course-236606"
-		prefix := "https://www.googleapis.com/compute/v1/projects/" + projectID
-		imageURL := "projects/gce-uefi-images/global/images/centos-7-v20190326"
-		machineType := prefix + "/zones/" + zone + "/machineTypes/f1-micro"
-		subNetwork := prefix + "/regions/us-east1/subnetworks/default"
-		networkName := prefix + "/global/networks/default"
-		serviceAccoutsMail := "default"
-		//baseName := "powerkimInstance"
-		baseName := "gcepowerkim"
-
-		userName := "byoungseob"
-		keyPath := "/root/.gcp/gcppowerkimkeypair.pem"
-	*/
-
-	credentialFile := masterConfigInfos.GCP.CREDENTIALFILE
-	svc := gcehandler.Connect(credentialFile)
-
-	// 1.1. create Servers(VM).
-	// some options are static for simple PoC.
-	// These must be prepared before.
-	region := masterConfigInfos.GCP.REGION
-	zone := masterConfigInfos.GCP.ZONE
-	projectID := masterConfigInfos.GCP.PROJECTID
-	//prefix := masterConfigInfos.GCP.PREFIX
-	imageURL := masterConfigInfos.GCP.IMAGEID
-	machineType := masterConfigInfos.GCP.INSTANCETYPE
-	subNetwork := masterConfigInfos.GCP.SUBNETID
-	networkName := masterConfigInfos.GCP.NETWORKNAME
-	serviceAccoutsMail := masterConfigInfos.GCP.SERVICEACCOUTSMAIL
-	baseName := masterConfigInfos.GCP.INSTANCENAMEPREFIX
-
-	//userName := masterConfigInfos.GCP.USERNAME   // byoungseob
-	//keyPath := masterConfigInfos.GCP.KEYFILEPATH // /root/.gcp/gcppowerkimkeypair.pem
-
-	instanceIds := gcehandler.CreateInstances(svc, region, zone, projectID, imageURL, machineType, 1, count,
-		subNetwork, networkName, serviceAccoutsMail, baseName)
-
-	for _, v := range instanceIds {
-		fmt.Println("\tInstanceName: ", *v)
-	}
-
-	publicIPs := make([]*string, len(instanceIds))
-	// 1.2. get servers' public IP.
-	// waiting for completion of new instance running.
-	// after then, can get publicIP.
-	for k, v := range instanceIds {
-		// wait until running status
-
-		fmt.Println("===========> ", svc, zone, projectID, *v)
-		gcehandler.WaitForRun(svc, zone, projectID, *v)
-
-		// get public IP
-		publicIP := gcehandler.GetPublicIP(svc, zone, projectID, *v)
-		fmt.Println("==============> " + publicIP)
-		publicIPs[k] = &publicIP
-	}
-
-	// 1.3. insert MCISM Agent into Servers.
-	// 1.4. execute Servers' Agent.
-	/*
-		for _, v := range publicIPs {
-			for i := 0; ; i++ {
-				err := insertAgent(*v, userName, keyPath)
-				if i == 30 {
-					os.Exit(3)
-				}
-				if err == nil {
-					break
-				}
-				// need to load SSH Service on the VM
-				time.Sleep(time.Second * 3)
-			} // end of for
-		} // end of for
-	*/
-	// 1.5. add server list into etcd.
-	//addServersToEtcd("gcp", instanceIds, publicIPs)
-
-	return instanceIds, publicIPs
-}
-
-func createVmAzure(count int) ([]*string, []*string) {
-	// ==> AZURE-Compute
-
-	/*
-			const (
-			groupName = "VMGroupName"
-			location = "westus2"
-			virtualNetworkName = "virtualNetworkName"
-			subnet1Name = "subnet1Name"
-			subnet2Name = "subnet2Name"
-			nsgName = "nsgName"
-			ipName = "ipName"
-			nicName = "nicName"
-
-			baseName = "azurepowerkim"
-			vmUserName = "powerkim"
-			vmPassword = "powerkim"
-			keyPath := "/root/.azure/azurepowerkimkeypair.pem"
-			sshPublicKeyPath = "/root/.azure/azurepublickey.pem"
-		)
-	*/
-
-	credentialFile := masterConfigInfos.AZURE.CREDENTIALFILE
-	connInfo := azurehandler.Connect(credentialFile)
-
-	// 1.1. create Servers(VM).
-	// some options are static for simple PoC.
-	// These must be prepared before.
-	groupName := masterConfigInfos.AZURE.GROUPNAME
-	location := masterConfigInfos.AZURE.LOCATION
-	virtualNetworkName := masterConfigInfos.AZURE.VIRTUALNETWORKNAME
-	subnet1Name := masterConfigInfos.AZURE.SUBNET1NAME
-	subnet2Name := masterConfigInfos.AZURE.SUBNET2NAME
-	nsgName := masterConfigInfos.AZURE.NETWORKSECURITYGROUPNAME
-	//        ipName := masterConfigInfos.AZURE.IPNAME
-	//        nicName := masterConfigInfos.AZURE.NICNAME
-
-	baseName := masterConfigInfos.AZURE.BASENAME
-	vmUserName := masterConfigInfos.AZURE.USERNAME
-	vmPassword := masterConfigInfos.AZURE.PASSWORD
-	//KeyPath := masterConfigInfos.AZURE.KEYFILEPATH
-	sshPublicKeyPath := masterConfigInfos.AZURE.PUBLICKEYFILEPATH
-
-	_, err := azurehandler.CreateGroup(connInfo, groupName, location)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	_, err = azurehandler.CreateVirtualNetworkAndSubnets(connInfo, groupName, location, virtualNetworkName, subnet1Name, subnet2Name)
-
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("created vnet and 2 subnets")
-
-	_, err = azurehandler.CreateNetworkSecurityGroup(connInfo, groupName, location, nsgName)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("created network security group")
-
-	/* PublicIP & NIC is made in CreateInstnaces()
-			_, err = azurehandler.CreatePublicIP(connInfo, groupName, location, ipName)
-			if err != nil {
-			fmt.Println(err.Error())
-		}
-		fmt.Println("created public IP")
-		_, err = azurehandler.CreateNIC(connInfo, groupName, location, virtualNetworkName, subnet1Name, nsgName, ipName, nicName)
-		if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println("created nic")
-	*/
-
-	/*
-			type ImageInfo struct {
-			Publisher string
-			Offer     string
-			Sku       string
-			Version   string
-		}
-	*/
-	imageInfo := azurehandler.ImageInfo{"Canonical", "UbuntuServer", "16.04.0-LTS", "latest"}
-
-	/*
-			type VMInfo struct {
-			UserName string
-			Password string
-			SshPublicKeyPath string
-		}
-	*/
-	vmInfo := azurehandler.VMInfo{vmUserName, vmPassword, sshPublicKeyPath}
-
-	/*
-	   type NICInfo struct {
-	   VirtualNetworkName string
-	   SubnetName string
-	   NetworkSecurityGroup string
-	   }
-	*/
-
-	nicInfo := azurehandler.NICInfo{virtualNetworkName, subnet1Name, nsgName}
-
-	instanceIds := azurehandler.CreateInstances(connInfo, groupName, location, baseName, nicInfo, imageInfo, vmInfo, count)
-
-	for _, v := range instanceIds {
-		fmt.Println("\tInstanceName: ", *v)
-	}
-
-	publicIPs := make([]*string, len(instanceIds))
-	// 1.2. get servers' public IP.
-	// waiting for completion of new instance running.
-	// after then, can get publicIP.
-	for i, _ := range instanceIds {
-		ipName := baseName + "IP" + strconv.Itoa(i)
-
-		// get public IP
-		publicIP, err := azurehandler.GetPublicIP(connInfo, groupName, ipName)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-
-		fmt.Println("==============> " + *publicIP.PublicIPAddressPropertiesFormat.IPAddress)
-		publicIPs[i] = publicIP.PublicIPAddressPropertiesFormat.IPAddress
-
-		//          fmt.Printf("[PublicIP] %#v", publicIP);
-		//            fmt.Printf("[PublicIP] %s", *publicIP.PublicIPAddressPropertiesFormat.IPAddress);
-	}
-
-	// 1.3. insert MCISM Agent into Servers.
-	// 1.4. execute Servers' Agent.
-	/*
-		for _, v := range publicIPs {
-			for i := 0; ; i++ {
-				err := insertAgent(*v, vmUserName, KeyPath)
-				if i == 30 {
-					os.Exit(3)
-				}
-				if err == nil {
-					break
-				}
-				// need to load SSH Service on the VM
-				time.Sleep(time.Second * 3)
-			} // end of for
-		} // end of for
-	*/
-	// 1.5. add server list into etcd.
-	//addServersToEtcd("azure", instanceIds, publicIPs)
-
-	return instanceIds, publicIPs
-}
-
 func controlMcis(nsId string, mcisId string, action string) error {
 
 	fmt.Println("[controlMcis]" + mcisId + " to " + action)
@@ -1988,54 +1676,6 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 
 }
 
-func controlVmAws(cspVmId string) {
-
-	//idList := make([]*string, 1)
-	//idList = append(idList, &cspVmId)
-	idList := []*string{&cspVmId}
-	fmt.Println("<controlVmAws cspVmId : " + *idList[0] + ">" + strconv.Itoa(len(idList)))
-
-	// (2) terminate AWS server
-	//region := "ap-northeast-2"
-	region := masterConfigInfos.AWS.REGION
-	svc := ec2handler.Connect(region)
-	//  destroy Servers(VMs).
-	ec2handler.DestroyInstances(svc, idList)
-
-}
-
-func controlVmGcp(cspVmId string) {
-
-	idList := []*string{&cspVmId}
-	fmt.Println("<controlVmGcp cspVmId : " + *idList[0] + ">")
-
-	// (2) terminate all GCP servers
-	credentialFile := masterConfigInfos.GCP.CREDENTIALFILE
-	svc := gcehandler.Connect(credentialFile)
-
-	//  destroy Servers(VM).
-	zone := masterConfigInfos.GCP.ZONE
-	projectID := masterConfigInfos.GCP.PROJECTID
-	gcehandler.DestroyInstances(svc, zone, projectID, idList)
-
-}
-
-func controlVmAzure(cspVmId string) {
-
-	idList := []*string{&cspVmId}
-	fmt.Println("<controlVmAzure cspVmId : " + *idList[0] + ">")
-
-	// (2) terminate all AZURE servers
-	credentialFile := masterConfigInfos.AZURE.CREDENTIALFILE
-	connInfo := azurehandler.Connect(credentialFile)
-
-	//  destroy Servers(VMs).
-	groupName := masterConfigInfos.AZURE.GROUPNAME
-	//    azurehandler.DestroyInstances(connInfo, groupName, idList)  @todo now, just delete target Group for convenience.
-	azurehandler.DeleteGroup(connInfo, groupName)
-
-}
-
 func insertAgent(serverIP string, userName string, keyPath string) error {
 
 	// server connection info
@@ -2112,6 +1752,7 @@ func getVmIp(nsId string, mcisId string, vmId string) string {
 	return content.Public_ip
 }
 
+/*
 func monitorVm(vmIpPort string) (string, string, string) {
 
 	// Set up a connection to the server.
@@ -2137,3 +1778,4 @@ func monitorVm(vmIpPort string) (string, string, string) {
 	return r.Cpu, r.Mem, r.Dsk
 
 }
+*/

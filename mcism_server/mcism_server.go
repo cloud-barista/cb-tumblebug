@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/cloud-barista/cb-tumblebug/mcism_server/confighandler"
-
 	"fmt"
 
 	uuid "github.com/google/uuid"
@@ -37,7 +35,7 @@ func init() {
 
 const defaultMonitorPort = ":2019"
 
-var masterConfigInfos confighandler.MASTERCONFIGTYPE
+//var masterConfigInfos confighandler.MASTERCONFIGTYPE
 
 const (
 	InfoColor    = "\033[1;34m%s\033[0m"
@@ -213,7 +211,7 @@ func main() {
 	*/
 
 	// load config
-	masterConfigInfos = confighandler.GetMasterConfigInfos()
+	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	// Run API Server
 	apiServer()
@@ -263,7 +261,17 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 	if key == "/invalid_key" {
 		return "invalid nsId or resourceType or resourceId"
 	}
-	keyValue, _ := store.Get(key)
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+		return ""
+	}
+	if keyValue == nil {
+		//cblog.Error(err)
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+		return ""
+	}
 
 	switch resourceType {
 	case "image":
@@ -298,7 +306,12 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 		return content.CspPublicIpId
 	case "vNic":
 		content := vNicInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &content)
+		err = json.Unmarshal([]byte(keyValue.Value), &content)
+		if err != nil {
+			cblog.Error(err)
+			// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+			return ""
+		}
 		return content.CspVNicId
 	default:
 		return "invalid resourceType"
