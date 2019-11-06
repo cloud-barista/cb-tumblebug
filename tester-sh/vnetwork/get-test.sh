@@ -12,7 +12,7 @@ TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/netwo
 
 if [ "$TB_NETWORK_IDS" != "" ]
 then
-	TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
 	for TB_NETWORK_ID in ${TB_NETWORK_IDS}
 	do
 		echo ....Get ${TB_NETWORK_ID} ...
