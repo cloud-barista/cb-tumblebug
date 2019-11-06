@@ -33,7 +33,10 @@ func init() {
 	store = cbstore.GetStore()
 }
 
-const defaultMonitorPort = ":2019"
+type KeyValue struct {
+	Key   string
+	Value string
+}
 
 //var masterConfigInfos confighandler.MASTERCONFIGTYPE
 
