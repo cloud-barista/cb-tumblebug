@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -74,7 +74,7 @@ g.DELETE("/resources/securityGroup", restDelAllSecurityGroup)
 */
 
 // MCIS API Proxy: SecurityGroup
-func restPostSecurityGroup(c echo.Context) error {
+func RestPostSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -116,7 +116,7 @@ func restPostSecurityGroup(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetSecurityGroup(c echo.Context) error {
+func RestGetSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -139,7 +139,7 @@ func restGetSecurityGroup(c echo.Context) error {
 
 }
 
-func restGetAllSecurityGroup(c echo.Context) error {
+func RestGetAllSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -168,13 +168,13 @@ func restGetAllSecurityGroup(c echo.Context) error {
 
 }
 
-func restPutSecurityGroup(c echo.Context) error {
+func RestPutSecurityGroup(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelSecurityGroup(c echo.Context) error {
+func RestDelSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("securityGroupId")
@@ -191,7 +191,7 @@ func restDelSecurityGroup(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllSecurityGroup(c echo.Context) error {
+func RestDelAllSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")

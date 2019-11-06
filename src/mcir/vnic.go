@@ -1,4 +1,4 @@
-package main
+package mcir
 
 import (
 	"encoding/json"
@@ -72,7 +72,7 @@ g.DELETE("/:nsId/resources/vNic", restDelAllVNic)
 */
 
 // MCIS API Proxy: VNic
-func restPostVNic(c echo.Context) error {
+func RestPostVNic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -114,7 +114,7 @@ func restPostVNic(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func restGetVNic(c echo.Context) error {
+func RestGetVNic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -137,7 +137,7 @@ func restGetVNic(c echo.Context) error {
 
 }
 
-func restGetAllVNic(c echo.Context) error {
+func RestGetAllVNic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -166,13 +166,13 @@ func restGetAllVNic(c echo.Context) error {
 
 }
 
-func restPutVNic(c echo.Context) error {
+func RestPutVNic(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func restDelVNic(c echo.Context) error {
+func RestDelVNic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("vNicId")
@@ -189,7 +189,7 @@ func restDelVNic(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func restDelAllVNic(c echo.Context) error {
+func RestDelAllVNic(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
