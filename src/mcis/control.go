@@ -50,7 +50,7 @@ type mcisReq struct {
 	Id             string  `json:"id"`
 	Name           string  `json:"name"`
 	Vm_req         []vmReq `json:"vm_req"`
-	Vm_num         string  `json:"vm_num"`
+	//Vm_num         string  `json:"vm_num"`
 	Placement_algo string  `json:"placement_algo"`
 	Description    string  `json:"description"`
 }
@@ -81,17 +81,6 @@ type vmReq struct {
 	VMUserId     string `json:"vmUserId"`
 	VMUserPasswd string `json:"vmUserPasswd"`
 
-	// 2. Required by CB-Tumblebug
-	Location string `json:"location"`
-
-	Vcpu_size   string `json:"vcpu_size"`
-	Memory_size string `json:"memory_size"`
-	Disk_size   string `json:"disk_size"`
-	Disk_type   string `json:"disk_type"`
-
-	Placement_algo string `json:"placement_algo"`
-	//Description    string `json:"description"`
-
 	Name               string   `json:"name"`
 	Config_name        string   `json:"config_name"`
 	Spec_id            string   `json:"spec_id"`
@@ -114,7 +103,6 @@ type placementKeyValue struct {
 type mcisInfo struct {
 	Id             string `json:"id"`
 	Name           string `json:"name"`
-	Vm_num         string `json:"vm_num"`
 	Status         string `json:"status"`
 	Placement_algo string `json:"placement_algo"`
 	Description    string `json:"description"`
@@ -127,39 +115,6 @@ type RegionInfo struct {
 
 type vmInfo struct {
 	Id             string `json:"id"`
-	ConnectionName string `json:"connectionName"`
-
-	// 1. Variables in vmReq
-	CspVmName string `json:"cspVmName"`
-
-	CspImageName          string   `json:"cspImageName"`
-	CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
-	CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
-	CspPublicIPId         string   `json:"cspPublicIPId"`
-	CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
-	CspSpecId             string   `json:"cspSpecId"`
-	CspKeyPairName        string   `json:"cspKeyPairName"`
-
-	CbImageId            string   `json:"cbImageId"`
-	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
-	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
-	CbPublicIPId         string   `json:"cbPublicIPId"`
-	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
-	CbSpecId             string   `json:"cbSpecId"`
-	CbKeyPairId          string   `json:"cbKeyPairId"`
-
-	VMUserId     string `json:"vmUserId"`
-	VMUserPasswd string `json:"vmUserPasswd"`
-
-	Location string `json:"location"`
-
-	Vcpu_size   string `json:"vcpu_size"`
-	Memory_size string `json:"memory_size"`
-	Disk_size   string `json:"disk_size"`
-	Disk_type   string `json:"disk_type"`
-
-	Placement_algo string `json:"placement_algo"`
-	//Description    string `json:"description"`
 	Name               string   `json:"name"`
 	Config_name        string   `json:"config_name"`
 	Spec_id            string   `json:"spec_id"`
@@ -173,9 +128,10 @@ type vmInfo struct {
 	Vm_access_id       string   `json:"vm_access_id"`
 	Vm_access_passwd   string   `json:"vm_access_passwd"`
 
+	VmUserId     string `json:"vmUserId"`
+	VmUserPasswd string `json:"vmUserPasswd"`
+
 	// 2. Provided by CB-Spider
-	CspVmId      string     `json:"cspVmId"`
-	StartTime    time.Time  `json:"startTime"`
 	Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
 	PublicIP     string     `json:"publicIP"`
 	PublicDNS    string     `json:"publicDNS"`
@@ -183,20 +139,46 @@ type vmInfo struct {
 	PrivateDNS   string     `json:"privateDNS"`
 	VMBootDisk   string     `json:"vmBootDisk"` // ex) /dev/sda1
 	VMBlockDisk  string     `json:"vmBlockDisk"`
-	KeyValueList []KeyValue `json:"keyValueList"`
 
 	// 3. Required by CB-Tumblebug
 	Status string `json:"status"`
 
-	//Public_ip     string `json:"public_ip"`
-	//Domain_name   string `json:"domain_name"`
-	Cloud_id string `json:"cloud_id"`
+	CspViewVmDetail vmCspViewInfo `json:"cspViewVmDetail"`
 }
+
+
+type vmCspViewInfo struct {
+	Name      string    // AWS,
+	Id        string    // AWS,
+	StartTime time.Time // Timezone: based on cloud-barista server location.
+
+	Region           RegionInfo // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	ImageId          string
+	VMSpecId         string   // AWS, instance type or flavour, etc... ex) t2.micro or f1.micro
+	VirtualNetworkId string   // AWS, ex) subnet-8c4a53e4
+	SecurityGroupIds []string // AWS, ex) sg-0b7452563e1121bb6
+
+	NetworkInterfaceId string // ex) eth0
+	PublicIP           string // ex) AWS, 13.125.43.21
+	PublicDNS          string // ex) AWS, ec2-13-125-43-0.ap-northeast-2.compute.amazonaws.com
+	PrivateIP          string // ex) AWS, ip-172-31-4-60.ap-northeast-2.compute.internal
+	PrivateDNS         string // ex) AWS, 172.31.4.60
+
+	KeyPairName  string // ex) AWS, powerkimKeyPair
+	VMUserId     string // ex) user1
+	VMUserPasswd string
+
+	VMBootDisk  string // ex) /dev/sda1
+	VMBlockDisk string // ex)
+
+	KeyValueList []KeyValue
+}
+
 
 type mcisStatusInfo struct {
 	Id     string         `json:"id"`
 	Name   string         `json:"name"`
-	Vm_num string         `json:"vm_num"`
+	//Vm_num string         `json:"vm_num"`
 	Status string         `json:"status"`
 	Vm     []vmStatusInfo `json:"vm"`
 }
@@ -234,7 +216,6 @@ type vmPriority struct {
 	Vm_spec  mcir.SpecInfo `json:"vm_spec"`
 }
 type vmRecommendInfo struct {
-	Request_name    string              `json:"request_name"`
 	Vm_req          vmRecommendReq      `json:"vm_req"`
 	Vm_priority     []vmPriority        `json:"vm_priority"`
 	Placement_algo  string              `json:"placement_algo"`
@@ -260,7 +241,7 @@ func RestPostMcis(c echo.Context) error {
 	var content struct {
 		Id             string   `json:"id"`
 		Name           string   `json:"name"`
-		Vm_num         string   `json:"vm_num"`
+		//Vm_num         string   `json:"vm_num"`
 		Status         string   `json:"status"`
 		Vm             []vmInfo `json:"vm"`
 		Placement_algo string   `json:"placement_algo"`
@@ -289,6 +270,10 @@ func RestPostMcis(c echo.Context) error {
 		vmTmp.Id = v
 		content.Vm = append(content.Vm, vmTmp)
 	}
+
+	mcisStatus, err := getMcisStatus(nsId, mcisId)
+	content.Status = mcisStatus.Status
+
 	fmt.Printf("%+v\n", content)
 
 	return c.JSON(http.StatusCreated, content)
@@ -306,7 +291,7 @@ func RestGetMcis(c echo.Context) error {
 		fmt.Println("[suspend MCIS]")
 
 		controlMcis(nsId, mcisId, actionSuspend)
-		mapA := map[string]string{"message": "The MCIS has been suspended"}
+		mapA := map[string]string{"message": "Suspending the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "resume" {
@@ -314,7 +299,7 @@ func RestGetMcis(c echo.Context) error {
 
 		controlMcis(nsId, mcisId, actionResume)
 
-		mapA := map[string]string{"message": "The MCIS has been resumed"}
+		mapA := map[string]string{"message": "Resuming the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "reboot" {
@@ -322,7 +307,7 @@ func RestGetMcis(c echo.Context) error {
 
 		controlMcis(nsId, mcisId, actionReboot)
 
-		mapA := map[string]string{"message": "The MCIS has been rebooted"}
+		mapA := map[string]string{"message": "Rebooting the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "terminate" {
@@ -344,7 +329,7 @@ func RestGetMcis(c echo.Context) error {
 			controlVm(nsId, mcisId, v, actionTerminate)
 		}
 
-		mapA := map[string]string{"message": "The MCIS has been terminated"}
+		mapA := map[string]string{"message": "Terminating the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "status" {
@@ -376,7 +361,7 @@ func RestGetMcis(c echo.Context) error {
 		var content struct {
 			Id             string   `json:"id"`
 			Name           string   `json:"name"`
-			Vm_num         string   `json:"vm_num"`
+			//Vm_num         string   `json:"vm_num"`
 			Status         string   `json:"status"`
 			Vm             []vmInfo `json:"vm"`
 			Placement_algo string   `json:"placement_algo"`
@@ -396,6 +381,14 @@ func RestGetMcis(c echo.Context) error {
 		fmt.Println("===============================================")
 
 		json.Unmarshal([]byte(keyValue.Value), &content)
+
+		mcisStatus, err := getMcisStatus(nsId, mcisId)
+		content.Status = mcisStatus.Status
+
+		if err != nil {
+			cblog.Error(err)
+			return err
+		}
 
 		vmList, err := getVmList(nsId, mcisId)
 		if err != nil {
@@ -475,7 +468,7 @@ func RestDelMcis(c echo.Context) error {
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
-	mapA := map[string]string{"message": "The MCIS has been deleted"}
+	mapA := map[string]string{"message": "Deleting the MCIS info"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
@@ -526,7 +519,7 @@ func RestPostMcisRecommand(c echo.Context) error {
 
 	for i, v := range vmList {
 		vmTmp := vmRecommendInfo{}
-		vmTmp.Request_name = v.Request_name
+		//vmTmp.Request_name = v.Request_name
 		vmTmp.Vm_req = req.Vm_req[i]
 		vmTmp.Placement_algo = v.Placement_algo
 		vmTmp.Placement_param = v.Placement_param
@@ -562,32 +555,32 @@ func RestPostMcisVm(c echo.Context) error {
 	vmInfoData := vmInfo{}
 	vmInfoData.Id = genUuid()
 	req.Id = vmInfoData.Id
-	vmInfoData.CspVmName = req.CspVmName
+	//vmInfoData.CspVmName = req.CspVmName
 
-	vmInfoData.Placement_algo = req.Placement_algo
+	//vmInfoData.Placement_algo = req.Placement_algo
 
-	vmInfoData.Location = req.Location
+	//vmInfoData.Location = req.Location
 	//vmInfoData.Cloud_id = req.
 	vmInfoData.Description = req.Description
 
-	vmInfoData.CspSpecId = req.CspSpecId
+	//vmInfoData.CspSpecId = req.CspSpecId
 
-	vmInfoData.Vcpu_size = req.Vcpu_size
-	vmInfoData.Memory_size = req.Memory_size
-	vmInfoData.Disk_size = req.Disk_size
-	vmInfoData.Disk_type = req.Disk_type
+	//vmInfoData.Vcpu_size = req.Vcpu_size
+	//vmInfoData.Memory_size = req.Memory_size
+	//vmInfoData.Disk_size = req.Disk_size
+	//vmInfoData.Disk_type = req.Disk_type
 
-	vmInfoData.CspImageName = req.CspImageName
+	//vmInfoData.CspImageName = req.CspImageName
 
-	vmInfoData.CspSecurityGroupIds = req.CspSecurityGroupIds
-	vmInfoData.CspVirtualNetworkId = "TBD"
+	//vmInfoData.CspSecurityGroupIds = req.CspSecurityGroupIds
+	//vmInfoData.CspVirtualNetworkId = "TBD"
 	//vmInfoData.Subnet = "TBD"
-	vmInfoData.CspImageName = "TBD"
-	vmInfoData.CspSpecId = "TBD"
+	//vmInfoData.CspImageName = "TBD"
+	//vmInfoData.CspSpecId = "TBD"
 
-	vmInfoData.PublicIP = "Not assigned yet"
-	vmInfoData.CspVmId = "Not assigned yet"
-	vmInfoData.PublicDNS = "Not assigned yet"
+	//vmInfoData.PublicIP = "Not assigned yet"
+	//vmInfoData.CspVmId = "Not assigned yet"
+	//vmInfoData.PublicDNS = "Not assigned yet"
 	vmInfoData.Status = "Creating"
 
 	///////////
@@ -614,7 +607,7 @@ func RestPostMcisVm(c echo.Context) error {
 	vmInfoData.Ssh_key_id = req.Ssh_key_id
 	vmInfoData.Description = req.Description
 
-	vmInfoData.ConnectionName = req.Config_name
+	vmInfoData.Config_name = req.Config_name
 
 	//goroutin
 	var wg sync.WaitGroup
@@ -622,7 +615,7 @@ func RestPostMcisVm(c echo.Context) error {
 
 	//createMcis(nsId, req)
 	//err := addVmToMcis(nsId, mcisId, vmInfoData)
-	err := addVmToMcis(&wg, nsId, mcisId, vmInfoData)
+	err := addVmToMcis(&wg, nsId, mcisId, &vmInfoData)
 
 	if err != nil {
 		mapA := map[string]string{"message": "Cannot find " + common.GenMcisKey(nsId, mcisId, "")}
@@ -630,7 +623,11 @@ func RestPostMcisVm(c echo.Context) error {
 	}
 	wg.Wait()
 
-	return c.JSON(http.StatusCreated, req)
+	vmStatus, err := getVmStatus(nsId, mcisId, vmInfoData.Id)
+	vmInfoData.Status = vmStatus.Status
+
+
+	return c.JSON(http.StatusCreated, vmInfoData)
 }
 
 func RestGetMcisVm(c echo.Context) error {
@@ -646,21 +643,21 @@ func RestGetMcisVm(c echo.Context) error {
 		fmt.Println("[suspend VM]")
 
 		controlVm(nsId, mcisId, vmId, actionSuspend)
-		mapA := map[string]string{"message": "The VM has been suspended"}
+		mapA := map[string]string{"message": "Suspending the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "resume" {
 		fmt.Println("[resume VM]")
 
 		controlVm(nsId, mcisId, vmId, actionResume)
-		mapA := map[string]string{"message": "The VM has been resumed"}
+		mapA := map[string]string{"message": "Resuming the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "reboot" {
 		fmt.Println("[reboot VM]")
 
 		controlVm(nsId, mcisId, vmId, actionReboot)
-		mapA := map[string]string{"message": "The VM has been restarted"}
+		mapA := map[string]string{"message": "Starting the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "terminate" {
@@ -668,7 +665,7 @@ func RestGetMcisVm(c echo.Context) error {
 
 		controlVm(nsId, mcisId, vmId, actionTerminate)
 
-		mapA := map[string]string{"message": "The VM has been terminated"}
+		mapA := map[string]string{"message": "Terminating the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "status" {
@@ -734,11 +731,11 @@ func RestDelMcisVm(c echo.Context) error {
 	err := delMcisVm(nsId, mcisId, vmId)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the VM"}
+		mapA := map[string]string{"message": "Failed to delete the VM info"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
-	mapA := map[string]string{"message": "The VM has been deleted"}
+	mapA := map[string]string{"message": "Deleting the VM info"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
@@ -757,6 +754,19 @@ func addVmInfoToMcis(nsId string, mcisId string, vmInfoData vmInfo) {
 	fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
 	fmt.Println("===========================")
 
+}
+
+func updateMcisInfo(nsId string, mcisInfoData mcisInfo) {
+	key := common.GenMcisKey(nsId, mcisInfoData.Id, "")
+	val, _ := json.Marshal(mcisInfoData)
+	err := store.Put(string(key), string(val))
+	if err != nil {
+		cblog.Error(err)
+	}
+	fmt.Println("===========================")
+	vmkeyValue, _ := store.Get(string(key))
+	fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
+	fmt.Println("===========================")
 }
 
 func updateVmInfo(nsId string, mcisId string, vmInfoData vmInfo) {
@@ -948,7 +958,7 @@ func createMcis(nsId string, req *mcisReq) string {
 	fmt.Println("=========================== Put createSvc")
 	key := common.GenMcisKey(nsId, req.Id, "")
 	//mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
-	mapA := map[string]string{"id": req.Id, "name": req.Name, "description": req.Description, "status": "CREATING", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
+	mapA := map[string]string{"id": req.Id, "name": req.Name, "description": req.Description, "status": "CREATING"}
 	val, _ := json.Marshal(mapA)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -967,29 +977,29 @@ func createMcis(nsId string, req *mcisReq) string {
 		//vmInfoData vmInfo
 		vmInfoData := vmInfo{}
 		vmInfoData.Id = genUuid()
-		vmInfoData.CspVmName = k.CspVmName
+		//vmInfoData.CspVmName = k.CspVmName
 
-		vmInfoData.Placement_algo = k.Placement_algo
+		//vmInfoData.Placement_algo = k.Placement_algo
 
-		vmInfoData.Location = k.Location
+		//vmInfoData.Location = k.Location
 		//vmInfoData.Cloud_id = k.Csp
 		vmInfoData.Description = k.Description
 
-		vmInfoData.CspSpecId = k.CspSpecId
+		//vmInfoData.CspSpecId = k.CspSpecId
 
-		vmInfoData.Vcpu_size = k.Vcpu_size
-		vmInfoData.Memory_size = k.Memory_size
-		vmInfoData.Disk_size = k.Disk_size
-		vmInfoData.Disk_type = k.Disk_type
+		//vmInfoData.Vcpu_size = k.Vcpu_size
+		//vmInfoData.Memory_size = k.Memory_size
+		//vmInfoData.Disk_size = k.Disk_size
+		//vmInfoData.Disk_type = k.Disk_type
 
-		vmInfoData.CspImageName = k.CspImageName
+		//vmInfoData.CspImageName = k.CspImageName
 
 		//vmInfoData.CspSecurityGroupIds = ["TBD"]
-		vmInfoData.CspVirtualNetworkId = "TBD"
+		//vmInfoData.CspVirtualNetworkId = "TBD"
 		//vmInfoData.Subnet = "TBD"
 
 		vmInfoData.PublicIP = "Not assigned yet"
-		vmInfoData.CspVmId = "Not assigned yet"
+		//vmInfoData.CspVmId = "Not assigned yet"
 		vmInfoData.PublicDNS = "Not assigned yet"
 		vmInfoData.Status = "Creating"
 
@@ -1017,19 +1027,20 @@ func createMcis(nsId string, req *mcisReq) string {
 		vmInfoData.Ssh_key_id = k.Ssh_key_id
 		vmInfoData.Description = k.Description
 
-		vmInfoData.ConnectionName = k.Config_name
+		vmInfoData.Config_name = k.Config_name
 
 		/////////
 
-		go addVmToMcis(&wg, nsId, req.Id, vmInfoData)
+		go addVmToMcis(&wg, nsId, req.Id, &vmInfoData)
 		//addVmToMcis(nsId, req.Id, vmInfoData)
 	}
 	wg.Wait()
 
+
 	return key
 }
 
-func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmInfo) error {
+func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *vmInfo) error {
 	fmt.Printf("\n[addVmToMcis]\n")
 	//goroutin
 	defer wg.Done()
@@ -1040,11 +1051,11 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 		return fmt.Errorf("Cannot find %s", key)
 	}
 
-	addVmInfoToMcis(nsId, mcisId, vmInfoData)
+	addVmInfoToMcis(nsId, mcisId, *vmInfoData)
 	fmt.Printf("\n[vmInfoData]\n %+v\n", vmInfoData)
 
 	//instanceIds, publicIPs := createVm(&vmInfoData)
-	err := createVm(nsId, mcisId, &vmInfoData)
+	err := createVm(nsId, mcisId, vmInfoData)
 	if err != nil {
 		cblog.Error(err)
 		return err
@@ -1053,7 +1064,7 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData vmIn
 	//vmInfoData.PublicIP = string(*publicIPs[0])
 	//vmInfoData.CspVmId = string(*instanceIds[0])
 	vmInfoData.Status = "Running"
-	updateVmInfo(nsId, mcisId, vmInfoData)
+	updateVmInfo(nsId, mcisId, *vmInfoData)
 
 	return nil
 
@@ -1135,7 +1146,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	}
 	*/
 
-	url := SPIDER_URL + "/vm?connection_name=" + vmInfoData.ConnectionName
+	url := SPIDER_URL + "/vm?connection_name=" + vmInfoData.Config_name
 
 	method := "POST"
 
@@ -1254,33 +1265,8 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	// jhseo 191016
 	//var s = new(imageInfo)
 	//s := imageInfo{}
-	type VMInfo struct {
-		Name      string    // AWS,
-		Id        string    // AWS,
-		StartTime time.Time // Timezone: based on cloud-barista server location.
 
-		Region           RegionInfo // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-		ImageId          string
-		VMSpecId         string   // AWS, instance type or flavour, etc... ex) t2.micro or f1.micro
-		VirtualNetworkId string   // AWS, ex) subnet-8c4a53e4
-		SecurityGroupIds []string // AWS, ex) sg-0b7452563e1121bb6
-
-		NetworkInterfaceId string // ex) eth0
-		PublicIP           string // ex) AWS, 13.125.43.21
-		PublicDNS          string // ex) AWS, ec2-13-125-43-0.ap-northeast-2.compute.amazonaws.com
-		PrivateIP          string // ex) AWS, ip-172-31-4-60.ap-northeast-2.compute.internal
-		PrivateDNS         string // ex) AWS, 172.31.4.60
-
-		KeyPairName  string // ex) AWS, powerkimKeyPair
-		VMUserId     string // ex) user1
-		VMUserPasswd string
-
-		VMBootDisk  string // ex) /dev/sda1
-		VMBlockDisk string // ex)
-
-		KeyValueList []KeyValue
-	}
-	temp := VMInfo{}
+	temp := vmCspViewInfo{}
 	err2 := json.Unmarshal(body, &temp)
 
 	if err2 != nil {
@@ -1350,9 +1336,10 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	//content := vmInfo{}
 	//content.Id = genUuid()
-	vmInfoData.ConnectionName = vmInfoData.ConnectionName
+	//vmInfoData.Config_name = vmInfoData.Config_name
 
 	// 1. Variables in vmReq
+	/*
 	vmInfoData.CspVmName = temp.Name // = u.CspVmName
 
 	vmInfoData.CspImageName = temp.ImageId
@@ -1374,19 +1361,26 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	vmInfoData.Vm_access_id = temp.VMUserId
 	vmInfoData.Vm_access_passwd = temp.VMUserPasswd
 
+	*/
+	
+	vmInfoData.CspViewVmDetail = temp
+
+	vmInfoData.Vm_access_id = temp.VMUserId
+	vmInfoData.Vm_access_passwd = temp.VMUserPasswd
+
 	//vmInfoData.Location = vmInfoData.Location
 
-	vmInfoData.Vcpu_size = vmInfoData.Vcpu_size
-	vmInfoData.Memory_size = vmInfoData.Memory_size
-	vmInfoData.Disk_size = vmInfoData.Disk_size
-	vmInfoData.Disk_type = vmInfoData.Disk_type
+	//vmInfoData.Vcpu_size = vmInfoData.Vcpu_size
+	//vmInfoData.Memory_size = vmInfoData.Memory_size
+	//vmInfoData.Disk_size = vmInfoData.Disk_size
+	//vmInfoData.Disk_type = vmInfoData.Disk_type
 
 	//vmInfoData.Placement_algo = vmInfoData.Placement_algo
 	vmInfoData.Description = vmInfoData.Description
 
 	// 2. Provided by CB-Spider
-	vmInfoData.CspVmId = temp.Id
-	vmInfoData.StartTime = temp.StartTime
+	//vmInfoData.CspVmId = temp.Id
+	//vmInfoData.StartTime = temp.StartTime
 	vmInfoData.Region = temp.Region
 	vmInfoData.PublicIP = temp.PublicIP
 	vmInfoData.PublicDNS = temp.PublicDNS
@@ -1394,7 +1388,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	vmInfoData.PrivateDNS = temp.PrivateDNS
 	vmInfoData.VMBootDisk = temp.VMBootDisk
 	vmInfoData.VMBlockDisk = temp.VMBlockDisk
-	vmInfoData.KeyValueList = temp.KeyValueList
+	//vmInfoData.KeyValueList = temp.KeyValueList
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.
@@ -1484,22 +1478,23 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
-	fmt.Println("temp.CspVmId: " + temp.CspVmId)
+	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
+	cspVmId := temp.CspViewVmDetail.Id
 
 	url := ""
 	method := ""
 	switch action {
 	case actionTerminate:
-		url = SPIDER_URL + "/vm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName
+		url = SPIDER_URL + "/vm/" + cspVmId + "?connection_name=" + temp.Config_name
 		method = "DELETE"
 	case actionReboot:
-		url = SPIDER_URL + "/controlvm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=reboot"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=reboot"
 		method = "GET"
 	case actionSuspend:
-		url = SPIDER_URL + "/controlvm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=suspend"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=suspend"
 		method = "GET"
 	case actionResume:
-		url = SPIDER_URL + "/controlvm/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=resume"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=resume"
 		method = "GET"
 	default:
 		return errors.New(action + "is invalid actionType")
@@ -1640,6 +1635,7 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 
 func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) {
 
+	/*
 	var content struct {
 		Cloud_id  string `json:"cloud_id"`
 		Csp_vm_id string `json:"csp_vm_id"`
@@ -1647,6 +1643,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		CspVmName string
 		PublicIP  string
 	}
+	*/
 
 	fmt.Println("[getVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
@@ -1656,19 +1653,20 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
+	//json.Unmarshal([]byte(keyValue.Value), &content)
 
-	fmt.Printf("%+v\n", content.Cloud_id)
-	fmt.Printf("%+v\n", content.Csp_vm_id)
+	//fmt.Printf("%+v\n", content.Cloud_id)
+	//fmt.Printf("%+v\n", content.Csp_vm_id)
 
 	temp := vmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
-	fmt.Println("temp.CspVmId: " + temp.CspVmId)
+	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
+	cspVmId := temp.CspViewVmDetail.Id
 
-	url := SPIDER_URL + "/vmstatus/" + temp.CspVmId + "?connection_name=" + temp.ConnectionName + "&action=resume"
+	url := SPIDER_URL + "/vmstatus/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=resume"
 	method := "GET"
 
 	fmt.Println("url: " + url)
@@ -1725,9 +1723,9 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 
 	vmStatusTmp := vmStatusInfo{}
 	vmStatusTmp.Id = vmId
-	vmStatusTmp.Name = content.CspVmName
-	vmStatusTmp.Csp_vm_id = content.CspVmId
-	vmStatusTmp.Public_ip = content.PublicIP
+	vmStatusTmp.Name = temp.Name
+	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.Id
+	vmStatusTmp.Public_ip = temp.PublicIP
 	vmStatusTmp.Status = statusResponseTmp.Status
 	if err != nil {
 		cblog.Error(err)
