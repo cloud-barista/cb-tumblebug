@@ -12,7 +12,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 ***
 
 ## [설치 개요]
-- 설치 환경: 우분투 (시험검증:Ubuntu 18.04)
+- 설치 환경: 리눅스(검증시험:Ubuntu 18.04)
 
 ## [설치 절차]
 
