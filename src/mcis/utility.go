@@ -28,19 +28,6 @@ func genUuid() string {
 	return uuid.New().String()
 }
 
-func genMcisKey(nsId string, mcisId string, vmId string) string {
-
-	if vmId != "" {
-		return "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId
-	} else if mcisId != "" {
-		return "/ns/" + nsId + "/mcis/" + mcisId
-	} else if nsId != "" {
-		return "/ns/" + nsId
-	} else {
-		return ""
-	}
-
-}
 
 func genResourceKey(nsId string, resourceType string, resourceId string) string {
 	//resourceType = strings.ToLower(resourceType)

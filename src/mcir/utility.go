@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"fmt"
 	"encoding/json"
-	uuid "github.com/google/uuid"
 	"os"
+
+	uuid "github.com/google/uuid"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
 	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"github.com/sirupsen/logrus"
-	//"github.com/cloud-barista/cb-tumblebug/src/mcism"
 )
 
 // CB-Store
@@ -144,11 +144,30 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		return http.StatusOK, nil, nil
 	case "spec":
 		// delete spec info
-		err := store.Delete(key)
+	
+		//get related recommend spec
+		keyValue, err := store.Get(key)
+		content := specInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
 		if err != nil {
 			cblog.Error(err)
 			return http.StatusInternalServerError, nil, err
 		}
+		//
+
+		err = store.Delete(key)
+		if err != nil {
+			cblog.Error(err)
+			return http.StatusInternalServerError, nil, err
+		}
+
+		//delete related recommend spec
+		err = delRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+		if err != nil {
+			cblog.Error(err)
+			return http.StatusInternalServerError, nil, err
+		}
+
 		return http.StatusOK, nil, nil
 	case "sshKey":
 		temp := sshKeyInfo{}
