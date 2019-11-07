@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,12 +17,9 @@ import (
 	// REST API (echo)
 	"net/http"
 
-	"github.com/cloud-barista/poc-farmoni/farmoni_master/serverhandler/scp"
-	"github.com/cloud-barista/poc-farmoni/farmoni_master/serverhandler/sshrun"
 	"github.com/labstack/echo"
 
 	"sync"
-
 	//"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
@@ -48,6 +44,16 @@ type KeyValue struct {
 }
 
 // Structs for REST API
+
+type mcisReq struct {
+	Id             string  `json:"id"`
+	Name           string  `json:"name"`
+	Vm_req         []vmReq `json:"vm_req"`
+	Vm_num         string  `json:"vm_num"`
+	Placement_algo string  `json:"placement_algo"`
+	Description    string  `json:"description"`
+}
+
 type vmReq struct {
 	Id             string `json:"id"`
 	ConnectionName string `json:"connectionName"`
@@ -98,13 +104,28 @@ type vmReq struct {
 	Vm_access_id       string   `json:"vm_access_id"`
 	Vm_access_passwd   string   `json:"vm_access_passwd"`
 }
-type mcisReq struct {
-	Id             string  `json:"id"`
-	Name           string  `json:"name"`
-	Vm_req         []vmReq `json:"vm_req"`
-	Vm_num         string  `json:"vm_num"`
-	Placement_algo string  `json:"placement_algo"`
-	Description    string  `json:"description"`
+
+type placementKeyValue struct {
+	Key   string
+	Value string
+}
+
+type mcisRecommendReq struct {
+	Vm_req          []vmRecommendReq    `json:"vm_req"`
+	Placement_algo  string              `json:"placement_algo"`
+	Placement_param []placementKeyValue `json:"placement_param"`
+}
+
+type vmRecommendReq struct {
+	Request_name string `json:"request_name"`
+
+	Vcpu_size   string `json:"vcpu_size"`
+	Memory_size string `json:"memory_size"`
+	Disk_size   string `json:"disk_size"`
+	Disk_type   string `json:"disk_type"`
+
+	Placement_algo  string              `json:"placement_algo"`
+	Placement_param []placementKeyValue `json:"placement_param"`
 }
 
 type mcisInfo struct {
@@ -1683,6 +1704,28 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 
 }
 
+func getVmIp(nsId string, mcisId string, vmId string) string {
+
+	var content struct {
+		Public_ip string `json:"public_ip"`
+	}
+
+	fmt.Println("[getVmIp]" + vmId)
+	key := genMcisKey(nsId, mcisId, vmId)
+	fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	fmt.Printf("%+v\n", content.Public_ip)
+
+	return content.Public_ip
+}
+
+/*
 func insertAgent(serverIP string, userName string, keyPath string) error {
 
 	// server connection info
@@ -1737,27 +1780,7 @@ func insertAgent(serverIP string, userName string, keyPath string) error {
 
 	return err
 }
-
-func getVmIp(nsId string, mcisId string, vmId string) string {
-
-	var content struct {
-		Public_ip string `json:"public_ip"`
-	}
-
-	fmt.Println("[getVmIp]" + vmId)
-	key := genMcisKey(nsId, mcisId, vmId)
-	fmt.Println(key)
-
-	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
-
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	fmt.Printf("%+v\n", content.Public_ip)
-
-	return content.Public_ip
-}
+*/
 
 /*
 func monitorVm(vmIpPort string) (string, string, string) {
