@@ -29,7 +29,7 @@ func init() {
 
 // MCIS utilities
 
-func genUuid() string {
+func GenUuid() string {
 	return uuid.New().String()
 }
 
@@ -47,7 +47,7 @@ func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 }
 
-func lookupKeyValueList(kvl []KeyValue, key string) string {
+func LookupKeyValueList(kvl []KeyValue, key string) string {
 	for _, v := range kvl {
 		if v.Key == key {
 			return v.Value

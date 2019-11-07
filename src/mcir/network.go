@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/VNetworkHandler.go
@@ -55,7 +56,7 @@ type networkInfo struct {
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description  string     `json:"description"`
 	Status       string     `json:"status"`
-	KeyValueList []KeyValue `json:"keyValueList"`
+	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -142,7 +143,7 @@ func RestGetAllNetwork(c echo.Context) error {
 		Network []networkInfo `json:"network"`
 	}
 
-	networkList := getNetworkList(nsId)
+	networkList := getResourceList(nsId, "network")
 
 	for _, v := range networkList {
 
@@ -191,7 +192,7 @@ func RestDelAllNetwork(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	networkList := getNetworkList(nsId)
+	networkList := getResourceList(nsId, "network")
 
 	for _, v := range networkList {
 		//responseCode, body, err := delNetwork(nsId, v, forceFlag)
@@ -285,7 +286,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 		AddressPrefix string
 		Status        string
 
-		KeyValueList []KeyValue
+		KeyValueList []common.KeyValue
 	}
 	temp := VNetworkInfo{}
 	err2 := json.Unmarshal(body, &temp)
@@ -309,7 +310,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 	*/
 
 	content := networkInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspNetworkId = temp.Id     // CspSubnetId
 	content.CspNetworkName = temp.Name // = u.CspNetworkName
@@ -349,6 +350,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 	return content, res.StatusCode, body, nil
 }
 
+/*
 func getNetworkList(nsId string) []string {
 
 	fmt.Println("[Get networks")
@@ -369,6 +371,7 @@ func getNetworkList(nsId string) []string {
 	return networkList
 
 }
+*/
 
 /*
 func delNetwork(nsId string, Id string, forceFlag string) (int, []byte, error) {

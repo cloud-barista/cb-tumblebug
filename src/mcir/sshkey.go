@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/KeyPairHandler.go
@@ -48,7 +49,7 @@ type sshKeyInfo struct {
 	PublicKey      string     `json:"publicKey"`
 	PrivateKey     string     `json:"privateKey"`
 	Description    string     `json:"description"`
-	KeyValueList   []KeyValue `json:"keyValueList"`
+	KeyValueList   []common.KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -139,7 +140,7 @@ func RestGetAllSshKey(c echo.Context) error {
 		SshKey []sshKeyInfo `json:"sshKey"`
 	}
 
-	sshKeyList := getSshKeyList(nsId)
+	sshKeyList := getResourceList(nsId, "sshKey")
 
 	for _, v := range sshKeyList {
 
@@ -193,7 +194,7 @@ func RestDelAllSshKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	sshKeyList := getSshKeyList(nsId)
+	sshKeyList := getResourceList(nsId, "sshKey")
 
 	for _, v := range sshKeyList {
 		//responseCode, body, err := delSshKey(nsId, v, forceFlag)
@@ -280,7 +281,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 		PrivateKey  string
 		VMUserID    string
 
-		KeyValueList []KeyValue
+		KeyValueList []common.KeyValue
 	}
 	temp := KeyPairInfo{}
 	err2 := json.Unmarshal(body, &temp)
@@ -303,7 +304,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	*/
 
 	content := sshKeyInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspSshKeyName = temp.Name // = u.CspSshKeyName
 	content.Fingerprint = temp.Fingerprint
@@ -339,6 +340,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	return content, res.StatusCode, body, nil
 }
 
+/*
 func getSshKeyList(nsId string) []string {
 
 	fmt.Println("[Get sshKeys")
@@ -359,6 +361,7 @@ func getSshKeyList(nsId string) []string {
 	return sshKeyList
 
 }
+*/
 
 /*
 func delSshKey(nsId string, Id string, forceFlag string) (int, []byte, error) {

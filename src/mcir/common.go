@@ -1,6 +1,7 @@
 package mcir
 
 import (
+	"strings"
 	"strconv"
 	"io/ioutil"
 	"net/http"
@@ -8,7 +9,8 @@ import (
 	"encoding/json"
 	"os"
 
-	uuid "github.com/google/uuid"
+	//uuid "github.com/google/uuid"
+	//"github.com/cloud-barista/cb-tumblebug/src/common"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
@@ -28,11 +30,7 @@ func init() {
 	SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
-func genUuid() string {
-	return uuid.New().String()
-}
-
-func genResourceKey(nsId string, resourceType string, resourceId string) string {
+func genResourceKey(nsId string, resourceType string, resourceId string) string { // can be moved to common/utility.go
 	//resourceType = strings.ToLower(resourceType)
 
 	if resourceType == "image" ||
@@ -110,15 +108,6 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 	default:
 		return "invalid resourceType"
 	}
-}
-
-func lookupKeyValueList(kvl []KeyValue, key string) string {
-	for _, v := range kvl {
-		if v.Key == key {
-			return v.Value
-		}
-	}
-	return ""
 }
 
 func delResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
@@ -268,4 +257,38 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 		return res.StatusCode, body, nil
 	}
+}
+
+func getResourceList(nsId string, resourceType string) []string {
+
+	if resourceType == "image" ||
+		resourceType == "sshKey" ||
+		resourceType == "spec" ||
+		resourceType == "network" ||
+		resourceType == "subnet" ||
+		resourceType == "securityGroup" ||
+		resourceType == "publicIp" ||
+		resourceType == "vNic" {
+		// continue
+	} else {
+		return []string{"invalid resource type"}
+	}
+	
+	fmt.Println("[Get " + resourceType + " list")
+	key := "/ns/" + nsId + "/resources/" + resourceType
+	fmt.Println(key)
+
+	keyValue, _ := store.GetList(key, true)
+	var resourceList []string
+	for _, v := range keyValue {
+		//if !strings.Contains(v.Key, "vm") {
+			resourceList = append(resourceList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/" + resourceType + "/"))
+		//}
+	}
+	for _, v := range resourceList {
+		fmt.Println("<" + v + "> \n")
+	}
+	fmt.Println("===============================================")
+	return resourceList
+
 }
