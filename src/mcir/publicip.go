@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/PublicIPHandler.go
@@ -37,7 +38,7 @@ type publicIpReq struct {
 	//OwnedVmId         string `json:"ownedVmId"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description  string     `json:"description"`
-	KeyValueList []KeyValue `json:"keyValueList"`
+	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
 type publicIpInfo struct {
@@ -50,7 +51,7 @@ type publicIpInfo struct {
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description  string     `json:"description"`
 	Status       string     `json:"status"`
-	KeyValueList []KeyValue `json:"keyValueList"`
+	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -137,7 +138,7 @@ func RestGetAllPublicIp(c echo.Context) error {
 		PublicIp []publicIpInfo `json:"publicIp"`
 	}
 
-	publicIpList := getPublicIpList(nsId)
+	publicIpList := getResourceList(nsId, "publicIp")
 
 	for _, v := range publicIpList {
 
@@ -186,7 +187,7 @@ func RestDelAllPublicIp(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	publicIpList := getPublicIpList(nsId)
+	publicIpList := getResourceList(nsId, "publicIp")
 
 	for _, v := range publicIpList {
 		//responseCode, body, err := delPublicIp(nsId, v, forceFlag)
@@ -226,7 +227,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspPublicIpName + "\"}")
 	type PublicIPReqInfo struct {
 		Name         string
-		KeyValueList []KeyValue
+		KeyValueList []common.KeyValue
 	}
 	tempReq := PublicIPReqInfo{}
 	tempReq.Name = u.CspPublicIpName
@@ -278,7 +279,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 		OwnedVMID string
 		Status    string
 
-		KeyValueList []KeyValue
+		KeyValueList []common.KeyValue
 	}
 	temp := PublicIPInfo{}
 	err2 := json.Unmarshal(body, &temp)
@@ -287,10 +288,10 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	}
 
 	content := publicIpInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspPublicIpId = temp.Name
-	content.CspPublicIpName = lookupKeyValueList(temp.KeyValueList, "Name")
+	content.CspPublicIpName = common.LookupKeyValueList(temp.KeyValueList, "Name")
 	content.PublicIp = temp.PublicIP
 	content.OwnedVmId = temp.OwnedVMID
 	content.Description = u.Description
@@ -328,6 +329,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	return content, res.StatusCode, body, nil
 }
 
+/*
 func getPublicIpList(nsId string) []string {
 
 	fmt.Println("[Get publicIps")
@@ -348,6 +350,7 @@ func getPublicIpList(nsId string) []string {
 	return publicIpList
 
 }
+*/
 
 /*
 func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) {

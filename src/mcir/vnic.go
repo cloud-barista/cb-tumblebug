@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/VNicHandler.go
@@ -59,7 +60,7 @@ type vNicInfo struct {
 	OwnedVmId        string     `json:"ownedVmId"`
 	Status           string     `json:"status"`
 	SecurityGroupIds []string   `json:"securityGroupIds"`
-	KeyValueList     []KeyValue `json:"keyValueList"`
+	KeyValueList     []common.KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -146,7 +147,7 @@ func RestGetAllVNic(c echo.Context) error {
 		VNic []vNicInfo `json:"vNic"`
 	}
 
-	vNicList := getVNicList(nsId)
+	vNicList := getResourceList(nsId, "vNic")
 
 	for _, v := range vNicList {
 
@@ -195,7 +196,7 @@ func RestDelAllVNic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	vNicList := getVNicList(nsId)
+	vNicList := getResourceList(nsId, "vNic")
 
 	for _, v := range vNicList {
 		//responseCode, body, err := delVNic(nsId, v, forceFlag)
@@ -316,7 +317,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 		SecurityGroupIds []string
 		Status           string
 
-		KeyValueList []KeyValue
+		KeyValueList []common.KeyValue
 	}
 	temp := VNicInfo{}
 	err2 := json.Unmarshal(body, &temp)
@@ -344,7 +345,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	*/
 
 	content := vNicInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspVNicId = temp.Id
 	content.CspVNicName = temp.Name // = u.CspVNicName
@@ -390,6 +391,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	return content, res.StatusCode, body, nil
 }
 
+/*
 func getVNicList(nsId string) []string {
 
 	fmt.Println("[Get vNics")
@@ -410,6 +412,7 @@ func getVNicList(nsId string) []string {
 	return vNicList
 
 }
+*/
 
 /*
 func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {

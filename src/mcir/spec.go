@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+	//"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/labstack/echo"
@@ -142,7 +142,7 @@ func RestGetAllSpec(c echo.Context) error {
 		Spec []specInfo `json:"spec"`
 	}
 
-	specList := getSpecList(nsId)
+	specList := getResourceList(nsId, "spec")
 
 	for _, v := range specList {
 
@@ -191,7 +191,7 @@ func RestDelAllSpec(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	specList := getSpecList(nsId)
+	specList := getResourceList(nsId, "spec")
 
 	for _, v := range specList {
 		//responseCode, _, err := delSpec(nsId, v, forceFlag)
@@ -220,7 +220,7 @@ func registerSpecWithCspFlavorName(nsId string, u *specReq) (specInfo, error) {
 	// content, err := lookupSpec(u)
 
 	// if 1 { // if lookupSpec(u) succeeds
-	// 	content.Id = genUuid()
+	// 	content.Id = common.GenUuid()
 	// 	...
 	// } else { // if lookupSpec(u) fails
 
@@ -228,7 +228,7 @@ func registerSpecWithCspFlavorName(nsId string, u *specReq) (specInfo, error) {
 	//
 
 	// Temporary code
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.Os_type = u.Os_type
@@ -284,7 +284,7 @@ func registerSpecWithInfo(nsId string, content *specInfo) (specInfo, error) {
 	// TODO: Implement error check logic
 
 	// Temporary code
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 
 	/* FYI
 	type specInfo struct {
@@ -371,6 +371,7 @@ func registerRecommendList(nsId string, connectionName string, cpuSize string, m
 
 }
 
+/*
 func getSpecList(nsId string) []string {
 
 	fmt.Println("[Get specs")
@@ -391,6 +392,7 @@ func getSpecList(nsId string) []string {
 	return specList
 
 }
+*/
 
 /*
 func delSpec(nsId string, Id string, forceFlag string) (int, []byte, error) {

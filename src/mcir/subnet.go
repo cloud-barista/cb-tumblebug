@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+	//"strings"
 
 	"github.com/labstack/echo"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 type subnetReq struct {
@@ -117,7 +118,7 @@ func RestGetAllSubnet(c echo.Context) error {
 		Subnet []subnetInfo `json:"subnet"`
 	}
 
-	subnetList := getSubnetList(nsId)
+	subnetList := getResourceList(nsId, "subnet")
 
 	for _, v := range subnetList {
 
@@ -166,7 +167,7 @@ func RestDelAllSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	subnetList := getSubnetList(nsId)
+	subnetList := getResourceList(nsId, "subnet")
 
 	for _, v := range subnetList {
 		//responseCode, _, err := delSubnet(nsId, v, forceFlag)
@@ -186,7 +187,7 @@ func RestDelAllSubnet(c echo.Context) error {
 func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	content := subnetInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspSubnetId = u.CspSubnetId
 	content.CspSubnetName = u.CspSubnetName
@@ -243,7 +244,7 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 func registerSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	content := subnetInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspSubnetId = u.CspSubnetId
 	content.CspSubnetName = u.CspSubnetName
@@ -283,6 +284,7 @@ func registerSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 }
 */
 
+/*
 func getSubnetList(nsId string) []string {
 
 	fmt.Println("[Get subnets")
@@ -303,6 +305,7 @@ func getSubnetList(nsId string) []string {
 	return subnetList
 
 }
+*/
 
 /*
 func delSubnet(nsId string, Id string, forceFlag string) (int, []byte, error) {

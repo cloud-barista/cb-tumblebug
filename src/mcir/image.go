@@ -10,7 +10,7 @@ import (
 
 	"github.com/labstack/echo"
 
-	//"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // Ref: https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/ImageHandler.go
@@ -38,10 +38,12 @@ type ImageHandler interface {
 }
 */
 
+/*
 type KeyValue struct {
 	Key   string
 	Value string
 }
+*/
 
 type imageReq struct {
 	//Id             string `json:"id"`
@@ -61,7 +63,7 @@ type imageInfo struct {
 	Description    string     `json:"description"`
 	GuestOS        string     `json:"guestOS"` // Windows7, Ubuntu etc.
 	Status         string     `json:"status"`  // available, unavailable
-	KeyValueList   []KeyValue `json:"keyValueList"`
+	KeyValueList   []common.KeyValue `json:"keyValueList"`
 }
 
 /* FYI
@@ -147,7 +149,7 @@ func RestGetAllImage(c echo.Context) error {
 		Image []imageInfo `json:"image"`
 	}
 
-	imageList := getImageList(nsId)
+	imageList := getResourceList(nsId, "image")
 
 	for _, v := range imageList {
 
@@ -196,7 +198,7 @@ func RestDelAllImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	imageList := getImageList(nsId)
+	imageList := getResourceList(nsId, "image")
 
 	for _, v := range imageList {
 		//responseCode, _, err := delImage(nsId, v, forceFlag)
@@ -284,7 +286,7 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 		GuestOS string // Windows7, Ubuntu etc.
 		Status  string // available, unavailable
 
-		KeyValueList []KeyValue
+		KeyValueList []common.KeyValue
 	}
 	temp := ImageInfo{}
 	err2 := json.Unmarshal(body, &temp)
@@ -307,12 +309,12 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 	}
 	*/
 	content := imageInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspImageId = temp.Id     // = u.CspImageId
 	content.CspImageName = temp.Name // = u.CspImageName
-	content.CreationDate = lookupKeyValueList(temp.KeyValueList, "CreationDate")
-	content.Description = lookupKeyValueList(temp.KeyValueList, "Description")
+	content.CreationDate = common.LookupKeyValueList(temp.KeyValueList, "CreationDate")
+	content.Description = common.LookupKeyValueList(temp.KeyValueList, "Description")
 	content.GuestOS = temp.GuestOS
 	content.Status = temp.Status
 	content.KeyValueList = temp.KeyValueList
@@ -334,7 +336,7 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 
 func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
 
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 
 	fmt.Println("=========================== PUT registerImage")
 	Key := genResourceKey(nsId, "image", content.Id)
@@ -350,6 +352,7 @@ func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
 	return *content, nil
 }
 
+/*
 func getImageList(nsId string) []string {
 
 	fmt.Println("[Get images")
@@ -370,6 +373,7 @@ func getImageList(nsId string) []string {
 	return imageList
 
 }
+*/
 
 /*
 func delImage(nsId string, Id string, forceFlag string) (int, []byte, error) {

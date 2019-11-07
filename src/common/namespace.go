@@ -157,7 +157,7 @@ func createNs(u *nsReq) (nsInfo, error) {
 
 	//u.Id = genUuid()
 	content := nsInfo{}
-	content.Id = genUuid()
+	content.Id = GenUuid()
 	content.Name = u.Name
 	content.Description = u.Description
 

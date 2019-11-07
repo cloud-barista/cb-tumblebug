@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/SecurityHandler.go
@@ -61,7 +62,7 @@ type securityGroupInfo struct {
 	//ResourceGroupName  string `json:"resourceGroupName"`
 	Description   string              `json:"description"`
 	FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
-	KeyValueList  []KeyValue          `json:"keyValueList"`
+	KeyValueList  []common.KeyValue          `json:"keyValueList"`
 }
 
 /* FYI
@@ -148,7 +149,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 		SecurityGroup []securityGroupInfo `json:"securityGroup"`
 	}
 
-	securityGroupList := getSecurityGroupList(nsId)
+	securityGroupList := getResourceList(nsId, "securityGroup")
 
 	for _, v := range securityGroupList {
 
@@ -197,7 +198,7 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	securityGroupList := getSecurityGroupList(nsId)
+	securityGroupList := getResourceList(nsId, "securityGroup")
 
 	for _, v := range securityGroupList {
 		//responseCode, body, err := delSecurityGroup(nsId, v, forceFlag)
@@ -303,7 +304,7 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 		Name          string
 		SecurityRules *[]firewallRuleInfo //*[]SecurityRuleInfo
 
-		KeyValueList []KeyValue
+		KeyValueList []common.KeyValue
 	}
 	temp := SecurityInfo{}
 	err2 := json.Unmarshal(body, &temp)
@@ -321,12 +322,12 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 		//ResourceGroupName  string `json:"resourceGroupName"`
 		Description   string              `json:"description"`
 		FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
-		KeyValueList  []KeyValue          `json:"keyValueList"`
+		KeyValueList  []common.KeyValue          `json:"keyValueList"`
 	}
 	*/
 
 	content := securityGroupInfo{}
-	content.Id = genUuid()
+	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspSecurityGroupId = temp.Id
 	content.CspSecurityGroupName = temp.Name // = u.CspSecurityGroupName
@@ -359,6 +360,7 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 	return content, res.StatusCode, body, nil
 }
 
+/*
 func getSecurityGroupList(nsId string) []string {
 
 	fmt.Println("[Get securityGroups")
@@ -379,6 +381,7 @@ func getSecurityGroupList(nsId string) []string {
 	return securityGroupList
 
 }
+*/
 
 /*
 func delSecurityGroup(nsId string, Id string, forceFlag string) (int, []byte, error) {
