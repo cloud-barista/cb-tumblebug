@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/labstack/echo"
-
-	"github.com/cloud-barista/cb-tumblebug/src/mcis"
+	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
 )
 
 type specReq struct {
@@ -45,6 +45,21 @@ type specInfo struct {
 	Gpumem_GiB            string `json:"gpumem_GiB"`
 	Gpu_p2p               string `json:"gpu_p2p"`
 }
+
+type SpecInfo struct {
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	Os_type        string `json:"os_type"`
+	Num_vCPU       string `json:"num_vCPU"`
+	Num_core       string `json:"num_core"`
+	Mem_GiB        string `json:"mem_GiB"`
+	Storage_GiB    string `json:"storage_GiB"`
+	Description    string `json:"description"`
+
+	Cost_per_hour         string `json:"cost_per_hour"`
+}
+
 
 /* FYI
 g.POST("/:nsId/resources/spec", restPostSpec)
@@ -331,9 +346,29 @@ func registerSpecWithInfo(nsId string, content *specInfo) (specInfo, error) {
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	mcis.RegisterRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	registerRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
 
 	return *content, nil
+}
+
+func registerRecommendList(nsId string, connectionName string, cpuSize string, memSize string, diskSize string, specId string, price string) error {
+
+	//fmt.Println("[Get MCISs")
+	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId
+	fmt.Println(key)
+
+	mapA := map[string]string{"id":specId,"price":price,"connectionName":connectionName}
+	Val, _ := json.Marshal(mapA)
+
+	err := store.Put(string(key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	fmt.Println("===============================================")
+	return nil
+
 }
 
 func getSpecList(nsId string) []string {
@@ -365,12 +400,45 @@ func delSpec(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	key := genResourceKey(nsId, "spec", Id)
 	fmt.Println(key)
 
+	//get related recommend spec
+	keyValue, err := store.Get(key)
+	content := specInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &content)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+	//
+
+	err = store.Delete(key)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	//delete related recommend spec
+	err = delRecommendSpec(nsId, Id, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+	
+	return nil
+}
+*/
+
+func delRecommendSpec(nsId string, specId string, cpuSize string, memSize string, diskSize string) error {
+
+	fmt.Println("delRecommendSpec()")
+
+	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId 
+
 	err := store.Delete(key)
 	if err != nil {
 		cblog.Error(err)
-		return http.StatusInternalServerError, nil, err
+		return err
 	}
 
-	return http.StatusOK, nil, nil
+	return nil
+
 }
-*/

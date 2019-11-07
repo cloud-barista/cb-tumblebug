@@ -10,7 +10,6 @@ import (
 	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"github.com/sirupsen/logrus"
-
 	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
 )
 
@@ -34,7 +33,7 @@ func genUuid() string {
 	return uuid.New().String()
 }
 
-func genMcisKey(nsId string, mcisId string, vmId string) string {
+func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 	if vmId != "" {
 		return "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId
@@ -47,8 +46,6 @@ func genMcisKey(nsId string, mcisId string, vmId string) string {
 	}
 
 }
-
-
 
 func lookupKeyValueList(kvl []KeyValue, key string) string {
 	for _, v := range kvl {
