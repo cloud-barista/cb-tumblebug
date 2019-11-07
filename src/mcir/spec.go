@@ -157,12 +157,14 @@ func RestDelSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("specId")
+	forceFlag := c.QueryParam("force")
 
-	err := delSpec(nsId, id)
+	//responseCode, _, err := delSpec(nsId, id, forceFlag)
+	responseCode, _, err := delResource(nsId, "spec", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the spec"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(responseCode, &mapA)
 	}
 
 	mapA := map[string]string{"message": "The spec has been deleted"}
@@ -172,15 +174,17 @@ func RestDelSpec(c echo.Context) error {
 func RestDelAllSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	specList := getSpecList(nsId)
 
 	for _, v := range specList {
-		err := delSpec(nsId, v)
+		//responseCode, _, err := delSpec(nsId, v, forceFlag)
+		responseCode, _, err := delResource(nsId, "spec", v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All specs"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(responseCode, &mapA)
 		}
 	}
 
@@ -353,7 +357,8 @@ func getSpecList(nsId string) []string {
 
 }
 
-func delSpec(nsId string, Id string) error {
+/*
+func delSpec(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete spec] " + Id)
 
@@ -363,8 +368,9 @@ func delSpec(nsId string, Id string) error {
 	err := store.Delete(key)
 	if err != nil {
 		cblog.Error(err)
-		return err
+		return http.StatusInternalServerError, nil, err
 	}
 
-	return nil
+	return http.StatusOK, nil, nil
 }
+*/

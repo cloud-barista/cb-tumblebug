@@ -180,7 +180,8 @@ func RestDelSecurityGroup(c echo.Context) error {
 	id := c.Param("securityGroupId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
+	//responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
+	responseCode, body, err := delResource(nsId, "securityGroup", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
@@ -199,7 +200,8 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 	securityGroupList := getSecurityGroupList(nsId)
 
 	for _, v := range securityGroupList {
-		responseCode, body, err := delSecurityGroup(nsId, v, forceFlag)
+		//responseCode, body, err := delSecurityGroup(nsId, v, forceFlag)
+		responseCode, body, err := delResource(nsId, "securityGroup", v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All securityGroups"}
@@ -378,6 +380,7 @@ func getSecurityGroupList(nsId string) []string {
 
 }
 
+/*
 func delSecurityGroup(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete securityGroup] " + Id)
@@ -447,3 +450,4 @@ func delSecurityGroup(nsId string, Id string, forceFlag string) (int, []byte, er
 		return res.StatusCode, body, nil
 	}
 }
+*/

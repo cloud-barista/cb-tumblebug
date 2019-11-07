@@ -177,12 +177,14 @@ func RestDelImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	id := c.Param("imageId")
+	forceFlag := c.QueryParam("force")
 
-	err := delImage(nsId, id)
+	//responseCode, _, err := delImage(nsId, id, forceFlag)
+	responseCode, _, err := delResource(nsId, "image", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the image"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(responseCode, &mapA)
 	}
 
 	mapA := map[string]string{"message": "The image has been deleted"}
@@ -192,15 +194,17 @@ func RestDelImage(c echo.Context) error {
 func RestDelAllImage(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	forceFlag := c.QueryParam("force")
 
 	imageList := getImageList(nsId)
 
 	for _, v := range imageList {
-		err := delImage(nsId, v)
+		//responseCode, _, err := delImage(nsId, v, forceFlag)
+		responseCode, _, err := delResource(nsId, "image", v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All images"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(responseCode, &mapA)
 		}
 	}
 
@@ -367,7 +371,8 @@ func getImageList(nsId string) []string {
 
 }
 
-func delImage(nsId string, Id string) error {
+/*
+func delImage(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete image] " + Id)
 
@@ -378,8 +383,9 @@ func delImage(nsId string, Id string) error {
 	err := store.Delete(key)
 	if err != nil {
 		cblog.Error(err)
-		return err
+		return http.StatusInternalServerError, nil, err
 	}
 
-	return nil
+	return http.StatusOK, nil, nil
 }
+*/

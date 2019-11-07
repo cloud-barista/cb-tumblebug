@@ -178,7 +178,8 @@ func RestDelVNic(c echo.Context) error {
 	id := c.Param("vNicId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delVNic(nsId, id, forceFlag)
+	//responseCode, body, err := delVNic(nsId, id, forceFlag)
+	responseCode, body, err := delResource(nsId, "vNic", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the vNic"}
@@ -197,7 +198,8 @@ func RestDelAllVNic(c echo.Context) error {
 	vNicList := getVNicList(nsId)
 
 	for _, v := range vNicList {
-		responseCode, body, err := delVNic(nsId, v, forceFlag)
+		//responseCode, body, err := delVNic(nsId, v, forceFlag)
+		responseCode, body, err := delResource(nsId, "vNic", v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All vNics"}
@@ -409,6 +411,7 @@ func getVNicList(nsId string) []string {
 
 }
 
+/*
 func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete vNic] " + Id)
@@ -456,24 +459,6 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		return res.StatusCode, body, err
 	}
 
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete vnic info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
-
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
@@ -496,3 +481,4 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		return res.StatusCode, body, nil
 	}
 }
+*/
