@@ -171,7 +171,8 @@ func RestDelSshKey(c echo.Context) error {
 	id := c.Param("sshKeyId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delSshKey(nsId, id, forceFlag)
+	//responseCode, body, err := delSshKey(nsId, id, forceFlag)
+	responseCode, body, err := delResource(nsId, "sshKey", id, forceFlag)
 	//body, _ := ioutil.ReadAll(res.Body)
 	if err != nil {
 		cblog.Error(err)
@@ -182,9 +183,9 @@ func RestDelSshKey(c echo.Context) error {
 		return c.JSONBlob(responseCode, body)
 	}
 
-	//mapA := map[string]string{"message": "The sshKey has been deleted"}
-	//return c.JSON(http.StatusOK, &mapA)
-	return c.JSON(http.StatusOK, body)
+	mapA := map[string]string{"message": "The sshKey has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+	//return c.JSON(http.StatusOK, body)
 }
 
 func RestDelAllSshKey(c echo.Context) error {
@@ -195,7 +196,8 @@ func RestDelAllSshKey(c echo.Context) error {
 	sshKeyList := getSshKeyList(nsId)
 
 	for _, v := range sshKeyList {
-		responseCode, body, err := delSshKey(nsId, v, forceFlag)
+		//responseCode, body, err := delSshKey(nsId, v, forceFlag)
+		responseCode, body, err := delResource(nsId, "sshKey", v, forceFlag)
 		//body, _ := ioutil.ReadAll(res.Body)
 		if err != nil {
 			cblog.Error(err)
@@ -358,6 +360,7 @@ func getSshKeyList(nsId string) []string {
 
 }
 
+/*
 func delSshKey(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete sshKey] " + Id)
@@ -405,24 +408,6 @@ func delSshKey(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		return res.StatusCode, body, err
 	}
 
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete sshKey info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
-
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
@@ -445,3 +430,4 @@ func delSshKey(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		return res.StatusCode, body, nil
 	}
 }
+*/

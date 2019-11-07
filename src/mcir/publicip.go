@@ -169,7 +169,8 @@ func RestDelPublicIp(c echo.Context) error {
 	id := c.Param("publicIpId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delPublicIp(nsId, id, forceFlag)
+	//responseCode, body, err := delPublicIp(nsId, id, forceFlag)
+	responseCode, body, err := delResource(nsId, "publicIp", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
@@ -188,7 +189,8 @@ func RestDelAllPublicIp(c echo.Context) error {
 	publicIpList := getPublicIpList(nsId)
 
 	for _, v := range publicIpList {
-		responseCode, body, err := delPublicIp(nsId, v, forceFlag)
+		//responseCode, body, err := delPublicIp(nsId, v, forceFlag)
+		responseCode, body, err := delResource(nsId, "publicIp", v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All publicIps"}
@@ -347,6 +349,7 @@ func getPublicIpList(nsId string) []string {
 
 }
 
+/*
 func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete publicIp] " + Id)
@@ -364,7 +367,7 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 	fmt.Println("temp.CspPublicIpName: " + temp.CspPublicIpName) // Identifier is subject to change.
 
 	//url := SPIDER_URL + "/publicip?connection_name=" + temp.ConnectionName // for testapi.io
-	url := SPIDER_URL + "/publicip/" + temp.CspPublicIpId + "?connection_name=" + temp.ConnectionName // for testapi.io
+	url := SPIDER_URL + "/publicip/" + temp.CspPublicIpId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
@@ -394,24 +397,6 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 		return res.StatusCode, body, err
 	}
 
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete publicIp info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
-
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
@@ -434,3 +419,4 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 		return res.StatusCode, body, nil
 	}
 }
+*/

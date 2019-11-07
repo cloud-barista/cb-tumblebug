@@ -174,7 +174,8 @@ func RestDelNetwork(c echo.Context) error {
 	id := c.Param("networkId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, body, err := delNetwork(nsId, id, forceFlag)
+	//responseCode, body, err := delNetwork(nsId, id, forceFlag)
+	responseCode, body, err := delResource(nsId, "network", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the network"}
@@ -193,7 +194,8 @@ func RestDelAllNetwork(c echo.Context) error {
 	networkList := getNetworkList(nsId)
 
 	for _, v := range networkList {
-		responseCode, body, err := delNetwork(nsId, v, forceFlag)
+		//responseCode, body, err := delNetwork(nsId, v, forceFlag)
+		responseCode, body, err := delResource(nsId, "network", v, forceFlag)
 		if err != nil {
 			cblog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All networks"}
@@ -368,6 +370,7 @@ func getNetworkList(nsId string) []string {
 
 }
 
+/*
 func delNetwork(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete network] " + Id)
@@ -415,24 +418,6 @@ func delNetwork(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		return res.StatusCode, body, err
 	}
 
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete network info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
-
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
@@ -455,3 +440,4 @@ func delNetwork(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		return res.StatusCode, body, nil
 	}
 }
+*/
