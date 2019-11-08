@@ -134,7 +134,31 @@ do
 
 #############################################################################################################################################
 
-	#echo ${VNET_ID}, ${PIP_ID}, ${SG_ID}, ${VNIC_ID}, $SSHKEY_ID, $SPEC_ID
+	TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	#echo $TB_IMAGE_IDS | json_pp
+
+	if [ "$TB_IMAGE_IDS" != "" ]
+	then
+		TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		for TB_IMAGE_ID in ${TB_IMAGE_IDS}
+		do
+			echo ....Get ${TB_IMAGE_ID} ...
+			IMAGES_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image/${TB_IMAGE_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			if [ "$IMAGES_CONN_NAME" == "$NAME" ]
+                        then
+                                IMAGE_ID=$TB_IMAGE_ID
+                                echo IMAGE_ID: $IMAGE_ID
+                                break
+                        fi
+		done
+	else
+		echo ....no images found
+		exit 1
+	fi
+
+#############################################################################################################################################
+
+	#echo ${VNET_ID}, ${PIP_ID}, ${SG_ID}, ${VNIC_ID}, $SSHKEY_ID, $SPEC_ID, $IMAGE_ID
 
 #	curl -sX POST http://$RESTSERVER:1024/vm?connection_name=${NAME} -H 'Content-Type: application/json' -d '{
 #	    "VMName": "vm-powerkim01",
@@ -161,7 +185,7 @@ then
             "name": "aws-shson-vm'$num'",
             "config_name": "'$NAME'",
             "spec_id": "'$SPEC_ID'",
-            "image_id": "'$IMG_IDS[num]'",
+            "image_id": "'$IMAGE_ID'",
             "vnet_id": "'$VNET_ID'",
             "vnic_id": "",
             "public_ip_id": "'$PIP_ID'",
@@ -177,13 +201,12 @@ then
 }' | json_pp
 
 else
-
 	MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | json_pp | grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
 	curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
 	"name": "aws-shson-vm'$num'",
             "config_name": "'$NAME'",
             "spec_id": "'$SPEC_ID'",
-            "image_id": "'$IMG_IDS[num]'",
+            "image_id": "'$IMAGE_ID'",
             "vnet_id": "'$VNET_ID'",
             "vnic_id": "",
             "public_ip_id": "'$PIP_ID'",
