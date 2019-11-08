@@ -1,5 +1,5 @@
 #!/bin/bash
-SERVER=52.8.176.204
+SERVER=15.222.55.8
 
 
 HN=`hostname`

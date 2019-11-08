@@ -37,10 +37,10 @@ source ../setup.env
 				continue
 			else
                                 PUBLIC_IP=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | json_pp | grep "\"publicIp\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
-				echo $NAME: copy shooter into ${PUBLIC_IP} ...
+				echo $PIPS_CONN_NAME: copy shooter into ${PUBLIC_IP} ...
 				ssh-keygen -f "/root/.ssh/known_hosts" -R ${PUBLIC_IP}
-				scp -i ../keypair/$NAME.key -o "StrictHostKeyChecking no" ./shooter/shooter.sh cb-user@$PUBLIC_IP:/tmp
-				ssh -i ../keypair/$NAME.key -o "StrictHostKeyChecking no" cb-user@$PUBLIC_IP /tmp/shooter.sh &
+				scp -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" ./shooter/shooter.sh ubuntu@$PUBLIC_IP:/tmp
+				ssh -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" ubuntu@$PUBLIC_IP /tmp/shooter.sh &
                         fi
                 done
         else
