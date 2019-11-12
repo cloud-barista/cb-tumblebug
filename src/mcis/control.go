@@ -106,6 +106,18 @@ type mcisInfo struct {
 	Status         string `json:"status"`
 	Placement_algo string `json:"placement_algo"`
 	Description    string `json:"description"`
+	Vm             []vmOverview `json:"vm"`
+}
+
+type vmOverview struct {
+	Id             string `json:"id"`
+	Name               string   `json:"name"`
+	Config_name        string   `json:"config_name"`
+	Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP     string     `json:"publicIP"`
+	PublicDNS    string     `json:"publicDNS"`
+	Status string `json:"status"`
+
 }
 
 type RegionInfo struct {
@@ -442,7 +454,39 @@ func RestGetAllMcis(c echo.Context) error {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		mcisTmp := mcisInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
-		mcisTmp.Id = v
+		mcisId := v
+		mcisTmp.Id = mcisId
+		
+		mcisStatus, err := getMcisStatus(nsId, mcisId)
+		if err != nil {
+			cblog.Error(err)
+			return err
+		}
+		mcisTmp.Status = mcisStatus.Status
+
+
+		vmList, err := getVmList(nsId, mcisId)
+		if err != nil {
+			cblog.Error(err)
+			return err
+		}
+
+		for _, v1 := range vmList {
+			vmKey := common.GenMcisKey(nsId, mcisId, v1)
+			fmt.Println(vmKey)
+			vmKeyValue, _ := store.Get(vmKey)
+			if vmKeyValue == nil {
+				mapA := map[string]string{"message": "Cannot find " + key}
+				return c.JSON(http.StatusOK, &mapA)
+			}
+			fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+			vmTmp := vmOverview{}
+			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+			vmTmp.Id = v1
+			mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
+		}
+
+
 		content.Mcis = append(content.Mcis, mcisTmp)
 
 	}
