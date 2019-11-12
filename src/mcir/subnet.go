@@ -151,11 +151,14 @@ func RestDelSubnet(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, _, err := delSubnet(nsId, id, forceFlag)
-	responseCode, _, err := delResource(nsId, "subnet", id, forceFlag)
+	responseCode, _, err := delResourceById(nsId, "subnet", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the subnet"}
-		return c.JSON(responseCode, &mapA)
+		responseCode, _, err = delResourceByName(nsId, "subnet", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete the subnet"}
+			return c.JSON(responseCode, &mapA)
+		}
 	}
 
 	mapA := map[string]string{"message": "The subnet has been deleted"}
@@ -171,11 +174,14 @@ func RestDelAllSubnet(c echo.Context) error {
 
 	for _, v := range subnetList {
 		//responseCode, _, err := delSubnet(nsId, v, forceFlag)
-		responseCode, _, err := delResource(nsId, "subnet", v, forceFlag)
+		responseCode, _, err := delResourceById(nsId, "subnet", v, forceFlag)
 		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All subnets"}
-			return c.JSON(responseCode, &mapA)
+			responseCode, _, err = delResourceByName(nsId, "subnet", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{"message": "Failed to delete the subnet"}
+				return c.JSON(responseCode, &mapA)
+			}
 		}
 	}
 

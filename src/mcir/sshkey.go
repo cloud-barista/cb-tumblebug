@@ -173,15 +173,18 @@ func RestDelSshKey(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delSshKey(nsId, id, forceFlag)
-	responseCode, body, err := delResource(nsId, "sshKey", id, forceFlag)
+	responseCode, body, err := delResourceById(nsId, "sshKey", id, forceFlag)
 	//body, _ := ioutil.ReadAll(res.Body)
 	if err != nil {
-		cblog.Error(err)
-		/*
-			mapA := map[string]string{"message": "Failed to delete the sshKey"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		*/
-		return c.JSONBlob(responseCode, body)
+		responseCode, body, err = delResourceByName(nsId, "sshKey", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			/*
+				mapA := map[string]string{"message": "Failed to delete the sshKey"}
+				return c.JSON(http.StatusFailedDependency, &mapA)
+			*/
+			return c.JSONBlob(responseCode, body)
+		}
 	}
 
 	mapA := map[string]string{"message": "The sshKey has been deleted"}
@@ -198,15 +201,18 @@ func RestDelAllSshKey(c echo.Context) error {
 
 	for _, v := range sshKeyList {
 		//responseCode, body, err := delSshKey(nsId, v, forceFlag)
-		responseCode, body, err := delResource(nsId, "sshKey", v, forceFlag)
+		responseCode, body, err := delResourceById(nsId, "sshKey", v, forceFlag)
 		//body, _ := ioutil.ReadAll(res.Body)
 		if err != nil {
-			cblog.Error(err)
-			/*
-				mapA := map[string]string{"message": "Failed to delete All sshKeys"}
-				return c.JSON(http.StatusFailedDependency, &mapA)
-			*/
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err = delResourceByName(nsId, "sshKey", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				/*
+					mapA := map[string]string{"message": "Failed to delete the sshKey"}
+					return c.JSON(http.StatusFailedDependency, &mapA)
+				*/
+				return c.JSONBlob(responseCode, body)
+			}
 		}
 	}
 

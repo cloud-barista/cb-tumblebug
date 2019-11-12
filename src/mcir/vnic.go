@@ -180,11 +180,14 @@ func RestDelVNic(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delVNic(nsId, id, forceFlag)
-	responseCode, body, err := delResource(nsId, "vNic", id, forceFlag)
+	responseCode, body, err := delResourceById(nsId, "vNic", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": "Failed to delete the vNic"}
-		return c.JSONBlob(responseCode, body)
+		responseCode, body, err = delResourceByName(nsId, "vNic", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the vNic"}
+			return c.JSONBlob(responseCode, body)
+		}
 	}
 
 	mapA := map[string]string{"message": "The vNic has been deleted"}
@@ -200,11 +203,14 @@ func RestDelAllVNic(c echo.Context) error {
 
 	for _, v := range vNicList {
 		//responseCode, body, err := delVNic(nsId, v, forceFlag)
-		responseCode, body, err := delResource(nsId, "vNic", v, forceFlag)
+		responseCode, body, err := delResourceById(nsId, "vNic", v, forceFlag)
 		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete All vNics"}
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err = delResourceByName(nsId, "vNic", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				//mapA := map[string]string{"message": "Failed to delete the vNic"}
+				return c.JSONBlob(responseCode, body)
+			}
 		}
 	}
 

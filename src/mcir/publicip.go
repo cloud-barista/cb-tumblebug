@@ -171,11 +171,14 @@ func RestDelPublicIp(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delPublicIp(nsId, id, forceFlag)
-	responseCode, body, err := delResource(nsId, "publicIp", id, forceFlag)
+	responseCode, body, err := delResourceById(nsId, "publicIp", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
-		return c.JSONBlob(responseCode, body)
+		responseCode, body, err = delResourceByName(nsId, "publicIp", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the publicIp"}
+			return c.JSONBlob(responseCode, body)
+		}
 	}
 
 	mapA := map[string]string{"message": "The publicIp has been deleted"}
@@ -191,11 +194,14 @@ func RestDelAllPublicIp(c echo.Context) error {
 
 	for _, v := range publicIpList {
 		//responseCode, body, err := delPublicIp(nsId, v, forceFlag)
-		responseCode, body, err := delResource(nsId, "publicIp", v, forceFlag)
+		responseCode, body, err := delResourceById(nsId, "publicIp", v, forceFlag)
 		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete All publicIps"}
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err = delResourceByName(nsId, "publicIp", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				//mapA := map[string]string{"message": "Failed to delete the publicIp"}
+				return c.JSONBlob(responseCode, body)
+			}
 		}
 	}
 
@@ -291,7 +297,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	content.Id = common.GenUuid()
 	content.ConnectionName = u.ConnectionName
 	content.CspPublicIpId = temp.Name
-	content.CspPublicIpName = common.LookupKeyValueList(temp.KeyValueList, "Name")
+	content.CspPublicIpName = temp.Name //common.LookupKeyValueList(temp.KeyValueList, "Name")
 	content.PublicIp = temp.PublicIP
 	content.OwnedVmId = temp.OwnedVMID
 	content.Description = u.Description

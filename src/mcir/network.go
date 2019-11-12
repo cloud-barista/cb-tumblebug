@@ -176,11 +176,14 @@ func RestDelNetwork(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delNetwork(nsId, id, forceFlag)
-	responseCode, body, err := delResource(nsId, "network", id, forceFlag)
+	responseCode, body, err := delResourceById(nsId, "network", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": "Failed to delete the network"}
-		return c.JSONBlob(responseCode, body)
+		responseCode, body, err = delResourceByName(nsId, "network", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the network"}
+			return c.JSONBlob(responseCode, body)
+		}
 	}
 
 	mapA := map[string]string{"message": "The network has been deleted"}
@@ -196,11 +199,14 @@ func RestDelAllNetwork(c echo.Context) error {
 
 	for _, v := range networkList {
 		//responseCode, body, err := delNetwork(nsId, v, forceFlag)
-		responseCode, body, err := delResource(nsId, "network", v, forceFlag)
+		responseCode, body, err := delResourceById(nsId, "network", v, forceFlag)
 		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete All networks"}
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err = delResourceByName(nsId, "network", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				//mapA := map[string]string{"message": "Failed to delete the network"}
+				return c.JSONBlob(responseCode, body)
+			}
 		}
 	}
 

@@ -182,11 +182,14 @@ func RestDelImage(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, _, err := delImage(nsId, id, forceFlag)
-	responseCode, _, err := delResource(nsId, "image", id, forceFlag)
+	responseCode, _, err := delResourceById(nsId, "image", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the image"}
-		return c.JSON(responseCode, &mapA)
+		responseCode, _, err = delResourceByName(nsId, "image", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete the image"}
+			return c.JSON(responseCode, &mapA)
+		}
 	}
 
 	mapA := map[string]string{"message": "The image has been deleted"}
@@ -202,11 +205,14 @@ func RestDelAllImage(c echo.Context) error {
 
 	for _, v := range imageList {
 		//responseCode, _, err := delImage(nsId, v, forceFlag)
-		responseCode, _, err := delResource(nsId, "image", v, forceFlag)
+		responseCode, _, err := delResourceById(nsId, "image", v, forceFlag)
 		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All images"}
-			return c.JSON(responseCode, &mapA)
+			responseCode, _, err = delResourceByName(nsId, "image", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{"message": "Failed to delete the image"}
+				return c.JSON(responseCode, &mapA)
+			}
 		}
 	}
 

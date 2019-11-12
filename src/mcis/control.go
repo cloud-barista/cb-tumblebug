@@ -1214,7 +1214,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	tempReq.ImageId = getCspResourceId(nsId, "image", vmInfoData.Image_id)
 	tempReq.VirtualNetworkId = getCspResourceId(nsId, "network", vmInfoData.Vnet_id)
-	tempReq.NetworkInterfaceId = getCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
+	tempReq.NetworkInterfaceId = "" //getCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
 	tempReq.PublicIPId = getCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
 
 	var SecurityGroupIdsTmp []string
@@ -1248,6 +1248,9 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	}
 
 	req.Header.Add("Content-Type", "application/json")
+
+	reqBody, _ := ioutil.ReadAll(req.Body)
+	fmt.Println(string(reqBody))
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -1479,7 +1482,8 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
-	cspVmId := temp.CspViewVmDetail.Id
+	//cspVmId := temp.CspViewVmDetail.Id // AWS
+	cspVmId := temp.CspViewVmDetail.Name // Azure
 
 	url := ""
 	method := ""

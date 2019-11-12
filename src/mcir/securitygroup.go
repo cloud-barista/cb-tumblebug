@@ -182,11 +182,14 @@ func RestDelSecurityGroup(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
-	responseCode, body, err := delResource(nsId, "securityGroup", id, forceFlag)
+	responseCode, body, err := delResourceById(nsId, "securityGroup", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
-		return c.JSONBlob(responseCode, body)
+		responseCode, body, err = delResourceByName(nsId, "securityGroup", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
+			return c.JSONBlob(responseCode, body)
+		}
 	}
 
 	mapA := map[string]string{"message": "The securityGroup has been deleted"}
@@ -202,11 +205,14 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 
 	for _, v := range securityGroupList {
 		//responseCode, body, err := delSecurityGroup(nsId, v, forceFlag)
-		responseCode, body, err := delResource(nsId, "securityGroup", v, forceFlag)
+		responseCode, body, err := delResourceById(nsId, "securityGroup", v, forceFlag)
 		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete All securityGroups"}
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err = delResourceByName(nsId, "securityGroup", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
+				return c.JSONBlob(responseCode, body)
+			}
 		}
 	}
 

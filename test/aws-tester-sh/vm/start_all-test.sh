@@ -175,51 +175,51 @@ do
 #		"VMUserPasswd": ""
 #	}' |json_pp &
 
-if [ $num == 0 ]
-then
-	curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d '{
-    "name": "mcis-t01",
-    "description": "Test description",
-    "vm_req": [
-    	{
-            "name": "aws-shson-vm'$num'",
-            "config_name": "'$NAME'",
-            "spec_id": "'$SPEC_ID'",
-            "image_id": "'$IMAGE_ID'",
-            "vnet_id": "'$VNET_ID'",
-            "vnic_id": "",
-            "public_ip_id": "'$PIP_ID'",
-            "security_group_ids": [
-        		"'$SG_ID'"
-    		],
-            "ssh_key_id": "'$SSHKEY_ID'",
-            "description": "description",
-            "vm_access_id": "",
-            "vm_access_passwd": ""
-        }    
-    ]
-}' | json_pp
+	if [ $num == 0 ]
+	then
+		curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d '{
+	    "name": "mcis-t01",
+	    "description": "Test description",
+	    "vm_req": [
+		{
+		    "name": "aws-jhseo-vm'$num'",
+		    "config_name": "'$NAME'",
+		    "spec_id": "'$SPEC_ID'",
+		    "image_id": "'$IMAGE_ID'",
+		    "vnet_id": "'$VNET_ID'",
+		    "vnic_id": "",
+		    "public_ip_id": "'$PIP_ID'",
+		    "security_group_ids": [
+				"'$SG_ID'"
+			],
+		    "ssh_key_id": "'$SSHKEY_ID'",
+		    "description": "description",
+		    "vm_access_id": "",
+		    "vm_access_passwd": ""
+		}    
+	    ]
+	}' | json_pp
 
-else
-	MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | json_pp | grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
-	curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
-	"name": "aws-shson-vm'$num'",
-            "config_name": "'$NAME'",
-            "spec_id": "'$SPEC_ID'",
-            "image_id": "'$IMAGE_ID'",
-            "vnet_id": "'$VNET_ID'",
-            "vnic_id": "",
-            "public_ip_id": "'$PIP_ID'",
-            "security_group_ids": [
-                        "'$SG_ID'"
-                ],
-            "ssh_key_id": "'$SSHKEY_ID'",
-            "description": "description",
-            "vm_access_id": "",
-            "vm_access_passwd": ""
-        }' | json_pp
+	else
+		MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | json_pp | grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
+		"name": "aws-jhseo-vm'$num'",
+		    "config_name": "'$NAME'",
+		    "spec_id": "'$SPEC_ID'",
+		    "image_id": "'$IMAGE_ID'",
+		    "vnet_id": "'$VNET_ID'",
+		    "vnic_id": "",
+		    "public_ip_id": "'$PIP_ID'",
+		    "security_group_ids": [
+				"'$SG_ID'"
+			],
+		    "ssh_key_id": "'$SSHKEY_ID'",
+		    "description": "description",
+		    "vm_access_id": "",
+		    "vm_access_passwd": ""
+		}' | json_pp
 
-fi
+	fi
 
 	num=`expr $num + 1`
 done
