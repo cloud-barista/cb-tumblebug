@@ -85,6 +85,12 @@ func ApiServer() {
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
 
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+	}))
+
+
 	fmt.Println("")
 	fmt.Println("")
 	fmt.Println("")
