@@ -175,11 +175,14 @@ func RestDelSpec(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, _, err := delSpec(nsId, id, forceFlag)
-	responseCode, _, err := delResource(nsId, "spec", id, forceFlag)
+	responseCode, _, err := delResourceById(nsId, "spec", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the spec"}
-		return c.JSON(responseCode, &mapA)
+		responseCode, _, err = delResourceByName(nsId, "spec", id, forceFlag)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete the spec"}
+			return c.JSON(responseCode, &mapA)
+		}
 	}
 
 	mapA := map[string]string{"message": "The spec has been deleted"}
@@ -195,11 +198,14 @@ func RestDelAllSpec(c echo.Context) error {
 
 	for _, v := range specList {
 		//responseCode, _, err := delSpec(nsId, v, forceFlag)
-		responseCode, _, err := delResource(nsId, "spec", v, forceFlag)
+		responseCode, _, err := delResourceById(nsId, "spec", v, forceFlag)
 		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All specs"}
-			return c.JSON(responseCode, &mapA)
+			responseCode, _, err = delResourceByName(nsId, "spec", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{"message": "Failed to delete the spec"}
+				return c.JSON(responseCode, &mapA)
+			}
 		}
 	}
 
