@@ -11,6 +11,9 @@ import (
 	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"github.com/sirupsen/logrus"
 	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
+
+	"encoding/json"
+	"fmt"
 )
 
 type KeyValue struct {
@@ -55,3 +58,13 @@ func LookupKeyValueList(kvl []KeyValue, key string) string {
 	}
 	return ""
 }
+
+func PrintJsonPretty(v interface{}) {
+	prettyJSON, err := json.MarshalIndent(v, "", "    ")
+	if err != nil {
+		fmt.Printf("%+v\n", v)
+	} else {
+		fmt.Printf("%s\n", string(prettyJSON))
+	}
+}
+
