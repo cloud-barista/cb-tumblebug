@@ -83,8 +83,8 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 	case "image":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		//return content.CspImageId // AWS
-		return content.CspImageName // Azure
+		return content.CspImageId // AWS
+		//return content.CspImageName // Azure
 	case "sshKey":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
@@ -96,8 +96,8 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 	case "network":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		//return content.CspNetworkId // contains CspSubnetId // AWS
-		return content.CspNetworkName // contains CspSubnetId // Azure
+		return content.CspNetworkId // contains CspSubnetId // AWS
+		//return content.CspNetworkName // contains CspSubnetId // Azure
 	/*
 		case "subnet":
 			content := subnetInfo{}
@@ -107,13 +107,13 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 	case "securityGroup":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		//return content.CspSecurityGroupId // AWS
-		return content.CspSecurityGroupName // Azure
+		return content.CspSecurityGroupId // AWS
+		//return content.CspSecurityGroupName // Azure
 	case "publicIp":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		//return content.CspPublicIpId // AWS
-		return content.CspPublicIpName // Azure
+		return content.CspPublicIpId // AWS
+		//return content.CspPublicIpName // Azure
 	case "vNic":
 		content := mcirIds{}
 		err = json.Unmarshal([]byte(keyValue.Value), &content)
