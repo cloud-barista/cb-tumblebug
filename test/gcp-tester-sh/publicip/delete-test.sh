@@ -14,9 +14,9 @@ source ../setup.env
 TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 #echo $TB_PUBLICIP_IDS | json_pp
 
-if [ "$TB_PUBLICIP_IDS" != "" ]
+if [ "$TB_PUBLICIP_IDS" != null ]
 then
-        TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
+        #TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
         for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
         do
                 echo ....Delete ${TB_PUBLICIP_ID} ...

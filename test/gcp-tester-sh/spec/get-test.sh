@@ -10,9 +10,9 @@ source ../setup.env
 TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
 #echo $TB_SPEC_IDS | json_pp
 
-if [ "$TB_SPEC_IDS" != "" ]
+if [ "$TB_SPEC_IDS" != null ]
 then
-        TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
+        #TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
         for TB_SPEC_ID in ${TB_SPEC_IDS}
         do
                 echo ....Get ${TB_SPEC_ID} ...

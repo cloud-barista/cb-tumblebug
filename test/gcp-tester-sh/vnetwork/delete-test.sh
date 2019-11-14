@@ -9,9 +9,9 @@ source ../setup.env
 
 TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
 
-if [ "$TB_NETWORK_IDS" != "" ]
+if [ "$TB_NETWORK_IDS" != null ]
 then
-        TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
+        #TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
         for TB_NETWORK_ID in ${TB_NETWORK_IDS}
         do
                 echo ....Delete ${TB_NETWORK_ID} ...

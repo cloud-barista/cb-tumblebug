@@ -18,9 +18,9 @@ do
         TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
         #echo $TB_NETWORK_IDS | json_pp
 
-        if [ "$TB_NETWORK_IDS" != "" ]
+        if [ "$TB_NETWORK_IDS" != null ]
         then
-                TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
+                #TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
                 for TB_NETWORK_ID in ${TB_NETWORK_IDS}
                 do
                         echo ....Get ${TB_NETWORK_ID} ...
@@ -42,9 +42,9 @@ do
         TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
         #echo $TB_PUBLICIP_IDS | json_pp
 
-        if [ "$TB_PUBLICIP_IDS" != "" ]
+        if [ "$TB_PUBLICIP_IDS" != null ]
         then
-                TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
+                #TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
                 for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
                 do
                         echo ....Get ${TB_PUBLICIP_ID} ...
@@ -66,9 +66,9 @@ do
 TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
         #echo $TB_SECURITYGROUP_IDS | json_pp
 
-        if [ "$TB_SECURITYGROUP_IDS" != "" ]
+        if [ "$TB_SECURITYGROUP_IDS" != null ]
         then
-                TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
+                #TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
                 for TB_SECURITYGROUP_ID in ${TB_SECURITYGROUP_IDS}
                 do
                         echo ....Get ${TB_SECURITYGROUP_ID} ...
@@ -90,9 +90,9 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
         #echo $TB_SSHKEY_IDS | json_pp
 
-        if [ "$TB_SSHKEY_IDS" != "" ]
+        if [ "$TB_SSHKEY_IDS" != null ]
         then
-                TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
+                #TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
                 for TB_SSHKEY_ID in ${TB_SSHKEY_IDS}
                 do
                         echo ....Get ${TB_SSHKEY_ID} ...
@@ -114,9 +114,9 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
         #echo $TB_SPEC_IDS | json_pp
 
-        if [ "$TB_SPEC_IDS" != "" ]
+        if [ "$TB_SPEC_IDS" != null ]
         then
-                TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
+                #TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
                 for TB_SPEC_ID in ${TB_SPEC_IDS}
                 do
                         echo ....Get ${TB_SPEC_ID} ...
@@ -138,9 +138,9 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
         #echo $TB_IMAGE_IDS | json_pp
 
-        if [ "$TB_IMAGE_IDS" != "" ]
+        if [ "$TB_IMAGE_IDS" != null ]
         then
-                TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
+                #TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
                 for TB_IMAGE_ID in ${TB_IMAGE_IDS}
                 do
                         echo ....Get ${TB_IMAGE_ID} ...
