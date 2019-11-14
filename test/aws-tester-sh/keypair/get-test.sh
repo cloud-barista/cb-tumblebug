@@ -6,12 +6,12 @@ source ../setup.env
 #	curl -sX GET http://$RESTSERVER:1024/keypair/mcb-keypair-powerkim?connection_name=${NAME} |json_pp &
 #done
 
-TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
 #echo $TB_SSHKEY_IDS | json_pp
 
-if [ "$TB_SSHKEY_IDS" != "" ]
+if [ "$TB_SSHKEY_IDS" != null ]
 then
-        TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+        #TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
         for TB_SSHKEY_ID in ${TB_SSHKEY_IDS}
         do
                 echo ....Get ${TB_SSHKEY_ID} ...

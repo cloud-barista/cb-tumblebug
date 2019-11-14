@@ -7,12 +7,12 @@ source ../setup.env
 #	curl -sX DELETE http://$RESTSERVER:1024/publicip/${ID}?connection_name=${NAME} 
 #done
 
-TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
 #echo $TB_IMAGE_IDS | json_pp
 
-if [ "$TB_IMAGE_IDS" != "" ]
+if [ "$TB_IMAGE_IDS" != null ]
 then
-        TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+        #TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
         for TB_IMAGE_ID in ${TB_IMAGE_IDS}
         do
                 echo ....Delete ${TB_IMAGE_ID} ...

@@ -7,12 +7,12 @@ source ../setup.env
 #	curl -sX GET http://$RESTSERVER:1024/publicip/${ID}?connection_name=${NAME} |json_pp &
 #done
 
-TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 #echo $TB_PUBLICIP_IDS | json_pp
 
-if [ "$TB_PUBLICIP_IDS" != "" ]
+if [ "$TB_PUBLICIP_IDS" != null ]
 then
-        TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+        #TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
         for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
         do
                 echo ....Get ${TB_PUBLICIP_ID} ...

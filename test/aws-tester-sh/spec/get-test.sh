@@ -7,12 +7,12 @@ source ../setup.env
 #	curl -sX GET http://$RESTSERVER:1024/publicip/${ID}?connection_name=${NAME} |json_pp &
 #done
 
-TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
 #echo $TB_SPEC_IDS | json_pp
 
-if [ "$TB_SPEC_IDS" != "" ]
+if [ "$TB_SPEC_IDS" != null ]
 then
-        TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+        #TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
         for TB_SPEC_ID in ${TB_SPEC_IDS}
         do
                 echo ....Get ${TB_SPEC_ID} ...
