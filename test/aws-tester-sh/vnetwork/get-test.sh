@@ -7,12 +7,12 @@ source ../setup.env
 #	curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network/$ID |json_pp &
 #done
 
-TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
 #echo $TB_NETWORK_IDS | json_pp
 
 if [ "$TB_NETWORK_IDS" != "" ]
 then
-	TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
 	for TB_NETWORK_ID in ${TB_NETWORK_IDS}
 	do
 		echo ....Get ${TB_NETWORK_ID} ...

@@ -7,12 +7,12 @@ source ../setup.env
 #	curl -sX DELETE http://$RESTSERVER:1024/securitygroup/${ID}?connection_name=${NAME}
 #done
 
-TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
 #echo $TB_SECURITYGROUP_IDS | json_pp
 
 if [ "$TB_SECURITYGROUP_IDS" != "" ]
 then
-        TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+        TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
         for TB_SECURITYGROUP_ID in ${TB_SECURITYGROUP_IDS}
         do
                 echo ....Delete ${TB_SECURITYGROUP_ID} ...

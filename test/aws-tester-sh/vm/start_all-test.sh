@@ -14,16 +14,16 @@ do
 
 #############################################################################################################################################
 
-	TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
 	#echo $TB_NETWORK_IDS | json_pp
 
 	if [ "$TB_NETWORK_IDS" != "" ]
 	then
-		TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
 		for TB_NETWORK_ID in ${TB_NETWORK_IDS}
 		do
 			echo ....Get ${TB_NETWORK_ID} ...
-			NETWORKS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network/${TB_NETWORK_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			NETWORKS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network/${TB_NETWORK_ID} | jq -r '.connectionName'`
 			if [ "$NETWORKS_CONN_NAME" == "$NAME" ]
 			then
 				VNET_ID=$TB_NETWORK_ID
@@ -38,16 +38,16 @@ do
 
 #############################################################################################################################################
 
-	TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 	#echo $TB_PUBLICIP_IDS | json_pp
 
 	if [ "$TB_PUBLICIP_IDS" != "" ]
 	then
-		TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 		for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
 		do
 			echo ....Get ${TB_PUBLICIP_ID} ...
-			PIPS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			PIPS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.connectionName'`
                         if [ "$PIPS_CONN_NAME" == "$NAME" ]
                         then
                                 PIP_ID=$TB_PUBLICIP_ID
@@ -62,16 +62,16 @@ do
 
 #############################################################################################################################################
 
-	TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
 	#echo $TB_SECURITYGROUP_IDS | json_pp
 
 	if [ "$TB_SECURITYGROUP_IDS" != "" ]
 	then
-		TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
 		for TB_SECURITYGROUP_ID in ${TB_SECURITYGROUP_IDS}
 		do
 			echo ....Get ${TB_SECURITYGROUP_ID} ...
-			SGS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup/${TB_SECURITYGROUP_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			SGS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup/${TB_SECURITYGROUP_ID} | jq -r '.connectionName'`
 			if [ "$SGS_CONN_NAME" == "$NAME" ]
                         then
                                 SG_ID=$TB_SECURITYGROUP_ID
@@ -86,16 +86,16 @@ do
 
 #############################################################################################################################################
 
-	TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
 	#echo $TB_SSHKEY_IDS | json_pp
 
 	if [ "$TB_SSHKEY_IDS" != "" ]
 	then
-		TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
 		for TB_SSHKEY_ID in ${TB_SSHKEY_IDS}
 		do
 			echo ....Get ${TB_SSHKEY_ID} ...
-			SSHKEYS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey/${TB_SSHKEY_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			SSHKEYS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey/${TB_SSHKEY_ID} | jq -r '.connectionName'`
 			if [ "$SSHKEYS_CONN_NAME" == "$NAME" ]
                         then
                                 SSHKEY_ID=$TB_SSHKEY_ID
@@ -110,16 +110,16 @@ do
 
 #############################################################################################################################################
 
-	TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
 	#echo $TB_SPEC_IDS | json_pp
 
 	if [ "$TB_SPEC_IDS" != "" ]
 	then
-		TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
 		for TB_SPEC_ID in ${TB_SPEC_IDS}
 		do
 			echo ....Get ${TB_SPEC_ID} ...
-			SPECS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec/${TB_SPEC_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			SPECS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec/${TB_SPEC_ID} | jq -r '.connectionName'`
 			if [ "$SPECS_CONN_NAME" == "$NAME" ]
 			then
 				SPEC_ID=$TB_SPEC_ID
@@ -134,16 +134,16 @@ do
 
 #############################################################################################################################################
 
-	TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
 	#echo $TB_IMAGE_IDS | json_pp
 
 	if [ "$TB_IMAGE_IDS" != "" ]
 	then
-		TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
 		for TB_IMAGE_ID in ${TB_IMAGE_IDS}
 		do
 			echo ....Get ${TB_IMAGE_ID} ...
-			IMAGES_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image/${TB_IMAGE_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			IMAGES_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image/${TB_IMAGE_ID} | jq -r '.connectionName'`
 			if [ "$IMAGES_CONN_NAME" == "$NAME" ]
                         then
                                 IMAGE_ID=$TB_IMAGE_ID
@@ -201,7 +201,7 @@ do
 	}' | json_pp
 
 	else
-		MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | json_pp | grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | jq -r '.mcis[].id'`
 		curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
 		"name": "aws-jhseo-vm'$num'",
 		    "config_name": "'$NAME'",

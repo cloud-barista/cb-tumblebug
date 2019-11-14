@@ -21,22 +21,22 @@ source ../setup.env
 #	fi
 #done
 
-TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 #echo $TB_PUBLICIP_IDS | json_pp
 
 if [ "$TB_PUBLICIP_IDS" != "" ]
 then
-	TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp |json_pp |grep "\"id\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+	TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 	for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
 	do
 		echo ....Get ${TB_PUBLICIP_ID} ...
-		PIPS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | json_pp | grep "\"connectionName\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		PIPS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.connectionName'`
 		if [ "$PIPS_CONN_NAME" == "${CONNECT_NAMES[0]}" ]
 		then
 			echo Skipping first VM
 			continue
 		else
-			PUBLIC_IP=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | json_pp | grep "\"publicIp\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+			PUBLIC_IP=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.publicIp'`
 			echo $PIPS_CONN_NAME: copy shooter into ${PUBLIC_IP} ...
 			ssh-keygen -f "/root/.ssh/known_hosts" -R ${PUBLIC_IP}
 			scp -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" ./shooter/shooter.sh ubuntu@$PUBLIC_IP:/tmp
