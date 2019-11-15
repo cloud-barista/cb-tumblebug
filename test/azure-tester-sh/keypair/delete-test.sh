@@ -9,7 +9,7 @@ source ../setup.env
 
 TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
 
-if [ "$TB_SSHKEY_IDS" != null ]
+if [ -n "$TB_SSHKEY_IDS" ]
 then
         #TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
         for TB_SSHKEY_ID in ${TB_SSHKEY_IDS}

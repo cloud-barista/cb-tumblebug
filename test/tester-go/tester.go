@@ -1,14 +1,19 @@
 package main
 
 import (
-	"encoding/json"
-	"os"
+	//"encoding/json"
+	//"os"
+	"fmt"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
 	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"github.com/sirupsen/logrus"
+
+	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/mcis"
 )
 
 /*
@@ -35,15 +40,16 @@ func main() {
 	//SPIDER_URL = os.Getenv("SPIDER_URL")
 	SPIDER_URL = "http://localhost:1024"
 
+	/*
 	// Step 1. Register Cloud Driver info
 	// Option 1
-	/*
-		aws_driver01 := cloudDriverRegisterRequestInfo{
-			DriverName:        "aws-driver01",
-			ProviderName:      "AWS",
-			DriverLibFileName: "aws-driver-v1.0.so",
-		}
-	*/
+	
+	// aws_driver01 := cloudDriverRegisterRequestInfo{
+	// 	DriverName:        "aws-driver01",
+	// 	ProviderName:      "AWS",
+	// 	DriverLibFileName: "aws-driver-v1.0.so",
+	// }
+	
 
 	// Option 2
 	myCloudDriverRegisterRequestInfo := `{"DriverName":"aws-driver01","ProviderName":"AWS", "DriverLibFileName":"aws-driver-v1.0.so"}`
@@ -128,4 +134,8 @@ func main() {
 		cblog.Error(err)
 		os.Exit(1)
 	}
+	*/
+
+	fmt.Println("Listing all namespaces")
+	common.RestGetAllNs
 }

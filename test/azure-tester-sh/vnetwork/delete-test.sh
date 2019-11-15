@@ -9,7 +9,7 @@ source ../setup.env
 
 TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
 
-if [ "$TB_NETWORK_IDS" != null ]
+if [ -n "$TB_NETWORK_IDS" ]
 then
         #TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
         for TB_NETWORK_ID in ${TB_NETWORK_IDS}
