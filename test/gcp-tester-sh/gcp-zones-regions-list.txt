@@ -2,20 +2,26 @@ $gcloud compute zones list
 
 NAME                       REGION                   STATUS  NEXT_MAINTENANCE  TURNDOWN_DATE
 us-east1-b                 us-east1                 UP
+us-central1-c              us-central1              UP
+us-west1-b                 us-west1                 UP
+europe-west4-a             europe-west4             UP
 asia-east1-b               asia-east1               UP
+asia-southeast1-b          asia-southeast1          UP
+
+
 us-east1-c                 us-east1                 UP
 us-east1-d                 us-east1                 UP
 us-east4-c                 us-east4                 UP
 us-east4-b                 us-east4                 UP
 us-east4-a                 us-east4                 UP
-us-central1-c              us-central1              UP
+
 us-central1-a              us-central1              UP
 us-central1-f              us-central1              UP
 us-central1-b              us-central1              UP
-us-west1-b                 us-west1                 UP
+
 us-west1-c                 us-west1                 UP
 us-west1-a                 us-west1                 UP
-europe-west4-a             europe-west4             UP
+
 europe-west4-b             europe-west4             UP
 europe-west4-c             europe-west4             UP
 europe-west1-b             europe-west1             UP
@@ -30,7 +36,7 @@ europe-west2-a             europe-west2             UP
 
 asia-east1-a               asia-east1               UP
 asia-east1-c               asia-east1               UP
-asia-southeast1-b          asia-southeast1          UP
+
 asia-southeast1-a          asia-southeast1          UP
 asia-southeast1-c          asia-southeast1          UP
 asia-northeast1-b          asia-northeast1          UP

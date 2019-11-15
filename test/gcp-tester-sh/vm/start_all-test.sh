@@ -4,7 +4,7 @@ source ../setup.env
 IMG_ID=ubuntu-minimal-1804-bionic-v20191024
 IMG_ID=projects/ubuntu-os-cloud/global/images/ubuntu-minimal-1804-bionic-v20191024
 
-num=1
+num=0
 for NAME in "${CONNECT_NAMES[@]}"
 do
         echo ========================== $NAME
@@ -178,7 +178,7 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
             "description": "Test description",
             "vm_req": [
                 {
-                    "name": "jhseo-vm'$num'",
+                    "name": "jhseo-vm-'$num'",
                     "config_name": "'$NAME'",
                     "spec_id": "'$SPEC_ID'",
                     "image_id": "'$IMAGE_ID'",
@@ -199,7 +199,7 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         else
                 MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | jq -r '.mcis[].id'`
                 curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
-                "name": "jhseo-vm'$num'",
+                "name": "jhseo-vm-'$num'",
                     "config_name": "'$NAME'",
                     "spec_id": "'$SPEC_ID'",
                     "image_id": "'$IMAGE_ID'",
