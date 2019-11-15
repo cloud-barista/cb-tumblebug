@@ -4,7 +4,7 @@ source ../setup.env
 IMG_ID=ubuntu-minimal-1804-bionic-v20191024
 IMG_ID=projects/ubuntu-os-cloud/global/images/ubuntu-minimal-1804-bionic-v20191024
 
-num=0
+num=1
 for NAME in "${CONNECT_NAMES[@]}"
 do
         echo ========================== $NAME
@@ -18,7 +18,7 @@ do
         TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
         #echo $TB_NETWORK_IDS | json_pp
 
-        if [ "$TB_NETWORK_IDS" != null ]
+        if [ -n "$TB_NETWORK_IDS" ]
         then
                 #TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
                 for TB_NETWORK_ID in ${TB_NETWORK_IDS}
@@ -42,7 +42,7 @@ do
         TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
         #echo $TB_PUBLICIP_IDS | json_pp
 
-        if [ "$TB_PUBLICIP_IDS" != null ]
+        if [ -n "$TB_PUBLICIP_IDS" ]
         then
                 #TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
                 for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
@@ -66,7 +66,7 @@ do
 TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
         #echo $TB_SECURITYGROUP_IDS | json_pp
 
-        if [ "$TB_SECURITYGROUP_IDS" != null ]
+        if [ -n "$TB_SECURITYGROUP_IDS" ]
         then
                 #TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/securityGroup | jq -r '.securityGroup[].id'`
                 for TB_SECURITYGROUP_ID in ${TB_SECURITYGROUP_IDS}
@@ -90,7 +90,7 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
         #echo $TB_SSHKEY_IDS | json_pp
 
-        if [ "$TB_SSHKEY_IDS" != null ]
+        if [ -n "$TB_SSHKEY_IDS" ]
         then
                 #TB_SSHKEY_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/sshKey | jq -r '.sshKey[].id'`
                 for TB_SSHKEY_ID in ${TB_SSHKEY_IDS}
@@ -114,7 +114,7 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
         #echo $TB_SPEC_IDS | json_pp
 
-        if [ "$TB_SPEC_IDS" != null ]
+        if [ -n "$TB_SPEC_IDS" ]
         then
                 #TB_SPEC_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/spec | jq -r '.spec[].id'`
                 for TB_SPEC_ID in ${TB_SPEC_IDS}
@@ -138,7 +138,7 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
         #echo $TB_IMAGE_IDS | json_pp
 
-        if [ "$TB_IMAGE_IDS" != null ]
+        if [ -n "$TB_IMAGE_IDS" ]
         then
                 #TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
                 for TB_IMAGE_ID in ${TB_IMAGE_IDS}

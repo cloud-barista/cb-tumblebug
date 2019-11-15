@@ -10,7 +10,7 @@ source ../setup.env
 TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
 #echo $TB_IMAGE_IDS | json_pp
 
-if [ "$TB_IMAGE_IDS" != null ]
+if [ -n "$TB_IMAGE_IDS" ]
 then
         #TB_IMAGE_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/image | jq -r '.image[].id'`
         for TB_IMAGE_ID in ${TB_IMAGE_IDS}

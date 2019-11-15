@@ -1570,8 +1570,8 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 	fmt.Println("\n\n[Calling SPIDER]START vmControl")
 
 	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
-	cspVmId := temp.CspViewVmDetail.Id // AWS
-	//cspVmId := temp.CspViewVmDetail.Name // Azure
+	//cspVmId := temp.CspViewVmDetail.Id // AWS
+	cspVmId := temp.CspViewVmDetail.Name // Azure
 	common.PrintJsonPretty(temp.CspViewVmDetail)
 
 	url := ""
