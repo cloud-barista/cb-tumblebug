@@ -115,7 +115,7 @@ func RestGetPublicIp(c echo.Context) error {
 	content := publicIpInfo{}
 
 	fmt.Println("[Get publicIp for id]" + id)
-	key := genResourceKey(nsId, "publicIp", id)
+	key := common.GenResourceKey(nsId, "publicIp", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -142,7 +142,7 @@ func RestGetAllPublicIp(c echo.Context) error {
 
 	for _, v := range publicIpList {
 
-		key := genResourceKey(nsId, "publicIp", v)
+		key := common.GenResourceKey(nsId, "publicIp", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -171,15 +171,14 @@ func RestDelPublicIp(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delPublicIp(nsId, id, forceFlag)
-	responseCode, body, err := delResourceById(nsId, "publicIp", id, forceFlag)
+
+	responseCode, body, err := delResource(nsId, "publicIp", id, forceFlag)
 	if err != nil {
-		responseCode, body, err = delResourceByName(nsId, "publicIp", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the publicIp"}
-			return c.JSONBlob(responseCode, body)
-		}
+		cblog.Error(err)
+		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
+		return c.JSONBlob(responseCode, body)
 	}
+	
 
 	mapA := map[string]string{"message": "The publicIp has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -194,15 +193,14 @@ func RestDelAllPublicIp(c echo.Context) error {
 
 	for _, v := range publicIpList {
 		//responseCode, body, err := delPublicIp(nsId, v, forceFlag)
-		responseCode, body, err := delResourceById(nsId, "publicIp", v, forceFlag)
+
+		responseCode, body, err := delResource(nsId, "publicIp", v, forceFlag)
 		if err != nil {
-			responseCode, body, err = delResourceByName(nsId, "publicIp", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				//mapA := map[string]string{"message": "Failed to delete the publicIp"}
-				return c.JSONBlob(responseCode, body)
-			}
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the publicIp"}
+			return c.JSONBlob(responseCode, body)
 		}
+		
 	}
 
 	mapA := map[string]string{"message": "All publicIps has been deleted"}
@@ -320,7 +318,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 
 	// cb-store
 	fmt.Println("=========================== PUT createPublicIp")
-	Key := genResourceKey(nsId, "publicIp", content.Id)
+	Key := common.GenResourceKey(nsId, "publicIp", content.Id)
 	Val, _ := json.Marshal(content)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)

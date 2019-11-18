@@ -10,7 +10,7 @@ import (
 	"os"
 
 	//uuid "github.com/google/uuid"
-	//"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
@@ -30,6 +30,7 @@ func init() {
 	SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
+/*
 func genResourceKey(nsId string, resourceType string, resourceId string) string { // can be moved to common/utility.go
 	//resourceType = strings.ToLower(resourceType)
 
@@ -47,9 +48,11 @@ func genResourceKey(nsId string, resourceType string, resourceId string) string 
 	}
 
 }
+*/
 
+/*
 func getCspResourceId(nsId string, resourceType string, resourceId string) string {
-	key := genResourceKey(nsId, resourceType, resourceId)
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	if key == "/invalid_key" {
 		return "invalid nsId or resourceType or resourceId"
 	}
@@ -82,12 +85,10 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 		content := networkInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspNetworkId // contains CspSubnetId
-	/*
-		case "subnet":
-			content := subnetInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSubnetId
-	*/
+	// case "subnet":
+	// 	content := subnetInfo{}
+	// 	json.Unmarshal([]byte(keyValue.Value), &content)
+	// 	return content.CspSubnetId
 	case "securityGroup":
 		content := securityGroupInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
@@ -109,7 +110,176 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 		return "invalid resourceType"
 	}
 }
+*/
 
+func delResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
+
+	fmt.Println("[Delete " + resourceType + "] " + resourceId)
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	fmt.Println("key: " + key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
+
+	cspType := common.GetCspResourceId(nsId, resourceType, resourceId)
+
+	var url string
+
+	switch resourceType {
+	case "image":
+		// delete image info
+		err := store.Delete(key)
+		if err != nil {
+			cblog.Error(err)
+			return http.StatusInternalServerError, nil, err
+		}
+		return http.StatusOK, nil, nil
+	case "spec":
+		// delete spec info
+	
+		//get related recommend spec
+		keyValue, err := store.Get(key)
+		content := specInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		if err != nil {
+			cblog.Error(err)
+			return http.StatusInternalServerError, nil, err
+		}
+		//
+
+		err = store.Delete(key)
+		if err != nil {
+			cblog.Error(err)
+			return http.StatusInternalServerError, nil, err
+		}
+
+		//delete related recommend spec
+		err = delRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+		if err != nil {
+			cblog.Error(err)
+			return http.StatusInternalServerError, nil, err
+		}
+
+		return http.StatusOK, nil, nil
+	case "sshKey":
+		temp := sshKeyInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &temp)
+		url = SPIDER_URL + "/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName
+	case "network":
+		temp := networkInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &temp)
+		if cspType == "AWS" {
+			url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName
+		} else {
+			url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkName + "?connection_name=" + temp.ConnectionName
+		}		
+	/*
+		case "subnet":
+			temp := subnetInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			return content.CspSubnetId
+	*/
+	case "securityGroup":
+		temp := securityGroupInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &temp)
+		if cspType == "AWS" {
+			url = SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupId + "?connection_name=" + temp.ConnectionName
+		} else {
+			url = SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupName + "?connection_name=" + temp.ConnectionName
+		}
+	case "publicIp":
+		temp := publicIpInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &temp)
+		if cspType == "AWS" {
+			url = SPIDER_URL + "/publicip/" + temp.CspPublicIpId + "?connection_name=" + temp.ConnectionName
+		} else {
+			url = SPIDER_URL + "/publicip/" + temp.CspPublicIpName + "?connection_name=" + temp.ConnectionName
+		}
+	case "vNic":
+		temp := vNicInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &temp)
+		if cspType == "AWS" {
+			url = SPIDER_URL + "/vnic/" + temp.CspVNicId + "?connection_name=" + temp.ConnectionName
+		} else {
+			url = SPIDER_URL + "/vnic/" + temp.CspVNicName + "?connection_name=" + temp.ConnectionName
+		}
+	default:
+		err := fmt.Errorf("invalid resourceType")
+		return http.StatusBadRequest, nil, err
+	}
+
+	fmt.Println("url: " + url)
+
+	method := "DELETE"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		cblog.Error(err)
+		return res.StatusCode, nil, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	fmt.Println(string(body))
+	if err != nil {
+		cblog.Error(err)
+		return res.StatusCode, body, err
+	}
+
+	/*
+		if res.StatusCode == 400 || res.StatusCode == 401 {
+			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
+			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
+			cblog.Error(err)
+			return res, err
+		}
+
+		// delete network info
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res, cbStoreDeleteErr
+		}
+
+		return res, nil
+	*/
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case forceFlag == "true":
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res.StatusCode, body, cbStoreDeleteErr
+		}
+		return res.StatusCode, body, nil
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		return res.StatusCode, body, err
+	default:
+		cbStoreDeleteErr := store.Delete(key)
+		if cbStoreDeleteErr != nil {
+			cblog.Error(cbStoreDeleteErr)
+			return res.StatusCode, body, cbStoreDeleteErr
+		}
+		return res.StatusCode, body, nil
+	}
+}
+
+/*
 func delResourceById(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
 
 	fmt.Println("[Delete " + resourceType + "] " + resourceId)
@@ -166,12 +336,6 @@ func delResourceById(nsId string, resourceType string, resourceId string, forceF
 		temp := networkInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName
-	/*
-		case "subnet":
-			temp := subnetInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSubnetId
-	*/
 	case "securityGroup":
 		temp := securityGroupInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -217,24 +381,6 @@ func delResourceById(nsId string, resourceType string, resourceId string, forceF
 		cblog.Error(err)
 		return res.StatusCode, body, err
 	}
-
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete network info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
@@ -315,12 +461,6 @@ func delResourceByName(nsId string, resourceType string, resourceId string, forc
 		temp := networkInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkName + "?connection_name=" + temp.ConnectionName
-	/*
-		case "subnet":
-			temp := subnetInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSubnetId
-	*/
 	case "securityGroup":
 		temp := securityGroupInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -367,24 +507,6 @@ func delResourceByName(nsId string, resourceType string, resourceId string, forc
 		return res.StatusCode, body, err
 	}
 
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete network info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
-
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
@@ -407,6 +529,7 @@ func delResourceByName(nsId string, resourceType string, resourceId string, forc
 		return res.StatusCode, body, nil
 	}
 }
+*/
 
 func getResourceList(nsId string, resourceType string) []string {
 

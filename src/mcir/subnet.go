@@ -95,7 +95,7 @@ func RestGetSubnet(c echo.Context) error {
 	content := subnetInfo{}
 
 	fmt.Println("[Get subnet for id]" + id)
-	key := genResourceKey(nsId, "subnet", id)
+	key := common.GenResourceKey(nsId, "subnet", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -122,7 +122,7 @@ func RestGetAllSubnet(c echo.Context) error {
 
 	for _, v := range subnetList {
 
-		key := genResourceKey(nsId, "subnet", v)
+		key := common.GenResourceKey(nsId, "subnet", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -151,15 +151,14 @@ func RestDelSubnet(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, _, err := delSubnet(nsId, id, forceFlag)
-	responseCode, _, err := delResourceById(nsId, "subnet", id, forceFlag)
+
+	responseCode, _, err := delResource(nsId, "subnet", id, forceFlag)
 	if err != nil {
-		responseCode, _, err = delResourceByName(nsId, "subnet", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete the subnet"}
-			return c.JSON(responseCode, &mapA)
-		}
+		cblog.Error(err)
+		mapA := map[string]string{"message": "Failed to delete the subnet"}
+		return c.JSON(responseCode, &mapA)
 	}
+	
 
 	mapA := map[string]string{"message": "The subnet has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -174,15 +173,14 @@ func RestDelAllSubnet(c echo.Context) error {
 
 	for _, v := range subnetList {
 		//responseCode, _, err := delSubnet(nsId, v, forceFlag)
-		responseCode, _, err := delResourceById(nsId, "subnet", v, forceFlag)
+
+		responseCode, _, err := delResource(nsId, "subnet", v, forceFlag)
 		if err != nil {
-			responseCode, _, err = delResourceByName(nsId, "subnet", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				mapA := map[string]string{"message": "Failed to delete the subnet"}
-				return c.JSON(responseCode, &mapA)
-			}
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete the subnet"}
+			return c.JSON(responseCode, &mapA)
 		}
+		
 	}
 
 	mapA := map[string]string{"message": "All subnets has been deleted"}
@@ -221,7 +219,7 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createSubnet")
-	Key := genResourceKey(nsId, "subnet", content.Id)
+	Key := common.GenResourceKey(nsId, "subnet", content.Id)
 	mapA := map[string]string{
 		"connectionName":     content.ConnectionName,
 		"cspSubnetId":        content.CspSubnetId,

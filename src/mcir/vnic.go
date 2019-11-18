@@ -124,7 +124,7 @@ func RestGetVNic(c echo.Context) error {
 	content := vNicInfo{}
 
 	fmt.Println("[Get vNic for id]" + id)
-	key := genResourceKey(nsId, "vNic", id)
+	key := common.GenResourceKey(nsId, "vNic", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -151,7 +151,7 @@ func RestGetAllVNic(c echo.Context) error {
 
 	for _, v := range vNicList {
 
-		key := genResourceKey(nsId, "vNic", v)
+		key := common.GenResourceKey(nsId, "vNic", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -180,15 +180,14 @@ func RestDelVNic(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delVNic(nsId, id, forceFlag)
-	responseCode, body, err := delResourceById(nsId, "vNic", id, forceFlag)
+
+	responseCode, body, err := delResource(nsId, "vNic", id, forceFlag)
 	if err != nil {
-		responseCode, body, err = delResourceByName(nsId, "vNic", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the vNic"}
-			return c.JSONBlob(responseCode, body)
-		}
+		cblog.Error(err)
+		//mapA := map[string]string{"message": "Failed to delete the vNic"}
+		return c.JSONBlob(responseCode, body)
 	}
+	
 
 	mapA := map[string]string{"message": "The vNic has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -203,15 +202,14 @@ func RestDelAllVNic(c echo.Context) error {
 
 	for _, v := range vNicList {
 		//responseCode, body, err := delVNic(nsId, v, forceFlag)
-		responseCode, body, err := delResourceById(nsId, "vNic", v, forceFlag)
+
+		responseCode, body, err := delResource(nsId, "vNic", v, forceFlag)
 		if err != nil {
-			responseCode, body, err = delResourceByName(nsId, "vNic", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				//mapA := map[string]string{"message": "Failed to delete the vNic"}
-				return c.JSONBlob(responseCode, body)
-			}
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the vNic"}
+			return c.JSONBlob(responseCode, body)
 		}
+		
 	}
 
 	mapA := map[string]string{"message": "All vNics has been deleted"}
@@ -367,7 +365,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createVNic")
-	Key := genResourceKey(nsId, "vNic", content.Id)
+	Key := common.GenResourceKey(nsId, "vNic", content.Id)
 	/*
 		mapA := map[string]string{
 			"connectionName": content.ConnectionName,

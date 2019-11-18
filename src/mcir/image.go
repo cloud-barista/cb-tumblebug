@@ -126,7 +126,7 @@ func RestGetImage(c echo.Context) error {
 	content := imageInfo{}
 
 	fmt.Println("[Get image for id]" + id)
-	key := genResourceKey(nsId, "image", id)
+	key := common.GenResourceKey(nsId, "image", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -153,7 +153,7 @@ func RestGetAllImage(c echo.Context) error {
 
 	for _, v := range imageList {
 
-		key := genResourceKey(nsId, "image", v)
+		key := common.GenResourceKey(nsId, "image", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -182,14 +182,12 @@ func RestDelImage(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, _, err := delImage(nsId, id, forceFlag)
-	responseCode, _, err := delResourceById(nsId, "image", id, forceFlag)
+	
+	responseCode, _, err := delResource(nsId, "image", id, forceFlag)
 	if err != nil {
-		responseCode, _, err = delResourceByName(nsId, "image", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete the image"}
-			return c.JSON(responseCode, &mapA)
-		}
+		cblog.Error(err)
+		mapA := map[string]string{"message": "Failed to delete the image"}
+		return c.JSON(responseCode, &mapA)
 	}
 
 	mapA := map[string]string{"message": "The image has been deleted"}
@@ -205,15 +203,14 @@ func RestDelAllImage(c echo.Context) error {
 
 	for _, v := range imageList {
 		//responseCode, _, err := delImage(nsId, v, forceFlag)
-		responseCode, _, err := delResourceById(nsId, "image", v, forceFlag)
+
+		responseCode, _, err := delResource(nsId, "image", v, forceFlag)
 		if err != nil {
-			responseCode, _, err = delResourceByName(nsId, "image", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				mapA := map[string]string{"message": "Failed to delete the image"}
-				return c.JSON(responseCode, &mapA)
-			}
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete the image"}
+			return c.JSON(responseCode, &mapA)
 		}
+
 	}
 
 	mapA := map[string]string{"message": "All images has been deleted"}
@@ -327,7 +324,7 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 
 	// Step 4. Store the metadata to CB-Store.
 	fmt.Println("=========================== PUT registerImage")
-	Key := genResourceKey(nsId, "image", content.Id)
+	Key := common.GenResourceKey(nsId, "image", content.Id)
 	Val, _ := json.Marshal(content)
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
@@ -345,7 +342,7 @@ func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
 	content.Id = common.GenUuid()
 
 	fmt.Println("=========================== PUT registerImage")
-	Key := genResourceKey(nsId, "image", content.Id)
+	Key := common.GenResourceKey(nsId, "image", content.Id)
 	Val, _ := json.Marshal(content)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {

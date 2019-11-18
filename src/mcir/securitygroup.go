@@ -126,7 +126,7 @@ func RestGetSecurityGroup(c echo.Context) error {
 	content := securityGroupInfo{}
 
 	fmt.Println("[Get securityGroup for id]" + id)
-	key := genResourceKey(nsId, "securityGroup", id)
+	key := common.GenResourceKey(nsId, "securityGroup", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -153,7 +153,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 
 	for _, v := range securityGroupList {
 
-		key := genResourceKey(nsId, "securityGroup", v)
+		key := common.GenResourceKey(nsId, "securityGroup", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -182,15 +182,14 @@ func RestDelSecurityGroup(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
-	responseCode, body, err := delResourceById(nsId, "securityGroup", id, forceFlag)
+
+	responseCode, body, err := delResource(nsId, "securityGroup", id, forceFlag)
 	if err != nil {
-		responseCode, body, err = delResourceByName(nsId, "securityGroup", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
-			return c.JSONBlob(responseCode, body)
-		}
+		cblog.Error(err)
+		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
+		return c.JSONBlob(responseCode, body)
 	}
+	
 
 	mapA := map[string]string{"message": "The securityGroup has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -205,15 +204,14 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 
 	for _, v := range securityGroupList {
 		//responseCode, body, err := delSecurityGroup(nsId, v, forceFlag)
-		responseCode, body, err := delResourceById(nsId, "securityGroup", v, forceFlag)
+
+		responseCode, body, err := delResource(nsId, "securityGroup", v, forceFlag)
 		if err != nil {
-			responseCode, body, err = delResourceByName(nsId, "securityGroup", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
-				return c.JSONBlob(responseCode, body)
-			}
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
+			return c.JSONBlob(responseCode, body)
 		}
+		
 	}
 
 	mapA := map[string]string{"message": "All securityGroups has been deleted"}
@@ -343,7 +341,7 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 
 	// cb-store
 	fmt.Println("=========================== PUT createSecurityGroup")
-	Key := genResourceKey(nsId, "securityGroup", content.Id)
+	Key := common.GenResourceKey(nsId, "securityGroup", content.Id)
 	/*
 		mapA := map[string]string{
 			"connectionName": content.ConnectionName,
