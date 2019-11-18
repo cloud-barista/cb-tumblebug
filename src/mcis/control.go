@@ -1815,19 +1815,21 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	fmt.Println("[Calling SPIDER]END\n\n")
 
 	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
-	if statusResponseTmp.Status == "PENDING" {
+	if statusResponseTmp.Status == "Starting" {
 		statusResponseTmp.Status = statusCreating
-	} else if statusResponseTmp.Status == "RUNNING" {
+	} else if statusResponseTmp.Status == "Running" {
 		statusResponseTmp.Status = statusRunning
-	} else if statusResponseTmp.Status == "STOPPING" {
+	} else if statusResponseTmp.Status == "Suspending" {
 		statusResponseTmp.Status = statusSuspending
-	} else if statusResponseTmp.Status == "STOPPED" {
+	} else if statusResponseTmp.Status == "Suspended" {
 		statusResponseTmp.Status = statusSuspended
-	} else if statusResponseTmp.Status == "REBOOTING" {
+	} else if statusResponseTmp.Status == "Resuming" {
+		statusResponseTmp.Status = statusResuming
+	} else if statusResponseTmp.Status == "Rebooting" {
 		statusResponseTmp.Status = statusRebooting
-	} else if statusResponseTmp.Status == "SHUTTING-DOWN" {
+	} else if statusResponseTmp.Status == "Terminating" {
 		statusResponseTmp.Status = statusTerminating
-	} else if statusResponseTmp.Status == "TERMINATED" {
+	} else if statusResponseTmp.Status == "Terminated" {
 		statusResponseTmp.Status = statusTerminated
 	} else {
 		statusResponseTmp.Status = "statusUndefined"
