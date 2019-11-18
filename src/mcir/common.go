@@ -122,7 +122,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 	keyValue, _ := store.Get(key)
 	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
 
-	cspType := common.GetCspResourceId(nsId, resourceType, resourceId)
+	cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
 	var url string
 
