@@ -117,7 +117,7 @@ func RestGetSshKey(c echo.Context) error {
 	content := sshKeyInfo{}
 
 	fmt.Println("[Get sshKey for id]" + id)
-	key := genResourceKey(nsId, "sshKey", id)
+	key := common.GenResourceKey(nsId, "sshKey", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -144,7 +144,7 @@ func RestGetAllSshKey(c echo.Context) error {
 
 	for _, v := range sshKeyList {
 
-		key := genResourceKey(nsId, "sshKey", v)
+		key := common.GenResourceKey(nsId, "sshKey", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -173,19 +173,17 @@ func RestDelSshKey(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delSshKey(nsId, id, forceFlag)
-	responseCode, body, err := delResourceById(nsId, "sshKey", id, forceFlag)
-	//body, _ := ioutil.ReadAll(res.Body)
+
+	responseCode, body, err := delResource(nsId, "sshKey", id, forceFlag)
 	if err != nil {
-		responseCode, body, err = delResourceByName(nsId, "sshKey", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			/*
-				mapA := map[string]string{"message": "Failed to delete the sshKey"}
-				return c.JSON(http.StatusFailedDependency, &mapA)
-			*/
-			return c.JSONBlob(responseCode, body)
-		}
+		cblog.Error(err)
+		/*
+			mapA := map[string]string{"message": "Failed to delete the sshKey"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		*/
+		return c.JSONBlob(responseCode, body)
 	}
+	
 
 	mapA := map[string]string{"message": "The sshKey has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -201,19 +199,17 @@ func RestDelAllSshKey(c echo.Context) error {
 
 	for _, v := range sshKeyList {
 		//responseCode, body, err := delSshKey(nsId, v, forceFlag)
-		responseCode, body, err := delResourceById(nsId, "sshKey", v, forceFlag)
-		//body, _ := ioutil.ReadAll(res.Body)
+
+		responseCode, body, err := delResource(nsId, "sshKey", v, forceFlag)
 		if err != nil {
-			responseCode, body, err = delResourceByName(nsId, "sshKey", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				/*
-					mapA := map[string]string{"message": "Failed to delete the sshKey"}
-					return c.JSON(http.StatusFailedDependency, &mapA)
-				*/
-				return c.JSONBlob(responseCode, body)
-			}
+			cblog.Error(err)
+			/*
+				mapA := map[string]string{"message": "Failed to delete the sshKey"}
+				return c.JSON(http.StatusFailedDependency, &mapA)
+			*/
+			return c.JSONBlob(responseCode, body)
 		}
+		
 	}
 
 	mapA := map[string]string{"message": "All sshKeys has been deleted"}
@@ -322,7 +318,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT createSshKey")
-	Key := genResourceKey(nsId, "sshKey", content.Id)
+	Key := common.GenResourceKey(nsId, "sshKey", content.Id)
 	/*
 		mapA := map[string]string{
 			"connectionName": content.ConnectionName,

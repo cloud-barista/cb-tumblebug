@@ -609,7 +609,7 @@ func RestPostMcisVm(c echo.Context) error {
 	}
 
 	vmInfoData := vmInfo{}
-	vmInfoData.Id = genUuid()
+	vmInfoData.Id = common.GenUuid()
 	req.Id = vmInfoData.Id
 	//vmInfoData.CspVmName = req.CspVmName
 
@@ -994,7 +994,7 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 		}
 
 		content2 := mcir.SpecInfo{}
-		key2 := genResourceKey(nsId, "spec", content.Id)
+		key2 := common.GenResourceKey(nsId, "spec", content.Id)
 
 		keyValue2, err := store.Get(key2)
 		if err != nil {
@@ -1023,7 +1023,7 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 func createMcis(nsId string, req *mcisReq) string {
 
-	req.Id = genUuid()
+	req.Id = common.GenUuid()
 	vmRequest := req.Vm_req
 
 	fmt.Println("=========================== Put createSvc")
@@ -1047,7 +1047,7 @@ func createMcis(nsId string, req *mcisReq) string {
 
 		//vmInfoData vmInfo
 		vmInfoData := vmInfo{}
-		vmInfoData.Id = genUuid()
+		vmInfoData.Id = common.GenUuid()
 		//vmInfoData.CspVmName = k.CspVmName
 
 		//vmInfoData.Placement_algo = k.Placement_algo
@@ -1291,20 +1291,20 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	tempReq := VMReqInfo{}
 	tempReq.VMName = vmInfoData.Name
 
-	tempReq.ImageId = getCspResourceId(nsId, "image", vmInfoData.Image_id)
-	tempReq.VirtualNetworkId = getCspResourceId(nsId, "network", vmInfoData.Vnet_id)
-	tempReq.NetworkInterfaceId = "" //getCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
-	tempReq.PublicIPId = getCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
+	tempReq.ImageId = common.GetCspResourceId(nsId, "image", vmInfoData.Image_id)
+	tempReq.VirtualNetworkId = common.GetCspResourceId(nsId, "network", vmInfoData.Vnet_id)
+	tempReq.NetworkInterfaceId = "" //common.GetCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
+	tempReq.PublicIPId = common.GetCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
 
 	var SecurityGroupIdsTmp []string
 	for _, v := range vmInfoData.Security_group_ids {
-		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, getCspResourceId(nsId, "securityGroup", v))
+		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, common.GetCspResourceId(nsId, "securityGroup", v))
 	}
 	tempReq.SecurityGroupIds = SecurityGroupIdsTmp
 
-	tempReq.VMSpecId = getCspResourceId(nsId, "spec", vmInfoData.Spec_id)
+	tempReq.VMSpecId = common.GetCspResourceId(nsId, "spec", vmInfoData.Spec_id)
 
-	tempReq.KeyPairName = getCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
+	tempReq.KeyPairName = common.GetCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
 
 	tempReq.VMUserId = vmInfoData.Vm_access_id
 	tempReq.VMUserPasswd = vmInfoData.Vm_access_passwd
@@ -1570,8 +1570,14 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 	fmt.Println("\n\n[Calling SPIDER]START vmControl")
 
 	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
-	//cspVmId := temp.CspViewVmDetail.Id // AWS
-	cspVmId := temp.CspViewVmDetail.Name // Azure
+	
+	cspType := getVMsCspType(nsId, mcisId, vmId)
+	var cspVmId string
+	if cspType == "AWS" {
+		cspVmId = temp.CspViewVmDetail.Id
+	} else {
+		cspVmId = temp.CspViewVmDetail.Name
+	}
 	common.PrintJsonPretty(temp.CspViewVmDetail)
 
 	url := ""

@@ -120,7 +120,7 @@ func RestGetNetwork(c echo.Context) error {
 	content := networkInfo{}
 
 	fmt.Println("[Get network for id]" + id)
-	key := genResourceKey(nsId, "network", id)
+	key := common.GenResourceKey(nsId, "network", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -147,7 +147,7 @@ func RestGetAllNetwork(c echo.Context) error {
 
 	for _, v := range networkList {
 
-		key := genResourceKey(nsId, "network", v)
+		key := common.GenResourceKey(nsId, "network", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -176,15 +176,14 @@ func RestDelNetwork(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delNetwork(nsId, id, forceFlag)
-	responseCode, body, err := delResourceById(nsId, "network", id, forceFlag)
+
+	responseCode, body, err := delResource(nsId, "network", id, forceFlag)
 	if err != nil {
-		responseCode, body, err = delResourceByName(nsId, "network", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the network"}
-			return c.JSONBlob(responseCode, body)
-		}
+		cblog.Error(err)
+		//mapA := map[string]string{"message": "Failed to delete the network"}
+		return c.JSONBlob(responseCode, body)
 	}
+	
 
 	mapA := map[string]string{"message": "The network has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -199,15 +198,14 @@ func RestDelAllNetwork(c echo.Context) error {
 
 	for _, v := range networkList {
 		//responseCode, body, err := delNetwork(nsId, v, forceFlag)
-		responseCode, body, err := delResourceById(nsId, "network", v, forceFlag)
+
+		responseCode, body, err := delResource(nsId, "network", v, forceFlag)
 		if err != nil {
-			responseCode, body, err = delResourceByName(nsId, "network", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				//mapA := map[string]string{"message": "Failed to delete the network"}
-				return c.JSONBlob(responseCode, body)
-			}
+			cblog.Error(err)
+			//mapA := map[string]string{"message": "Failed to delete the network"}
+			return c.JSONBlob(responseCode, body)
 		}
+		
 	}
 
 	mapA := map[string]string{"message": "All networks has been deleted"}
@@ -327,7 +325,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 
 	// cb-store
 	fmt.Println("=========================== PUT createNetwork")
-	Key := genResourceKey(nsId, "network", content.Id)
+	Key := common.GenResourceKey(nsId, "network", content.Id)
 	/*
 		mapA := map[string]string{
 			"connectionName": content.ConnectionName,

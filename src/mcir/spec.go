@@ -119,7 +119,7 @@ func RestGetSpec(c echo.Context) error {
 	content := specInfo{}
 
 	fmt.Println("[Get spec for id]" + id)
-	key := genResourceKey(nsId, "spec", id)
+	key := common.GenResourceKey(nsId, "spec", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
@@ -146,7 +146,7 @@ func RestGetAllSpec(c echo.Context) error {
 
 	for _, v := range specList {
 
-		key := genResourceKey(nsId, "spec", v)
+		key := common.GenResourceKey(nsId, "spec", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -175,15 +175,14 @@ func RestDelSpec(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, _, err := delSpec(nsId, id, forceFlag)
-	responseCode, _, err := delResourceById(nsId, "spec", id, forceFlag)
+
+	responseCode, _, err := delResource(nsId, "spec", id, forceFlag)
 	if err != nil {
-		responseCode, _, err = delResourceByName(nsId, "spec", id, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete the spec"}
-			return c.JSON(responseCode, &mapA)
-		}
+		cblog.Error(err)
+		mapA := map[string]string{"message": "Failed to delete the spec"}
+		return c.JSON(responseCode, &mapA)
 	}
+	
 
 	mapA := map[string]string{"message": "The spec has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -198,15 +197,14 @@ func RestDelAllSpec(c echo.Context) error {
 
 	for _, v := range specList {
 		//responseCode, _, err := delSpec(nsId, v, forceFlag)
-		responseCode, _, err := delResourceById(nsId, "spec", v, forceFlag)
+
+		responseCode, _, err := delResource(nsId, "spec", v, forceFlag)
 		if err != nil {
-			responseCode, _, err = delResourceByName(nsId, "spec", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				mapA := map[string]string{"message": "Failed to delete the spec"}
-				return c.JSON(responseCode, &mapA)
-			}
+			cblog.Error(err)
+			mapA := map[string]string{"message": "Failed to delete the spec"}
+			return c.JSON(responseCode, &mapA)
 		}
+		
 	}
 
 	mapA := map[string]string{"message": "All specs has been deleted"}
@@ -319,7 +317,7 @@ func registerSpecWithInfo(nsId string, content *specInfo) (specInfo, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
-	Key := genResourceKey(nsId, "spec", content.Id)
+	Key := common.GenResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
 		"name":           content.Name,
 		"connectionName": content.ConnectionName,
