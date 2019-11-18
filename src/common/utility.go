@@ -1,6 +1,7 @@
 package common
 
 import (
+	"os"
 	//"encoding/json"
 
 	uuid "github.com/google/uuid"
@@ -33,6 +34,7 @@ var SPIDER_URL string
 func init() {
 	cblog = config.Cblogger
 	store = cbstore.GetStore()
+	SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
 // MCIS utilities
