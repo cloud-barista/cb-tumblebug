@@ -56,7 +56,7 @@ func ApiServer(routes []route, strPort string) {
 	e := echo.New()
 
 	// Middleware
-	e.Use(middleware.Logger())
+	//e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	for _, route := range routes {

@@ -1822,7 +1822,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	fmt.Println("[Calling SPIDER]END\n\n")
 
 	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
-	if statusResponseTmp.Status == "Starting" {
+	if statusResponseTmp.Status == "Creating" {
 		statusResponseTmp.Status = statusCreating
 	} else if statusResponseTmp.Status == "Running" {
 		statusResponseTmp.Status = statusRunning

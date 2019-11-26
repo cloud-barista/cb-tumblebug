@@ -32,6 +32,8 @@ then
                         PUBLIC_IP=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.publicIp'`
                         echo $CONNECT_NAME : copy testsvc into ${PUBLIC_IP} ...
                         ssh-keygen -f "/root/.ssh/known_hosts" -R ${PUBLIC_IP}
+                        scp -i ../keypair/${CONNECT_NAME}.key -o "StrictHostKeyChecking no" ./testsvc/TESTSvc ./testsvc/setup.env ubuntu@$PUBLIC_IP:/tmp
+                        scp -i ../keypair/${CONNECT_NAME}.key -o "StrictHostKeyChecking no" -r ./testsvc/conf ubuntu@$PUBLIC_IP:/tmp
                         scp -i ../keypair/${CONNECT_NAME}.key -o "StrictHostKeyChecking no" ./testsvc/TESTSvc ./testsvc/setup.env cb-user@$PUBLIC_IP:/tmp
                         scp -i ../keypair/${CONNECT_NAME}.key -o "StrictHostKeyChecking no" -r ./testsvc/conf cb-user@$PUBLIC_IP:/tmp
                         break

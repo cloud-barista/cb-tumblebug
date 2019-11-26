@@ -69,23 +69,36 @@ func callService(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	cnt++
-	date := strings.ReplaceAll(req.Date, "%20", " ")
+	//date := strings.ReplaceAll(req.Date, "%20", " ")
 
+	fmt.Print("\n\n## CURRENT RESOURCE_UTILIZATION  =>>>>>>>>>>>>>>>> ")
 	strCPUUtilizationArr := GetAllUtilPercentages()
 	for i, cpupercent := range strCPUUtilizationArr {
-		println("CPU" + strconv.Itoa(i) +":   " + cpupercent + " %")
+		println("CPU" + strconv.Itoa(i) +":   [[ " + cpupercent + " % ]]")
 	}
 
+	var Country = "SOUTH KOREA"
+	if (req.Country != ""){
+		Country = req.Country
+		Country = strings.ToUpper(Country)
+	}
+	if (Country == "UNITED"){
+		Country = "USA"
+	}
+
+	fmt.Println("\n")
+
 	//cblog.Infof("[%#v][Request From] DATE: %#v, HOSTNAME: %#v", cnt, date, req.HostName)
-	fmt.Printf("[%#v][Request From] DATE: %#v, HOSTNAME: %#v \n", cnt, date, req.HostName)
-	fmt.Printf("[%#v] IP: %#v, Location: %#v \n", cnt, req.IP, req.Country)
-	fmt.Printf("Processing ............ \n")
+	fmt.Printf("\n[%d] Request From =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [[ %#v ]] \n", cnt, Country)
+	fmt.Printf("[%d] HOSTNAME: %#v \n", cnt, req.HostName)
+	fmt.Printf("[%d] IP: %#v \n", cnt, req.IP)
+	fmt.Printf("[%d] Processing ............................ \n", cnt)
 	for i := 1; i <= 65535; i++ {
-			for j := 1; j <= 65535; j++ {
-					_ = 159 * 753 * 654
+			for j := 1; j <= 16553; j++ {
+					_ = 5 * 75 * 65
 			}
 	}
-	fmt.Printf("Finished the Processing for HOST: %#v \n", req.HostName)
+	fmt.Printf("[%d] Finished the Processing for HOST: %#v \n\n\n", cnt, req.HostName)
 
 	resultInfo := BooleanInfo{
 			Result: "OK",
