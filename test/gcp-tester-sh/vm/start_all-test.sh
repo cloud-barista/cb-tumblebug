@@ -178,7 +178,7 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
             "description": "Test description",
             "vm_req": [
                 {
-                    "name": "jhseo-vm-'$num'",
+                    "name": "jhseo-shooter-'$num'",
                     "config_name": "'$NAME'",
                     "spec_id": "'$SPEC_ID'",
                     "image_id": "'$IMAGE_ID'",
@@ -199,7 +199,7 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
         else
                 MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | jq -r '.mcis[].id'`
                 curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
-                "name": "jhseo-vm-'$num'",
+                "name": "jhseo-shooter-'$num'",
                     "config_name": "'$NAME'",
                     "spec_id": "'$SPEC_ID'",
                     "image_id": "'$IMAGE_ID'",

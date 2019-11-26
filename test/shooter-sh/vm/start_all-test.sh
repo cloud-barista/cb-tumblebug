@@ -1,8 +1,8 @@
 #!/bin/bash
 source ../setup.env
 
-IMG_ID=ubuntu-minimal-1804-bionic-v20191024
-IMG_ID=projects/ubuntu-os-cloud/global/images/ubuntu-minimal-1804-bionic-v20191024
+#IMG_ID=ubuntu-minimal-1804-bionic-v20191024
+#IMG_ID=projects/ubuntu-os-cloud/global/images/ubuntu-minimal-1804-bionic-v20191024
 
 num=0
 for NAME in "${CONNECT_NAMES[@]}"
@@ -173,7 +173,8 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
 
         if [ $num == 0 ]
         then
-                curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d '{
+#                curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d '{
+                echo '{
             "name": "mcis-t01",
             "description": "Test description",
             "vm_req": [
@@ -198,7 +199,8 @@ TB_SECURITYGROUP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources
 
         else
                 MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | jq -r '.mcis[].id'`
-                curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
+#                curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
+                echo '{
                 "name": "jhseo-vm-'$num'",
                     "config_name": "'$NAME'",
                     "spec_id": "'$SPEC_ID'",

@@ -1,7 +1,7 @@
 #!/bin/bash
 source ../setup.env
 
-KEY_NAME=${CONNECT_NAMES[0]}
+#KEY_NAME=${CONNECT_NAMES[0]}
 
 #num=0
 #for NAME in "${CONNECT_NAMES[@]}"
@@ -41,8 +41,10 @@ then
                         PUBLIC_IP=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.publicIp'`
                         echo $PIPS_CONN_NAME: copy shooter into ${PUBLIC_IP} ...
                         ssh-keygen -f "/root/.ssh/known_hosts" -R ${PUBLIC_IP}
-                        scp -i ../keypair/$KEY_NAME.key -o "StrictHostKeyChecking no" ./shooter/shooter.sh cb-user@$PUBLIC_IP:/tmp
-                        ssh -i ../keypair/$KEY_NAME.key -o "StrictHostKeyChecking no" cb-user@$PUBLIC_IP /tmp/shooter.sh &
+                        scp -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" ./shooter/shooter.sh ubuntu@$PUBLIC_IP:/tmp
+                        ssh -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" ubuntu@$PUBLIC_IP /tmp/shooter.sh & > /dev/null
+                        scp -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" ./shooter/shooter.sh cb-user@$PUBLIC_IP:/tmp
+                        ssh -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" cb-user@$PUBLIC_IP /tmp/shooter.sh & > /dev/null
                 fi
         done
 else
