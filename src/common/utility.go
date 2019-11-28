@@ -15,9 +15,9 @@ import (
 
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"io/ioutil"
-	"strconv"
+	//"net/http"
+	//"io/ioutil"
+	//"strconv"
 )
 
 type KeyValue struct {
@@ -109,6 +109,7 @@ type mcirIds struct {
 	ConnectionName string
 }
 
+/*
 func GetResourcesCspType(nsId string, resourceType string, resourceId string) string {
 	key := GenResourceKey(nsId, resourceType, resourceId)
 	if key == "/invalid_key" {
@@ -158,24 +159,6 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 		return "ioutil.ReadAll error"
 	}
 
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete network info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
-
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
@@ -198,6 +181,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 
 	return temp.ProviderName
 }
+*/
 
 func GetCspResourceId(nsId string, resourceType string, resourceId string) string {
 	key := GenResourceKey(nsId, resourceType, resourceId)
@@ -216,6 +200,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) strin
 		return ""
 	}
 
+	/*
 	cspType := GetResourcesCspType(nsId, resourceType, resourceId)
 	if cspType == "AWS" {
 		switch resourceType {
@@ -260,6 +245,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) strin
 			return "invalid resourceType"
 		}
 	} else {
+		*/
 		switch resourceType {
 		case "image":
 			content := mcirIds{}
@@ -297,9 +283,9 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) strin
 				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
 				return ""
 			}
-			return content.CspVNicId
+			return content.CspVNicName
 		default:
 			return "invalid resourceType"
 		}
-	}	
+	//}	
 }

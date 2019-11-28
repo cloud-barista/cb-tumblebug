@@ -122,7 +122,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 	keyValue, _ := store.Get(key)
 	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
 
-	cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
+	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
 	var url string
 
@@ -169,11 +169,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 	case "network":
 		temp := networkInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
-		if cspType == "AWS" {
-			url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName
-		} else {
-			url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkName + "?connection_name=" + temp.ConnectionName
-		}		
+		url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkName + "?connection_name=" + temp.ConnectionName
 	/*
 		case "subnet":
 			temp := subnetInfo{}
@@ -183,27 +179,15 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 	case "securityGroup":
 		temp := securityGroupInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
-		if cspType == "AWS" {
-			url = SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupId + "?connection_name=" + temp.ConnectionName
-		} else {
-			url = SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupName + "?connection_name=" + temp.ConnectionName
-		}
+		url = SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupName + "?connection_name=" + temp.ConnectionName
 	case "publicIp":
 		temp := publicIpInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
-		if cspType == "AWS" {
-			url = SPIDER_URL + "/publicip/" + temp.CspPublicIpId + "?connection_name=" + temp.ConnectionName
-		} else {
-			url = SPIDER_URL + "/publicip/" + temp.CspPublicIpName + "?connection_name=" + temp.ConnectionName
-		}
+		url = SPIDER_URL + "/publicip/" + temp.CspPublicIpName + "?connection_name=" + temp.ConnectionName
 	case "vNic":
 		temp := vNicInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
-		if cspType == "AWS" {
-			url = SPIDER_URL + "/vnic/" + temp.CspVNicId + "?connection_name=" + temp.ConnectionName
-		} else {
-			url = SPIDER_URL + "/vnic/" + temp.CspVNicName + "?connection_name=" + temp.ConnectionName
-		}
+		url = SPIDER_URL + "/vnic/" + temp.CspVNicName + "?connection_name=" + temp.ConnectionName
 	default:
 		err := fmt.Errorf("invalid resourceType")
 		return http.StatusBadRequest, nil, err

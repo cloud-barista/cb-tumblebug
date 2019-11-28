@@ -1571,13 +1571,14 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
 	
+	/*
 	cspType := getVMsCspType(nsId, mcisId, vmId)
 	var cspVmId string
 	if cspType == "AWS" {
 		cspVmId = temp.CspViewVmDetail.Id
 	} else {
-		cspVmId = temp.CspViewVmDetail.Name
-	}
+		*/
+	cspVmId := temp.CspViewVmDetail.Name
 	common.PrintJsonPretty(temp.CspViewVmDetail)
 
 	url := ""
@@ -1765,15 +1766,15 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	}
 	fmt.Println("\n\n[Calling SPIDER]START")
 	fmt.Println("CspVmId: " + temp.CspViewVmDetail.Id)
-	//cspVmId := temp.CspViewVmDetail.Id
+	/*
 	var cspVmId string
 	cspType := getVMsCspType(nsId, mcisId, vmId)
 	if cspType == "AWS" {
 		cspVmId = temp.CspViewVmDetail.Id
 	} else {
-		cspVmId = temp.CspViewVmDetail.Name
-	}
-
+		*/
+	cspVmId := temp.CspViewVmDetail.Name
+	
 	url := SPIDER_URL + "/vmstatus/" + cspVmId + "?connection_name=" + temp.Config_name 
 	method := "GET"
 
