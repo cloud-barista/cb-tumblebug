@@ -1,13 +1,13 @@
 package mcis
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	//uuid "github.com/google/uuid"
 	"os"
-	"fmt"
-	"net/http"
-	"io/ioutil"
-	"strconv"
+	//"fmt"
+	//"net/http"
+	//"io/ioutil"
+	//"strconv"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
@@ -15,7 +15,7 @@ import (
 	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"github.com/sirupsen/logrus"
 	//"github.com/cloud-barista/cb-tumblebug/src/mcism"
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	//"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // CB-Store
@@ -159,6 +159,7 @@ func getCspResourceId(nsId string, resourceType string, resourceId string) strin
 }
 */
 
+/*
 func getVMsCspType(nsId string, mcisId string, vmId string) string {
 	var content struct {
 		Config_name        string   `json:"config_name"`
@@ -197,24 +198,6 @@ func getVMsCspType(nsId string, mcisId string, vmId string) string {
 		return "ioutil.ReadAll error"
 	}
 
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
-			return res, err
-		}
-
-		// delete network info
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
-		}
-
-		return res, nil
-	*/
-
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
@@ -237,3 +220,4 @@ func getVMsCspType(nsId string, mcisId string, vmId string) string {
 
 	return temp.ProviderName
 }
+*/
