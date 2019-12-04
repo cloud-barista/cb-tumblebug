@@ -22,8 +22,8 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 - 의존 라이브러리 다운로드
   - Cloud-Barista alliance 설치 (CB-Store, CB-Log, CB-Spider)
   - 기타 라이브러리
-- mcism 빌드 (go build -o mcism)
-- mcism 실행 (./mcism)
+- mcism 빌드 (make)
+- mcism 실행 (make run)
 
 ## [설치 & 실행 상세 정보]
 
@@ -69,13 +69,17 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 
 - CB-Tumblebug 실행에 필요한 환경변수 설정
   - `source setup.env` (cb-tumblebug/conf 에 setup.env)
+  - cb-tumblebug/conf 에 store_conf.yaml 내용 확인 및 설정 (CB-Store 설정)
+    - storetype 지정 (NUTSDB 또는 ETCD 지정)
+    - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 cb-tumblebug/meta_db/dat 에 파일로 추가됨)
+  - cb-tumblebug/conf 에 log_conf.yaml 내용 확인 및 설정 (CB-Log 설정)
 
 
 ### mcism 빌드
 
 ```Shell
 # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
-# go build -o mcism
+# ./make
 ```
 - 패키지 관련 오류 발생 시, `go get` 명령을 통해 부족한 패키지를 추가
 
@@ -91,8 +95,8 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
 ```
 
-- `# ./mcism` (또는 `# go run mcism.go`)
-  - API server가 실행됨
+- `# ./make run` (또는 `# go run mcism.go`)
+  - CB-Tumblebug API server가 실행됨
 
 ### mcism 테스트 방법
 
