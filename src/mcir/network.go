@@ -124,14 +124,18 @@ func RestGetNetwork(c echo.Context) error {
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the network with give UUID."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.Id = id // Optional. Can be omitted.
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		content.Id = id // Optional. Can be omitted.
 
-	return c.JSON(http.StatusOK, &content)
-
+		return c.JSON(http.StatusOK, &content)
+	}
 }
 
 func RestGetAllNetwork(c echo.Context) error {
@@ -196,21 +200,25 @@ func RestDelAllNetwork(c echo.Context) error {
 
 	networkList := getResourceList(nsId, "network")
 
-	for _, v := range networkList {
-		//responseCode, body, err := delNetwork(nsId, v, forceFlag)
+	if len(networkList) == 0 {
+		mapA := map[string]string{"message": "There is no network element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range networkList {
+			//responseCode, body, err := delNetwork(nsId, v, forceFlag)
 
-		responseCode, body, err := delResource(nsId, "network", v, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the network"}
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err := delResource(nsId, "network", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				//mapA := map[string]string{"message": "Failed to delete the network"}
+				return c.JSONBlob(responseCode, body)
+			}
+			
 		}
-		
+
+		mapA := map[string]string{"message": "All networks has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
 	}
-
-	mapA := map[string]string{"message": "All networks has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-
 }
 
 func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error) {

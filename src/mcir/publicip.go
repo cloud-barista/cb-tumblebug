@@ -119,14 +119,18 @@ func RestGetPublicIp(c echo.Context) error {
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the publicIp with give UUID."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.Id = id // Optional. Can be omitted.
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		content.Id = id // Optional. Can be omitted.
 
-	return c.JSON(http.StatusOK, &content)
-
+		return c.JSON(http.StatusOK, &content)
+	}
 }
 
 func RestGetAllPublicIp(c echo.Context) error {
@@ -191,21 +195,25 @@ func RestDelAllPublicIp(c echo.Context) error {
 
 	publicIpList := getResourceList(nsId, "publicIp")
 
-	for _, v := range publicIpList {
-		//responseCode, body, err := delPublicIp(nsId, v, forceFlag)
+	if len(publicIpList) == 0 {
+		mapA := map[string]string{"message": "There is no publicIp element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range publicIpList {
+			//responseCode, body, err := delPublicIp(nsId, v, forceFlag)
 
-		responseCode, body, err := delResource(nsId, "publicIp", v, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the publicIp"}
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err := delResource(nsId, "publicIp", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				//mapA := map[string]string{"message": "Failed to delete the publicIp"}
+				return c.JSONBlob(responseCode, body)
+			}
+			
 		}
-		
+
+		mapA := map[string]string{"message": "All publicIps has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
 	}
-
-	mapA := map[string]string{"message": "All publicIps has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-
 }
 
 func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, error) {

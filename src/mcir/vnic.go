@@ -128,14 +128,18 @@ func RestGetVNic(c echo.Context) error {
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the vNic with give UUID."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.Id = id // Optional. Can be omitted.
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		content.Id = id // Optional. Can be omitted.
 
-	return c.JSON(http.StatusOK, &content)
-
+		return c.JSON(http.StatusOK, &content)
+	}
 }
 
 func RestGetAllVNic(c echo.Context) error {
@@ -200,21 +204,25 @@ func RestDelAllVNic(c echo.Context) error {
 
 	vNicList := getResourceList(nsId, "vNic")
 
-	for _, v := range vNicList {
-		//responseCode, body, err := delVNic(nsId, v, forceFlag)
+	if len(vNicList) == 0 {
+		mapA := map[string]string{"message": "There is no vNic element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range vNicList {
+			//responseCode, body, err := delVNic(nsId, v, forceFlag)
 
-		responseCode, body, err := delResource(nsId, "vNic", v, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the vNic"}
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err := delResource(nsId, "vNic", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				//mapA := map[string]string{"message": "Failed to delete the vNic"}
+				return c.JSONBlob(responseCode, body)
+			}
+			
 		}
-		
+
+		mapA := map[string]string{"message": "All vNics has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
 	}
-
-	mapA := map[string]string{"message": "All vNics has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-
 }
 
 func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {

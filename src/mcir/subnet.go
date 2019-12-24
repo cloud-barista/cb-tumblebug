@@ -99,14 +99,18 @@ func RestGetSubnet(c echo.Context) error {
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the subnet with give UUID."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.Id = id // Optional. Can be omitted.
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		content.Id = id // Optional. Can be omitted.
 
-	return c.JSON(http.StatusOK, &content)
-
+		return c.JSON(http.StatusOK, &content)
+	}
 }
 
 func RestGetAllSubnet(c echo.Context) error {
@@ -171,21 +175,25 @@ func RestDelAllSubnet(c echo.Context) error {
 
 	subnetList := getResourceList(nsId, "subnet")
 
-	for _, v := range subnetList {
-		//responseCode, _, err := delSubnet(nsId, v, forceFlag)
+	if len(subnetList) == 0 {
+		mapA := map[string]string{"message": "There is no subnet element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range subnetList {
+			//responseCode, _, err := delSubnet(nsId, v, forceFlag)
 
-		responseCode, _, err := delResource(nsId, "subnet", v, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete the subnet"}
-			return c.JSON(responseCode, &mapA)
+			responseCode, _, err := delResource(nsId, "subnet", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{"message": "Failed to delete the subnet"}
+				return c.JSON(responseCode, &mapA)
+			}
+			
 		}
-		
+
+		mapA := map[string]string{"message": "All subnets has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
 	}
-
-	mapA := map[string]string{"message": "All subnets has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-
 }
 
 func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {

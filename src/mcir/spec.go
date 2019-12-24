@@ -123,14 +123,18 @@ func RestGetSpec(c echo.Context) error {
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the spec with give UUID."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.Id = id // Optional. Can be omitted.
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		content.Id = id // Optional. Can be omitted.
 
-	return c.JSON(http.StatusOK, &content)
-
+		return c.JSON(http.StatusOK, &content)
+	}
 }
 
 func RestGetAllSpec(c echo.Context) error {
@@ -174,8 +178,6 @@ func RestDelSpec(c echo.Context) error {
 	id := c.Param("specId")
 	forceFlag := c.QueryParam("force")
 
-	//responseCode, _, err := delSpec(nsId, id, forceFlag)
-
 	responseCode, _, err := delResource(nsId, "spec", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
@@ -195,21 +197,23 @@ func RestDelAllSpec(c echo.Context) error {
 
 	specList := getResourceList(nsId, "spec")
 
-	for _, v := range specList {
-		//responseCode, _, err := delSpec(nsId, v, forceFlag)
-
-		responseCode, _, err := delResource(nsId, "spec", v, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete the spec"}
-			return c.JSON(responseCode, &mapA)
+	if len(specList) == 0 {
+		mapA := map[string]string{"message": "There is no spec element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range specList {
+			responseCode, _, err := delResource(nsId, "spec", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{"message": "Failed to delete the spec"}
+				return c.JSON(responseCode, &mapA)
+			}
+			
 		}
-		
+
+		mapA := map[string]string{"message": "All specs has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
 	}
-
-	mapA := map[string]string{"message": "All specs has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-
 }
 
 /* Optional
