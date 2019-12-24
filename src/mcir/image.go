@@ -130,14 +130,18 @@ func RestGetImage(c echo.Context) error {
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the image with give UUID."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.Id = id // Optional. Can be omitted.
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		content.Id = id // Optional. Can be omitted.
 
-	return c.JSON(http.StatusOK, &content)
-
+		return c.JSON(http.StatusOK, &content)
+	}
 }
 
 func RestGetAllImage(c echo.Context) error {
@@ -201,21 +205,25 @@ func RestDelAllImage(c echo.Context) error {
 
 	imageList := getResourceList(nsId, "image")
 
-	for _, v := range imageList {
-		//responseCode, _, err := delImage(nsId, v, forceFlag)
+	if len(imageList) == 0 {
+		mapA := map[string]string{"message": "There is no image element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range imageList {
+			//responseCode, _, err := delImage(nsId, v, forceFlag)
 
-		responseCode, _, err := delResource(nsId, "image", v, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete the image"}
-			return c.JSON(responseCode, &mapA)
+			responseCode, _, err := delResource(nsId, "image", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{"message": "Failed to delete the image"}
+				return c.JSON(responseCode, &mapA)
+			}
+
 		}
 
+		mapA := map[string]string{"message": "All images has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
 	}
-
-	mapA := map[string]string{"message": "All images has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-
 }
 
 /*

@@ -121,14 +121,18 @@ func RestGetSshKey(c echo.Context) error {
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the sshKey with give UUID."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	content.Id = id // Optional. Can be omitted.
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		content.Id = id // Optional. Can be omitted.
 
-	return c.JSON(http.StatusOK, &content)
-
+		return c.JSON(http.StatusOK, &content)
+	}
 }
 
 func RestGetAllSshKey(c echo.Context) error {
@@ -197,24 +201,28 @@ func RestDelAllSshKey(c echo.Context) error {
 
 	sshKeyList := getResourceList(nsId, "sshKey")
 
-	for _, v := range sshKeyList {
-		//responseCode, body, err := delSshKey(nsId, v, forceFlag)
+	if len(sshKeyList) == 0 {
+		mapA := map[string]string{"message": "There is no sshKey element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range sshKeyList {
+			//responseCode, body, err := delSshKey(nsId, v, forceFlag)
 
-		responseCode, body, err := delResource(nsId, "sshKey", v, forceFlag)
-		if err != nil {
-			cblog.Error(err)
-			/*
-				mapA := map[string]string{"message": "Failed to delete the sshKey"}
-				return c.JSON(http.StatusFailedDependency, &mapA)
-			*/
-			return c.JSONBlob(responseCode, body)
+			responseCode, body, err := delResource(nsId, "sshKey", v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				/*
+					mapA := map[string]string{"message": "Failed to delete the sshKey"}
+					return c.JSON(http.StatusFailedDependency, &mapA)
+				*/
+				return c.JSONBlob(responseCode, body)
+			}
+			
 		}
-		
+
+		mapA := map[string]string{"message": "All sshKeys has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
 	}
-
-	mapA := map[string]string{"message": "All sshKeys has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-
 }
 
 func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {

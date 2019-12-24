@@ -120,7 +120,13 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 	fmt.Println("key: " + key)
 
 	keyValue, _ := store.Get(key)
-	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
+	if keyValue == nil {
+		mapA := map[string]string{"message": "Failed to find the resource with give UUID."}
+		mapB, _ := json.Marshal(mapA)
+		err := fmt.Errorf("Failed to find the resource with give UUID.")
+		return http.StatusNotFound, mapB, err
+	}
+	//fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
