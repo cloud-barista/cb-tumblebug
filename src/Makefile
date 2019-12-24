@@ -1,8 +1,8 @@
 default:
-	go build -o mcism
+	go build -o cb-tumblebug
 cc:
-	GOOS=linux GOARCH=arm go build -o mcism-arm
+	GOOS=linux GOARCH=arm go build -o cb-tumblebug-arm
 run:
-	./mcism
+	./cb-tumblebug
 clean:
-	rm -v mcism mcism-arm
+	rm -v cb-tumblebug cb-tumblebug-arm
