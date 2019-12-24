@@ -18,12 +18,12 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 
 - Go 설치 & Git 설치
 - 환경 변수 설정
-- MCISM 소스 다운로드 (Git clone MCISM)
+- CB-Tumblebug 소스 다운로드 (Git clone CB-Tumblebug)
 - 의존 라이브러리 다운로드
   - Cloud-Barista alliance 설치 (CB-Store, CB-Log, CB-Spider)
   - 기타 라이브러리
-- mcism 빌드 (make)
-- mcism 실행 (make run)
+- CB-Tumblebug 빌드 (make)
+- CB-Tumblebug 실행 (make run)
 
 ## [설치 & 실행 상세 정보]
 
@@ -43,7 +43,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   - `source ~/.bashrc`
   - `. ~/.bashrc`
 
-- MCISM 소스 다운로드
+- CB-Tumblebug 소스 다운로드
   - `# go get -u -v github.com/cloud-barista/cb-tumblebug`
 
 - 의존 라이브러리 다운로드
@@ -75,7 +75,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   - cb-tumblebug/conf 에 log_conf.yaml 내용 확인 및 설정 (CB-Log 설정)
 
 
-### mcism 빌드
+### CB-Tumblebug 빌드
 
 ```Shell
 # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
@@ -83,14 +83,14 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 ```
 - 패키지 관련 오류 발생 시, `go get` 명령을 통해 부족한 패키지를 추가
 
-### mcism 실행
+### CB-Tumblebug 실행
 - 만약 AWS 관련 작업 시 에러가 발생하면 다음을 실행
 ```Shell
 # sudo apt-get --yes install ntpdate
 # sudo ntpdate 0.amazon.pool.ntp.org
 ```
 
-- 만약 `“panic: /debug/requests is already registered. You may have two independent copies of golang.org/x/net/trace in your binary, trying to maintain separate state. This may involve a vendored copy of golang.org/x/net/trace.”` 에러가 발생하면 다음을 실행 (mcism rebuild 가 필요할 수도 있음)
+- 만약 `“panic: /debug/requests is already registered. You may have two independent copies of golang.org/x/net/trace in your binary, trying to maintain separate state. This may involve a vendored copy of golang.org/x/net/trace.”` 에러가 발생하면 다음을 실행 (CB-Tumblebug rebuild 가 필요할 수도 있음)
 ```Shell
 # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
 ```
@@ -98,9 +98,9 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 - `# ./make run` (또는 `# go run mcism.go`)
   - CB-Tumblebug API server가 실행됨
 
-### mcism 테스트 방법
+### CB-Tumblebug 테스트 방법
 
-- mcism 의 REST API를 사용하여 테스트
+- CB-Tumblebug 의 REST API를 사용하여 테스트
   - Cloud-Barista 사용자 API 리스트: https://github.com/cloud-barista/docs/blob/master/API-Specifications/User-REST-API(v0.30).md
   - 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
   - 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 MCIS 및 VM 생성을 위한 자원 생성
