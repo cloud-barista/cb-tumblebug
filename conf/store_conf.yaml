@@ -6,7 +6,7 @@ storetype: NUTSDB
 #storetype: ETCD
 
 nutsdb:
-  dbpath: "/home/son/go/src/github.com/cloud-barista/cb-tumblebug/meta_db/dat"
+  dbpath: "$CBSTORE_ROOT/meta_db/dat"
   segmentsize: 1048576  # 1048576 1024*1024 (1MB)
   #segmentsize: 10485760  # 10485760 10*1024*1024 (10MB)
 
