@@ -1,0 +1,40 @@
+{
+  "name": "mcis-2-t003",
+  "vm_num": "3",
+  "description": "Test description",
+  "vm_req": [
+    {
+          "name": "gcp-vmt05",
+          "config_name": "gcp-connection-config-01",
+          "spec_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "image_id": "UUID-for-aws-ubuntu-image",
+          "vnet_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "vnic_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "security_group_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "ssh_key_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "description": "description"
+      },
+      {
+          "name": "azure-t09",
+          "config_name": "azure-connection-config-01",
+          "spec_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "image_id": "UUID-for-azure-ubuntu-image",
+          "vnet_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "vnic_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "security_group_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "ssh_key_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "description": "description"
+      },
+      {
+          "name": "aws-vmtest06",
+          "config_name": "aws-connection-config-01",
+          "spec_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "image_id": "UUID-for-aws-ubuntu-image",
+          "vnet_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "vnic_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "security_group_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "ssh_key_id": "17c12631-d29c-46c9-8390-322ad065cc39",
+          "description": "description"
+      }
+  ]
+}
