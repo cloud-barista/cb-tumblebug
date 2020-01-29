@@ -1,5 +1,5 @@
-# CB-Tumblebug (Multi-Cloud Infra Service Management)
-Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
+# CB-Tumblebug CLI (가칭:tbctl)
+CB-Tumblebug의 기본적인 시나리오 테스트를 지원하기 위한 CLI 도구
 
 ***
 
