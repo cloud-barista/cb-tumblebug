@@ -13,7 +13,7 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 
 ## [CLI 개요]
 - CB-Tumblebug의 기본적인 시나리오 테스트를 지원하기 위한 CLI (목적 변경 가능)
-- CLI 기본 코드는 cobra 프로젝트 (https://github.com/spf13/cobra)를 통해 자동 생성함
+- CLI 기본 코드는 cobra 프로젝트 (https://github.com/spf13/cobra) 를 통해 자동 생성함
 - 현황: 개발 진행중
 
 ## [CLI 사용 방법]
