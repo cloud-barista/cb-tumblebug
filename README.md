@@ -35,7 +35,11 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
   - https://golang.org/doc/install (2019년 11월 현재 `apt install golang` 으로 설치하면 1.10 설치됨. 이 링크에서 1.12 이상 버전으로 설치할 것)
   - `wget https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz`
   - `tar -C /usr/local -xzf go1.13.4.linux-amd64.tar.gz`
-  - `.bashrc` 파일 하단에 다음을 추가: `export PATH=$PATH:/usr/local/go/bin`
+  - `.bashrc` 파일 하단에 다음을 추가: 
+  ```
+  export PATH=$PATH:/usr/local/go/bin
+  export GOPATH=$HOME/go
+  ```
 
 
 - `.bashrc` 에 기재한 내용을 적용하기 위해, 다음 중 하나를 수행
