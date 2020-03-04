@@ -14,7 +14,7 @@ WORKDIR /go/src/github.com/cloud-barista/cb-tumblebug
 
 WORKDIR src
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumblebug -v
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumblebug -v
 
 #############################################################
 ## Stage 2 - Application Setup
