@@ -1,13 +1,13 @@
 package mcir
 
 import (
-	"strings"
-	"strconv"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"fmt"
-	"encoding/json"
 	"os"
+	"strconv"
+	"strings"
 
 	//uuid "github.com/google/uuid"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
@@ -121,9 +121,9 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the resource with give UUID."}
+		mapA := map[string]string{"message": "Failed to find the resource with given UUID."}
 		mapB, _ := json.Marshal(mapA)
-		err := fmt.Errorf("Failed to find the resource with give UUID.")
+		err := fmt.Errorf("Failed to find the resource with given UUID.")
 		return http.StatusNotFound, mapB, err
 	}
 	//fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
@@ -143,7 +143,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		return http.StatusOK, nil, nil
 	case "spec":
 		// delete spec info
-	
+
 		//get related recommend spec
 		keyValue, err := store.Get(key)
 		content := specInfo{}
@@ -293,7 +293,7 @@ func delResourceById(nsId string, resourceType string, resourceId string, forceF
 		return http.StatusOK, nil, nil
 	case "spec":
 		// delete spec info
-	
+
 		//get related recommend spec
 		keyValue, err := store.Get(key)
 		content := specInfo{}
@@ -418,7 +418,7 @@ func delResourceByName(nsId string, resourceType string, resourceId string, forc
 		return http.StatusOK, nil, nil
 	case "spec":
 		// delete spec info
-	
+
 		//get related recommend spec
 		keyValue, err := store.Get(key)
 		content := specInfo{}
@@ -535,7 +535,7 @@ func getResourceList(nsId string, resourceType string) []string {
 	} else {
 		return []string{"invalid resource type"}
 	}
-	
+
 	fmt.Println("[Get " + resourceType + " list")
 	key := "/ns/" + nsId + "/resources/" + resourceType
 	fmt.Println(key)
@@ -544,7 +544,7 @@ func getResourceList(nsId string, resourceType string) []string {
 	var resourceList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
-			resourceList = append(resourceList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/" + resourceType + "/"))
+		resourceList = append(resourceList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/"+resourceType+"/"))
 		//}
 	}
 	for _, v := range resourceList {

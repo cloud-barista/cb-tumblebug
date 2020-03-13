@@ -41,14 +41,14 @@ type sshKeyReq struct {
 }
 
 type sshKeyInfo struct {
-	Id             string     `json:"id"`
-	ConnectionName string     `json:"connectionName"`
-	CspSshKeyName  string     `json:"cspSshKeyName"`
-	Fingerprint    string     `json:"fingerprint"`
-	Username       string     `json:"username"`
-	PublicKey      string     `json:"publicKey"`
-	PrivateKey     string     `json:"privateKey"`
-	Description    string     `json:"description"`
+	Id             string            `json:"id"`
+	ConnectionName string            `json:"connectionName"`
+	CspSshKeyName  string            `json:"cspSshKeyName"`
+	Fingerprint    string            `json:"fingerprint"`
+	Username       string            `json:"username"`
+	PublicKey      string            `json:"publicKey"`
+	PrivateKey     string            `json:"privateKey"`
+	Description    string            `json:"description"`
 	KeyValueList   []common.KeyValue `json:"keyValueList"`
 }
 
@@ -122,7 +122,7 @@ func RestGetSshKey(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the sshKey with give UUID."}
+		mapA := map[string]string{"message": "Failed to find the sshKey with given UUID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -187,7 +187,6 @@ func RestDelSshKey(c echo.Context) error {
 		*/
 		return c.JSONBlob(responseCode, body)
 	}
-	
 
 	mapA := map[string]string{"message": "The sshKey has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -217,7 +216,7 @@ func RestDelAllSshKey(c echo.Context) error {
 				*/
 				return c.JSONBlob(responseCode, body)
 			}
-			
+
 		}
 
 		mapA := map[string]string{"message": "All sshKeys has been deleted"}

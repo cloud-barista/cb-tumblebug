@@ -54,8 +54,8 @@ type networkInfo struct {
 	CidrBlock      string `json:"cidrBlock"`
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description  string     `json:"description"`
-	Status       string     `json:"status"`
+	Description  string            `json:"description"`
+	Status       string            `json:"status"`
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
@@ -125,7 +125,7 @@ func RestGetNetwork(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the network with give UUID."}
+		mapA := map[string]string{"message": "Failed to find the network with given UUID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -187,7 +187,6 @@ func RestDelNetwork(c echo.Context) error {
 		//mapA := map[string]string{"message": "Failed to delete the network"}
 		return c.JSONBlob(responseCode, body)
 	}
-	
 
 	mapA := map[string]string{"message": "The network has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -213,7 +212,7 @@ func RestDelAllNetwork(c echo.Context) error {
 				//mapA := map[string]string{"message": "Failed to delete the network"}
 				return c.JSONBlob(responseCode, body)
 			}
-			
+
 		}
 
 		mapA := map[string]string{"message": "All networks has been deleted"}
