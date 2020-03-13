@@ -37,7 +37,7 @@ type publicIpReq struct {
 	//PublicIp          string `json:"publicIp"`
 	//OwnedVmId         string `json:"ownedVmId"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description  string     `json:"description"`
+	Description  string            `json:"description"`
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
@@ -49,8 +49,8 @@ type publicIpInfo struct {
 	PublicIp        string `json:"publicIp"`
 	OwnedVmId       string `json:"ownedVmId"`
 	//ResourceGroupName string `json:"resourceGroupName"`
-	Description  string     `json:"description"`
-	Status       string     `json:"status"`
+	Description  string            `json:"description"`
+	Status       string            `json:"status"`
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
@@ -120,7 +120,7 @@ func RestGetPublicIp(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the publicIp with give UUID."}
+		mapA := map[string]string{"message": "Failed to find the publicIp with given UUID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -182,7 +182,6 @@ func RestDelPublicIp(c echo.Context) error {
 		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
 		return c.JSONBlob(responseCode, body)
 	}
-	
 
 	mapA := map[string]string{"message": "The publicIp has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -208,7 +207,7 @@ func RestDelAllPublicIp(c echo.Context) error {
 				//mapA := map[string]string{"message": "Failed to delete the publicIp"}
 				return c.JSONBlob(responseCode, body)
 			}
-			
+
 		}
 
 		mapA := map[string]string{"message": "All publicIps has been deleted"}

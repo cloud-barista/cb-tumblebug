@@ -14,7 +14,7 @@ do
 	#echo $LEN, $NUM, $ZONE, $REGION
 	echo $REGION, $ZONE
 
-	curl -X POST http://$RESTSERVER:1024/region -H 'Content-Type: application/json' -d '{"RegionName":"gcp-'$ZONE'","ProviderName":"GCP", "KeyValueInfoList": [{"Key":"Region", "Value":"'$REGION'"}, {"Key":"Zone", "Value":"'$ZONE'"}]}'
-	curl -X POST http://$RESTSERVER:1024/connectionconfig -H 'Content-Type: application/json' -d '{"ConfigName":"gcp-'$ZONE'-config","ProviderName":"GCP", "DriverName":"gcp-driver01", "CredentialName":"gcp-credential01", "RegionName":"gcp-'$ZONE'"}'
+	curl -X POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: application/json' -d '{"RegionName":"gcp-'$ZONE'","ProviderName":"GCP", "KeyValueInfoList": [{"Key":"Region", "Value":"'$REGION'"}, {"Key":"Zone", "Value":"'$ZONE'"}]}'
+	curl -X POST http://$RESTSERVER:1024/spider/connectionconfig -H 'Content-Type: application/json' -d '{"ConfigName":"gcp-'$ZONE'-config","ProviderName":"GCP", "DriverName":"gcp-driver01", "CredentialName":"gcp-credential01", "RegionName":"gcp-'$ZONE'"}'
 
 done

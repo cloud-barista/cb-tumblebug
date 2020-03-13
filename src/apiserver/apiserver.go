@@ -7,7 +7,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/cloud-barista/cb-tumblebug/src/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/mcis"
-	
+
 	//"os"
 
 	"fmt"
@@ -90,7 +90,6 @@ func ApiServer() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
-
 	fmt.Println("")
 	fmt.Println("")
 	fmt.Println("")
@@ -104,7 +103,7 @@ func ApiServer() {
 	fmt.Println("")
 
 	// Route
-	g := e.Group("/ns", common.NsValidation())
+	g := e.Group("/tumblebug/ns", common.NsValidation())
 
 	g.POST("", common.RestPostNs)
 	g.GET("/:nsId", common.RestGetNs)

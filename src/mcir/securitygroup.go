@@ -62,7 +62,7 @@ type securityGroupInfo struct {
 	//ResourceGroupName  string `json:"resourceGroupName"`
 	Description   string              `json:"description"`
 	FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
-	KeyValueList  []common.KeyValue          `json:"keyValueList"`
+	KeyValueList  []common.KeyValue   `json:"keyValueList"`
 }
 
 /* FYI
@@ -131,7 +131,7 @@ func RestGetSecurityGroup(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the securityGroup with give UUID."}
+		mapA := map[string]string{"message": "Failed to find the securityGroup with given UUID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -193,7 +193,6 @@ func RestDelSecurityGroup(c echo.Context) error {
 		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
 		return c.JSONBlob(responseCode, body)
 	}
-	
 
 	mapA := map[string]string{"message": "The securityGroup has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -219,7 +218,7 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 				//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
 				return c.JSONBlob(responseCode, body)
 			}
-			
+
 		}
 
 		mapA := map[string]string{"message": "All securityGroups has been deleted"}

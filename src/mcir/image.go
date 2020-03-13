@@ -55,14 +55,14 @@ type imageReq struct {
 }
 
 type imageInfo struct {
-	Id             string     `json:"id"`
-	ConnectionName string     `json:"connectionName"`
-	CspImageId     string     `json:"cspImageId"`
-	CspImageName   string     `json:"cspImageName"`
-	CreationDate   string     `json:"creationDate"`
-	Description    string     `json:"description"`
-	GuestOS        string     `json:"guestOS"` // Windows7, Ubuntu etc.
-	Status         string     `json:"status"`  // available, unavailable
+	Id             string            `json:"id"`
+	ConnectionName string            `json:"connectionName"`
+	CspImageId     string            `json:"cspImageId"`
+	CspImageName   string            `json:"cspImageName"`
+	CreationDate   string            `json:"creationDate"`
+	Description    string            `json:"description"`
+	GuestOS        string            `json:"guestOS"` // Windows7, Ubuntu etc.
+	Status         string            `json:"status"`  // available, unavailable
 	KeyValueList   []common.KeyValue `json:"keyValueList"`
 }
 
@@ -131,7 +131,7 @@ func RestGetImage(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the image with give UUID."}
+		mapA := map[string]string{"message": "Failed to find the image with given UUID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -186,7 +186,7 @@ func RestDelImage(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, _, err := delImage(nsId, id, forceFlag)
-	
+
 	responseCode, _, err := delResource(nsId, "image", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
