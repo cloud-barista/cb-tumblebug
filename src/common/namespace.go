@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo"
-
+	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
 	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
+	"github.com/labstack/echo"
 )
 
 type nsReq struct {
@@ -208,24 +208,42 @@ func delNs(Id string) error {
 	fmt.Println("[Delete ns] " + Id)
 
 	/*
-	// Forbid deleting NS when there is at least one MCIS or one of resources.
-	mcisList := mcis.getMcisList(Id)
-	imageList := getImageList(Id)
-	networkList := getNetworkList(Id)
-	securityGroupList := getSecurityGroupList(Id)
-	specList := getSpecList(Id)
-	sshKeyList := getSshKeyList(Id)
-	subnetList := getSubnetList(Id)
+		// Forbid deleting NS when there is at least one MCIS or one of resources.
+		mcisList := mcis.getMcisList(Id)
+		imageList := mcir.getResourceList(Id, "image")
+		networkList := mcir.getResourceList(Id, "network")
+		publicIpList := mcir.getResourceList(Id, "publicIp")
+		securityGroupList := mcir.getResourceList(Id, "securityGroup")
+		specList := mcir.getResourceList(Id, "spec")
+		sshKeyList := mcir.getResourceList(Id, "sshKey")
+		subnetList := mcir.getResourceList(Id, "subnet")
+		vNicList := mcir.getResourceList(Id, "vNic")
 
-	if len(mcisList)+len(imageList)+len(networkList)+len(securityGroupList)+len(specList)+len(sshKeyList)+len(subnetList) > 0 {
-		fmt.Println("Cannot delete NS " + Id + ", which is not empty. There exists at least one MCIS or one of resources.")
-		fmt.Printf(" len(mcisList): %d \n len(imageList): %d \n len(networkList): %d \n len(securityGroupList): %d \n len(specList): %d \n len(sshKeyList): %d \n len(subnetList): %d \n",
-			len(mcisList), len(imageList), len(networkList), len(securityGroupList), len(specList), len(sshKeyList), len(subnetList))
+		if len(mcisList)+len(imageList)+len(networkList)+len(securityGroupList)+len(specList)+len(sshKeyList)+len(subnetList) > 0 {
+			errString := "Cannot delete NS " + Id + ", which is not empty. There exists at least one MCIS or one of resources."
+			errString += " \n len(mcisList): " + len(mcisList)
+			errString += " \n len(imageList): " + len(imageList)
+			errString += " \n len(networkList): " + len(networkList)
+			errString += " \n len(publicIpList): " + len(publicIpList)
+			errString += " \n len(securityGroupList): " + len(securityGroupList)
+			errString += " \n len(specList): " + len(specList)
+			errString += " \n len(sshKeyList): " + len(sshKeyList)
+			errString += " \n len(subnetList): " + len(subnetList)
+			errString += " \n len(vNicList): " + len(vNicList)
 
-		err := store.Delete("") // TODO: We don't need to call store.Delete("") to make an error object.
-		cblog.Error(err)
-		return err // TODO: Pass len(****List) to restDelNs() / restDelAllNs()
-	}
+			err := fmt.Errorf(errString)
+			cblog.Error(err)
+			return err
+		}
+	*/
+
+	/*
+			import cycle not allowed
+			package github.com/cloud-barista/cb-tumblebug/src
+		        imports github.com/cloud-barista/cb-tumblebug/src/apiserver
+		        imports github.com/cloud-barista/cb-tumblebug/src/common
+		        imports github.com/cloud-barista/cb-tumblebug/src/mcir
+				imports github.com/cloud-barista/cb-tumblebug/src/common
 	*/
 
 	key := "/ns/" + Id
