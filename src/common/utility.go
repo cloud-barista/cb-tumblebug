@@ -11,6 +11,7 @@ import (
 	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"github.com/sirupsen/logrus"
+
 	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
 
 	"encoding/json"
@@ -93,18 +94,18 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 }
 
 type mcirIds struct {
-	CspImageId string
-	CspImageName string
-	CspSshKeyName string
-	Name string // Spec
-	CspNetworkId string
-	CspNetworkName string
-	CspSecurityGroupId string
+	CspImageId           string
+	CspImageName         string
+	CspSshKeyName        string
+	Name                 string // Spec
+	CspNetworkId         string
+	CspNetworkName       string
+	CspSecurityGroupId   string
 	CspSecurityGroupName string
-	CspPublicIpId string
-	CspPublicIpName string
-	CspVNicId string
-	CspVNicName string
+	CspPublicIpId        string
+	CspPublicIpName      string
+	CspVNicId            string
+	CspVNicName          string
 
 	ConnectionName string
 }
@@ -126,12 +127,12 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
 		return ""
 	}
-	
+
 	content := mcirIds{}
 	json.Unmarshal([]byte(keyValue.Value), &content)
-	
+
 	url := SPIDER_URL + "/connectionconfig/" + content.ConnectionName
-	
+
 	method := "GET"
 
 	client := &http.Client{
@@ -166,7 +167,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 		cblog.Error(err)
 		return "Cannot get VM's CSP type"
 	default:
-		
+
 	}
 
 	type ConnConfigInfo struct {
@@ -200,92 +201,46 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) strin
 		return ""
 	}
 
-	/*
-	cspType := GetResourcesCspType(nsId, resourceType, resourceId)
-	if cspType == "AWS" {
-		switch resourceType {
-		case "image":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspImageId
-		case "sshKey":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSshKeyName
-		case "spec":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.Name
-		case "network":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspNetworkId // contains CspSubnetId
-		// case "subnet":
-		// 	content := subnetInfo{}
-		// 	json.Unmarshal([]byte(keyValue.Value), &content)
-		// 	return content.CspSubnetId
-		case "securityGroup":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSecurityGroupId
-		case "publicIp":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspPublicIpId
-		case "vNic":
-			content := mcirIds{}
-			err = json.Unmarshal([]byte(keyValue.Value), &content)
-			if err != nil {
-				cblog.Error(err)
-				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-				return ""
-			}
-			return content.CspVNicId
-		default:
-			return "invalid resourceType"
+	switch resourceType {
+	case "image":
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspImageName
+	case "sshKey":
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspSshKeyName
+	case "spec":
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.Name
+	case "network":
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspNetworkName // contains CspSubnetId
+	// case "subnet":
+	// 	content := subnetInfo{}
+	// 	json.Unmarshal([]byte(keyValue.Value), &content)
+	// 	return content.CspSubnetId
+	case "securityGroup":
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspSecurityGroupName
+	case "publicIp":
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspPublicIpName
+	case "vNic":
+		content := mcirIds{}
+		err = json.Unmarshal([]byte(keyValue.Value), &content)
+		if err != nil {
+			cblog.Error(err)
+			// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+			return ""
 		}
-	} else {
-		*/
-		switch resourceType {
-		case "image":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspImageName
-		case "sshKey":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSshKeyName
-		case "spec":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.Name
-		case "network":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspNetworkName // contains CspSubnetId
-		// case "subnet":
-		// 	content := subnetInfo{}
-		// 	json.Unmarshal([]byte(keyValue.Value), &content)
-		// 	return content.CspSubnetId
-		case "securityGroup":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSecurityGroupName
-		case "publicIp":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspPublicIpName
-		case "vNic":
-			content := mcirIds{}
-			err = json.Unmarshal([]byte(keyValue.Value), &content)
-			if err != nil {
-				cblog.Error(err)
-				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-				return ""
-			}
-			return content.CspVNicName
-		default:
-			return "invalid resourceType"
-		}
-	//}	
+		return content.CspVNicName
+	default:
+		return "invalid resourceType"
+	}
+	//}
 }

@@ -10,5 +10,5 @@ source ../setup.env
 #	curl -sX DELETE http://$RESTSERVER:1024/vm/${VM_ID}?connection_name=${NAME} &
 #done
 
-MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | jq -r '.mcis[].id'`
-curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID?action=terminate
+MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/tumblebug/ns/$NS_ID/mcis | jq -r '.mcis[].id'`
+curl -sX GET http://$TUMBLEBUG_IP:1323/tumblebug/ns/$NS_ID/mcis/$MCIS_ID?action=terminate

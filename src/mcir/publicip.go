@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/labstack/echo"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/PublicIPHandler.go
@@ -231,20 +231,25 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	}
 	*/
 
-	url := SPIDER_URL + "/publicip?connection_name=" + u.ConnectionName
+	//url := SPIDER_URL + "/publicip?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/publicip"
 
 	method := "POST"
 
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspPublicIpName + "\"}")
 	type PublicIPReqInfo struct {
-		Name         string
-		KeyValueList []common.KeyValue
+		ConnectionName string
+		ReqInfo        struct {
+			Name         string
+			KeyValueList []common.KeyValue
+		}
 	}
 	tempReq := PublicIPReqInfo{}
-	tempReq.Name = u.CspPublicIpName
-	tempReq.KeyValueList = u.KeyValueList
+	tempReq.ConnectionName = u.ConnectionName
+	tempReq.ReqInfo.Name = u.CspPublicIpName
+	tempReq.ReqInfo.KeyValueList = u.KeyValueList
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
-	fmt.Println("payload: " + string(payload)) // for debug
+	//fmt.Println("payload: " + string(payload)) // for debug
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {

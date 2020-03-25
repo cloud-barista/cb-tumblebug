@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/labstack/echo"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/VNetworkHandler.go
@@ -240,26 +240,31 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 	}
 	*/
 
-	//ip := "http://localhost"
-	//port := "1024"
-	//url := ip + ":" + port + "/vnetwork?connection_name=" + u.ConnectionName
-
-	// ip := "http://5ca45cf78bae720014a963d5.mockapi.io"
-	// port := "80"
-	// url := ip + ":" + port + "/vnetwork"
-
-	url := SPIDER_URL + "/vnetwork?connection_name=" + u.ConnectionName
+	//url := SPIDER_URL + "/vnetwork?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/vnetwork"
 
 	method := "POST"
 
-	payload := strings.NewReader("{ \"Name\": \"" + u.CspNetworkName + "\"}")
+	//payload := strings.NewReader("{ \"Name\": \"" + u.CspNetworkName + "\"}")
+	type VNetReqInfo struct {
+		ConnectionName string
+		ReqInfo        struct {
+			Name         string
+			KeyValueList []common.KeyValue
+		}
+	}
+	tempReq := VNetReqInfo{}
+	tempReq.ConnectionName = u.ConnectionName
+	tempReq.ReqInfo.Name = u.CspNetworkName
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	//fmt.Println("payload: " + string(payload)) // for debug
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(method, url, payload)
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 	if err != nil {
 		fmt.Println(err)

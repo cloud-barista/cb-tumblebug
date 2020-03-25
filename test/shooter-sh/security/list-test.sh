@@ -6,6 +6,6 @@ source ../setup.env
 	#NAME=${CONNECT_NAMES[0]}
 
         #curl -sX GET http://$RESTSERVER:1024/securitygroup?connection_name=${NAME} |json_pp &
-	curl -sX GET http://$TUMBLEBUG_IP:1323/ns/${NS_ID}/resources/securityGroup | json_pp &
+	curl -sX GET http://$TUMBLEBUG_IP:1323/tumblebug/ns/${NS_ID}/resources/securityGroup | json_pp &
 #done
 

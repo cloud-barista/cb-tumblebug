@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+
 	//"log"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/labstack/echo"
 
 	"sync"
+
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/cloud-barista/cb-tumblebug/src/mcir"
 )
@@ -47,12 +49,12 @@ type KeyValue struct {
 // Structs for REST API
 
 type mcisReq struct {
-	Id             string  `json:"id"`
-	Name           string  `json:"name"`
-	Vm_req         []vmReq `json:"vm_req"`
+	Id     string  `json:"id"`
+	Name   string  `json:"name"`
+	Vm_req []vmReq `json:"vm_req"`
 	//Vm_num         string  `json:"vm_num"`
-	Placement_algo string  `json:"placement_algo"`
-	Description    string  `json:"description"`
+	Placement_algo string `json:"placement_algo"`
+	Description    string `json:"description"`
 }
 
 type vmReq struct {
@@ -101,23 +103,22 @@ type placementKeyValue struct {
 }
 
 type mcisInfo struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	Status         string `json:"status"`
-	Placement_algo string `json:"placement_algo"`
-	Description    string `json:"description"`
+	Id             string       `json:"id"`
+	Name           string       `json:"name"`
+	Status         string       `json:"status"`
+	Placement_algo string       `json:"placement_algo"`
+	Description    string       `json:"description"`
 	Vm             []vmOverview `json:"vm"`
 }
 
 type vmOverview struct {
-	Id             string `json:"id"`
-	Name               string   `json:"name"`
-	Config_name        string   `json:"config_name"`
-	Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP     string     `json:"publicIP"`
-	PublicDNS    string     `json:"publicDNS"`
-	Status string `json:"status"`
-
+	Id          string     `json:"id"`
+	Name        string     `json:"name"`
+	Config_name string     `json:"config_name"`
+	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP    string     `json:"publicIP"`
+	PublicDNS   string     `json:"publicDNS"`
+	Status      string     `json:"status"`
 }
 
 type RegionInfo struct {
@@ -126,7 +127,7 @@ type RegionInfo struct {
 }
 
 type vmInfo struct {
-	Id             string `json:"id"`
+	Id                 string   `json:"id"`
 	Name               string   `json:"name"`
 	Config_name        string   `json:"config_name"`
 	Spec_id            string   `json:"spec_id"`
@@ -144,20 +145,19 @@ type vmInfo struct {
 	VmUserPasswd string `json:"vmUserPasswd"`
 
 	// 2. Provided by CB-Spider
-	Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP     string     `json:"publicIP"`
-	PublicDNS    string     `json:"publicDNS"`
-	PrivateIP    string     `json:"privateIP"`
-	PrivateDNS   string     `json:"privateDNS"`
-	VMBootDisk   string     `json:"vmBootDisk"` // ex) /dev/sda1
-	VMBlockDisk  string     `json:"vmBlockDisk"`
+	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP    string     `json:"publicIP"`
+	PublicDNS   string     `json:"publicDNS"`
+	PrivateIP   string     `json:"privateIP"`
+	PrivateDNS  string     `json:"privateDNS"`
+	VMBootDisk  string     `json:"vmBootDisk"` // ex) /dev/sda1
+	VMBlockDisk string     `json:"vmBlockDisk"`
 
 	// 3. Required by CB-Tumblebug
 	Status string `json:"status"`
 
 	CspViewVmDetail vmCspViewInfo `json:"cspViewVmDetail"`
 }
-
 
 type vmCspViewInfo struct {
 	Name      string    // AWS,
@@ -186,10 +186,9 @@ type vmCspViewInfo struct {
 	KeyValueList []KeyValue
 }
 
-
 type mcisStatusInfo struct {
-	Id     string         `json:"id"`
-	Name   string         `json:"name"`
+	Id   string `json:"id"`
+	Name string `json:"name"`
 	//Vm_num string         `json:"vm_num"`
 	Status string         `json:"status"`
 	Vm     []vmStatusInfo `json:"vm"`
@@ -224,7 +223,7 @@ type vmRecommendReq struct {
 }
 
 type vmPriority struct {
-	Priority string `json:"priority"`
+	Priority string        `json:"priority"`
 	Vm_spec  mcir.SpecInfo `json:"vm_spec"`
 }
 type vmRecommendInfo struct {
@@ -251,8 +250,8 @@ func RestPostMcis(c echo.Context) error {
 	keyValue, _ := store.Get(key)
 
 	var content struct {
-		Id             string   `json:"id"`
-		Name           string   `json:"name"`
+		Id   string `json:"id"`
+		Name string `json:"name"`
 		//Vm_num         string   `json:"vm_num"`
 		Status         string   `json:"status"`
 		Vm             []vmInfo `json:"vm"`
@@ -373,8 +372,8 @@ func RestGetMcis(c echo.Context) error {
 	} else {
 
 		var content struct {
-			Id             string   `json:"id"`
-			Name           string   `json:"name"`
+			Id   string `json:"id"`
+			Name string `json:"name"`
 			//Vm_num         string   `json:"vm_num"`
 			Status         string   `json:"status"`
 			Vm             []vmInfo `json:"vm"`
@@ -466,14 +465,13 @@ func RestGetAllMcis(c echo.Context) error {
 		json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 		mcisId := v
 		mcisTmp.Id = mcisId
-		
+
 		mcisStatus, err := getMcisStatus(nsId, mcisId)
 		if err != nil {
 			cblog.Error(err)
 			return err
 		}
 		mcisTmp.Status = mcisStatus.Status
-
 
 		vmList, err := getVmList(nsId, mcisId)
 		if err != nil {
@@ -495,7 +493,6 @@ func RestGetAllMcis(c echo.Context) error {
 			vmTmp.Id = v1
 			mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
 		}
-
 
 		content.Mcis = append(content.Mcis, mcisTmp)
 
@@ -682,7 +679,6 @@ func RestPostMcisVm(c echo.Context) error {
 	vmStatus, err := getVmStatus(nsId, mcisId, vmInfoData.Id)
 	vmInfoData.Status = vmStatus.Status
 
-
 	return c.JSON(http.StatusCreated, vmInfoData)
 }
 
@@ -774,7 +770,6 @@ func RestGetMcisVm(c echo.Context) error {
 		}
 		vmTmp.Status = vmStatusInfoTmp.Status
 
-
 		//fmt.Printf("%+v\n", vmTmp)
 		common.PrintJsonPretty(vmTmp)
 
@@ -863,10 +858,10 @@ func getMcisList(nsId string) []string {
 		}
 	}
 	/*
-	for _, v := range mcisList {
-		fmt.Println("<" + v + "> \n")
-	}
-	fmt.Println("===============================================")
+		for _, v := range mcisList {
+			fmt.Println("<" + v + "> \n")
+		}
+		fmt.Println("===============================================")
 	*/
 	return mcisList
 
@@ -890,10 +885,10 @@ func getVmList(nsId string, mcisId string) ([]string, error) {
 		}
 	}
 	/*
-	for _, v := range vmList {
-		fmt.Println("<" + v + ">")
-	}
-	fmt.Println("===============================================")
+		for _, v := range vmList {
+			fmt.Println("<" + v + ">")
+		}
+		fmt.Println("===============================================")
 	*/
 	return vmList, nil
 
@@ -968,11 +963,11 @@ func delMcisVm(nsId string, mcisId string, vmId string) error {
 func getRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]vmPriority, error) {
 
 	fmt.Println("getRecommendList")
-	
+
 	var content struct {
-		Id					string 
-		Price        		string 
-		ConnectionName     string  
+		Id             string
+		Price          string
+		ConnectionName string
 	}
 	//fmt.Println("[Get MCISs")
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
@@ -986,7 +981,7 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 	var vmPriorityList []vmPriority
 
 	for cnt, v := range keyValue {
-		fmt.Println("getRecommendList1: "+v.Key)
+		fmt.Println("getRecommendList1: " + v.Key)
 		err = json.Unmarshal([]byte(v.Value), &content)
 		if err != nil {
 			cblog.Error(err)
@@ -1016,8 +1011,6 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 	//requires error handling
 
 }
-
-
 
 // MCIS Control
 
@@ -1106,7 +1099,6 @@ func createMcis(nsId string, req *mcisReq) string {
 		//addVmToMcis(nsId, req.Id, vmInfoData)
 	}
 	wg.Wait()
-
 
 	return key
 }
@@ -1218,16 +1210,14 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	Description        string   `json:"description"`
 	}
 	*/
-	
 
-
-	url := SPIDER_URL + "/vm?connection_name=" + vmInfoData.Config_name
+	//url := SPIDER_URL + "/vm?connection_name=" + vmInfoData.Config_name
+	url := SPIDER_URL + "/vm"
 
 	method := "POST"
 
 	fmt.Println("\n\n[Calling SPIDER]START")
 	fmt.Println("url: " + url + " method: " + method)
-
 
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
 
@@ -1255,19 +1245,22 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	// Mark 3
 	type VMReqInfo struct {
-		VMName string
+		ConnectionName string
+		ReqInfo        struct {
+			VMName string
 
-		ImageId            string
-		VirtualNetworkId   string
-		NetworkInterfaceId string
-		PublicIPId         string
-		SecurityGroupIds   []string
+			ImageId            string
+			VirtualNetworkId   string
+			NetworkInterfaceId string
+			PublicIPId         string
+			SecurityGroupIds   []string
 
-		VMSpecId string
+			VMSpecId string
 
-		KeyPairName  string
-		VMUserId     string
-		VMUserPasswd string
+			KeyPairName  string
+			VMUserId     string
+			VMUserPasswd string
+		}
 	}
 
 	/* VM creation requtest with csp resource ids
@@ -1289,25 +1282,27 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	*/
 
 	tempReq := VMReqInfo{}
-	tempReq.VMName = vmInfoData.Name
+	tempReq.ConnectionName = vmInfoData.Config_name
 
-	tempReq.ImageId = common.GetCspResourceId(nsId, "image", vmInfoData.Image_id)
-	tempReq.VirtualNetworkId = common.GetCspResourceId(nsId, "network", vmInfoData.Vnet_id)
-	tempReq.NetworkInterfaceId = "" //common.GetCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
-	tempReq.PublicIPId = common.GetCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
+	tempReq.ReqInfo.VMName = vmInfoData.Name
+
+	tempReq.ReqInfo.ImageId = common.GetCspResourceId(nsId, "image", vmInfoData.Image_id)
+	tempReq.ReqInfo.VirtualNetworkId = common.GetCspResourceId(nsId, "network", vmInfoData.Vnet_id)
+	tempReq.ReqInfo.NetworkInterfaceId = "" //common.GetCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
+	tempReq.ReqInfo.PublicIPId = common.GetCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
 
 	var SecurityGroupIdsTmp []string
 	for _, v := range vmInfoData.Security_group_ids {
 		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, common.GetCspResourceId(nsId, "securityGroup", v))
 	}
-	tempReq.SecurityGroupIds = SecurityGroupIdsTmp
+	tempReq.ReqInfo.SecurityGroupIds = SecurityGroupIdsTmp
 
-	tempReq.VMSpecId = common.GetCspResourceId(nsId, "spec", vmInfoData.Spec_id)
+	tempReq.ReqInfo.VMSpecId = common.GetCspResourceId(nsId, "spec", vmInfoData.Spec_id)
 
-	tempReq.KeyPairName = common.GetCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
+	tempReq.ReqInfo.KeyPairName = common.GetCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
 
-	tempReq.VMUserId = vmInfoData.Vm_access_id
-	tempReq.VMUserPasswd = vmInfoData.Vm_access_passwd
+	tempReq.ReqInfo.VMUserId = vmInfoData.Vm_access_id
+	tempReq.ReqInfo.VMUserPasswd = vmInfoData.Vm_access_passwd
 
 	fmt.Printf("\n[Request body to CB-SPIDER for Creating VM]\n")
 	common.PrintJsonPretty(tempReq)
@@ -1427,29 +1422,29 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	// 1. Variables in vmReq
 	/*
-	vmInfoData.CspVmName = temp.Name // = u.CspVmName
+		vmInfoData.CspVmName = temp.Name // = u.CspVmName
 
-	vmInfoData.CspImageName = temp.ImageId
-	vmInfoData.CspVirtualNetworkId = temp.VirtualNetworkId
-	vmInfoData.CspNetworkInterfaceId = temp.NetworkInterfaceId
-	//vmInfoData.CspPublicIPId = temp..CspPublicIPId
-	vmInfoData.CspSecurityGroupIds = temp.SecurityGroupIds
-	vmInfoData.CspSpecId = temp.VMSpecId
-	vmInfoData.CspKeyPairName = temp.KeyPairName
+		vmInfoData.CspImageName = temp.ImageId
+		vmInfoData.CspVirtualNetworkId = temp.VirtualNetworkId
+		vmInfoData.CspNetworkInterfaceId = temp.NetworkInterfaceId
+		//vmInfoData.CspPublicIPId = temp..CspPublicIPId
+		vmInfoData.CspSecurityGroupIds = temp.SecurityGroupIds
+		vmInfoData.CspSpecId = temp.VMSpecId
+		vmInfoData.CspKeyPairName = temp.KeyPairName
 
-	vmInfoData.CbImageId = vmInfoData.Image_id
-	vmInfoData.CbVirtualNetworkId = vmInfoData.Vnet_id
-	vmInfoData.CbNetworkInterfaceId = vmInfoData.Vnic_id
-	vmInfoData.CbPublicIPId = vmInfoData.Public_ip_id
-	vmInfoData.CbSecurityGroupIds = vmInfoData.Security_group_ids
-	vmInfoData.CbSpecId = vmInfoData.Spec_id
-	vmInfoData.CbKeyPairId = vmInfoData.Ssh_key_id
+		vmInfoData.CbImageId = vmInfoData.Image_id
+		vmInfoData.CbVirtualNetworkId = vmInfoData.Vnet_id
+		vmInfoData.CbNetworkInterfaceId = vmInfoData.Vnic_id
+		vmInfoData.CbPublicIPId = vmInfoData.Public_ip_id
+		vmInfoData.CbSecurityGroupIds = vmInfoData.Security_group_ids
+		vmInfoData.CbSpecId = vmInfoData.Spec_id
+		vmInfoData.CbKeyPairId = vmInfoData.Ssh_key_id
 
-	vmInfoData.Vm_access_id = temp.VMUserId
-	vmInfoData.Vm_access_passwd = temp.VMUserPasswd
+		vmInfoData.Vm_access_id = temp.VMUserId
+		vmInfoData.Vm_access_passwd = temp.VMUserPasswd
 
 	*/
-	
+
 	vmInfoData.CspViewVmDetail = temp
 
 	vmInfoData.Vm_access_id = temp.VMUserId
@@ -1566,18 +1561,17 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 
-
 	fmt.Println("\n\n[Calling SPIDER]START vmControl")
 
 	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
-	
+
 	/*
-	cspType := getVMsCspType(nsId, mcisId, vmId)
-	var cspVmId string
-	if cspType == "AWS" {
-		cspVmId = temp.CspViewVmDetail.Id
-	} else {
-		*/
+		cspType := getVMsCspType(nsId, mcisId, vmId)
+		var cspVmId string
+		if cspType == "AWS" {
+			cspVmId = temp.CspViewVmDetail.Id
+		} else {
+	*/
 	cspVmId := temp.CspViewVmDetail.Name
 	common.PrintJsonPretty(temp.CspViewVmDetail)
 
@@ -1585,33 +1579,46 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 	method := ""
 	switch action {
 	case actionTerminate:
-		url = SPIDER_URL + "/vm/" + cspVmId + "?connection_name=" + temp.Config_name
+		//url = SPIDER_URL + "/vm/" + cspVmId + "?connection_name=" + temp.Config_name
+		url = SPIDER_URL + "/vm/" + cspVmId
 		method = "DELETE"
 	case actionReboot:
-		url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=reboot"
+		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=reboot"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=reboot"
 		method = "GET"
 	case actionSuspend:
-		url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=suspend"
+		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=suspend"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=suspend"
 		method = "GET"
 	case actionResume:
-		url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=resume"
+		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=resume"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=resume"
 		method = "GET"
 	default:
 		return errors.New(action + "is invalid actionType")
 	}
-	fmt.Println("url: " + url + " method: " + method)
+	//fmt.Println("url: " + url + " method: " + method)
+
+	type ControlVMReqInfo struct {
+		ConnectionName string
+	}
+	tempReq := ControlVMReqInfo{}
+	tempReq.ConnectionName = temp.Config_name
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	//fmt.Println("payload: " + string(payload)) // for debug
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
+	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
 	//fmt.Println("Called mockAPI.")
@@ -1737,13 +1744,13 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) {
 
 	/*
-	var content struct {
-		Cloud_id  string `json:"cloud_id"`
-		Csp_vm_id string `json:"csp_vm_id"`
-		CspVmId   string
-		CspVmName string
-		PublicIP  string
-	}
+		var content struct {
+			Cloud_id  string `json:"cloud_id"`
+			Csp_vm_id string `json:"csp_vm_id"`
+			CspVmId   string
+			CspVmName string
+			PublicIP  string
+		}
 	*/
 
 	fmt.Println("[getVmStatus]" + vmId)
@@ -1767,25 +1774,33 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	fmt.Println("\n\n[Calling SPIDER]START")
 	fmt.Println("CspVmId: " + temp.CspViewVmDetail.Id)
 	/*
-	var cspVmId string
-	cspType := getVMsCspType(nsId, mcisId, vmId)
-	if cspType == "AWS" {
-		cspVmId = temp.CspViewVmDetail.Id
-	} else {
-		*/
+		var cspVmId string
+		cspType := getVMsCspType(nsId, mcisId, vmId)
+		if cspType == "AWS" {
+			cspVmId = temp.CspViewVmDetail.Id
+		} else {
+	*/
 	cspVmId := temp.CspViewVmDetail.Name
-	
-	url := SPIDER_URL + "/vmstatus/" + cspVmId + "?connection_name=" + temp.Config_name 
+
+	url := SPIDER_URL + "/vmstatus/" + cspVmId // + "?connection_name=" + temp.Config_name
 	method := "GET"
 
-	fmt.Println("url: " + url)
+	//fmt.Println("url: " + url)
+
+	type VMStatusReqInfo struct {
+		ConnectionName string
+	}
+	tempReq := VMStatusReqInfo{}
+	tempReq.ConnectionName = temp.Config_name
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	//fmt.Println("payload: " + string(payload)) // for debug
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 	errorInfo := vmStatusInfo{}
 	errorInfo.Status = "FAILED"
@@ -1794,10 +1809,11 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		fmt.Println(err)
 		return errorInfo, err
 	}
+	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
 	//fmt.Println("Called CB-Spider API.")
-	
+
 	if err != nil {
 		fmt.Println(err)
 		return errorInfo, err
@@ -1810,8 +1826,6 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		Status string
 	}
 	statusResponseTmp := statusResponse{}
-
-	
 
 	err2 := json.Unmarshal(body, &statusResponseTmp)
 	if err2 != nil {

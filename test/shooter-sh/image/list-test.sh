@@ -10,4 +10,4 @@ source ../setup.env
 #        num=`expr $num + 1`
 #done
 
-curl -sX GET http://$TUMBLEBUG_IP:1323/ns/${NS_ID}/resources/image | json_pp &
+curl -sX GET http://$TUMBLEBUG_IP:1323/tumblebug/ns/${NS_ID}/resources/image | json_pp &
