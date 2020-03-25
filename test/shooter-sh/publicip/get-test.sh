@@ -12,16 +12,16 @@ source ../setup.env
 #	num=`expr $num + 1`
 #done
 
-TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
+TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/tumblebug/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 #echo $TB_PUBLICIP_IDS | json_pp
 
 if [ -n "$TB_PUBLICIP_IDS" ]
 then
-        #TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
+        #TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/tumblebug/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
         for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
         do
                 echo ....Get ${TB_PUBLICIP_ID} ...
-                curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | json_pp
+                curl -sX GET http://$TUMBLEBUG_IP:1323/tumblebug/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | json_pp
         done
 else
         echo ....no publicIps found
