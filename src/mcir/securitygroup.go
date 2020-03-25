@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/labstack/echo"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/SecurityHandler.go
@@ -249,18 +249,23 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 	}
 	*/
 
-	url := SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
+	//url := SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/securitygroup"
 
 	method := "POST"
 
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSecurityGroupName + "\"}")
 	type SecurityReqInfo struct {
-		Name          string
-		SecurityRules *[]firewallRuleInfo
+		ConnectionName string
+		ReqInfo        struct {
+			Name          string
+			SecurityRules *[]firewallRuleInfo
+		}
 	}
 	tempReq := SecurityReqInfo{}
-	tempReq.Name = u.CspSecurityGroupName
-	tempReq.SecurityRules = u.FirewallRules
+	tempReq.ConnectionName = u.ConnectionName
+	tempReq.ReqInfo.Name = u.CspSecurityGroupName
+	tempReq.ReqInfo.SecurityRules = u.FirewallRules
 
 	payload, _ := json.Marshal(tempReq)
 
