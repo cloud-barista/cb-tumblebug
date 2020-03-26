@@ -1,10 +1,15 @@
 package common
 
 import (
+	"io/ioutil"
+	"net/http"
 	"os"
+	"strconv"
+
 	//"encoding/json"
 
 	uuid "github.com/google/uuid"
+	"github.com/labstack/echo"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
@@ -243,4 +248,142 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) strin
 		return "invalid resourceType"
 	}
 	//}
+}
+
+type ConnConfig struct {
+	ConfigName     string
+	ProviderName   string
+	DriverName     string
+	CredentialName string
+	RegionName     string
+}
+
+func GetConnConfig(ConnConfigName string) ConnConfig {
+	url := SPIDER_URL + "/connectionconfig/" + ConnConfigName
+
+	method := "GET"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	//req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		cblog.Error(err)
+		content := ConnConfig{}
+		return content
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		cblog.Error(err)
+		content := ConnConfig{}
+		return content
+	}
+
+	fmt.Println(string(body))
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		content := ConnConfig{}
+		return content
+	}
+
+	temp := ConnConfig{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+	}
+	return temp
+}
+
+func RestGetConnConfig(c echo.Context) error {
+
+	connConfigName := c.Param("connConfigName")
+
+	fmt.Println("[Get ConnConfig for name]" + connConfigName)
+	content := GetConnConfig(connConfigName)
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+type Region struct {
+	RegionName       string
+	ProviderName     string
+	KeyValueInfoList []KeyValue
+}
+
+func GetRegion(RegionName string) Region {
+	url := SPIDER_URL + "/region/" + RegionName
+
+	method := "GET"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	//req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		cblog.Error(err)
+		content := Region{}
+		return content
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		cblog.Error(err)
+		content := Region{}
+		return content
+	}
+
+	fmt.Println(string(body))
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		content := Region{}
+		return content
+	}
+
+	temp := Region{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+	}
+	return temp
+}
+
+func RestGetRegion(c echo.Context) error {
+
+	regionName := c.Param("regionName")
+
+	fmt.Println("[Get Region for name]" + regionName)
+	content := GetRegion(regionName)
+
+	return c.JSON(http.StatusOK, &content)
+
 }
