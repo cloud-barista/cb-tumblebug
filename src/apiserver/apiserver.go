@@ -184,6 +184,9 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/vNic/:vNicId", mcir.RestDelVNic)
 	g.DELETE("/:nsId/resources/vNic", mcir.RestDelAllVNic)
 
+	e.GET("/tumblebug/connConfig/:connConfigName", common.RestGetConnConfig)
+	e.GET("/tumblebug/region/:regionName", common.RestGetRegion)
+
 	e.Logger.Fatal(e.Start(":1323"))
 
 }
