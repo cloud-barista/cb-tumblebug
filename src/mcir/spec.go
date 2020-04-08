@@ -17,8 +17,9 @@ import (
 
 type specReq struct {
 	//Id             string `json:"id"`
-	CspSpecName    string `json:"cspSpecName"`
 	ConnectionName string `json:"connectionName"`
+	CspSpecName    string `json:"cspSpecName"`
+	Name           string `json:"name"`
 	Os_type        string `json:"os_type"`
 	Num_vCPU       string `json:"num_vCPU"`
 	Num_core       string `json:"num_core"`
@@ -29,8 +30,9 @@ type specReq struct {
 
 type SpecInfo struct {
 	Id             string `json:"id"`
-	CspSpecName    string `json:"cspSpecName"`
 	ConnectionName string `json:"connectionName"`
+	CspSpecName    string `json:"cspSpecName"`
+	Name           string `json:"name"`
 	Os_type        string `json:"os_type"`
 	Num_vCPU       string `json:"num_vCPU"`
 	Num_core       string `json:"num_core"`
@@ -49,22 +51,6 @@ type SpecInfo struct {
 	Gpumem_GiB            string `json:"gpumem_GiB"`
 	Gpu_p2p               string `json:"gpu_p2p"`
 }
-
-/*
-type SpecInfo struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	Os_type        string `json:"os_type"`
-	Num_vCPU       string `json:"num_vCPU"`
-	Num_core       string `json:"num_core"`
-	Mem_GiB        string `json:"mem_GiB"`
-	Storage_GiB    string `json:"storage_GiB"`
-	Description    string `json:"description"`
-
-	Cost_per_hour string `json:"cost_per_hour"`
-}
-*/
 
 type SpiderSpecInfo struct {
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
@@ -350,11 +336,11 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 	}
 	*/
 
-	// Temporary code
 	content := SpecInfo{}
 	content.Id = common.GenUuid()
-	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
+	content.CspSpecName = res.Name
+	content.Name = u.Name
 	//content.Os_type = res.Os_type
 	content.Num_vCPU = res.VCpu.Count
 	//content.Num_core = res.Num_core
@@ -366,8 +352,9 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
-		"cspSpecName":    content.CspSpecName,
 		"connectionName": content.ConnectionName,
+		"cspSpecName":    content.CspSpecName,
+		"name":           content.Name,
 		"os_type":        content.Os_type,
 		"Num_vCPU":       content.Num_vCPU,
 		"Num_core":       content.Num_core,
@@ -408,37 +395,13 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 
 	content.Id = common.GenUuid()
 
-	/* FYI
-	type specInfo struct {
-		Id          string `json:"id"`
-		CspSpecName        string `json:"cspSpecName"`
-		ConnectionName         string `json:"connectionName"`
-		Os_type     string `json:"os_type"`
-		Num_vCPU    string `json:"num_vCPU"`
-		Num_core    string `json:"num_core"`
-		Mem_GiB     string `json:"mem_GiB"`
-		Storage_GiB string `json:"storage_GiB"`
-		Description string `json:"description"`
-
-		Cost_per_hour         string `json:"cost_per_hour"`
-		Num_storage           string `json:"num_storage"`
-		Max_num_storage       string `json:"max_num_storage"`
-		Max_total_storage_TiB string `json:"max_total_storage_TiB"`
-		Net_bw_Gbps           string `json:"net_bw_Gbps"`
-		Ebs_bw_Mbps           string `json:"ebs_bw_Mbps"`
-		Gpu_model             string `json:"gpu_model"`
-		Num_gpu               string `json:"num_gpu"`
-		Gpumem_GiB            string `json:"gpumem_GiB"`
-		Gpu_p2p               string `json:"gpu_p2p"`
-	}
-	*/
-
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
-		"cspSpecName":    content.CspSpecName,
 		"connectionName": content.ConnectionName,
+		"cspSpecName":    content.CspSpecName,
+		"name":           content.Name,
 		"os_type":        content.Os_type,
 		"Num_vCPU":       content.Num_vCPU,
 		"Num_core":       content.Num_core,
