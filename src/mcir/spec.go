@@ -3,7 +3,11 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"strconv"
+	"strings"
+
 	//"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
@@ -23,7 +27,7 @@ type specReq struct {
 	Description    string `json:"description"`
 }
 
-type specInfo struct {
+type SpecInfo struct {
 	Id             string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
@@ -46,6 +50,7 @@ type specInfo struct {
 	Gpu_p2p               string `json:"gpu_p2p"`
 }
 
+/*
 type SpecInfo struct {
 	Id             string `json:"id"`
 	Name           string `json:"name"`
@@ -57,9 +62,33 @@ type SpecInfo struct {
 	Storage_GiB    string `json:"storage_GiB"`
 	Description    string `json:"description"`
 
-	Cost_per_hour         string `json:"cost_per_hour"`
+	Cost_per_hour string `json:"cost_per_hour"`
+}
+*/
+
+type SpiderSpecInfo struct {
+	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
+
+	Region string
+	Name   string
+	VCpu   VCpuInfo
+	Mem    string
+	Gpu    []GpuInfo
+
+	KeyValueList []common.KeyValue
 }
 
+type VCpuInfo struct {
+	Count string
+	Clock string // GHz
+}
+
+type GpuInfo struct {
+	Count string
+	Mfr   string
+	Model string
+	Mem   string
+}
 
 /* FYI
 g.POST("/:nsId/resources/spec", restPostSpec)
@@ -96,7 +125,7 @@ func RestPostSpec(c echo.Context) error {
 
 	fmt.Println("[POST Spec")
 	fmt.Println("[Registering Spec]")
-	u := &specInfo{}
+	u := &SpecInfo{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -110,13 +139,27 @@ func RestPostSpec(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
+func RestLookupSpec(c echo.Context) error {
+	u := &specReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	u.Name = c.Param("specName")
+	fmt.Println("[Lookup spec]" + u.Name)
+	content, _ := lookupSpec(u)
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
 func RestGetSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
 	id := c.Param("specId")
 
-	content := specInfo{}
+	content := SpecInfo{}
 
 	fmt.Println("[Get spec for id]" + id)
 	key := common.GenResourceKey(nsId, "spec", id)
@@ -143,7 +186,7 @@ func RestGetAllSpec(c echo.Context) error {
 
 	var content struct {
 		//Name string     `json:"name"`
-		Spec []specInfo `json:"spec"`
+		Spec []SpecInfo `json:"spec"`
 	}
 
 	specList := getResourceList(nsId, "spec")
@@ -154,7 +197,7 @@ func RestGetAllSpec(c echo.Context) error {
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		specTmp := specInfo{}
+		specTmp := SpecInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &specTmp)
 		specTmp.Id = v
 		content.Spec = append(content.Spec, specTmp)
@@ -184,7 +227,6 @@ func RestDelSpec(c echo.Context) error {
 		mapA := map[string]string{"message": "Failed to delete the spec"}
 		return c.JSON(responseCode, &mapA)
 	}
-	
 
 	mapA := map[string]string{"message": "The spec has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -208,7 +250,7 @@ func RestDelAllSpec(c echo.Context) error {
 				mapA := map[string]string{"message": "Failed to delete the spec"}
 				return c.JSON(responseCode, &mapA)
 			}
-			
+
 		}
 
 		mapA := map[string]string{"message": "All specs has been deleted"}
@@ -216,13 +258,73 @@ func RestDelAllSpec(c echo.Context) error {
 	}
 }
 
-/* Optional
-func registerSpecWithCspFlavorName(nsId string, u *specReq) (specInfo, error) {
+func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
+	url := SPIDER_URL + "/vmspec/" + u.Name
+
+	method := "GET"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	// Create Req body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	tempReq := JsonTemplate{}
+	tempReq.ConnectionName = u.ConnectionName
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		cblog.Error(err)
+		content := SpiderSpecInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		cblog.Error(err)
+		content := SpiderSpecInfo{}
+		err := fmt.Errorf("an error occurred while reading CB-Spider's response")
+		return content, err
+	}
+
+	fmt.Println(string(body))
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		cblog.Error(err)
+		content := SpiderSpecInfo{}
+		return content, err
+	}
+
+	temp := SpiderSpecInfo{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Errorf("an error occurred while unmarshaling:", err2)
+	}
+	return temp, nil
+}
+
+func registerSpecWithCspFlavorName(nsId string, u *specReq) (SpecInfo, error) {
 
 	// TODO: Implement error check logic
 	// TODO: Implement spec retrieving logic
 
-	content := specInfo{}
+	content := SpecInfo{}
 
 	// TODO: Implement the code below
 	// content, err := lookupSpec(u)
@@ -248,7 +350,7 @@ func registerSpecWithCspFlavorName(nsId string, u *specReq) (specInfo, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
-	Key := genResourceKey(nsId, "spec", content.Id)
+	Key := common.GenResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
 		"name":           content.Name,
 		"connectionName": content.ConnectionName,
@@ -281,17 +383,15 @@ func registerSpecWithCspFlavorName(nsId string, u *specReq) (specInfo, error) {
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	registerRecommendList(nsId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	registerRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
 
 	return content, nil
 }
-*/
 
-func registerSpecWithInfo(nsId string, content *specInfo) (specInfo, error) {
+func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 
 	// TODO: Implement error check logic
 
-	// Temporary code
 	content.Id = common.GenUuid()
 
 	/* FYI
@@ -365,7 +465,7 @@ func registerRecommendList(nsId string, connectionName string, cpuSize string, m
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId
 	fmt.Println(key)
 
-	mapA := map[string]string{"id":specId,"price":price,"connectionName":connectionName}
+	mapA := map[string]string{"id": specId, "price": price, "connectionName": connectionName}
 	Val, _ := json.Marshal(mapA)
 
 	err := store.Put(string(key), string(Val))
@@ -432,7 +532,7 @@ func delSpec(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		cblog.Error(err)
 		return err
 	}
-	
+
 	return nil
 }
 */
@@ -441,7 +541,7 @@ func delRecommendSpec(nsId string, specId string, cpuSize string, memSize string
 
 	fmt.Println("delRecommendSpec()")
 
-	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId 
+	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId
 
 	err := store.Delete(key)
 	if err != nil {
