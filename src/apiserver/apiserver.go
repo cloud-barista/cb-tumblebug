@@ -188,6 +188,8 @@ func ApiServer() {
 	e.GET("/tumblebug/connConfig/:connConfigName", common.RestGetConnConfig)
 	e.GET("/tumblebug/region/:regionName", common.RestGetRegion)
 
+	e.GET("/tumblebug/lookupSpec/:specName", mcir.RestLookupSpec)
+
 	e.Logger.Fatal(e.Start(":1323"))
 
 }

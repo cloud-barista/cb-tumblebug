@@ -70,7 +70,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		//get related recommend spec
 		keyValue, err := store.Get(key)
-		content := specInfo{}
+		content := SpecInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		if err != nil {
 			cblog.Error(err)
