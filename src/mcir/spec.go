@@ -17,7 +17,7 @@ import (
 
 type specReq struct {
 	//Id             string `json:"id"`
-	Name           string `json:"name"`
+	CspSpecName    string `json:"cspSpecName"`
 	ConnectionName string `json:"connectionName"`
 	Os_type        string `json:"os_type"`
 	Num_vCPU       string `json:"num_vCPU"`
@@ -29,7 +29,7 @@ type specReq struct {
 
 type SpecInfo struct {
 	Id             string `json:"id"`
-	Name           string `json:"name"`
+	CspSpecName    string `json:"cspSpecName"`
 	ConnectionName string `json:"connectionName"`
 	Os_type        string `json:"os_type"`
 	Num_vCPU       string `json:"num_vCPU"`
@@ -104,39 +104,44 @@ func RestPostSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	/*
-		action := c.QueryParam("action")
-		fmt.Println("[POST Spec requested action: " + action)
+	action := c.QueryParam("action")
+	fmt.Println("[POST Spec requested action: " + action)
 
-		if action == "registerWithInfo" {
-			fmt.Println("[Registering Spec with info]")
-			u := &specInfo{}
-			if err := c.Bind(u); err != nil {
-				return err
-			}
-			content, _ := registerSpecWithInfo(nsId, u)
-			return c.JSON(http.StatusCreated, content)
-
-		} else {
-			mapA := map[string]string{"message": "lookupSpec(specRequest) failed."}
+	if action == "registerWithInfo" { // `registerSpecWithInfo` will be deprecated in Cappuccino.
+		fmt.Println("[Registering Spec with info]")
+		u := &SpecInfo{}
+		if err := c.Bind(u); err != nil {
+			return err
+		}
+		content, err := registerSpecWithInfo(nsId, u)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{
+				"message": "Failed to register a Spec"}
 			return c.JSON(http.StatusFailedDependency, &mapA)
 		}
-	*/
+		return c.JSON(http.StatusCreated, content)
 
-	fmt.Println("[POST Spec")
-	fmt.Println("[Registering Spec]")
-	u := &SpecInfo{}
-	if err := c.Bind(u); err != nil {
-		return err
-	}
-	content, err := registerSpecWithInfo(nsId, u)
-	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{
-			"message": "Failed to register a Spec"}
+	} else { // if action == "registerWithCspSpecName" { // The default mode.
+		fmt.Println("[Registering Spec with CspSpecName]")
+		u := &specReq{}
+		if err := c.Bind(u); err != nil {
+			return err
+		}
+		content, err := registerSpecWithCspSpecName(nsId, u)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{
+				"message": "Failed to register a Spec"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+		return c.JSON(http.StatusCreated, content)
+
+	} /* else {
+		mapA := map[string]string{"message": "lookupSpec(specRequest) failed."}
 		return c.JSON(http.StatusFailedDependency, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	} */
+
 }
 
 func RestLookupSpec(c echo.Context) error {
@@ -145,8 +150,8 @@ func RestLookupSpec(c echo.Context) error {
 		return err
 	}
 
-	u.Name = c.Param("specName")
-	fmt.Println("[Lookup spec]" + u.Name)
+	u.CspSpecName = c.Param("specName")
+	fmt.Println("[Lookup spec]" + u.CspSpecName)
 	content, _ := lookupSpec(u)
 
 	return c.JSON(http.StatusOK, &content)
@@ -259,7 +264,7 @@ func RestDelAllSpec(c echo.Context) error {
 }
 
 func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
-	url := SPIDER_URL + "/vmspec/" + u.Name
+	url := SPIDER_URL + "/vmspec/" + u.CspSpecName
 
 	method := "GET"
 
@@ -319,40 +324,49 @@ func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
 	return temp, nil
 }
 
-func registerSpecWithCspFlavorName(nsId string, u *specReq) (SpecInfo, error) {
+func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 
 	// TODO: Implement error check logic
-	// TODO: Implement spec retrieving logic
 
-	content := SpecInfo{}
+	res, err := lookupSpec(u)
+	if err != nil {
+		cblog.Error(err)
+		err := fmt.Errorf("an error occurred while lookup spec via CB-Spider")
+		emptySpecInfoObj := SpecInfo{}
+		return emptySpecInfoObj, err
+	}
 
-	// TODO: Implement the code below
-	// content, err := lookupSpec(u)
+	/* FYI
+	type SpiderSpecInfo struct {
+		// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
-	// if 1 { // if lookupSpec(u) succeeds
-	// 	content.Id = common.GenUuid()
-	// 	...
-	// } else { // if lookupSpec(u) fails
+		Region string
+		Name   string
+		VCpu   VCpuInfo
+		Mem    string
+		Gpu    []GpuInfo
 
-	// }
-	//
+		KeyValueList []common.KeyValue
+	}
+	*/
 
 	// Temporary code
+	content := SpecInfo{}
 	content.Id = common.GenUuid()
-	content.Name = u.Name
+	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
-	content.Os_type = u.Os_type
-	content.Num_vCPU = u.Num_vCPU
-	content.Num_core = u.Num_core
-	content.Mem_GiB = u.Mem_GiB
-	content.Storage_GiB = u.Storage_GiB
-	content.Description = u.Description
+	//content.Os_type = res.Os_type
+	content.Num_vCPU = res.VCpu.Count
+	//content.Num_core = res.Num_core
+	content.Mem_GiB = res.Mem
+	//content.Storage_GiB = res.Storage_GiB
+	//content.Description = res.Description
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
-		"name":           content.Name,
+		"cspSpecName":    content.CspSpecName,
 		"connectionName": content.ConnectionName,
 		"os_type":        content.Os_type,
 		"Num_vCPU":       content.Num_vCPU,
@@ -373,7 +387,7 @@ func registerSpecWithCspFlavorName(nsId string, u *specReq) (SpecInfo, error) {
 		"gpu_p2p":               content.Gpu_p2p,
 	}
 	Val, _ := json.Marshal(mapA)
-	err := store.Put(string(Key), string(Val))
+	err = store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
 		return content, err
@@ -397,7 +411,7 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 	/* FYI
 	type specInfo struct {
 		Id          string `json:"id"`
-		Name        string `json:"name"`
+		CspSpecName        string `json:"cspSpecName"`
 		ConnectionName         string `json:"connectionName"`
 		Os_type     string `json:"os_type"`
 		Num_vCPU    string `json:"num_vCPU"`
@@ -423,7 +437,7 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
 	mapA := map[string]string{
-		"name":           content.Name,
+		"cspSpecName":    content.CspSpecName,
 		"connectionName": content.ConnectionName,
 		"os_type":        content.Os_type,
 		"Num_vCPU":       content.Num_vCPU,
