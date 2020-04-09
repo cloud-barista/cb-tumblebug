@@ -31,6 +31,7 @@ type PublicIPInfo struct {
 
 type publicIpReq struct {
 	//Id                string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	//CspPublicIpId     string `json:"cspPublicIpId"`
 	CspPublicIpName string `json:"cspPublicIpName"`
@@ -43,6 +44,7 @@ type publicIpReq struct {
 
 type publicIpInfo struct {
 	Id              string `json:"id"`
+	Name            string `json:"name"`
 	ConnectionName  string `json:"connectionName"`
 	CspPublicIpId   string `json:"cspPublicIpId"`
 	CspPublicIpName string `json:"cspPublicIpName"`
@@ -216,6 +218,13 @@ func RestDelAllPublicIp(c echo.Context) error {
 }
 
 func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, error) {
+	check, _ := checkResource(nsId, "publicIp", u.Name)
+
+	if check {
+		temp := publicIpInfo{}
+		err := fmt.Errorf("The publicIp " + u.Name + " already exists.")
+		return temp, http.StatusConflict, nil, err
+	}
 
 	/* FYI
 	type publicIpReq struct {
@@ -304,7 +313,8 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	}
 
 	content := publicIpInfo{}
-	content.Id = common.GenUuid()
+	//content.Id = common.GenUuid()
+	content.Id = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspPublicIpId = temp.Name
 	content.CspPublicIpName = temp.Name //common.LookupKeyValueList(temp.KeyValueList, "Name")

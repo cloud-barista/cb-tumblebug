@@ -47,6 +47,7 @@ type KeyValue struct {
 
 type imageReq struct {
 	//Id             string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	CspImageId     string `json:"cspImageId"`
 	CspImageName   string `json:"cspImageName"`
@@ -56,6 +57,7 @@ type imageReq struct {
 
 type imageInfo struct {
 	Id             string            `json:"id"`
+	Name           string            `json:"name"`
 	ConnectionName string            `json:"connectionName"`
 	CspImageId     string            `json:"cspImageId"`
 	CspImageName   string            `json:"cspImageName"`
@@ -95,7 +97,12 @@ func RestPostImage(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return err
 		}
-		content, _ := registerImageWithInfo(nsId, u)
+		content, err := registerImageWithInfo(nsId, u)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
 		return c.JSON(http.StatusCreated, content)
 	} else if action == "registerWithId" {
 		fmt.Println("[Registering Image with ID]")
@@ -103,11 +110,14 @@ func RestPostImage(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return err
 		}
-		content, responseCode, body, err := registerImageWithId(nsId, u)
+		//content, responseCode, body, err := registerImageWithId(nsId, u)
+		content, err := registerImageWithId(nsId, u)
 		if err != nil {
 			cblog.Error(err)
-			fmt.Println("body: ", string(body))
-			return c.JSONBlob(responseCode, body)
+			//fmt.Println("body: ", string(body))
+			//return c.JSONBlob(responseCode, body)
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
 		}
 		return c.JSON(http.StatusCreated, content)
 	} else {
@@ -131,7 +141,7 @@ func RestGetImage(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the image with given UUID."}
+		mapA := map[string]string{"message": "Failed to find the image with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -185,12 +195,10 @@ func RestDelImage(c echo.Context) error {
 	id := c.Param("imageId")
 	forceFlag := c.QueryParam("force")
 
-	//responseCode, _, err := delImage(nsId, id, forceFlag)
-
 	responseCode, _, err := delResource(nsId, "image", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the image"}
+		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(responseCode, &mapA)
 	}
 
@@ -232,7 +240,15 @@ func createImage(nsId string, u *imageReq) (imageInfo, error) {
 }
 */
 
-func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, error) {
+//func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, error) {
+func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
+	check, _ := checkResource(nsId, "image", u.Name)
+
+	if check {
+		temp := imageInfo{}
+		err := fmt.Errorf("The image " + u.Name + " already exists.")
+		return temp, err
+	}
 
 	/*
 		// Step 1. Create a temp `ImageReqInfo (from Spider)` object.
@@ -269,7 +285,8 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 	if err != nil {
 		cblog.Error(err)
 		content := imageInfo{}
-		return content, res.StatusCode, nil, err
+		//return content, res.StatusCode, nil, err
+		return content, err
 	}
 	defer res.Body.Close()
 
@@ -278,7 +295,8 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 	if err != nil {
 		cblog.Error(err)
 		content := imageInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
@@ -288,7 +306,8 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 		fmt.Println("body: ", string(body))
 		cblog.Error(err)
 		content := imageInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	type ImageInfo struct {
@@ -320,7 +339,8 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 	}
 	*/
 	content := imageInfo{}
-	content.Id = common.GenUuid()
+	//content.Id = common.GenUuid()
+	content.Id = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspImageId = temp.Id     // = u.CspImageId
 	content.CspImageName = temp.Name // = u.CspImageName
@@ -337,17 +357,27 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, int, []byte, erro
 	cbStorePutErr := store.Put(string(Key), string(Val))
 	if cbStorePutErr != nil {
 		cblog.Error(cbStorePutErr)
-		return content, res.StatusCode, body, cbStorePutErr
+		//return content, res.StatusCode, body, cbStorePutErr
+		return content, cbStorePutErr
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res.StatusCode, body, nil
+	//return content, res.StatusCode, body, nil
+	return content, nil
 }
 
 func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
+	check, _ := checkResource(nsId, "image", content.Name)
 
-	content.Id = common.GenUuid()
+	if check {
+		temp := imageInfo{}
+		err := fmt.Errorf("The image " + content.Name + " already exists.")
+		return temp, err
+	}
+
+	//content.Id = common.GenUuid()
+	content.Id = content.Name
 
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, "image", content.Id)

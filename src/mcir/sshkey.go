@@ -31,6 +31,7 @@ type KeyPairInfo struct {
 
 type sshKeyReq struct {
 	//Id             string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	CspSshKeyName  string `json:"cspSshKeyName"`
 	//Fingerprint    string `json:"fingerprint"`
@@ -42,6 +43,7 @@ type sshKeyReq struct {
 
 type sshKeyInfo struct {
 	Id             string            `json:"id"`
+	Name           string            `json:"name"`
 	ConnectionName string            `json:"connectionName"`
 	CspSshKeyName  string            `json:"cspSshKeyName"`
 	Fingerprint    string            `json:"fingerprint"`
@@ -225,6 +227,13 @@ func RestDelAllSshKey(c echo.Context) error {
 }
 
 func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
+	check, _ := checkResource(nsId, "sshKey", u.Name)
+
+	if check {
+		temp := sshKeyInfo{}
+		err := fmt.Errorf("The sshKey " + u.Name + " already exists.")
+		return temp, http.StatusConflict, nil, err
+	}
 
 	/* FYI
 	type sshKeyReq struct {
@@ -325,7 +334,8 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	*/
 
 	content := sshKeyInfo{}
-	content.Id = common.GenUuid()
+	//content.Id = common.GenUuid()
+	content.Id = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspSshKeyName = temp.Name // = u.CspSshKeyName
 	content.Fingerprint = temp.Fingerprint

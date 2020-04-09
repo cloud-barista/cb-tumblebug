@@ -12,7 +12,7 @@ import (
 )
 
 type nsReq struct {
-	Id          string `json:"id"`
+	//Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -32,7 +32,12 @@ func RestPostNs(c echo.Context) error {
 	}
 
 	fmt.Println("[Creating Ns]")
-	content, _ := createNs(u)
+	content, err := createNs(u)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": "Failed to create the ns " + u.Name}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
 	return c.JSON(http.StatusCreated, content)
 
 }
@@ -70,8 +75,8 @@ func RestGetNs(c echo.Context) error {
 		return err
 	}
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Cannot find " + key}
-		return c.JSON(http.StatusOK, &mapA)
+		mapA := map[string]string{"message": "Cannot find the NS " + key}
+		return c.JSON(http.StatusNotFound, &mapA)
 	}
 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -127,7 +132,7 @@ func RestDelNs(c echo.Context) error {
 	err := delNs(id)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the ns"}
+		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
@@ -143,7 +148,7 @@ func RestDelAllNs(c echo.Context) error {
 		err := delNs(v)
 		if err != nil {
 			cblog.Error(err)
-			mapA := map[string]string{"message": "Failed to delete All nss"}
+			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusFailedDependency, &mapA)
 		}
 	}
@@ -154,10 +159,17 @@ func RestDelAllNs(c echo.Context) error {
 }
 
 func createNs(u *nsReq) (nsInfo, error) {
+	check, _ := checkNs(u.Name)
 
-	//u.Id = genUuid()
+	if check {
+		temp := nsInfo{}
+		err := fmt.Errorf("The namespace " + u.Name + " already exists.")
+		return temp, err
+	}
+
 	content := nsInfo{}
-	content.Id = GenUuid()
+	//content.Id = GenUuid()
+	content.Id = u.Name
 	content.Name = u.Name
 	content.Description = u.Description
 
@@ -180,7 +192,7 @@ func createNs(u *nsReq) (nsInfo, error) {
 
 func getNsList() []string {
 
-	fmt.Println("[Get nss")
+	fmt.Println("[List ns")
 	key := "/ns"
 	fmt.Println(key)
 
@@ -261,10 +273,10 @@ func delNs(Id string) error {
 
 func checkNs(Id string) (bool, error) {
 
-	fmt.Println("[Delete ns] " + Id)
+	fmt.Println("[Check ns] " + Id)
 
 	key := "/ns/" + Id
-	fmt.Println(key)
+	//fmt.Println(key)
 
 	keyValue, err := store.Get(key)
 	if err != nil {

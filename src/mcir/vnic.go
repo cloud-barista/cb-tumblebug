@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/labstack/echo"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/VNicHandler.go
@@ -37,6 +37,7 @@ type VNicInfo struct {
 type vNicReq struct {
 	//Id                string `json:"id"`
 	ConnectionName string `json:"connectionName"`
+	Name           string `json:"name"`
 	//CspVNicId     string `json:"cspVNicId"`
 	CspVNicName string `json:"cspVNicName"`
 	CspVNetName string `json:"cspVNetName"`
@@ -48,6 +49,7 @@ type vNicReq struct {
 
 type vNicInfo struct {
 	Id             string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	CspVNicId      string `json:"cspVNicId"`
 	CspVNicName    string `json:"cspVNicName"`
@@ -225,6 +227,13 @@ func RestDelAllVNic(c echo.Context) error {
 }
 
 func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
+	check, _ := checkResource(nsId, "vNic", u.Name)
+
+	if check {
+		temp := vNicInfo{}
+		err := fmt.Errorf("The vNic " + u.Name + " already exists.")
+		return temp, http.StatusConflict, nil, err
+	}
 
 	/* FYI
 	type vNicReq struct {
@@ -356,7 +365,8 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	*/
 
 	content := vNicInfo{}
-	content.Id = common.GenUuid()
+	//content.Id = common.GenUuid()
+	content.Id = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspVNicId = temp.Id
 	content.CspVNicName = temp.Name // = u.CspVNicName

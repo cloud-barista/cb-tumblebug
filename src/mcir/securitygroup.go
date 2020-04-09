@@ -44,6 +44,7 @@ type firewallRuleInfo struct {
 
 type securityGroupReq struct {
 	//Id                 string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	//VirtualNetworkId     string `json:"virtualNetworkId"`
 	//CspSecurityGroupId   string `json:"cspSecurityGroupId"`
@@ -55,6 +56,7 @@ type securityGroupReq struct {
 
 type securityGroupInfo struct {
 	Id             string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	//VirtualNetworkId   string `json:"virtualNetworkId"`
 	CspSecurityGroupId   string `json:"cspSecurityGroupId"`
@@ -227,6 +229,13 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 }
 
 func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, int, []byte, error) {
+	check, _ := checkResource(nsId, "securityGroup", u.Name)
+
+	if check {
+		temp := securityGroupInfo{}
+		err := fmt.Errorf("The securityGroup " + u.Name + " already exists.")
+		return temp, http.StatusConflict, nil, err
+	}
 
 	/* FYI
 	type firewallRuleInfo struct {
@@ -343,7 +352,8 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 	*/
 
 	content := securityGroupInfo{}
-	content.Id = common.GenUuid()
+	//content.Id = common.GenUuid()
+	content.Id = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspSecurityGroupId = temp.Id
 	content.CspSecurityGroupName = temp.Name // = u.CspSecurityGroupName

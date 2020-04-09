@@ -103,7 +103,7 @@ func RestPostSpec(c echo.Context) error {
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{
-				"message": "Failed to register a Spec"}
+				"message": err.Error()}
 			return c.JSON(http.StatusFailedDependency, &mapA)
 		}
 		return c.JSON(http.StatusCreated, content)
@@ -118,7 +118,7 @@ func RestPostSpec(c echo.Context) error {
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{
-				"message": "Failed to register a Spec"}
+				"message": err.Error()}
 			return c.JSON(http.StatusFailedDependency, &mapA)
 		}
 		return c.JSON(http.StatusCreated, content)
@@ -158,7 +158,7 @@ func RestGetSpec(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the spec with given UUID."}
+		mapA := map[string]string{"message": "Failed to find the spec with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -215,7 +215,7 @@ func RestDelSpec(c echo.Context) error {
 	responseCode, _, err := delResource(nsId, "spec", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the spec"}
+		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(responseCode, &mapA)
 	}
 
@@ -238,7 +238,7 @@ func RestDelAllSpec(c echo.Context) error {
 			responseCode, _, err := delResource(nsId, "spec", v, forceFlag)
 			if err != nil {
 				cblog.Error(err)
-				mapA := map[string]string{"message": "Failed to delete the spec"}
+				mapA := map[string]string{"message": err.Error()}
 				return c.JSON(responseCode, &mapA)
 			}
 
@@ -311,8 +311,13 @@ func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
 }
 
 func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
+	check, _ := checkResource(nsId, "spec", u.Name)
 
-	// TODO: Implement error check logic
+	if check {
+		temp := SpecInfo{}
+		err := fmt.Errorf("The spec " + u.Name + " already exists.")
+		return temp, err
+	}
 
 	res, err := lookupSpec(u)
 	if err != nil {
@@ -337,10 +342,12 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 	*/
 
 	content := SpecInfo{}
-	content.Id = common.GenUuid()
-	content.ConnectionName = u.ConnectionName
-	content.CspSpecName = res.Name
+	//content.Id = common.GenUuid()
+	content.Id = u.Name
 	content.Name = u.Name
+	content.CspSpecName = res.Name
+	content.ConnectionName = u.ConnectionName
+
 	//content.Os_type = res.Os_type
 	content.Num_vCPU = res.VCpu.Count
 	//content.Num_core = res.Num_core
@@ -390,10 +397,16 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 }
 
 func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
+	check, _ := checkResource(nsId, "spec", content.Name)
 
-	// TODO: Implement error check logic
+	if check {
+		temp := SpecInfo{}
+		err := fmt.Errorf("The spec " + content.Name + " already exists.")
+		return temp, err
+	}
 
-	content.Id = common.GenUuid()
+	//content.Id = common.GenUuid()
+	content.Id = content.Name
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
