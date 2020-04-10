@@ -34,16 +34,28 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	fmt.Println("[Delete " + resourceType + "] " + resourceId)
 
+	check, _ := checkResource(nsId, resourceType, resourceId)
+
+	if !check {
+		errString := "The " + resourceType + " " + resourceId + " does not exist."
+		mapA := map[string]string{"message": errString}
+		mapB, _ := json.Marshal(mapA)
+		err := fmt.Errorf(errString)
+		return http.StatusNotFound, mapB, err
+	}
+
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	fmt.Println("key: " + key)
 
 	keyValue, _ := store.Get(key)
-	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the resource with given UUID."}
-		mapB, _ := json.Marshal(mapA)
-		err := fmt.Errorf("Failed to find the resource with given UUID.")
-		return http.StatusNotFound, mapB, err
-	}
+	/*
+		if keyValue == nil {
+			mapA := map[string]string{"message": "Failed to find the resource with given UUID."}
+			mapB, _ := json.Marshal(mapA)
+			err := fmt.Errorf("Failed to find the resource with given UUID.")
+			return http.StatusNotFound, mapB, err
+		}
+	*/
 	//fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
@@ -69,16 +81,18 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// delete spec info
 
 		//get related recommend spec
-		keyValue, err := store.Get(key)
+		//keyValue, err := store.Get(key)
 		content := SpecInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		if err != nil {
-			cblog.Error(err)
-			return http.StatusInternalServerError, nil, err
-		}
+		/*
+			if err != nil {
+				cblog.Error(err)
+				return http.StatusInternalServerError, nil, err
+			}
+		*/
 		//
 
-		err = store.Delete(key)
+		err := store.Delete(key)
 		if err != nil {
 			cblog.Error(err)
 			return http.StatusInternalServerError, nil, err
@@ -233,5 +247,24 @@ func getResourceList(nsId string, resourceType string) []string {
 	}
 	fmt.Println("===============================================")
 	return resourceList
+
+}
+
+func checkResource(nsId string, resourceType string, resourceId string) (bool, error) {
+
+	fmt.Println("[Check resource] " + resourceType + ", " + resourceId)
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	//fmt.Println(key)
+
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return false, err
+	}
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
 
 }

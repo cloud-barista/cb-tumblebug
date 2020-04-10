@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
 	//"strings"
 
-	"github.com/labstack/echo"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/labstack/echo"
 )
 
 type subnetReq struct {
 	//Id                 string `json:"id"`
+	Name               string `json:"name"`
 	ConnectionName     string `json:"connectionName"`
 	CspSubnetId        string `json:"cspSubnetId"`
 	CspSubnetName      string `json:"cspSubnetName"`
@@ -25,6 +27,7 @@ type subnetReq struct {
 
 type subnetInfo struct {
 	Id                 string `json:"id"`
+	Name               string `json:"name"`
 	ConnectionName     string `json:"connectionName"`
 	CspSubnetId        string `json:"cspSubnetId"`
 	CspSubnetName      string `json:"cspSubnetName"`
@@ -162,7 +165,6 @@ func RestDelSubnet(c echo.Context) error {
 		mapA := map[string]string{"message": "Failed to delete the subnet"}
 		return c.JSON(responseCode, &mapA)
 	}
-	
 
 	mapA := map[string]string{"message": "The subnet has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
@@ -188,7 +190,7 @@ func RestDelAllSubnet(c echo.Context) error {
 				mapA := map[string]string{"message": "Failed to delete the subnet"}
 				return c.JSON(responseCode, &mapA)
 			}
-			
+
 		}
 
 		mapA := map[string]string{"message": "All subnets has been deleted"}
@@ -197,18 +199,13 @@ func RestDelAllSubnet(c echo.Context) error {
 }
 
 func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
+	check, _ := checkResource(nsId, "subnet", u.Name)
 
-	content := subnetInfo{}
-	content.Id = common.GenUuid()
-	content.ConnectionName = u.ConnectionName
-	content.CspSubnetId = u.CspSubnetId
-	content.CspSubnetName = u.CspSubnetName
-	content.VirtualNetworkId = u.VirtualNetworkId
-	content.VirtualNetworkName = u.VirtualNetworkName
-	content.CidrBlock = u.CidrBlock
-	content.Region = u.Region
-	content.ResourceGroupName = u.ResourceGroupName
-	content.Description = u.Description
+	if check {
+		temp := subnetInfo{}
+		err := fmt.Errorf("The subnet " + u.Name + " already exists.")
+		return temp, err
+	}
 
 	/* FYI
 	type subnetReq struct {
@@ -224,6 +221,22 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 		Description        string `json:"description"`
 	}
 	*/
+
+	//url := SPIDER_URL + "/subnet"
+
+	// TODO: To be implemented
+
+	content := subnetInfo{}
+	content.Id = common.GenUuid()
+	content.ConnectionName = u.ConnectionName
+	content.CspSubnetId = u.CspSubnetId
+	content.CspSubnetName = u.CspSubnetName
+	content.VirtualNetworkId = u.VirtualNetworkId
+	content.VirtualNetworkName = u.VirtualNetworkName
+	content.CidrBlock = u.CidrBlock
+	content.Region = u.Region
+	content.ResourceGroupName = u.ResourceGroupName
+	content.Description = u.Description
 
 	// cb-store
 	fmt.Println("=========================== PUT createSubnet")

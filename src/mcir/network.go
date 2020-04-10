@@ -37,6 +37,7 @@ type VNetworkHandler interface {
 
 type networkReq struct {
 	//Id                string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	//CspNetworkId      string `json:"cspNetworkId"`
 	CspNetworkName string `json:"cspNetworkName"`
@@ -48,6 +49,7 @@ type networkReq struct {
 
 type networkInfo struct {
 	Id             string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	CspNetworkId   string `json:"cspNetworkId"`
 	CspNetworkName string `json:"cspNetworkName"`
@@ -99,14 +101,17 @@ func RestPostNetwork(c echo.Context) error {
 
 	fmt.Println("[POST Network")
 	fmt.Println("[Creating Network]")
-	content, responseCode, body, err := createNetwork(nsId, u)
+	//content, responseCode, body, err := createNetwork(nsId, u)
+	content, err := createNetwork(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
 			mapA := map[string]string{
 				"message": "Failed to create a network"}
 		*/
-		return c.JSONBlob(responseCode, body)
+		//return c.JSONBlob(responseCode, body)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -220,12 +225,15 @@ func RestDelAllNetwork(c echo.Context) error {
 	}
 }
 
-func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error) {
+//func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error) {
+func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
+	check, _ := checkResource(nsId, "network", u.Name)
 
-	// TODO: Since Spider does not check duplication for vnet `Name` that already exists,
-	// Tumblebug should check duplication.
-	// Option 1: Lookup in Tumblebug's metadata store.
-	// Option 2: Ask to Spider.
+	if check {
+		temp := networkInfo{}
+		err := fmt.Errorf("The network " + u.Name + " already exists.")
+		return temp, err
+	}
 
 	/* FYI
 	type networkReq struct {
@@ -275,7 +283,8 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 	if err != nil {
 		cblog.Error(err)
 		content := networkInfo{}
-		return content, res.StatusCode, nil, err
+		//return content, res.StatusCode, nil, err
+		return content, err
 	}
 	defer res.Body.Close()
 
@@ -284,7 +293,8 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 	if err != nil {
 		cblog.Error(err)
 		content := networkInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
@@ -293,7 +303,8 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
 		content := networkInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	type VNetworkInfo struct {
@@ -326,7 +337,8 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 	*/
 
 	content := networkInfo{}
-	content.Id = common.GenUuid()
+	//content.Id = common.GenUuid()
+	content.Id = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspNetworkId = temp.Id     // CspSubnetId
 	content.CspNetworkName = temp.Name // = u.CspNetworkName
@@ -358,12 +370,14 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error)
 	err3 := store.Put(string(Key), string(Val))
 	if err3 != nil {
 		cblog.Error(err3)
-		return content, res.StatusCode, body, err3
+		//return content, res.StatusCode, body, err3
+		return content, err3
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res.StatusCode, body, nil
+	//return content, res.StatusCode, body, nil
+	return content, nil
 }
 
 /*
