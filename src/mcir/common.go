@@ -50,9 +50,9 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 	keyValue, _ := store.Get(key)
 	/*
 		if keyValue == nil {
-			mapA := map[string]string{"message": "Failed to find the resource with given UUID."}
+			mapA := map[string]string{"message": "Failed to find the resource with given ID."}
 			mapB, _ := json.Marshal(mapA)
-			err := fmt.Errorf("Failed to find the resource with given UUID.")
+			err := fmt.Errorf("Failed to find the resource with given ID.")
 			return http.StatusNotFound, mapB, err
 		}
 	*/
@@ -252,6 +252,33 @@ func getResourceList(nsId string, resourceType string) []string {
 
 func checkResource(nsId string, resourceType string, resourceId string) (bool, error) {
 
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("checkResource failed; nsId given is null.")
+		return false, err
+	} else if resourceType == "" {
+		err := fmt.Errorf("checkResource failed; resourceType given is null.")
+		return false, err
+	} else if resourceId == "" {
+		err := fmt.Errorf("checkResource failed; resourceId given is null.")
+		return false, err
+	}
+
+	// Check resourceType's validity
+	if resourceType == "image" ||
+		resourceType == "sshKey" ||
+		resourceType == "spec" ||
+		resourceType == "network" ||
+		resourceType == "subnet" ||
+		resourceType == "securityGroup" ||
+		resourceType == "publicIp" ||
+		resourceType == "vNic" {
+		// continue
+	} else {
+		err := fmt.Errorf("invalid resource type")
+		return false, err
+	}
+
 	fmt.Println("[Check resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
@@ -268,3 +295,29 @@ func checkResource(nsId string, resourceType string, resourceId string) (bool, e
 	return false, nil
 
 }
+
+// https://stackoverflow.com/questions/45139954/dynamic-struct-as-parameter-golang
+
+type ReturnValue struct {
+	CustomStruct interface{}
+}
+
+type NameOnly struct {
+	Name string
+}
+
+func getNameFromStruct(u interface{}) string {
+	var result = ReturnValue{CustomStruct: u}
+
+	//fmt.Println(result)
+
+	msg, ok := result.CustomStruct.(NameOnly)
+	if ok {
+		//fmt.Printf("Message1 is %s\n", msg.Name)
+		return msg.Name
+	} else {
+		return ""
+	}
+}
+
+//func createResource(nsId string, resourceType string, u interface{}) (interface{}, int, []byte, error) {

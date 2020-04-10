@@ -35,7 +35,8 @@ func RestPostNs(c echo.Context) error {
 	content, err := createNs(u)
 	if err != nil {
 		cblog.Error(err)
-		mapA := map[string]string{"message": "Failed to create the ns " + u.Name}
+		//mapA := map[string]string{"message": "Failed to create the ns " + u.Name}
+		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
@@ -272,6 +273,10 @@ func delNs(Id string) error {
 }
 
 func checkNs(Id string) (bool, error) {
+	if Id == "" {
+		err := fmt.Errorf("checkNs failed; nsId given is null.")
+		return false, err
+	}
 
 	fmt.Println("[Check ns] " + Id)
 

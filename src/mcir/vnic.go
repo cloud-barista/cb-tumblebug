@@ -1,3 +1,5 @@
+// 2020-04-08 jhseo; The vNic mgmt feature will be deprecated in TB & Spider.
+
 package mcir
 
 import (
@@ -131,7 +133,7 @@ func RestGetVNic(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the vNic with given UUID."}
+		mapA := map[string]string{"message": "Failed to find the vNic with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)

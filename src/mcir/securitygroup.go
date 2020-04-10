@@ -133,7 +133,7 @@ func RestGetSecurityGroup(c echo.Context) error {
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the securityGroup with given UUID."}
+		mapA := map[string]string{"message": "Failed to find the securityGroup with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
