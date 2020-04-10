@@ -338,7 +338,7 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 
 	content := networkInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = u.Name
+	content.Id = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspNetworkId = temp.Id     // CspSubnetId
 	content.CspNetworkName = temp.Name // = u.CspNetworkName

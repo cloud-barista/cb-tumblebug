@@ -607,7 +607,7 @@ func RestPostMcisVm(c echo.Context) error {
 
 	vmInfoData := vmInfo{}
 	//vmInfoData.Id = common.GenUuid()
-	vmInfoData.Id = req.Name
+	vmInfoData.Id = common.GenId(req.Name)
 	req.Id = vmInfoData.Id
 	//vmInfoData.CspVmName = req.CspVmName
 
@@ -1018,7 +1018,7 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 func createMcis(nsId string, req *mcisReq) string {
 
 	//req.Id = common.GenUuid()
-	req.Id = req.Name
+	req.Id = common.GenId(req.Name)
 	vmRequest := req.Vm_req
 
 	fmt.Println("=========================== Put createSvc")
@@ -1043,7 +1043,7 @@ func createMcis(nsId string, req *mcisReq) string {
 		//vmInfoData vmInfo
 		vmInfoData := vmInfo{}
 		//vmInfoData.Id = common.GenUuid()
-		vmInfoData.Id = k.Name
+		vmInfoData.Id = common.GenId(k.Name)
 		//vmInfoData.CspVmName = k.CspVmName
 
 		//vmInfoData.Placement_algo = k.Placement_algo

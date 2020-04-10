@@ -335,7 +335,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 
 	content := sshKeyInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = u.Name
+	content.Id = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspSshKeyName = temp.Name // = u.CspSshKeyName
 	content.Fingerprint = temp.Fingerprint

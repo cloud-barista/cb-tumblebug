@@ -49,6 +49,11 @@ func GenUuid() string {
 	return uuid.New().String()
 }
 
+func GenId(name string) string {
+	//return uuid.New().String()
+	return name
+}
+
 func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 	if vmId != "" {

@@ -343,7 +343,7 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 
 	content := SpecInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = u.Name
+	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
@@ -406,7 +406,7 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 	}
 
 	//content.Id = common.GenUuid()
-	content.Id = content.Name
+	content.Id = common.GenId(content.Name)
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")

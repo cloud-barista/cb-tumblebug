@@ -353,7 +353,7 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 
 	content := securityGroupInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = u.Name
+	content.Id = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspSecurityGroupId = temp.Id
 	content.CspSecurityGroupName = temp.Name // = u.CspSecurityGroupName
