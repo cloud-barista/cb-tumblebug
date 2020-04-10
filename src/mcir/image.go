@@ -340,7 +340,7 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 	*/
 	content := imageInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = u.Name
+	content.Id = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspImageId = temp.Id     // = u.CspImageId
 	content.CspImageName = temp.Name // = u.CspImageName
@@ -377,7 +377,7 @@ func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
 	}
 
 	//content.Id = common.GenUuid()
-	content.Id = content.Name
+	content.Id = common.GenId(content.Name)
 
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, "image", content.Id)
