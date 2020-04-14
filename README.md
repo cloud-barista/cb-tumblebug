@@ -5,16 +5,28 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 
 ## [목차]
 
-1. [설치 개요](#설치-개요)
-2. [설치 절차](#설치-절차)
-3. [설치 & 실행 상세 정보](#설치--실행-상세-정보)
+1. [실행 환경](#실행-환경)
+2. [실행 방법](#실행-방법)
+3. [소스 기반 설치 & 실행 상세 정보](#소스-기반-설치--실행-상세-정보)
 
 ***
 
-## [설치 개요]
-- 설치 환경: 리눅스(검증시험:Ubuntu 18.04)
+## [실행 환경]
+- Linux (검증시험: Ubuntu 18.04)
 
-## [설치 절차]
+## [실행 방법]
+
+### (1) 컨테이너 기반 실행
+- CB-Tumblebug 이미지 확인(https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
+- CB-Tumblebug 컨테이너 실행
+```
+# docker run -p 1323:1323 \
+-v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
+--name cb-tumblebug \
+cloudbaristaorg/cb-tumblebug:v0.1-yyyymmdd
+```
+
+### (2) 소스 기반 실행
 
 - Go 설치 & Git 설치
 - 환경 변수 설정
@@ -25,7 +37,14 @@ Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
 - CB-Tumblebug 빌드 (make)
 - CB-Tumblebug 실행 (make run)
 
-## [설치 & 실행 상세 정보]
+### (3) Cloud-Barista 시스템 통합 실행 참고 (Docker-Compose 기반)
+```
+# git clone https://github.com/jihoon-seo/cb-deployer.git
+# cd cb-deployer
+# docker-compose up
+```
+
+## [소스 기반 설치 & 실행 상세 정보]
 
 - Git 설치
   - `# apt update`
