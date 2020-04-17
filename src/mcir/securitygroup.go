@@ -12,8 +12,8 @@ import (
 	"github.com/labstack/echo"
 )
 
-// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/SecurityHandler.go
-/* FYI
+// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/SecurityHandler.go
+/* FYI; as of cb-spider-v0.1.2-20200403
 type SecurityReqInfo struct {
 	Name          string
 	SecurityRules *[]SecurityRuleInfo
@@ -66,15 +66,6 @@ type securityGroupInfo struct {
 	FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
 	KeyValueList  []common.KeyValue   `json:"keyValueList"`
 }
-
-/* FYI
-g.POST("/resources/securityGroup", restPostSecurityGroup)
-g.GET("/resources/securityGroup/:securityGroupId", restGetSecurityGroup)
-g.GET("/resources/securityGroup", restGetAllSecurityGroup)
-g.PUT("/resources/securityGroup/:securityGroupId", restPutSecurityGroup)
-g.DELETE("/resources/securityGroup/:securityGroupId", restDelSecurityGroup)
-g.DELETE("/resources/securityGroup", restDelAllSecurityGroup)
-*/
 
 // MCIS API Proxy: SecurityGroup
 func RestPostSecurityGroup(c echo.Context) error {
@@ -237,7 +228,7 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 		return temp, http.StatusConflict, nil, err
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type firewallRuleInfo struct {
 		FromPort   string `json:"fromPort"`
 		ToPort     string `json:"toPort"`
@@ -247,14 +238,14 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 
 	type securityGroupReq struct {
 		//Id                 string `json:"id"`
+		Name           string `json:"name"`
 		ConnectionName string `json:"connectionName"`
 		//VirtualNetworkId     string `json:"virtualNetworkId"`
 		//CspSecurityGroupId   string `json:"cspSecurityGroupId"`
 		CspSecurityGroupName string `json:"cspSecurityGroupName"`
 		//ResourceGroupName    string `json:"resourceGroupName"`
-		Description string `json:"description"`
+		Description   string              `json:"description"`
 		FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
-
 	}
 	*/
 
@@ -337,9 +328,10 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 		fmt.Println("whoops:", err2)
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type securityGroupInfo struct {
 		Id             string `json:"id"`
+		Name           string `json:"name"`
 		ConnectionName string `json:"connectionName"`
 		//VirtualNetworkId   string `json:"virtualNetworkId"`
 		CspSecurityGroupId   string `json:"cspSecurityGroupId"`
@@ -347,13 +339,14 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 		//ResourceGroupName  string `json:"resourceGroupName"`
 		Description   string              `json:"description"`
 		FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
-		KeyValueList  []common.KeyValue          `json:"keyValueList"`
+		KeyValueList  []common.KeyValue   `json:"keyValueList"`
 	}
 	*/
 
 	content := securityGroupInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspSecurityGroupId = temp.Id
 	content.CspSecurityGroupName = temp.Name // = u.CspSecurityGroupName

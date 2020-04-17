@@ -1164,7 +1164,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	*/
 
 	/* FYI
-			type vmReq struct {
+	type vmReq struct {
 		Id             string `json:"id"`
 		ConnectionName string `json:"connectionName"`
 
@@ -1201,16 +1201,16 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 		Placement_algo string `json:"placement_algo"`
 		//Description    string `json:"description"`
 
-	Name               string   `json:"name"`
-	Config_name        string   `json:"config_name"`
-	Spec_id            string   `json:"spec_id"`
-	Image_id           string   `json:"image_id"`
-	Vnet_id            string   `json:"vnet_id"`
-	Vnic_id            string   `json:"vnic_id"`
-	Public_ip_id       string   `json:"public_ip_id"`
-	Security_group_ids []string `json:"security_group_id"`
-	Ssh_key_id         string   `json:"ssh_key_id"`
-	Description        string   `json:"description"`
+		Name               string   `json:"name"`
+		Config_name        string   `json:"config_name"`
+		Spec_id            string   `json:"spec_id"`
+		Image_id           string   `json:"image_id"`
+		Vnet_id            string   `json:"vnet_id"`
+		Vnic_id            string   `json:"vnic_id"`
+		Public_ip_id       string   `json:"public_ip_id"`
+		Security_group_ids []string `json:"security_group_id"`
+		Ssh_key_id         string   `json:"ssh_key_id"`
+		Description        string   `json:"description"`
 	}
 	*/
 

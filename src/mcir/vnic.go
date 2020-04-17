@@ -15,7 +15,7 @@ import (
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/VNicHandler.go
-/* FYI
+/* FYI; vNic mgmt feature will be deprecated in Spider & TB.
 type VNicReqInfo struct {
 	Name             string
 	VNetName         string
@@ -66,15 +66,6 @@ type vNicInfo struct {
 	SecurityGroupIds []string          `json:"securityGroupIds"`
 	KeyValueList     []common.KeyValue `json:"keyValueList"`
 }
-
-/* FYI
-g.POST("/:nsId/resources/vNic", restPostVNic)
-g.GET("/:nsId/resources/vNic/:vNicId", restGetVNic)
-g.GET("/:nsId/resources/vNic", restGetAllVNic)
-g.PUT("/:nsId/resources/vNic/:vNicId", restPutVNic)
-g.DELETE("/:nsId/resources/vNic/:vNicId", restDelVNic)
-g.DELETE("/:nsId/resources/vNic", restDelAllVNic)
-*/
 
 // MCIS API Proxy: VNic
 func RestPostVNic(c echo.Context) error {
@@ -237,16 +228,17 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 		return temp, http.StatusConflict, nil, err
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type vNicReq struct {
 		//Id                string `json:"id"`
 		ConnectionName string `json:"connectionName"`
+		Name           string `json:"name"`
 		//CspVNicId     string `json:"cspVNicId"`
 		CspVNicName string `json:"cspVNicName"`
 		CspVNetName string `json:"cspVNetName"`
 		PublicIpId  string `json:"publicIpId"`
 		//ResourceGroupName string `json:"resourceGroupName"`
-		Description string `json:"description"`
+		Description      string   `json:"description"`
 		SecurityGroupIds []string `json:"securityGroupIds"`
 	}
 	*/
@@ -347,28 +339,30 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 		fmt.Println("whoops:", err2)
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type vNicInfo struct {
 		Id             string `json:"id"`
+		Name           string `json:"name"`
 		ConnectionName string `json:"connectionName"`
 		CspVNicId      string `json:"cspVNicId"`
 		CspVNicName    string `json:"cspVNicName"`
 		CspVNetName    string `json:"cspVNetName"`
 		PublicIpId     string `json:"publicIpId"`
 		//ResourceGroupName string `json:"resourceGroupName"`
-		Description string `json:"description"`
-		PublicIp    string `json:"publicIp"`
-		MacAddress  string `json:"macAddress"`
-		OwnedVmId   string `json:"ownedVmId"`
-		Status      string `json:"status"`
-		SecurityGroupIds []string   `json:"securityGroupIds"`
-		KeyValueList     []KeyValue `json:"keyValueList"`
+		Description      string            `json:"description"`
+		PublicIp         string            `json:"publicIp"`
+		MacAddress       string            `json:"macAddress"`
+		OwnedVmId        string            `json:"ownedVmId"`
+		Status           string            `json:"status"`
+		SecurityGroupIds []string          `json:"securityGroupIds"`
+		KeyValueList     []common.KeyValue `json:"keyValueList"`
 	}
 	*/
 
 	content := vNicInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = u.Name
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspVNicId = temp.Id
 	content.CspVNicName = temp.Name // = u.CspVNicName

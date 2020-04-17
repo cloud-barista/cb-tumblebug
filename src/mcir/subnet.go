@@ -39,15 +39,6 @@ type subnetInfo struct {
 	Description        string `json:"description"`
 }
 
-/* FYI
-g.POST("/:nsId/resources/subnet", restPostSubnet)
-g.GET("/:nsId/resources/subnet/:subnetId", restGetSubnet)
-g.GET("/:nsId/resources/subnet", restGetAllSubnet)
-g.PUT("/:nsId/resources/subnet/:subnetId", restPutSubnet)
-g.DELETE("/:nsId/resources/subnet/:subnetId", restDelSubnet)
-g.DELETE("/:nsId/resources/subnet", restDelAllSubnet)
-*/
-
 // MCIS API Proxy: Subnet
 func RestPostSubnet(c echo.Context) error {
 
@@ -207,10 +198,11 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 		return temp, err
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type subnetReq struct {
-		Id                 string `json:"id"`
-		ConnectionName                string `json:"connectionName"`
+		//Id                 string `json:"id"`
+		Name               string `json:"name"`
+		ConnectionName     string `json:"connectionName"`
 		CspSubnetId        string `json:"cspSubnetId"`
 		CspSubnetName      string `json:"cspSubnetName"`
 		VirtualNetworkId   string `json:"virtualNetworkId"`
@@ -228,6 +220,7 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	content := subnetInfo{}
 	content.Id = common.GenId(u.Name)
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspSubnetId = u.CspSubnetId
 	content.CspSubnetName = u.CspSubnetName

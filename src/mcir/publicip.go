@@ -58,15 +58,6 @@ type publicIpInfo struct {
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-/* FYI
-g.POST("/:nsId/resources/publicIp", restPostPublicIp)
-g.GET("/:nsId/resources/publicIp/:publicIpId", restGetPublicIp)
-g.GET("/:nsId/resources/publicIp", restGetAllPublicIp)
-g.PUT("/:nsId/resources/publicIp/:publicIpId", restPutPublicIp)
-g.DELETE("/:nsId/resources/publicIp/:publicIpId", restDelPublicIp)
-g.DELETE("/:nsId/resources/publicIp", restDelAllPublicIp)
-*/
-
 // MCIS API Proxy: PublicIp
 func RestPostPublicIp(c echo.Context) error {
 
@@ -228,17 +219,18 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 		return temp, http.StatusConflict, nil, err
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type publicIpReq struct {
 		//Id                string `json:"id"`
+		Name           string `json:"name"`
 		ConnectionName string `json:"connectionName"`
 		//CspPublicIpId     string `json:"cspPublicIpId"`
 		CspPublicIpName string `json:"cspPublicIpName"`
 		//PublicIp          string `json:"publicIp"`
 		//OwnedVmId         string `json:"ownedVmId"`
 		//ResourceGroupName string `json:"resourceGroupName"`
-		Description string `json:"description"`
-		KeyValueList []KeyValue `json:"keyValueList"`
+		Description  string            `json:"description"`
+		KeyValueList []common.KeyValue `json:"keyValueList"`
 	}
 	*/
 
@@ -317,6 +309,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	content := publicIpInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspPublicIpId = temp.Name
 	content.CspPublicIpName = temp.Name //common.LookupKeyValueList(temp.KeyValueList, "Name")
@@ -326,17 +319,19 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	content.Status = temp.Status
 	content.KeyValueList = temp.KeyValueList
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type publicIpInfo struct {
 		Id              string `json:"id"`
+		Name            string `json:"name"`
 		ConnectionName  string `json:"connectionName"`
 		CspPublicIpId   string `json:"cspPublicIpId"`
 		CspPublicIpName string `json:"cspPublicIpName"`
 		PublicIp        string `json:"publicIp"`
 		OwnedVmId       string `json:"ownedVmId"`
 		//ResourceGroupName string `json:"resourceGroupName"`
-		Description string `json:"description"`
-		Status      string `json:"string"`
+		Description  string            `json:"description"`
+		Status       string            `json:"status"`
+		KeyValueList []common.KeyValue `json:"keyValueList"`
 	}
 	*/
 
