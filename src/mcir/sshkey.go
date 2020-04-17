@@ -12,8 +12,8 @@ import (
 	"github.com/labstack/echo"
 )
 
-// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/KeyPairHandler.go
-/* FYI
+// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/KeyPairHandler.go
+/* FYI; as of cb-spider-v0.1.2-20200403
 type KeyPairReqInfo struct {
         Name     string
 }
@@ -53,15 +53,6 @@ type sshKeyInfo struct {
 	Description    string            `json:"description"`
 	KeyValueList   []common.KeyValue `json:"keyValueList"`
 }
-
-/* FYI
-g.POST("/:nsId/resources/sshKey", restPostSshKey)
-g.GET("/:nsId/resources/sshKey/:sshKeyId", restGetSshKey)
-g.GET("/:nsId/resources/sshKey", restGetAllSshKey)
-g.PUT("/:nsId/resources/sshKey/:sshKeyId", restPutSshKey)
-g.DELETE("/:nsId/resources/sshKey/:sshKeyId", restDelSshKey)
-g.DELETE("/:nsId/resources/sshKey", restDelAllSshKey)
-*/
 
 // MCIS API Proxy: SshKey
 func RestPostSshKey(c echo.Context) error {
@@ -235,9 +226,10 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 		return temp, http.StatusConflict, nil, err
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type sshKeyReq struct {
 		//Id             string `json:"id"`
+		Name           string `json:"name"`
 		ConnectionName string `json:"connectionName"`
 		CspSshKeyName  string `json:"cspSshKeyName"`
 		//Fingerprint    string `json:"fingerprint"`
@@ -319,23 +311,25 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 		fmt.Println("whoops:", err2)
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type sshKeyInfo struct {
-		Id             string `json:"id"`
-		ConnectionName string `json:"connectionName"`
-		CspSshKeyName  string `json:"cspSshKeyName"`
-		Fingerprint    string `json:"fingerprint"`
-		Username       string `json:"username"`
-		PublicKey      string `json:"publicKey"`
-		PrivateKey     string `json:"privateKey"`
-		Description    string `json:"description"`
-		KeyValueList []KeyValue `json:"keyValueList"`
+		Id             string            `json:"id"`
+		Name           string            `json:"name"`
+		ConnectionName string            `json:"connectionName"`
+		CspSshKeyName  string            `json:"cspSshKeyName"`
+		Fingerprint    string            `json:"fingerprint"`
+		Username       string            `json:"username"`
+		PublicKey      string            `json:"publicKey"`
+		PrivateKey     string            `json:"privateKey"`
+		Description    string            `json:"description"`
+		KeyValueList   []common.KeyValue `json:"keyValueList"`
 	}
 	*/
 
 	content := sshKeyInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspSshKeyName = temp.Name // = u.CspSshKeyName
 	content.Fingerprint = temp.Fingerprint

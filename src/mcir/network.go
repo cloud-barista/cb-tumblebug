@@ -61,15 +61,6 @@ type networkInfo struct {
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-/* FYI
-g.POST("/:nsId/resources/network", restPostNetwork)
-g.GET("/:nsId/resources/network/:networkId", restGetNetwork)
-g.GET("/:nsId/resources/network", restGetAllNetwork)
-g.PUT("/:nsId/resources/network/:networkId", restPutNetwork)
-g.DELETE("/:nsId/resources/network/:networkId", restDelNetwork)
-g.DELETE("/:nsId/resources/network", restDelAllNetwork)
-*/
-
 // MCIS API Proxy: Network
 func RestPostNetwork(c echo.Context) error {
 
@@ -235,16 +226,17 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 		return temp, err
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type networkReq struct {
 		//Id                string `json:"id"`
-		ConnectionName    string `json:"connectionName"`
+		Name           string `json:"name"`
+		ConnectionName string `json:"connectionName"`
 		//CspNetworkId      string `json:"cspNetworkId"`
-		CspNetworkName    string `json:"cspNetworkName"`
+		CspNetworkName string `json:"cspNetworkName"`
 		//CidrBlock         string `json:"cidrBlock"`
 		//Region            string `json:"region"`
 		//ResourceGroupName string `json:"resourceGroupName"`
-		Description       string `json:"description"`
+		Description string `json:"description"`
 	}
 	*/
 
@@ -321,24 +313,26 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 		fmt.Println("whoops:", err2)
 	}
 
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type networkInfo struct {
-		Id                string `json:"id"`
-		ConnectionName    string `json:"connectionName"`
-		CspNetworkId      string `json:"cspNetworkId"`
-		CspNetworkName    string `json:"cspNetworkName"`
-		CidrBlock         string `json:"cidrBlock"`
-		//Region            string `json:"region"`
+		Id             string `json:"id"`
+		Name           string `json:"name"`
+		ConnectionName string `json:"connectionName"`
+		CspNetworkId   string `json:"cspNetworkId"`
+		CspNetworkName string `json:"cspNetworkName"`
+		CidrBlock      string `json:"cidrBlock"`
+		//Region         string `json:"region"`
 		//ResourceGroupName string `json:"resourceGroupName"`
-		Description       string `json:"description"`
-		Status            string `json:"string"`
-		KeyValueList []KeyValue `json:"keyValueList"`
+		Description  string            `json:"description"`
+		Status       string            `json:"status"`
+		KeyValueList []common.KeyValue `json:"keyValueList"`
 	}
 	*/
 
 	content := networkInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspNetworkId = temp.Id     // CspSubnetId
 	content.CspNetworkName = temp.Name // = u.CspNetworkName

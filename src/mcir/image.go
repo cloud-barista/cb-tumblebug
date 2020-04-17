@@ -68,15 +68,6 @@ type imageInfo struct {
 	KeyValueList   []common.KeyValue `json:"keyValueList"`
 }
 
-/* FYI
-g.POST("/:nsId/resources/image", restPostImage)
-g.GET("/:nsId/resources/image/:imageId", restGetImage)
-g.GET("/:nsId/resources/image", restGetAllImage)
-g.PUT("/:nsId/resources/image/:imageId", restPutImage)
-g.DELETE("/:nsId/resources/image/:imageId", restDelImage)
-g.DELETE("/:nsId/resources/image", restDelAllImage)
-*/
-
 // MCIS API Proxy: Image
 func RestPostImage(c echo.Context) error {
 
@@ -325,22 +316,23 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 	}
 
 	// Step 3. Create a temp `imageInfo (in this file)` object.
-	/* FYI
+	/* FYI; as of 2020-04-17
 	type imageInfo struct {
-		Id             string     `json:"id"`
-		ConnectionName string     `json:"connectionName"`
-		CspImageId     string     `json:"cspImageId"`
-		CspImageName   string     `json:"cspImageName"`
-		CreationDate   string     `json:"creationDate"`
-		Description    string     `json:"description"`
-		GuestOS        string     `json:"guestOS"` // Windows7, Ubuntu etc.
-		Status         string     `json:"status"`  // available, unavailable
-		KeyValueList   []KeyValue `json:"keyValueList"`
+		Id             string            `json:"id"`
+		Name           string            `json:"name"`
+		ConnectionName string            `json:"connectionName"`
+		CspImageId     string            `json:"cspImageId"`
+		CspImageName   string            `json:"cspImageName"`
+		CreationDate   string            `json:"creationDate"`
+		Description    string            `json:"description"`
+		GuestOS        string            `json:"guestOS"` // Windows7, Ubuntu etc.
+		Status         string            `json:"status"`  // available, unavailable
+		KeyValueList   []common.KeyValue `json:"keyValueList"`
 	}
 	*/
 	content := imageInfo{}
-	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspImageId = temp.Id     // = u.CspImageId
 	content.CspImageName = temp.Name // = u.CspImageName

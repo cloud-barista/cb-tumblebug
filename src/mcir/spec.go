@@ -76,15 +76,6 @@ type GpuInfo struct {
 	Mem   string
 }
 
-/* FYI
-g.POST("/:nsId/resources/spec", restPostSpec)
-g.GET("/:nsId/resources/spec/:specId", restGetSpec)
-g.GET("/:nsId/resources/spec", restGetAllSpec)
-g.PUT("/:nsId/resources/spec/:specId", restPutSpec)
-g.DELETE("/:nsId/resources/spec/:specId", restDelSpec)
-g.DELETE("/:nsId/resources/spec", restDelAllSpec)
-*/
-
 // MCIS API Proxy: Spec
 func RestPostSpec(c echo.Context) error {
 
@@ -327,7 +318,7 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 		return emptySpecInfoObj, err
 	}
 
-	/* FYI
+	/* FYI; as of cb-spider-v0.1.2-20200417
 	type SpiderSpecInfo struct {
 		// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
