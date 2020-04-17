@@ -24,8 +24,8 @@ github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloud-barista/cb-log v0.0.0-20191204151250-4d68d1150b4e h1:7jhq6n225RDWZJeQ1hEzJtZa9M7yov+iPFOuurOQb8k=
 github.com/cloud-barista/cb-log v0.0.0-20191204151250-4d68d1150b4e/go.mod h1:/kfh19vJJ2hNcnhHfgDM2CeZSSGtuc2J7xj5R4QU/Oc=
-github.com/cloud-barista/cb-store v0.0.0-20200103024537-5a9953f36101 h1:L3AtDzCOvl2L+36gRjePzSSwPBPoMzH3KWoBfsBJURI=
-github.com/cloud-barista/cb-store v0.0.0-20200103024537-5a9953f36101/go.mod h1:IZkIEZokowBnF7X6DIZt3fANO1qUu0UUAngD4yejURY=
+github.com/cloud-barista/cb-store v0.0.0-20200324092155-64d4df337031 h1:YulAUxx/xxlrWl5YXyCnKmZH8NULIjd38n+6+4WK8Zo=
+github.com/cloud-barista/cb-store v0.0.0-20200324092155-64d4df337031/go.mod h1:IZkIEZokowBnF7X6DIZt3fANO1qUu0UUAngD4yejURY=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
 github.com/coreos/bbolt v1.3.3 h1:n6AiVyVRKQFNb6mJlwESEvvLoDyiTzXX7ORAUlkeBdY=
 github.com/coreos/bbolt v1.3.3/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
@@ -243,6 +243,8 @@ github.com/xujiajun/mmap-go v1.0.1 h1:7Se7ss1fLPPRW+ePgqGpCkfGIZzJV6JPq9Wq9iv/WH
 github.com/xujiajun/mmap-go v1.0.1/go.mod h1:CNN6Sw4SL69Sui00p0zEzcZKbt+5HtEnYUsc6BKKRMg=
 github.com/xujiajun/nutsdb v0.5.0 h1:j/jM3Zw7Chg8WK7bAcKR0Xr7Mal47U1oJAMgySfDn9E=
 github.com/xujiajun/nutsdb v0.5.0/go.mod h1:owdwN0tW084RxEodABLbO7h4Z2s9WiAjZGZFhRh0/1Q=
+github.com/xujiajun/nutsdb v0.5.1-0.20200320023740-0cc84000d103 h1:f4o683PVxl60Kmv2ivRqR/fiOyzVjojMb1C0vFCroiY=
+github.com/xujiajun/nutsdb v0.5.1-0.20200320023740-0cc84000d103/go.mod h1:Q8FXi2zeQRluPpUl/CKQ6J7u/9gcI02J6cZp3owFLyA=
 github.com/xujiajun/utils v0.0.0-20190123093513-8bf096c4f53b h1:jKG9OiL4T4xQN3IUrhUpc1tG+HfDXppkgVcrAiiaI/0=
 github.com/xujiajun/utils v0.0.0-20190123093513-8bf096c4f53b/go.mod h1:AZd87GYJlUzl82Yab2kTjx1EyXSQCAfZDhpTo1SQC4k=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
@@ -309,8 +311,8 @@ golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a h1:aYOabOQFp6Vj6W1F80affTUvO
 golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20191220142924-d4481acd189f h1:68K/z8GLUxV76xGSqwTWw2gyk/jwn79LUL43rES2g8o=
 golang.org/x/sys v0.0.0-20191220142924-d4481acd189f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20200120151820-655fe14d7479 h1:LhLiKguPgZL+Tglay4GhVtfF0kb8cvOJ0dHTCBO8YNI=
-golang.org/x/sys v0.0.0-20200120151820-655fe14d7479/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 h1:opSr2sbRXk5X5/givKrrKj9HXxFpW2sdCiP8MJSKLQY=
+golang.org/x/sys v0.0.0-20200413165638-669c56c373c4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0 h1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=

@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/cloud-barista/cb-log v0.0.0-20191204151250-4d68d1150b4e // indirect
-	github.com/cloud-barista/cb-store v0.0.0-20200103024537-5a9953f36101
+	github.com/cloud-barista/cb-store v0.0.0-20200324092155-64d4df337031
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.18+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -18,6 +18,8 @@ require (
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/prometheus/client_golang v1.3.0 // indirect
 	github.com/shirou/gopsutil v2.19.12+incompatible
@@ -30,12 +32,12 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/valyala/fasttemplate v1.1.0 // indirect
-	github.com/xujiajun/nutsdb v0.5.0 // indirect
+	github.com/xujiajun/nutsdb v0.5.1-0.20200320023740-0cc84000d103 // indirect
 	go.etcd.io/bbolt v1.3.3 // indirect
 	go.etcd.io/etcd v3.3.18+incompatible // indirect
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876 // indirect
-	golang.org/x/sys v0.0.0-20200120151820-655fe14d7479 // indirect
+	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/grpc v1.26.0 // indirect
