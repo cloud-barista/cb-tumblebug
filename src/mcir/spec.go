@@ -129,7 +129,11 @@ func RestLookupSpec(c echo.Context) error {
 
 	u.CspSpecName = c.Param("specName")
 	fmt.Println("[Lookup spec]" + u.CspSpecName)
-	content, _ := lookupSpec(u)
+	content, err := lookupSpec(u)
+	if err != nil {
+		cblog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
 
 	return c.JSON(http.StatusOK, &content)
 
@@ -269,7 +273,7 @@ func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
 	if err != nil {
 		cblog.Error(err)
 		content := SpiderSpecInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		//err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
 	}
 	defer res.Body.Close()
@@ -278,7 +282,7 @@ func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
 	if err != nil {
 		cblog.Error(err)
 		content := SpiderSpecInfo{}
-		err := fmt.Errorf("an error occurred while reading CB-Spider's response")
+		//err := fmt.Errorf("an error occurred while reading CB-Spider's response")
 		return content, err
 	}
 

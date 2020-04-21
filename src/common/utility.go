@@ -263,7 +263,7 @@ type ConnConfig struct {
 	RegionName     string
 }
 
-func GetConnConfig(ConnConfigName string) ConnConfig {
+func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	url := SPIDER_URL + "/connectionconfig/" + ConnConfigName
 
 	method := "GET"
@@ -284,7 +284,7 @@ func GetConnConfig(ConnConfigName string) ConnConfig {
 	if err != nil {
 		cblog.Error(err)
 		content := ConnConfig{}
-		return content
+		return content, err
 	}
 	defer res.Body.Close()
 
@@ -292,7 +292,7 @@ func GetConnConfig(ConnConfigName string) ConnConfig {
 	if err != nil {
 		cblog.Error(err)
 		content := ConnConfig{}
-		return content
+		return content, err
 	}
 
 	fmt.Println(string(body))
@@ -303,7 +303,7 @@ func GetConnConfig(ConnConfigName string) ConnConfig {
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
 		content := ConnConfig{}
-		return content
+		return content, err
 	}
 
 	temp := ConnConfig{}
@@ -311,7 +311,7 @@ func GetConnConfig(ConnConfigName string) ConnConfig {
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
-	return temp
+	return temp, nil
 }
 
 func RestGetConnConfig(c echo.Context) error {
@@ -319,8 +319,11 @@ func RestGetConnConfig(c echo.Context) error {
 	connConfigName := c.Param("connConfigName")
 
 	fmt.Println("[Get ConnConfig for name]" + connConfigName)
-	content := GetConnConfig(connConfigName)
-
+	content, err := GetConnConfig(connConfigName)
+	if err != nil {
+		cblog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
 	return c.JSON(http.StatusOK, &content)
 
 }
@@ -329,7 +332,7 @@ type ConnConfigList struct {
 	Connectionconfig []ConnConfig `json:"connectionconfig"`
 }
 
-func GetConnConfigList() ConnConfigList {
+func GetConnConfigList() (ConnConfigList, error) {
 	url := SPIDER_URL + "/connectionconfig"
 
 	method := "GET"
@@ -350,7 +353,7 @@ func GetConnConfigList() ConnConfigList {
 	if err != nil {
 		cblog.Error(err)
 		content := ConnConfigList{}
-		return content
+		return content, err
 	}
 	defer res.Body.Close()
 
@@ -358,7 +361,7 @@ func GetConnConfigList() ConnConfigList {
 	if err != nil {
 		cblog.Error(err)
 		content := ConnConfigList{}
-		return content
+		return content, err
 	}
 
 	fmt.Println(string(body))
@@ -369,7 +372,7 @@ func GetConnConfigList() ConnConfigList {
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
 		content := ConnConfigList{}
-		return content
+		return content, err
 	}
 
 	temp := ConnConfigList{}
@@ -377,13 +380,17 @@ func GetConnConfigList() ConnConfigList {
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
-	return temp
+	return temp, nil
 }
 
 func RestGetConnConfigList(c echo.Context) error {
 
 	fmt.Println("[Get ConnConfig List]")
-	content := GetConnConfigList()
+	content, err := GetConnConfigList()
+	if err != nil {
+		cblog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
 
 	return c.JSON(http.StatusOK, &content)
 
@@ -395,7 +402,7 @@ type Region struct {
 	KeyValueInfoList []KeyValue
 }
 
-func GetRegion(RegionName string) Region {
+func GetRegion(RegionName string) (Region, error) {
 	url := SPIDER_URL + "/region/" + RegionName
 
 	method := "GET"
@@ -416,7 +423,7 @@ func GetRegion(RegionName string) Region {
 	if err != nil {
 		cblog.Error(err)
 		content := Region{}
-		return content
+		return content, err
 	}
 	defer res.Body.Close()
 
@@ -424,7 +431,7 @@ func GetRegion(RegionName string) Region {
 	if err != nil {
 		cblog.Error(err)
 		content := Region{}
-		return content
+		return content, err
 	}
 
 	fmt.Println(string(body))
@@ -435,7 +442,7 @@ func GetRegion(RegionName string) Region {
 		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		cblog.Error(err)
 		content := Region{}
-		return content
+		return content, err
 	}
 
 	temp := Region{}
@@ -443,7 +450,7 @@ func GetRegion(RegionName string) Region {
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
-	return temp
+	return temp, nil
 }
 
 func RestGetRegion(c echo.Context) error {
@@ -451,7 +458,11 @@ func RestGetRegion(c echo.Context) error {
 	regionName := c.Param("regionName")
 
 	fmt.Println("[Get Region for name]" + regionName)
-	content := GetRegion(regionName)
+	content, err := GetRegion(regionName)
+	if err != nil {
+		cblog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
 
 	return c.JSON(http.StatusOK, &content)
 
