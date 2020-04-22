@@ -201,7 +201,7 @@ func getVMsCspType(nsId string, mcisId string, vmId string) string {
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		return "Cannot get VM's CSP type"
 	default:

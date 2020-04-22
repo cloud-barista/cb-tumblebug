@@ -86,7 +86,7 @@ func registerCloudInfo(resourceType string, param interface{}) error {
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		fmt.Println("body: ", string(body))
 		cblog.Error(err)
 		return err

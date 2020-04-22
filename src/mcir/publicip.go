@@ -286,7 +286,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		content := publicIpInfo{}
 		return content, res.StatusCode, body, err
@@ -433,7 +433,7 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 		}
 		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		return res.StatusCode, body, err
 	default:

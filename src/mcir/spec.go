@@ -244,6 +244,90 @@ func RestDelAllSpec(c echo.Context) error {
 	}
 }
 
+type SpecList struct {
+	Vmspec []SpiderSpecInfo `json:"vmspec"`
+}
+
+func LookupSpecList(connConfig string) (SpecList, error) {
+	url := SPIDER_URL + "/vmspec"
+
+	method := "GET"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	// Create Req body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	tempReq := JsonTemplate{}
+	tempReq.ConnectionName = connConfig
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		cblog.Error(err)
+		content := SpecList{}
+		return content, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		cblog.Error(err)
+		content := SpecList{}
+		return content, err
+	}
+
+	fmt.Println(string(body))
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf(string(body))
+		cblog.Error(err)
+		content := SpecList{}
+		return content, err
+	}
+
+	temp := SpecList{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+	}
+	return temp, nil
+}
+
+func RestLookupSpecList(c echo.Context) error {
+
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+
+	u := &JsonTemplate{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[Get Region List]")
+	content, err := LookupSpecList(u.ConnectionName)
+	if err != nil {
+		cblog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
 func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
 	url := SPIDER_URL + "/vmspec/" + u.CspSpecName
 
@@ -291,7 +375,7 @@ func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		content := SpiderSpecInfo{}
 		return content, err
