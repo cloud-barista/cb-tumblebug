@@ -184,6 +184,12 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/vNic/:vNicId", mcir.RestDelVNic)
 	g.DELETE("/:nsId/resources/vNic", mcir.RestDelAllVNic)
 
+	g.GET("/:nsId/checkResource/:resourceType/:resourceId", mcir.RestCheckResource)
+	g.GET("/:nsId/checkMcis/:mcisId", mcis.RestCheckMcis)
+	g.GET("/:nsId/mcis/:mcisId/checkVm/:vmId", mcis.RestCheckVm)
+
+	e.GET("/tumblebug/checkNs/:nsId", common.RestCheckNs)
+
 	e.GET("/tumblebug/connConfig", common.RestGetConnConfigList)
 	e.GET("/tumblebug/connConfig/:connConfigName", common.RestGetConnConfig)
 	e.GET("/tumblebug/region", common.RestGetRegionList)
