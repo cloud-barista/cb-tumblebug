@@ -3,7 +3,10 @@ package mcis
 import (
 	//"encoding/json"
 	//uuid "github.com/google/uuid"
+	"fmt"
+	"net/http"
 	"os"
+
 	//"fmt"
 	//"net/http"
 	//"io/ioutil"
@@ -13,6 +16,8 @@ import (
 	cbstore "github.com/cloud-barista/cb-store"
 	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
 	//"github.com/cloud-barista/cb-tumblebug/src/mcism"
 	//"github.com/cloud-barista/cb-tumblebug/src/common"
@@ -36,188 +41,125 @@ func genUuid() string {
 */
 
 type mcirIds struct {
-	CspImageId string
-	CspImageName string
-	CspSshKeyName string
-	Name string // Spec
-	CspNetworkId string
-	CspNetworkName string
-	CspSecurityGroupId string
+	CspImageId           string
+	CspImageName         string
+	CspSshKeyName        string
+	Name                 string // Spec
+	CspNetworkId         string
+	CspNetworkName       string
+	CspSecurityGroupId   string
 	CspSecurityGroupName string
-	CspPublicIpId string
-	CspPublicIpName string
-	CspVNicId string
-	CspVNicName string
+	CspPublicIpId        string
+	CspPublicIpName      string
+	CspVNicId            string
+	CspVNicName          string
 
 	ConnectionName string
 }
 
-/*
-func getCspResourceId(nsId string, resourceType string, resourceId string) string {
-	key := genResourceKey(nsId, resourceType, resourceId)
-	if key == "/invalid_key" {
-		return "invalid nsId or resourceType or resourceId"
+func checkMcis(nsId string, mcisId string) (bool, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("checkMcis failed; nsId given is null.")
+		return false, err
+	} else if mcisId == "" {
+		err := fmt.Errorf("checkMcis failed; mcisId given is null.")
+		return false, err
 	}
+
+	fmt.Println("[Check mcis] " + mcisId)
+
+	//key := "/ns/" + nsId + "/mcis/" + mcisId
+	key := common.GenMcisKey(nsId, mcisId, "")
+	//fmt.Println(key)
+
 	keyValue, err := store.Get(key)
 	if err != nil {
 		cblog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-		return ""
+		return false, err
 	}
-	if keyValue == nil {
-		//cblog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-		return ""
+	if keyValue != nil {
+		return true, nil
 	}
+	return false, nil
 
-	cspType := getResourcesCspType(nsId, resourceType, resourceId)
-	if cspType == "AWS" {
-		switch resourceType {
-		case "image":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspImageId
-		case "sshKey":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSshKeyName
-		case "spec":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.Name
-		case "network":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspNetworkId // contains CspSubnetId
-		// case "subnet":
-		// 	content := subnetInfo{}
-		// 	json.Unmarshal([]byte(keyValue.Value), &content)
-		// 	return content.CspSubnetId
-		case "securityGroup":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSecurityGroupId
-		case "publicIp":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspPublicIpId
-		case "vNic":
-			content := mcirIds{}
-			err = json.Unmarshal([]byte(keyValue.Value), &content)
-			if err != nil {
-				cblog.Error(err)
-				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-				return ""
-			}
-			return content.CspVNicId
-		default:
-			return "invalid resourceType"
-		}
-	} else {
-		switch resourceType {
-		case "image":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspImageName
-		case "sshKey":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSshKeyName
-		case "spec":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.Name
-		case "network":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspNetworkName // contains CspSubnetId
-		// case "subnet":
-		// 	content := subnetInfo{}
-		// 	json.Unmarshal([]byte(keyValue.Value), &content)
-		// 	return content.CspSubnetId
-		case "securityGroup":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSecurityGroupName
-		case "publicIp":
-			content := mcirIds{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspPublicIpName
-		case "vNic":
-			content := mcirIds{}
-			err = json.Unmarshal([]byte(keyValue.Value), &content)
-			if err != nil {
-				cblog.Error(err)
-				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-				return ""
-			}
-			return content.CspVNicId
-		default:
-			return "invalid resourceType"
-		}
-	}	
 }
-*/
 
-/*
-func getVMsCspType(nsId string, mcisId string, vmId string) string {
-	var content struct {
-		Config_name        string   `json:"config_name"`
+func RestCheckMcis(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+
+	exists, err := checkMcis(nsId, mcisId)
+
+	type JsonTemplate struct {
+		Exists bool `json:exists`
 	}
-	
+	content := JsonTemplate{}
+	content.Exists = exists
+
+	if err != nil {
+		cblog.Error(err)
+		//mapA := map[string]string{"message": err.Error()}
+		//return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusNotFound, &content)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+}
+
+func checkVm(nsId string, mcisId string, vmId string) (bool, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("checkVm failed; nsId given is null.")
+		return false, err
+	} else if mcisId == "" {
+		err := fmt.Errorf("checkVm failed; mcisId given is null.")
+		return false, err
+	} else if vmId == "" {
+		err := fmt.Errorf("checkVm failed; vmId given is null.")
+		return false, err
+	}
+
+	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
+
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	keyValue, _ := store.Get(key)
-	json.Unmarshal([]byte(keyValue.Value), &content)
+	//fmt.Println(key)
 
-	url := SPIDER_URL + "/connectionconfig/" + content.Config_name
-	
-	method := "GET"
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	res, err := client.Do(req)
+	keyValue, err := store.Get(key)
 	if err != nil {
 		cblog.Error(err)
-		return "http request error"
+		return false, err
 	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		cblog.Error(err)
-		return "ioutil.ReadAll error"
+	if keyValue != nil {
+		return true, nil
 	}
+	return false, nil
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		cblog.Error(err)
-		return "Cannot get VM's CSP type"
-	default:
-		
-	}
-
-	type ConnConfigInfo struct {
-		ProviderName            string
-	}
-
-	temp := ConnConfigInfo{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
-	}
-
-	return temp.ProviderName
 }
-*/
+
+func RestCheckVm(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	exists, err := checkVm(nsId, mcisId, vmId)
+
+	type JsonTemplate struct {
+		Exists bool `json:exists`
+	}
+	content := JsonTemplate{}
+	content.Exists = exists
+
+	if err != nil {
+		cblog.Error(err)
+		//mapA := map[string]string{"message": err.Error()}
+		//return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusNotFound, &content)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+}

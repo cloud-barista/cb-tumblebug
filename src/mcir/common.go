@@ -11,6 +11,7 @@ import (
 
 	//uuid "github.com/google/uuid"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/labstack/echo"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
@@ -294,6 +295,30 @@ func checkResource(nsId string, resourceType string, resourceId string) (bool, e
 	}
 	return false, nil
 
+}
+
+func RestCheckResource(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	resourceType := c.Param("resourceType")
+	resourceId := c.Param("resourceId")
+
+	exists, err := checkResource(nsId, resourceType, resourceId)
+
+	type JsonTemplate struct {
+		Exists bool `json:exists`
+	}
+	content := JsonTemplate{}
+	content.Exists = exists
+
+	if err != nil {
+		cblog.Error(err)
+		//mapA := map[string]string{"message": err.Error()}
+		//return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusNotFound, &content)
+	}
+
+	return c.JSON(http.StatusOK, &content)
 }
 
 // https://stackoverflow.com/questions/45139954/dynamic-struct-as-parameter-golang

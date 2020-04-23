@@ -292,5 +292,26 @@ func checkNs(Id string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
 
+func RestCheckNs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	exists, err := checkNs(nsId)
+
+	type JsonTemplate struct {
+		Exists bool `json:exists`
+	}
+	content := JsonTemplate{}
+	content.Exists = exists
+
+	if err != nil {
+		cblog.Error(err)
+		//mapA := map[string]string{"message": err.Error()}
+		//return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusNotFound, &content)
+	}
+
+	return c.JSON(http.StatusOK, &content)
 }
