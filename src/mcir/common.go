@@ -203,7 +203,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		return res.StatusCode, body, err
 	default:

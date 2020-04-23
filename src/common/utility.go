@@ -173,7 +173,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		return "Cannot get VM's CSP type"
 	default:
@@ -300,7 +300,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		content := ConnConfig{}
 		return content, err
@@ -369,7 +369,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		content := ConnConfigList{}
 		return content, err
@@ -439,7 +439,7 @@ func GetRegion(RegionName string) (Region, error) {
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		content := Region{}
 		return content, err
@@ -459,6 +459,74 @@ func RestGetRegion(c echo.Context) error {
 
 	fmt.Println("[Get Region for name]" + regionName)
 	content, err := GetRegion(regionName)
+	if err != nil {
+		cblog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+type RegionList struct {
+	Region []Region `json:"region"`
+}
+
+func GetRegionList() (RegionList, error) {
+	url := SPIDER_URL + "/region"
+
+	method := "GET"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	//req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		cblog.Error(err)
+		content := RegionList{}
+		return content, err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		cblog.Error(err)
+		content := RegionList{}
+		return content, err
+	}
+
+	fmt.Println(string(body))
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf(string(body))
+		cblog.Error(err)
+		content := RegionList{}
+		return content, err
+	}
+
+	temp := RegionList{}
+	err2 := json.Unmarshal(body, &temp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+	}
+	return temp, nil
+}
+
+func RestGetRegionList(c echo.Context) error {
+
+	fmt.Println("[Get Region List]")
+	content, err := GetRegionList()
 	if err != nil {
 		cblog.Error(err)
 		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
