@@ -174,10 +174,10 @@ func RestDelSshKey(c echo.Context) error {
 	responseCode, body, err := delResource(nsId, "sshKey", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
-		/*
-			mapA := map[string]string{"message": "Failed to delete the sshKey"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		*/
+
+		//mapA := map[string]string{"message": "Failed to delete the sshKey"}
+		//return c.JSON(http.StatusFailedDependency, &mapA)
+
 		return c.JSONBlob(responseCode, body)
 	}
 

@@ -149,6 +149,8 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/spec/:specId", mcir.RestDelSpec)
 	g.DELETE("/:nsId/resources/spec", mcir.RestDelAllSpec)
 
+	//g.GET("/:nsId/resources/fetchSpecs", mcir.RestFetchSpecs)
+
 	g.POST("/:nsId/resources/securityGroup", mcir.RestPostSecurityGroup)
 	g.GET("/:nsId/resources/securityGroup/:securityGroupId", mcir.RestGetSecurityGroup)
 	g.GET("/:nsId/resources/securityGroup", mcir.RestGetAllSecurityGroup)
@@ -183,6 +185,11 @@ func ApiServer() {
 	g.PUT("/:nsId/resources/vNic/:vNicId", mcir.RestPutVNic)
 	g.DELETE("/:nsId/resources/vNic/:vNicId", mcir.RestDelVNic)
 	g.DELETE("/:nsId/resources/vNic", mcir.RestDelAllVNic)
+
+	// We cannot use these wildcard method below.
+	// https://github.com/labstack/echo/issues/382
+	//g.DELETE("/:nsId/resources/:resourceType/:resourceId", mcir.RestDelResource)
+	//g.DELETE("/:nsId/resources/:resourceType", mcir.RestDelAllResources)
 
 	g.GET("/:nsId/checkResource/:resourceType/:resourceId", mcir.RestCheckResource)
 	g.GET("/:nsId/checkMcis/:mcisId", mcis.RestCheckMcis)
