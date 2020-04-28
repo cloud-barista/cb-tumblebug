@@ -33,7 +33,8 @@ func init() {
 
 func delResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
 
-	fmt.Println("[Delete " + resourceType + "] " + resourceId)
+	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
+	fmt.Printf("RestDelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
 	check, _ := checkResource(nsId, resourceType, resourceId)
 
@@ -320,6 +321,55 @@ func RestCheckResource(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, &content)
 }
+
+/*
+func RestDelResource(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	resourceType := c.Param("resourceType")
+	resourceId := c.Param("resourceId")
+	forceFlag := c.QueryParam("force")
+
+	fmt.Printf("RestDelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
+
+	responseCode, _, err := delResource(nsId, resourceType, resourceId, forceFlag)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(responseCode, &mapA)
+	}
+
+	mapA := map[string]string{"message": "The " + resourceType + " " + resourceId + " has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+}
+
+func RestDelAllResources(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	resourceType := c.Param("resourceType")
+	forceFlag := c.QueryParam("force")
+
+	resourceList := getResourceList(nsId, resourceType)
+
+	if len(resourceList) == 0 {
+		mapA := map[string]string{"message": "There is no " + resourceType + " element in this namespace."}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		for _, v := range resourceList {
+			responseCode, _, err := delResource(nsId, resourceType, v, forceFlag)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{"message": err.Error()}
+				return c.JSON(responseCode, &mapA)
+			}
+
+		}
+
+		mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
+	}
+}
+*/
 
 // https://stackoverflow.com/questions/45139954/dynamic-struct-as-parameter-golang
 
