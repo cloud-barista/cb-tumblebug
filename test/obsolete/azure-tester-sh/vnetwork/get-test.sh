@@ -4,7 +4,7 @@ source ../setup.env
 #for NAME in "${CONNECT_NAMES[@]}"
 #do
 #	ID=CB-VNet-powerkim
-#	curl -sX GET http://$RESTSERVER:1024/vnetwork/${ID}?connection_name=${NAME} |json_pp &
+#	curl -sX GET http://$RESTSERVER:1024/vpc/${ID}?connection_name=${NAME} |json_pp &
 #done
 
 TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`

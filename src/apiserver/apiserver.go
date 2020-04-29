@@ -172,19 +172,21 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/network/:networkId", mcir.RestDelNetwork)
 	g.DELETE("/:nsId/resources/network", mcir.RestDelAllNetwork)
 
-	g.POST("/:nsId/resources/publicIp", mcir.RestPostPublicIp)
-	g.GET("/:nsId/resources/publicIp/:publicIpId", mcir.RestGetPublicIp)
-	g.GET("/:nsId/resources/publicIp", mcir.RestGetAllPublicIp)
-	g.PUT("/:nsId/resources/publicIp/:publicIpId", mcir.RestPutPublicIp)
-	g.DELETE("/:nsId/resources/publicIp/:publicIpId", mcir.RestDelPublicIp)
-	g.DELETE("/:nsId/resources/publicIp", mcir.RestDelAllPublicIp)
+	/*
+		g.POST("/:nsId/resources/publicIp", mcir.RestPostPublicIp)
+		g.GET("/:nsId/resources/publicIp/:publicIpId", mcir.RestGetPublicIp)
+		g.GET("/:nsId/resources/publicIp", mcir.RestGetAllPublicIp)
+		g.PUT("/:nsId/resources/publicIp/:publicIpId", mcir.RestPutPublicIp)
+		g.DELETE("/:nsId/resources/publicIp/:publicIpId", mcir.RestDelPublicIp)
+		g.DELETE("/:nsId/resources/publicIp", mcir.RestDelAllPublicIp)
 
-	g.POST("/:nsId/resources/vNic", mcir.RestPostVNic)
-	g.GET("/:nsId/resources/vNic/:vNicId", mcir.RestGetVNic)
-	g.GET("/:nsId/resources/vNic", mcir.RestGetAllVNic)
-	g.PUT("/:nsId/resources/vNic/:vNicId", mcir.RestPutVNic)
-	g.DELETE("/:nsId/resources/vNic/:vNicId", mcir.RestDelVNic)
-	g.DELETE("/:nsId/resources/vNic", mcir.RestDelAllVNic)
+		g.POST("/:nsId/resources/vNic", mcir.RestPostVNic)
+		g.GET("/:nsId/resources/vNic/:vNicId", mcir.RestGetVNic)
+		g.GET("/:nsId/resources/vNic", mcir.RestGetAllVNic)
+		g.PUT("/:nsId/resources/vNic/:vNicId", mcir.RestPutVNic)
+		g.DELETE("/:nsId/resources/vNic/:vNicId", mcir.RestDelVNic)
+		g.DELETE("/:nsId/resources/vNic", mcir.RestDelAllVNic)
+	*/
 
 	// We cannot use these wildcard method below.
 	// https://github.com/labstack/echo/issues/382

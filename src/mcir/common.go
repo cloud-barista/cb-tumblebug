@@ -117,7 +117,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := networkInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/vnetwork/" + temp.CspNetworkName //+ "?connection_name=" + temp.ConnectionName
+		url = SPIDER_URL + "/vpc/" + temp.CspNetworkName //+ "?connection_name=" + temp.ConnectionName
 	/*
 		case "subnet":
 			temp := subnetInfo{}

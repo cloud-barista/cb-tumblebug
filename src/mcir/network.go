@@ -240,8 +240,8 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	}
 	*/
 
-	//url := SPIDER_URL + "/vnetwork?connection_name=" + u.ConnectionName
-	url := SPIDER_URL + "/vnetwork"
+	//url := SPIDER_URL + "/vpc?connection_name=" + u.ConnectionName
+	url := SPIDER_URL + "/vpc"
 
 	method := "POST"
 
@@ -414,8 +414,8 @@ func delNetwork(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	}
 	fmt.Println("temp.CspNetworkId: " + temp.CspNetworkId)
 
-	//url := SPIDER_URL + "/vnetwork?connection_name=" + temp.ConnectionName                           // for testapi.io
-	url := SPIDER_URL + "/vnetwork/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	//url := SPIDER_URL + "/vpc?connection_name=" + temp.ConnectionName                           // for testapi.io
+	url := SPIDER_URL + "/vpc/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
