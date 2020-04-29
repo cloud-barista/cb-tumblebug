@@ -1290,7 +1290,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	tempReq.ReqInfo.VMName = vmInfoData.Name
 
 	tempReq.ReqInfo.ImageId = common.GetCspResourceId(nsId, "image", vmInfoData.Image_id)
-	tempReq.ReqInfo.VirtualNetworkId = common.GetCspResourceId(nsId, "network", vmInfoData.Vnet_id)
+	tempReq.ReqInfo.VirtualNetworkId = common.GetCspResourceId(nsId, "vNet", vmInfoData.Vnet_id)
 	tempReq.ReqInfo.NetworkInterfaceId = "" //common.GetCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
 	tempReq.ReqInfo.PublicIPId = common.GetCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
 

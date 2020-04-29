@@ -45,8 +45,8 @@ type mcirIds struct {
 	CspImageName         string
 	CspSshKeyName        string
 	Name                 string // Spec
-	CspNetworkId         string
-	CspNetworkName       string
+	CspVNetId         string
+	CspVNetName       string
 	CspSecurityGroupId   string
 	CspSecurityGroupName string
 	CspPublicIpId        string

@@ -17,25 +17,40 @@ function full_test() {
 	echo "####################################################################"
 	echo "## 1. VPC: Create -> List -> Get"
 	echo "####################################################################"
-	curl -sX POST http://localhost:1323/tumblebug/vpc -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'", "ReqInfo": { "Name": "VPC-01", "IPv4_CIDR": "192.168.0.0/16", "SubnetInfoList": [ { "Name": "Subnet-01", "IPv4_CIDR": "192.168.1.0/24"} ] } }' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/vpc -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/vpc/VPC-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
+		'{
+			"name": "VPC-01",
+			"connectionName": "'${CONN_CONFIG}'",
+			"cspVNetName": "VPC-01",
+			"cidrBlock": "192.168.0.0/16",
+			"subnetInfoList": [ {
+				"Name": "Subnet-01", 
+				"IPv4_CIDR": "192.168.1.0/24"
+			} ]
+		}' | json_pp || return 1
+#		'{ "ConnectionName": "'${CONN_CONFIG}'", "ReqInfo": { "Name": "vNet-01", "IPv4_CIDR": "192.168.0.0/16", "SubnetInfoList": [ { "Name": "Subnet-01", "IPv4_CIDR": "192.168.1.0/24"} ] } }' | json_pp || return 1
+
+	echo This is the begin of the block comment
+	: << 'END'
+
+	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d '{ "connectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet/VPC-01 -H 'Content-Type: application/json' -d '{ "connectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "#-----------------------------"
 
 	echo "####################################################################"
 	echo "## 2. SecurityGroup: Create -> List -> Get"
 	echo "####################################################################"
-	curl -sX POST http://localhost:1323/tumblebug/securitygroup -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'", "ReqInfo": { "Name": "SG-01", "VPCName": "VPC-01", "SecurityRules": [ {"FromPort": "1", "ToPort" : "65535", "IPProtocol" : "tcp", "Direction" : "inbound"} ] } }' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/securitygroup -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/securitygroup/SG-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/securitygroup -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'", "ReqInfo": { "Name": "SG-01", "VPCName": "VPC-01", "SecurityRules": [ {"FromPort": "1", "ToPort" : "65535", "IPProtocol" : "tcp", "Direction" : "inbound"} ] } }' | json_pp || return 1
+	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securitygroup -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securitygroup/SG-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "#-----------------------------"
 
 	echo "####################################################################"
 	echo "## 3. KeyPair: Create -> List -> Get"
 	echo "####################################################################"
-	curl -sX POST http://localhost:1323/tumblebug/keypair -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'", "ReqInfo": { "Name": "KEYPAIR-01" } }' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/keypair -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/keypair/KEYPAIR-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/keypair -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'", "ReqInfo": { "Name": "KEYPAIR-01" } }' | json_pp || return 1
+	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/keypair -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/keypair/KEYPAIR-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "#-----------------------------"
 
 	echo "####################################################################"
@@ -82,7 +97,10 @@ function full_test() {
 	echo "####################################################################"
 	echo "## 1. VPC: Delete"
 	echo "####################################################################"
-	curl -sX DELETE http://localhost:1323/tumblebug/vpc/VPC-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -sX DELETE http://localhost:1323/tumblebug/vNet/VPC-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+
+END
+	echo This is the end of the block comment
 }
 
 full_test

@@ -12,48 +12,55 @@ import (
 	"github.com/labstack/echo"
 )
 
-// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/VNetworkHandler.go
-/*
-type VNetworkReqInfo struct {
-     Name string
+// 2020-04-09 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
+
+type SpiderVPCReqInfo struct { // Spider
+	ConnectionName string
+	ReqInfo        VPCReqInfo
 }
 
-type VNetworkInfo struct {
-     Id   string
-     Name string
-     AddressPrefix string
-     Status string
-
-     KeyValueList []KeyValue
+type VPCReqInfo struct { // Spider
+	IId            common.IID // {NameId, SystemId}
+	IPv4_CIDR      string
+	SubnetInfoList []SubnetInfo
 }
 
-type VNetworkHandler interface {
-	CreateVNetwork(vNetworkReqInfo VNetworkReqInfo) (VNetworkInfo, error)
-	ListVNetwork() ([]*VNetworkInfo, error)
-	GetVNetwork(vNetworkID string) (VNetworkInfo, error)
-	DeleteVNetwork(vNetworkID string) (bool, error)
-}
-*/
+type VPCInfo struct { // Spider
+	IId            common.IID // {NameId, SystemId}
+	IPv4_CIDR      string
+	SubnetInfoList []SubnetInfo
 
-type networkReq struct {
+	KeyValueList []common.KeyValue
+}
+
+type SubnetInfo struct { // Spider
+	IId       common.IID // {NameId, SystemId}
+	IPv4_CIDR string
+
+	KeyValueList []common.KeyValue
+}
+
+type vNetReq struct { // Tumblebug
 	//Id                string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
-	//CspNetworkId      string `json:"cspNetworkId"`
-	CspNetworkName string `json:"cspNetworkName"`
-	//CidrBlock         string `json:"cidrBlock"`
+	//CspVNetId      string `json:"cspVNetId"`
+	CspVNetName    string       `json:"cspVNetName"`
+	CidrBlock      string       `json:"cidrBlock"`
+	SubnetInfoList []SubnetInfo `json:"subnetInfoList"`
 	//Region            string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description string `json:"description"`
 }
 
-type networkInfo struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	CspNetworkId   string `json:"cspNetworkId"`
-	CspNetworkName string `json:"cspNetworkName"`
-	CidrBlock      string `json:"cidrBlock"`
+type vNetInfo struct { // Tumblebug
+	Id             string       `json:"id"`
+	Name           string       `json:"name"`
+	ConnectionName string       `json:"connectionName"`
+	CspVNetId      string       `json:"cspVNetId"`
+	CspVNetName    string       `json:"cspVNetName"`
+	CidrBlock      string       `json:"cidrBlock"`
+	SubnetInfoList []SubnetInfo `json:"subnetInfoList"`
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description  string            `json:"description"`
@@ -61,27 +68,27 @@ type networkInfo struct {
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-// MCIS API Proxy: Network
-func RestPostNetwork(c echo.Context) error {
+// MCIS API Proxy: VNet
+func RestPostVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &networkReq{}
+	u := &vNetReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	/*
 		action := c.QueryParam("action")
-		fmt.Println("[POST Network requested action: " + action)
+		fmt.Println("[POST VNet requested action: " + action)
 		if action == "create" {
-			fmt.Println("[Creating Network]")
-			content, _ := createNetwork(nsId, u)
+			fmt.Println("[Creating VNet]")
+			content, _ := createVNet(nsId, u)
 			return c.JSON(http.StatusCreated, content)
 
 		} else if action == "register" {
-			fmt.Println("[Registering Network]")
-			content, _ := registerNetwork(nsId, u)
+			fmt.Println("[Registering VNet]")
+			content, _ := registerVNet(nsId, u)
 			return c.JSON(http.StatusCreated, content)
 
 		} else {
@@ -90,15 +97,15 @@ func RestPostNetwork(c echo.Context) error {
 		}
 	*/
 
-	fmt.Println("[POST Network")
-	fmt.Println("[Creating Network]")
-	//content, responseCode, body, err := createNetwork(nsId, u)
-	content, err := createNetwork(nsId, u)
+	fmt.Println("[POST VNet")
+	fmt.Println("[Creating VNet]")
+	//content, responseCode, body, err := createVNet(nsId, u)
+	content, err := createVNet(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
 			mapA := map[string]string{
-				"message": "Failed to create a network"}
+				"message": "Failed to create a vNet"}
 		*/
 		//return c.JSONBlob(responseCode, body)
 		mapA := map[string]string{"message": err.Error()}
@@ -107,21 +114,21 @@ func RestPostNetwork(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-func RestGetNetwork(c echo.Context) error {
+func RestGetVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	id := c.Param("networkId")
+	id := c.Param("vNetId")
 
-	content := networkInfo{}
+	content := vNetInfo{}
 
-	fmt.Println("[Get network for id]" + id)
-	key := common.GenResourceKey(nsId, "network", id)
+	fmt.Println("[Get vNet for id]" + id)
+	key := common.GenResourceKey(nsId, "vNet", id)
 	fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
 	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the network with given ID."}
+		mapA := map[string]string{"message": "Failed to find the vNet with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -134,27 +141,27 @@ func RestGetNetwork(c echo.Context) error {
 	}
 }
 
-func RestGetAllNetwork(c echo.Context) error {
+func RestGetAllVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
 	var content struct {
 		//Name string     `json:"name"`
-		Network []networkInfo `json:"network"`
+		VNet []vNetInfo `json:"vNet"`
 	}
 
-	networkList := getResourceList(nsId, "network")
+	vNetList := getResourceList(nsId, "vNet")
 
-	for _, v := range networkList {
+	for _, v := range vNetList {
 
-		key := common.GenResourceKey(nsId, "network", v)
+		key := common.GenResourceKey(nsId, "vNet", v)
 		fmt.Println(key)
 		keyValue, _ := store.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		networkTmp := networkInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &networkTmp)
-		networkTmp.Id = v
-		content.Network = append(content.Network, networkTmp)
+		vNetTmp := vNetInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &vNetTmp)
+		vNetTmp.Id = v
+		content.VNet = append(content.VNet, vNetTmp)
 
 	}
 	fmt.Printf("content %+v\n", content)
@@ -163,76 +170,76 @@ func RestGetAllNetwork(c echo.Context) error {
 
 }
 
-func RestPutNetwork(c echo.Context) error {
+func RestPutVNet(c echo.Context) error {
 	//nsId := c.Param("nsId")
 
 	return nil
 }
 
-func RestDelNetwork(c echo.Context) error {
+func RestDelVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	id := c.Param("networkId")
+	id := c.Param("vNetId")
 	forceFlag := c.QueryParam("force")
 
-	//responseCode, body, err := delNetwork(nsId, id, forceFlag)
+	//responseCode, body, err := delVNet(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, "network", id, forceFlag)
+	responseCode, body, err := delResource(nsId, "vNet", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
-		//mapA := map[string]string{"message": "Failed to delete the network"}
+		//mapA := map[string]string{"message": "Failed to delete the vNet"}
 		return c.JSONBlob(responseCode, body)
 	}
 
-	mapA := map[string]string{"message": "The network has been deleted"}
+	mapA := map[string]string{"message": "The vNet has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func RestDelAllNetwork(c echo.Context) error {
+func RestDelAllVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	networkList := getResourceList(nsId, "network")
+	vNetList := getResourceList(nsId, "vNet")
 
-	if len(networkList) == 0 {
-		mapA := map[string]string{"message": "There is no network element in this namespace."}
+	if len(vNetList) == 0 {
+		mapA := map[string]string{"message": "There is no vNet element in this namespace."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
-		for _, v := range networkList {
-			//responseCode, body, err := delNetwork(nsId, v, forceFlag)
+		for _, v := range vNetList {
+			//responseCode, body, err := delVNet(nsId, v, forceFlag)
 
-			responseCode, body, err := delResource(nsId, "network", v, forceFlag)
+			responseCode, body, err := delResource(nsId, "vNet", v, forceFlag)
 			if err != nil {
 				cblog.Error(err)
-				//mapA := map[string]string{"message": "Failed to delete the network"}
+				//mapA := map[string]string{"message": "Failed to delete the vNet"}
 				return c.JSONBlob(responseCode, body)
 			}
 
 		}
 
-		mapA := map[string]string{"message": "All networks has been deleted"}
+		mapA := map[string]string{"message": "All vNets has been deleted"}
 		return c.JSON(http.StatusOK, &mapA)
 	}
 }
 
-//func createNetwork(nsId string, u *networkReq) (networkInfo, int, []byte, error) {
-func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
-	check, _ := checkResource(nsId, "network", u.Name)
+//func createVNet(nsId string, u *vNetReq) (vNetInfo, int, []byte, error) {
+func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
+	check, _ := checkResource(nsId, "vNet", u.Name)
 
 	if check {
-		temp := networkInfo{}
-		err := fmt.Errorf("The network " + u.Name + " already exists.")
+		temp := vNetInfo{}
+		err := fmt.Errorf("The vNet " + u.Name + " already exists.")
 		return temp, err
 	}
 
 	/* FYI; as of 2020-04-17
-	type networkReq struct {
+	type vNetReq struct {
 		//Id                string `json:"id"`
 		Name           string `json:"name"`
 		ConnectionName string `json:"connectionName"`
-		//CspNetworkId      string `json:"cspNetworkId"`
-		CspNetworkName string `json:"cspNetworkName"`
+		//CspVNetId      string `json:"cspVNetId"`
+		CspVNetName string `json:"cspVNetName"`
 		//CidrBlock         string `json:"cidrBlock"`
 		//Region            string `json:"region"`
 		//ResourceGroupName string `json:"resourceGroupName"`
@@ -245,19 +252,14 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 
 	method := "POST"
 
-	//payload := strings.NewReader("{ \"Name\": \"" + u.CspNetworkName + "\"}")
-	type VNetReqInfo struct {
-		ConnectionName string
-		ReqInfo        struct {
-			Name         string
-			KeyValueList []common.KeyValue
-		}
-	}
-	tempReq := VNetReqInfo{}
+	tempReq := SpiderVPCReqInfo{}
 	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.CspNetworkName
+	tempReq.ReqInfo.IId.NameId = u.Name
+	tempReq.ReqInfo.IId.SystemId = u.CspVNetName
+	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
+	tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
-	//fmt.Println("payload: " + string(payload)) // for debug
+	fmt.Println("payload: " + string(payload)) // for debug
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -274,17 +276,19 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	res, err := client.Do(req)
 	if err != nil {
 		cblog.Error(err)
-		content := networkInfo{}
+		content := vNetInfo{}
 		//return content, res.StatusCode, nil, err
 		return content, err
 	}
 	defer res.Body.Close()
 
+	//fmt.Println("res.Body: " + string(res.Body)) // for debug
+
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		content := networkInfo{}
+		content := vNetInfo{}
 		//return content, res.StatusCode, body, err
 		return content, err
 	}
@@ -294,32 +298,24 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
 		cblog.Error(err)
-		content := networkInfo{}
+		content := vNetInfo{}
 		//return content, res.StatusCode, body, err
 		return content, err
 	}
 
-	type VNetworkInfo struct {
-		Id            string
-		Name          string
-		AddressPrefix string
-		Status        string
-
-		KeyValueList []common.KeyValue
-	}
-	temp := VNetworkInfo{}
+	temp := VPCInfo{} // Spider
 	err2 := json.Unmarshal(body, &temp)
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
 
 	/* FYI; as of 2020-04-17
-	type networkInfo struct {
+	type vNetInfo struct {
 		Id             string `json:"id"`
 		Name           string `json:"name"`
 		ConnectionName string `json:"connectionName"`
-		CspNetworkId   string `json:"cspNetworkId"`
-		CspNetworkName string `json:"cspNetworkName"`
+		CspVNetId   string `json:"cspVNetId"`
+		CspVNetName string `json:"cspVNetName"`
 		CidrBlock      string `json:"cidrBlock"`
 		//Region         string `json:"region"`
 		//ResourceGroupName string `json:"resourceGroupName"`
@@ -329,26 +325,26 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 	}
 	*/
 
-	content := networkInfo{}
+	content := vNetInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspNetworkId = temp.Id     // CspSubnetId
-	content.CspNetworkName = temp.Name // = u.CspNetworkName
-	content.CidrBlock = temp.AddressPrefix
+	content.CspVNetId = temp.IId.SystemId // CspSubnetId
+	content.CspVNetName = temp.IId.NameId // = u.CspVNetName
+	content.CidrBlock = temp.IPv4_CIDR
+	content.SubnetInfoList = temp.SubnetInfoList
 	content.Description = u.Description
-	content.Status = temp.Status
 	content.KeyValueList = temp.KeyValueList
 
 	// cb-store
-	fmt.Println("=========================== PUT createNetwork")
-	Key := common.GenResourceKey(nsId, "network", content.Id)
+	fmt.Println("=========================== PUT createVNet")
+	Key := common.GenResourceKey(nsId, "vNet", content.Id)
 	/*
 		mapA := map[string]string{
 			"connectionName": content.ConnectionName,
-			"cspNetworkId":   content.CspNetworkId,
-			"cspNetworkName": content.CspNetworkName,
+			"cspVNetId":   content.CspVNetId,
+			"cspVNetName": content.CspVNetName,
 			"cidrBlock":      content.CidrBlock,
 			//"region":            content.Region,
 			//"resourceGroupName": content.ResourceGroupName,
@@ -375,47 +371,47 @@ func createNetwork(nsId string, u *networkReq) (networkInfo, error) {
 }
 
 /*
-func getNetworkList(nsId string) []string {
+func getVNetList(nsId string) []string {
 
-	fmt.Println("[Get networks")
-	key := "/ns/" + nsId + "/resources/network"
+	fmt.Println("[Get vNets")
+	key := "/ns/" + nsId + "/resources/vNet"
 	fmt.Println(key)
 
 	keyValue, _ := store.GetList(key, true)
-	var networkList []string
+	var vNetList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
-		networkList = append(networkList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/network/"))
+		vNetList = append(vNetList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/vNet/"))
 		//}
 	}
-	for _, v := range networkList {
+	for _, v := range vNetList {
 		fmt.Println("<" + v + "> \n")
 	}
 	fmt.Println("===============================================")
-	return networkList
+	return vNetList
 
 }
 */
 
 /*
-func delNetwork(nsId string, Id string, forceFlag string) (int, []byte, error) {
+func delVNet(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
-	fmt.Println("[Delete network] " + Id)
+	fmt.Println("[Delete vNet] " + Id)
 
-	key := genResourceKey(nsId, "network", Id)
+	key := genResourceKey(nsId, "vNet", Id)
 	fmt.Println("key: " + key)
 
 	keyValue, _ := store.Get(key)
 	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
-	temp := networkInfo{}
+	temp := vNetInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
-	fmt.Println("temp.CspNetworkId: " + temp.CspNetworkId)
+	fmt.Println("temp.CspVNetId: " + temp.CspVNetId)
 
 	//url := SPIDER_URL + "/vpc?connection_name=" + temp.ConnectionName                           // for testapi.io
-	url := SPIDER_URL + "/vpc/" + temp.CspNetworkId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	url := SPIDER_URL + "/vpc/" + temp.CspVNetId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

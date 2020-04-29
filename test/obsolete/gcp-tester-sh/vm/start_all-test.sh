@@ -15,16 +15,16 @@ do
 
 #############################################################################################################################################
 
-        TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
+        TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/vNet | jq -r '.vNet[].id'`
         #echo $TB_NETWORK_IDS | json_pp
 
         if [ -n "$TB_NETWORK_IDS" ]
         then
-                #TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network | jq -r '.network[].id'`
+                #TB_NETWORK_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/vNet | jq -r '.vNet[].id'`
                 for TB_NETWORK_ID in ${TB_NETWORK_IDS}
                 do
                         echo ....Get ${TB_NETWORK_ID} ...
-                        NETWORKS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network/${TB_NETWORK_ID} | jq -r '.connectionName'`
+                        NETWORKS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/vNet/${TB_NETWORK_ID} | jq -r '.connectionName'`
                         if [ "$NETWORKS_CONN_NAME" == "$NAME" ]
                         then
                                 VNET_ID=$TB_NETWORK_ID
@@ -33,7 +33,7 @@ do
                         fi
                 done
         else
-                echo ....no networks found. Exiting..
+                echo ....no vNets found. Exiting..
                 exit 1
         fi
 
