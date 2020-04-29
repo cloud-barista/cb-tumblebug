@@ -3,5 +3,5 @@ source ../setup.env
 
 for NAME in "${CONNECT_NAMES[@]}"
 do
-	curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/network -H 'Content-Type: application/json' -d "{\"connectionName\":\"$NAME\", \"cspNetworkName\":\"CB-VNet-jhseo\"}" |json_pp &
+	curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d "{\"connectionName\":\"$NAME\", \"cspNetworkName\":\"CB-VNet-jhseo\"}" |json_pp &
 done

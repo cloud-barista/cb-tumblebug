@@ -43,6 +43,12 @@ func init() {
 	SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
+// Spider 2020-03-30 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/IId.go
+type IID struct {
+	NameId   string // NameID by user
+	SystemId string // SystemID by CloudOS
+}
+
 // MCIS utilities
 
 func GenUuid() string {
@@ -92,11 +98,11 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 	if resourceType == "image" ||
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
-		resourceType == "network" ||
-		resourceType == "subnet" ||
-		resourceType == "securityGroup" ||
-		resourceType == "publicIp" ||
-		resourceType == "vNic" {
+		resourceType == "vNet" ||
+		resourceType == "securityGroup" {
+		//resourceType == "subnet" ||
+		//resourceType == "publicIp" ||
+		//resourceType == "vNic" {
 		return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
 	} else {
 		return "/invalid_key"
@@ -108,8 +114,8 @@ type mcirIds struct {
 	CspImageName         string
 	CspSshKeyName        string
 	Name                 string // Spec
-	CspNetworkId         string
-	CspNetworkName       string
+	CspVNetId            string
+	CspVNetName          string
 	CspSecurityGroupId   string
 	CspSecurityGroupName string
 	CspPublicIpId        string
@@ -224,10 +230,10 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) strin
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.Name
-	case "network":
+	case "vNet":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspNetworkName // contains CspSubnetId
+		return content.CspVNetName // contains CspSubnetId
 	// case "subnet":
 	// 	content := subnetInfo{}
 	// 	json.Unmarshal([]byte(keyValue.Value), &content)

@@ -113,11 +113,11 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
 		url = SPIDER_URL + "/keypair/" + temp.CspSshKeyName //+ "?connection_name=" + temp.ConnectionName
-	case "network":
-		temp := networkInfo{}
+	case "vNet":
+		temp := vNetInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/vpc/" + temp.CspNetworkName //+ "?connection_name=" + temp.ConnectionName
+		url = SPIDER_URL + "/vpc/" + temp.CspVNetName //+ "?connection_name=" + temp.ConnectionName
 	/*
 		case "subnet":
 			temp := subnetInfo{}
@@ -185,7 +185,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return res, err
 		}
 
-		// delete network info
+		// delete vNet info
 		cbStoreDeleteErr := store.Delete(key)
 		if cbStoreDeleteErr != nil {
 			cblog.Error(cbStoreDeleteErr)
@@ -223,7 +223,7 @@ func getResourceList(nsId string, resourceType string) []string {
 	if resourceType == "image" ||
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
-		resourceType == "network" ||
+		resourceType == "vNet" ||
 		resourceType == "subnet" ||
 		resourceType == "securityGroup" ||
 		resourceType == "publicIp" ||
@@ -270,7 +270,7 @@ func checkResource(nsId string, resourceType string, resourceId string) (bool, e
 	if resourceType == "image" ||
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
-		resourceType == "network" ||
+		resourceType == "vNet" ||
 		resourceType == "subnet" ||
 		resourceType == "securityGroup" ||
 		resourceType == "publicIp" ||
