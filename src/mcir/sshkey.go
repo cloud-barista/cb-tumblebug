@@ -12,28 +12,32 @@ import (
 	"github.com/labstack/echo"
 )
 
-// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/KeyPairHandler.go
-/* FYI; as of cb-spider-v0.1.2-20200403
-type KeyPairReqInfo struct {
-        Name     string
+// 2020-04-03 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/KeyPairHandler.go
+
+type SpiderKeyPairReqInfo struct { // Spider
+	ConnectionName string
+	ReqInfo        KeyPairReqInfo
 }
 
-type KeyPairInfo struct {
-     Name        string
-     Fingerprint string
-     PublicKey   string
-     PrivateKey  string
-     VMUserID      string
-
-     KeyValueList []KeyValue
+type KeyPairReqInfo struct { // Spider
+	Name string
 }
-*/
+
+type KeyPairInfo struct { // Spider
+	IId         common.IID // {NameId, SystemId}
+	Fingerprint string
+	PublicKey   string
+	PrivateKey  string
+	VMUserID    string
+
+	KeyValueList []common.KeyValue
+}
 
 type sshKeyReq struct {
 	//Id             string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
-	CspSshKeyName  string `json:"cspSshKeyName"`
+	//CspSshKeyName  string `json:"cspSshKeyName"`
 	//Fingerprint    string `json:"fingerprint"`
 	//Username       string `json:"username"`
 	//PublicKey      string `json:"publicKey"`
@@ -72,10 +76,10 @@ func RestPostSshKey(c echo.Context) error {
 			content, _ := createSshKey(nsId, u)
 			return c.JSON(http.StatusCreated, content)
 
-				} else if action == "register" {
-					fmt.Println("[Registering SshKey]")
-					content, _ := registerSshKey(nsId, u)
-					return c.JSON(http.StatusCreated, content)
+		} else if action == "register" {
+			fmt.Println("[Registering SshKey]")
+			content, _ := registerSshKey(nsId, u)
+			return c.JSON(http.StatusCreated, content)
 
 		} else {
 			mapA := map[string]string{"message": "You must specify: action=create"}
@@ -85,7 +89,7 @@ func RestPostSshKey(c echo.Context) error {
 
 	fmt.Println("[POST SshKey")
 	fmt.Println("[Creating SshKey]")
-	content, responseCode, body, err := createSshKey(nsId, u)
+	content, responseCode, _, err := createSshKey(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
@@ -95,8 +99,8 @@ func RestPostSshKey(c echo.Context) error {
 		*/
 		//return c.JSON(res.StatusCode, res)
 		//body, _ := ioutil.ReadAll(res.Body)
-		fmt.Println("body: ", string(body))
-		return c.JSONBlob(responseCode, body)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(responseCode, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -246,15 +250,9 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	method := "POST"
 
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
-	type KeypairReqInfo struct {
-		ConnectionName string
-		ReqInfo        struct {
-			Name string
-		}
-	}
-	tempReq := KeypairReqInfo{}
+	tempReq := SpiderKeyPairReqInfo{}
 	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.CspSshKeyName
+	tempReq.ReqInfo.Name = u.Name
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
 	//fmt.Println("payload: " + string(payload)) // for debug
 
@@ -296,42 +294,18 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 		return content, res.StatusCode, body, err
 	}
 
-	type KeyPairInfo struct {
-		Name        string
-		Fingerprint string
-		PublicKey   string
-		PrivateKey  string
-		VMUserID    string
-
-		KeyValueList []common.KeyValue
-	}
 	temp := KeyPairInfo{}
 	err2 := json.Unmarshal(body, &temp)
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
 
-	/* FYI; as of 2020-04-17
-	type sshKeyInfo struct {
-		Id             string            `json:"id"`
-		Name           string            `json:"name"`
-		ConnectionName string            `json:"connectionName"`
-		CspSshKeyName  string            `json:"cspSshKeyName"`
-		Fingerprint    string            `json:"fingerprint"`
-		Username       string            `json:"username"`
-		PublicKey      string            `json:"publicKey"`
-		PrivateKey     string            `json:"privateKey"`
-		Description    string            `json:"description"`
-		KeyValueList   []common.KeyValue `json:"keyValueList"`
-	}
-	*/
-
 	content := sshKeyInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspSshKeyName = temp.Name // = u.CspSshKeyName
+	content.CspSshKeyName = temp.IId.NameId
 	content.Fingerprint = temp.Fingerprint
 	content.Username = temp.VMUserID
 	content.PublicKey = temp.PublicKey

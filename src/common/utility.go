@@ -113,7 +113,7 @@ type mcirIds struct {
 	CspImageId           string
 	CspImageName         string
 	CspSshKeyName        string
-	Name                 string // Spec
+	CspSpecName          string
 	CspVNetId            string
 	CspVNetName          string
 	CspSecurityGroupId   string
@@ -200,40 +200,40 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 }
 */
 
-func GetCspResourceId(nsId string, resourceType string, resourceId string) string {
+func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
 	key := GenResourceKey(nsId, resourceType, resourceId)
 	if key == "/invalid_key" {
-		return "invalid nsId or resourceType or resourceId"
+		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
 	}
 	keyValue, err := store.Get(key)
 	if err != nil {
 		cblog.Error(err)
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-		return ""
+		return "", err
 	}
 	if keyValue == nil {
 		//cblog.Error(err)
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-		return ""
+		return "", err
 	}
 
 	switch resourceType {
 	case "image":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspImageName
+		return content.CspImageId, nil
 	case "sshKey":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspSshKeyName
+		return content.CspSshKeyName, nil
 	case "spec":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.Name
+		return content.CspSpecName, nil
 	case "vNet":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspVNetName // contains CspSubnetId
+		return content.CspVNetName, nil // contains CspSubnetId
 	// case "subnet":
 	// 	content := subnetInfo{}
 	// 	json.Unmarshal([]byte(keyValue.Value), &content)
@@ -241,22 +241,24 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) strin
 	case "securityGroup":
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspSecurityGroupName
-	case "publicIp":
-		content := mcirIds{}
-		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspPublicIpName
-	case "vNic":
-		content := mcirIds{}
-		err = json.Unmarshal([]byte(keyValue.Value), &content)
-		if err != nil {
-			cblog.Error(err)
-			// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
-			return ""
-		}
-		return content.CspVNicName
+		return content.CspSecurityGroupName, nil
+	/*
+		case "publicIp":
+			content := mcirIds{}
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			return content.CspPublicIpName
+		case "vNic":
+			content := mcirIds{}
+			err = json.Unmarshal([]byte(keyValue.Value), &content)
+			if err != nil {
+				cblog.Error(err)
+				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+				return ""
+			}
+			return content.CspVNicName
+	*/
 	default:
-		return "invalid resourceType"
+		return "", fmt.Errorf("invalid resourceType")
 	}
 	//}
 }

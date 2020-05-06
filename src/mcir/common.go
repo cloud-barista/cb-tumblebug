@@ -112,33 +112,33 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := sshKeyInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/keypair/" + temp.CspSshKeyName //+ "?connection_name=" + temp.ConnectionName
+		url = SPIDER_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 	case "vNet":
 		temp := vNetInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/vpc/" + temp.CspVNetName //+ "?connection_name=" + temp.ConnectionName
+		url = SPIDER_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+	case "securityGroup":
+		temp := securityGroupInfo{}
+		json.Unmarshal([]byte(keyValue.Value), &temp)
+		tempReq.ConnectionName = temp.ConnectionName
+		url = SPIDER_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 	/*
 		case "subnet":
 			temp := subnetInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &content)
 			return content.CspSubnetId
+		case "publicIp":
+			temp := publicIpInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+			tempReq.ConnectionName = temp.ConnectionName
+			url = SPIDER_URL + "/publicip/" + temp.CspPublicIpName //+ "?connection_name=" + temp.ConnectionName
+		case "vNic":
+			temp := vNicInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+			tempReq.ConnectionName = temp.ConnectionName
+			url = SPIDER_URL + "/vnic/" + temp.CspVNicName //+ "?connection_name=" + temp.ConnectionName
 	*/
-	case "securityGroup":
-		temp := securityGroupInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &temp)
-		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupName //+ "?connection_name=" + temp.ConnectionName
-	case "publicIp":
-		temp := publicIpInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &temp)
-		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/publicip/" + temp.CspPublicIpName //+ "?connection_name=" + temp.ConnectionName
-	case "vNic":
-		temp := vNicInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &temp)
-		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/vnic/" + temp.CspVNicName //+ "?connection_name=" + temp.ConnectionName
 	default:
 		err := fmt.Errorf("invalid resourceType")
 		return http.StatusBadRequest, nil, err

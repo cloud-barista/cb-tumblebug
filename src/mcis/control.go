@@ -48,6 +48,84 @@ type KeyValue struct {
 
 // Structs for REST API
 
+// 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
+type SpiderVMReqInfo struct { // Spider
+	ConnectionName string
+	ReqInfo        VMReqInfo
+}
+
+type VMReqInfo struct { // Spider
+	Name               string
+	ImageName          string
+	VPCName            string
+	SubnetName         string
+	SecurityGroupNames []string
+	VMSpecName         string
+	KeyPairName        string
+
+	VMUserId     string
+	VMUserPasswd string
+}
+
+type VMStatusInfo struct { // Spider
+	//IId      IID // {NameId, SystemId}
+
+	VmStatus VMStatus
+}
+
+// GO do not support Enum. So, define like this.
+type VMStatus string // Spider
+
+const ( // Spider
+	Creating VMStatus = "Creating" // from launch to running
+	Running  VMStatus = "Running"
+
+	Suspending VMStatus = "Suspending" // from running to suspended
+	Suspended  VMStatus = "Suspended"
+	Resuming   VMStatus = "Resuming" // from suspended to running
+
+	Rebooting VMStatus = "Rebooting" // from running to running
+
+	Terminating VMStatus = "Terminating" // from running, suspended to terminated
+	Terminated  VMStatus = "Terminated"
+	NotExist    VMStatus = "NotExist" // VM does not exist
+
+	Failed VMStatus = "Failed"
+)
+
+type RegionInfo struct { // Spider
+	Region string
+	Zone   string
+}
+
+type VMInfo struct { // Spider
+	IId               common.IID // {NameId, SystemId}
+	ImageIId          common.IID
+	VpcIID            common.IID
+	SubnetIID         common.IID   // AWS, ex) subnet-8c4a53e4
+	SecurityGroupIIds []common.IID // AWS, ex) sg-0b7452563e1121bb6
+	KeyPairIId        common.IID
+	VMSpecName        string //  instance type or flavour, etc... ex) t2.micro or f1.micro
+
+	StartTime time.Time // Timezone: based on cloud-barista server location.
+
+	Region RegionInfo //  ex) {us-east1, us-east1-c} or {ap-northeast-2}
+
+	VMUserId     string // ex) user1
+	VMUserPasswd string
+
+	NetworkInterface string // ex) eth0
+	PublicIP         string
+	PublicDNS        string
+	PrivateIP        string
+	PrivateDNS       string
+
+	VMBootDisk  string // ex) /dev/sda1
+	VMBlockDisk string // ex)
+
+	KeyValueList []KeyValue
+}
+
 type mcisReq struct {
 	Id     string  `json:"id"`
 	Name   string  `json:"name"`
@@ -64,32 +142,33 @@ type vmReq struct {
 	// 1. Required by CB-Spider
 	CspVmName string `json:"cspVmName"`
 
-	CspImageName          string   `json:"cspImageName"`
-	CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
-	CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
-	CspPublicIPId         string   `json:"cspPublicIPId"`
-	CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
-	CspSpecId             string   `json:"cspSpecId"`
-	CspKeyPairName        string   `json:"cspKeyPairName"`
+	CspImageName        string `json:"cspImageName"`
+	CspVirtualNetworkId string `json:"cspVirtualNetworkId"`
+	//CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
+	//CspPublicIPId         string   `json:"cspPublicIPId"`
+	CspSecurityGroupIds []string `json:"cspSecurityGroupIds"`
+	CspSpecId           string   `json:"cspSpecId"`
+	CspKeyPairName      string   `json:"cspKeyPairName"`
 
-	CbImageId            string   `json:"cbImageId"`
-	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
-	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
-	CbPublicIPId         string   `json:"cbPublicIPId"`
-	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
-	CbSpecId             string   `json:"cbSpecId"`
-	CbKeyPairId          string   `json:"cbKeyPairId"`
+	CbImageId          string `json:"cbImageId"`
+	CbVirtualNetworkId string `json:"cbVirtualNetworkId"`
+	//CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
+	//CbPublicIPId         string   `json:"cbPublicIPId"`
+	CbSecurityGroupIds []string `json:"cbSecurityGroupIds"`
+	CbSpecId           string   `json:"cbSpecId"`
+	CbKeyPairId        string   `json:"cbKeyPairId"`
 
 	VMUserId     string `json:"vmUserId"`
 	VMUserPasswd string `json:"vmUserPasswd"`
 
-	Name               string   `json:"name"`
-	Config_name        string   `json:"config_name"`
-	Spec_id            string   `json:"spec_id"`
-	Image_id           string   `json:"image_id"`
-	Vnet_id            string   `json:"vnet_id"`
-	Vnic_id            string   `json:"vnic_id"`
-	Public_ip_id       string   `json:"public_ip_id"`
+	Name        string `json:"name"`
+	Config_name string `json:"config_name"`
+	Spec_id     string `json:"spec_id"`
+	Image_id    string `json:"image_id"`
+	Vnet_id     string `json:"vnet_id"`
+	Subnet_id   string `json:"subnet_id"`
+	//Vnic_id            string   `json:"vnic_id"`
+	//Public_ip_id       string   `json:"public_ip_id"`
 	Security_group_ids []string `json:"security_group_ids"`
 	Ssh_key_id         string   `json:"ssh_key_id"`
 	Description        string   `json:"description"`
@@ -121,20 +200,16 @@ type vmOverview struct {
 	Status      string     `json:"status"`
 }
 
-type RegionInfo struct {
-	Region string
-	Zone   string
-}
-
 type vmInfo struct {
-	Id                 string   `json:"id"`
-	Name               string   `json:"name"`
-	Config_name        string   `json:"config_name"`
-	Spec_id            string   `json:"spec_id"`
-	Image_id           string   `json:"image_id"`
-	Vnet_id            string   `json:"vnet_id"`
-	Vnic_id            string   `json:"vnic_id"`
-	Public_ip_id       string   `json:"public_ip_id"`
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Config_name string `json:"config_name"`
+	Spec_id     string `json:"spec_id"`
+	Image_id    string `json:"image_id"`
+	Vnet_id     string `json:"vnet_id"`
+	Subnet_id   string `json:"subnet_id"`
+	//Vnic_id            string   `json:"vnic_id"`
+	//Public_ip_id       string   `json:"public_ip_id"`
 	Security_group_ids []string `json:"security_group_ids"`
 	Ssh_key_id         string   `json:"ssh_key_id"`
 	Description        string   `json:"description"`
@@ -156,9 +231,10 @@ type vmInfo struct {
 	// 3. Required by CB-Tumblebug
 	Status string `json:"status"`
 
-	CspViewVmDetail vmCspViewInfo `json:"cspViewVmDetail"`
+	CspViewVmDetail VMInfo `json:"cspViewVmDetail"`
 }
 
+/* Use "VMInfo" (from Spider), instead of this.
 type vmCspViewInfo struct {
 	Name      string    // AWS,
 	Id        string    // AWS,
@@ -185,6 +261,7 @@ type vmCspViewInfo struct {
 
 	KeyValueList []KeyValue
 }
+*/
 
 type mcisStatusInfo struct {
 	Id   string `json:"id"`
@@ -655,8 +732,9 @@ func RestPostMcisVm(c echo.Context) error {
 	vmInfoData.Spec_id = req.Spec_id
 	vmInfoData.Image_id = req.Image_id
 	vmInfoData.Vnet_id = req.Vnet_id
-	vmInfoData.Vnic_id = req.Vnic_id
-	vmInfoData.Public_ip_id = req.Public_ip_id
+	vmInfoData.Subnet_id = req.Subnet_id
+	//vmInfoData.Vnic_id = req.Vnic_id
+	//vmInfoData.Public_ip_id = req.Public_ip_id
 	vmInfoData.Security_group_ids = req.Security_group_ids
 	vmInfoData.Ssh_key_id = req.Ssh_key_id
 	vmInfoData.Description = req.Description
@@ -1016,6 +1094,15 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 // MCIS Control
 
 func createMcis(nsId string, req *mcisReq) string {
+	/*
+		check, _ := checkMcis(nsId, req.Name)
+
+		if check {
+			//temp := mcisInfo{}
+			//err := fmt.Errorf("The mcis " + req.Name + " already exists.")
+			return ""
+		}
+	*/
 
 	//req.Id = common.GenUuid()
 	req.Id = common.GenId(req.Name)
@@ -1040,7 +1127,6 @@ func createMcis(nsId string, req *mcisReq) string {
 
 	for _, k := range vmRequest {
 
-		//vmInfoData vmInfo
 		vmInfoData := vmInfo{}
 		//vmInfoData.Id = common.GenUuid()
 		vmInfoData.Id = common.GenId(k.Name)
@@ -1088,8 +1174,9 @@ func createMcis(nsId string, req *mcisReq) string {
 		vmInfoData.Spec_id = k.Spec_id
 		vmInfoData.Image_id = k.Image_id
 		vmInfoData.Vnet_id = k.Vnet_id
-		vmInfoData.Vnic_id = k.Vnic_id
-		vmInfoData.Public_ip_id = k.Public_ip_id
+		vmInfoData.Subnet_id = k.Subnet_id
+		//vmInfoData.Vnic_id = k.Vnic_id
+		//vmInfoData.Public_ip_id = k.Public_ip_id
 		vmInfoData.Security_group_ids = k.Security_group_ids
 		vmInfoData.Ssh_key_id = k.Ssh_key_id
 		vmInfoData.Description = k.Description
@@ -1100,6 +1187,11 @@ func createMcis(nsId string, req *mcisReq) string {
 
 		go addVmToMcis(&wg, nsId, req.Id, &vmInfoData)
 		//addVmToMcis(nsId, req.Id, vmInfoData)
+
+		if err != nil {
+			errMsg := "Failed to add VM " + vmInfoData.Name + " to MCIS " + req.Name
+			return errMsg
+		}
 	}
 	wg.Wait()
 
@@ -1140,6 +1232,43 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	fmt.Printf("\n\n[createVm(vmInfoData *vmInfo)]\n\n")
 
+	switch {
+	case vmInfoData.Name == "":
+		err := fmt.Errorf("vmInfoData.Name is empty")
+		cblog.Error(err)
+		return err
+	case vmInfoData.Image_id == "":
+		err := fmt.Errorf("vmInfoData.Image_id is empty")
+		cblog.Error(err)
+		return err
+	case vmInfoData.Config_name == "":
+		err := fmt.Errorf("vmInfoData.Config_name is empty")
+		cblog.Error(err)
+		return err
+	case vmInfoData.Ssh_key_id == "":
+		err := fmt.Errorf("vmInfoData.Ssh_key_id is empty")
+		cblog.Error(err)
+		return err
+	case vmInfoData.Spec_id == "":
+		err := fmt.Errorf("vmInfoData.Spec_id is empty")
+		cblog.Error(err)
+		return err
+	case vmInfoData.Security_group_ids == nil:
+		err := fmt.Errorf("vmInfoData.Security_group_ids is empty")
+		cblog.Error(err)
+		return err
+	case vmInfoData.Vnet_id == "":
+		err := fmt.Errorf("vmInfoData.Vnet_id is empty")
+		cblog.Error(err)
+		return err
+	case vmInfoData.Subnet_id == "":
+		err := fmt.Errorf("vmInfoData.Subnet_id is empty")
+		cblog.Error(err)
+		return err
+	default:
+
+	}
+
 	//prettyJSON, err := json.MarshalIndent(vmInfoData, "", "    ")
 	//if err != nil {
 	//log.Fatal("Failed to generate json")
@@ -1150,71 +1279,6 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	//fmt.Printf("%+v\n", vmInfoData.CspVmId)
 
-	/*
-		if strings.Compare(vmInfoData.Cloud_id, "aws") == 0 {
-			return createVmAws(1)
-		} else if strings.Compare(vmInfoData.Cloud_id, "gcp") == 0 {
-			return createVmGcp(1)
-		} else if strings.Compare(vmInfoData.Cloud_id, "azure") == 0 {
-			return createVmAzure(1)
-		} else {
-			fmt.Println("==============ERROR=no matched provider_id=================")
-			return nil, nil
-		}
-	*/
-
-	/* FYI
-	type vmReq struct {
-		Id             string `json:"id"`
-		ConnectionName string `json:"connectionName"`
-
-		// 1. Required by CB-Spider
-		CspVmName string `json:"cspVmName"`
-
-		CspImageName          string   `json:"cspImageName"`
-		CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
-		CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
-		CspPublicIPId         string   `json:"cspPublicIPId"`
-		CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
-		CspSpecId             string   `json:"cspSpecId"`
-		CspKeyPairName        string   `json:"cspKeyPairName"`
-
-		CbImageId            string   `json:"cbImageId"`
-		CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
-		CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
-		CbPublicIPId         string   `json:"cbPublicIPId"`
-		CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
-		CbSpecId             string   `json:"cbSpecId"`
-		CbKeyPairId          string   `json:"cbKeyPairId"`
-
-		VMUserId     string `json:"vmUserId"`
-		VMUserPasswd string `json:"vmUserPasswd"`
-
-		// 2. Required by CB-Tumblebug
-		Location string `json:"location"`
-
-		Vcpu_size   string `json:"vcpu_size"`
-		Memory_size string `json:"memory_size"`
-		Disk_size   string `json:"disk_size"`
-		Disk_type   string `json:"disk_type"`
-
-		Placement_algo string `json:"placement_algo"`
-		//Description    string `json:"description"`
-
-		Name               string   `json:"name"`
-		Config_name        string   `json:"config_name"`
-		Spec_id            string   `json:"spec_id"`
-		Image_id           string   `json:"image_id"`
-		Vnet_id            string   `json:"vnet_id"`
-		Vnic_id            string   `json:"vnic_id"`
-		Public_ip_id       string   `json:"public_ip_id"`
-		Security_group_ids []string `json:"security_group_id"`
-		Ssh_key_id         string   `json:"ssh_key_id"`
-		Description        string   `json:"description"`
-	}
-	*/
-
-	//url := SPIDER_URL + "/vm?connection_name=" + vmInfoData.Config_name
 	url := SPIDER_URL + "/vm"
 
 	method := "POST"
@@ -1222,87 +1286,57 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	fmt.Println("\n\n[Calling SPIDER]START")
 	fmt.Println("url: " + url + " method: " + method)
 
-	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
-
-	/* Mark 1
-	type VNicReqInfo struct {
-		Name             string
-		VNetName         string
-		SecurityGroupIds []string
-		PublicIPid       string
-	}
-	tempReq := VNicReqInfo{}
-	tempReq.Name = u.CspVNicName
-	tempReq.VNetName = u.CspVNetName
-	//tempReq.SecurityGroupIds =
-	tempReq.PublicIPid = u.PublicIpId
-	*/
-
-	/* Mark 2
-	tempReq := map[string]string{
-		"Name":     u.CspVNicName,
-		"VNetName": u.CspVNetName,
-		//"SecurityGroupIds":    content.Fingerprint,
-		"PublicIPid": u.PublicIpId}
-	*/
-
-	// Mark 3
-	type VMReqInfo struct {
-		ConnectionName string
-		ReqInfo        struct {
-			VMName string
-
-			ImageId            string
-			VirtualNetworkId   string
-			NetworkInterfaceId string
-			PublicIPId         string
-			SecurityGroupIds   []string
-
-			VMSpecId string
-
-			KeyPairName  string
-			VMUserId     string
-			VMUserPasswd string
-		}
-	}
-
-	/* VM creation requtest with csp resource ids
-	tempReq := VMReqInfo{}
-	tempReq.VMName = vmInfoData.Name
-
-	tempReq.ImageId = vmInfoData.Image_id
-	tempReq.VirtualNetworkId = vmInfoData.Vnet_id
-	tempReq.NetworkInterfaceId = vmInfoData.Vnic_id
-	tempReq.PublicIPId = vmInfoData.Public_ip_id
-	tempReq.SecurityGroupIds = vmInfoData.Security_group_ids
-
-	tempReq.VMSpecId = vmInfoData.Spec_id
-
-	tempReq.KeyPairName = vmInfoData.Ssh_key_id
-
-	tempReq.VMUserId = vmInfoData.Vm_access_id
-	tempReq.VMUserPasswd = vmInfoData.Vm_access_passwd
-	*/
-
-	tempReq := VMReqInfo{}
+	tempReq := SpiderVMReqInfo{}
 	tempReq.ConnectionName = vmInfoData.Config_name
 
-	tempReq.ReqInfo.VMName = vmInfoData.Name
+	tempReq.ReqInfo.Name = vmInfoData.Name
 
-	tempReq.ReqInfo.ImageId = common.GetCspResourceId(nsId, "image", vmInfoData.Image_id)
-	tempReq.ReqInfo.VirtualNetworkId = common.GetCspResourceId(nsId, "vNet", vmInfoData.Vnet_id)
-	tempReq.ReqInfo.NetworkInterfaceId = "" //common.GetCspResourceId(nsId, "vNic", vmInfoData.Vnic_id)
-	tempReq.ReqInfo.PublicIPId = common.GetCspResourceId(nsId, "publicIp", vmInfoData.Public_ip_id)
+	err := fmt.Errorf("")
+
+	tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, "image", vmInfoData.Image_id)
+	if tempReq.ReqInfo.ImageName == "" || err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, "vNet", vmInfoData.Vnet_id)
+	if tempReq.ReqInfo.VPCName == "" || err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	/*
+		tempReq.ReqInfo.SubnetName, err = common.GetCspResourceId(nsId, "vNet", vmInfoData.Vnet_id)
+		if tempReq.ReqInfo.SubnetName == "" || err != nil {
+			cblog.Error(err)
+			return err
+		}
+	*/
+	tempReq.ReqInfo.SubnetName = vmInfoData.Subnet_id
 
 	var SecurityGroupIdsTmp []string
 	for _, v := range vmInfoData.Security_group_ids {
-		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, common.GetCspResourceId(nsId, "securityGroup", v))
+		CspSgId, err := common.GetCspResourceId(nsId, "securityGroup", v)
+		if CspSgId == "" || err != nil {
+			cblog.Error(err)
+			return err
+		}
+
+		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
 	}
-	tempReq.ReqInfo.SecurityGroupIds = SecurityGroupIdsTmp
+	tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
-	tempReq.ReqInfo.VMSpecId = common.GetCspResourceId(nsId, "spec", vmInfoData.Spec_id)
+	tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, "spec", vmInfoData.Spec_id)
+	if tempReq.ReqInfo.VMSpecName == "" || err != nil {
+		cblog.Error(err)
+		return err
+	}
 
-	tempReq.ReqInfo.KeyPairName = common.GetCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
+	tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
+	if tempReq.ReqInfo.KeyPairName == "" || err != nil {
+		cblog.Error(err)
+		return err
+	}
 
 	tempReq.ReqInfo.VMUserId = vmInfoData.Vm_access_id
 	tempReq.ReqInfo.VMUserPasswd = vmInfoData.Vm_access_passwd
@@ -1311,6 +1345,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	common.PrintJsonPretty(tempReq)
 
 	payload, _ := json.Marshal(tempReq)
+	fmt.Println("payload: " + string(payload))
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -1337,17 +1372,13 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 		return err
 	}
 
-	fmt.Println("Called cb-spider API.")
+	fmt.Println("Called CB-Spider API.")
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 
 	//fmt.Println(string(body))
 
-	// jhseo 191016
-	//var s = new(imageInfo)
-	//s := imageInfo{}
-
-	temp := vmCspViewInfo{}
+	temp := VMInfo{} // FYI; VMInfo: the struct in CB-Spider
 	err2 := json.Unmarshal(body, &temp)
 
 	if err2 != nil {
@@ -1361,92 +1392,14 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	common.PrintJsonPretty(temp)
 	fmt.Println("[Calling SPIDER]END\n\n")
 
-	/* FYI
-	type vmInfo struct {
-		Id             string `json:"id"`
-		ConnectionName string `json:"connectionName"`
-
-		// 1. Variables in vmReq
-		CspVmName string `json:"cspVmName"`
-
-		CspImageName          string   `json:"cspImageName"`
-		CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
-		CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
-		CspPublicIPId         string   `json:"cspPublicIPId"`
-		CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
-		CspSpecId             string   `json:"cspSpecId"`
-		CspKeyPairName        string   `json:"cspKeyPairName"`
-
-		CbImageId          string   `json:"cbImageId"`
-		CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
-		CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
-		CbPublicIPId         string   `json:"cbPublicIPId"`
-		CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
-		CbSpecId             string   `json:"cbSpecId"`
-		CbKeyPairId        string   `json:"cbKeyPairId"`
-
-		VMUserId     string `json:"vmUserId"`
-		VMUserPasswd string `json:"vmUserPasswd"`
-
-		Location string `json:"location"`
-
-		Vcpu_size   string `json:"vcpu_size"`
-		Memory_size string `json:"memory_size"`
-		Disk_size   string `json:"disk_size"`
-		Disk_type   string `json:"disk_type"`
-
-		Placement_algo string `json:"placement_algo"`
-		Description    string `json:"description"`
-
-		// 2. Provided by CB-Spider
-		CspVmId      string     `json:"cspVmId"`
-		StartTime    time.Time  `json:"startTime"`
-		Region       RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-		PublicIP     string     `json:"publicIP"`
-		PublicDNS    string     `json:"publicDNS"`
-		PrivateIP    string     `json:"privateIP"`
-		PrivateDNS   string     `json:"privateDNS"`
-		VMBootDisk   string     `json:"vmBootDisk"` // ex) /dev/sda1
-		VMBlockDisk  string     `json:"vmBlockDisk"`
-		KeyValueList []KeyValue `json:"keyValueList"`
-
-		// 3. Required by CB-Tumblebug
-		Status string `json:"status"`
-
-		//Public_ip     string `json:"public_ip"`
-		//Domain_name   string `json:"domain_name"`
-		Cloud_id string `json:"cloud_id"`
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf(string(body))
+		fmt.Println("body: ", string(body))
+		cblog.Error(err)
+		return err
 	}
-	*/
-
-	//content := vmInfo{}
-	//content.Id = genUuid()
-	//vmInfoData.Config_name = vmInfoData.Config_name
-
-	// 1. Variables in vmReq
-	/*
-		vmInfoData.CspVmName = temp.Name // = u.CspVmName
-
-		vmInfoData.CspImageName = temp.ImageId
-		vmInfoData.CspVirtualNetworkId = temp.VirtualNetworkId
-		vmInfoData.CspNetworkInterfaceId = temp.NetworkInterfaceId
-		//vmInfoData.CspPublicIPId = temp..CspPublicIPId
-		vmInfoData.CspSecurityGroupIds = temp.SecurityGroupIds
-		vmInfoData.CspSpecId = temp.VMSpecId
-		vmInfoData.CspKeyPairName = temp.KeyPairName
-
-		vmInfoData.CbImageId = vmInfoData.Image_id
-		vmInfoData.CbVirtualNetworkId = vmInfoData.Vnet_id
-		vmInfoData.CbNetworkInterfaceId = vmInfoData.Vnic_id
-		vmInfoData.CbPublicIPId = vmInfoData.Public_ip_id
-		vmInfoData.CbSecurityGroupIds = vmInfoData.Security_group_ids
-		vmInfoData.CbSpecId = vmInfoData.Spec_id
-		vmInfoData.CbKeyPairId = vmInfoData.Ssh_key_id
-
-		vmInfoData.Vm_access_id = temp.VMUserId
-		vmInfoData.Vm_access_passwd = temp.VMUserPasswd
-
-	*/
 
 	vmInfoData.CspViewVmDetail = temp
 
@@ -1566,7 +1519,7 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	fmt.Println("\n\n[Calling SPIDER]START vmControl")
 
-	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.Id)
+	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 
 	/*
 		cspType := getVMsCspType(nsId, mcisId, vmId)
@@ -1575,7 +1528,7 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 			cspVmId = temp.CspViewVmDetail.Id
 		} else {
 	*/
-	cspVmId := temp.CspViewVmDetail.Name
+	cspVmId := temp.CspViewVmDetail.IId.NameId
 	common.PrintJsonPretty(temp.CspViewVmDetail)
 
 	url := ""
@@ -1775,7 +1728,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 	fmt.Println("\n\n[Calling SPIDER]START")
-	fmt.Println("CspVmId: " + temp.CspViewVmDetail.Id)
+	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 	/*
 		var cspVmId string
 		cspType := getVMsCspType(nsId, mcisId, vmId)
@@ -1783,7 +1736,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 			cspVmId = temp.CspViewVmDetail.Id
 		} else {
 	*/
-	cspVmId := temp.CspViewVmDetail.Name
+	cspVmId := temp.CspViewVmDetail.IId.NameId
 
 	url := SPIDER_URL + "/vmstatus/" + cspVmId // + "?connection_name=" + temp.Config_name
 	method := "GET"
@@ -1865,7 +1818,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	vmStatusTmp := vmStatusInfo{}
 	vmStatusTmp.Id = vmId
 	vmStatusTmp.Name = temp.Name
-	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.Id
+	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
 	vmStatusTmp.Public_ip = temp.PublicIP
 	vmStatusTmp.Status = statusResponseTmp.Status
 	if err != nil {
