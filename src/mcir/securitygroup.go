@@ -12,58 +12,55 @@ import (
 	"github.com/labstack/echo"
 )
 
-// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/SecurityHandler.go
-/* FYI; as of cb-spider-v0.1.2-20200403
-type SecurityReqInfo struct {
+// 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/SecurityHandler.go
+
+type SpiderSecurityReqInfo struct { // Spider
+	ConnectionName string
+	ReqInfo        SecurityReqInfo
+}
+
+type SecurityReqInfo struct { // Spider
 	Name          string
+	VPCName       string
 	SecurityRules *[]SecurityRuleInfo
+	//Direction     string // @todo used??
 }
 
-type SecurityRuleInfo struct {
-	FromPort   string
-	ToPort     string
-	IPProtocol string
-	Direction  string
-}
-
-type SecurityInfo struct {
-	Id            string
-	Name          string
-	SecurityRules *[]SecurityRuleInfo
-
-	KeyValueList []KeyValue
-}
-*/
-
-type firewallRuleInfo struct {
+type SecurityRuleInfo struct { // Spider
 	FromPort   string `json:"fromPort"`
 	ToPort     string `json:"toPort"`
 	IPProtocol string `json:"ipProtocol"`
 	Direction  string `json:"direction"`
 }
 
+type SecurityInfo struct { // Spider
+	IId           common.IID // {NameId, SystemId}
+	VpcIID        common.IID // {NameId, SystemId}
+	Direction     string     // @todo userd??
+	SecurityRules *[]SecurityRuleInfo
+
+	KeyValueList []common.KeyValue
+}
+
 type securityGroupReq struct {
-	//Id                 string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
-	//VirtualNetworkId     string `json:"virtualNetworkId"`
-	//CspSecurityGroupId   string `json:"cspSecurityGroupId"`
-	CspSecurityGroupName string `json:"cspSecurityGroupName"`
+	VNetId         string `json:"vNetId"`
 	//ResourceGroupName    string `json:"resourceGroupName"`
 	Description   string              `json:"description"`
-	FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
+	FirewallRules *[]SecurityRuleInfo `json:"firewallRules"`
 }
 
 type securityGroupInfo struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	//VirtualNetworkId   string `json:"virtualNetworkId"`
+	Id                   string `json:"id"`
+	Name                 string `json:"name"`
+	ConnectionName       string `json:"connectionName"`
+	VNetId               string `json:"vNetId"`
 	CspSecurityGroupId   string `json:"cspSecurityGroupId"`
 	CspSecurityGroupName string `json:"cspSecurityGroupName"`
 	//ResourceGroupName  string `json:"resourceGroupName"`
 	Description   string              `json:"description"`
-	FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
+	FirewallRules *[]SecurityRuleInfo `json:"firewallRules"`
 	KeyValueList  []common.KeyValue   `json:"keyValueList"`
 }
 
@@ -98,14 +95,15 @@ func RestPostSecurityGroup(c echo.Context) error {
 
 	fmt.Println("[POST SecurityGroup")
 	fmt.Println("[Creating SecurityGroup]")
-	content, responseCode, body, err := createSecurityGroup(nsId, u)
+	content, responseCode, _, err := createSecurityGroup(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
 			mapA := map[string]string{
 				"message": "Failed to create a SecurityGroup"}
 		*/
-		return c.JSONBlob(responseCode, body)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(responseCode, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -228,24 +226,18 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 		return temp, http.StatusConflict, nil, err
 	}
 
-	/* FYI; as of 2020-04-17
-	type firewallRuleInfo struct {
-		FromPort   string `json:"fromPort"`
-		ToPort     string `json:"toPort"`
-		IPProtocol string `json:"ipProtocol"`
-		Direction  string `json:"direction"`
-	}
-
+	/* FYI; as of 2020-05-04
 	type securityGroupReq struct {
-		//Id                 string `json:"id"`
-		Name           string `json:"name"`
-		ConnectionName string `json:"connectionName"`
-		//VirtualNetworkId     string `json:"virtualNetworkId"`
-		//CspSecurityGroupId   string `json:"cspSecurityGroupId"`
+		Id                   string `json:"id"`
+		Name                 string `json:"name"`
+		ConnectionName       string `json:"connectionName"`
+		VNetId               string `json:"vNetId"`
+		CspSecurityGroupId   string `json:"cspSecurityGroupId"`
 		CspSecurityGroupName string `json:"cspSecurityGroupName"`
-		//ResourceGroupName    string `json:"resourceGroupName"`
+		//ResourceGroupName  string `json:"resourceGroupName"`
 		Description   string              `json:"description"`
-		FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
+		FirewallRules *[]SecurityRuleInfo `json:"firewallRules"`
+		KeyValueList  []common.KeyValue   `json:"keyValueList"`
 	}
 	*/
 
@@ -255,19 +247,14 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 	method := "POST"
 
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSecurityGroupName + "\"}")
-	type SecurityReqInfo struct {
-		ConnectionName string
-		ReqInfo        struct {
-			Name          string
-			SecurityRules *[]firewallRuleInfo
-		}
-	}
-	tempReq := SecurityReqInfo{}
+	tempReq := SpiderSecurityReqInfo{}
 	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.CspSecurityGroupName
+	tempReq.ReqInfo.Name = u.Name
+	tempReq.ReqInfo.VPCName = u.VNetId
 	tempReq.ReqInfo.SecurityRules = u.FirewallRules
 
 	payload, _ := json.Marshal(tempReq)
+	fmt.Println("payload: " + string(payload)) // for debug
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -315,30 +302,23 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 		}
 	*/
 
-	type SecurityInfo struct {
-		Id            string
-		Name          string
-		SecurityRules *[]firewallRuleInfo //*[]SecurityRuleInfo
-
-		KeyValueList []common.KeyValue
-	}
 	temp := SecurityInfo{}
 	err2 := json.Unmarshal(body, &temp)
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
 
-	/* FYI; as of 2020-04-17
+	/* FYI; as of 2020-05-04
 	type securityGroupInfo struct {
-		Id             string `json:"id"`
-		Name           string `json:"name"`
-		ConnectionName string `json:"connectionName"`
-		//VirtualNetworkId   string `json:"virtualNetworkId"`
+		Id                   string `json:"id"`
+		Name                 string `json:"name"`
+		ConnectionName       string `json:"connectionName"`
+		VNetId               string `json:"vNetId"`
 		CspSecurityGroupId   string `json:"cspSecurityGroupId"`
 		CspSecurityGroupName string `json:"cspSecurityGroupName"`
 		//ResourceGroupName  string `json:"resourceGroupName"`
 		Description   string              `json:"description"`
-		FirewallRules *[]firewallRuleInfo `json:"firewallRules"`
+		FirewallRules *[]SecurityRuleInfo `json:"firewallRules"`
 		KeyValueList  []common.KeyValue   `json:"keyValueList"`
 	}
 	*/
@@ -348,8 +328,9 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspSecurityGroupId = temp.Id
-	content.CspSecurityGroupName = temp.Name // = u.CspSecurityGroupName
+	content.VNetId = temp.VpcIID.NameId
+	content.CspSecurityGroupId = temp.IId.SystemId
+	content.CspSecurityGroupName = temp.IId.NameId
 	content.Description = u.Description
 	content.FirewallRules = temp.SecurityRules
 	content.KeyValueList = temp.KeyValueList

@@ -20,7 +20,7 @@ type SpiderVPCReqInfo struct { // Spider
 }
 
 type VPCReqInfo struct { // Spider
-	IId            common.IID // {NameId, SystemId}
+	Name           string
 	IPv4_CIDR      string
 	SubnetInfoList []SubnetInfo
 }
@@ -41,11 +41,8 @@ type SubnetInfo struct { // Spider
 }
 
 type vNetReq struct { // Tumblebug
-	//Id                string `json:"id"`
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	//CspVNetId      string `json:"cspVNetId"`
-	CspVNetName    string       `json:"cspVNetName"`
+	Name           string       `json:"name"`
+	ConnectionName string       `json:"connectionName"`
 	CidrBlock      string       `json:"cidrBlock"`
 	SubnetInfoList []SubnetInfo `json:"subnetInfoList"`
 	//Region            string `json:"region"`
@@ -254,8 +251,7 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 
 	tempReq := SpiderVPCReqInfo{}
 	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.IId.NameId = u.Name
-	tempReq.ReqInfo.IId.SystemId = u.CspVNetName
+	tempReq.ReqInfo.Name = u.Name
 	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
 	tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
@@ -330,8 +326,8 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspVNetId = temp.IId.SystemId // CspSubnetId
-	content.CspVNetName = temp.IId.NameId // = u.CspVNetName
+	content.CspVNetId = temp.IId.SystemId
+	content.CspVNetName = temp.IId.NameId
 	content.CidrBlock = temp.IPv4_CIDR
 	content.SubnetInfoList = temp.SubnetInfoList
 	content.Description = u.Description

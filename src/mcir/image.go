@@ -13,37 +13,27 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
-// Ref: https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/ImageHandler.go
-/* 2019-10-16
-type ImageReqInfo struct {
+// 2020-04-03 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/ImageHandler.go
+
+type SpiderImageReqInfo struct { // Spider
+	ConnectionName string
+	ReqInfo        ImageReqInfo
+}
+
+type ImageReqInfo struct { // Spider
+	//IId   IID 	// {NameId, SystemId}
 	Name string
-	Id   string
 	// @todo
 }
 
-type ImageInfo struct {
-     Id   string
-     Name string
-     GuestOS string // Windows7, Ubuntu etc.
-     Status string  // available, unavailable
+type ImageInfo struct { // Spider
+	//IId     IID    // {NameId, SystemId}
+	Name    string
+	GuestOS string // Windows7, Ubuntu etc.
+	Status  string // available, unavailable
 
-     KeyValueList []KeyValue
+	KeyValueList []common.KeyValue
 }
-
-type ImageHandler interface {
-	CreateImage(imageReqInfo ImageReqInfo) (ImageInfo, error)
-	ListImage() ([]*ImageInfo, error)
-	GetImage(imageID string) (ImageInfo, error)
-	DeleteImage(imageID string) (bool, error)
-}
-*/
-
-/*
-type KeyValue struct {
-	Key   string
-	Value string
-}
-*/
 
 type imageReq struct {
 	//Id             string `json:"id"`
@@ -301,14 +291,6 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 		return content, err
 	}
 
-	type ImageInfo struct {
-		Id      string
-		Name    string
-		GuestOS string // Windows7, Ubuntu etc.
-		Status  string // available, unavailable
-
-		KeyValueList []common.KeyValue
-	}
 	temp := ImageInfo{}
 	err2 := json.Unmarshal(body, &temp)
 	if err2 != nil {
@@ -334,7 +316,7 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspImageId = temp.Id     // = u.CspImageId
+	content.CspImageId = temp.Name   // = u.CspImageId
 	content.CspImageName = temp.Name // = u.CspImageName
 	content.CreationDate = common.LookupKeyValueList(temp.KeyValueList, "CreationDate")
 	content.Description = common.LookupKeyValueList(temp.KeyValueList, "Description")
