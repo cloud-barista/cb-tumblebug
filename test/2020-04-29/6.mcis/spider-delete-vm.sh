@@ -2,7 +2,7 @@
 
 source ../conf.env
 
-INDEX=${1-"1"}
+INDEX=${1}
 
 curl -sX DELETE http://localhost:1024/spider/vm/VM-0$INDEX -H 'Content-Type: application/json' -d \
     '{ 

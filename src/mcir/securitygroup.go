@@ -42,7 +42,7 @@ type SecurityInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-type securityGroupReq struct {
+type securityGroupReq struct { // Tumblebug
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	VNetId         string `json:"vNetId"`
@@ -51,7 +51,7 @@ type securityGroupReq struct {
 	FirewallRules *[]SecurityRuleInfo `json:"firewallRules"`
 }
 
-type securityGroupInfo struct {
+type securityGroupInfo struct { // Tumblebug
 	Id                   string `json:"id"`
 	Name                 string `json:"name"`
 	ConnectionName       string `json:"connectionName"`
