@@ -9,7 +9,7 @@ curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Conte
 		"connectionName": "'${CONN_CONFIG}'",
 		"cspVNetName": "VPC-01",
 		"cidrBlock": "192.168.0.0/16",
-		"subnetInfoList": [ {
+		"subnetReqInfoList": [ {
 			"Name": "Subnet-01", 
 			"IPv4_CIDR": "192.168.1.0/24"
 		} ]
