@@ -4,7 +4,7 @@ source ../conf.env
 
 INDEX=${1-"1"}
 
-curl -sX GET http://localhost:1024/spider/keypair/KEYPAIR-0$INDEX -H 'Content-Type: application/json' -d \
+curl -sX GET http://localhost:1024/spider/vmstatus/VM-0$INDEX -H 'Content-Type: application/json' -d \
     '{ 
         "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
     }' | json_pp
