@@ -1299,25 +1299,28 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 		return err
 	}
 
-	tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, "vNet", vmInfoData.Vnet_id)
-	if tempReq.ReqInfo.VPCName == "" || err != nil {
+	tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, "spec", vmInfoData.Spec_id)
+	if tempReq.ReqInfo.VMSpecName == "" || err != nil {
 		cblog.Error(err)
 		return err
 	}
 
-	/*
-		tempReq.ReqInfo.SubnetName, err = common.GetCspResourceId(nsId, "vNet", vmInfoData.Vnet_id)
-		if tempReq.ReqInfo.SubnetName == "" || err != nil {
-			cblog.Error(err)
-			return err
-		}
-	*/
-	tempReq.ReqInfo.SubnetName = vmInfoData.Subnet_id
+	tempReq.ReqInfo.VPCName = vmInfoData.Vnet_id //common.GetCspResourceId(nsId, "vNet", vmInfoData.Vnet_id)
+	if tempReq.ReqInfo.VPCName == "" {
+		cblog.Error(err)
+		return err
+	}
+
+	tempReq.ReqInfo.SubnetName = vmInfoData.Subnet_id //common.GetCspResourceId(nsId, "vNet", vmInfoData.Subnet_id)
+	if tempReq.ReqInfo.SubnetName == "" {
+		cblog.Error(err)
+		return err
+	}
 
 	var SecurityGroupIdsTmp []string
 	for _, v := range vmInfoData.Security_group_ids {
-		CspSgId, err := common.GetCspResourceId(nsId, "securityGroup", v)
-		if CspSgId == "" || err != nil {
+		CspSgId := v //common.GetCspResourceId(nsId, "securityGroup", v)
+		if CspSgId == "" {
 			cblog.Error(err)
 			return err
 		}
@@ -1326,14 +1329,8 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	}
 	tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
-	tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, "spec", vmInfoData.Spec_id)
-	if tempReq.ReqInfo.VMSpecName == "" || err != nil {
-		cblog.Error(err)
-		return err
-	}
-
-	tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
-	if tempReq.ReqInfo.KeyPairName == "" || err != nil {
+	tempReq.ReqInfo.KeyPairName = vmInfoData.Ssh_key_id //common.GetCspResourceId(nsId, "sshKey", vmInfoData.Ssh_key_id)
+	if tempReq.ReqInfo.KeyPairName == "" {
 		cblog.Error(err)
 		return err
 	}

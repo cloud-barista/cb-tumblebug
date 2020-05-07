@@ -2,12 +2,17 @@
 
 source ../conf.env
 
+echo "####################################################################"
 echo "## 2. SecurityGroup: Create"
+echo "####################################################################"
+
+INDEX=${1-"1"}
+
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d \
 	'{
-		"name": "SG-01",
-		"connectionName": "'${CONN_CONFIG}'",
-		"vNetId": "VPC-01",
+		"name": "SG-0'$INDEX'",
+		"connectionName": "'${CONN_CONFIG[INDEX]}'",
+		"vNetId": "VPC-0'$INDEX'",
 		"description": "jhseo test description",
 		    "firewallRules": [
 			    {
