@@ -6,7 +6,7 @@ echo "####################################################################"
 echo "## 4. VM: Create MCIS"
 echo "####################################################################"
 
-INDEX=${1-"1"}
+INDEX=${1}
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 	'{

@@ -2,7 +2,7 @@
 
 source ../conf.env
 
-INDEX=${1-"1"}
+INDEX=${1}
 
 curl -sX POST http://localhost:1024/spider/vm -H 'Content-Type: application/json' -d \
 	'{ 

@@ -6,7 +6,7 @@ echo "####################################################################"
 echo "## 1. VPC: Create"
 echo "####################################################################"
 
-INDEX=${1-"1"}
+INDEX=${1}
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
 	'{
