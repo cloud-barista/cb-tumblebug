@@ -20,9 +20,16 @@ type SpiderVPCReqInfo struct { // Spider
 }
 
 type VPCReqInfo struct { // Spider
-	Name           string
-	IPv4_CIDR      string
-	SubnetInfoList []SubnetInfo
+	Name              string
+	IPv4_CIDR         string
+	SubnetReqInfoList []SubnetReqInfo
+}
+
+type SubnetReqInfo struct { // Spider
+	Name      string
+	IPv4_CIDR string
+
+	KeyValueList []common.KeyValue
 }
 
 type VPCInfo struct { // Spider
@@ -41,10 +48,10 @@ type SubnetInfo struct { // Spider
 }
 
 type vNetReq struct { // Tumblebug
-	Name           string       `json:"name"`
-	ConnectionName string       `json:"connectionName"`
-	CidrBlock      string       `json:"cidrBlock"`
-	SubnetInfoList []SubnetInfo `json:"subnetInfoList"`
+	Name              string          `json:"name"`
+	ConnectionName    string          `json:"connectionName"`
+	CidrBlock         string          `json:"cidrBlock"`
+	SubnetReqInfoList []SubnetReqInfo `json:"subnetReqInfoList"`
 	//Region            string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description string `json:"description"`
@@ -253,7 +260,7 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	tempReq.ConnectionName = u.ConnectionName
 	tempReq.ReqInfo.Name = u.Name
 	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
-	tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
+	tempReq.ReqInfo.SubnetReqInfoList = u.SubnetReqInfoList
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
 	fmt.Println("payload: " + string(payload)) // for debug
 
