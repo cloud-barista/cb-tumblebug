@@ -34,7 +34,7 @@ func init() {
 func delResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
 
 	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
-	fmt.Printf("RestDelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
+	fmt.Printf("delResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
 	check, _ := checkResource(nsId, resourceType, resourceId)
 
@@ -271,10 +271,10 @@ func checkResource(nsId string, resourceType string, resourceId string) (bool, e
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
 		resourceType == "vNet" ||
-		resourceType == "subnet" ||
-		resourceType == "securityGroup" ||
-		resourceType == "publicIp" ||
-		resourceType == "vNic" {
+		resourceType == "securityGroup" {
+		//resourceType == "subnet" ||
+		//resourceType == "publicIp" ||
+		//resourceType == "vNic" {
 		// continue
 	} else {
 		err := fmt.Errorf("invalid resource type")
@@ -321,6 +321,31 @@ func RestCheckResource(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, &content)
 }
+
+/*
+func convertSpiderResourceToTumblebugResource(resourceType string, i interface{}) (interface{}, error) {
+	if resourceType == "" {
+		err := fmt.Errorf("checkResource failed; resourceType given is null.")
+		return nil, err
+	}
+
+	// Check resourceType's validity
+	if resourceType == "image" ||
+		resourceType == "sshKey" ||
+		resourceType == "spec" ||
+		resourceType == "vNet" ||
+		resourceType == "securityGroup" {
+		//resourceType == "subnet" ||
+		//resourceType == "publicIp" ||
+		//resourceType == "vNic" {
+		// continue
+	} else {
+		err := fmt.Errorf("invalid resource type")
+		return nil, err
+	}
+
+}
+*/
 
 /*
 func RestDelResource(c echo.Context) error {

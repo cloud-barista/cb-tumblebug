@@ -15,7 +15,7 @@ import (
 	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
 )
 
-type specReq struct {
+type specReq struct { // Tumblebug
 	//Id             string `json:"id"`
 	ConnectionName string `json:"connectionName"`
 	CspSpecName    string `json:"cspSpecName"`
@@ -24,11 +24,12 @@ type specReq struct {
 	Num_vCPU       string `json:"num_vCPU"`
 	Num_core       string `json:"num_core"`
 	Mem_GiB        string `json:"mem_GiB"`
+	Mem_MiB        string `json:"mem_MiB"`
 	Storage_GiB    string `json:"storage_GiB"`
 	Description    string `json:"description"`
 }
 
-type SpecInfo struct {
+type SpecInfo struct { // Tumblebug
 	Id             string `json:"id"`
 	ConnectionName string `json:"connectionName"`
 	CspSpecName    string `json:"cspSpecName"`
@@ -37,6 +38,7 @@ type SpecInfo struct {
 	Num_vCPU       string `json:"num_vCPU"`
 	Num_core       string `json:"num_core"`
 	Mem_GiB        string `json:"mem_GiB"`
+	Mem_MiB        string `json:"mem_MiB"`
 	Storage_GiB    string `json:"storage_GiB"`
 	Description    string `json:"description"`
 
@@ -52,7 +54,7 @@ type SpecInfo struct {
 	Gpu_p2p               string `json:"gpu_p2p"`
 }
 
-type SpiderSpecInfo struct {
+type SpiderSpecInfo struct { // Spider
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
 	Region string
@@ -64,12 +66,12 @@ type SpiderSpecInfo struct {
 	KeyValueList []common.KeyValue
 }
 
-type VCpuInfo struct {
+type VCpuInfo struct { // Spider
 	Count string
 	Clock string // GHz
 }
 
-type GpuInfo struct {
+type GpuInfo struct { // Spider
 	Count string
 	Mfr   string
 	Model string
@@ -244,11 +246,94 @@ func RestDelAllSpec(c echo.Context) error {
 	}
 }
 
-type SpecList struct {
+func RestFetchSpecs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	connConfigs, err := common.GetConnConfigList()
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{
+			"message": err.Error()}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
+
+	var connConfigCount uint
+	var specCount uint
+
+	for _, connConfig := range connConfigs.Connectionconfig {
+		fmt.Println("connConfig " + connConfig.ConfigName)
+
+		spiderSpecList, err := LookupSpecList(connConfig.ConfigName)
+		if err != nil {
+			cblog.Error(err)
+			mapA := map[string]string{
+				"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+
+		for _, spiderSpec := range spiderSpecList.Vmspec {
+			tumblebugSpec, err := convertSpiderSpecToTumblebugSpec(spiderSpec)
+			if err != nil {
+				cblog.Error(err)
+				mapA := map[string]string{
+					"message": err.Error()}
+				return c.JSON(http.StatusFailedDependency, &mapA)
+			}
+
+			tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
+			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
+
+			check, _ := checkResource(nsId, "spec", tumblebugSpecId)
+			if check {
+				cblog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
+				continue
+			} else {
+				tumblebugSpec.Id = tumblebugSpecId
+				tumblebugSpec.Name = tumblebugSpecId
+				tumblebugSpec.ConnectionName = connConfig.ConfigName
+
+				_, err := registerSpecWithInfo(nsId, &tumblebugSpec)
+				if err != nil {
+					cblog.Error(err)
+					mapA := map[string]string{
+						"message": err.Error()}
+					return c.JSON(http.StatusFailedDependency, &mapA)
+				}
+			}
+			specCount++
+		}
+		connConfigCount++
+	}
+	mapA := map[string]string{
+		"message": "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
+	return c.JSON(http.StatusCreated, &mapA) //content)
+}
+
+func convertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (SpecInfo, error) {
+	if spiderSpec.Name == "" {
+		err := fmt.Errorf("convertSpiderSpecToTumblebugSpec failed; spiderSpec.Name == \"\" ")
+		emptyTumblebugSpec := SpecInfo{}
+		return emptyTumblebugSpec, err
+	}
+
+	tumblebugSpec := SpecInfo{}
+
+	tumblebugSpec.Name = spiderSpec.Name
+	tumblebugSpec.CspSpecName = spiderSpec.Name
+	tumblebugSpec.Num_vCPU = spiderSpec.VCpu.Count
+	tumblebugSpec.Mem_MiB = spiderSpec.Mem
+	temp, _ := strconv.ParseFloat(tumblebugSpec.Mem_MiB, 32)
+	tumblebugSpec.Mem_GiB = fmt.Sprintf("%.0f", temp/1024)
+
+	return tumblebugSpec, nil
+}
+
+type SpiderSpecList struct {
 	Vmspec []SpiderSpecInfo `json:"vmspec"`
 }
 
-func LookupSpecList(connConfig string) (SpecList, error) {
+func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 	url := SPIDER_URL + "/vmspec"
 
 	method := "GET"
@@ -275,7 +360,7 @@ func LookupSpecList(connConfig string) (SpecList, error) {
 	res, err := client.Do(req)
 	if err != nil {
 		cblog.Error(err)
-		content := SpecList{}
+		content := SpiderSpecList{}
 		return content, err
 	}
 	defer res.Body.Close()
@@ -283,7 +368,7 @@ func LookupSpecList(connConfig string) (SpecList, error) {
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		cblog.Error(err)
-		content := SpecList{}
+		content := SpiderSpecList{}
 		return content, err
 	}
 
@@ -294,11 +379,11 @@ func LookupSpecList(connConfig string) (SpecList, error) {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
 		cblog.Error(err)
-		content := SpecList{}
+		content := SpiderSpecList{}
 		return content, err
 	}
 
-	temp := SpecList{}
+	temp := SpiderSpecList{}
 	err2 := json.Unmarshal(body, &temp)
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
@@ -430,36 +515,41 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 	//content.Os_type = res.Os_type
 	content.Num_vCPU = res.VCpu.Count
 	//content.Num_core = res.Num_core
-	content.Mem_GiB = res.Mem
+	content.Mem_MiB = res.Mem
+	temp, _ := strconv.ParseFloat(content.Mem_MiB, 32)
+	content.Mem_GiB = fmt.Sprintf("%.0f", temp/1024)
 	//content.Storage_GiB = res.Storage_GiB
 	//content.Description = res.Description
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
-	mapA := map[string]string{
-		"connectionName": content.ConnectionName,
-		"cspSpecName":    content.CspSpecName,
-		"name":           content.Name,
-		"os_type":        content.Os_type,
-		"Num_vCPU":       content.Num_vCPU,
-		"Num_core":       content.Num_core,
-		"mem_GiB":        content.Mem_GiB,
-		"storage_GiB":    content.Storage_GiB,
-		"description":    content.Description,
+	/*
+		mapA := map[string]string{
+			"connectionName": content.ConnectionName,
+			"cspSpecName":    content.CspSpecName,
+			"name":           content.Name,
+			"os_type":        content.Os_type,
+			"Num_vCPU":       content.Num_vCPU,
+			"Num_core":       content.Num_core,
+			"mem_GiB":        content.Mem_GiB,
+			"storage_GiB":    content.Storage_GiB,
+			"description":    content.Description,
 
-		"cost_per_hour":         content.Cost_per_hour,
-		"num_storage":           content.Num_storage,
-		"max_num_storage":       content.Max_num_storage,
-		"max_total_storage_TiB": content.Max_total_storage_TiB,
-		"net_bw_Gbps":           content.Net_bw_Gbps,
-		"ebs_bw_Mbps":           content.Ebs_bw_Mbps,
-		"gpu_model":             content.Gpu_model,
-		"num_gpu":               content.Num_gpu,
-		"gpumem_GiB":            content.Gpumem_GiB,
-		"gpu_p2p":               content.Gpu_p2p,
-	}
-	Val, _ := json.Marshal(mapA)
+			"cost_per_hour":         content.Cost_per_hour,
+			"num_storage":           content.Num_storage,
+			"max_num_storage":       content.Max_num_storage,
+			"max_total_storage_TiB": content.Max_total_storage_TiB,
+			"net_bw_Gbps":           content.Net_bw_Gbps,
+			"ebs_bw_Mbps":           content.Ebs_bw_Mbps,
+			"gpu_model":             content.Gpu_model,
+			"num_gpu":               content.Num_gpu,
+			"gpumem_GiB":            content.Gpumem_GiB,
+			"gpu_p2p":               content.Gpu_p2p,
+		}
+		Val, _ := json.Marshal(mapA)
+	*/
+	Val, _ := json.Marshal(content)
 	err = store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
@@ -490,29 +580,7 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
-	mapA := map[string]string{
-		"connectionName": content.ConnectionName,
-		"cspSpecName":    content.CspSpecName,
-		"name":           content.Name,
-		"os_type":        content.Os_type,
-		"Num_vCPU":       content.Num_vCPU,
-		"Num_core":       content.Num_core,
-		"mem_GiB":        content.Mem_GiB,
-		"storage_GiB":    content.Storage_GiB,
-		"description":    content.Description,
-
-		"cost_per_hour":         content.Cost_per_hour,
-		"num_storage":           content.Num_storage,
-		"max_num_storage":       content.Max_num_storage,
-		"max_total_storage_TiB": content.Max_total_storage_TiB,
-		"net_bw_Gbps":           content.Net_bw_Gbps,
-		"ebs_bw_Mbps":           content.Ebs_bw_Mbps,
-		"gpu_model":             content.Gpu_model,
-		"num_gpu":               content.Num_gpu,
-		"gpumem_GiB":            content.Gpumem_GiB,
-		"gpu_p2p":               content.Gpu_p2p,
-	}
-	Val, _ := json.Marshal(mapA)
+	Val, _ := json.Marshal(content)
 	err := store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
