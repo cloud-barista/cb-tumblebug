@@ -3,7 +3,7 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 0. Remove Cloud Connction Config"
+echo "## 0. Get Cloud Connction Config"
 echo "####################################################################"
 
 INDEX=${1}
