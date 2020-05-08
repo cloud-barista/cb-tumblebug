@@ -219,35 +219,11 @@ $az account list-locations
     "subscriptionId": null
   },
   {
-    "displayName": "France South",
-    "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/francesouth",
-    "latitude": "43.8345",
-    "longitude": "2.1972",
-    "name": "francesouth",
-    "subscriptionId": null
-  },
-  {
     "displayName": "Australia Central",
     "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/australiacentral",
     "latitude": "-35.3075",
     "longitude": "149.1244",
     "name": "australiacentral",
-    "subscriptionId": null
-  },
-  {
-    "displayName": "Australia Central 2",
-    "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/australiacentral2",
-    "latitude": "-35.3075",
-    "longitude": "149.1244",
-    "name": "australiacentral2",
-    "subscriptionId": null
-  },
-  {
-    "displayName": "UAE Central",
-    "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/uaecentral",
-    "latitude": "24.466667",
-    "longitude": "54.366669",
-    "name": "uaecentral",
     "subscriptionId": null
   },
   {
@@ -267,14 +243,6 @@ $az account list-locations
     "subscriptionId": null
   },
   {
-    "displayName": "South Africa West",
-    "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/southafricawest",
-    "latitude": "-34.075691",
-    "longitude": "18.843266",
-    "name": "southafricawest",
-    "subscriptionId": null
-  },
-  {
     "displayName": "Switzerland North",
     "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/switzerlandnorth",
     "latitude": "47.451542",
@@ -283,35 +251,11 @@ $az account list-locations
     "subscriptionId": null
   },
   {
-    "displayName": "Switzerland West",
-    "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/switzerlandwest",
-    "latitude": "46.204391",
-    "longitude": "6.143158",
-    "name": "switzerlandwest",
-    "subscriptionId": null
-  },
-  {
-    "displayName": "Germany North",
-    "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/germanynorth",
-    "latitude": "53.073635",
-    "longitude": "8.806422",
-    "name": "germanynorth",
-    "subscriptionId": null
-  },
-  {
     "displayName": "Germany West Central",
     "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/germanywestcentral",
     "latitude": "50.110924",
     "longitude": "8.682127",
     "name": "germanywestcentral",
-    "subscriptionId": null
-  },
-  {
-    "displayName": "Norway West",
-    "id": "/subscriptions/f1548292-2be3-4acd-84a4-6df079160846/locations/norwaywest",
-    "latitude": "58.969975",
-    "longitude": "5.733107",
-    "name": "norwaywest",
     "subscriptionId": null
   },
   {

@@ -149,7 +149,7 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/spec/:specId", mcir.RestDelSpec)
 	g.DELETE("/:nsId/resources/spec", mcir.RestDelAllSpec)
 
-	//g.GET("/:nsId/resources/fetchSpecs", mcir.RestFetchSpecs)
+	g.POST("/:nsId/resources/fetchSpecs", mcir.RestFetchSpecs)
 
 	g.POST("/:nsId/resources/securityGroup", mcir.RestPostSecurityGroup)
 	g.GET("/:nsId/resources/securityGroup/:securityGroupId", mcir.RestGetSecurityGroup)
@@ -157,15 +157,6 @@ func ApiServer() {
 	g.PUT("/:nsId/resources/securityGroup/:securityGroupId", mcir.RestPutSecurityGroup)
 	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId", mcir.RestDelSecurityGroup)
 	g.DELETE("/:nsId/resources/securityGroup", mcir.RestDelAllSecurityGroup)
-
-	/*
-		g.POST("/:nsId/resources/subnet", mcir.RestPostSubnet)
-		g.GET("/:nsId/resources/subnet/:subnetId", mcir.RestGetSubnet)
-		g.GET("/:nsId/resources/subnet", mcir.RestGetAllSubnet)
-		g.PUT("/:nsId/resources/subnet/:subnetId", mcir.RestPutSubnet)
-		g.DELETE("/:nsId/resources/subnet/:subnetId", mcir.RestDelSubnet)
-		g.DELETE("/:nsId/resources/subnet", mcir.RestDelAllSubnet)
-	*/
 
 	g.POST("/:nsId/resources/vNet", mcir.RestPostVNet)
 	g.GET("/:nsId/resources/vNet/:vNetId", mcir.RestGetVNet)
@@ -175,6 +166,13 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/vNet", mcir.RestDelAllVNet)
 
 	/*
+		g.POST("/:nsId/resources/subnet", mcir.RestPostSubnet)
+		g.GET("/:nsId/resources/subnet/:subnetId", mcir.RestGetSubnet)
+		g.GET("/:nsId/resources/subnet", mcir.RestGetAllSubnet)
+		g.PUT("/:nsId/resources/subnet/:subnetId", mcir.RestPutSubnet)
+		g.DELETE("/:nsId/resources/subnet/:subnetId", mcir.RestDelSubnet)
+		g.DELETE("/:nsId/resources/subnet", mcir.RestDelAllSubnet)
+
 		g.POST("/:nsId/resources/publicIp", mcir.RestPostPublicIp)
 		g.GET("/:nsId/resources/publicIp/:publicIpId", mcir.RestGetPublicIp)
 		g.GET("/:nsId/resources/publicIp", mcir.RestGetAllPublicIp)
