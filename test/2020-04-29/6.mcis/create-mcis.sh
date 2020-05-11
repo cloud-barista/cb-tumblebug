@@ -27,8 +27,9 @@ curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: a
 	'{
 		"name": "MCIS-'$CSP'-'$POSTFIX'",
 		"vm_num": "1",
-		"description": "Tumblebug demo",
+		"description": "Tumblebug Demo",
 		"vm_req": [ {
+			"name": "VM-'$CSP'-'$POSTFIX'-01",
 			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
 			"vm_access_id": "cb-user",
 			"config_name": "'${CONN_CONFIG[INDEX]}'",
@@ -40,8 +41,7 @@ curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: a
 			"vnet_id": "VPC-'$CSP'-'$POSTFIX'",
 			"subnet_id": "Subnet-'$CSP'-'$POSTFIX'",
 			"description": "description",
-			"vm_access_passwd": "",
-			"name": "VM-'$CSP'-'$POSTFIX'"
+			"vm_access_passwd": ""
 		} ]
 	}' | json_pp || return 1
 

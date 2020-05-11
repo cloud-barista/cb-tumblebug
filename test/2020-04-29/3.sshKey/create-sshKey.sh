@@ -26,5 +26,6 @@ fi
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey -H 'Content-Type: application/json' -d \
 	'{ 
 		"connectionName": "'${CONN_CONFIG[INDEX]}'", 
-		"name": "KEYPAIR-'$CSP'-'$POSTFIX'"
+		"name": "KEYPAIR-'$CSP'-'$POSTFIX'", 
+		"username": "ubuntu"
 	}' | json_pp #|| return 1

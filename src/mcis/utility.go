@@ -19,6 +19,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
+	//"github.com/cloud-barista/cb-spider/cloud-control-manager/vm-ssh"
 	//"github.com/cloud-barista/cb-tumblebug/src/mcism"
 	//"github.com/cloud-barista/cb-tumblebug/src/common"
 )
@@ -162,4 +163,24 @@ func RestCheckVm(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, &content)
+}
+
+
+
+func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*string, error) {
+
+	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
+	serverEndpoint := fmt.Sprintf("%s:22", vmIP)
+	sshInfo := SSHInfo{
+		ServerPort: serverEndpoint,
+		UserName:   userName,
+		PrivateKey: []byte(privateKey),
+	}
+
+	// VM SSH 명령어 실행
+	if result, err := SSHRun(sshInfo, cmd); err != nil {
+		return nil, err
+	} else {
+		return &result, nil
+	}
 }
