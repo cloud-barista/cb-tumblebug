@@ -24,9 +24,9 @@ else
 fi
 
 ../6.mcis/just-terminate-mcis.sh $CSP $POSTFIX
-echo "============== sleep 10 to check MCIS : Start"
-sleep 100
-echo "============== sleep 10 to check MCIS : End"
+echo "============== sleep 60 to check MCIS : Start"
+sleep 60
+echo "============== sleep 60 to check MCIS : End"
 ../6.mcis/status-mcis.sh $CSP $POSTFIX
 ../6.mcis/terminate-and-delete-mcis.sh $CSP $POSTFIX
 ../5.spec/unregister-spec.sh $CSP $POSTFIX

@@ -127,6 +127,10 @@ func ApiServer() {
 	//g.DELETE("/:nsId/mcis", mcis.RestDelAllMcis)
 
 	g.POST("/:nsId/mcis/recommend", mcis.RestPostMcisRecommand)
+	g.POST("/:nsId/cmd/mcis/:mcisId", mcis.RestPostCmdMcis)
+	g.POST("/:nsId/cmd/mcis/:mcisId/vm/:vmId", mcis.RestPostCmdMcisVm)
+	g.POST("/:nsId/install/mcis/:mcisId", mcis.RestPostInstallAgentToMcis)
+	g.GET("/:nsId/benchmark/mcis/:mcisId", mcis.RestGetBenchmark)
 
 	g.POST("/:nsId/resources/image", mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:imageId", mcir.RestGetImage)
