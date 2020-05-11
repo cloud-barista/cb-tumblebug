@@ -3,8 +3,9 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 6. VM: Reboot MCIS"
+echo "## 6. VM: Status MCIS"
 echo "####################################################################"
+
 
 CSP=${1}
 POSTFIX=${2:-developer}
@@ -23,4 +24,4 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/mcis/MCIS-$CSP-$POSTFIX?action=reboot | json_pp
+curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/mcis/MCIS-$CSP-$POSTFIX?action=status | json_pp

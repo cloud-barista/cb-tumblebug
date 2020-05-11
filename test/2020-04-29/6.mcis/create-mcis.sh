@@ -3,30 +3,45 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 4. VM: Create MCIS"
+echo "## 6. VM: Create MCIS"
 echo "####################################################################"
 
-INDEX=${1}
+CSP=${1}
+POSTFIX=${2:-developer}
+if [ "${CSP}" == "aws" ]; then
+	echo "[Test for AWS]"
+	INDEX=1
+elif [ "${CSP}" == "azure" ]; then
+	echo "[Test for Azure]"
+	INDEX=2
+elif [ "${CSP}" == "gcp" ]; then
+	echo "[Test for GCP]"
+	INDEX=3
+else
+	echo "[No acceptable argument was provided (aws, azure, gcp, ..). Default: Test for AWS]"
+	CSP="aws"
+	INDEX=1
+fi
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 	'{
-		"name": "MCIS-0'$INDEX'",
+		"name": "MCIS-'$CSP'-'$POSTFIX'",
 		"vm_num": "1",
 		"description": "Tumblebug demo",
 		"vm_req": [ {
-			"image_id": "IMAGE-0'$INDEX'",
+			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
 			"vm_access_id": "cb-user",
 			"config_name": "'${CONN_CONFIG[INDEX]}'",
-			"ssh_key_id": "KEYPAIR-0'$INDEX'",
-			"spec_id": "SPEC-0'$INDEX'",
+			"ssh_key_id": "KEYPAIR-'$CSP'-'$POSTFIX'",
+			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
 			"security_group_ids": [
-				"SG-0'$INDEX'"
+				"SG-'$CSP'-'$POSTFIX'"
 			],
-			"vnet_id": "VPC-0'$INDEX'",
-			"subnet_id": "Subnet-0'$INDEX'",
+			"vnet_id": "VPC-'$CSP'-'$POSTFIX'",
+			"subnet_id": "Subnet-'$CSP'-'$POSTFIX'",
 			"description": "description",
 			"vm_access_passwd": "",
-			"name": "VM-0'$INDEX'"
+			"name": "VM-'$CSP'-'$POSTFIX'"
 		} ]
 	}' | json_pp || return 1
 

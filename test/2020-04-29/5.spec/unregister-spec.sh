@@ -2,13 +2,28 @@
 
 source ../conf.env
 
-INDEX=${1}
-
 echo "####################################################################"
-echo "## 3. spec: Unregister"
+echo "## 5. spec: Unregister"
 echo "####################################################################"
 
-curl -sX DELETE http://localhost:1323/tumblebug/ns/$NS_ID/resources/spec/SPEC-0$INDEX -H 'Content-Type: application/json' -d \
+CSP=${1}
+POSTFIX=${2:-developer}
+if [ "${CSP}" == "aws" ]; then
+	echo "[Test for AWS]"
+	INDEX=1
+elif [ "${CSP}" == "azure" ]; then
+	echo "[Test for Azure]"
+	INDEX=2
+elif [ "${CSP}" == "gcp" ]; then
+	echo "[Test for GCP]"
+	INDEX=3
+else
+	echo "[No acceptable argument was provided (aws, azure, gcp, ..). Default: Test for AWS]"
+	CSP="aws"
+	INDEX=1
+fi
+
+curl -sX DELETE http://localhost:1323/tumblebug/ns/$NS_ID/resources/spec/SPEC-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
     '{ 
         "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
     }' | json_pp #|| return 1

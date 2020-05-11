@@ -3,7 +3,7 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 6. VM: Reboot MCIS"
+echo "## 2. SecurityGroup: Get"
 echo "####################################################################"
 
 CSP=${1}
@@ -23,4 +23,8 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/mcis/MCIS-$CSP-$POSTFIX?action=reboot | json_pp
+curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup/SG-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
+    '{ 
+        "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
+    }' | json_pp #|| return 1
+
