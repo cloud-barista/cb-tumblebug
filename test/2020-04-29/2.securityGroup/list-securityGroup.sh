@@ -3,7 +3,9 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 5. spec: Fetch"
+echo "## 2. SecurityGroup: List"
 echo "####################################################################"
 
-curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/fetchSpecs #| json_pp
+
+curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup | json_pp #|| return 1
+
