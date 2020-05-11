@@ -24,3 +24,6 @@ meta_db/
 
 # Config file for mcism
 conf/
+
+# Config file for test
+test/2020-04-29/credentials.conf

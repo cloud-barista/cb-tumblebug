@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source ../conf.env
 source ../credentials.conf
 
 echo "####################################################################"
