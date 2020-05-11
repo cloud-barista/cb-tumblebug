@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../credentials.env
+source ../credentials.conf
 
 echo "####################################################################"
 echo "## 0. Get Cloud Connction Config"

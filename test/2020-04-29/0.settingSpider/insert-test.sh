@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../credentials.env
+source ../credentials.conf
 
 echo "####################################################################"
 echo "## 0. Create Cloud Connction Config"
@@ -50,7 +50,9 @@ curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: applicatio
         "KeyValueInfoList" : [
             {
                 "Key" : "'${RegionKey01[INDEX]:-NULL}'",
-                "Value" : "'${RegionVal01[INDEX]:-NULL}'"
+                "Value" : "'${RegionVal01[INDEX]:-NULL}'",
+                "Key" : "'${RegionKey02[INDEX]:-NULL}'",
+                "Value" : "'${RegionVal02[INDEX]:-NULL}'"
             }
         ],
         "RegionName" : "'${RegionName[INDEX]}'"
