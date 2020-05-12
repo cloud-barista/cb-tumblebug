@@ -26,10 +26,40 @@ fi
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 	'{
 		"name": "MCIS-'$CSP'-'$POSTFIX'",
-		"vm_num": "1",
+		"vm_num": "3",
 		"description": "Tumblebug Demo",
 		"vm_req": [ {
 			"name": "VM-'$CSP'-'$POSTFIX'-01",
+			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
+			"vm_access_id": "cb-user",
+			"config_name": "'${CONN_CONFIG[INDEX]}'",
+			"ssh_key_id": "KEYPAIR-'$CSP'-'$POSTFIX'",
+			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
+			"security_group_ids": [
+				"SG-'$CSP'-'$POSTFIX'"
+			],
+			"vnet_id": "VPC-'$CSP'-'$POSTFIX'",
+			"subnet_id": "Subnet-'$CSP'-'$POSTFIX'",
+			"description": "description",
+			"vm_access_passwd": ""
+		},
+		{
+			"name": "VM-'$CSP'-'$POSTFIX'-02",
+			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
+			"vm_access_id": "cb-user",
+			"config_name": "'${CONN_CONFIG[INDEX]}'",
+			"ssh_key_id": "KEYPAIR-'$CSP'-'$POSTFIX'",
+			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
+			"security_group_ids": [
+				"SG-'$CSP'-'$POSTFIX'"
+			],
+			"vnet_id": "VPC-'$CSP'-'$POSTFIX'",
+			"subnet_id": "Subnet-'$CSP'-'$POSTFIX'",
+			"description": "description",
+			"vm_access_passwd": ""
+		},
+		{
+			"name": "VM-'$CSP'-'$POSTFIX'-03",
 			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
 			"vm_access_id": "cb-user",
 			"config_name": "'${CONN_CONFIG[INDEX]}'",

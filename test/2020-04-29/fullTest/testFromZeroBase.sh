@@ -26,7 +26,9 @@ fi
 ../0.settingSpider/register-cloud.sh $CSP $POSTFIX
 ../0.settingTB/create-ns.sh $CSP $POSTFIX
 ../1.vNet/create-vNet.sh $CSP $POSTFIX
+sleep 10
 ../2.securityGroup/create-securityGroup.sh $CSP $POSTFIX
+sleep 10
 ../3.sshKey/create-sshKey.sh $CSP $POSTFIX
 ../4.image/register-image.sh $CSP $POSTFIX
 ../5.spec/register-spec.sh $CSP $POSTFIX
