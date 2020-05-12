@@ -32,7 +32,9 @@ echo "============== sleep 60 to check MCIS : End"
 ../5.spec/unregister-spec.sh $CSP $POSTFIX
 ../4.image/unregister-image.sh $CSP $POSTFIX
 ../3.sshKey/delete-sshKey.sh $CSP $POSTFIX
+sleep 10
 ../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX
+sleep 10
 ../1.vNet/delete-vNet.sh $CSP $POSTFIX
 ../0.settingTB/delete-ns.sh $CSP $POSTFIX
 ../0.settingSpider/unregister-cloud.sh $CSP $POSTFIX

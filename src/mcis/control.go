@@ -803,7 +803,7 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 	}
 
 	//install script
-	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway && sudo chmod 755 ~/milkyway && ~/milkyway "
+	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & netstat -tulpn | grep milkyway"
 
 
 	type contentSub struct {
@@ -865,60 +865,50 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 
 }
 
-
 func RestGetBenchmark(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
+	type bmReq struct {
+		Host string `json:"host"`
+	}
+	req := &bmReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+	target := req.Host
+	
 	action := c.QueryParam("action")
-	fmt.Println("[Get MCIS benchmark action: " + action)
-	if action == "install" {
-		fmt.Println("[Install benchmark]")
+	fmt.Println("[Get MCIS benchmark action: " + action + target)
+	
 
-		content, err := BenchmarkAction(nsId, mcisId, "install")
-		if err != nil {
-			mapA := map[string]string{"message": "Benchmark Error"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+	var err error
+	content := multiInfo{}
+
+	vaildActions := "install init cpus cpum memR memW fioR fioW dbR dbW rtt mrtt clear"
+
+	fmt.Println("[Benchmark] "+ action)
+	if strings.Contains(vaildActions, action)  {
+		option := "localhost"
+		if action == "rtt" {
+			option = target
+		} else {
+			option = ""
 		}
-		common.PrintJsonPretty(content)
-		return c.JSON(http.StatusOK, content)
-
-	} else if action == "init" {
-		fmt.Println("[Init benchmark]")
-
-		content, err := BenchmarkAction(nsId, mcisId, "init")
-		if err != nil {
-			mapA := map[string]string{"message": "Benchmark Error"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-		common.PrintJsonPretty(content)
-		return c.JSON(http.StatusOK, content)
-
-	} else if action == "cpus" {
-		fmt.Println("[cpus benchmark]")
-
-		content, err := BenchmarkAction(nsId, mcisId, "cpus")
-		if err != nil {
-			mapA := map[string]string{"message": "Benchmark Error"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-		common.PrintJsonPretty(content)
-		return c.JSON(http.StatusOK, content)
-
-	} else if action == "clear" {
-		fmt.Println("[Clear benchmark]")
-
-		controlMcis(nsId, mcisId, actionReboot)
-
-		mapA := map[string]string{"message": "Clear benchmark"}
-		return c.JSON(http.StatusOK, &mapA)
-
+		content, err = BenchmarkAction(nsId, mcisId, action, option)
 	} else {
 		mapA := map[string]string{"message": "Not available action"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
+	
+	if err != nil {
+		mapError := map[string]string{"message": "Benchmark Error"}
+		return c.JSON(http.StatusFailedDependency, &mapError)
+	}
+	common.PrintJsonPretty(content)
+	return c.JSON(http.StatusOK, content)
 }
 
 type benchInfo struct {
@@ -926,13 +916,23 @@ type benchInfo struct {
 	Unit string `json:"unit"`
 	Desc string `json:"desc"`
 	Elapsed string `json:"elapsed"`
+	Resultarray []mRequest `json:"resultarray"`
 }
 
 type multiInfo struct {
 	ResultArray []benchInfo `json:"resultarray"`
 }
 
-func BenchmarkAction(nsId string, mcisId string, action string) (multiInfo, error) {
+type request struct {
+	Host string `json:"host"`
+}
+
+type mRequest struct {
+	Multihost []request `json:"multihost"`
+}
+
+
+func BenchmarkAction(nsId string, mcisId string, action string, option string) (multiInfo, error) {
 
 
 	var results multiInfo
@@ -956,14 +956,32 @@ func BenchmarkAction(nsId string, mcisId string, action string) (multiInfo, erro
 				return http.ErrUseLastResponse
 			},
 		}
+		
+
 
 		// Create Req body
 		type JsonTemplate struct {
-			Test string
+			Host string `json:"host"`
 		}
 		tempReq := JsonTemplate{}
-		tempReq.Test = "Test"
+		tempReq.Host = option
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+		if action == "mrtt" {
+			reqTmp := mRequest{}
+			for _, vm := range vmList {
+				vmIdTmp := vm
+				vmIpTmp := getVmIp(nsId, mcisId, vmIdTmp) 
+				fmt.Println("[Test for vmList " + vmIdTmp + ", " +vmIpTmp + "]")
+	
+				hostTmp := request{}
+				hostTmp.Host = vmIpTmp
+				reqTmp.Multihost = append(reqTmp.Multihost, hostTmp)
+			}
+			common.PrintJsonPretty(reqTmp)
+			payload, _ = json.MarshalIndent(reqTmp, "", "  ")
+		}
+
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 		req.Header.Add("Content-Type", "application/json")
 		if err != nil {
@@ -991,13 +1009,23 @@ func BenchmarkAction(nsId string, mcisId string, action string) (multiInfo, erro
 			cblog.Error(err)
 			return multiInfo{}, err
 		}
-	
-		resultTmp := benchInfo{}
-		err2 := json.Unmarshal(body, &resultTmp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+
+		if action == "mrtt" {
+			resultTmp := multiInfo{}
+			err2 := json.Unmarshal(body, &resultTmp)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+//Need to modify
+		} else{
+			resultTmp := benchInfo{}
+			err2 := json.Unmarshal(body, &resultTmp)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+			results.ResultArray = append(results.ResultArray, resultTmp)
 		}
-		results.ResultArray = append(results.ResultArray, resultTmp)
+		
 	}
 
 	return results, nil
