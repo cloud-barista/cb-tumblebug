@@ -887,7 +887,7 @@ func RestGetBenchmark(c echo.Context) error {
 	var err error
 	content := multiInfo{}
 
-	vaildActions := "install init cpus cpum memR memW fioR fioW dbR dbW rtt mrtt clear"
+	vaildActions := "install init cpus cpum memR memW fioR fioW dbR dbW rtt mrtt clean"
 
 	fmt.Println("[Benchmark] "+ action)
 	if strings.Contains(vaildActions, action)  {
@@ -916,7 +916,7 @@ type benchInfo struct {
 	Unit string `json:"unit"`
 	Desc string `json:"desc"`
 	Elapsed string `json:"elapsed"`
-	Resultarray []mRequest `json:"resultarray"`
+	ResultArray []benchInfo `json:"resultarray"`
 }
 
 type multiInfo struct {
@@ -1011,11 +1011,15 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		}
 
 		if action == "mrtt" {
-			resultTmp := multiInfo{}
+			//benchInfoTmp := benchInfo{}
+			resultTmp := benchInfo{}
 			err2 := json.Unmarshal(body, &resultTmp)
 			if err2 != nil {
 				fmt.Println("whoops:", err2)
 			}
+			//benchInfoTmp.ResultArray =  resultTmp.ResultArray
+			results.ResultArray = append(results.ResultArray, resultTmp)
+		
 //Need to modify
 		} else{
 			resultTmp := benchInfo{}

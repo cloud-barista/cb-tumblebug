@@ -35,6 +35,12 @@ curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup 
 				    "ToPort": "65535",
 				    "IPProtocol": "tcp",
 				    "Direction": "inbound"
+			    },
+				{
+				    "FromPort": "-1",
+				    "ToPort": "-1",
+				    "IPProtocol": "icmp",
+				    "Direction": "inbound"
 			    }
 		    ]
 	    }' | json_pp #|| return 1
