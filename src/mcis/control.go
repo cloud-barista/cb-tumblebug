@@ -723,6 +723,14 @@ func RestPostCmdMcisVm(c echo.Context) error {
 	}
 }
 
+type sshResult struct {
+	Mcis_id	string   `json:"mcis_id"`
+	Vm_id	string   `json:"vm_id"`
+	Vm_ip	string   `json:"vm_ip"`
+	Result    string   `json:"result"`	
+	Err    error   `json:"err"`	
+}
+
 func RestPostCmdMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -749,15 +757,17 @@ func RestPostCmdMcis(c echo.Context) error {
 		return err
 	}
 
+	//goroutine sync wg
+	var wg sync.WaitGroup
+	
+	var resultArray []sshResult
+
 	for _, v := range vmList {
+		wg.Add(1)
 
 		vmId := v
-
 		vmIp := getVmIp(nsId, mcisId, vmId) 
 
-		//fmt.Printf("[vmIp] " +vmIp)
-		
-		//sshKey := req.Ssh_key
 		cmd := req.Command
 	
 		userName, sshKey := getVmKey(nsId, mcisId, vmId) 
@@ -768,21 +778,23 @@ func RestPostCmdMcis(c echo.Context) error {
 			userName = "ubuntu"
 		}
 	
-		//fmt.Printf("[userName] " +userName)
-	
 		fmt.Println("[SSH] " + mcisId+ "/" +vmId +"("+ vmIp +")" + "with userName:" +userName)
 		fmt.Println("[CMD] " + cmd)
 	
-		if result, err := RunSSH(vmIp, userName, sshKey, cmd); err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
-		} else {
-			resultTmp := contentSub{}
-			resultTmp.Mcis_id = mcisId
-			resultTmp.Vm_id = vmId
-			resultTmp.Vm_ip = vmIp
-			resultTmp.Result = *result
-			content.Result_array = append(content.Result_array, resultTmp)
-		}
+		go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray); 
+
+	}
+	wg.Wait() //goroutine sync wg
+	
+	for _, v := range resultArray {
+
+		resultTmp := contentSub{}
+		resultTmp.Mcis_id = mcisId
+		resultTmp.Vm_id = v.Vm_id
+		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.Result = v.Result
+		content.Result_array = append(content.Result_array, resultTmp)
+		//fmt.Println("result from goroutin " + v)
 	}
 
 	//fmt.Printf("%+v\n", content)
@@ -805,13 +817,13 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 	//install script
 	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & netstat -tulpn | grep milkyway"
 
-
 	type contentSub struct {
 		Mcis_id	string   `json:"mcis_id"`
 		Vm_id	string   `json:"vm_id"`
 		Vm_ip	string   `json:"vm_ip"`
 		Result    string   `json:"result"`
 	}
+
 	var content struct {
 		Result_array         []contentSub `json:"result_array"`
 	}
@@ -822,16 +834,18 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 		return err
 	}
 
+	//goroutin sync wg
+	var wg sync.WaitGroup
+	
+	var resultArray []sshResult
+
 	for _, v := range vmList {
+		wg.Add(1)
 
 		vmId := v
-
 		vmIp := getVmIp(nsId, mcisId, vmId) 
 
-		//fmt.Printf("[vmIp] " +vmIp)
-		
-		//sshKey := req.Ssh_key
-		
+		//cmd := req.Command
 	
 		userName, sshKey := getVmKey(nsId, mcisId, vmId) 
 		if (userName == "") {
@@ -841,21 +855,23 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 			userName = "ubuntu"
 		}
 	
-		//fmt.Printf("[userName] " +userName)
-	
 		fmt.Println("[SSH] " + mcisId+ "/" +vmId +"("+ vmIp +")" + "with userName:" +userName)
 		fmt.Println("[CMD] " + cmd)
 	
-		if result, err := RunSSH(vmIp, userName, sshKey, cmd); err != nil {
-			return c.JSON(http.StatusInternalServerError, err)
-		} else {
-			resultTmp := contentSub{}
-			resultTmp.Mcis_id = mcisId
-			resultTmp.Vm_id = vmId
-			resultTmp.Vm_ip = vmIp
-			resultTmp.Result = *result
-			content.Result_array = append(content.Result_array, resultTmp)
-		}
+		go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray); 
+
+	}
+	wg.Wait() //goroutin sync wg
+	
+	for _, v := range resultArray {
+
+		resultTmp := contentSub{}
+		resultTmp.Mcis_id = mcisId
+		resultTmp.Vm_id = v.Vm_id
+		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.Result = v.Result
+		content.Result_array = append(content.Result_array, resultTmp)
+		//fmt.Println("result from goroutin " + v)
 	}
 
 	//fmt.Printf("%+v\n", content)
@@ -931,7 +947,125 @@ type mRequest struct {
 	Multihost []request `json:"multihost"`
 }
 
+func callMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId string, vmIp string, action string, option string, results *multiInfo){
+	defer wg.Done() //goroutine sync done
 
+	url := "http://"+ vmIp + milkywayPort + action
+	method := "GET"
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	
+	// Create Req body
+	type JsonTemplate struct {
+		Host string `json:"host"`
+	}
+	tempReq := JsonTemplate{}
+	tempReq.Host = option
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+	if action == "mrtt" {
+		reqTmp := mRequest{}
+		for _, vm := range vmList {
+			vmIdTmp := vm
+			vmIpTmp := getVmIp(nsId, mcisId, vmIdTmp) 
+			fmt.Println("[Test for vmList " + vmIdTmp + ", " +vmIpTmp + "]")
+
+			hostTmp := request{}
+			hostTmp.Host = vmIpTmp
+			reqTmp.Multihost = append(reqTmp.Multihost, hostTmp)
+		}
+		common.PrintJsonPretty(reqTmp)
+		payload, _ = json.MarshalIndent(reqTmp, "", "  ")
+	}
+
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+	req.Header.Add("Content-Type", "application/json")
+	if err != nil {
+		fmt.Println(err)
+	}
+	errStr := ""
+	res, err := client.Do(req)
+	if err != nil {
+		cblog.Error(err)
+		errStr = err.Error()
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		cblog.Error(err)
+		errStr = err.Error()
+	}
+	fmt.Println(string(body))
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf(string(body))
+		cblog.Error(err)
+		errStr = err.Error()
+	}
+
+	if action == "mrtt" {
+		//benchInfoTmp := benchInfo{}
+		resultTmp := benchInfo{}
+		err2 := json.Unmarshal(body, &resultTmp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		//benchInfoTmp.ResultArray =  resultTmp.ResultArray
+		if errStr != "" {
+			resultTmp.Result = errStr
+		}
+		results.ResultArray = append(results.ResultArray, resultTmp)
+
+	} else{
+		resultTmp := benchInfo{}
+		err2 := json.Unmarshal(body, &resultTmp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		if errStr != "" {
+			resultTmp.Result = errStr
+		}
+		results.ResultArray = append(results.ResultArray, resultTmp)
+	}
+
+}
+
+func BenchmarkAction(nsId string, mcisId string, action string, option string) (multiInfo, error) {
+
+
+	var results multiInfo
+
+	vmList, err := getVmList(nsId, mcisId)
+	if err != nil {
+		cblog.Error(err)
+		return multiInfo{}, err
+	}
+
+	//goroutin sync wg
+	var wg sync.WaitGroup
+
+	for _, v := range vmList {
+		wg.Add(1)
+
+		vmId := v
+		vmIp := getVmIp(nsId, mcisId, vmId) 
+
+		go callMilkyway(&wg, vmList, nsId, mcisId, vmIp, action, option, &results)
+	}
+	wg.Wait() //goroutine sync wg
+
+	return results, nil
+
+}
+
+/*
 func BenchmarkAction(nsId string, mcisId string, action string, option string) (multiInfo, error) {
 
 
@@ -1019,8 +1153,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 			}
 			//benchInfoTmp.ResultArray =  resultTmp.ResultArray
 			results.ResultArray = append(results.ResultArray, resultTmp)
-		
-//Need to modify
+
 		} else{
 			resultTmp := benchInfo{}
 			err2 := json.Unmarshal(body, &resultTmp)
@@ -1035,7 +1168,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 	return results, nil
 
 }
-
+*/
 
 // VM API Proxy
 

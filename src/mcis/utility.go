@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-
+	"sync"
 	//"fmt"
 	//"net/http"
 	//"io/ioutil"
@@ -183,4 +183,40 @@ func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*strin
 	} else {
 		return &result, nil
 	}
+}
+
+func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, privateKey string, cmd string, returnResult *[]sshResult) {
+	
+	defer wg.Done() //goroutin sync done
+
+	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
+	serverEndpoint := fmt.Sprintf("%s:22", vmIP)
+	sshInfo := SSHInfo{
+		ServerPort: serverEndpoint,
+		UserName:   userName,
+		PrivateKey: []byte(privateKey),
+	}
+
+	// VM SSH 명령어 실행
+	result, err := SSHRun(sshInfo, cmd); 
+
+	//wg.Done() //goroutin sync done
+
+	sshResultTmp := sshResult{}
+	sshResultTmp.Mcis_id = ""
+	sshResultTmp.Vm_id = vmID
+	sshResultTmp.Vm_ip = vmIP
+	
+
+	if err != nil {
+		sshResultTmp.Result = err.Error()
+		sshResultTmp.Err = err
+		*returnResult = append( *returnResult, sshResultTmp )
+	} else {
+		fmt.Println("cmd result " + result)
+		sshResultTmp.Result = result
+		sshResultTmp.Err = nil
+		*returnResult = append( *returnResult, sshResultTmp )
+	}
+
 }
