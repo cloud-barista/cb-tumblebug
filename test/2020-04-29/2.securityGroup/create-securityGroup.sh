@@ -25,9 +25,9 @@ fi
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d \
 	'{
-		"name": "SG-'$CSP'-'$POSTFIX'",
+		"name": "sg-'$CSP'-'$POSTFIX'",
 		"connectionName": "'${CONN_CONFIG[INDEX]}'",
-		"vNetId": "VPC-'$CSP'-'$POSTFIX'",
+		"vNetId": "vpc-'$CSP'-'$POSTFIX'",
 		"description": "jhseo test description",
 		    "firewallRules": [
 			    {

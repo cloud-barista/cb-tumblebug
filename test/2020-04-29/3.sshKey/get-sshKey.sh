@@ -23,7 +23,7 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey/KEYPAIR-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
+curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey/keypair-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
     '{ 
         "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
     }' | json_pp #|| return 1

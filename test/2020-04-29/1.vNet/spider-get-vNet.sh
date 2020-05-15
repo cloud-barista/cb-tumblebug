@@ -19,4 +19,4 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1024/spider/vpc/VPC-$CSP-$POSTFIX -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[INDEX]}'"}' | json_pp
+curl -sX GET http://localhost:1024/spider/vpc/vpc-$CSP-$POSTFIX -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[INDEX]}'"}' | json_pp

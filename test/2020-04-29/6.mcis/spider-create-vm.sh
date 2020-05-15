@@ -23,12 +23,12 @@ curl -sX POST http://localhost:1024/spider/vm -H 'Content-Type: application/json
 	'{ 
 		"ConnectionName": "'${CONN_CONFIG[INDEX]}'", 
 		"ReqInfo": { 
-			"Name": "VM-'$CSP'-'$POSTFIX'",
+			"Name": "vm-'$CSP'-'$POSTFIX'",
 			"ImageName": "'${IMAGE_NAME[INDEX]}'", 
-			"VPCName": "VPC-'$CSP'-'$POSTFIX'",
-			"SubnetName": "Subnet-'$CSP'-'$POSTFIX'",
-			"SecurityGroupNames": [ "SG-'$CSP'-'$POSTFIX'" ], 
+			"VPCName": "vpc-'$CSP'-'$POSTFIX'",
+			"SubnetName": "subnet-'$CSP'-'$POSTFIX'",
+			"SecurityGroupNames": [ "sg-'$CSP'-'$POSTFIX'" ], 
 			"VMSpecName": "'${SPEC_NAME[INDEX]}'", 
-			"KeyPairName": "KEYPAIR-'$CSP'-'$POSTFIX'"
+			"KeyPairName": "keypair-'$CSP'-'$POSTFIX'"
 		} 
 	}' | json_pp

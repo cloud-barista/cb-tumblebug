@@ -35,28 +35,28 @@ curl -sX POST http://$RESTSERVER:1024/spider/driver -H 'Content-Type: applicatio
 
  # for Cloud Credential Info
 curl -sX POST http://$RESTSERVER:1024/spider/credential -H 'Content-Type: application/json' -d \
-    '{
-        "ProviderName" : "'${ProviderName[INDEX]}'",
-        "CredentialName" : "'${CredentialName[INDEX]}'",
-        "KeyValueInfoList" : [
+    "{
+        \"ProviderName\" : \"${ProviderName[INDEX]}\",
+        \"CredentialName\" : \"${CredentialName[INDEX]}\",
+        \"KeyValueInfoList\" : [
             {
-                "Key" : "'${CredentialKey01[INDEX]:-NULL}'",
-                "Value" : "'${CredentialVal01[INDEX]:-NULL}'"
+                \"Key\" : \"${CredentialKey01[INDEX]:-NULL}\",
+                \"Value\" : \"${CredentialVal01[INDEX]:-NULL}\"
             },
             {
-                "Key" : "'${CredentialKey02[INDEX]:-NULL}'",
-                "Value" : "'${CredentialVal02[INDEX]:-NULL}'"
+                \"Key\" : \"${CredentialKey02[INDEX]:-NULL}\",
+                \"Value\" : \"${CredentialVal02[INDEX]:-NULL}\"
             },
             {
-                "Key" : "'${CredentialKey03[INDEX]:-NULL}'",
-                "Value" : "'${CredentialVal03[INDEX]:-NULL}'"
+                \"Key\" : \"${CredentialKey03[INDEX]:-NULL}\",
+                \"Value\" : \"${CredentialVal03[INDEX]:-NULL}\"
             },
             {
-                "Key" : "'${CredentialKey04[INDEX]:-NULL}'",
-                "Value" : "'${CredentialVal04[INDEX]:-NULL}'"
+                \"Key\" : \"${CredentialKey04[INDEX]:-NULL}\",
+                \"Value\" : \"${CredentialVal04[INDEX]:-NULL}\"
             }
         ]
-    }' | json_pp
+    }" | json_pp
 
  # for Cloud Region Info
 

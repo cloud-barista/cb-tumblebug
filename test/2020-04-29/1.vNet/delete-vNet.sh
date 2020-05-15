@@ -3,7 +3,7 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 1. VPC: Delete"
+echo "## 1. vpc: Delete"
 echo "####################################################################"
 
 CSP=${1}
@@ -23,7 +23,7 @@ else
 	INDEX=1
 fi
 
-curl -sX DELETE http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet/VPC-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
+curl -sX DELETE http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet/vpc-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
     '{ 
         "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
     }' | json_pp #|| return 1
