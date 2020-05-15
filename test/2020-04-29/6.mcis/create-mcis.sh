@@ -3,7 +3,7 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 6. VM: Create MCIS"
+echo "## 6. vm: Create MCIS"
 echo "####################################################################"
 
 CSP=${1}
@@ -29,47 +29,47 @@ curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: a
 		"vm_num": "3",
 		"description": "Tumblebug Demo",
 		"vm_req": [ {
-			"name": "VM-'$CSP'-'$POSTFIX'-01",
+			"name": "vm-'$CSP'-'$POSTFIX'-01",
 			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
 			"vm_access_id": "cb-user",
 			"config_name": "'${CONN_CONFIG[INDEX]}'",
-			"ssh_key_id": "KEYPAIR-'$CSP'-'$POSTFIX'",
+			"ssh_key_id": "keypair-'$CSP'-'$POSTFIX'",
 			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
 			"security_group_ids": [
-				"SG-'$CSP'-'$POSTFIX'"
+				"sg-'$CSP'-'$POSTFIX'"
 			],
-			"vnet_id": "VPC-'$CSP'-'$POSTFIX'",
-			"subnet_id": "Subnet-'$CSP'-'$POSTFIX'",
+			"vnet_id": "vpc-'$CSP'-'$POSTFIX'",
+			"subnet_id": "subnet-'$CSP'-'$POSTFIX'",
 			"description": "description",
 			"vm_access_passwd": ""
 		},
 		{
-			"name": "VM-'$CSP'-'$POSTFIX'-02",
+			"name": "vm-'$CSP'-'$POSTFIX'-02",
 			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
 			"vm_access_id": "cb-user",
 			"config_name": "'${CONN_CONFIG[INDEX]}'",
-			"ssh_key_id": "KEYPAIR-'$CSP'-'$POSTFIX'",
+			"ssh_key_id": "keypair-'$CSP'-'$POSTFIX'",
 			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
 			"security_group_ids": [
-				"SG-'$CSP'-'$POSTFIX'"
+				"sg-'$CSP'-'$POSTFIX'"
 			],
-			"vnet_id": "VPC-'$CSP'-'$POSTFIX'",
-			"subnet_id": "Subnet-'$CSP'-'$POSTFIX'",
+			"vnet_id": "vpc-'$CSP'-'$POSTFIX'",
+			"subnet_id": "subnet-'$CSP'-'$POSTFIX'",
 			"description": "description",
 			"vm_access_passwd": ""
 		},
 		{
-			"name": "VM-'$CSP'-'$POSTFIX'-03",
+			"name": "vm-'$CSP'-'$POSTFIX'-03",
 			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
 			"vm_access_id": "cb-user",
 			"config_name": "'${CONN_CONFIG[INDEX]}'",
-			"ssh_key_id": "KEYPAIR-'$CSP'-'$POSTFIX'",
+			"ssh_key_id": "keypair-'$CSP'-'$POSTFIX'",
 			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
 			"security_group_ids": [
-				"SG-'$CSP'-'$POSTFIX'"
+				"sg-'$CSP'-'$POSTFIX'"
 			],
-			"vnet_id": "VPC-'$CSP'-'$POSTFIX'",
-			"subnet_id": "Subnet-'$CSP'-'$POSTFIX'",
+			"vnet_id": "vpc-'$CSP'-'$POSTFIX'",
+			"subnet_id": "subnet-'$CSP'-'$POSTFIX'",
 			"description": "description",
 			"vm_access_passwd": ""
 		} ]

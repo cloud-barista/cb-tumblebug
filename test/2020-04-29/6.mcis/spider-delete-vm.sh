@@ -19,7 +19,7 @@ else
 	INDEX=1
 fi
 
-curl -sX DELETE http://localhost:1024/spider/vm/VM-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
+curl -sX DELETE http://localhost:1024/spider/vm/vm-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
     '{ 
         "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
     }' | json_pp
