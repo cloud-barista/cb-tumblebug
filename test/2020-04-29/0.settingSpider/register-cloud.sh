@@ -59,6 +59,25 @@ curl -sX POST http://$RESTSERVER:1024/spider/credential -H 'Content-Type: applic
     }' | json_pp
 
  # for Cloud Region Info
+
+if [ "${CSP}" == "azure" ]; then
+    # Differenciate Cloud Region Value for Resource Group Name
+	curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: application/json' -d \
+    '{
+        "ProviderName" : "'${ProviderName[INDEX]}'",
+        "KeyValueInfoList" : [
+            {
+                "Key" : "'${RegionKey01[INDEX]:-NULL}'",
+                "Value" : "'${RegionVal01[INDEX]:-NULL}'"
+            },
+            {
+                "Key" : "'${RegionKey02[INDEX]:-NULL}'",
+                "Value" : "'${RegionVal02[INDEX]:-NULL}'-'$CSP'-'$POSTFIX'"
+            }
+        ],
+        "RegionName" : "'${RegionName[INDEX]}'"
+    }' | json_pp
+else
 curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: application/json' -d \
     '{
         "ProviderName" : "'${ProviderName[INDEX]}'",
@@ -74,6 +93,7 @@ curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: applicatio
         ],
         "RegionName" : "'${RegionName[INDEX]}'"
     }' | json_pp
+fi
 
 
  # for Cloud Connection Config Info

@@ -390,14 +390,14 @@ func RestGetMcis(c echo.Context) error {
 	if action == "suspend" {
 		fmt.Println("[suspend MCIS]")
 
-		controlMcis(nsId, mcisId, actionSuspend)
+		controlMcisAsync(nsId, mcisId, actionSuspend)
 		mapA := map[string]string{"message": "Suspending the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "resume" {
 		fmt.Println("[resume MCIS]")
 
-		controlMcis(nsId, mcisId, actionResume)
+		controlMcisAsync(nsId, mcisId, actionResume)
 
 		mapA := map[string]string{"message": "Resuming the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -405,7 +405,7 @@ func RestGetMcis(c echo.Context) error {
 	} else if action == "reboot" {
 		fmt.Println("[reboot MCIS]")
 
-		controlMcis(nsId, mcisId, actionReboot)
+		controlMcisAsync(nsId, mcisId, actionReboot)
 
 		mapA := map[string]string{"message": "Rebooting the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -425,9 +425,12 @@ func RestGetMcis(c echo.Context) error {
 			return c.JSON(http.StatusOK, &mapA)
 		}
 
+		/*
 		for _, v := range vmList {
 			controlVm(nsId, mcisId, v, actionTerminate)
 		}
+		*/
+		controlMcisAsync(nsId, mcisId, actionTerminate)
 
 		mapA := map[string]string{"message": "Terminating the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -1985,6 +1988,202 @@ func controlMcis(nsId string, mcisId string, action string) error {
 	return nil
 
 	//need to change status
+
+}
+
+func controlMcisAsync(nsId string, mcisId string, action string) error {
+
+	fmt.Println("[controlMcis]" + mcisId + " to " + action)
+	key := common.GenMcisKey(nsId, mcisId, "")
+	fmt.Println(key)
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	vmList, err := getVmList(nsId, mcisId)
+	fmt.Println("=============================================== %#v", vmList)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+	if len(vmList) == 0 {
+		return nil
+	}
+
+	//goroutin sync wg
+	var wg sync.WaitGroup
+	var results controlVmReturnArray
+	// delete vms info
+	for _, v := range vmList {
+		wg.Add(1)
+
+		go controlVmAsync(&wg, nsId, mcisId, v, action, &results)
+	}
+	wg.Wait() //goroutine sync wg
+
+
+	return nil
+
+	//need to change status
+
+}
+
+type controlVmReturn struct {
+	VmId string `json:"vm_id"`
+	Status string `json:"Status"`
+	Error error `json:"Error"`
+}
+type controlVmReturnArray struct {
+	ResultArray []controlVmReturn `json:"resultarray"`
+}
+
+func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, action string, results *controlVmReturnArray) error{
+	defer wg.Done() //goroutine sync done
+
+	var content struct {
+		Cloud_id  string `json:"cloud_id"`
+		Csp_vm_id string `json:"csp_vm_id"`
+	}
+
+	fmt.Println("[controlVm]" + vmId)
+	key := common.GenMcisKey(nsId, mcisId, vmId)
+	fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	//fmt.Printf("%+v\n", content.Cloud_id)
+	//fmt.Printf("%+v\n", content.Csp_vm_id)
+
+	temp := vmInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+
+	fmt.Println("\n\n[Calling SPIDER]START vmControl")
+
+	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.IId.NameId)
+
+	/*
+		cspType := getVMsCspType(nsId, mcisId, vmId)
+		var cspVmId string
+		if cspType == "AWS" {
+			cspVmId = temp.CspViewVmDetail.Id
+		} else {
+	*/
+	cspVmId := temp.CspViewVmDetail.IId.NameId
+	common.PrintJsonPretty(temp.CspViewVmDetail)
+
+	url := ""
+	method := ""
+	switch action {
+	case actionTerminate:
+		//url = SPIDER_URL + "/vm/" + cspVmId + "?connection_name=" + temp.Config_name
+		url = SPIDER_URL + "/vm/" + cspVmId
+		method = "DELETE"
+	case actionReboot:
+		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=reboot"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=reboot"
+		method = "GET"
+	case actionSuspend:
+		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=suspend"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=suspend"
+		method = "GET"
+	case actionResume:
+		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=resume"
+		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=resume"
+		method = "GET"
+	default:
+		return errors.New(action + "is invalid actionType")
+	}
+	//fmt.Println("url: " + url + " method: " + method)
+
+	type ControlVMReqInfo struct {
+		ConnectionName string
+	}
+	tempReq := ControlVMReqInfo{}
+	tempReq.ConnectionName = temp.Config_name
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	//fmt.Println("payload: " + string(payload)) // for debug
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	//fmt.Println("Called mockAPI.")
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	//var resBodyTmp struct {
+	//	Status string `json:"Status"`
+	//}
+
+	var errTmp error
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf(string(body))
+		cblog.Error(err)
+		errTmp = err
+	}
+
+	//err2 := json.Unmarshal(body, &resBodyTmp)
+	//if err2 != nil {
+	//	fmt.Println("whoops:", err2)
+	//	return errors.New("whoops: "+ err2.Error())
+	//}
+
+
+	resultTmp := controlVmReturn{}
+	err2 := json.Unmarshal(body, &resultTmp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
+		cblog.Error(err)
+		errTmp = err
+	}
+	if errTmp != nil {
+		resultTmp.Error = errTmp
+	}
+	results.ResultArray = append(results.ResultArray, resultTmp)
+
+	common.PrintJsonPretty(resultTmp)
+
+	fmt.Println("[Calling SPIDER]END vmControl\n\n")
+	/*
+		if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
+			return nil
+		}
+		if strings.Compare(content.Cloud_id, "aws") == 0 {
+			controlVmAws(content.Csp_vm_id)
+		} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
+			controlVmGcp(content.Csp_vm_id)
+		} else if strings.Compare(content.Cloud_id, "azure") == 0 {
+			controlVmAzure(content.Csp_vm_id)
+		} else {
+			fmt.Println("==============ERROR=no matched provider_id=================")
+		}
+	*/
+
+	return nil
 
 }
 
