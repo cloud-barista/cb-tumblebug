@@ -24,27 +24,27 @@ else
 fi
 
 ../6.mcis/just-terminate-mcis.sh $CSP $POSTFIX
-echo "============== sleep 60 to check MCIS : Start"
+echo "============== sleep 60 before delete MCIS obj"
 sleep 60
-echo "============== sleep 60 to check MCIS : End"
 ../6.mcis/status-mcis.sh $CSP $POSTFIX
 ../6.mcis/terminate-and-delete-mcis.sh $CSP $POSTFIX
 ../5.spec/unregister-spec.sh $CSP $POSTFIX
 ../4.image/unregister-image.sh $CSP $POSTFIX
 ../3.sshKey/delete-sshKey.sh $CSP $POSTFIX
-sleep 10
+sleep 5
 ../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX
-sleep 10
+sleep 5
 ../1.vNet/delete-vNet.sh $CSP $POSTFIX
-../0.settingTB/delete-ns.sh $CSP $POSTFIX
+#../0.settingTB/delete-ns.sh $CSP $POSTFIX
 ../0.settingSpider/unregister-cloud.sh $CSP $POSTFIX
 
 
+_self="${0##*/}"
 
-
-
-
-
-
-
+echo ""
+echo "[Cleaning related commands in history file executionStatus]"
+sed -i "/${CSP} ${POSTFIX}/d" ./executionStatus
+echo ""
+echo "[Executed Command List]"
+cat  ./executionStatus
 
