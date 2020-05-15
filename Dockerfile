@@ -34,7 +34,7 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumbleb
 #RUN /bin/bash -c "source /app/conf/setup.env"
 ENV CBSTORE_ROOT /app
 ENV CBLOG_ROOT /app
-ENV SPIDER_URL http://cb-spider:1024
+ENV SPIDER_URL http://cb-spider:1024/spider
 
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
 
