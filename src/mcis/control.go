@@ -534,6 +534,8 @@ func RestGetMcis(c echo.Context) error {
 func RestGetAllMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	option := c.QueryParam("option")
+	fmt.Println("[Get MCIS List requested with option: " + option)
 
 	var content struct {
 		//Name string     `json:"name"`
@@ -557,12 +559,19 @@ func RestGetAllMcis(c echo.Context) error {
 		mcisId := v
 		mcisTmp.Id = mcisId
 
-		mcisStatus, err := getMcisStatus(nsId, mcisId)
-		if err != nil {
-			cblog.Error(err)
-			return err
+
+		if option == "status" {
+			//get current mcis status
+			mcisStatus, err := getMcisStatus(nsId, mcisId)
+			if err != nil {
+				cblog.Error(err)
+				return err
+			}
+			mcisTmp.Status = mcisStatus.Status
+		} else {
+			//Set current mcis status with NullStr
+			mcisTmp.Status = ""
 		}
-		mcisTmp.Status = mcisStatus.Status
 
 		vmList, err := getVmList(nsId, mcisId)
 		if err != nil {
@@ -582,6 +591,19 @@ func RestGetAllMcis(c echo.Context) error {
 			vmTmp := vmOverview{}
 			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 			vmTmp.Id = v1
+
+			if option == "status" {
+				//get current vm status
+				vmStatusInfoTmp, err := getVmStatus(nsId, mcisId, v1)
+				if err != nil {
+					cblog.Error(err)
+				}
+				vmTmp.Status = vmStatusInfoTmp.Status
+			} else {
+				//Set current vm status with NullStr
+				vmTmp.Status = ""
+			}
+
 			mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
 		}
 
