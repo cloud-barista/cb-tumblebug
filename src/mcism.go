@@ -2,10 +2,14 @@ package main
 
 import (
 	"github.com/cloud-barista/cb-tumblebug/src/apiserver"
+	"github.com/cloud-barista/cb-tumblebug/src/mcis"
 	"os"
+	"time"
+	"fmt"
 )
 
 func main() {
+	
 
 	//fmt.Println("\n[cb-tumblebug (Multi-Cloud Infra Service Management Framework)]")
 	//fmt.Println("\nInitiating REST API Server ...")
@@ -33,6 +37,17 @@ func main() {
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
+
+	//Ticker for MCIS status validation
+	validationDuration := 2000 //ms
+	ticker := time.NewTicker( time.Millisecond * time.Duration(validationDuration) )
+	go func() {
+		for t := range ticker.C {
+			fmt.Println("Tick at", t)
+			mcis.ValidateStatus()
+		}
+	}()
+	defer ticker.Stop()
 
 	// Run API Server
 	apiserver.ApiServer()
