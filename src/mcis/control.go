@@ -26,10 +26,12 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/mcir"
 )
 
+const actionCreate string = "Create"
 const actionTerminate string = "Terminate"
 const actionSuspend string = "Suspend"
 const actionResume string = "Resume"
 const actionReboot string = "Reboot"
+const actionComplete string = "None"
 
 const statusRunning string = "Running"
 const statusSuspended string = "Suspended"
@@ -40,6 +42,7 @@ const statusSuspending string = "Suspending"
 const statusResuming string = "Resuming"
 const statusRebooting string = "Rebooting"
 const statusTerminating string = "Terminating"
+const statusComplete string = "None"
 
 const milkywayPort string = ":1324/milkyway/"
 
@@ -77,6 +80,7 @@ type VMStatusInfo struct { // Spider
 
 // GO do not support Enum. So, define like this.
 type VMStatus string // Spider
+type VMOperation string 
 
 const ( // Spider
 	Creating VMStatus = "Creating" // from launch to running
@@ -187,6 +191,8 @@ type mcisInfo struct {
 	Id             string       `json:"id"`
 	Name           string       `json:"name"`
 	Status         string       `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
 	Placement_algo string       `json:"placement_algo"`
 	Description    string       `json:"description"`
 	Vm             []vmOverview `json:"vm"`
@@ -232,6 +238,8 @@ type vmInfo struct {
 
 	// 3. Required by CB-Tumblebug
 	Status string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
 
 	CspViewVmDetail VMInfo `json:"cspViewVmDetail"`
 }
@@ -270,6 +278,8 @@ type mcisStatusInfo struct {
 	Name string `json:"name"`
 	//Vm_num string         `json:"vm_num"`
 	Status string         `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
 	Vm     []vmStatusInfo `json:"vm"`
 }
 
@@ -278,6 +288,9 @@ type vmStatusInfo struct {
 	Csp_vm_id string `json:"csp_vm_id"`
 	Name      string `json:"name"`
 	Status    string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+	Native_status    string `json:"native_status"`
 	Public_ip string `json:"public_ip"`
 }
 
@@ -342,6 +355,8 @@ func RestPostMcis(c echo.Context) error {
 		Name string `json:"name"`
 		//Vm_num         string   `json:"vm_num"`
 		Status         string   `json:"status"`
+		TargetStatus string `json:"targetStatus"`
+		TargetAction string `json:"targetAction"`
 		Vm             []vmInfo `json:"vm"`
 		Placement_algo string   `json:"placement_algo"`
 		Description    string   `json:"description"`
@@ -370,8 +385,8 @@ func RestPostMcis(c echo.Context) error {
 		content.Vm = append(content.Vm, vmTmp)
 	}
 
-	mcisStatus, err := getMcisStatus(nsId, mcisId)
-	content.Status = mcisStatus.Status
+	//mcisStatus, err := getMcisStatus(nsId, mcisId)
+	//content.Status = mcisStatus.Status
 
 	//fmt.Printf("%+v\n", content)
 	common.PrintJsonPretty(content)
@@ -390,14 +405,23 @@ func RestGetMcis(c echo.Context) error {
 	if action == "suspend" {
 		fmt.Println("[suspend MCIS]")
 
-		controlMcisAsync(nsId, mcisId, actionSuspend)
+		err := controlMcisAsync(nsId, mcisId, actionSuspend)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+
 		mapA := map[string]string{"message": "Suspending the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "resume" {
 		fmt.Println("[resume MCIS]")
 
-		controlMcisAsync(nsId, mcisId, actionResume)
+		err := controlMcisAsync(nsId, mcisId, actionResume)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
 
 		mapA := map[string]string{"message": "Resuming the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -405,7 +429,11 @@ func RestGetMcis(c echo.Context) error {
 	} else if action == "reboot" {
 		fmt.Println("[reboot MCIS]")
 
-		controlMcisAsync(nsId, mcisId, actionReboot)
+		err := controlMcisAsync(nsId, mcisId, actionReboot)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
 
 		mapA := map[string]string{"message": "Rebooting the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -430,7 +458,11 @@ func RestGetMcis(c echo.Context) error {
 			controlVm(nsId, mcisId, v, actionTerminate)
 		}
 		*/
-		controlMcisAsync(nsId, mcisId, actionTerminate)
+		err = controlMcisAsync(nsId, mcisId, actionTerminate)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
 
 		mapA := map[string]string{"message": "Terminating the MCIS"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -467,6 +499,8 @@ func RestGetMcis(c echo.Context) error {
 			Name string `json:"name"`
 			//Vm_num         string   `json:"vm_num"`
 			Status         string   `json:"status"`
+			TargetStatus string `json:"targetStatus"`
+			TargetAction string `json:"targetAction"`
 			Vm             []vmInfo `json:"vm"`
 			Placement_algo string   `json:"placement_algo"`
 			Description    string   `json:"description"`
@@ -519,6 +553,8 @@ func RestGetMcis(c echo.Context) error {
 				cblog.Error(err)
 			}
 			vmTmp.Status = vmStatusInfoTmp.Status
+			vmTmp.TargetStatus = vmStatusInfoTmp.TargetStatus
+			vmTmp.TargetAction = vmStatusInfoTmp.TargetAction
 
 			content.Vm = append(content.Vm, vmTmp)
 		}
@@ -1281,7 +1317,11 @@ func RestPostMcisVm(c echo.Context) error {
 	wg.Wait()
 
 	vmStatus, err := getVmStatus(nsId, mcisId, vmInfoData.Id)
+
 	vmInfoData.Status = vmStatus.Status
+	vmInfoData.TargetStatus = vmStatus.TargetStatus
+	vmInfoData.TargetAction = vmStatus.TargetAction
+
 
 	return c.JSON(http.StatusCreated, vmInfoData)
 }
@@ -1313,7 +1353,7 @@ func RestGetMcisVm(c echo.Context) error {
 		fmt.Println("[reboot VM]")
 
 		controlVm(nsId, mcisId, vmId, actionReboot)
-		mapA := map[string]string{"message": "Starting the VM"}
+		mapA := map[string]string{"message": "Rebooting the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "terminate" {
@@ -1372,7 +1412,10 @@ func RestGetMcisVm(c echo.Context) error {
 		if err != nil {
 			cblog.Error(err)
 		}
+		
 		vmTmp.Status = vmStatusInfoTmp.Status
+		vmTmp.TargetStatus = vmStatusInfoTmp.TargetStatus
+		vmTmp.TargetAction = vmStatusInfoTmp.TargetAction
 
 		//fmt.Printf("%+v\n", vmTmp)
 		common.PrintJsonPretty(vmTmp)
@@ -1629,14 +1672,18 @@ func createMcis(nsId string, req *mcisReq) string {
 		}
 	*/
 
+	targetAction := actionCreate
+	targetStatus := statusRunning
+
 	//req.Id = common.GenUuid()
 	req.Id = common.GenId(req.Name)
 	vmRequest := req.Vm_req
+	mcisId := req.Id
 
 	fmt.Println("=========================== Put createSvc")
-	key := common.GenMcisKey(nsId, req.Id, "")
+	key := common.GenMcisKey(nsId, mcisId, "")
 	//mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
-	mapA := map[string]string{"id": req.Id, "name": req.Name, "description": req.Description, "status": "CREATING"}
+	mapA := map[string]string{"id": mcisId, "name": req.Name, "description": req.Description, "status": statusCreating, "targetAction": targetAction, "targetStatus": targetStatus}
 	val, _ := json.Marshal(mapA)
 	err := store.Put(string(key), string(val))
 	if err != nil {
@@ -1679,7 +1726,10 @@ func createMcis(nsId string, req *mcisReq) string {
 		vmInfoData.PublicIP = "Not assigned yet"
 		//vmInfoData.CspVmId = "Not assigned yet"
 		vmInfoData.PublicDNS = "Not assigned yet"
-		vmInfoData.Status = "Creating"
+
+		vmInfoData.Status = statusCreating
+		vmInfoData.TargetAction = targetAction
+		vmInfoData.TargetStatus = targetStatus
 
 		///////////
 		/*
@@ -1710,7 +1760,7 @@ func createMcis(nsId string, req *mcisReq) string {
 
 		/////////
 
-		go addVmToMcis(&wg, nsId, req.Id, &vmInfoData)
+		go addVmToMcis(&wg, nsId, mcisId, &vmInfoData)
 		//addVmToMcis(nsId, req.Id, vmInfoData)
 
 		if err != nil {
@@ -1719,6 +1769,19 @@ func createMcis(nsId string, req *mcisReq) string {
 		}
 	}
 	wg.Wait()
+
+	mcisTmp := mcisInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	
+	mcisStatusTmp, _ := getMcisStatus(nsId, mcisId)
+
+	mcisTmp.Status = mcisStatusTmp.Status
+
+	if mcisTmp.TargetStatus == mcisTmp.Status {
+		mcisTmp.TargetStatus = statusComplete
+		mcisTmp.TargetAction = actionComplete
+	}
+	updateMcisInfo(nsId, mcisTmp)
 
 	return key
 }
@@ -1740,13 +1803,17 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *vmI
 	//instanceIds, publicIPs := createVm(&vmInfoData)
 	err := createVm(nsId, mcisId, vmInfoData)
 	if err != nil {
+		vmInfoData.Status = statusFailed
+		updateVmInfo(nsId, mcisId, *vmInfoData)
 		cblog.Error(err)
 		return err
 	}
 
 	//vmInfoData.PublicIP = string(*publicIPs[0])
 	//vmInfoData.CspVmId = string(*instanceIds[0])
-	vmInfoData.Status = "Running"
+	vmInfoData.Status = statusRunning
+	vmInfoData.TargetAction = actionComplete
+	vmInfoData.TargetStatus = statusComplete
 	updateVmInfo(nsId, mcisId, *vmInfoData)
 
 	return nil
@@ -2013,7 +2080,48 @@ func controlMcis(nsId string, mcisId string, action string) error {
 
 }
 
+func checkAllowedTransition(nsId string, mcisId string, action string) error {
+
+	fmt.Println("[checkAllowedTransition]" + mcisId + " to " + action)
+	key := common.GenMcisKey(nsId, mcisId, "")
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	mcisTmp := mcisInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+
+	mcisStatusTmp, _ := getMcisStatus(nsId, mcisId)
+
+	updateMcisInfo(nsId, mcisTmp)
+
+	if mcisStatusTmp.Status == statusTerminating || mcisStatusTmp.Status == statusResuming || mcisStatusTmp.Status == statusSuspending || mcisStatusTmp.Status == statusCreating || mcisStatusTmp.Status == statusRebooting {
+		return errors.New(action + " is not allowed for MCIS under "+ mcisStatusTmp.Status)
+	}
+	if mcisStatusTmp.Status == statusTerminated {
+		return errors.New(action + " is not allowed for " +mcisStatusTmp.Status+ " MCIS")
+	}
+	if mcisStatusTmp.Status == statusSuspended {
+		if action == actionResume || action == actionTerminate {
+			return nil
+		} else {
+			return errors.New(action + " is not allowed for " +mcisStatusTmp.Status+ " MCIS")
+		}
+	}
+	return nil	
+}
+
 func controlMcisAsync(nsId string, mcisId string, action string) error {
+
+	checkError := checkAllowedTransition(nsId, mcisId, action)
+	if checkError != nil {
+		return checkError
+	}
 
 	fmt.Println("[controlMcis]" + mcisId + " to " + action)
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -2027,6 +2135,12 @@ func controlMcisAsync(nsId string, mcisId string, action string) error {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
+	mcisTmp := mcisInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+
 	vmList, err := getVmList(nsId, mcisId)
 	fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
@@ -2036,6 +2150,37 @@ func controlMcisAsync(nsId string, mcisId string, action string) error {
 	if len(vmList) == 0 {
 		return nil
 	}
+
+
+	switch action {
+	case actionTerminate:
+
+		mcisTmp.TargetAction = actionTerminate
+		mcisTmp.TargetStatus = statusTerminated
+		mcisTmp.Status = statusTerminating
+
+	case actionReboot:
+
+		mcisTmp.TargetAction = actionReboot
+		mcisTmp.TargetStatus = statusRunning
+		mcisTmp.Status = statusRebooting
+
+	case actionSuspend:
+
+		mcisTmp.TargetAction = actionSuspend
+		mcisTmp.TargetStatus = statusSuspended
+		mcisTmp.Status = statusSuspending
+
+	case actionResume:
+
+		mcisTmp.TargetAction = actionResume
+		mcisTmp.TargetStatus = statusRunning
+		mcisTmp.Status = statusResuming
+
+	default:
+		return errors.New(action + "is invalid actionType")
+	}
+	updateMcisInfo(nsId, mcisTmp)
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
@@ -2047,6 +2192,7 @@ func controlMcisAsync(nsId string, mcisId string, action string) error {
 		go controlVmAsync(&wg, nsId, mcisId, v, action, &results)
 	}
 	wg.Wait() //goroutine sync wg
+
 
 
 	return nil
@@ -2109,24 +2255,45 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	method := ""
 	switch action {
 	case actionTerminate:
+
+		temp.TargetAction = actionTerminate
+		temp.TargetStatus = statusTerminated
+		temp.Status = statusTerminating
+
 		//url = SPIDER_URL + "/vm/" + cspVmId + "?connection_name=" + temp.Config_name
 		url = SPIDER_URL + "/vm/" + cspVmId
 		method = "DELETE"
 	case actionReboot:
+
+		temp.TargetAction = actionReboot
+		temp.TargetStatus = statusRunning
+		temp.Status = statusRebooting
+
 		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=reboot"
 		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=reboot"
 		method = "GET"
 	case actionSuspend:
+
+		temp.TargetAction = actionSuspend
+		temp.TargetStatus = statusSuspended
+		temp.Status = statusSuspending
+
 		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=suspend"
 		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=suspend"
 		method = "GET"
 	case actionResume:
+
+		temp.TargetAction = actionResume
+		temp.TargetStatus = statusRunning
+		temp.Status = statusResuming
+
 		//url = SPIDER_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.Config_name + "&action=resume"
 		url = SPIDER_URL + "/controlvm/" + cspVmId + "?action=resume"
 		method = "GET"
 	default:
 		return errors.New(action + "is invalid actionType")
 	}
+	updateVmInfo(nsId, mcisId, temp)
 	//fmt.Println("url: " + url + " method: " + method)
 
 	type ControlVMReqInfo struct {
@@ -2146,6 +2313,8 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 	if err != nil {
 		fmt.Println(err)
+		temp.Status = statusFailed
+		updateVmInfo(nsId, mcisId, temp)
 		return err
 	}
 	req.Header.Add("Content-Type", "application/json")
@@ -2184,6 +2353,9 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	}
 	if errTmp != nil {
 		resultTmp.Error = errTmp
+
+		temp.Status = statusFailed
+		updateVmInfo(nsId, mcisId, temp)
 	}
 	results.ResultArray = append(results.ResultArray, resultTmp)
 
@@ -2338,6 +2510,9 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 	mcisStatus := mcisStatusInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisStatus)
 
+	mcisTmp := mcisInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+
 	vmList, err := getVmList(nsId, mcisId)
 	//fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
@@ -2352,7 +2527,7 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 		vmStatusTmp, err := getVmStatus(nsId, mcisId, v)
 		if err != nil {
 			cblog.Error(err)
-			vmStatusTmp.Status = "FAILED"
+			vmStatusTmp.Status = statusFailed
 			return mcisStatus, err
 		}
 		mcisStatus.Vm = append(mcisStatus.Vm, vmStatusTmp)
@@ -2408,6 +2583,22 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 	if statusFlag[9] > 0 {
 		mcisStatus.Status = statusFlagStr[9]
 	}
+
+	var isDone bool
+	isDone = true
+	for _, v := range mcisStatus.Vm {
+		if v.TargetStatus != statusComplete{
+			isDone = false
+		}
+	}
+	if isDone {
+		mcisStatus.TargetAction = actionComplete
+		mcisStatus.TargetStatus = statusComplete
+		mcisTmp.TargetAction = actionComplete
+		mcisTmp.TargetStatus = statusComplete
+		updateMcisInfo(nsId, mcisTmp)
+	}
+
 
 	return mcisStatus, nil
 
@@ -2477,7 +2668,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 	errorInfo := vmStatusInfo{}
-	errorInfo.Status = "FAILED"
+	errorInfo.Status = statusFailed
 
 	if err != nil {
 		fmt.Println(err)
@@ -2510,6 +2701,16 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	common.PrintJsonPretty(statusResponseTmp)
 	fmt.Println("[Calling SPIDER]END\n\n")
 
+	vmStatusTmp := vmStatusInfo{}
+	vmStatusTmp.Id = vmId
+	vmStatusTmp.Name = temp.Name
+	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
+	vmStatusTmp.Public_ip = temp.PublicIP
+	vmStatusTmp.Native_status = statusResponseTmp.Status
+
+	vmStatusTmp.TargetAction= temp.TargetAction
+	vmStatusTmp.TargetStatus= temp.TargetStatus
+
 	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
 	if statusResponseTmp.Status == "Creating" {
 		statusResponseTmp.Status = statusCreating
@@ -2531,20 +2732,48 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		statusResponseTmp.Status = "statusUndefined"
 	}
 
+	//Correct undefined status using TargetAction
+	if vmStatusTmp.TargetAction == actionCreate {
+		if statusResponseTmp.Status == "statusUndefined" {
+			statusResponseTmp.Status = statusCreating
+		}
+	}
+	if vmStatusTmp.TargetAction == actionTerminate {
+		if statusResponseTmp.Status == "statusUndefined" {
+			statusResponseTmp.Status = statusTerminated
+		}
+	}
+	if vmStatusTmp.TargetAction == actionResume {
+		if statusResponseTmp.Status == statusCreating {
+			statusResponseTmp.Status = statusResuming
+		}
+	}
+
 	// End of Temporal CODE.
 
-	vmStatusTmp := vmStatusInfo{}
-	vmStatusTmp.Id = vmId
-	vmStatusTmp.Name = temp.Name
-	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
-	vmStatusTmp.Public_ip = temp.PublicIP
 	vmStatusTmp.Status = statusResponseTmp.Status
 	if err != nil {
 		cblog.Error(err)
-		vmStatusTmp.Status = "FAILED"
+		vmStatusTmp.Status = statusFailed
+	}
+
+	//if TargetStatus == CurrentStatus, record to finialize the control operation
+	if vmStatusTmp.TargetStatus == vmStatusTmp.Status {
+		vmStatusTmp.TargetStatus = statusComplete
+		vmStatusTmp.TargetAction = actionComplete
 	}
 
 	return vmStatusTmp, nil
+
+}
+
+func ValidateStatus() {
+	
+	nsList := common.GetNsList()
+
+	for _, v := range nsList {
+		fmt.Println("validateStatus: NS["+v+"]")
+	}
 
 }
 
@@ -2599,87 +2828,3 @@ func getVmIp(nsId string, mcisId string, vmId string) string {
 	return content.PublicIP
 }
 
-/*
-func insertAgent(serverIP string, userName string, keyPath string) error {
-
-	// server connection info
-	// some options are static for simple PoC.// some options are static for simple PoC.
-	// These must be prepared before.
-	//userName := "ec2-user"
-	port := ":22"
-	serverPort := serverIP + port
-
-	//keyPath := "/root/.aws/awspowerkimkeypair.pem"
-	//keyPath := masterConfigInfos.AWS.KEYFILEPATH
-
-	// file info to copy
-	//sourceFile := "/root/go/src/mcism/mcism_agent/mcism_agent"
-	//sourceFile := "/root/go/src/github.com/cloud-barista/cb-tumblebug/mcism_agent/mcism_agent"
-	homePath := os.Getenv("HOME")
-	sourceFile := homePath + "/go/src/github.com/cloud-barista/cb-tumblebug/mcism_agent/mcism_agent"
-	targetFile := "/tmp/mcism_agent"
-
-	// command for ssh run
-	cmd := "/tmp/mcism_agent &"
-
-	// Connect to the server for scp
-	scpCli, err := scp.Connect(userName, keyPath, serverPort)
-	if err != nil {
-		fmt.Println("Couldn't establisch a connection to the remote server ", err)
-		return err
-	}
-
-	// copy agent into the server.
-	if err := scp.Copy(scpCli, sourceFile, targetFile); err != nil {
-		fmt.Println("Error while copying file ", err)
-		return err
-	}
-
-	// close the session
-	scp.Close(scpCli)
-
-	// Connect to the server for ssh
-	sshCli, err := sshrun.Connect(userName, keyPath, serverPort)
-	if err != nil {
-		fmt.Println("Couldn't establisch a connection to the remote server ", err)
-		return err
-	}
-
-	if err := sshrun.RunCommand(sshCli, cmd); err != nil {
-		fmt.Println("Error while running cmd: "+cmd, err)
-		return err
-	}
-
-	sshrun.Close(sshCli)
-
-	return err
-}
-*/
-
-/*
-func monitorVm(vmIpPort string) (string, string, string) {
-
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(vmIpPort, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	c := pb.NewResourceStatClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Hour)
-	defer cancel()
-
-	r, err := c.GetResourceStat(ctx, &pb.ResourceStatRequest{})
-	if err != nil {
-		log.Fatalf("could not Fetch Resource Status Information: %v", err)
-	}
-	println("[" + r.Servername + "]")
-	log.Printf("%s", r.Cpu)
-	log.Printf("%s", r.Mem)
-	log.Printf("%s", r.Dsk)
-
-	return r.Cpu, r.Mem, r.Dsk
-
-}
-*/

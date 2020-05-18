@@ -97,7 +97,7 @@ func RestGetAllNs(c echo.Context) error {
 		Ns []nsInfo `json:"ns"`
 	}
 
-	nsList := getNsList()
+	nsList := GetNsList()
 
 	for _, v := range nsList {
 
@@ -143,7 +143,7 @@ func RestDelNs(c echo.Context) error {
 
 func RestDelAllNs(c echo.Context) error {
 
-	nsList := getNsList()
+	nsList := GetNsList()
 
 	for _, v := range nsList {
 		err := delNs(v)
@@ -191,9 +191,9 @@ func createNs(u *nsReq) (nsInfo, error) {
 	return content, nil
 }
 
-func getNsList() []string {
+func GetNsList() []string {
 
-	fmt.Println("[List ns")
+	fmt.Println("[List ns]")
 	key := "/ns"
 	fmt.Println(key)
 
