@@ -1,4 +1,17 @@
 #!/bin/bash
+
+function dozing()
+{
+	duration=$1
+	printf "Dozing for %s : " $duration
+	for (( i=1; i<=$duration; i++ ))
+	do
+		printf "%s " $i
+		sleep 1
+	done
+	echo "(Back to work)"
+}
+
 source ../conf.env
 source ../credentials.conf
 
@@ -23,18 +36,77 @@ else
 	INDEX=1
 fi
 
-../6.mcis/just-terminate-mcis.sh $CSP $POSTFIX
-echo "============== sleep 60 before delete MCIS obj"
-sleep 60
+echo '## 6. MCIS: Terminate'
+OUTPUT=$(../6.mcis/just-terminate-mcis.sh $CSP $POSTFIX)
+echo "${OUTPUT}"
+OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
+OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
+echo "${OUTPUT1}"
+echo "${OUTPUT2}"
+if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ]
+then
+	echo "============== sleep 60 before delete MCIS obj"
+	dozing 60
+fi
+
 ../6.mcis/status-mcis.sh $CSP $POSTFIX
 ../6.mcis/terminate-and-delete-mcis.sh $CSP $POSTFIX
 ../5.spec/unregister-spec.sh $CSP $POSTFIX
 ../4.image/unregister-image.sh $CSP $POSTFIX
-../3.sshKey/delete-sshKey.sh $CSP $POSTFIX
-sleep 10
-../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX
-sleep 10
-../1.vNet/delete-vNet.sh $CSP $POSTFIX
+
+echo '## 3. sshKey: Delete'
+OUTPUT=$(../3.sshKey/delete-sshKey.sh $CSP $POSTFIX)
+echo "${OUTPUT}"
+OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
+echo "${OUTPUT}"
+if [ "${OUTPUT}" != 1 ]; then
+	echo "============== sleep 10 after delete-sshKey"
+	dozing 5
+fi
+
+echo '## 2. SecurityGroup: Delete'
+OUTPUT=$(../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX)
+echo "${OUTPUT}"
+OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
+echo "${OUTPUT}"
+if [ "${OUTPUT}" != 1 ]; then
+	echo "============== sleep 10 after delete-securityGroup"
+	dozing 5
+fi
+
+
+echo '## 1. vpc: Delete'
+OUTPUT=$(../1.vNet/delete-vNet.sh $CSP $POSTFIX)
+echo "${OUTPUT}"
+OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent')
+echo "${OUTPUT}"
+if [ "${OUTPUT}" != 0 ]; then
+
+	echo "Retry delete-vNet 15 times"
+	for (( c=1; c<=20; c++ ))
+	do
+		echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
+		dozing 5
+		# retry delete-vNet
+		OUTPUT2=$(../1.vNet/delete-vNet.sh $CSP $POSTFIX)
+		echo "${OUTPUT2}"
+		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent')
+		echo "${OUTPUT2}"
+
+		if [ "${OUTPUT2}" == 0 ]; then
+			echo "OK. delete-vNet complete"
+			break
+		fi
+
+		if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]
+		then
+			echo "Problem in delete-vNet. Exit without unregister-cloud."
+			exit
+		fi
+	done
+
+fi
+
 #../0.settingTB/delete-ns.sh $CSP $POSTFIX
 ../0.settingSpider/unregister-cloud.sh $CSP $POSTFIX
 
@@ -47,4 +119,4 @@ sed -i "/${CSP} ${POSTFIX}/d" ./executionStatus
 echo ""
 echo "[Executed Command List]"
 cat  ./executionStatus
-
+echo ""

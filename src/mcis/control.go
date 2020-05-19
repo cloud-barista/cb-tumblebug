@@ -2748,6 +2748,11 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 			statusResponseTmp.Status = statusResuming
 		}
 	}
+	if vmStatusTmp.TargetAction == actionReboot {
+		if statusResponseTmp.Status == statusSuspending || statusResponseTmp.Status == statusSuspended {
+			statusResponseTmp.Status = statusRebooting
+		}
+	}
 
 	// End of Temporal CODE.
 

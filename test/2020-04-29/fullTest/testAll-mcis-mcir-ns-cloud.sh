@@ -1,4 +1,17 @@
 #!/bin/bash
+
+function dozing()
+{
+	duration=$1
+	printf "Dozing for %s : " $duration
+	for (( i=1; i<=$duration; i++ ))
+	do
+		printf "%s " $i
+		sleep 1
+	done
+	echo "(Back to work)"
+}
+
 source ../conf.env
 source ../credentials.conf
 
@@ -26,14 +39,14 @@ fi
 ../0.settingSpider/register-cloud.sh $CSP $POSTFIX
 ../0.settingTB/create-ns.sh $CSP $POSTFIX
 ../1.vNet/create-vNet.sh $CSP $POSTFIX
-sleep 10
+dozing 10
 ../2.securityGroup/create-securityGroup.sh $CSP $POSTFIX
-sleep 10
+dozing 10
 ../3.sshKey/create-sshKey.sh $CSP $POSTFIX
 ../4.image/register-image.sh $CSP $POSTFIX
 ../5.spec/register-spec.sh $CSP $POSTFIX
 ../6.mcis/create-mcis.sh $CSP $POSTFIX
-sleep 1
+dozing 1
 ../6.mcis/status-mcis.sh $CSP $POSTFIX
 
 _self="${0##*/}"
@@ -44,3 +57,4 @@ echo "[CMD] ${_self} ${CSP} ${POSTFIX}" >> ./executionStatus
 echo ""
 echo "[Executed Command List]"
 cat  ./executionStatus
+echo ""
