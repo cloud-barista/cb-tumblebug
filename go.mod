@@ -21,6 +21,7 @@ require (
 	github.com/snowzach/rotatefilehook v0.0.0-20180327172521-2f64f265f58c // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
+	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	github.com/xujiajun/nutsdb v0.5.1-0.20200320023740-0cc84000d103 // indirect
 	go.etcd.io/etcd v3.3.21+incompatible // indirect
