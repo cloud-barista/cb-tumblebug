@@ -30,8 +30,11 @@ elif [ "${CSP}" == "azure" ]; then
 elif [ "${CSP}" == "gcp" ]; then
 	echo "[Test for GCP]"
 	INDEX=3
+elif [ "${CSP}" == "alibaba" ]; then
+	echo "[Test for Alibaba]"
+	INDEX=4
 else
-	echo "[No acceptable argument was provided (aws, azure, gcp, ..). Default: Test for AWS]"
+	echo "[No acceptable argument was provided (aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
 	CSP="aws"
 	INDEX=1
 fi
