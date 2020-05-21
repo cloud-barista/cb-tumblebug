@@ -43,6 +43,10 @@ fi
 ../0.settingTB/create-ns.sh $CSP $POSTFIX
 ../1.vNet/create-vNet.sh $CSP $POSTFIX
 dozing 10
+if [ "${CSP}" == "gcp" ]; then
+	echo "[Test for GCP needs more preparation time]"
+	dozing 20
+fi
 ../2.securityGroup/create-securityGroup.sh $CSP $POSTFIX
 dozing 10
 ../3.sshKey/create-sshKey.sh $CSP $POSTFIX
