@@ -23,9 +23,13 @@ src/cli/cli
 meta_db/
 
 # Config file for test
-test/2020-04-29/credentials.conf
-test/2020-04-29/fullTest/executionStatus
+test/official/credentials.conf
+test/official/sequentialFullTests/executionStatus
 
 # Config file for mcism
 conf/
+
+# Runtime files
+src/benchmarking.csv
+src/rttmap.csv
 

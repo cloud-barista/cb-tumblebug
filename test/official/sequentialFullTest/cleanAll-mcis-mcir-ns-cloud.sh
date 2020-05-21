@@ -57,35 +57,99 @@ fi
 ../5.spec/unregister-spec.sh $CSP $POSTFIX
 ../4.image/unregister-image.sh $CSP $POSTFIX
 
+# echo '## 3. sshKey: Delete'
+# OUTPUT=$(../3.sshKey/delete-sshKey.sh $CSP $POSTFIX)
+# echo "${OUTPUT}"
+# OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
+# echo "${OUTPUT}"
+# if [ "${OUTPUT}" != 1 ]; then
+# 	echo "============== sleep 10 after delete-sshKey"
+# 	dozing 5
+# fi
+
 echo '## 3. sshKey: Delete'
 OUTPUT=$(../3.sshKey/delete-sshKey.sh $CSP $POSTFIX)
 echo "${OUTPUT}"
-OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
+OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 echo "${OUTPUT}"
-if [ "${OUTPUT}" != 1 ]; then
-	echo "============== sleep 10 after delete-sshKey"
-	dozing 5
+if [ "${OUTPUT}" != 0 ]; then
+
+	echo "Retry sshKey: Delete 20 times"
+	for (( c=1; c<=20; c++ ))
+	do
+		echo "Trial: ${c}. Sleep 5 before retry sshKey: Delete"
+		dozing 5
+		# retry sshKey: Delete
+		OUTPUT2=$(../3.sshKey/delete-sshKey.sh $CSP $POSTFIX)
+		echo "${OUTPUT2}"
+		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
+		echo "${OUTPUT2}"
+
+		if [ "${OUTPUT2}" == 0 ]; then
+			echo "OK. sshKey: Delete complete"
+			break
+		fi
+
+		if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]
+		then
+			echo "Problem in sshKey: Delete. Exit without unregister-cloud."
+			exit
+		fi
+	done
+
 fi
+
+# echo '## 2. SecurityGroup: Delete'
+# OUTPUT=$(../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX)
+# echo "${OUTPUT}"
+# OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
+# echo "${OUTPUT}"
+# if [ "${OUTPUT}" != 1 ]; then
+# 	echo "============== sleep 10 after delete-securityGroup"
+# 	dozing 5
+# fi
 
 echo '## 2. SecurityGroup: Delete'
 OUTPUT=$(../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX)
 echo "${OUTPUT}"
-OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
+OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 echo "${OUTPUT}"
-if [ "${OUTPUT}" != 1 ]; then
-	echo "============== sleep 10 after delete-securityGroup"
-	dozing 5
+if [ "${OUTPUT}" != 0 ]; then
+
+	echo "Retry SecurityGroup: Delete 20 times"
+	for (( c=1; c<=20; c++ ))
+	do
+		echo "Trial: ${c}. Sleep 5 before retry SecurityGroup: Delete"
+		dozing 5
+		# retry SecurityGroup: Delete
+		OUTPUT2=$(../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX)
+		echo "${OUTPUT2}"
+		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
+		echo "${OUTPUT2}"
+
+		if [ "${OUTPUT2}" == 0 ]; then
+			echo "OK. SecurityGroup: Delete complete"
+			break
+		fi
+
+		if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]
+		then
+			echo "Problem in SecurityGroup: Delete. Exit without unregister-cloud."
+			exit
+		fi
+	done
+
 fi
 
 
 echo '## 1. vpc: Delete'
 OUTPUT=$(../1.vNet/delete-vNet.sh $CSP $POSTFIX)
 echo "${OUTPUT}"
-OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent')
+OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 echo "${OUTPUT}"
 if [ "${OUTPUT}" != 0 ]; then
 
-	echo "Retry delete-vNet 15 times"
+	echo "Retry delete-vNet 20 times"
 	for (( c=1; c<=20; c++ ))
 	do
 		echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
@@ -93,7 +157,7 @@ if [ "${OUTPUT}" != 0 ]; then
 		# retry delete-vNet
 		OUTPUT2=$(../1.vNet/delete-vNet.sh $CSP $POSTFIX)
 		echo "${OUTPUT2}"
-		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent')
+		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 		echo "${OUTPUT2}"
 
 		if [ "${OUTPUT2}" == 0 ]; then
