@@ -17,6 +17,7 @@ import (
 
 	//csv file handling
 	"encoding/csv"
+	"bufio"
 	"os"
 
 	// REST API (echo)
@@ -212,9 +213,18 @@ type vmOverview struct {
 	Name        string     `json:"name"`
 	Config_name string     `json:"config_name"`
 	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	Location    geoLocation `json:"location"` 
 	PublicIP    string     `json:"publicIP"`
 	PublicDNS   string     `json:"publicDNS"`
 	Status      string     `json:"status"`
+}
+
+type geoLocation struct {
+	Latitude	string 	`json:"latitude"`
+	Longitude	string	`json:"longitude"`
+	BriefAddr	string	`json:"briefAddr"`
+	CloudType	string	`json:"cloudType"`
+	NativeRegion	string	`json:"nativeRegion"`
 }
 
 type vmInfo struct {
@@ -235,6 +245,8 @@ type vmInfo struct {
 
 	VmUserId     string `json:"vmUserId"`
 	VmUserPasswd string `json:"vmUserPasswd"`
+
+	Location    geoLocation `json:"location"` 
 
 	// 2. Provided by CB-Spider
 	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
@@ -2231,6 +2243,10 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	vmInfoData.VMBlockDisk = temp.VMBlockDisk
 	//vmInfoData.KeyValueList = temp.KeyValueList
 
+
+	configTmp, _ := common.GetConnConfig(vmInfoData.Config_name)	
+	vmInfoData.Location = getCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(temp.Region.Region))
+
 	//content.Status = temp.
 	//content.Cloud_id = temp.
 
@@ -2784,18 +2800,22 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 		}
 	}
 
-	if tmpMax == len(mcisStatus.Vm) {
-		mcisStatus.Status = statusFlagStr[tmpMaxIndex]
-	} else if tmpMax < len(mcisStatus.Vm) {
-		mcisStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex]
+	numVm := len(mcisStatus.Vm)
+	proportionStr :=  "-(" + strconv.Itoa(tmpMax) + "/" + strconv.Itoa(numVm) + ")"
+	if tmpMax == numVm {
+		mcisStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
+	} else if tmpMax < numVm {
+		mcisStatus.Status = "Partial-" + statusFlagStr[tmpMaxIndex] + proportionStr
 	} else {
-		mcisStatus.Status = statusFlagStr[9]
+		mcisStatus.Status = statusFlagStr[9] + proportionStr
 	}
+	proportionStr = "-(" + strconv.Itoa(statusFlag[0]) + "/" + strconv.Itoa(numVm) + ")"
 	if statusFlag[0] > 0 {
-		mcisStatus.Status = statusFlagStr[0]
+		mcisStatus.Status = statusFlagStr[0] + proportionStr
 	}
+	proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
 	if statusFlag[9] > 0 {
-		mcisStatus.Status = statusFlagStr[9]
+		mcisStatus.Status = statusFlagStr[9] + proportionStr
 	}
 
 	var isDone bool
@@ -3064,4 +3084,66 @@ func getVmSpec(nsId string, mcisId string, vmId string) string {
 	fmt.Printf("%+v\n", content.Spec_id)
 
 	return content.Spec_id
+}
+
+func getCloudLocation(cloudType string, nativeRegion string) geoLocation {
+
+	location := geoLocation{}
+
+	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
+
+	fmt.Printf("[getCloudLocation] KEY: %+v\n", key)
+
+	keyValue, err := store.Get(key)
+
+	if err != nil {
+		cblog.Error(err)
+		return location
+	}
+
+	if keyValue == nil {
+		file, fileErr := os.Open("./resource/cloudlocation.csv")
+		defer file.Close()
+		if fileErr != nil {
+			cblog.Error(fileErr)
+			return location
+		}
+		
+		rdr := csv.NewReader(bufio.NewReader(file))
+		rows, _ := rdr.ReadAll()
+		for i, row := range rows {
+			keyLoc := "/cloudtype/" + rows[i][0] + "/region/" + rows[i][1]
+			location.CloudType = rows[i][0]
+			location.NativeRegion = rows[i][1]
+			location.BriefAddr = rows[i][2]
+			location.Latitude = rows[i][3]
+			location.Longitude = rows[i][4]
+			valLoc, _ := json.Marshal(location)
+			dbErr := store.Put(string(keyLoc), string(valLoc))
+			if dbErr != nil {
+				cblog.Error(dbErr)
+				return location
+			}
+			for j := range row {
+				fmt.Printf("%s ", rows[i][j])
+			}
+			fmt.Println()
+		}
+	}
+	keyValue, err = store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return location
+	}
+	
+	if keyValue != nil {
+		fmt.Printf("[getCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
+		err = json.Unmarshal([]byte(keyValue.Value), &location)
+		if err != nil {
+			cblog.Error(err)
+			return location
+		}
+	}
+	
+	return location
 }
