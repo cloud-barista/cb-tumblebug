@@ -1,0 +1,112 @@
+CloudType,ID,DisplayName,Latitude,Longitude
+azure,eastasia,East Asia,22.2670,114.1880
+azure,southeastasia,Southeast Asia,1.2830,103.8330
+azure,centralus,Central US,41.5908,-93.6208
+azure,eastus,East US,37.3719,-79.8164
+azure,eastus2,East US 2,36.6681,-78.3889
+azure,westus,West US,37.7830,-122.4170
+azure,northcentralus,North Central US,41.8819,-87.6278
+azure,southcentralus,South Central US,29.4167,-98.5000
+azure,northeurope,North Europe,53.3478,-6.2597
+azure,westeurope,West Europe,52.3667,4.9000
+azure,japanwest,Japan West,34.6939,135.5022
+azure,japaneast,Japan East,35.6800,139.7700
+azure,brazilsouth,Brazil South,-23.5500,-46.6330
+azure,australiaeast,Australia East,-33.8600,151.2094
+azure,australiasoutheast,Australia Southeast,-37.8136,144.9631
+azure,southindia,South India,12.9822,80.1636
+azure,centralindia,Central India,18.5822,73.9197
+azure,westindia,West India,19.0880,72.8680
+azure,canadacentral,Canada Central,43.6530,-79.3830
+azure,canadaeast,Canada East,46.8170,-71.2170
+azure,uksouth,UK South,50.9410,-0.7990
+azure,ukwest,UK West,53.4270,-3.0840
+azure,westcentralus,West Central US,40.8900,-110.2340
+azure,westus2,West US 2,47.2330,-119.8520
+azure,koreacentral,Korea Central,37.5665,126.9780
+azure,koreasouth,Korea South,35.1796,129.0756
+azure,francecentral,France Central,46.3772,2.3730
+azure,francesouth,France South,43.8345,2.1972
+azure,australiacentral,Australia Central,-35.3075,149.1244
+azure,australiacentral2,Australia Central 2,-35.3075,149.1244
+azure,uaecentral,UAE Central,24.4667,54.3667
+azure,uaenorth,UAE North,25.2667,55.3167
+azure,southafricanorth,South Africa North,-25.7313,28.2184
+azure,southafricawest,South Africa West,-34.0757,18.8433
+azure,switzerlandnorth,Switzerland North,47.4515,8.5646
+azure,switzerlandwest,Switzerland West,46.2044,6.1432
+azure,germanynorth,Germany North,53.0736,8.8064
+azure,germanywestcentral,Germany West Central,50.1109,8.6821
+azure,norwaywest,Norway West,58.9700,5.7331
+azure,norwayeast,Norway East,59.9139,10.7522
+aws,af-south-1,Africa (Cape Town),-33.9000,18.5000
+aws,ap-east-1,Asia Pacific (Hong Kong),22.2600,114.1800
+aws,ap-northeast-1,Tokyo,35.4100,139.4200
+aws,ap-northeast-2,Seoul,37.3600,126.7800
+aws,ap-northeast-3,Asia Pacific (Osaka-Local),34.3800,131.7000
+aws,ap-south-1,Mumbai,19.0800,72.8800
+aws,ap-southeast-1,Singapore,1.3700,103.8000
+aws,ap-southeast-2,Sydney,-33.8600,151.2000
+aws,ca-central-1,Canada Central,45.5000,-73.6000
+aws,cn-north-1,China (Beijing),41.7000,117.5000
+aws,cn-northwest-1,China (Ningxia),37.3000,113.3000
+aws,eu-central-1,Frankfurt,50.0000,8.0000
+aws,eu-north-1,Europe (Stockholm),64.6000,14.2000
+aws,eu-south-1,Europe (Milan),45.4000,9.1000
+aws,eu-west-1,Ireland,53.0000,-8.0000
+aws,eu-west-2,London,51.0000,-0.1000
+aws,eu-west-3,Paris,48.8600,2.3500
+aws,me-south-1,Middle East (Bahrain),25.0000,49.6000
+aws,sa-east-1,Sao Paulo,-23.3400,-46.3800
+aws,us-east-1,Virginia,38.1300,-78.4500
+aws,us-east-2,Ohio,39.9600,-83.0000
+aws,us-west-1,California,37.3500,-121.9600
+aws,us-west-2,Oregon,46.1500,-123.8800
+aws,us-gov-east-1,AWS GovCloud (US-East),37.0000,-81.0000
+aws,us-gov-west-1,AWS GovCloud (US),40.0000,-120.0000
+gcp,asia-east1,Changhua County  Taiwan,24.0756,120.5451
+gcp,asia-east2,Hong Kong,22.3964,114.1095
+gcp,asia-northeast1,Tokyo  Japan,35.6895,139.6917
+gcp,asia-northeast2,Osaka  Japan,34.6937,135.5022
+gcp,asia-northeast3,Seoul  South Korea,37.2000,127.0000
+gcp,asia-south1,Mumbai  India,19.0761,72.8774
+gcp,asia-southeast1,Jurong West  Singapore,1.3400,103.7041
+gcp,australia-southeast1,Sydney  Australia,-33.8651,151.2099
+gcp,europe-north1,Hamina  Finland,60.5700,27.2000
+gcp,europe-west1,St. Ghislain  Belgium,50.4482,3.8189
+gcp,europe-west2,London  England  UK,51.5099,-0.1181
+gcp,europe-west3,Frankfurt  Germany,50.1109,8.6821
+gcp,europe-west4,Eemshaven  Netherlands,53.4423,6.8253
+gcp,europe-west6,Zurich  Switzerland,47.3667,8.5500
+gcp,northamerica-northeast1,Montreal  Quebec  Canada,45.5089,-73.5617
+gcp,southamerica-east1,Osasco (Sao Paulo)  Brazil,-23.5325,-46.7917
+gcp,us-central1,Council Bluffs  Iowa  USA,41.2522,-95.8575
+gcp,us-east1,Moncks Corner  South Carolina  USA,33.1913,-80.0040
+gcp,us-east4,Ashburn  Northern Virginia  USA,39.0403,-77.4852
+gcp,us-west1,The Dalles  Oregon  USA,45.5946,-121.1787
+gcp,us-west2,Los Angeles  California  USA,34.0522,-118.2437
+gcp,us-west3,Salt Lake City  Utah  USA,40.7587,-111.8762
+gcp,us-west4,Las Vegas  Nevada  USA,36.1146,-115.1728
+alibaba,cn-qingdao,China (Qingdao),36.3000,120.2200
+alibaba,cn-beijing,China (Beijing),39.5427,116.2350
+alibaba,cn-zhangjiakou,China (Zhangjiakou),40.4836,114.5245
+alibaba,cn-huhehaote,China (Hohhot),40.5046,111.4358
+alibaba,cn-hangzhou,China (Hangzhou),30.2500,120.1666
+alibaba,cn-shanghai,China (Shanghai),31.2240,121.4691
+alibaba,cn-shenzhen,China (Shenzhen),22.5428,114.0629
+alibaba,cn-heyuan,China (Heyuan),23.7333,114.6830
+alibaba,cn-chengdu,China (Chengdu),30.6570,104.0800
+alibaba,cn-hongkong,China (Hong Kong),22.4464,114.5095
+alibaba,ap-southeast-1,Singapore,1.3500,103.2000
+alibaba,ap-southeast-2,Australia (Sydney),-33.1651,151.8099
+alibaba,ap-southeast-3,Malaysia (Kuala Lumpur),3.1408,101.6932
+alibaba,ap-southeast-5,Indonesia (Jakarta),-6.2000,106.8160
+alibaba,ap-south-1,India (Mumbai),19.1761,72.1774
+alibaba,ap-northeast-1,Japan (Tokyo),34.6895,139.9917
+alibaba,us-west-1,US (Silicon Valley),37.3700,-122.0400
+alibaba,us-east-1,US (Virginia),39.1300,-78.0000
+alibaba,eu-central-1,Germany (Frankfurt),50.4000,8.7000
+alibaba,eu-west-1,UK (London),51.8000,-0.2000
+alibaba,me-east-1,UAE (Dubai),25.2770,55.2962
+cloudit,default,Seoul  South Korea,37.2665,126.7780
+
