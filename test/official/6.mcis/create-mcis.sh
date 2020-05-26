@@ -7,7 +7,8 @@ echo "## 6. vm: Create MCIS"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -28,51 +29,50 @@ fi
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 	'{
-		"name": "MCIS-'$CSP'-'$POSTFIX'",
-		"vm_num": "3",
+		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 		"description": "Tumblebug Demo",
 		"vm_req": [ {
-			"name": "vm-'$CSP'-'$POSTFIX'-01",
-			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
+			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-01",
+			"image_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vm_access_id": "cb-user",
-			"config_name": "'${CONN_CONFIG[INDEX]}'",
-			"ssh_key_id": "keypair-'$CSP'-'$POSTFIX'",
-			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
+			"config_name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+			"ssh_key_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"spec_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"security_group_ids": [
-				"sg-'$CSP'-'$POSTFIX'"
+				"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 			],
-			"vnet_id": "vpc-'$CSP'-'$POSTFIX'",
-			"subnet_id": "subnet-'$CSP'-'$POSTFIX'",
+			"vnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"subnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
 			"vm_access_passwd": ""
 		},
 		{
-			"name": "vm-'$CSP'-'$POSTFIX'-02",
-			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
+			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-02",
+			"image_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vm_access_id": "cb-user",
-			"config_name": "'${CONN_CONFIG[INDEX]}'",
-			"ssh_key_id": "keypair-'$CSP'-'$POSTFIX'",
-			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
+			"config_name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+			"ssh_key_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"spec_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"security_group_ids": [
-				"sg-'$CSP'-'$POSTFIX'"
+				"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 			],
-			"vnet_id": "vpc-'$CSP'-'$POSTFIX'",
-			"subnet_id": "subnet-'$CSP'-'$POSTFIX'",
+			"vnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"subnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
 			"vm_access_passwd": ""
 		},
 		{
-			"name": "vm-'$CSP'-'$POSTFIX'-03",
-			"image_id": "IMAGE-'$CSP'-'$POSTFIX'",
+			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-03",
+			"image_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vm_access_id": "cb-user",
-			"config_name": "'${CONN_CONFIG[INDEX]}'",
-			"ssh_key_id": "keypair-'$CSP'-'$POSTFIX'",
-			"spec_id": "SPEC-'$CSP'-'$POSTFIX'",
+			"config_name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+			"ssh_key_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"spec_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"security_group_ids": [
-				"sg-'$CSP'-'$POSTFIX'"
+				"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 			],
-			"vnet_id": "vpc-'$CSP'-'$POSTFIX'",
-			"subnet_id": "subnet-'$CSP'-'$POSTFIX'",
+			"vnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"subnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
 			"vm_access_passwd": ""
 		} ]

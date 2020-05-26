@@ -3,7 +3,8 @@
 source ../conf.env
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -24,14 +25,14 @@ fi
 
 curl -sX POST http://localhost:1024/spider/vm -H 'Content-Type: application/json' -d \
 	'{ 
-		"ConnectionName": "'${CONN_CONFIG[INDEX]}'", 
+		"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 		"ReqInfo": { 
-			"Name": "vm-'$CSP'-'$POSTFIX'",
-			"ImageName": "'${IMAGE_NAME[INDEX]}'", 
-			"VPCName": "vpc-'$CSP'-'$POSTFIX'",
-			"SubnetName": "subnet-'$CSP'-'$POSTFIX'",
-			"SecurityGroupNames": [ "sg-'$CSP'-'$POSTFIX'" ], 
-			"VMSpecName": "'${SPEC_NAME[INDEX]}'", 
-			"KeyPairName": "keypair-'$CSP'-'$POSTFIX'"
+			"Name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"ImageName": "'${IMAGE_NAME[$INDEX,$REGION]}'", 
+			"VPCName": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"SubnetName": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"SecurityGroupNames": [ "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'" ], 
+			"VMSpecName": "'${SPEC_NAME[$INDEX,$REGION]}'", 
+			"KeyPairName": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 		} 
 	}' | json_pp

@@ -7,7 +7,8 @@ echo "## 6. VM: Reboot MCIS"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -26,4 +27,4 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/mcis/MCIS-$CSP-$POSTFIX?action=reboot | json_pp
+curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=reboot | json_pp

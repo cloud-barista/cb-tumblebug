@@ -3,7 +3,8 @@
 source ../conf.env
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -23,4 +24,4 @@ else
 fi
 
 
-curl -sX GET http://localhost:1024/spider/securitygroup/sg-$CSP-$POSTFIX -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[INDEX]}'"}' | json_pp
+curl -sX GET http://localhost:1024/spider/securitygroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' | json_pp

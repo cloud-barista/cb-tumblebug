@@ -7,7 +7,8 @@ echo "## 1. vpc: Create"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -28,11 +29,11 @@ fi
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
 	'{
-		"name": "vpc-'$CSP'-'$POSTFIX'",
-		"connectionName": "'${CONN_CONFIG[INDEX]}'",
+		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 		"cidrBlock": "192.168.0.0/16",
 		"subnetReqInfoList": [ {
-			"Name": "subnet-'$CSP'-'$POSTFIX'",
+			"Name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"IPv4_CIDR": "192.168.1.0/24"
 		} ]
 	}' | json_pp #|| return 1

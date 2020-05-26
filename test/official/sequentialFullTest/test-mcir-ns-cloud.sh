@@ -1,4 +1,17 @@
 #!/bin/bash
+
+function dozing()
+{
+	duration=$1
+	printf "Dozing for %s : " $duration
+	for (( i=1; i<=$duration; i++ ))
+	do
+		printf "%s " $i
+		sleep 1
+	done
+	echo "(Back to work)"
+}
+
 source ../conf.env
 source ../credentials.conf
 
@@ -7,7 +20,8 @@ echo "## Create MCIS from Zero Base"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -26,23 +40,27 @@ else
 	INDEX=1
 fi
 
-../0.settingSpider/register-cloud.sh $CSP $POSTFIX
-../0.settingTB/create-ns.sh $CSP $POSTFIX
-../1.vNet/create-vNet.sh $CSP $POSTFIX
-sleep 10
-../2.securityGroup/create-securityGroup.sh $CSP $POSTFIX
-sleep 10
-../3.sshKey/create-sshKey.sh $CSP $POSTFIX
-../4.image/register-image.sh $CSP $POSTFIX
-../5.spec/register-spec.sh $CSP $POSTFIX
-
+../0.settingSpider/register-cloud.sh $CSP $REGION $POSTFIX
+../0.settingTB/create-ns.sh $CSP $REGION $POSTFIX
+../1.vNet/create-vNet.sh $CSP $REGION $POSTFIX
+dozing 10
+if [ "${CSP}" == "gcp" ]; then
+	echo "[Test for GCP needs more preparation time]"
+	dozing 20
+fi
+../2.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
+dozing 10
+../3.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
+../4.image/register-image.sh $CSP $REGION $POSTFIX
+../5.spec/register-spec.sh $CSP $REGION $POSTFIX
 
 
 _self="${0##*/}"
+
 echo ""
 echo "[Logging to notify latest command history]"
-echo "[CMD] ${_self} ${CSP} ${POSTFIX}" >> ./executionStatus
+echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX}" >> ./executionStatus
 echo ""
 echo "[Executed Command List]"
 cat  ./executionStatus
-
+echo ""

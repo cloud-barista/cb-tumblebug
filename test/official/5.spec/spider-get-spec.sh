@@ -7,7 +7,8 @@ echo "## 5. spec: Fetch"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -26,5 +27,5 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1024/spider/vmspec/${SPEC_NAME[INDEX]} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[INDEX]}'" }' | json_pp
+curl -sX GET http://localhost:1024/spider/vmspec/${SPEC_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | json_pp
 
