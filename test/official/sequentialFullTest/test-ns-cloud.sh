@@ -1,4 +1,17 @@
 #!/bin/bash
+
+function dozing()
+{
+	duration=$1
+	printf "Dozing for %s : " $duration
+	for (( i=1; i<=$duration; i++ ))
+	do
+		printf "%s " $i
+		sleep 1
+	done
+	echo "(Back to work)"
+}
+
 source ../conf.env
 source ../credentials.conf
 
@@ -7,7 +20,8 @@ echo "## Create MCIS from Zero Base"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -26,14 +40,16 @@ else
 	INDEX=1
 fi
 
-../0.settingSpider/register-cloud.sh $CSP $POSTFIX
-../0.settingTB/create-ns.sh $CSP $POSTFIX
+../0.settingSpider/register-cloud.sh $CSP $REGION $POSTFIX
+../0.settingTB/create-ns.sh $CSP $REGION $POSTFIX
 
 
 _self="${0##*/}"
+
 echo ""
 echo "[Logging to notify latest command history]"
-echo "[CMD] ${_self} ${CSP} ${POSTFIX}" >> ./executionStatus
+echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX}" >> ./executionStatus
 echo ""
 echo "[Executed Command List]"
 cat  ./executionStatus
+echo ""

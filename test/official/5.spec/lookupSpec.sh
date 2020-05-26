@@ -7,7 +7,8 @@ echo "## 5. spec: Lookup Spec"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -27,7 +28,7 @@ else
 fi
 
 
-curl -sX GET http://localhost:1323/tumblebug/lookupSpec/${SPEC_NAME[INDEX]} -H 'Content-Type: application/json' -d \
+curl -sX GET http://localhost:1323/tumblebug/lookupSpec/${SPEC_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d \
 	'{ 
-		"connectionName": "'${CONN_CONFIG[INDEX]}'"
+		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
 	}' | json_pp #|| return 1

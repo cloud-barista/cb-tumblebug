@@ -7,7 +7,8 @@ echo "## 4. image: Register"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -28,9 +29,9 @@ fi
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/image?action=registerWithInfo -H 'Content-Type: application/json' -d \
 	'{ 
-		"connectionName": "'${CONN_CONFIG[INDEX]}'", 
-		"name": "IMAGE-'$CSP'-'$POSTFIX'",
-        "cspImageId": "'${IMAGE_NAME[INDEX]}'",
+		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
+		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+        "cspImageId": "'${IMAGE_NAME[$INDEX,$REGION]}'",
         "cspImageName": "",
         "creationDate": "",
         "description": "Canonical, Ubuntu, 18.04 LTS, amd64 bionic",

@@ -7,7 +7,8 @@ echo "## 0. Remove All Cloud Connction Config(s)"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -29,10 +30,10 @@ fi
 RESTSERVER=localhost
 
 # for Cloud Connection Config Info
-curl -sX DELETE http://$RESTSERVER:1024/spider/connectionconfig/${CONN_CONFIG[INDEX]}
+curl -sX DELETE http://$RESTSERVER:1024/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]}
 
 # for Cloud Region Info
-curl -sX DELETE http://$RESTSERVER:1024/spider/region/${RegionName[INDEX]}
+curl -sX DELETE http://$RESTSERVER:1024/spider/region/${RegionName[$INDEX,$REGION]}
 
 # for Cloud Credential Info
 curl -sX DELETE http://$RESTSERVER:1024/spider/credential/${CredentialName[INDEX]}

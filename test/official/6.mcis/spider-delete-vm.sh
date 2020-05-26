@@ -3,7 +3,8 @@
 source ../conf.env
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -21,8 +22,8 @@ else
 	CSP="aws"
 	INDEX=1
 fi
-
-curl -sX DELETE http://localhost:1024/spider/vm/vm-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
+#curl -sX DELETE http://localhost:1024/spider/vm/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H
+curl -sX DELETE http://localhost:1024/spider/vm/alibaba-ap-northeast-1-shson-01 -H 'Content-Type: application/json' -d \
     '{ 
-        "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
+        "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
     }' | json_pp

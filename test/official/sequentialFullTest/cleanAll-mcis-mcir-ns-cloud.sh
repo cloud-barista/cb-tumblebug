@@ -20,7 +20,8 @@ echo "## Remove MCIS test to Zero Base"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -40,7 +41,7 @@ else
 fi
 
 echo '## 6. MCIS: Terminate'
-OUTPUT=$(../6.mcis/just-terminate-mcis.sh $CSP $POSTFIX)
+OUTPUT=$(../6.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX)
 echo "${OUTPUT}"
 OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
@@ -52,13 +53,13 @@ then
 	dozing 60
 fi
 
-../6.mcis/status-mcis.sh $CSP $POSTFIX
-../6.mcis/terminate-and-delete-mcis.sh $CSP $POSTFIX
-../5.spec/unregister-spec.sh $CSP $POSTFIX
-../4.image/unregister-image.sh $CSP $POSTFIX
+../6.mcis/status-mcis.sh $CSP $REGION $POSTFIX
+../6.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX
+../5.spec/unregister-spec.sh $CSP $REGION $POSTFIX
+../4.image/unregister-image.sh $CSP $REGION $POSTFIX
 
 # echo '## 3. sshKey: Delete'
-# OUTPUT=$(../3.sshKey/delete-sshKey.sh $CSP $POSTFIX)
+# OUTPUT=$(../3.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX)
 # echo "${OUTPUT}"
 # OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
 # echo "${OUTPUT}"
@@ -68,7 +69,7 @@ fi
 # fi
 
 echo '## 3. sshKey: Delete'
-OUTPUT=$(../3.sshKey/delete-sshKey.sh $CSP $POSTFIX)
+OUTPUT=$(../3.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX)
 echo "${OUTPUT}"
 OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 echo "${OUTPUT}"
@@ -80,7 +81,7 @@ if [ "${OUTPUT}" != 0 ]; then
 		echo "Trial: ${c}. Sleep 5 before retry sshKey: Delete"
 		dozing 5
 		# retry sshKey: Delete
-		OUTPUT2=$(../3.sshKey/delete-sshKey.sh $CSP $POSTFIX)
+		OUTPUT2=$(../3.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX)
 		echo "${OUTPUT2}"
 		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 		echo "${OUTPUT2}"
@@ -100,7 +101,7 @@ if [ "${OUTPUT}" != 0 ]; then
 fi
 
 # echo '## 2. SecurityGroup: Delete'
-# OUTPUT=$(../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX)
+# OUTPUT=$(../2.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX)
 # echo "${OUTPUT}"
 # OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
 # echo "${OUTPUT}"
@@ -110,7 +111,7 @@ fi
 # fi
 
 echo '## 2. SecurityGroup: Delete'
-OUTPUT=$(../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX)
+OUTPUT=$(../2.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX)
 echo "${OUTPUT}"
 OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 echo "${OUTPUT}"
@@ -122,7 +123,7 @@ if [ "${OUTPUT}" != 0 ]; then
 		echo "Trial: ${c}. Sleep 5 before retry SecurityGroup: Delete"
 		dozing 5
 		# retry SecurityGroup: Delete
-		OUTPUT2=$(../2.securityGroup/delete-securityGroup.sh $CSP $POSTFIX)
+		OUTPUT2=$(../2.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX)
 		echo "${OUTPUT2}"
 		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 		echo "${OUTPUT2}"
@@ -143,7 +144,7 @@ fi
 
 
 echo '## 1. vpc: Delete'
-OUTPUT=$(../1.vNet/delete-vNet.sh $CSP $POSTFIX)
+OUTPUT=$(../1.vNet/delete-vNet.sh $CSP $REGION $POSTFIX)
 echo "${OUTPUT}"
 OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 echo "${OUTPUT}"
@@ -155,7 +156,7 @@ if [ "${OUTPUT}" != 0 ]; then
 		echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
 		dozing 5
 		# retry delete-vNet
-		OUTPUT2=$(../1.vNet/delete-vNet.sh $CSP $POSTFIX)
+		OUTPUT2=$(../1.vNet/delete-vNet.sh $CSP $REGION $POSTFIX)
 		echo "${OUTPUT2}"
 		OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 		echo "${OUTPUT2}"
@@ -174,15 +175,15 @@ if [ "${OUTPUT}" != 0 ]; then
 
 fi
 
-#../0.settingTB/delete-ns.sh $CSP $POSTFIX
-../0.settingSpider/unregister-cloud.sh $CSP $POSTFIX
+#../0.settingTB/delete-ns.sh $CSP $REGION $POSTFIX
+../0.settingSpider/unregister-cloud.sh $CSP $REGION $POSTFIX
 
 
 _self="${0##*/}"
 
 echo ""
 echo "[Cleaning related commands in history file executionStatus]"
-sed -i "/${CSP} ${POSTFIX}/d" ./executionStatus
+sed -i "/${CSP} ${REGION} ${POSTFIX}/d" ./executionStatus
 echo ""
 echo "[Executed Command List]"
 cat  ./executionStatus

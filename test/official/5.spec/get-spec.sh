@@ -7,7 +7,8 @@ echo "## 5. spec: Get"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -26,7 +27,7 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/spec/SPEC-$CSP-$POSTFIX -H 'Content-Type: application/json' -d \
+curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/spec/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
     '{ 
-        "ConnectionName": "'${CONN_CONFIG[INDEX]}'"
+        "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
     }' | json_pp #|| return 1

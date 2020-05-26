@@ -7,7 +7,8 @@ echo "## 0. Get Cloud Connction Config"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -29,11 +30,11 @@ fi
 RESTSERVER=localhost
 
 # for Cloud Connection Config Info
-curl -sX GET http://$RESTSERVER:1024/spider/connectionconfig/${CONN_CONFIG[INDEX]} | json_pp
+curl -sX GET http://$RESTSERVER:1024/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | json_pp
 
 
 # for Cloud Region Info
-curl -sX GET http://$RESTSERVER:1024/spider/region/${RegionName[INDEX]} | json_pp
+curl -sX GET http://$RESTSERVER:1024/spider/region/${RegionName[$INDEX,$REGION]} | json_pp
 
 
 # for Cloud Credential Info

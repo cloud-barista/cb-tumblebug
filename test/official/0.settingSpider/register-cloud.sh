@@ -7,7 +7,8 @@ echo "## 0. Create Cloud Connction Config"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -70,15 +71,15 @@ if [ "${CSP}" == "azure" ]; then
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "KeyValueInfoList" : [
             {
-                "Key" : "'${RegionKey01[INDEX]:-NULL}'",
-                "Value" : "'${RegionVal01[INDEX]:-NULL}'"
+                "Key" : "'${RegionKey01[$INDEX,$REGION]:-NULL}'",
+                "Value" : "'${RegionVal01[$INDEX,$REGION]:-NULL}'"
             },
             {
-                "Key" : "'${RegionKey02[INDEX]:-NULL}'",
-                "Value" : "'${RegionVal02[INDEX]:-NULL}'-'$CSP'-'$POSTFIX'"
+                "Key" : "'${RegionKey02[$INDEX,$REGION]:-NULL}'",
+                "Value" : "'${RegionVal02[$INDEX,$REGION]:-NULL}'-'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
             }
         ],
-        "RegionName" : "'${RegionName[INDEX]}'"
+        "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
     }' | json_pp
 else
 curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: application/json' -d \
@@ -86,15 +87,15 @@ curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: applicatio
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "KeyValueInfoList" : [
             {
-                "Key" : "'${RegionKey01[INDEX]:-NULL}'",
-                "Value" : "'${RegionVal01[INDEX]:-NULL}'"
+                "Key" : "'${RegionKey01[$INDEX,$REGION]:-NULL}'",
+                "Value" : "'${RegionVal01[$INDEX,$REGION]:-NULL}'"
             },
             {
-                "Key" : "'${RegionKey02[INDEX]:-NULL}'",
-                "Value" : "'${RegionVal02[INDEX]:-NULL}'"
+                "Key" : "'${RegionKey02[$INDEX,$REGION]:-NULL}'",
+                "Value" : "'${RegionVal02[$INDEX,$REGION]:-NULL}'"
             }
         ],
-        "RegionName" : "'${RegionName[INDEX]}'"
+        "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
     }' | json_pp
 fi
 
@@ -103,8 +104,8 @@ fi
 curl -sX POST http://$RESTSERVER:1024/spider/connectionconfig -H 'Content-Type: application/json' -d \
     '{
         "CredentialName" : "'${CredentialName[INDEX]}'",
-        "ConfigName" : "'${CONN_CONFIG[INDEX]}'",
+        "ConfigName" : "'${CONN_CONFIG[$INDEX,$REGION]}'",
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "DriverName" : "'${DriverName[INDEX]}'",
-        "RegionName" : "'${RegionName[INDEX]}'"
+        "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
     }' | json_pp

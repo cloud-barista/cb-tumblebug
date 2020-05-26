@@ -2976,14 +2976,24 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		if statusResponseTmp.Status == "statusUndefined" {
 			statusResponseTmp.Status = statusTerminated
 		}
+		if statusResponseTmp.Status == statusSuspending {
+			statusResponseTmp.Status = statusTerminated
+		}
 	}
 	if vmStatusTmp.TargetAction == actionResume {
+		if statusResponseTmp.Status == "statusUndefined" {
+			statusResponseTmp.Status = statusResuming
+		}
 		if statusResponseTmp.Status == statusCreating {
 			statusResponseTmp.Status = statusResuming
 		}
+
 	}
 	// for action reboot, some csp's native status are suspending, suspended, creating, resuming
 	if vmStatusTmp.TargetAction == actionReboot {
+		if statusResponseTmp.Status == "statusUndefined"  {
+			statusResponseTmp.Status = statusRebooting
+		}
 		if statusResponseTmp.Status == statusSuspending || statusResponseTmp.Status == statusSuspended || statusResponseTmp.Status == statusCreating || statusResponseTmp.Status == statusResuming {
 			statusResponseTmp.Status = statusRebooting
 		}

@@ -7,7 +7,8 @@ echo "## 3. sshKey: Create"
 echo "####################################################################"
 
 CSP=${1}
-POSTFIX=${2:-developer}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 if [ "${CSP}" == "aws" ]; then
 	echo "[Test for AWS]"
 	INDEX=1
@@ -28,7 +29,7 @@ fi
 
 curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey -H 'Content-Type: application/json' -d \
 	'{ 
-		"connectionName": "'${CONN_CONFIG[INDEX]}'", 
-		"name": "keypair-'$CSP'-'$POSTFIX'", 
+		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
+		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
 		"username": "ubuntu"
 	}' | json_pp #|| return 1
