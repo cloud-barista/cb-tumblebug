@@ -3,7 +3,7 @@
 source ../conf.env
 
 echo "####################################################################"
-echo "## 6. VM: Just Terminate MCIS"
+echo "## Command (SSH) to MCIS "
 echo "####################################################################"
 
 CSP=${1}
@@ -27,4 +27,8 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=terminate | json_pp
+MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
+	'{
+		"command": "echo -n [CMD] Works! [Public IP: ; curl https://api.ipify.org ; echo -n ], [Hostname: ; hostname ; echo -n ]"
+	}' | json_pp #|| return 1

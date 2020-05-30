@@ -23,11 +23,11 @@ else
 	INDEX=1
 fi
 
-curl -sX POST http://localhost:1024/spider/vm -H 'Content-Type: application/json' -d \
+curl -sX POST http://$SpiderServer/spider/vm -H 'Content-Type: application/json' -d \
 	'{ 
 		"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 		"ReqInfo": { 
-			"Name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"Name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-01",
 			"ImageName": "'${IMAGE_NAME[$INDEX,$REGION]}'", 
 			"VPCName": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"SubnetName": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",

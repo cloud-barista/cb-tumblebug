@@ -27,5 +27,5 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1024/spider/vmspec -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | json_pp
+curl -sX GET http://$SpiderServer/spider/vmspec -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | json_pp
 

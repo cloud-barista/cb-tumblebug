@@ -27,7 +27,7 @@ else
 	INDEX=1
 fi
 
-curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
+curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 	'{
 		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 		"description": "Tumblebug Demo",

@@ -27,7 +27,7 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
+curl -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
     '{ 
         "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
     }' | json_pp #|| return 1

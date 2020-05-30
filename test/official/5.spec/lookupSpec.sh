@@ -28,7 +28,7 @@ else
 fi
 
 
-curl -sX GET http://localhost:1323/tumblebug/lookupSpec/${SPEC_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d \
+curl -sX GET http://$TumblebugServer/tumblebug/lookupSpec/${SPEC_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d \
 	'{ 
 		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
 	}' | json_pp #|| return 1

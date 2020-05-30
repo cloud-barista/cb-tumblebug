@@ -27,7 +27,7 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1323/tumblebug/lookupSpec -H 'Content-Type: application/json' -d \
+curl -sX GET http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d \
 	'{ 
 		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
 	}' | json_pp #|| return 1
