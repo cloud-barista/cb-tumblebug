@@ -1,5 +1,6 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
-Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
+
+A Framework for Cloud-Barista Platform to Manage Multi-Cloud Infra Service (i.e., MCIS)
 
 ***
 
@@ -108,24 +109,28 @@ cloudbaristaorg/cb-tumblebug:v0.1-yyyymmdd
 - 패키지 관련 오류 발생 시, `go get` 명령을 통해 부족한 패키지를 추가
 
 ### CB-Tumblebug 실행
-- 만약 AWS 관련 작업 시 에러가 발생하면 다음을 실행
-```Shell
-# sudo apt-get --yes install ntpdate
-# sudo ntpdate 0.amazon.pool.ntp.org
-```
+
+- `# ./make run` (또는 `# go run mcism.go`)
+  - CB-Tumblebug API server가 실행됨
 
 - 만약 `“panic: /debug/requests is already registered. You may have two independent copies of golang.org/x/net/trace in your binary, trying to maintain separate state. This may involve a vendored copy of golang.org/x/net/trace.”` 에러가 발생하면 다음을 실행 (CB-Tumblebug rebuild 가 필요할 수도 있음)
 ```Shell
 # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
 ```
 
-- `# ./make run` (또는 `# go run mcism.go`)
-  - CB-Tumblebug API server가 실행됨
-
 ### CB-Tumblebug 테스트 방법
 
+- CB-Tumblebug 테스트 스크립트를 통해 테스트
+  - https://github.com/cloud-barista/cb-tumblebug/tree/master/test/official
+    - 클라우드 인증 정보, 테스트 기본 정보 입력
+    - 한꺼번에 통합 시험 (추천 테스트 방법)
+    - 클라우드정보, Namespace, MCIR, MCIS 등 개별 제어 시험 (개별 시험시, 오브젝트들의 의존성 고려 필요))
+
 - CB-Tumblebug 의 REST API를 사용하여 테스트
-  - Cloud-Barista 사용자 API 리스트: https://github.com/cloud-barista/docs/blob/master/API-Specifications/User-REST-API(v0.30).md
   - 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
-  - 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 MCIS 및 VM 생성을 위한 자원 생성
-  - 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 종료
+    - https://documenter.getpostman.com/view/6451118/SzmfXGk9?version=latest
+  - 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
+    - https://documenter.getpostman.com/view/6451118/SzmfXGkB?version=latest
+  - 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 원격명령수행, 종료
+    - https://documenter.getpostman.com/view/6451118/SzmfXGkD?version=latest
+
