@@ -47,7 +47,7 @@ const (
 )
 
 const (
-	Version = " Version: Americano"
+	Version = " Version: Cappuccino"
 	website = " Repository: https://github.com/cloud-barista/cb-tumblebug"
 	banner  = `
 
