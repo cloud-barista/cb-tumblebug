@@ -23,7 +23,7 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://localhost:1024/spider/vmstatus/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
+curl -sX GET http://$SpiderServer/spider/vmstatus/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-01 -H 'Content-Type: application/json' -d \
     '{ 
         "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
     }' | json_pp

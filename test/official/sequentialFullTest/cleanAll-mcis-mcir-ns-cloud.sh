@@ -150,8 +150,8 @@ OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'de
 echo "${OUTPUT}"
 if [ "${OUTPUT}" != 0 ]; then
 
-	echo "Retry delete-vNet 20 times"
-	for (( c=1; c<=20; c++ ))
+	echo "Retry delete-vNet 40 times"
+	for (( c=1; c<=40; c++ ))
 	do
 		echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
 		dozing 5
@@ -176,8 +176,14 @@ if [ "${OUTPUT}" != 0 ]; then
 fi
 
 #../0.settingTB/delete-ns.sh $CSP $REGION $POSTFIX
-../0.settingSpider/unregister-cloud.sh $CSP $REGION $POSTFIX
 
+CNT=$(grep -c "${CSP}" ./executionStatus)
+if [ "${CNT}" -ge 2 ]; then
+	../0.settingSpider/unregister-cloud.sh $CSP $REGION $POSTFIX leave
+else
+	echo "[No dependancy, this CSP can be removed.]"
+	../0.settingSpider/unregister-cloud.sh $CSP $REGION $POSTFIX
+fi
 
 _self="${0##*/}"
 

@@ -2523,6 +2523,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	default:
 		return errors.New(action + "is invalid actionType")
 	}
+	
 	updateVmInfo(nsId, mcisId, temp)
 	//fmt.Println("url: " + url + " method: " + method)
 
@@ -2592,6 +2593,9 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	common.PrintJsonPretty(resultTmp)
 
 	fmt.Println("[Calling SPIDER]END vmControl\n\n")
+
+	updateVmNativeIp(nsId, mcisId, temp)
+
 	/*
 		if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
 			return nil
@@ -2760,6 +2764,7 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 			vmStatusTmp.Status = statusFailed
 			return mcisStatus, err
 		}
+		
 		mcisStatus.Vm = append(mcisStatus.Vm, vmStatusTmp)
 	}
 
@@ -2870,6 +2875,17 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
+
+
+	//updateVmNativeIp. update temp vmInfo{} with changed IP
+	updateVmNativeIp(nsId, mcisId, temp)
+	keyValue, _ = store.Get(key)
+	unmarshalErr = json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+
+
 	fmt.Println("\n\n[Calling SPIDER]START")
 	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 	/*
@@ -2935,7 +2951,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	common.PrintJsonPretty(statusResponseTmp)
 	fmt.Println("[Calling SPIDER]END\n\n")
 
-	vmStatusTmp := vmStatusInfo{}
+		vmStatusTmp := vmStatusInfo{}
 	vmStatusTmp.Id = vmId
 	vmStatusTmp.Name = temp.Name
 	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
@@ -3016,6 +3032,103 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	return vmStatusTmp, nil
 
 }
+
+
+func updateVmNativeIp(nsId string, mcisId string, vmInfoData vmInfo) error {
+
+	vmInfoTmp, err := getVmNativeIp(nsId, mcisId, vmInfoData.Id)
+
+	if err != nil {
+		cblog.Error(err)
+		return err
+	}
+
+	vmInfoData.PublicIP = vmInfoTmp.Public_ip
+	
+	updateVmInfo(nsId, mcisId, vmInfoData)
+
+	return nil
+
+}
+
+func getVmNativeIp(nsId string, mcisId string, vmId string) (vmStatusInfo, error) {
+
+	fmt.Println("[getVmStatus]" + vmId)
+	key := common.GenMcisKey(nsId, mcisId, vmId)
+	//fmt.Println(key)
+
+	keyValue, _ := store.Get(key)
+
+	temp := vmInfo{}
+	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+	if unmarshalErr != nil {
+		fmt.Println("unmarshalErr:", unmarshalErr)
+	}
+	fmt.Println("\n\n[Calling SPIDER]START")
+	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
+
+	cspVmId := temp.CspViewVmDetail.IId.NameId
+
+	url := SPIDER_URL + "/vm/" + cspVmId // + "?connection_name=" + temp.Config_name
+	method := "GET"
+
+	type VMStatusReqInfo struct {
+		ConnectionName string
+	}
+	tempReq := VMStatusReqInfo{}
+	tempReq.ConnectionName = temp.Config_name
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	//fmt.Println("payload: " + string(payload)) // for debug
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	errorInfo := vmStatusInfo{}
+	errorInfo.Status = statusFailed
+
+	if err != nil {
+		fmt.Println(err)
+		return errorInfo, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	//fmt.Println("Called CB-Spider API.")
+
+	if err != nil {
+		fmt.Println(err)
+		return errorInfo, err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	type statusResponse struct {
+		Status string
+		PublicIP string
+	}
+	statusResponseTmp := statusResponse{}
+
+	err2 := json.Unmarshal(body, &statusResponseTmp)
+	if err2 != nil {
+		fmt.Println(err2)
+		return errorInfo, err2
+	}
+
+	common.PrintJsonPretty(statusResponseTmp)
+	fmt.Println("[Calling SPIDER]END\n\n")
+
+	vmStatusTmp := vmStatusInfo{}
+	vmStatusTmp.Public_ip = statusResponseTmp.PublicIP
+
+	return vmStatusTmp, nil
+
+}
+
 
 func ValidateStatus() {
 	

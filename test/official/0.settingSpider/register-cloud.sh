@@ -30,7 +30,7 @@ fi
 RESTSERVER=localhost
 
  # for Cloud Driver Info
-curl -sX POST http://$RESTSERVER:1024/spider/driver -H 'Content-Type: application/json' -d \
+curl -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d \
 	'{
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "DriverLibFileName" : "'${DriverLibFileName[INDEX]}'",
@@ -38,7 +38,7 @@ curl -sX POST http://$RESTSERVER:1024/spider/driver -H 'Content-Type: applicatio
 	}' | json_pp
 
  # for Cloud Credential Info
-curl -sX POST http://$RESTSERVER:1024/spider/credential -H 'Content-Type: application/json' -d \
+curl -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d \
     "{
         \"ProviderName\" : \"${ProviderName[INDEX]}\",
         \"CredentialName\" : \"${CredentialName[INDEX]}\",
@@ -66,7 +66,7 @@ curl -sX POST http://$RESTSERVER:1024/spider/credential -H 'Content-Type: applic
 
 if [ "${CSP}" == "azure" ]; then
     # Differenciate Cloud Region Value for Resource Group Name
-	curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: application/json' -d \
+	curl -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
     '{
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "KeyValueInfoList" : [
@@ -82,7 +82,7 @@ if [ "${CSP}" == "azure" ]; then
         "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
     }' | json_pp
 else
-curl -sX POST http://$RESTSERVER:1024/spider/region -H 'Content-Type: application/json' -d \
+curl -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
     '{
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "KeyValueInfoList" : [
@@ -101,7 +101,7 @@ fi
 
 
  # for Cloud Connection Config Info
-curl -sX POST http://$RESTSERVER:1024/spider/connectionconfig -H 'Content-Type: application/json' -d \
+curl -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d \
     '{
         "CredentialName" : "'${CredentialName[INDEX]}'",
         "ConfigName" : "'${CONN_CONFIG[$INDEX,$REGION]}'",

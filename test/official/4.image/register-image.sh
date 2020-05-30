@@ -27,7 +27,7 @@ else
 	INDEX=1
 fi
 
-curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/image?action=registerWithInfo -H 'Content-Type: application/json' -d \
+curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/image?action=registerWithInfo -H 'Content-Type: application/json' -d \
 	'{ 
 		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",

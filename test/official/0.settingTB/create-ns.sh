@@ -8,7 +8,7 @@ echo "####################################################################"
 
 INDEX=${1}
 
-curl -sX POST http://localhost:1323/tumblebug/ns -H 'Content-Type: application/json' -d \
+curl -sX POST http://$TumblebugServer/tumblebug/ns -H 'Content-Type: application/json' -d \
 	'{
 		"name": "'$NS_ID'",
 		"description": "NameSpace for General Testing"

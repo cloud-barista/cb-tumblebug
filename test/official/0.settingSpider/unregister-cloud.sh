@@ -27,16 +27,23 @@ else
 	INDEX=1
 fi
 
+OPTION=${4:-none}
+
 RESTSERVER=localhost
 
 # for Cloud Connection Config Info
-curl -sX DELETE http://$RESTSERVER:1024/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]}
+curl -sX DELETE http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]}
 
 # for Cloud Region Info
-curl -sX DELETE http://$RESTSERVER:1024/spider/region/${RegionName[$INDEX,$REGION]}
+curl -sX DELETE http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]}
+
+if [ "${OPTION}" == "leave" ]; then
+	echo "[Leave Cloud Credential and Cloud Driver for other Regions]"
+	exit
+fi
 
 # for Cloud Credential Info
-curl -sX DELETE http://$RESTSERVER:1024/spider/credential/${CredentialName[INDEX]}
+curl -sX DELETE http://$SpiderServer/spider/credential/${CredentialName[INDEX]}
  
 # for Cloud Driver Info
-curl -sX DELETE http://$RESTSERVER:1024/spider/driver/${DriverName[INDEX]}
+curl -sX DELETE http://$SpiderServer/spider/driver/${DriverName[INDEX]}

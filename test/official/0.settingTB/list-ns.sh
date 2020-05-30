@@ -8,4 +8,4 @@ echo "####################################################################"
 
 INDEX=${1}
 
-curl -sX GET http://localhost:1323/tumblebug/ns | json_pp #|| return 1
+curl -sX GET http://$TumblebugServer/tumblebug/ns | json_pp #|| return 1
