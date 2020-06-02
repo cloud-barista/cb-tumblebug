@@ -2,6 +2,15 @@
 
 A Framework for Cloud-Barista Platform to Manage Multi-Cloud Infra Service (i.e., MCIS)
 
+```
+[NOTE]
+CB-Tumblebug is currently under development. (the latest version is 0.2 cappuccino)
+So, we do not recommend using the current release in production.
+Please note that the functionalities of CB-Tumblebug are not stable and secure yet.
+If you have any difficulties in using CB-Tumblebug, please let us know.
+(Open an issue or Join the cloud-barista Slack)
+```
+
 ***
 
 ## [목차]
@@ -39,11 +48,13 @@ cloudbaristaorg/cb-tumblebug:v0.1-yyyymmdd
 - CB-Tumblebug 빌드 (make)
 - CB-Tumblebug 실행 (make run)
 
-### (3) Cloud-Barista 시스템 통합 실행 참고 (Docker-Compose 기반)
+### (3) Cloud-Barista 시스템 통합 실행 참고 (cb-operator)
 ```
-# git clone https://github.com/jihoon-seo/cb-deployer.git
-# cd cb-deployer
-# docker-compose up
+https://github.com/cloud-barista/cb-operator 를 통해 Cloud-Barista 전체 FW를 통합 실행할 수 있음
+
+$ git clone https://github.com/cloud-barista/cb-operator.git
+$ cd cb-operator/src
+cb-operator/src$ go build -o operator
 ```
 
 ## [소스 기반 설치 & 실행 상세 정보]
