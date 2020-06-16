@@ -244,7 +244,7 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 	*/
 
 	// Step 2. Send a req to Spider and save the response.
-	url := SPIDER_URL + "/vmimage/" + u.CspImageId + "?connection_name=" + u.ConnectionName
+	url := common.SPIDER_URL + "/vmimage/" + u.CspImageId + "?connection_name=" + u.ConnectionName
 
 	method := "GET"
 

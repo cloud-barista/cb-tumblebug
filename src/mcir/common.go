@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -24,12 +23,13 @@ import (
 // CB-Store
 var cblog *logrus.Logger
 var store icbs.Store
-var SPIDER_URL string
+
+//var SPIDER_URL string
 
 func init() {
 	cblog = config.Cblogger
 	store = cbstore.GetStore()
-	SPIDER_URL = os.Getenv("SPIDER_URL")
+	//SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
 func delResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
@@ -132,17 +132,17 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := sshKeyInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+		url = common.SPIDER_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 	case "vNet":
 		temp := vNetInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+		url = common.SPIDER_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 	case "securityGroup":
 		temp := securityGroupInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
-		url = SPIDER_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+		url = common.SPIDER_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 	/*
 		case "subnet":
 			temp := subnetInfo{}
@@ -152,12 +152,12 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 			temp := publicIpInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
 			tempReq.ConnectionName = temp.ConnectionName
-			url = SPIDER_URL + "/publicip/" + temp.CspPublicIpName //+ "?connection_name=" + temp.ConnectionName
+			url = common.SPIDER_URL + "/publicip/" + temp.CspPublicIpName //+ "?connection_name=" + temp.ConnectionName
 		case "vNic":
 			temp := vNicInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
 			tempReq.ConnectionName = temp.ConnectionName
-			url = SPIDER_URL + "/vnic/" + temp.CspVNicName //+ "?connection_name=" + temp.ConnectionName
+			url = common.SPIDER_URL + "/vnic/" + temp.CspVNicName //+ "?connection_name=" + temp.ConnectionName
 	*/
 	default:
 		err := fmt.Errorf("invalid resourceType")

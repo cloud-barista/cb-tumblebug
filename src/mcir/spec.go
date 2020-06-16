@@ -338,7 +338,7 @@ type SpiderSpecList struct {
 }
 
 func LookupSpecList(connConfig string) (SpiderSpecList, error) {
-	url := SPIDER_URL + "/vmspec"
+	url := common.SPIDER_URL + "/vmspec"
 
 	method := "GET"
 
@@ -418,7 +418,7 @@ func RestLookupSpecList(c echo.Context) error {
 }
 
 func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
-	url := SPIDER_URL + "/vmspec/" + u.CspSpecName
+	url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
 
 	method := "GET"
 
@@ -495,20 +495,6 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 		return emptySpecInfoObj, err
 	}
 
-	/* FYI; as of cb-spider-v0.1.2-20200417
-	type SpiderSpecInfo struct {
-		// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
-
-		Region string
-		Name   string
-		VCpu   VCpuInfo
-		Mem    string
-		Gpu    []GpuInfo
-
-		KeyValueList []common.KeyValue
-	}
-	*/
-
 	content := SpecInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
@@ -525,34 +511,61 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 	//content.Storage_GiB = res.Storage_GiB
 	//content.Description = res.Description
 
+	sql := "INSERT INTO `spec`(" +
+		"`id`, " +
+		"`connectionName`, " +
+		"`cspSpecName`, " +
+		"`name`, " +
+		"`os_type`, " +
+		"`num_vCPU`, " +
+		"`num_core`, " +
+		"`mem_GiB`, " +
+		"`mem_MiB`, " +
+		"`storage_GiB`, " +
+		"`description`, " +
+		"`cost_per_hour`, " +
+		"`num_storage`, " +
+		"`max_num_storage`, " +
+		"`max_total_storage_TiB`, " +
+		"`net_bw_Gbps`, " +
+		"`ebs_bw_Mbps`, " +
+		"`gpu_model`, " +
+		"`num_gpu`, " +
+		"`gpumem_GiB`, " +
+		"`gpu_p2p`) " +
+		"VALUES ('" +
+		content.Id + "', '" +
+		content.ConnectionName + "', '" +
+		content.CspSpecName + "', '" +
+		content.Name + "', '" +
+		content.Os_type + "', '" +
+		content.Num_vCPU + "', '" +
+		content.Num_core + "', '" +
+		content.Mem_GiB + "', '" +
+		content.Mem_MiB + "', '" +
+		content.Storage_GiB + "', '" +
+		content.Description + "', '" +
+		content.Cost_per_hour + "', '" +
+		content.Num_storage + "', '" +
+		content.Max_num_storage + "', '" +
+		content.Max_total_storage_TiB + "', '" +
+		content.Net_bw_Gbps + "', '" +
+		content.Ebs_bw_Mbps + "', '" +
+		content.Gpu_model + "', '" +
+		content.Num_gpu + "', '" +
+		content.Gpumem_GiB + "', '" +
+		content.Gpu_p2p + "');"
+
+	fmt.Println("sql: " + sql)
+	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+	_, err = sqlparser.Parse(sql)
+	if err != nil {
+		return content, err
+	}
+
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
-	/*
-		mapA := map[string]string{
-			"connectionName": content.ConnectionName,
-			"cspSpecName":    content.CspSpecName,
-			"name":           content.Name,
-			"os_type":        content.Os_type,
-			"Num_vCPU":       content.Num_vCPU,
-			"Num_core":       content.Num_core,
-			"mem_GiB":        content.Mem_GiB,
-			"storage_GiB":    content.Storage_GiB,
-			"description":    content.Description,
-
-			"cost_per_hour":         content.Cost_per_hour,
-			"num_storage":           content.Num_storage,
-			"max_num_storage":       content.Max_num_storage,
-			"max_total_storage_TiB": content.Max_total_storage_TiB,
-			"net_bw_Gbps":           content.Net_bw_Gbps,
-			"ebs_bw_Mbps":           content.Ebs_bw_Mbps,
-			"gpu_model":             content.Gpu_model,
-			"num_gpu":               content.Num_gpu,
-			"gpumem_GiB":            content.Gpumem_GiB,
-			"gpu_p2p":               content.Gpu_p2p,
-		}
-		Val, _ := json.Marshal(mapA)
-	*/
 	Val, _ := json.Marshal(content)
 	err = store.Put(string(Key), string(Val))
 	if err != nil {
@@ -565,6 +578,17 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 
 	// register information related with MCIS recommendation
 	registerRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+
+	stmt, err := common.MYDB.Prepare(sql)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Data inserted successfully..")
+	}
 
 	return content, nil
 }
@@ -660,14 +684,6 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 		fmt.Println("Data inserted successfully..")
 	}
 
-	/* https://medium.com/gothicism/how-to-handle-user-datatypes-in-golang-with-json-and-sql-database-a62d5304b0db
-	query := `INSERT INTO public.t_usertypes (email) VALUES ($1) `
-	_, err = db.Exec(query, &emailWrite)
-	if err != nil {
-		panic(err)
-	}
-	*/
-
 	return *content, nil
 }
 
@@ -711,41 +727,6 @@ func getSpecList(nsId string) []string {
 	fmt.Println("===============================================")
 	return specList
 
-}
-*/
-
-/*
-func delSpec(nsId string, Id string, forceFlag string) (int, []byte, error) {
-
-	fmt.Println("[Delete spec] " + Id)
-
-	key := genResourceKey(nsId, "spec", Id)
-	fmt.Println(key)
-
-	//get related recommend spec
-	keyValue, err := store.Get(key)
-	content := specInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &content)
-	if err != nil {
-		cblog.Error(err)
-		return err
-	}
-	//
-
-	err = store.Delete(key)
-	if err != nil {
-		cblog.Error(err)
-		return err
-	}
-
-	//delete related recommend spec
-	err = delRecommendSpec(nsId, Id, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
-	if err != nil {
-		cblog.Error(err)
-		return err
-	}
-
-	return nil
 }
 */
 

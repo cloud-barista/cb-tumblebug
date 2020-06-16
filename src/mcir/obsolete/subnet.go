@@ -214,7 +214,7 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 	}
 	*/
 
-	//url := SPIDER_URL + "/subnet"
+	//url := common.SPIDER_URL + "/subnet"
 
 	// TODO: To be implemented
 

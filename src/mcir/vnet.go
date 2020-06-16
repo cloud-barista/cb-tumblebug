@@ -251,8 +251,8 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	}
 	*/
 
-	//url := SPIDER_URL + "/vpc?connection_name=" + u.ConnectionName
-	url := SPIDER_URL + "/vpc"
+	//url := common.SPIDER_URL + "/vpc?connection_name=" + u.ConnectionName
+	url := common.SPIDER_URL + "/vpc"
 
 	method := "POST"
 
@@ -413,8 +413,8 @@ func delVNet(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	}
 	fmt.Println("temp.CspVNetId: " + temp.CspVNetId)
 
-	//url := SPIDER_URL + "/vpc?connection_name=" + temp.ConnectionName                           // for testapi.io
-	url := SPIDER_URL + "/vpc/" + temp.CspVNetId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	//url := common.SPIDER_URL + "/vpc?connection_name=" + temp.ConnectionName                           // for testapi.io
+	url := common.SPIDER_URL + "/vpc/" + temp.CspVNetId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
