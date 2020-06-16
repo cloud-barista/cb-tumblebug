@@ -1,6 +1,3 @@
-// Proof of Concepts for the Cloud-Barista Multi-Cloud Project.
-//      * Cloud-Barista: https://github.com/cloud-barista
-
 package apiserver
 
 import (
@@ -19,22 +16,6 @@ import (
 	"github.com/labstack/echo/middleware"
 	// CB-Store
 )
-
-/*
-// CB-Store
-var cblog *logrus.Logger
-var store icbs.Store
-
-func init() {
-	cblog = config.Cblogger
-	store = cbstore.GetStore()
-}
-
-type KeyValue struct {
-	Key   string
-	Value string
-}
-*/
 
 //var masterConfigInfos confighandler.MASTERCONFIGTYPE
 
@@ -133,8 +114,6 @@ func ApiServer() {
 	g.GET("/:nsId/benchmark/mcis/:mcisId", mcis.RestGetBenchmark)
 	g.GET("/:nsId/benchmarkall/mcis/:mcisId", mcis.RestGetAllBenchmark)
 
-	
-
 	g.POST("/:nsId/resources/image", mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:imageId", mcir.RestGetImage)
 	g.GET("/:nsId/resources/image", mcir.RestGetAllImage)
@@ -217,23 +196,3 @@ func ApiServer() {
 	e.Logger.Fatal(e.Start(":1323"))
 
 }
-
-var SPIDER_URL string
-
-/*
-func main() {
-
-	//fmt.Println("\n[cb-tumblebug (Multi-Cloud Infra Service Management Framework)]")
-	//fmt.Println("\nInitiating REST API Server ...")
-	//fmt.Println("\n[REST API call examples]")
-
-	SPIDER_URL = os.Getenv("SPIDER_URL")
-
-	// load config
-	//masterConfigInfos = confighandler.GetMasterConfigInfos()
-
-	// Run API Server
-	apiServer()
-
-}
-*/

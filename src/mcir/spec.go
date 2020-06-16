@@ -12,7 +12,11 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/labstack/echo"
+
 	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/xwb1989/sqlparser"
 )
 
 type specReq struct { // Tumblebug
@@ -577,11 +581,63 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(content.Name)
 
+	sql := "INSERT INTO `spec`(" +
+		"`id`, " +
+		"`connectionName`, " +
+		"`cspSpecName`, " +
+		"`name`, " +
+		"`os_type`, " +
+		"`num_vCPU`, " +
+		"`num_core`, " +
+		"`mem_GiB`, " +
+		"`mem_MiB`, " +
+		"`storage_GiB`, " +
+		"`description`, " +
+		"`cost_per_hour`, " +
+		"`num_storage`, " +
+		"`max_num_storage`, " +
+		"`max_total_storage_TiB`, " +
+		"`net_bw_Gbps`, " +
+		"`ebs_bw_Mbps`, " +
+		"`gpu_model`, " +
+		"`num_gpu`, " +
+		"`gpumem_GiB`, " +
+		"`gpu_p2p`) " +
+		"VALUES ('" +
+		content.Id + "', '" +
+		content.ConnectionName + "', '" +
+		content.CspSpecName + "', '" +
+		content.Name + "', '" +
+		content.Os_type + "', '" +
+		content.Num_vCPU + "', '" +
+		content.Num_core + "', '" +
+		content.Mem_GiB + "', '" +
+		content.Mem_MiB + "', '" +
+		content.Storage_GiB + "', '" +
+		content.Description + "', '" +
+		content.Cost_per_hour + "', '" +
+		content.Num_storage + "', '" +
+		content.Max_num_storage + "', '" +
+		content.Max_total_storage_TiB + "', '" +
+		content.Net_bw_Gbps + "', '" +
+		content.Ebs_bw_Mbps + "', '" +
+		content.Gpu_model + "', '" +
+		content.Num_gpu + "', '" +
+		content.Gpumem_GiB + "', '" +
+		content.Gpu_p2p + "');"
+
+	fmt.Println("sql: " + sql)
+	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+	_, err := sqlparser.Parse(sql)
+	if err != nil {
+		return *content, err
+	}
+
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, "spec", content.Id)
 	Val, _ := json.Marshal(content)
-	err := store.Put(string(Key), string(Val))
+	err = store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
 		return *content, err
@@ -592,6 +648,25 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 
 	// register information related with MCIS recommendation
 	registerRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+
+	stmt, err := common.MYDB.Prepare(sql)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Data inserted successfully..")
+	}
+
+	/* https://medium.com/gothicism/how-to-handle-user-datatypes-in-golang-with-json-and-sql-database-a62d5304b0db
+	query := `INSERT INTO public.t_usertypes (email) VALUES ($1) `
+	_, err = db.Exec(query, &emailWrite)
+	if err != nil {
+		panic(err)
+	}
+	*/
 
 	return *content, nil
 }

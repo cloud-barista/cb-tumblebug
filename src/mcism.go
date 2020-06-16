@@ -1,46 +1,31 @@
 package main
 
 import (
-	"github.com/cloud-barista/cb-tumblebug/src/apiserver"
-	"github.com/cloud-barista/cb-tumblebug/src/mcis"
+	"database/sql"
+	"fmt"
 	"os"
 	"time"
-	"fmt"
+
+	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/cloud-barista/cb-tumblebug/src/apiserver"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/mcis"
 )
 
 func main() {
-	
-
-	//fmt.Println("\n[cb-tumblebug (Multi-Cloud Infra Service Management Framework)]")
-	//fmt.Println("\nInitiating REST API Server ...")
-	//fmt.Println("\n[REST API call examples]")
-
-	apiserver.SPIDER_URL = os.Getenv("SPIDER_URL")
-
-	/*
-		fmt.Println("[List MCISs]:\t\t curl <ServerIP>:1323/mcis")
-		fmt.Println("[Create MCIS]:\t\t curl -X POST <ServerIP>:1323/mcis  -H 'Content-Type: application/json' -d '{<MCIS_REQ_JSON>}'")
-		fmt.Println("[Get MCIS Info]:\t curl <ServerIP>:1323/mcis/<McisID>")
-		fmt.Println("[Get MCIS status]:\t curl <ServerIP>:1323/mcis/<McisID>?action=monitor")
-		fmt.Println("[Terminate MCIS]:\t curl <ServerIP>:1323/mcis/<McisID>?action=terminate")
-		fmt.Println("[Del MCIS Info]:\t curl -X DELETE <ServerIP>:1323/mcis/<McisID>")
-		fmt.Println("[Del MCISs Info]:\t curl -X DELETE <ServerIP>:1323/mcis")
-
-		fmt.Println("\n")
-		fmt.Println("[List Images]:\t\t curl <ServerIP>:1323/image")
-		fmt.Println("[Create Image]:\t\t curl -X POST <ServerIP>:1323/image?action=create -H 'Content-Type: application/json' -d '{<IMAGE_REQ_JSON>}'")
-		fmt.Println("[Register Image]:\t\t curl -X POST <ServerIP>:1323/image?action=register -H 'Content-Type: application/json' -d '{<IMAGE_REQ_JSON>}'")
-		fmt.Println("[Get Image Info]:\t curl <ServerIP>:1323/image/<imageID>")
-		fmt.Println("[Del Image Info]:\t curl -X DELETE <ServerIP>:1323/image/<imageID>")
-		fmt.Println("[Del Images Info]:\t curl -X DELETE <ServerIP>:1323/image")
-	*/
+	common.SPIDER_URL = os.Getenv("SPIDER_URL")
+	common.DB_URL = os.Getenv("DB_URL")
+	common.DB_DATABASE = os.Getenv("DB_DATABASE")
+	common.DB_USER = os.Getenv("DB_USER")
+	common.DB_PASSWORD = os.Getenv("DB_PASSWORD")
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	//Ticker for MCIS status validation
 	validationDuration := 60000 //ms
-	ticker := time.NewTicker( time.Millisecond * time.Duration(validationDuration) )
+	ticker := time.NewTicker(time.Millisecond * time.Duration(validationDuration))
 	go func() {
 		for t := range ticker.C {
 			fmt.Println("Tick at", t)
@@ -48,6 +33,61 @@ func main() {
 		}
 	}()
 	defer ticker.Stop()
+
+	var err error
+	common.MYDB, err = sql.Open("mysql", //"root:pwd@tcp(127.0.0.1:3306)/testdb")
+		common.DB_USER+":"+
+			common.DB_PASSWORD+"@tcp("+
+			common.DB_URL+")/"+
+			common.DB_DATABASE)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Database access info set successfully")
+	}
+
+	_, err = common.MYDB.Exec("USE " + common.DB_DATABASE)
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("DB selected successfully..")
+	}
+
+	stmt, err := common.MYDB.Prepare("CREATE Table spec(" + // IF NOT EXISTS
+		"id varchar(50) NOT NULL," +
+		"connectionName varchar(50) NOT NULL," +
+		"cspSpecName varchar(50) NOT NULL," +
+		"name varchar(50)," +
+		"os_type varchar(50)," +
+		"num_vCPU varchar(50)," +
+		"num_core varchar(50)," +
+		"mem_GiB varchar(50)," +
+		"mem_MiB varchar(50)," +
+		"storage_GiB varchar(50)," +
+		"description varchar(50)," +
+		"cost_per_hour varchar(50)," +
+		"num_storage varchar(50)," +
+		"max_num_storage varchar(50)," +
+		"max_total_storage_TiB varchar(50)," +
+		"net_bw_Gbps varchar(50)," +
+		"ebs_bw_Mbps varchar(50)," +
+		"gpu_model varchar(50)," +
+		"num_gpu varchar(50)," +
+		"gpumem_GiB varchar(50)," +
+		"gpu_p2p varchar(50)," +
+		"PRIMARY KEY (id));")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Table created successfully..")
+	}
+
+	//defer db.Close()
 
 	// Run API Server
 	apiserver.ApiServer()
