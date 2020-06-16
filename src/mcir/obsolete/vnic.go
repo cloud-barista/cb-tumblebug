@@ -243,7 +243,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	}
 	*/
 
-	url := SPIDER_URL + "/vnic?connection_name=" + u.ConnectionName
+	url := common.SPIDER_URL + "/vnic?connection_name=" + u.ConnectionName
 
 	method := "POST"
 
@@ -448,8 +448,8 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	}
 	fmt.Println("temp.CspVNicId: " + temp.CspVNicId)
 
-	//url := SPIDER_URL + "/vnic?connection_name=" + temp.ConnectionName // for testapi.io
-	url := SPIDER_URL + "/vnic/" + temp.CspVNicId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	//url := common.SPIDER_URL + "/vnic?connection_name=" + temp.ConnectionName // for testapi.io
+	url := common.SPIDER_URL + "/vnic/" + temp.CspVNicId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

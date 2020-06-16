@@ -5,8 +5,8 @@ import (
 	//uuid "github.com/google/uuid"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
+
 	//"fmt"
 	//"net/http"
 	//"io/ioutil"
@@ -27,12 +27,13 @@ import (
 // CB-Store
 var cblog *logrus.Logger
 var store icbs.Store
-var SPIDER_URL string
+
+//var SPIDER_URL string
 
 func init() {
 	cblog = config.Cblogger
 	store = cbstore.GetStore()
-	SPIDER_URL = os.Getenv("SPIDER_URL")
+	//SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
 /*
@@ -46,8 +47,8 @@ type mcirIds struct {
 	CspImageName         string
 	CspSshKeyName        string
 	Name                 string // Spec
-	CspVNetId         string
-	CspVNetName       string
+	CspVNetId            string
+	CspVNetName          string
 	CspSecurityGroupId   string
 	CspSecurityGroupName string
 	CspPublicIpId        string
@@ -165,8 +166,6 @@ func RestCheckVm(c echo.Context) error {
 	return c.JSON(http.StatusOK, &content)
 }
 
-
-
 func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*string, error) {
 
 	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
@@ -186,7 +185,7 @@ func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*strin
 }
 
 func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, privateKey string, cmd string, returnResult *[]sshResult) {
-	
+
 	defer wg.Done() //goroutin sync done
 
 	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
@@ -198,7 +197,7 @@ func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, 
 	}
 
 	// VM SSH 명령어 실행
-	result, err := SSHRun(sshInfo, cmd); 
+	result, err := SSHRun(sshInfo, cmd)
 
 	//wg.Done() //goroutin sync done
 
@@ -206,17 +205,16 @@ func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, 
 	sshResultTmp.Mcis_id = ""
 	sshResultTmp.Vm_id = vmID
 	sshResultTmp.Vm_ip = vmIP
-	
 
 	if err != nil {
 		sshResultTmp.Result = err.Error()
 		sshResultTmp.Err = err
-		*returnResult = append( *returnResult, sshResultTmp )
+		*returnResult = append(*returnResult, sshResultTmp)
 	} else {
 		fmt.Println("cmd result " + result)
 		sshResultTmp.Result = result
 		sshResultTmp.Err = nil
-		*returnResult = append( *returnResult, sshResultTmp )
+		*returnResult = append(*returnResult, sshResultTmp)
 	}
 
 }

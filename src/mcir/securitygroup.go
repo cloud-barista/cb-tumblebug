@@ -241,8 +241,8 @@ func createSecurityGroup(nsId string, u *securityGroupReq) (securityGroupInfo, i
 	}
 	*/
 
-	//url := SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
-	url := SPIDER_URL + "/securitygroup"
+	//url := common.SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
+	url := common.SPIDER_URL + "/securitygroup"
 
 	method := "POST"
 
@@ -400,8 +400,8 @@ func delSecurityGroup(nsId string, Id string, forceFlag string) (int, []byte, er
 	}
 	fmt.Println("temp.CspSecurityGroupId: " + temp.CspSecurityGroupId)
 
-	//url := SPIDER_URL + "/securitygroup?connection_name=" + temp.ConnectionName // for testapi.io
-	url := SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	//url := common.SPIDER_URL + "/securitygroup?connection_name=" + temp.ConnectionName // for testapi.io
+	url := common.SPIDER_URL + "/securitygroup/" + temp.CspSecurityGroupId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

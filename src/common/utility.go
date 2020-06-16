@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 
 	//"encoding/json"
@@ -46,7 +45,7 @@ var MYDB *sql.DB
 func init() {
 	cblog = config.Cblogger
 	store = cbstore.GetStore()
-	SPIDER_URL = os.Getenv("SPIDER_URL")
+	//SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
 // Spider 2020-03-30 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/IId.go

@@ -244,8 +244,8 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	}
 	*/
 
-	//url := SPIDER_URL + "/keypair?connection_name=" + u.ConnectionName
-	url := SPIDER_URL + "/keypair"
+	//url := common.SPIDER_URL + "/keypair?connection_name=" + u.ConnectionName
+	url := common.SPIDER_URL + "/keypair"
 
 	method := "POST"
 
@@ -379,8 +379,8 @@ func delSshKey(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	}
 	fmt.Println("temp.CspSshKeyName: " + temp.CspSshKeyName)
 
-	//url := SPIDER_URL + "/keypair?connection_name=" + temp.ConnectionName // for testapi.io
-	url := SPIDER_URL + "/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	//url := common.SPIDER_URL + "/keypair?connection_name=" + temp.ConnectionName // for testapi.io
+	url := common.SPIDER_URL + "/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"
