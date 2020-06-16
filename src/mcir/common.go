@@ -12,6 +12,7 @@ import (
 	//uuid "github.com/google/uuid"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/labstack/echo"
+	"github.com/xwb1989/sqlparser"
 
 	// CB-Store
 	cbstore "github.com/cloud-barista/cb-store"
@@ -105,6 +106,25 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		if err != nil {
 			cblog.Error(err)
 			return http.StatusInternalServerError, nil, err
+		}
+
+		sql := "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
+		fmt.Println("sql: " + sql)
+		// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+		_, err = sqlparser.Parse(sql)
+		if err != nil {
+			//return
+		}
+
+		stmt, err := common.MYDB.Prepare(sql)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		_, err = stmt.Exec()
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println("Data deleted successfully..")
 		}
 
 		return http.StatusOK, nil, nil

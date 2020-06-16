@@ -12,6 +12,7 @@ require (
 	github.com/coreos/etcd v3.3.21+incompatible // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
@@ -21,8 +22,10 @@ require (
 	github.com/snowzach/rotatefilehook v0.0.0-20180327172521-2f64f265f58c // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
+	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	github.com/xujiajun/nutsdb v0.5.1-0.20200320023740-0cc84000d103 // indirect
+	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
 	go.etcd.io/etcd v3.3.21+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9 // indirect

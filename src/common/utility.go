@@ -1,6 +1,7 @@
 package common
 
 import (
+	"database/sql"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -36,6 +37,11 @@ var cblog *logrus.Logger
 var store icbs.Store
 
 var SPIDER_URL string
+var DB_URL string
+var DB_DATABASE string
+var DB_USER string
+var DB_PASSWORD string
+var MYDB *sql.DB
 
 func init() {
 	cblog = config.Cblogger
