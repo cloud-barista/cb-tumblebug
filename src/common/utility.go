@@ -4,14 +4,19 @@ import (
 	"database/sql"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"strconv"
 
 	//"encoding/json"
 
 	uuid "github.com/google/uuid"
 	"github.com/labstack/echo"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"gopkg.in/yaml.v2"
 
 	// CB-Store
+	//"github.com/cloud-barista/cb-grpc-project/pkg/logging"
 	cbstore "github.com/cloud-barista/cb-store"
 	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
@@ -547,4 +552,120 @@ func RestGetRegionList(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, &content)
 
+}
+
+// ConvertToMessage - 입력 데이터를 grpc 메시지로 변환
+func ConvertToMessage(inType string, inData string, obj interface{}) error {
+	//logger := logging.NewLogger()
+
+	if inType == "yaml" {
+		err := yaml.Unmarshal([]byte(inData), obj)
+		if err != nil {
+			return err
+		}
+		//logger.Debug("yaml Unmarshal: \n", obj)
+	}
+
+	if inType == "json" {
+		err := json.Unmarshal([]byte(inData), obj)
+		if err != nil {
+			return err
+		}
+		//logger.Debug("json Unmarshal: \n", obj)
+	}
+
+	return nil
+}
+
+// ConvertToOutput - grpc 메시지를 출력포맷으로 변환
+func ConvertToOutput(outType string, obj interface{}) (string, error) {
+	//logger := logging.NewLogger()
+
+	if outType == "yaml" {
+		// 메시지 포맷에서 불필요한 필드(XXX_로 시작하는 필드)를 제거하기 위해 json 태그를 이용하여 마샬링
+		j, err := json.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
+
+		// 필드를 소팅하지 않고 지정된 순서대로 출력하기 위해 MapSlice 이용
+		jsonObj := yaml.MapSlice{}
+		err2 := yaml.Unmarshal(j, &jsonObj)
+		if err2 != nil {
+			return "", err2
+		}
+
+		// yaml 마샬링
+		y, err3 := yaml.Marshal(jsonObj)
+		if err3 != nil {
+			return "", err3
+		}
+		//logger.Debug("yaml Marshal: \n", string(y))
+
+		return string(y), nil
+	}
+
+	if outType == "json" {
+		j, err := json.MarshalIndent(obj, "", "  ")
+		if err != nil {
+			return "", err
+		}
+		//logger.Debug("json Marshal: \n", string(j))
+
+		return string(j), nil
+	}
+
+	return "", nil
+}
+
+// CopySrcToDest - 소스에서 타켓으로 데이터 복사
+func CopySrcToDest(src interface{}, dest interface{}) error {
+	//logger := logging.NewLogger()
+
+	j, err := json.MarshalIndent(src, "", "  ")
+	if err != nil {
+		return err
+	}
+	//logger.Debug("source value : \n", string(j))
+
+	err = json.Unmarshal(j, dest)
+	if err != nil {
+		return err
+	}
+
+	j, err = json.MarshalIndent(dest, "", "  ")
+	if err != nil {
+		return err
+	}
+	//logger.Debug("target value : \n", string(j))
+
+	return nil
+}
+
+// ConvGrpcStatusErr - GRPC 상태 코드 에러로 변환
+func ConvGrpcStatusErr(err error, tag string, method string) error {
+	//logger := logging.NewLogger()
+
+	//_, fn, line, _ := runtime.Caller(1)
+	runtime.Caller(1)
+	if err != nil {
+		if errStatus, ok := status.FromError(err); ok {
+			//logger.Error(tag, " error while calling ", method, " method: [", fn, ":", line, "] ", errStatus.Message())
+			return status.Errorf(errStatus.Code(), "%s error while calling %s method: %v ", tag, method, errStatus.Message())
+		}
+		//logger.Error(tag, " error while calling ", method, " method: [", fn, ":", line, "] ", err)
+		return status.Errorf(codes.Internal, "%s error while calling %s method: %v ", tag, method, err)
+	}
+
+	return nil
+}
+
+// NewGrpcStatusErr - GRPC 상태 코드 에러 생성
+func NewGrpcStatusErr(msg string, tag string, method string) error {
+	//logger := logging.NewLogger()
+
+	//_, fn, line, _ := runtime.Caller(1)
+	runtime.Caller(1)
+	//logger.Error(tag, " error while calling ", method, " method: [", fn, ":", line, "] ", msg)
+	return status.Errorf(codes.Internal, "%s error while calling %s method: %s ", tag, method, msg)
 }

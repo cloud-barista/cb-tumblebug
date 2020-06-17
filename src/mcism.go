@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+//	"database/sql"
 	"fmt"
 	"os"
 	"time"
@@ -34,6 +34,7 @@ func main() {
 	}()
 	defer ticker.Stop()
 
+	/*
 	var err error
 	common.MYDB, err = sql.Open("mysql", //"root:pwd@tcp(127.0.0.1:3306)/testdb")
 		common.DB_USER+":"+
@@ -109,6 +110,7 @@ func main() {
 	}
 
 	//defer db.Close()
+	*/
 
 	// Run API Server
 	apiserver.ApiServer()

@@ -13,6 +13,8 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/gogo/protobuf v1.2.1
+	github.com/golang/protobuf v1.4.2
 	github.com/google/uuid v1.1.1
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
@@ -29,7 +31,9 @@ require (
 	go.etcd.io/etcd v3.3.21+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	golang.org/x/sys v0.0.0-20200515095857-1151b9dac4a9 // indirect
+	google.golang.org/grpc v1.21.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
+	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.0-20200506231410-2ff61e1afc86 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )

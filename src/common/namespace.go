@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-type nsReq struct {
+type NsReq struct {
 	//Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -26,13 +26,13 @@ type nsInfo struct {
 // MCIS API Proxy: Ns
 func RestPostNs(c echo.Context) error {
 
-	u := &nsReq{}
+	u := &NsReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	fmt.Println("[Creating Ns]")
-	content, err := createNs(u)
+	content, err := CreateNs(u)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to create the ns " + u.Name}
@@ -159,7 +159,7 @@ func RestDelAllNs(c echo.Context) error {
 
 }
 
-func createNs(u *nsReq) (nsInfo, error) {
+func CreateNs(u *NsReq) (nsInfo, error) {
 	check, _ := checkNs(u.Name)
 
 	if check {
