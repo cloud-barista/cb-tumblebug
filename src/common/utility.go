@@ -554,7 +554,6 @@ func RestGetRegionList(c echo.Context) error {
 
 }
 
-// gRPC utilities by OurTech
 // ConvertToMessage - 입력 데이터를 grpc 메시지로 변환
 func ConvertToMessage(inType string, inData string, obj interface{}) error {
 	//logger := logging.NewLogger()
