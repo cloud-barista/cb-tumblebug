@@ -84,7 +84,28 @@ func main() {
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Table created successfully..")
+		fmt.Println("Table spec created successfully..")
+	}
+
+	stmt, err = common.MYDB.Prepare("CREATE Table image(" + // IF NOT EXISTS
+		"id varchar(50) NOT NULL," +
+		"name varchar(50)," +
+		"connectionName varchar(50) NOT NULL," +
+		"cspImageId varchar(400) NOT NULL," +
+		"cspImageName varchar(400) NOT NULL," +
+		"creationDate varchar(50) NOT NULL," +
+		"description varchar(400) NOT NULL," +
+		"guestOS varchar(50) NOT NULL," +
+		"status varchar(50) NOT NULL," +
+		"PRIMARY KEY (id));")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Table image created successfully..")
 	}
 
 	//defer db.Close()

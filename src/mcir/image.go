@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo"
+	"github.com/xwb1989/sqlparser"
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
@@ -297,21 +298,6 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 		fmt.Println("whoops:", err2)
 	}
 
-	// Step 3. Create a temp `imageInfo (in this file)` object.
-	/* FYI; as of 2020-04-17
-	type imageInfo struct {
-		Id             string            `json:"id"`
-		Name           string            `json:"name"`
-		ConnectionName string            `json:"connectionName"`
-		CspImageId     string            `json:"cspImageId"`
-		CspImageName   string            `json:"cspImageName"`
-		CreationDate   string            `json:"creationDate"`
-		Description    string            `json:"description"`
-		GuestOS        string            `json:"guestOS"` // Windows7, Ubuntu etc.
-		Status         string            `json:"status"`  // available, unavailable
-		KeyValueList   []common.KeyValue `json:"keyValueList"`
-	}
-	*/
 	content := imageInfo{}
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
@@ -323,6 +309,34 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 	content.GuestOS = temp.GuestOS
 	content.Status = temp.Status
 	content.KeyValueList = temp.KeyValueList
+
+	sql := "INSERT INTO `image`(" +
+		"`id`, " +
+		"`name`, " +
+		"`connectionName`, " +
+		"`cspImageId`, " +
+		"`cspImageName`, " +
+		"`creationDate`, " +
+		"`description`, " +
+		"`guestOS`, " +
+		"`status`) " +
+		"VALUES ('" +
+		content.Id + "', '" +
+		content.Name + "', '" +
+		content.ConnectionName + "', '" +
+		content.CspImageId + "', '" +
+		content.CspImageName + "', '" +
+		content.CreationDate + "', '" +
+		content.Description + "', '" +
+		content.GuestOS + "', '" +
+		content.Status + "');"
+
+	fmt.Println("sql: " + sql)
+	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+	_, err = sqlparser.Parse(sql)
+	if err != nil {
+		return content, err
+	}
 
 	// Step 4. Store the metadata to CB-Store.
 	fmt.Println("=========================== PUT registerImage")
@@ -337,6 +351,18 @@ func registerImageWithId(nsId string, u *imageReq) (imageInfo, error) {
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
+
+	stmt, err := common.MYDB.Prepare(sql)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Data inserted successfully..")
+	}
+
 	//return content, res.StatusCode, body, nil
 	return content, nil
 }
@@ -353,10 +379,38 @@ func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(content.Name)
 
+	sql := "INSERT INTO `image`(" +
+		"`id`, " +
+		"`name`, " +
+		"`connectionName`, " +
+		"`cspImageId`, " +
+		"`cspImageName`, " +
+		"`creationDate`, " +
+		"`description`, " +
+		"`guestOS`, " +
+		"`status`) " +
+		"VALUES ('" +
+		content.Id + "', '" +
+		content.Name + "', '" +
+		content.ConnectionName + "', '" +
+		content.CspImageId + "', '" +
+		content.CspImageName + "', '" +
+		content.CreationDate + "', '" +
+		content.Description + "', '" +
+		content.GuestOS + "', '" +
+		content.Status + "');"
+
+	fmt.Println("sql: " + sql)
+	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+	_, err := sqlparser.Parse(sql)
+	if err != nil {
+		return *content, err
+	}
+
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, "image", content.Id)
 	Val, _ := json.Marshal(content)
-	err := store.Put(string(Key), string(Val))
+	err = store.Put(string(Key), string(Val))
 	if err != nil {
 		cblog.Error(err)
 		return *content, err
@@ -364,6 +418,18 @@ func registerImageWithInfo(nsId string, content *imageInfo) (imageInfo, error) {
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
+
+	stmt, err := common.MYDB.Prepare(sql)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Data inserted successfully..")
+	}
+
 	return *content, nil
 }
 
@@ -387,24 +453,5 @@ func getImageList(nsId string) []string {
 	fmt.Println("===============================================")
 	return imageList
 
-}
-*/
-
-/*
-func delImage(nsId string, Id string, forceFlag string) (int, []byte, error) {
-
-	fmt.Println("[Delete image] " + Id)
-
-	key := genResourceKey(nsId, "image", Id)
-	fmt.Println(key)
-
-	// delete image info
-	err := store.Delete(key)
-	if err != nil {
-		cblog.Error(err)
-		return http.StatusInternalServerError, nil, err
-	}
-
-	return http.StatusOK, nil, nil
 }
 */
