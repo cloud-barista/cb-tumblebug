@@ -1,4 +1,4 @@
-package apiserver
+package restapiserver
 
 import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"

@@ -1,14 +1,17 @@
-package main
+package server
+
 import (
 	"context"
 	"log"
 	"net"
+
 	pb "github.com/cloud-barista/cb-tumblebug/src/grpc/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
+
 const (
 	port = ":50051"
 )
@@ -21,7 +24,7 @@ type server struct{}
 // protoc에서 생성된 skeleton 코드를 그대로 사용한다.
 func (s *server) CreateNS(ctx context.Context, in *pb.NsReq) (*pb.NsInfo, error) {
 	log.Printf("Received: %v", in.Name)
-//	return &pb.NsInfo{Name: in.Name, Description: "CB-TB gRPC PB test"}, nil
+	//	return &pb.NsInfo{Name: in.Name, Description: "CB-TB gRPC PB test"}, nil
 
 	var tbNsReq common.NsReq
 	err := common.CopySrcToDest(&in, &tbNsReq)
@@ -46,7 +49,7 @@ func (s *server) CreateNS(ctx context.Context, in *pb.NsReq) (*pb.NsInfo, error)
 	return &pbNsInfo, nil
 }
 
-func main() {
+func RunServer() {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

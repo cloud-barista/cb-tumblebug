@@ -253,7 +253,7 @@ func delNs(Id string) error {
 	/*
 			import cycle not allowed
 			package github.com/cloud-barista/cb-tumblebug/src
-		        imports github.com/cloud-barista/cb-tumblebug/src/apiserver
+		        imports github.com/cloud-barista/cb-tumblebug/src/restapiserver
 		        imports github.com/cloud-barista/cb-tumblebug/src/common
 		        imports github.com/cloud-barista/cb-tumblebug/src/mcir
 				imports github.com/cloud-barista/cb-tumblebug/src/common
