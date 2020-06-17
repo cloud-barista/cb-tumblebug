@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/empty.proto";
+
+package cbtumblebug;
+
+service Ns {
+        rpc CreateNS (NsReq) returns (NsInfo) {}
+}
+
+message NsReq {
+        string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+        string description = 2 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+}
+
+message NsInfo {
+        string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+        string description = 2 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+        string id = 3 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
+}
