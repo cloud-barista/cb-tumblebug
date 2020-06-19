@@ -233,7 +233,7 @@ type vmRecommendReq struct {
 
 type vmPriority struct {
 	Priority string `json:"priority"`
-	Vm_spec  mcir.SpecInfo `json:"vm_spec"`
+	Vm_spec  mcir.TbSpecInfo `json:"vm_spec"`
 }
 type vmRecommendInfo struct {
 	Vm_req          vmRecommendReq      `json:"vm_req"`

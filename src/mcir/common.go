@@ -32,12 +32,28 @@ func init() {
 	//SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
-func delResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
+func DelAllResources(nsId string, resourceType string, forceFlag string) error {
+	resourceIdList := ListResourceId(nsId, resourceType)
+
+	if len(resourceType) == 0 {
+		return nil
+	}
+
+	for _, v := range resourceIdList {
+		_, _, err := DelResource(nsId, resourceType, v, forceFlag)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
 
 	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
-	fmt.Printf("delResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
+	fmt.Printf("DelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
-	check, _ := checkResource(nsId, resourceType, resourceId)
+	check, _ := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
@@ -105,7 +121,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		//get related recommend spec
 		//keyValue, err := store.Get(key)
-		content := SpecInfo{}
+		content := TbSpecInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		/*
 			if err != nil {
@@ -122,7 +138,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 
 		//delete related recommend spec
-		err = delRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+		err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
 		if err != nil {
 			cblog.Error(err)
 			return http.StatusInternalServerError, nil, err
@@ -149,17 +165,17 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		return http.StatusOK, nil, nil
 	case "sshKey":
-		temp := sshKeyInfo{}
+		temp := TbSshKeyInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
 		url = common.SPIDER_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 	case "vNet":
-		temp := vNetInfo{}
+		temp := TbVNetInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
 		url = common.SPIDER_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 	case "securityGroup":
-		temp := securityGroupInfo{}
+		temp := TbSecurityGroupInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
 		tempReq.ConnectionName = temp.ConnectionName
 		url = common.SPIDER_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
@@ -258,16 +274,16 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 }
 
-func getResourceList(nsId string, resourceType string) []string {
+func ListResourceId(nsId string, resourceType string) []string {
 
 	if resourceType == "image" ||
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
 		resourceType == "vNet" ||
-		resourceType == "subnet" ||
-		resourceType == "securityGroup" ||
-		resourceType == "publicIp" ||
-		resourceType == "vNic" {
+		//resourceType == "subnet" ||
+		//resourceType == "publicIp" ||
+		//resourceType == "vNic" ||
+		resourceType == "securityGroup" {
 		// continue
 	} else {
 		return []string{"invalid resource type"}
@@ -292,17 +308,156 @@ func getResourceList(nsId string, resourceType string) []string {
 
 }
 
-func checkResource(nsId string, resourceType string, resourceId string) (bool, error) {
+func ListResource(nsId string, resourceType string) (interface{}, error) {
+	if resourceType == "image" ||
+		resourceType == "sshKey" ||
+		resourceType == "spec" ||
+		resourceType == "vNet" ||
+		//resourceType == "subnet" ||
+		//resourceType == "publicIp" ||
+		//resourceType == "vNic" ||
+		resourceType == "securityGroup" {
+		// continue
+	} else {
+		errString := "Cannot list " + resourceType + "s."
+		err := fmt.Errorf(errString)
+		return nil, err
+	}
+
+	fmt.Println("[Get " + resourceType + " list")
+	key := "/ns/" + nsId + "/resources/" + resourceType
+	fmt.Println(key)
+
+	keyValue, err := store.GetList(key, true)
+
+	if err != nil {
+		cblog.Error(err)
+		/*
+			fmt.Println("func ListResource; store.GetList gave error")
+			var resourceList []string
+			for _, v := range keyValue {
+				resourceList = append(resourceList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/"+resourceType+"/"))
+			}
+			for _, v := range resourceList {
+				fmt.Println("<" + v + "> \n")
+			}
+			fmt.Println("===============================================")
+		*/
+		return nil, err
+	}
+	if keyValue != nil {
+		switch resourceType {
+		case "image":
+			res := []TbImageInfo{}
+			for _, v := range keyValue {
+				tempObj := TbImageInfo{}
+				json.Unmarshal([]byte(v.Value), &tempObj)
+				res = append(res, tempObj)
+			}
+			return res, nil
+		case "securityGroup":
+			res := []TbSecurityGroupInfo{}
+			for _, v := range keyValue {
+				tempObj := TbSecurityGroupInfo{}
+				json.Unmarshal([]byte(v.Value), &tempObj)
+				res = append(res, tempObj)
+			}
+			return res, nil
+		case "spec":
+			res := []TbSpecInfo{}
+			for _, v := range keyValue {
+				tempObj := TbSpecInfo{}
+				json.Unmarshal([]byte(v.Value), &tempObj)
+				res = append(res, tempObj)
+			}
+			return res, nil
+		case "sshKey":
+			res := []TbSshKeyInfo{}
+			for _, v := range keyValue {
+				tempObj := TbSshKeyInfo{}
+				json.Unmarshal([]byte(v.Value), &tempObj)
+				res = append(res, tempObj)
+			}
+			return res, nil
+		case "vNet":
+			res := []TbVNetInfo{}
+			for _, v := range keyValue {
+				tempObj := TbVNetInfo{}
+				json.Unmarshal([]byte(v.Value), &tempObj)
+				res = append(res, tempObj)
+			}
+			return res, nil
+		}
+
+		//return true, nil
+	}
+
+	return nil, nil // When err == nil && keyValue == nil
+}
+
+func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
+
+	check, _ := CheckResource(nsId, resourceType, resourceId)
+
+	if !check {
+		errString := "The " + resourceType + " " + resourceId + " does not exist."
+		//mapA := map[string]string{"message": errString}
+		//mapB, _ := json.Marshal(mapA)
+		err := fmt.Errorf(errString)
+		return nil, err
+	}
+	fmt.Println("[Get resource] " + resourceType + ", " + resourceId)
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	//fmt.Println(key)
+
+	keyValue, err := store.Get(key)
+	if err != nil {
+		cblog.Error(err)
+		return nil, err
+	}
+	if keyValue != nil {
+		switch resourceType {
+		case "image":
+			res := TbImageInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &res)
+			return res, nil
+		case "securityGroup":
+			res := TbSecurityGroupInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &res)
+			return res, nil
+		case "spec":
+			res := TbSpecInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &res)
+			return res, nil
+		case "sshKey":
+			res := TbSshKeyInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &res)
+			return res, nil
+		case "vNet":
+			res := TbVNetInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &res)
+			return res, nil
+		}
+
+		//return true, nil
+	}
+	errString := "Cannot get " + resourceType + " " + resourceId + "."
+	err = fmt.Errorf(errString)
+	return nil, err
+}
+
+func CheckResource(nsId string, resourceType string, resourceId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("checkResource failed; nsId given is null.")
+		err := fmt.Errorf("CheckResource failed; nsId given is null.")
 		return false, err
 	} else if resourceType == "" {
-		err := fmt.Errorf("checkResource failed; resourceType given is null.")
+		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
 		return false, err
 	} else if resourceId == "" {
-		err := fmt.Errorf("checkResource failed; resourceId given is null.")
+		err := fmt.Errorf("CheckResource failed; resourceId given is null.")
 		return false, err
 	}
 
@@ -344,7 +499,7 @@ func RestCheckResource(c echo.Context) error {
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
 
-	exists, err := checkResource(nsId, resourceType, resourceId)
+	exists, err := CheckResource(nsId, resourceType, resourceId)
 
 	type JsonTemplate struct {
 		Exists bool `json:exists`
@@ -365,7 +520,7 @@ func RestCheckResource(c echo.Context) error {
 /*
 func convertSpiderResourceToTumblebugResource(resourceType string, i interface{}) (interface{}, error) {
 	if resourceType == "" {
-		err := fmt.Errorf("checkResource failed; resourceType given is null.")
+		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
 		return nil, err
 	}
 
@@ -397,7 +552,7 @@ func RestDelResource(c echo.Context) error {
 
 	fmt.Printf("RestDelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
-	responseCode, _, err := delResource(nsId, resourceType, resourceId, forceFlag)
+	responseCode, _, err := DelResource(nsId, resourceType, resourceId, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -414,14 +569,14 @@ func RestDelAllResources(c echo.Context) error {
 	resourceType := c.Param("resourceType")
 	forceFlag := c.QueryParam("force")
 
-	resourceList := getResourceList(nsId, resourceType)
+	resourceList := ListResourceId(nsId, resourceType)
 
 	if len(resourceList) == 0 {
 		mapA := map[string]string{"message": "There is no " + resourceType + " element in this namespace."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		for _, v := range resourceList {
-			responseCode, _, err := delResource(nsId, resourceType, v, forceFlag)
+			responseCode, _, err := DelResource(nsId, resourceType, v, forceFlag)
 			if err != nil {
 				cblog.Error(err)
 				mapA := map[string]string{"message": err.Error()}
@@ -446,7 +601,7 @@ type NameOnly struct {
 	Name string
 }
 
-func getNameFromStruct(u interface{}) string {
+func GetNameFromStruct(u interface{}) string {
 	var result = ReturnValue{CustomStruct: u}
 
 	//fmt.Println(result)

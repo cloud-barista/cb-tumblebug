@@ -14,16 +14,16 @@ import (
 
 // 2020-04-03 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/KeyPairHandler.go
 
-type SpiderKeyPairReqInfo struct { // Spider
+type SpiderKeyPairReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        KeyPairReqInfo
+	ReqInfo        SpiderKeyPairReqInfo
 }
 
-type KeyPairReqInfo struct { // Spider
+type SpiderKeyPairReqInfo struct { // Spider
 	Name string
 }
 
-type KeyPairInfo struct { // Spider
+type SpiderKeyPairInfo struct { // Spider
 	IId         common.IID // {NameId, SystemId}
 	Fingerprint string
 	PublicKey   string
@@ -33,7 +33,7 @@ type KeyPairInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-type sshKeyReq struct {
+type TbSshKeyReq struct {
 	//Id             string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
@@ -45,7 +45,7 @@ type sshKeyReq struct {
 	Description string `json:"description"`
 }
 
-type sshKeyInfo struct {
+type TbSshKeyInfo struct {
 	Id             string            `json:"id"`
 	Name           string            `json:"name"`
 	ConnectionName string            `json:"connectionName"`
@@ -63,7 +63,7 @@ func RestPostSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &sshKeyReq{}
+	u := &TbSshKeyReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func RestPostSshKey(c echo.Context) error {
 		fmt.Println("[POST SshKey requested action: " + action)
 		if action == "create" {
 			fmt.Println("[Creating SshKey]")
-			content, _ := createSshKey(nsId, u)
+			content, _ := CreateSshKey(nsId, u)
 			return c.JSON(http.StatusCreated, content)
 
 		} else if action == "register" {
@@ -89,7 +89,7 @@ func RestPostSshKey(c echo.Context) error {
 
 	fmt.Println("[POST SshKey")
 	fmt.Println("[Creating SshKey]")
-	content, responseCode, _, err := createSshKey(nsId, u)
+	content, responseCode, _, err := CreateSshKey(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
@@ -109,26 +109,38 @@ func RestGetSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	resourceType := "sshKey"
+
 	id := c.Param("sshKeyId")
 
-	content := sshKeyInfo{}
+	/*
+		content := TbSshKeyInfo{}
 
-	fmt.Println("[Get sshKey for id]" + id)
-	key := common.GenResourceKey(nsId, "sshKey", id)
-	fmt.Println(key)
+		fmt.Println("[Get sshKey for id]" + id)
+		key := common.GenResourceKey(nsId, "sshKey", id)
+		fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
-	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the sshKey with given ID."}
+		keyValue, _ := store.Get(key)
+		if keyValue == nil {
+			mapA := map[string]string{"message": "Failed to find the sshKey with given ID."}
+			return c.JSON(http.StatusNotFound, &mapA)
+		} else {
+			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			fmt.Println("===============================================")
+
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			content.Id = id // Optional. Can be omitted.
+
+			return c.JSON(http.StatusOK, &content)
+		}
+	*/
+
+	res, err := GetResource(nsId, resourceType, id)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===============================================")
-
-		json.Unmarshal([]byte(keyValue.Value), &content)
-		content.Id = id // Optional. Can be omitted.
-
-		return c.JSON(http.StatusOK, &content)
+		return c.JSON(http.StatusOK, &res)
 	}
 }
 
@@ -136,29 +148,45 @@ func RestGetAllSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	resourceType := "sshKey"
+
 	var content struct {
-		//Name string     `json:"name"`
-		SshKey []sshKeyInfo `json:"sshKey"`
+		SshKey []TbSshKeyInfo `json:"sshKey"`
 	}
 
-	sshKeyList := getResourceList(nsId, "sshKey")
+	/*
+		sshKeyList := ListResourceId(nsId, "sshKey")
 
-	for _, v := range sshKeyList {
+		for _, v := range sshKeyList {
 
-		key := common.GenResourceKey(nsId, "sshKey", v)
-		fmt.Println(key)
-		keyValue, _ := store.Get(key)
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		sshKeyTmp := sshKeyInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &sshKeyTmp)
-		sshKeyTmp.Id = v
-		content.SshKey = append(content.SshKey, sshKeyTmp)
+			key := common.GenResourceKey(nsId, "sshKey", v)
+			fmt.Println(key)
+			keyValue, _ := store.Get(key)
+			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			sshKeyTmp := TbSshKeyInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &sshKeyTmp)
+			sshKeyTmp.Id = v
+			content.SshKey = append(content.SshKey, sshKeyTmp)
 
+		}
+		fmt.Printf("content %+v\n", content)
+
+		return c.JSON(http.StatusOK, &content)
+	*/
+
+	resourceList, err := ListResource(nsId, resourceType)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
+		return c.JSON(http.StatusNotFound, &mapA)
 	}
-	fmt.Printf("content %+v\n", content)
 
+	if resourceList == nil {
+		return c.JSON(http.StatusOK, &content)
+	}
+
+	// When err == nil && resourceList != nil
+	content.SshKey = resourceList.([]TbSshKeyInfo) // type assertion (interface{} -> array)
 	return c.JSON(http.StatusOK, &content)
-
 }
 
 func RestPutSshKey(c echo.Context) error {
@@ -170,12 +198,13 @@ func RestPutSshKey(c echo.Context) error {
 func RestDelSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	resourceType := "sshKey"
 	id := c.Param("sshKeyId")
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delSshKey(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, "sshKey", id, forceFlag)
+	responseCode, body, err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 
@@ -185,7 +214,7 @@ func RestDelSshKey(c echo.Context) error {
 		return c.JSONBlob(responseCode, body)
 	}
 
-	mapA := map[string]string{"message": "The sshKey has been deleted"}
+	mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
 	//return c.JSON(http.StatusOK, body)
 }
@@ -193,56 +222,55 @@ func RestDelSshKey(c echo.Context) error {
 func RestDelAllSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	resourceType := "sshKey"
 	forceFlag := c.QueryParam("force")
 
-	sshKeyList := getResourceList(nsId, "sshKey")
+	/*
+		sshKeyList := ListResourceId(nsId, "sshKey")
 
-	if len(sshKeyList) == 0 {
-		mapA := map[string]string{"message": "There is no sshKey element in this namespace."}
-		return c.JSON(http.StatusNotFound, &mapA)
-	} else {
-		for _, v := range sshKeyList {
-			//responseCode, body, err := delSshKey(nsId, v, forceFlag)
+		if len(sshKeyList) == 0 {
+			mapA := map[string]string{"message": "There is no sshKey element in this namespace."}
+			return c.JSON(http.StatusNotFound, &mapA)
+		} else {
+			for _, v := range sshKeyList {
+				//responseCode, body, err := delSshKey(nsId, v, forceFlag)
 
-			responseCode, body, err := delResource(nsId, "sshKey", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				/*
-					mapA := map[string]string{"message": "Failed to delete the sshKey"}
-					return c.JSON(http.StatusFailedDependency, &mapA)
-				*/
-				return c.JSONBlob(responseCode, body)
+				responseCode, body, err := DelResource(nsId, "sshKey", v, forceFlag)
+				if err != nil {
+					cblog.Error(err)
+
+					//mapA := map[string]string{"message": "Failed to delete the sshKey"}
+					//return c.JSON(http.StatusFailedDependency, &mapA)
+
+					return c.JSONBlob(responseCode, body)
+				}
+
 			}
 
+			mapA := map[string]string{"message": "All sshKeys has been deleted"}
+			return c.JSON(http.StatusOK, &mapA)
 		}
+	*/
 
-		mapA := map[string]string{"message": "All sshKeys has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
+	err := DelAllResources(nsId, resourceType, forceFlag)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusConflict, &mapA)
 	}
+
+	mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
 }
 
-func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
-	check, _ := checkResource(nsId, "sshKey", u.Name)
+func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error) {
+	check, _ := CheckResource(nsId, "sshKey", u.Name)
 
 	if check {
-		temp := sshKeyInfo{}
+		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey " + u.Name + " already exists.")
 		return temp, http.StatusConflict, nil, err
 	}
-
-	/* FYI; as of 2020-04-17
-	type sshKeyReq struct {
-		//Id             string `json:"id"`
-		Name           string `json:"name"`
-		ConnectionName string `json:"connectionName"`
-		CspSshKeyName  string `json:"cspSshKeyName"`
-		//Fingerprint    string `json:"fingerprint"`
-		//Username       string `json:"username"`
-		//PublicKey      string `json:"publicKey"`
-		//PrivateKey     string `json:"privateKey"`
-		Description string `json:"description"`
-	}
-	*/
 
 	//url := common.SPIDER_URL + "/keypair?connection_name=" + u.ConnectionName
 	url := common.SPIDER_URL + "/keypair"
@@ -250,7 +278,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	method := "POST"
 
 	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
-	tempReq := SpiderKeyPairReqInfo{}
+	tempReq := SpiderKeyPairReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
 	tempReq.ReqInfo.Name = u.Name
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
@@ -271,7 +299,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	res, err := client.Do(req)
 	if err != nil {
 		cblog.Error(err)
-		content := sshKeyInfo{}
+		content := TbSshKeyInfo{}
 		return content, res.StatusCode, nil, err
 	}
 	defer res.Body.Close()
@@ -280,7 +308,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		content := sshKeyInfo{}
+		content := TbSshKeyInfo{}
 		return content, res.StatusCode, body, err
 	}
 
@@ -290,17 +318,17 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 		err := fmt.Errorf(string(body))
 		fmt.Println("body: ", string(body))
 		cblog.Error(err)
-		content := sshKeyInfo{}
+		content := TbSshKeyInfo{}
 		return content, res.StatusCode, body, err
 	}
 
-	temp := KeyPairInfo{}
+	temp := SpiderKeyPairInfo{}
 	err2 := json.Unmarshal(body, &temp)
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
 
-	content := sshKeyInfo{}
+	content := TbSshKeyInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
@@ -314,7 +342,7 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	content.KeyValueList = temp.KeyValueList
 
 	// cb-store
-	fmt.Println("=========================== PUT createSshKey")
+	fmt.Println("=========================== PUT CreateSshKey")
 	Key := common.GenResourceKey(nsId, "sshKey", content.Id)
 	/*
 		mapA := map[string]string{
@@ -338,98 +366,3 @@ func createSshKey(nsId string, u *sshKeyReq) (sshKeyInfo, int, []byte, error) {
 	fmt.Println("===========================")
 	return content, res.StatusCode, body, nil
 }
-
-/*
-func getSshKeyList(nsId string) []string {
-
-	fmt.Println("[Get sshKeys")
-	key := "/ns/" + nsId + "/resources/sshKey"
-	fmt.Println(key)
-
-	keyValue, _ := store.GetList(key, true)
-	var sshKeyList []string
-	for _, v := range keyValue {
-		//if !strings.Contains(v.Key, "vm") {
-		sshKeyList = append(sshKeyList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/sshKey/"))
-		//}
-	}
-	for _, v := range sshKeyList {
-		fmt.Println("<" + v + "> \n")
-	}
-	fmt.Println("===============================================")
-	return sshKeyList
-
-}
-*/
-
-/*
-func delSshKey(nsId string, Id string, forceFlag string) (int, []byte, error) {
-
-	fmt.Println("[Delete sshKey] " + Id)
-
-	key := genResourceKey(nsId, "sshKey", Id)
-	fmt.Println("key: " + key)
-
-	keyValue, _ := store.Get(key)
-	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
-	temp := sshKeyInfo{}
-	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
-	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
-	}
-	fmt.Println("temp.CspSshKeyName: " + temp.CspSshKeyName)
-
-	//url := common.SPIDER_URL + "/keypair?connection_name=" + temp.ConnectionName // for testapi.io
-	url := common.SPIDER_URL + "/keypair/" + temp.CspSshKeyName + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	fmt.Println("url: " + url)
-
-	method := "DELETE"
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		cblog.Error(err)
-		return res.StatusCode, nil, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		cblog.Error(err)
-		return res.StatusCode, body, err
-	}
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case forceFlag == "true":
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
-		}
-		return res.StatusCode, body, nil
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		cblog.Error(err)
-		return res.StatusCode, body, err
-	default:
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
-		}
-		return res.StatusCode, body, nil
-	}
-}
-*/

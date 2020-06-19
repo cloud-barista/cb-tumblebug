@@ -19,7 +19,7 @@ import (
 	"github.com/xwb1989/sqlparser"
 )
 
-type specReq struct { // Tumblebug
+type TbSpecReq struct { // Tumblebug
 	//Id             string `json:"id"`
 	ConnectionName string `json:"connectionName"`
 	CspSpecName    string `json:"cspSpecName"`
@@ -33,7 +33,7 @@ type specReq struct { // Tumblebug
 	Description    string `json:"description"`
 }
 
-type SpecInfo struct { // Tumblebug
+type TbSpecInfo struct { // Tumblebug
 	Id             string `json:"id"`
 	ConnectionName string `json:"connectionName"`
 	CspSpecName    string `json:"cspSpecName"`
@@ -63,19 +63,19 @@ type SpiderSpecInfo struct { // Spider
 
 	Region string
 	Name   string
-	VCpu   VCpuInfo
+	VCpu   SpiderVCpuInfo
 	Mem    string
-	Gpu    []GpuInfo
+	Gpu    []SpiderGpuInfo
 
 	KeyValueList []common.KeyValue
 }
 
-type VCpuInfo struct { // Spider
+type SpiderVCpuInfo struct { // Spider
 	Count string
 	Clock string // GHz
 }
 
-type GpuInfo struct { // Spider
+type SpiderGpuInfo struct { // Spider
 	Count string
 	Mfr   string
 	Model string
@@ -90,13 +90,13 @@ func RestPostSpec(c echo.Context) error {
 	action := c.QueryParam("action")
 	fmt.Println("[POST Spec requested action: " + action)
 
-	if action == "registerWithInfo" { // `registerSpecWithInfo` will be deprecated in Cappuccino.
+	if action == "registerWithInfo" { // `RegisterSpecWithInfo` will be deprecated in Cappuccino.
 		fmt.Println("[Registering Spec with info]")
-		u := &SpecInfo{}
+		u := &TbSpecInfo{}
 		if err := c.Bind(u); err != nil {
 			return err
 		}
-		content, err := registerSpecWithInfo(nsId, u)
+		content, err := RegisterSpecWithInfo(nsId, u)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{
@@ -107,11 +107,11 @@ func RestPostSpec(c echo.Context) error {
 
 	} else { // if action == "registerWithCspSpecName" { // The default mode.
 		fmt.Println("[Registering Spec with CspSpecName]")
-		u := &specReq{}
+		u := &TbSpecReq{}
 		if err := c.Bind(u); err != nil {
 			return err
 		}
-		content, err := registerSpecWithCspSpecName(nsId, u)
+		content, err := RegisterSpecWithCspSpecName(nsId, u)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{
@@ -121,21 +121,21 @@ func RestPostSpec(c echo.Context) error {
 		return c.JSON(http.StatusCreated, content)
 
 	} /* else {
-		mapA := map[string]string{"message": "lookupSpec(specRequest) failed."}
+		mapA := map[string]string{"message": "LookupSpec(specRequest) failed."}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	} */
 
 }
 
 func RestLookupSpec(c echo.Context) error {
-	u := &specReq{}
+	u := &TbSpecReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	u.CspSpecName = c.Param("specName")
 	fmt.Println("[Lookup spec]" + u.CspSpecName)
-	content, err := lookupSpec(u)
+	content, err := LookupSpec(u)
 	if err != nil {
 		cblog.Error(err)
 		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
@@ -149,26 +149,38 @@ func RestGetSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	resourceType := "spec"
+
 	id := c.Param("specId")
 
-	content := SpecInfo{}
+	/*
+		content := TbSpecInfo{}
 
-	fmt.Println("[Get spec for id]" + id)
-	key := common.GenResourceKey(nsId, "spec", id)
-	fmt.Println(key)
+		fmt.Println("[Get spec for id]" + id)
+		key := common.GenResourceKey(nsId, "spec", id)
+		fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
-	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the spec with given ID."}
+		keyValue, _ := store.Get(key)
+		if keyValue == nil {
+			mapA := map[string]string{"message": "Failed to find the spec with given ID."}
+			return c.JSON(http.StatusNotFound, &mapA)
+		} else {
+			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			fmt.Println("===============================================")
+
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			content.Id = id // Optional. Can be omitted.
+
+			return c.JSON(http.StatusOK, &content)
+		}
+	*/
+
+	res, err := GetResource(nsId, resourceType, id)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===============================================")
-
-		json.Unmarshal([]byte(keyValue.Value), &content)
-		content.Id = id // Optional. Can be omitted.
-
-		return c.JSON(http.StatusOK, &content)
+		return c.JSON(http.StatusOK, &res)
 	}
 }
 
@@ -176,29 +188,45 @@ func RestGetAllSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	resourceType := "spec"
+
 	var content struct {
-		//Name string     `json:"name"`
-		Spec []SpecInfo `json:"spec"`
+		Spec []TbSpecInfo `json:"spec"`
 	}
 
-	specList := getResourceList(nsId, "spec")
+	/*
+		specList := ListResourceId(nsId, "spec")
 
-	for _, v := range specList {
+		for _, v := range specList {
 
-		key := common.GenResourceKey(nsId, "spec", v)
-		fmt.Println(key)
-		keyValue, _ := store.Get(key)
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		specTmp := SpecInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &specTmp)
-		specTmp.Id = v
-		content.Spec = append(content.Spec, specTmp)
+			key := common.GenResourceKey(nsId, "spec", v)
+			fmt.Println(key)
+			keyValue, _ := store.Get(key)
+			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			specTmp := TbSpecInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &specTmp)
+			specTmp.Id = v
+			content.Spec = append(content.Spec, specTmp)
 
+		}
+		fmt.Printf("content %+v\n", content)
+
+		return c.JSON(http.StatusOK, &content)
+	*/
+
+	resourceList, err := ListResource(nsId, resourceType)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
+		return c.JSON(http.StatusNotFound, &mapA)
 	}
-	fmt.Printf("content %+v\n", content)
 
+	if resourceList == nil {
+		return c.JSON(http.StatusOK, &content)
+	}
+
+	// When err == nil && resourceList != nil
+	content.Spec = resourceList.([]TbSpecInfo) // type assertion (interface{} -> array)
 	return c.JSON(http.StatusOK, &content)
-
 }
 
 func RestPutSpec(c echo.Context) error {
@@ -210,44 +238,58 @@ func RestPutSpec(c echo.Context) error {
 func RestDelSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	resourceType := "spec"
 	id := c.Param("specId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, _, err := delResource(nsId, "spec", id, forceFlag)
+	responseCode, _, err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(responseCode, &mapA)
 	}
 
-	mapA := map[string]string{"message": "The spec has been deleted"}
+	mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
 func RestDelAllSpec(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	resourceType := "spec"
 	forceFlag := c.QueryParam("force")
 
-	specList := getResourceList(nsId, "spec")
+	/*
+		specList := ListResourceId(nsId, "spec")
 
-	if len(specList) == 0 {
-		mapA := map[string]string{"message": "There is no spec element in this namespace."}
-		return c.JSON(http.StatusNotFound, &mapA)
-	} else {
-		for _, v := range specList {
-			responseCode, _, err := delResource(nsId, "spec", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				mapA := map[string]string{"message": err.Error()}
-				return c.JSON(responseCode, &mapA)
+		if len(specList) == 0 {
+			mapA := map[string]string{"message": "There is no spec element in this namespace."}
+			return c.JSON(http.StatusNotFound, &mapA)
+		} else {
+			for _, v := range specList {
+				responseCode, _, err := DelResource(nsId, "spec", v, forceFlag)
+				if err != nil {
+					cblog.Error(err)
+					mapA := map[string]string{"message": err.Error()}
+					return c.JSON(responseCode, &mapA)
+				}
+
 			}
 
+			mapA := map[string]string{"message": "All specs has been deleted"}
+			return c.JSON(http.StatusOK, &mapA)
 		}
+	*/
 
-		mapA := map[string]string{"message": "All specs has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
+	err := DelAllResources(nsId, resourceType, forceFlag)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusConflict, &mapA)
 	}
+
+	mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
 }
 
 func RestFetchSpecs(c echo.Context) error {
@@ -277,7 +319,7 @@ func RestFetchSpecs(c echo.Context) error {
 		}
 
 		for _, spiderSpec := range spiderSpecList.Vmspec {
-			tumblebugSpec, err := convertSpiderSpecToTumblebugSpec(spiderSpec)
+			tumblebugSpec, err := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
 			if err != nil {
 				cblog.Error(err)
 				mapA := map[string]string{
@@ -288,7 +330,7 @@ func RestFetchSpecs(c echo.Context) error {
 			tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
 			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
 
-			check, _ := checkResource(nsId, "spec", tumblebugSpecId)
+			check, _ := CheckResource(nsId, "spec", tumblebugSpecId)
 			if check {
 				cblog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
 				continue
@@ -297,7 +339,7 @@ func RestFetchSpecs(c echo.Context) error {
 				tumblebugSpec.Name = tumblebugSpecId
 				tumblebugSpec.ConnectionName = connConfig.ConfigName
 
-				_, err := registerSpecWithInfo(nsId, &tumblebugSpec)
+				_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec)
 				if err != nil {
 					cblog.Error(err)
 					mapA := map[string]string{
@@ -314,14 +356,14 @@ func RestFetchSpecs(c echo.Context) error {
 	return c.JSON(http.StatusCreated, &mapA) //content)
 }
 
-func convertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (SpecInfo, error) {
+func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, error) {
 	if spiderSpec.Name == "" {
-		err := fmt.Errorf("convertSpiderSpecToTumblebugSpec failed; spiderSpec.Name == \"\" ")
-		emptyTumblebugSpec := SpecInfo{}
+		err := fmt.Errorf("ConvertSpiderSpecToTumblebugSpec failed; spiderSpec.Name == \"\" ")
+		emptyTumblebugSpec := TbSpecInfo{}
 		return emptyTumblebugSpec, err
 	}
 
-	tumblebugSpec := SpecInfo{}
+	tumblebugSpec := TbSpecInfo{}
 
 	tumblebugSpec.Name = spiderSpec.Name
 	tumblebugSpec.CspSpecName = spiderSpec.Name
@@ -417,7 +459,7 @@ func RestLookupSpecList(c echo.Context) error {
 
 }
 
-func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
+func LookupSpec(u *TbSpecReq) (SpiderSpecInfo, error) {
 	url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
 
 	method := "GET"
@@ -478,24 +520,24 @@ func lookupSpec(u *specReq) (SpiderSpecInfo, error) {
 	return temp, nil
 }
 
-func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
-	check, _ := checkResource(nsId, "spec", u.Name)
+func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
+	check, _ := CheckResource(nsId, "spec", u.Name)
 
 	if check {
-		temp := SpecInfo{}
+		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + u.Name + " already exists.")
 		return temp, err
 	}
 
-	res, err := lookupSpec(u)
+	res, err := LookupSpec(u)
 	if err != nil {
 		cblog.Error(err)
 		err := fmt.Errorf("an error occurred while lookup spec via CB-Spider")
-		emptySpecInfoObj := SpecInfo{}
+		emptySpecInfoObj := TbSpecInfo{}
 		return emptySpecInfoObj, err
 	}
 
-	content := SpecInfo{}
+	content := TbSpecInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
@@ -577,7 +619,7 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	registerRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	RegisterRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
 
 	stmt, err := common.MYDB.Prepare(sql)
 	if err != nil {
@@ -593,11 +635,11 @@ func registerSpecWithCspSpecName(nsId string, u *specReq) (SpecInfo, error) {
 	return content, nil
 }
 
-func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
-	check, _ := checkResource(nsId, "spec", content.Name)
+func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) {
+	check, _ := CheckResource(nsId, "spec", content.Name)
 
 	if check {
-		temp := SpecInfo{}
+		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + content.Name + " already exists.")
 		return temp, err
 	}
@@ -671,7 +713,7 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	registerRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	RegisterRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
 
 	stmt, err := common.MYDB.Prepare(sql)
 	if err != nil {
@@ -687,7 +729,7 @@ func registerSpecWithInfo(nsId string, content *SpecInfo) (SpecInfo, error) {
 	return *content, nil
 }
 
-func registerRecommendList(nsId string, connectionName string, cpuSize string, memSize string, diskSize string, specId string, price string) error {
+func RegisterRecommendList(nsId string, connectionName string, cpuSize string, memSize string, diskSize string, specId string, price string) error {
 
 	//fmt.Println("[Get MCISs")
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId
@@ -707,32 +749,9 @@ func registerRecommendList(nsId string, connectionName string, cpuSize string, m
 
 }
 
-/*
-func getSpecList(nsId string) []string {
+func DelRecommendSpec(nsId string, specId string, cpuSize string, memSize string, diskSize string) error {
 
-	fmt.Println("[Get specs")
-	key := "/ns/" + nsId + "/resources/spec"
-	fmt.Println(key)
-
-	keyValue, _ := store.GetList(key, true)
-	var specList []string
-	for _, v := range keyValue {
-		//if !strings.Contains(v.Key, "vm") {
-		specList = append(specList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/spec/"))
-		//}
-	}
-	for _, v := range specList {
-		fmt.Println("<" + v + "> \n")
-	}
-	fmt.Println("===============================================")
-	return specList
-
-}
-*/
-
-func delRecommendSpec(nsId string, specId string, cpuSize string, memSize string, diskSize string) error {
-
-	fmt.Println("delRecommendSpec()")
+	fmt.Println("DelRecommendSpec()")
 
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize + "/specId/" + specId
 

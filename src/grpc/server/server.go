@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	port = ":50051"
+	Port = ":50051"
 )
 
 // server는 protobuf에서 정의된 함수의 인자로서 사용된다.
@@ -50,7 +50,7 @@ func (s *server) CreateNS(ctx context.Context, in *pb.NsReq) (*pb.NsInfo, error)
 }
 
 func RunServer() {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", Port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -63,4 +63,6 @@ func RunServer() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
+	//fmt.Println("gRPC server started on " + Port)
 }

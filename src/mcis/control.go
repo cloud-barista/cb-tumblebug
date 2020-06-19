@@ -346,7 +346,7 @@ type mcisCmdReq struct {
 
 type vmPriority struct {
 	Priority string        `json:"priority"`
-	Vm_spec  mcir.SpecInfo `json:"vm_spec"`
+	Vm_spec  mcir.TbSpecInfo `json:"vm_spec"`
 }
 type vmRecommendInfo struct {
 	Vm_req          vmRecommendReq      `json:"vm_req"`
@@ -1851,7 +1851,7 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 			return []vmPriority{}, err
 		}
 
-		content2 := mcir.SpecInfo{}
+		content2 := mcir.TbSpecInfo{}
 		key2 := common.GenResourceKey(nsId, "spec", content.Id)
 
 		keyValue2, err := store.Get(key2)

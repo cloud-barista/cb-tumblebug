@@ -137,7 +137,7 @@ func RestGetAllPublicIp(c echo.Context) error {
 		PublicIp []publicIpInfo `json:"publicIp"`
 	}
 
-	publicIpList := getResourceList(nsId, "publicIp")
+	publicIpList := ListResourceId(nsId, "publicIp")
 
 	for _, v := range publicIpList {
 
@@ -171,7 +171,7 @@ func RestDelPublicIp(c echo.Context) error {
 
 	//responseCode, body, err := delPublicIp(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, "publicIp", id, forceFlag)
+	responseCode, body, err := DelResource(nsId, "publicIp", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
@@ -187,7 +187,7 @@ func RestDelAllPublicIp(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	publicIpList := getResourceList(nsId, "publicIp")
+	publicIpList := ListResourceId(nsId, "publicIp")
 
 	if len(publicIpList) == 0 {
 		mapA := map[string]string{"message": "There is no publicIp element in this namespace."}
@@ -196,7 +196,7 @@ func RestDelAllPublicIp(c echo.Context) error {
 		for _, v := range publicIpList {
 			//responseCode, body, err := delPublicIp(nsId, v, forceFlag)
 
-			responseCode, body, err := delResource(nsId, "publicIp", v, forceFlag)
+			responseCode, body, err := DelResource(nsId, "publicIp", v, forceFlag)
 			if err != nil {
 				cblog.Error(err)
 				//mapA := map[string]string{"message": "Failed to delete the publicIp"}
@@ -211,7 +211,7 @@ func RestDelAllPublicIp(c echo.Context) error {
 }
 
 func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, error) {
-	check, _ := checkResource(nsId, "publicIp", u.Name)
+	check, _ := CheckResource(nsId, "publicIp", u.Name)
 
 	if check {
 		temp := publicIpInfo{}

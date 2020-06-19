@@ -126,6 +126,7 @@ func main() {
 
 	go func() {
 		grpcserver.RunServer()
+		//fmt.Println("gRPC server started on " + grpcserver.Port)
 		wg.Done()
 	}()
 
