@@ -206,7 +206,7 @@ func RestDelImage(c echo.Context) error {
 	id := c.Param("imageId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, _, err := delResource(nsId, resourceType, id, forceFlag)
+	responseCode, _, err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -233,7 +233,7 @@ func RestDelAllImage(c echo.Context) error {
 			for _, v := range imageList {
 				//responseCode, _, err := delImage(nsId, v, forceFlag)
 
-				responseCode, _, err := delResource(nsId, "image", v, forceFlag)
+				responseCode, _, err := DelResource(nsId, "image", v, forceFlag)
 				if err != nil {
 					cblog.Error(err)
 					mapA := map[string]string{"message": "Failed to delete the image"}
@@ -247,7 +247,7 @@ func RestDelAllImage(c echo.Context) error {
 		}
 	*/
 
-	err := delAllResources(nsId, resourceType, forceFlag)
+	err := DelAllResources(nsId, resourceType, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -266,7 +266,7 @@ func createImage(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 //func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, int, []byte, error) {
 func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
-	check, _ := checkResource(nsId, "image", u.Name)
+	check, _ := CheckResource(nsId, "image", u.Name)
 
 	if check {
 		temp := TbImageInfo{}
@@ -410,7 +410,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 }
 
 func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, error) {
-	check, _ := checkResource(nsId, "image", content.Name)
+	check, _ := CheckResource(nsId, "image", content.Name)
 
 	if check {
 		temp := TbImageInfo{}

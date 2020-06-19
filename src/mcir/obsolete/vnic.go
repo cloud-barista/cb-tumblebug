@@ -180,7 +180,7 @@ func RestDelVNic(c echo.Context) error {
 
 	//responseCode, body, err := delVNic(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, "vNic", id, forceFlag)
+	responseCode, body, err := DelResource(nsId, "vNic", id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the vNic"}
@@ -205,7 +205,7 @@ func RestDelAllVNic(c echo.Context) error {
 		for _, v := range vNicList {
 			//responseCode, body, err := delVNic(nsId, v, forceFlag)
 
-			responseCode, body, err := delResource(nsId, "vNic", v, forceFlag)
+			responseCode, body, err := DelResource(nsId, "vNic", v, forceFlag)
 			if err != nil {
 				cblog.Error(err)
 				//mapA := map[string]string{"message": "Failed to delete the vNic"}
@@ -220,7 +220,7 @@ func RestDelAllVNic(c echo.Context) error {
 }
 
 func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
-	check, _ := checkResource(nsId, "vNic", u.Name)
+	check, _ := CheckResource(nsId, "vNic", u.Name)
 
 	if check {
 		temp := vNicInfo{}

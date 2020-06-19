@@ -204,7 +204,7 @@ func RestDelSshKey(c echo.Context) error {
 
 	//responseCode, body, err := delSshKey(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, resourceType, id, forceFlag)
+	responseCode, body, err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 
@@ -235,7 +235,7 @@ func RestDelAllSshKey(c echo.Context) error {
 			for _, v := range sshKeyList {
 				//responseCode, body, err := delSshKey(nsId, v, forceFlag)
 
-				responseCode, body, err := delResource(nsId, "sshKey", v, forceFlag)
+				responseCode, body, err := DelResource(nsId, "sshKey", v, forceFlag)
 				if err != nil {
 					cblog.Error(err)
 
@@ -252,7 +252,7 @@ func RestDelAllSshKey(c echo.Context) error {
 		}
 	*/
 
-	err := delAllResources(nsId, resourceType, forceFlag)
+	err := DelAllResources(nsId, resourceType, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -264,7 +264,7 @@ func RestDelAllSshKey(c echo.Context) error {
 }
 
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error) {
-	check, _ := checkResource(nsId, "sshKey", u.Name)
+	check, _ := CheckResource(nsId, "sshKey", u.Name)
 
 	if check {
 		temp := TbSshKeyInfo{}

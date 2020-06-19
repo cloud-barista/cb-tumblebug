@@ -32,7 +32,7 @@ func init() {
 	//SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
-func delAllResources(nsId string, resourceType string, forceFlag string) error {
+func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 	resourceIdList := ListResourceId(nsId, resourceType)
 
 	if len(resourceType) == 0 {
@@ -40,7 +40,7 @@ func delAllResources(nsId string, resourceType string, forceFlag string) error {
 	}
 
 	for _, v := range resourceIdList {
-		_, _, err := delResource(nsId, resourceType, v, forceFlag)
+		_, _, err := DelResource(nsId, resourceType, v, forceFlag)
 		if err != nil {
 			return err
 		}
@@ -48,12 +48,12 @@ func delAllResources(nsId string, resourceType string, forceFlag string) error {
 	return nil
 }
 
-func delResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
+func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
 
 	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
-	fmt.Printf("delResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
+	fmt.Printf("DelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
-	check, _ := checkResource(nsId, resourceType, resourceId)
+	check, _ := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
@@ -138,7 +138,7 @@ func delResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 
 		//delete related recommend spec
-		err = delRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+		err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
 		if err != nil {
 			cblog.Error(err)
 			return http.StatusInternalServerError, nil, err
@@ -397,7 +397,7 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 
 func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
 
-	check, _ := checkResource(nsId, resourceType, resourceId)
+	check, _ := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
@@ -447,17 +447,17 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	return nil, err
 }
 
-func checkResource(nsId string, resourceType string, resourceId string) (bool, error) {
+func CheckResource(nsId string, resourceType string, resourceId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("checkResource failed; nsId given is null.")
+		err := fmt.Errorf("CheckResource failed; nsId given is null.")
 		return false, err
 	} else if resourceType == "" {
-		err := fmt.Errorf("checkResource failed; resourceType given is null.")
+		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
 		return false, err
 	} else if resourceId == "" {
-		err := fmt.Errorf("checkResource failed; resourceId given is null.")
+		err := fmt.Errorf("CheckResource failed; resourceId given is null.")
 		return false, err
 	}
 
@@ -499,7 +499,7 @@ func RestCheckResource(c echo.Context) error {
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
 
-	exists, err := checkResource(nsId, resourceType, resourceId)
+	exists, err := CheckResource(nsId, resourceType, resourceId)
 
 	type JsonTemplate struct {
 		Exists bool `json:exists`
@@ -520,7 +520,7 @@ func RestCheckResource(c echo.Context) error {
 /*
 func convertSpiderResourceToTumblebugResource(resourceType string, i interface{}) (interface{}, error) {
 	if resourceType == "" {
-		err := fmt.Errorf("checkResource failed; resourceType given is null.")
+		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
 		return nil, err
 	}
 
@@ -552,7 +552,7 @@ func RestDelResource(c echo.Context) error {
 
 	fmt.Printf("RestDelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
-	responseCode, _, err := delResource(nsId, resourceType, resourceId, forceFlag)
+	responseCode, _, err := DelResource(nsId, resourceType, resourceId, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -576,7 +576,7 @@ func RestDelAllResources(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
 		for _, v := range resourceList {
-			responseCode, _, err := delResource(nsId, resourceType, v, forceFlag)
+			responseCode, _, err := DelResource(nsId, resourceType, v, forceFlag)
 			if err != nil {
 				cblog.Error(err)
 				mapA := map[string]string{"message": err.Error()}
@@ -601,7 +601,7 @@ type NameOnly struct {
 	Name string
 }
 
-func getNameFromStruct(u interface{}) string {
+func GetNameFromStruct(u interface{}) string {
 	var result = ReturnValue{CustomStruct: u}
 
 	//fmt.Println(result)

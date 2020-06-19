@@ -217,7 +217,7 @@ func RestDelVNet(c echo.Context) error {
 
 	//responseCode, body, err := delVNet(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, resourceType, id, forceFlag)
+	responseCode, body, err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the vNet"}
@@ -244,7 +244,7 @@ func RestDelAllVNet(c echo.Context) error {
 			for _, v := range vNetList {
 				//responseCode, body, err := delVNet(nsId, v, forceFlag)
 
-				responseCode, body, err := delResource(nsId, "vNet", v, forceFlag)
+				responseCode, body, err := DelResource(nsId, "vNet", v, forceFlag)
 				if err != nil {
 					cblog.Error(err)
 					//mapA := map[string]string{"message": "Failed to delete the vNet"}
@@ -258,7 +258,7 @@ func RestDelAllVNet(c echo.Context) error {
 		}
 	*/
 
-	err := delAllResources(nsId, resourceType, forceFlag)
+	err := DelAllResources(nsId, resourceType, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -271,7 +271,7 @@ func RestDelAllVNet(c echo.Context) error {
 
 //func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, int, []byte, error) {
 func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
-	check, _ := checkResource(nsId, "vNet", u.Name)
+	check, _ := CheckResource(nsId, "vNet", u.Name)
 
 	if check {
 		temp := TbVNetInfo{}

@@ -207,7 +207,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 
 	//responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, resourceType, id, forceFlag)
+	responseCode, body, err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
@@ -234,7 +234,7 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 			for _, v := range securityGroupList {
 				//responseCode, body, err := delSecurityGroup(nsId, v, forceFlag)
 
-				responseCode, body, err := delResource(nsId, "securityGroup", v, forceFlag)
+				responseCode, body, err := DelResource(nsId, "securityGroup", v, forceFlag)
 				if err != nil {
 					cblog.Error(err)
 					//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
@@ -248,7 +248,7 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 		}
 	*/
 
-	err := delAllResources(nsId, resourceType, forceFlag)
+	err := DelAllResources(nsId, resourceType, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -260,7 +260,7 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 }
 
 func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, int, []byte, error) {
-	check, _ := checkResource(nsId, "securityGroup", u.Name)
+	check, _ := CheckResource(nsId, "securityGroup", u.Name)
 
 	if check {
 		temp := TbSecurityGroupInfo{}
