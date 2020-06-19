@@ -14,57 +14,57 @@ import (
 
 // 2020-04-09 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
 
-type SpiderVPCReqInfo struct { // Spider
+type SpiderVPCReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        VPCReqInfo
+	ReqInfo        SpiderVPCReqInfo
 }
 
-type VPCReqInfo struct { // Spider
+type SpiderVPCReqInfo struct { // Spider
 	Name           string
 	IPv4_CIDR      string
-	SubnetInfoList []SubnetReqInfo
+	SubnetInfoList []SpiderSubnetReqInfo
 }
 
-type SubnetReqInfo struct { // Spider
+type SpiderSubnetReqInfo struct { // Spider
 	Name      string
 	IPv4_CIDR string
 
 	KeyValueList []common.KeyValue
 }
 
-type VPCInfo struct { // Spider
+type SpiderVPCInfo struct { // Spider
 	IId            common.IID // {NameId, SystemId}
 	IPv4_CIDR      string
-	SubnetInfoList []SubnetInfo
+	SubnetInfoList []SpiderSubnetInfo
 
 	KeyValueList []common.KeyValue
 }
 
-type SubnetInfo struct { // Spider
+type SpiderSubnetInfo struct { // Spider
 	IId       common.IID // {NameId, SystemId}
 	IPv4_CIDR string
 
 	KeyValueList []common.KeyValue
 }
 
-type vNetReq struct { // Tumblebug
-	Name              string          `json:"name"`
-	ConnectionName    string          `json:"connectionName"`
-	CidrBlock         string          `json:"cidrBlock"`
-	SubnetReqInfoList []SubnetReqInfo `json:"subnetReqInfoList"`
+type TbVNetReq struct { // Tumblebug
+	Name              string                `json:"name"`
+	ConnectionName    string                `json:"connectionName"`
+	CidrBlock         string                `json:"cidrBlock"`
+	SubnetReqInfoList []SpiderSubnetReqInfo `json:"subnetReqInfoList"`
 	//Region            string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description string `json:"description"`
 }
 
-type vNetInfo struct { // Tumblebug
-	Id             string       `json:"id"`
-	Name           string       `json:"name"`
-	ConnectionName string       `json:"connectionName"`
-	CspVNetId      string       `json:"cspVNetId"`
-	CspVNetName    string       `json:"cspVNetName"`
-	CidrBlock      string       `json:"cidrBlock"`
-	SubnetInfoList []SubnetInfo `json:"subnetInfoList"`
+type TbVNetInfo struct { // Tumblebug
+	Id             string             `json:"id"`
+	Name           string             `json:"name"`
+	ConnectionName string             `json:"connectionName"`
+	CspVNetId      string             `json:"cspVNetId"`
+	CspVNetName    string             `json:"cspVNetName"`
+	CidrBlock      string             `json:"cidrBlock"`
+	SubnetInfoList []SpiderSubnetInfo `json:"subnetInfoList"`
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description  string            `json:"description"`
@@ -77,7 +77,7 @@ func RestPostVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &vNetReq{}
+	u := &TbVNetReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func RestPostVNet(c echo.Context) error {
 		fmt.Println("[POST VNet requested action: " + action)
 		if action == "create" {
 			fmt.Println("[Creating VNet]")
-			content, _ := createVNet(nsId, u)
+			content, _ := CreateVNet(nsId, u)
 			return c.JSON(http.StatusCreated, content)
 
 		} else if action == "register" {
@@ -103,8 +103,8 @@ func RestPostVNet(c echo.Context) error {
 
 	fmt.Println("[POST VNet")
 	fmt.Println("[Creating VNet]")
-	//content, responseCode, body, err := createVNet(nsId, u)
-	content, err := createVNet(nsId, u)
+	//content, responseCode, body, err := CreateVNet(nsId, u)
+	content, err := CreateVNet(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
@@ -122,26 +122,38 @@ func RestGetVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	resourceType := "vNet"
+
 	id := c.Param("vNetId")
 
-	content := vNetInfo{}
+	/*
+		content := TbVNetInfo{}
 
-	fmt.Println("[Get vNet for id]" + id)
-	key := common.GenResourceKey(nsId, "vNet", id)
-	fmt.Println(key)
+		fmt.Println("[Get vNet for id]" + id)
+		key := common.GenResourceKey(nsId, "vNet", id)
+		fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
-	if keyValue == nil {
-		mapA := map[string]string{"message": "Failed to find the vNet with given ID."}
+		keyValue, _ := store.Get(key)
+		if keyValue == nil {
+			mapA := map[string]string{"message": "Failed to find the vNet with given ID."}
+			return c.JSON(http.StatusNotFound, &mapA)
+		} else {
+			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			fmt.Println("===============================================")
+
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			content.Id = id // Optional. Can be omitted.
+
+			return c.JSON(http.StatusOK, &content)
+		}
+	*/
+
+	res, err := GetResource(nsId, resourceType, id)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
 		return c.JSON(http.StatusNotFound, &mapA)
 	} else {
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===============================================")
-
-		json.Unmarshal([]byte(keyValue.Value), &content)
-		content.Id = id // Optional. Can be omitted.
-
-		return c.JSON(http.StatusOK, &content)
+		return c.JSON(http.StatusOK, &res)
 	}
 }
 
@@ -149,29 +161,45 @@ func RestGetAllVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	resourceType := "vNet"
+
 	var content struct {
-		//Name string     `json:"name"`
-		VNet []vNetInfo `json:"vNet"`
+		VNet []TbVNetInfo `json:"vNet"`
 	}
 
-	vNetList := getResourceList(nsId, "vNet")
+	/*
+		vNetList := ListResourceId(nsId, "vNet")
 
-	for _, v := range vNetList {
+		for _, v := range vNetList {
 
-		key := common.GenResourceKey(nsId, "vNet", v)
-		fmt.Println(key)
-		keyValue, _ := store.Get(key)
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		vNetTmp := vNetInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &vNetTmp)
-		vNetTmp.Id = v
-		content.VNet = append(content.VNet, vNetTmp)
+			key := common.GenResourceKey(nsId, "vNet", v)
+			fmt.Println(key)
+			keyValue, _ := store.Get(key)
+			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			vNetTmp := TbVNetInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &vNetTmp)
+			vNetTmp.Id = v
+			content.VNet = append(content.VNet, vNetTmp)
 
+		}
+		fmt.Printf("content %+v\n", content)
+
+		return c.JSON(http.StatusOK, &content)
+	*/
+
+	resourceList, err := ListResource(nsId, resourceType)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
+		return c.JSON(http.StatusNotFound, &mapA)
 	}
-	fmt.Printf("content %+v\n", content)
 
+	if resourceList == nil {
+		return c.JSON(http.StatusOK, &content)
+	}
+
+	// When err == nil && resourceList != nil
+	content.VNet = resourceList.([]TbVNetInfo) // type assertion (interface{} -> array)
 	return c.JSON(http.StatusOK, &content)
-
 }
 
 func RestPutVNet(c echo.Context) error {
@@ -183,80 +211,80 @@ func RestPutVNet(c echo.Context) error {
 func RestDelVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	resourceType := "vNet"
 	id := c.Param("vNetId")
 	forceFlag := c.QueryParam("force")
 
 	//responseCode, body, err := delVNet(nsId, id, forceFlag)
 
-	responseCode, body, err := delResource(nsId, "vNet", id, forceFlag)
+	responseCode, body, err := delResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the vNet"}
 		return c.JSONBlob(responseCode, body)
 	}
 
-	mapA := map[string]string{"message": "The vNet has been deleted"}
+	mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
 func RestDelAllVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	resourceType := "vNet"
 	forceFlag := c.QueryParam("force")
 
-	vNetList := getResourceList(nsId, "vNet")
+	/*
+		vNetList := ListResourceId(nsId, "vNet")
 
-	if len(vNetList) == 0 {
-		mapA := map[string]string{"message": "There is no vNet element in this namespace."}
-		return c.JSON(http.StatusNotFound, &mapA)
-	} else {
-		for _, v := range vNetList {
-			//responseCode, body, err := delVNet(nsId, v, forceFlag)
+		if len(vNetList) == 0 {
+			mapA := map[string]string{"message": "There is no vNet element in this namespace."}
+			return c.JSON(http.StatusNotFound, &mapA)
+		} else {
+			for _, v := range vNetList {
+				//responseCode, body, err := delVNet(nsId, v, forceFlag)
 
-			responseCode, body, err := delResource(nsId, "vNet", v, forceFlag)
-			if err != nil {
-				cblog.Error(err)
-				//mapA := map[string]string{"message": "Failed to delete the vNet"}
-				return c.JSONBlob(responseCode, body)
+				responseCode, body, err := delResource(nsId, "vNet", v, forceFlag)
+				if err != nil {
+					cblog.Error(err)
+					//mapA := map[string]string{"message": "Failed to delete the vNet"}
+					return c.JSONBlob(responseCode, body)
+				}
+
 			}
 
+			mapA := map[string]string{"message": "All vNets has been deleted"}
+			return c.JSON(http.StatusOK, &mapA)
 		}
+	*/
 
-		mapA := map[string]string{"message": "All vNets has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
+	err := delAllResources(nsId, resourceType, forceFlag)
+	if err != nil {
+		cblog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusConflict, &mapA)
 	}
+
+	mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
 }
 
-//func createVNet(nsId string, u *vNetReq) (vNetInfo, int, []byte, error) {
-func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
+//func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, int, []byte, error) {
+func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	check, _ := checkResource(nsId, "vNet", u.Name)
 
 	if check {
-		temp := vNetInfo{}
+		temp := TbVNetInfo{}
 		err := fmt.Errorf("The vNet " + u.Name + " already exists.")
 		return temp, err
 	}
-
-	/* FYI; as of 2020-04-17
-	type vNetReq struct {
-		//Id                string `json:"id"`
-		Name           string `json:"name"`
-		ConnectionName string `json:"connectionName"`
-		//CspVNetId      string `json:"cspVNetId"`
-		CspVNetName string `json:"cspVNetName"`
-		//CidrBlock         string `json:"cidrBlock"`
-		//Region            string `json:"region"`
-		//ResourceGroupName string `json:"resourceGroupName"`
-		Description string `json:"description"`
-	}
-	*/
 
 	//url := common.SPIDER_URL + "/vpc?connection_name=" + u.ConnectionName
 	url := common.SPIDER_URL + "/vpc"
 
 	method := "POST"
 
-	tempReq := SpiderVPCReqInfo{}
+	tempReq := SpiderVPCReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
 	tempReq.ReqInfo.Name = u.Name
 	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
@@ -279,7 +307,7 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	res, err := client.Do(req)
 	if err != nil {
 		cblog.Error(err)
-		content := vNetInfo{}
+		content := TbVNetInfo{}
 		//return content, res.StatusCode, nil, err
 		return content, err
 	}
@@ -291,7 +319,7 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		content := vNetInfo{}
+		content := TbVNetInfo{}
 		//return content, res.StatusCode, body, err
 		return content, err
 	}
@@ -301,34 +329,18 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
 		cblog.Error(err)
-		content := vNetInfo{}
+		content := TbVNetInfo{}
 		//return content, res.StatusCode, body, err
 		return content, err
 	}
 
-	temp := VPCInfo{} // Spider
+	temp := SpiderVPCInfo{} // Spider
 	err2 := json.Unmarshal(body, &temp)
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
 	}
 
-	/* FYI; as of 2020-04-17
-	type vNetInfo struct {
-		Id             string `json:"id"`
-		Name           string `json:"name"`
-		ConnectionName string `json:"connectionName"`
-		CspVNetId   string `json:"cspVNetId"`
-		CspVNetName string `json:"cspVNetName"`
-		CidrBlock      string `json:"cidrBlock"`
-		//Region         string `json:"region"`
-		//ResourceGroupName string `json:"resourceGroupName"`
-		Description  string            `json:"description"`
-		Status       string            `json:"status"`
-		KeyValueList []common.KeyValue `json:"keyValueList"`
-	}
-	*/
-
-	content := vNetInfo{}
+	content := TbVNetInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
@@ -341,7 +353,7 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	content.KeyValueList = temp.KeyValueList
 
 	// cb-store
-	fmt.Println("=========================== PUT createVNet")
+	fmt.Println("=========================== PUT CreateVNet")
 	Key := common.GenResourceKey(nsId, "vNet", content.Id)
 	/*
 		mapA := map[string]string{
@@ -372,98 +384,3 @@ func createVNet(nsId string, u *vNetReq) (vNetInfo, error) {
 	//return content, res.StatusCode, body, nil
 	return content, nil
 }
-
-/*
-func getVNetList(nsId string) []string {
-
-	fmt.Println("[Get vNets")
-	key := "/ns/" + nsId + "/resources/vNet"
-	fmt.Println(key)
-
-	keyValue, _ := store.GetList(key, true)
-	var vNetList []string
-	for _, v := range keyValue {
-		//if !strings.Contains(v.Key, "vm") {
-		vNetList = append(vNetList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/vNet/"))
-		//}
-	}
-	for _, v := range vNetList {
-		fmt.Println("<" + v + "> \n")
-	}
-	fmt.Println("===============================================")
-	return vNetList
-
-}
-*/
-
-/*
-func delVNet(nsId string, Id string, forceFlag string) (int, []byte, error) {
-
-	fmt.Println("[Delete vNet] " + Id)
-
-	key := genResourceKey(nsId, "vNet", Id)
-	fmt.Println("key: " + key)
-
-	keyValue, _ := store.Get(key)
-	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
-	temp := vNetInfo{}
-	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
-	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
-	}
-	fmt.Println("temp.CspVNetId: " + temp.CspVNetId)
-
-	//url := common.SPIDER_URL + "/vpc?connection_name=" + temp.ConnectionName                           // for testapi.io
-	url := common.SPIDER_URL + "/vpc/" + temp.CspVNetId + "?connection_name=" + temp.ConnectionName // for CB-Spider
-	fmt.Println("url: " + url)
-
-	method := "DELETE"
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		cblog.Error(err)
-		return res.StatusCode, nil, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		cblog.Error(err)
-		return res.StatusCode, body, err
-	}
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case forceFlag == "true":
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
-		}
-		return res.StatusCode, body, nil
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		cblog.Error(err)
-		return res.StatusCode, body, err
-	default:
-		cbStoreDeleteErr := store.Delete(key)
-		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
-		}
-		return res.StatusCode, body, nil
-	}
-}
-*/

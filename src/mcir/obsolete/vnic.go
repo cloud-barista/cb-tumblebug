@@ -146,7 +146,7 @@ func RestGetAllVNic(c echo.Context) error {
 		VNic []vNicInfo `json:"vNic"`
 	}
 
-	vNicList := getResourceList(nsId, "vNic")
+	vNicList := ListResourceId(nsId, "vNic")
 
 	for _, v := range vNicList {
 
@@ -196,7 +196,7 @@ func RestDelAllVNic(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	vNicList := getResourceList(nsId, "vNic")
+	vNicList := ListResourceId(nsId, "vNic")
 
 	if len(vNicList) == 0 {
 		mapA := map[string]string{"message": "There is no vNic element in this namespace."}

@@ -223,14 +223,14 @@ func delNs(Id string) error {
 	/*
 		// Forbid deleting NS when there is at least one MCIS or one of resources.
 		mcisList := mcis.getMcisList(Id)
-		imageList := mcir.getResourceList(Id, "image")
-		vNetList := mcir.getResourceList(Id, "vNet")
-		publicIpList := mcir.getResourceList(Id, "publicIp")
-		securityGroupList := mcir.getResourceList(Id, "securityGroup")
-		specList := mcir.getResourceList(Id, "spec")
-		sshKeyList := mcir.getResourceList(Id, "sshKey")
-		subnetList := mcir.getResourceList(Id, "subnet")
-		vNicList := mcir.getResourceList(Id, "vNic")
+		imageList := mcir.ListResourceId(Id, "image")
+		vNetList := mcir.ListResourceId(Id, "vNet")
+		publicIpList := mcir.ListResourceId(Id, "publicIp")
+		securityGroupList := mcir.ListResourceId(Id, "securityGroup")
+		specList := mcir.ListResourceId(Id, "spec")
+		sshKeyList := mcir.ListResourceId(Id, "sshKey")
+		subnetList := mcir.ListResourceId(Id, "subnet")
+		vNicList := mcir.ListResourceId(Id, "vNic")
 
 		if len(mcisList)+len(imageList)+len(vNetList)+len(securityGroupList)+len(specList)+len(sshKeyList)+len(subnetList) > 0 {
 			errString := "Cannot delete NS " + Id + ", which is not empty. There exists at least one MCIS or one of resources."

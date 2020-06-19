@@ -116,7 +116,7 @@ func RestGetAllSubnet(c echo.Context) error {
 		Subnet []subnetInfo `json:"subnet"`
 	}
 
-	subnetList := getResourceList(nsId, "subnet")
+	subnetList := ListResourceId(nsId, "subnet")
 
 	for _, v := range subnetList {
 
@@ -166,7 +166,7 @@ func RestDelAllSubnet(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	subnetList := getResourceList(nsId, "subnet")
+	subnetList := ListResourceId(nsId, "subnet")
 
 	if len(subnetList) == 0 {
 		mapA := map[string]string{"message": "There is no subnet element in this namespace."}

@@ -137,7 +137,7 @@ func RestGetAllPublicIp(c echo.Context) error {
 		PublicIp []publicIpInfo `json:"publicIp"`
 	}
 
-	publicIpList := getResourceList(nsId, "publicIp")
+	publicIpList := ListResourceId(nsId, "publicIp")
 
 	for _, v := range publicIpList {
 
@@ -187,7 +187,7 @@ func RestDelAllPublicIp(c echo.Context) error {
 	nsId := c.Param("nsId")
 	forceFlag := c.QueryParam("force")
 
-	publicIpList := getResourceList(nsId, "publicIp")
+	publicIpList := ListResourceId(nsId, "publicIp")
 
 	if len(publicIpList) == 0 {
 		mapA := map[string]string{"message": "There is no publicIp element in this namespace."}
