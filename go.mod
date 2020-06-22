@@ -18,6 +18,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/sirupsen/logrus v1.6.0
