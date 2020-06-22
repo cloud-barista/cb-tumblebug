@@ -206,11 +206,11 @@ func RestDelImage(c echo.Context) error {
 	id := c.Param("imageId")
 	forceFlag := c.QueryParam("force")
 
-	responseCode, _, err := DelResource(nsId, resourceType, id, forceFlag)
+	err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(responseCode, &mapA)
+		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
 	mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}

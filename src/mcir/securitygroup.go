@@ -207,11 +207,12 @@ func RestDelSecurityGroup(c echo.Context) error {
 
 	//responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
 
-	responseCode, body, err := DelResource(nsId, resourceType, id, forceFlag)
+	err := DelResource(nsId, resourceType, id, forceFlag)
 	if err != nil {
 		cblog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
-		return c.JSONBlob(responseCode, body)
+		//return c.JSONBlob(responseCode, body)
+		return c.JSON(http.StatusFailedDependency, err)
 	}
 
 	mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}

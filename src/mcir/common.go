@@ -40,7 +40,7 @@ func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 	}
 
 	for _, v := range resourceIdList {
-		_, _, err := DelResource(nsId, resourceType, v, forceFlag)
+		err := DelResource(nsId, resourceType, v, forceFlag)
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,8 @@ func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 	return nil
 }
 
-func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
+//func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
+func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) error {
 
 	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
 	fmt.Printf("DelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
@@ -57,10 +58,11 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		mapA := map[string]string{"message": errString}
-		mapB, _ := json.Marshal(mapA)
+		//mapA := map[string]string{"message": errString}
+		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
-		return http.StatusNotFound, mapB, err
+		//return http.StatusNotFound, mapB, err
+		return err
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
@@ -93,7 +95,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		err := store.Delete(key)
 		if err != nil {
 			cblog.Error(err)
-			return http.StatusInternalServerError, nil, err
+			//return http.StatusInternalServerError, nil, err
+			return err
 		}
 
 		sql := "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
@@ -115,7 +118,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			fmt.Println("Data deleted successfully..")
 		}
 
-		return http.StatusOK, nil, nil
+		//return http.StatusOK, nil, nil
+		return nil
 	case "spec":
 		// delete spec info
 
@@ -134,14 +138,16 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		err := store.Delete(key)
 		if err != nil {
 			cblog.Error(err)
-			return http.StatusInternalServerError, nil, err
+			//return http.StatusInternalServerError, nil, err
+			return err
 		}
 
 		//delete related recommend spec
 		err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
 		if err != nil {
 			cblog.Error(err)
-			return http.StatusInternalServerError, nil, err
+			//return http.StatusInternalServerError, nil, err
+			return err
 		}
 
 		sql := "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
@@ -163,7 +169,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			fmt.Println("Data deleted successfully..")
 		}
 
-		return http.StatusOK, nil, nil
+		//return http.StatusOK, nil, nil
+		return nil
 	case "sshKey":
 		temp := TbSshKeyInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -197,7 +204,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	*/
 	default:
 		err := fmt.Errorf("invalid resourceType")
-		return http.StatusBadRequest, nil, err
+		//return http.StatusBadRequest, nil, err
+		return err
 	}
 
 	fmt.Println("url: " + url)
@@ -222,7 +230,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	res, err := client.Do(req)
 	if err != nil {
 		cblog.Error(err)
-		return res.StatusCode, nil, err
+		//return res.StatusCode, nil, err
+		return err
 	}
 	defer res.Body.Close()
 
@@ -230,7 +239,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	fmt.Println(string(body))
 	if err != nil {
 		cblog.Error(err)
-		return res.StatusCode, body, err
+		//return res.StatusCode, body, err
+		return err
 	}
 
 	/*
@@ -257,20 +267,25 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		cbStoreDeleteErr := store.Delete(key)
 		if cbStoreDeleteErr != nil {
 			cblog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
+			//return res.StatusCode, body, cbStoreDeleteErr
+			return cbStoreDeleteErr
 		}
-		return res.StatusCode, body, nil
+		//return res.StatusCode, body, nil
+		return nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
 		cblog.Error(err)
-		return res.StatusCode, body, err
+		//return res.StatusCode, body, err
+		return err
 	default:
 		cbStoreDeleteErr := store.Delete(key)
 		if cbStoreDeleteErr != nil {
 			cblog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
+			//return res.StatusCode, body, cbStoreDeleteErr
+			return cbStoreDeleteErr
 		}
-		return res.StatusCode, body, nil
+		//return res.StatusCode, body, nil
+		return nil
 	}
 }
 
