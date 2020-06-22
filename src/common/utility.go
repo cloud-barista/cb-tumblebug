@@ -66,7 +66,6 @@ func GenUuid() string {
 }
 
 func GenId(name string) string {
-	//return uuid.New().String()
 	return name
 }
 
