@@ -11,9 +11,9 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/cloud-barista/cb-tumblebug/src/mcis"
-	"github.com/cloud-barista/cb-tumblebug/src/restapiserver"
 
-	grpcserver "github.com/cloud-barista/cb-tumblebug/src/grpc/server"
+	grpcserver "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server"
+	restapiserver "github.com/cloud-barista/cb-tumblebug/src/api/rest"
 )
 
 func main() {

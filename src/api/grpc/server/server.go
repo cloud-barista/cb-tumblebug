@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	pb "github.com/cloud-barista/cb-tumblebug/src/grpc/protobuf"
+	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
