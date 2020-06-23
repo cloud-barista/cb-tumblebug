@@ -35,7 +35,7 @@ func init() {
 func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 	resourceIdList := ListResourceId(nsId, resourceType)
 
-	if len(resourceType) == 0 {
+	if len(resourceIdList) == 0 {
 		return nil
 	}
 

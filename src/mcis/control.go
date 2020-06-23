@@ -3112,7 +3112,7 @@ func getVmNativeIp(nsId string, mcisId string, vmId string) (vmStatusInfo, error
 
 func ValidateStatus() {
 
-	nsList := common.GetNsList()
+	nsList := common.ListNsId()
 
 	for _, v := range nsList {
 		fmt.Println("validateStatus: NS[" + v + "]")
