@@ -45,7 +45,7 @@ to quickly create a Cobra application.`,
 			fmt.Println("file is required")
 		} else {
 			
-			var configuration mcisReq
+			var configuration TbMcisReq
 
     		viper.SetConfigFile(fileStr)
 			if err := viper.ReadInConfig(); err != nil {

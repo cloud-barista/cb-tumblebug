@@ -42,6 +42,7 @@ func genUuid() string {
 }
 */
 
+/*
 type mcirIds struct {
 	CspImageId           string
 	CspImageName         string
@@ -58,6 +59,7 @@ type mcirIds struct {
 
 	ConnectionName string
 }
+*/
 
 func checkMcis(nsId string, mcisId string) (bool, error) {
 
@@ -184,7 +186,7 @@ func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*strin
 	}
 }
 
-func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, privateKey string, cmd string, returnResult *[]sshResult) {
+func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
@@ -201,7 +203,7 @@ func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, 
 
 	//wg.Done() //goroutin sync done
 
-	sshResultTmp := sshResult{}
+	sshResultTmp := SshCmdResult{}
 	sshResultTmp.Mcis_id = ""
 	sshResultTmp.Vm_id = vmID
 	sshResultTmp.Vm_ip = vmIP
