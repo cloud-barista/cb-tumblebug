@@ -64,12 +64,12 @@ type KeyValue struct {
 // Structs for REST API
 
 // 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
-type SpiderVMReqInfo struct { // Spider
+type SpiderVMReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        VMReqInfo
+	ReqInfo        SpiderVMReqInfo
 }
 
-type VMReqInfo struct { // Spider
+type SpiderVMReqInfo struct { // Spider
 	Name               string
 	ImageName          string
 	VPCName            string
@@ -82,15 +82,16 @@ type VMReqInfo struct { // Spider
 	VMUserPasswd string
 }
 
+/* Not used yet
 type VMStatusInfo struct { // Spider
 	//IId      IID // {NameId, SystemId}
-
 	VmStatus VMStatus
 }
+*/
 
 // GO do not support Enum. So, define like this.
 type VMStatus string // Spider
-type VMOperation string
+//type VMOperation string // Not used yet
 
 const ( // Spider
 	Creating VMStatus = "Creating" // from launch to running
@@ -114,7 +115,7 @@ type RegionInfo struct { // Spider
 	Zone   string
 }
 
-type VMInfo struct { // Spider
+type SpiderVMInfo struct { // Spider
 	IId               common.IID // {NameId, SystemId}
 	ImageIId          common.IID
 	VpcIID            common.IID
@@ -142,16 +143,16 @@ type VMInfo struct { // Spider
 	KeyValueList []KeyValue
 }
 
-type mcisReq struct {
-	Id     string  `json:"id"`
-	Name   string  `json:"name"`
-	Vm_req []vmReq `json:"vm_req"`
+type TbMcisReq struct {
+	Id     string    `json:"id"`
+	Name   string    `json:"name"`
+	Vm_req []TbVmReq `json:"vm_req"`
 	//Vm_num         string  `json:"vm_num"`
 	Placement_algo string `json:"placement_algo"`
 	Description    string `json:"description"`
 }
 
-type vmReq struct {
+type TbVmReq struct {
 	Id             string `json:"id"`
 	ConnectionName string `json:"connectionName"`
 
@@ -192,34 +193,39 @@ type vmReq struct {
 	Vm_access_passwd   string   `json:"vm_access_passwd"`
 }
 
+/*
 type placementKeyValue struct {
 	Key   string
 	Value string
 }
+*/
 
-type mcisInfo struct {
-	Id             string       `json:"id"`
-	Name           string       `json:"name"`
-	Status         string       `json:"status"`
-	TargetStatus   string       `json:"targetStatus"`
-	TargetAction   string       `json:"targetAction"`
-	Placement_algo string       `json:"placement_algo"`
-	Description    string       `json:"description"`
-	Vm             []vmOverview `json:"vm"`
+type McisInfo struct {
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	Status         string `json:"status"`
+	TargetStatus   string `json:"targetStatus"`
+	TargetAction   string `json:"targetAction"`
+	Placement_algo string `json:"placement_algo"`
+	Description    string `json:"description"`
+	//Vm             []vmOverview `json:"vm"`
+	Vm []TbVmInfo `json:"vm"`
 }
 
+/*
 type vmOverview struct {
 	Id          string      `json:"id"`
 	Name        string      `json:"name"`
 	Config_name string      `json:"config_name"`
 	Region      RegionInfo  `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	Location    geoLocation `json:"location"`
+	Location    GeoLocation `json:"location"`
 	PublicIP    string      `json:"publicIP"`
 	PublicDNS   string      `json:"publicDNS"`
 	Status      string      `json:"status"`
 }
+*/
 
-type geoLocation struct {
+type GeoLocation struct {
 	Latitude     string `json:"latitude"`
 	Longitude    string `json:"longitude"`
 	BriefAddr    string `json:"briefAddr"`
@@ -227,7 +233,7 @@ type geoLocation struct {
 	NativeRegion string `json:"nativeRegion"`
 }
 
-type vmInfo struct {
+type TbVmInfo struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	Config_name string `json:"config_name"`
@@ -246,7 +252,7 @@ type vmInfo struct {
 	VmUserId     string `json:"vmUserId"`
 	VmUserPasswd string `json:"vmUserPasswd"`
 
-	Location geoLocation `json:"location"`
+	Location GeoLocation `json:"location"`
 
 	// 2. Provided by CB-Spider
 	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
@@ -262,10 +268,10 @@ type vmInfo struct {
 	TargetStatus string `json:"targetStatus"`
 	TargetAction string `json:"targetAction"`
 
-	CspViewVmDetail VMInfo `json:"cspViewVmDetail"`
+	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
 
-/* Use "VMInfo" (from Spider), instead of this.
+/* Use "SpiderVMInfo" (from Spider), instead of this.
 type vmCspViewInfo struct {
 	Name      string    // AWS,
 	Id        string    // AWS,
@@ -294,17 +300,17 @@ type vmCspViewInfo struct {
 }
 */
 
-type mcisStatusInfo struct {
+type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 	//Vm_num string         `json:"vm_num"`
-	Status       string         `json:"status"`
-	TargetStatus string         `json:"targetStatus"`
-	TargetAction string         `json:"targetAction"`
-	Vm           []vmStatusInfo `json:"vm"`
+	Status       string           `json:"status"`
+	TargetStatus string           `json:"targetStatus"`
+	TargetAction string           `json:"targetAction"`
+	Vm           []TbVmStatusInfo `json:"vm"`
 }
 
-type vmStatusInfo struct {
+type TbVmStatusInfo struct {
 	Id            string `json:"id"`
 	Csp_vm_id     string `json:"csp_vm_id"`
 	Name          string `json:"name"`
@@ -315,14 +321,14 @@ type vmStatusInfo struct {
 	Public_ip     string `json:"public_ip"`
 }
 
-type mcisRecommendReq struct {
-	Vm_req          []vmRecommendReq    `json:"vm_req"`
-	Placement_algo  string              `json:"placement_algo"`
-	Placement_param []placementKeyValue `json:"placement_param"`
-	Max_result_num  string              `json:"max_result_num"`
+type McisRecommendReq struct {
+	Vm_req          []TbVmRecommendReq `json:"vm_req"`
+	Placement_algo  string             `json:"placement_algo"`
+	Placement_param []KeyValue         `json:"placement_param"`
+	Max_result_num  string             `json:"max_result_num"`
 }
 
-type vmRecommendReq struct {
+type TbVmRecommendReq struct {
 	Request_name   string `json:"request_name"`
 	Max_result_num string `json:"max_result_num"`
 
@@ -331,11 +337,11 @@ type vmRecommendReq struct {
 	Disk_size   string `json:"disk_size"`
 	//Disk_type   string `json:"disk_type"`
 
-	Placement_algo  string              `json:"placement_algo"`
-	Placement_param []placementKeyValue `json:"placement_param"`
+	Placement_algo  string     `json:"placement_algo"`
+	Placement_param []KeyValue `json:"placement_param"`
 }
 
-type mcisCmdReq struct {
+type McisCmdReq struct {
 	Mcis_id   string `json:"mcis_id"`
 	Vm_id     string `json:"vm_id"`
 	Ip        string `json:"ip"`
@@ -344,15 +350,15 @@ type mcisCmdReq struct {
 	Command   string `json:"command"`
 }
 
-type vmPriority struct {
-	Priority string        `json:"priority"`
+type TbVmPriority struct {
+	Priority string          `json:"priority"`
 	Vm_spec  mcir.TbSpecInfo `json:"vm_spec"`
 }
-type vmRecommendInfo struct {
-	Vm_req          vmRecommendReq      `json:"vm_req"`
-	Vm_priority     []vmPriority        `json:"vm_priority"`
-	Placement_algo  string              `json:"placement_algo"`
-	Placement_param []placementKeyValue `json:"placement_param"`
+type TbVmRecommendInfo struct {
+	Vm_req          TbVmRecommendReq `json:"vm_req"`
+	Vm_priority     []TbVmPriority   `json:"vm_priority"`
+	Placement_algo  string           `json:"placement_algo"`
+	Placement_param []KeyValue       `json:"placement_param"`
 }
 
 // MCIS API Proxy
@@ -361,31 +367,34 @@ func RestPostMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	req := &mcisReq{}
+	req := &TbMcisReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	key := createMcis(nsId, req)
+	key := CreateMcis(nsId, req)
 	mcisId := req.Id
 
 	keyValue, _ := store.Get(key)
 
-	var content struct {
-		Id   string `json:"id"`
-		Name string `json:"name"`
-		//Vm_num         string   `json:"vm_num"`
-		Status         string   `json:"status"`
-		TargetStatus   string   `json:"targetStatus"`
-		TargetAction   string   `json:"targetAction"`
-		Vm             []vmInfo `json:"vm"`
-		Placement_algo string   `json:"placement_algo"`
-		Description    string   `json:"description"`
-	}
+	/*
+		var content struct {
+			Id   string `json:"id"`
+			Name string `json:"name"`
+			//Vm_num         string   `json:"vm_num"`
+			Status         string   `json:"status"`
+			TargetStatus   string   `json:"targetStatus"`
+			TargetAction   string   `json:"targetAction"`
+			Vm             []TbVmInfo `json:"vm"`
+			Placement_algo string   `json:"placement_algo"`
+			Description    string   `json:"description"`
+		}
+	*/
+	content := McisInfo{}
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
 		return err
@@ -400,13 +409,13 @@ func RestPostMcis(c echo.Context) error {
 			return c.JSON(http.StatusOK, &mapA)
 		}
 		//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-		vmTmp := vmInfo{}
+		vmTmp := TbVmInfo{}
 		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 		vmTmp.Id = v
 		content.Vm = append(content.Vm, vmTmp)
 	}
 
-	//mcisStatus, err := getMcisStatus(nsId, mcisId)
+	//mcisStatus, err := GetMcisStatus(nsId, mcisId)
 	//content.Status = mcisStatus.Status
 
 	//fmt.Printf("%+v\n", content)
@@ -426,7 +435,7 @@ func RestGetMcis(c echo.Context) error {
 	if action == "suspend" {
 		fmt.Println("[suspend MCIS]")
 
-		err := controlMcisAsync(nsId, mcisId, actionSuspend)
+		err := ControlMcisAsync(nsId, mcisId, actionSuspend)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusFailedDependency, &mapA)
@@ -438,7 +447,7 @@ func RestGetMcis(c echo.Context) error {
 	} else if action == "resume" {
 		fmt.Println("[resume MCIS]")
 
-		err := controlMcisAsync(nsId, mcisId, actionResume)
+		err := ControlMcisAsync(nsId, mcisId, actionResume)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusFailedDependency, &mapA)
@@ -450,7 +459,7 @@ func RestGetMcis(c echo.Context) error {
 	} else if action == "reboot" {
 		fmt.Println("[reboot MCIS]")
 
-		err := controlMcisAsync(nsId, mcisId, actionReboot)
+		err := ControlMcisAsync(nsId, mcisId, actionReboot)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusFailedDependency, &mapA)
@@ -462,7 +471,7 @@ func RestGetMcis(c echo.Context) error {
 	} else if action == "terminate" {
 		fmt.Println("[terminate MCIS]")
 
-		vmList, err := getVmList(nsId, mcisId)
+		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
 			cblog.Error(err)
 			return err
@@ -476,10 +485,10 @@ func RestGetMcis(c echo.Context) error {
 
 		/*
 			for _, v := range vmList {
-				controlVm(nsId, mcisId, v, actionTerminate)
+				ControlVm(nsId, mcisId, v, actionTerminate)
 			}
 		*/
-		err = controlMcisAsync(nsId, mcisId, actionTerminate)
+		err = ControlMcisAsync(nsId, mcisId, actionTerminate)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusFailedDependency, &mapA)
@@ -492,7 +501,7 @@ func RestGetMcis(c echo.Context) error {
 
 		fmt.Println("[status MCIS]")
 
-		vmList, err := getVmList(nsId, mcisId)
+		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
 			cblog.Error(err)
 			return err
@@ -502,7 +511,7 @@ func RestGetMcis(c echo.Context) error {
 			mapA := map[string]string{"message": "No VM to check in the MCIS"}
 			return c.JSON(http.StatusOK, &mapA)
 		}
-		mcisStatusResponse, err := getMcisStatus(nsId, mcisId)
+		mcisStatusResponse, err := GetMcisStatus(nsId, mcisId)
 		if err != nil {
 			cblog.Error(err)
 			return err
@@ -519,12 +528,12 @@ func RestGetMcis(c echo.Context) error {
 			Id   string `json:"id"`
 			Name string `json:"name"`
 			//Vm_num         string   `json:"vm_num"`
-			Status         string   `json:"status"`
-			TargetStatus   string   `json:"targetStatus"`
-			TargetAction   string   `json:"targetAction"`
-			Vm             []vmInfo `json:"vm"`
-			Placement_algo string   `json:"placement_algo"`
-			Description    string   `json:"description"`
+			Status         string     `json:"status"`
+			TargetStatus   string     `json:"targetStatus"`
+			TargetAction   string     `json:"targetAction"`
+			Vm             []TbVmInfo `json:"vm"`
+			Placement_algo string     `json:"placement_algo"`
+			Description    string     `json:"description"`
 		}
 
 		fmt.Println("[Get MCIS for id]" + mcisId)
@@ -541,7 +550,7 @@ func RestGetMcis(c echo.Context) error {
 
 		json.Unmarshal([]byte(keyValue.Value), &content)
 
-		mcisStatus, err := getMcisStatus(nsId, mcisId)
+		mcisStatus, err := GetMcisStatus(nsId, mcisId)
 		content.Status = mcisStatus.Status
 
 		if err != nil {
@@ -549,7 +558,7 @@ func RestGetMcis(c echo.Context) error {
 			return err
 		}
 
-		vmList, err := getVmList(nsId, mcisId)
+		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
 			cblog.Error(err)
 			return err
@@ -564,12 +573,12 @@ func RestGetMcis(c echo.Context) error {
 				return c.JSON(http.StatusOK, &mapA)
 			}
 			//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-			vmTmp := vmInfo{}
+			vmTmp := TbVmInfo{}
 			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 			vmTmp.Id = v
 
 			//get current vm status
-			vmStatusInfoTmp, err := getVmStatus(nsId, mcisId, v)
+			vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v)
 			if err != nil {
 				cblog.Error(err)
 			}
@@ -596,10 +605,10 @@ func RestGetAllMcis(c echo.Context) error {
 
 	var content struct {
 		//Name string     `json:"name"`
-		Mcis []mcisInfo `json:"mcis"`
+		Mcis []McisInfo `json:"mcis"`
 	}
 
-	mcisList := getMcisList(nsId)
+	mcisList := ListMcisId(nsId)
 
 	for _, v := range mcisList {
 
@@ -611,14 +620,14 @@ func RestGetAllMcis(c echo.Context) error {
 			return c.JSON(http.StatusOK, &mapA)
 		}
 		//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		mcisTmp := mcisInfo{}
+		mcisTmp := McisInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 		mcisId := v
 		mcisTmp.Id = mcisId
 
 		if option == "status" {
 			//get current mcis status
-			mcisStatus, err := getMcisStatus(nsId, mcisId)
+			mcisStatus, err := GetMcisStatus(nsId, mcisId)
 			if err != nil {
 				cblog.Error(err)
 				return err
@@ -629,7 +638,7 @@ func RestGetAllMcis(c echo.Context) error {
 			mcisTmp.Status = ""
 		}
 
-		vmList, err := getVmList(nsId, mcisId)
+		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
 			cblog.Error(err)
 			return err
@@ -644,13 +653,14 @@ func RestGetAllMcis(c echo.Context) error {
 				return c.JSON(http.StatusOK, &mapA)
 			}
 			//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-			vmTmp := vmOverview{}
+			//vmTmp := vmOverview{}
+			vmTmp := TbVmInfo{}
 			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 			vmTmp.Id = v1
 
 			if option == "status" {
 				//get current vm status
-				vmStatusInfoTmp, err := getVmStatus(nsId, mcisId, v1)
+				vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v1)
 				if err != nil {
 					cblog.Error(err)
 				}
@@ -682,7 +692,7 @@ func RestDelMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	err := delMcis(nsId, mcisId)
+	err := DelMcis(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the MCIS"}
@@ -696,7 +706,7 @@ func RestDelMcis(c echo.Context) error {
 func RestDelAllMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 
-	mcisList := getMcisList(nsId)
+	mcisList := ListMcisId(nsId)
 
 	if len(mcisList) == 0 {
 		mapA := map[string]string{"message": "No MCIS to delete"}
@@ -704,7 +714,7 @@ func RestDelAllMcis(c echo.Context) error {
 	}
 
 	for _, v := range mcisList {
-		err := delMcis(nsId, v)
+		err := DelMcis(nsId, v)
 		if err != nil {
 			cblog.Error(err)
 			mapA := map[string]string{"message": "Failed to delete All MCISs"}
@@ -721,16 +731,16 @@ func RestPostMcisRecommand(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	req := &mcisRecommendReq{}
+	req := &McisRecommendReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
 	var content struct {
-		//Vm_req          []vmRecommendReq    `json:"vm_req"`
-		Vm_recommend    []vmRecommendInfo   `json:"vm_recommend"`
+		//Vm_req          []TbVmRecommendReq    `json:"vm_req"`
+		Vm_recommend    []TbVmRecommendInfo `json:"vm_recommend"`
 		Placement_algo  string              `json:"placement_algo"`
-		Placement_param []placementKeyValue `json:"placement_param"`
+		Placement_param []KeyValue          `json:"placement_param"`
 	}
 	//content.Vm_req = req.Vm_req
 	content.Placement_algo = req.Placement_algo
@@ -739,14 +749,14 @@ func RestPostMcisRecommand(c echo.Context) error {
 	vmList := req.Vm_req
 
 	for i, v := range vmList {
-		vmTmp := vmRecommendInfo{}
+		vmTmp := TbVmRecommendInfo{}
 		//vmTmp.Request_name = v.Request_name
 		vmTmp.Vm_req = req.Vm_req[i]
 		vmTmp.Placement_algo = v.Placement_algo
 		vmTmp.Placement_param = v.Placement_param
 
 		var err error
-		vmTmp.Vm_priority, err = getRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
+		vmTmp.Vm_priority, err = GetRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
 
 		if err != nil {
 			cblog.Error(err)
@@ -768,12 +778,12 @@ func RestPostCmdMcisVm(c echo.Context) error {
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
 
-	req := &mcisCmdReq{}
+	req := &McisCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	vmIp := getVmIp(nsId, mcisId, vmId)
+	vmIp := GetVmIp(nsId, mcisId, vmId)
 
 	//fmt.Printf("[vmIp] " +vmIp)
 
@@ -781,9 +791,9 @@ func RestPostCmdMcisVm(c echo.Context) error {
 	cmd := req.Command
 
 	// find vaild username
-	userName, sshKey := getVmKey(nsId, mcisId, vmId)
+	userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 	userNames := []string{sshDefaultUserName01, sshDefaultUserName02, sshDefaultUserName03, sshDefaultUserName04, userName, req.User_name}
-	userName = verifySshUserName(vmIp, userNames, sshKey)
+	userName = VerifySshUserName(vmIp, userNames, sshKey)
 	if userName == "" {
 		return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
 	}
@@ -802,7 +812,7 @@ func RestPostCmdMcisVm(c echo.Context) error {
 	}
 }
 
-func verifySshUserName(vmIp string, userNames []string, privateKey string) string {
+func VerifySshUserName(vmIp string, userNames []string, privateKey string) string {
 	theUserName := ""
 	cmd := "ls"
 	for _, v := range userNames {
@@ -819,7 +829,7 @@ func verifySshUserName(vmIp string, userNames []string, privateKey string) strin
 	return theUserName
 }
 
-type sshResult struct {
+type SshCmdResult struct {
 	Mcis_id string `json:"mcis_id"`
 	Vm_id   string `json:"vm_id"`
 	Vm_ip   string `json:"vm_ip"`
@@ -832,7 +842,7 @@ func RestPostCmdMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	req := &mcisCmdReq{}
+	req := &McisCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
@@ -847,7 +857,7 @@ func RestPostCmdMcis(c echo.Context) error {
 		Result_array []contentSub `json:"result_array"`
 	}
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
 		return err
@@ -856,17 +866,17 @@ func RestPostCmdMcis(c echo.Context) error {
 	//goroutine sync wg
 	var wg sync.WaitGroup
 
-	var resultArray []sshResult
+	var resultArray []SshCmdResult
 
 	for _, v := range vmList {
 		wg.Add(1)
 
 		vmId := v
-		vmIp := getVmIp(nsId, mcisId, vmId)
+		vmIp := GetVmIp(nsId, mcisId, vmId)
 
 		cmd := req.Command
 
-		// userName, sshKey := getVmKey(nsId, mcisId, vmId)
+		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		// if (userName == "") {
 		// 	userName = req.User_name
 		// }
@@ -874,9 +884,9 @@ func RestPostCmdMcis(c echo.Context) error {
 		// 	userName = sshDefaultUserName
 		// }
 		// find vaild username
-		userName, sshKey := getVmKey(nsId, mcisId, vmId)
+		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		userNames := []string{sshDefaultUserName01, sshDefaultUserName02, sshDefaultUserName03, sshDefaultUserName04, userName, req.User_name}
-		userName = verifySshUserName(vmIp, userNames, sshKey)
+		userName = VerifySshUserName(vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -904,10 +914,10 @@ func RestPostCmdMcis(c echo.Context) error {
 
 }
 
-type agentInstallContent struct {
-	Result_array []agentInstallContentSub `json:"result_array"`
+type AgentInstallContentWrapper struct {
+	Result_array []AgentInstallContent `json:"result_array"`
 }
-type agentInstallContentSub struct {
+type AgentInstallContent struct {
 	Mcis_id string `json:"mcis_id"`
 	Vm_id   string `json:"vm_id"`
 	Vm_ip   string `json:"vm_ip"`
@@ -919,7 +929,7 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	req := &mcisCmdReq{}
+	req := &McisCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
@@ -933,14 +943,14 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, content)
 }
 
-func InstallAgentToMcis(nsId string, mcisId string, req *mcisCmdReq) (agentInstallContent, error) {
+func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
-	content := agentInstallContent{}
+	content := AgentInstallContentWrapper{}
 
 	//install script
 	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & netstat -tulpn | grep milkyway"
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
 		return content, err
@@ -949,17 +959,17 @@ func InstallAgentToMcis(nsId string, mcisId string, req *mcisCmdReq) (agentInsta
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
-	var resultArray []sshResult
+	var resultArray []SshCmdResult
 
 	for _, v := range vmList {
 		wg.Add(1)
 
 		vmId := v
-		vmIp := getVmIp(nsId, mcisId, vmId)
+		vmIp := GetVmIp(nsId, mcisId, vmId)
 
 		//cmd := req.Command
 
-		// userName, sshKey := getVmKey(nsId, mcisId, vmId)
+		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		// if (userName == "") {
 		// 	userName = req.User_name
 		// }
@@ -968,9 +978,9 @@ func InstallAgentToMcis(nsId string, mcisId string, req *mcisCmdReq) (agentInsta
 		// }
 
 		// find vaild username
-		userName, sshKey := getVmKey(nsId, mcisId, vmId)
+		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		userNames := []string{sshDefaultUserName01, sshDefaultUserName02, sshDefaultUserName03, sshDefaultUserName04, userName, req.User_name}
-		userName = verifySshUserName(vmIp, userNames, sshKey)
+		userName = VerifySshUserName(vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -982,7 +992,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *mcisCmdReq) (agentInsta
 
 	for _, v := range resultArray {
 
-		resultTmp := agentInstallContentSub{}
+		resultTmp := AgentInstallContent{}
 		resultTmp.Mcis_id = mcisId
 		resultTmp.Vm_id = v.Vm_id
 		resultTmp.Vm_ip = v.Vm_ip
@@ -1020,7 +1030,7 @@ func RestGetBenchmark(c echo.Context) error {
 	option = target
 
 	var err error
-	content := multiInfo{}
+	content := BenchmarkInfoArray{}
 
 	vaildActions := "install init cpus cpum memR memW fioR fioW dbR dbW rtt mrtt clean"
 
@@ -1040,7 +1050,7 @@ func RestGetBenchmark(c echo.Context) error {
 	return c.JSON(http.StatusOK, content)
 }
 
-type specBenchInfo struct {
+type SpecBenchmarkInfo struct {
 	SpecId     string `json:"specid"`
 	Cpus       string `json:"cpus"`
 	Cpum       string `json:"cpum"`
@@ -1077,11 +1087,11 @@ func RestGetAllBenchmark(c echo.Context) error {
 
 	var err error
 
-	content := multiInfo{}
+	content := BenchmarkInfoArray{}
 
 	allBenchCmd := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW", "dbR", "dbW", "rtt"}
 
-	resultMap := make(map[string]specBenchInfo)
+	resultMap := make(map[string]SpecBenchmarkInfo)
 
 	for i, v := range allBenchCmd {
 		fmt.Println("[Benchmark] " + v)
@@ -1089,7 +1099,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 		for _, k := range content.ResultArray {
 			SpecId := k.SpecId
 			Result := k.Result
-			specBenchInfoTmp := specBenchInfo{}
+			specBenchInfoTmp := SpecBenchmarkInfo{}
 
 			val, exist := resultMap[SpecId]
 			if exist {
@@ -1201,29 +1211,29 @@ func RestGetAllBenchmark(c echo.Context) error {
 	return c.JSON(http.StatusOK, content)
 }
 
-type benchInfo struct {
-	Result      string      `json:"result"`
-	Unit        string      `json:"unit"`
-	Desc        string      `json:"desc"`
-	Elapsed     string      `json:"elapsed"`
-	SpecId      string      `json:"specid"`
-	ResultArray []benchInfo `json:"resultarray"`
+type BenchmarkInfo struct {
+	Result      string          `json:"result"`
+	Unit        string          `json:"unit"`
+	Desc        string          `json:"desc"`
+	Elapsed     string          `json:"elapsed"`
+	SpecId      string          `json:"specid"`
+	ResultArray []BenchmarkInfo `json:"resultarray"` // struct-element cycle ?
 }
 
-type multiInfo struct {
-	ResultArray []benchInfo `json:"resultarray"`
+type BenchmarkInfoArray struct {
+	ResultArray []BenchmarkInfo `json:"resultarray"`
 }
 
-type request struct {
+type BenchmarkReq struct {
 	Host string `json:"host"`
 	Spec string `json:"spec"`
 }
 
-type mRequest struct {
-	Multihost []request `json:"multihost"`
+type MultihostBenchmarkReq struct {
+	Multihost []BenchmarkReq `json:"multihost"`
 }
 
-func callMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId string, vmId string, vmIp string, action string, option string, results *multiInfo) {
+func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId string, vmId string, vmIp string, action string, option string, results *BenchmarkInfoArray) {
 	defer wg.Done() //goroutine sync done
 
 	url := "http://" + vmIp + milkywayPort + action
@@ -1244,15 +1254,15 @@ func callMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
 
 	if action == "mrtt" {
-		reqTmp := mRequest{}
+		reqTmp := MultihostBenchmarkReq{}
 		for _, vm := range vmList {
 			vmIdTmp := vm
-			vmIpTmp := getVmIp(nsId, mcisId, vmIdTmp)
+			vmIpTmp := GetVmIp(nsId, mcisId, vmIdTmp)
 			fmt.Println("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
 
-			hostTmp := request{}
+			hostTmp := BenchmarkReq{}
 			hostTmp.Host = vmIpTmp
-			hostTmp.Spec = getVmSpec(nsId, mcisId, vmIdTmp)
+			hostTmp.Spec = GetVmSpecId(nsId, mcisId, vmIdTmp)
 			reqTmp.Multihost = append(reqTmp.Multihost, hostTmp)
 		}
 		common.PrintJsonPretty(reqTmp)
@@ -1288,8 +1298,8 @@ func callMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	}
 
 	if action == "mrtt" {
-		//benchInfoTmp := benchInfo{}
-		resultTmp := benchInfo{}
+		//benchInfoTmp := BenchmarkInfo{}
+		resultTmp := BenchmarkInfo{}
 		err2 := json.Unmarshal(body, &resultTmp)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)
@@ -1298,11 +1308,11 @@ func callMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		if errStr != "" {
 			resultTmp.Result = errStr
 		}
-		resultTmp.SpecId = getVmSpec(nsId, mcisId, vmId)
+		resultTmp.SpecId = GetVmSpecId(nsId, mcisId, vmId)
 		results.ResultArray = append(results.ResultArray, resultTmp)
 
 	} else {
-		resultTmp := benchInfo{}
+		resultTmp := BenchmarkInfo{}
 		err2 := json.Unmarshal(body, &resultTmp)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)
@@ -1310,20 +1320,20 @@ func callMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		if errStr != "" {
 			resultTmp.Result = errStr
 		}
-		resultTmp.SpecId = getVmSpec(nsId, mcisId, vmId)
+		resultTmp.SpecId = GetVmSpecId(nsId, mcisId, vmId)
 		results.ResultArray = append(results.ResultArray, resultTmp)
 	}
 
 }
 
-func BenchmarkAction(nsId string, mcisId string, action string, option string) (multiInfo, error) {
+func BenchmarkAction(nsId string, mcisId string, action string, option string) (BenchmarkInfoArray, error) {
 
-	var results multiInfo
+	var results BenchmarkInfoArray
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
-		return multiInfo{}, err
+		return BenchmarkInfoArray{}, err
 	}
 
 	//goroutin sync wg
@@ -1333,9 +1343,9 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		wg.Add(1)
 
 		vmId := v
-		vmIp := getVmIp(nsId, mcisId, vmId)
+		vmIp := GetVmIp(nsId, mcisId, vmId)
 
-		go callMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
+		go CallMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
 	}
 	wg.Wait() //goroutine sync wg
 
@@ -1344,21 +1354,21 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 }
 
 /*
-func BenchmarkAction(nsId string, mcisId string, action string, option string) (multiInfo, error) {
+func BenchmarkAction(nsId string, mcisId string, action string, option string) (BenchmarkInfoArray, error) {
 
 
-	var results multiInfo
+	var results BenchmarkInfoArray
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
-		return multiInfo{}, err
+		return BenchmarkInfoArray{}, err
 	}
 
 	for _, v := range vmList {
 
 		vmId := v
-		vmIp := getVmIp(nsId, mcisId, vmId)
+		vmIp := GetVmIp(nsId, mcisId, vmId)
 
 		url := "http://"+ vmIp + milkywayPort + action
 		method := "GET"
@@ -1380,13 +1390,13 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
 
 		if action == "mrtt" {
-			reqTmp := mRequest{}
+			reqTmp := MultihostBenchmarkReq{}
 			for _, vm := range vmList {
 				vmIdTmp := vm
-				vmIpTmp := getVmIp(nsId, mcisId, vmIdTmp)
+				vmIpTmp := GetVmIp(nsId, mcisId, vmIdTmp)
 				fmt.Println("[Test for vmList " + vmIdTmp + ", " +vmIpTmp + "]")
 
-				hostTmp := request{}
+				hostTmp := BenchmarkReq{}
 				hostTmp.Host = vmIpTmp
 				reqTmp.Multihost = append(reqTmp.Multihost, hostTmp)
 			}
@@ -1403,14 +1413,14 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		res, err := client.Do(req)
 		if err != nil {
 			cblog.Error(err)
-			return multiInfo{}, err
+			return BenchmarkInfoArray{}, err
 		}
 		defer res.Body.Close()
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			cblog.Error(err)
-			return multiInfo{}, err
+			return BenchmarkInfoArray{}, err
 		}
 		fmt.Println(string(body))
 
@@ -1419,12 +1429,12 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err := fmt.Errorf(string(body))
 			cblog.Error(err)
-			return multiInfo{}, err
+			return BenchmarkInfoArray{}, err
 		}
 
 		if action == "mrtt" {
-			//benchInfoTmp := benchInfo{}
-			resultTmp := benchInfo{}
+			//benchInfoTmp := BenchmarkInfo{}
+			resultTmp := BenchmarkInfo{}
 			err2 := json.Unmarshal(body, &resultTmp)
 			if err2 != nil {
 				fmt.Println("whoops:", err2)
@@ -1433,7 +1443,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 			results.ResultArray = append(results.ResultArray, resultTmp)
 
 		} else{
-			resultTmp := benchInfo{}
+			resultTmp := BenchmarkInfo{}
 			err2 := json.Unmarshal(body, &resultTmp)
 			if err2 != nil {
 				fmt.Println("whoops:", err2)
@@ -1455,12 +1465,12 @@ func RestPostMcisVm(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	req := &vmReq{}
+	req := &TbVmReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	vmInfoData := vmInfo{}
+	vmInfoData := TbVmInfo{}
 	//vmInfoData.Id = common.GenUuid()
 	vmInfoData.Id = common.GenId(req.Name)
 	req.Id = vmInfoData.Id
@@ -1523,9 +1533,9 @@ func RestPostMcisVm(c echo.Context) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	//createMcis(nsId, req)
-	//err := addVmToMcis(nsId, mcisId, vmInfoData)
-	err := addVmToMcis(&wg, nsId, mcisId, &vmInfoData)
+	//CreateMcis(nsId, req)
+	//err := AddVmToMcis(nsId, mcisId, vmInfoData)
+	err := AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
 
 	if err != nil {
 		mapA := map[string]string{"message": "Cannot find " + common.GenMcisKey(nsId, mcisId, "")}
@@ -1533,7 +1543,7 @@ func RestPostMcisVm(c echo.Context) error {
 	}
 	wg.Wait()
 
-	vmStatus, err := getVmStatus(nsId, mcisId, vmInfoData.Id)
+	vmStatus, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
 
 	vmInfoData.Status = vmStatus.Status
 	vmInfoData.TargetStatus = vmStatus.TargetStatus
@@ -1554,28 +1564,28 @@ func RestGetMcisVm(c echo.Context) error {
 	if action == "suspend" {
 		fmt.Println("[suspend VM]")
 
-		controlVm(nsId, mcisId, vmId, actionSuspend)
+		ControlVm(nsId, mcisId, vmId, actionSuspend)
 		mapA := map[string]string{"message": "Suspending the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "resume" {
 		fmt.Println("[resume VM]")
 
-		controlVm(nsId, mcisId, vmId, actionResume)
+		ControlVm(nsId, mcisId, vmId, actionResume)
 		mapA := map[string]string{"message": "Resuming the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "reboot" {
 		fmt.Println("[reboot VM]")
 
-		controlVm(nsId, mcisId, vmId, actionReboot)
+		ControlVm(nsId, mcisId, vmId, actionReboot)
 		mapA := map[string]string{"message": "Rebooting the VM"}
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else if action == "terminate" {
 		fmt.Println("[terminate VM]")
 
-		controlVm(nsId, mcisId, vmId, actionTerminate)
+		ControlVm(nsId, mcisId, vmId, actionTerminate)
 
 		mapA := map[string]string{"message": "Terminating the VM"}
 		return c.JSON(http.StatusOK, &mapA)
@@ -1592,7 +1602,7 @@ func RestGetMcisVm(c echo.Context) error {
 			return c.JSON(http.StatusOK, &mapA)
 		}
 
-		vmStatusResponse, err := getVmStatus(nsId, mcisId, vmId)
+		vmStatusResponse, err := GetVmStatus(nsId, mcisId, vmId)
 
 		if err != nil {
 			cblog.Error(err)
@@ -1619,12 +1629,12 @@ func RestGetMcisVm(c echo.Context) error {
 			return c.JSON(http.StatusOK, &mapA)
 		}
 		//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-		vmTmp := vmInfo{}
+		vmTmp := TbVmInfo{}
 		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 		vmTmp.Id = vmId
 
 		//get current vm status
-		vmStatusInfoTmp, err := getVmStatus(nsId, mcisId, vmId)
+		vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
 		if err != nil {
 			cblog.Error(err)
 		}
@@ -1653,7 +1663,7 @@ func RestDelMcisVm(c echo.Context) error {
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
 
-	err := delMcisVm(nsId, mcisId, vmId)
+	err := DelMcisVm(nsId, mcisId, vmId)
 	if err != nil {
 		cblog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the VM info"}
@@ -1666,7 +1676,8 @@ func RestDelMcisVm(c echo.Context) error {
 
 // MCIS Information Managemenet
 
-func addVmInfoToMcis(nsId string, mcisId string, vmInfoData vmInfo) {
+/*
+func AddVmInfoToMcis(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
@@ -1680,8 +1691,9 @@ func addVmInfoToMcis(nsId string, mcisId string, vmInfoData vmInfo) {
 	//fmt.Println("===========================")
 
 }
+*/
 
-func updateMcisInfo(nsId string, mcisInfoData mcisInfo) {
+func UpdateMcisInfo(nsId string, mcisInfoData McisInfo) {
 	key := common.GenMcisKey(nsId, mcisInfoData.Id, "")
 	val, _ := json.Marshal(mcisInfoData)
 	err := store.Put(string(key), string(val))
@@ -1694,7 +1706,7 @@ func updateMcisInfo(nsId string, mcisInfoData mcisInfo) {
 	//fmt.Println("===========================")
 }
 
-func updateVmInfo(nsId string, mcisId string, vmInfoData vmInfo) {
+func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
 	err := store.Put(string(key), string(val))
@@ -1707,7 +1719,7 @@ func updateVmInfo(nsId string, mcisId string, vmInfoData vmInfo) {
 	//fmt.Println("===========================")
 }
 
-func getMcisList(nsId string) []string {
+func ListMcisId(nsId string) []string {
 
 	fmt.Println("[Get MCISs")
 	key := "/ns/" + nsId + "/mcis"
@@ -1730,9 +1742,9 @@ func getMcisList(nsId string) []string {
 
 }
 
-func getVmList(nsId string, mcisId string) ([]string, error) {
+func ListVmId(nsId string, mcisId string) ([]string, error) {
 
-	fmt.Println("[getVmList]")
+	fmt.Println("[ListVmId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//fmt.Println(key)
 
@@ -1757,12 +1769,12 @@ func getVmList(nsId string, mcisId string) ([]string, error) {
 
 }
 
-func delMcis(nsId string, mcisId string) error {
+func DelMcis(nsId string, mcisId string) error {
 
 	fmt.Println("[Delete MCIS] " + mcisId)
 
-	// controlMcis first
-	err := controlMcis(nsId, mcisId, actionTerminate)
+	// ControlMcis first
+	err := ControlMcis(nsId, mcisId, actionTerminate)
 	if err != nil {
 		cblog.Error(err)
 		return err
@@ -1772,7 +1784,7 @@ func delMcis(nsId string, mcisId string) error {
 	key := common.GenMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		cblog.Error(err)
 		return err
@@ -1798,12 +1810,12 @@ func delMcis(nsId string, mcisId string) error {
 	return nil
 }
 
-func delMcisVm(nsId string, mcisId string, vmId string) error {
+func DelMcisVm(nsId string, mcisId string, vmId string) error {
 
 	fmt.Println("[Delete VM] " + vmId)
 
-	// controlVm first
-	err := controlVm(nsId, mcisId, vmId, actionTerminate)
+	// ControlVm first
+	err := ControlVm(nsId, mcisId, vmId, actionTerminate)
 
 	if err != nil {
 		cblog.Error(err)
@@ -1823,9 +1835,9 @@ func delMcisVm(nsId string, mcisId string, vmId string) error {
 }
 
 //// Info manage for MCIS recommandation
-func getRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]vmPriority, error) {
+func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
 
-	fmt.Println("getRecommendList")
+	fmt.Println("GetRecommendList")
 
 	var content struct {
 		Id             string
@@ -1838,17 +1850,17 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 	keyValue, err := store.GetList(key, true)
 	if err != nil {
 		cblog.Error(err)
-		return []vmPriority{}, err
+		return []TbVmPriority{}, err
 	}
 
-	var vmPriorityList []vmPriority
+	var vmPriorityList []TbVmPriority
 
 	for cnt, v := range keyValue {
 		fmt.Println("getRecommendList1: " + v.Key)
 		err = json.Unmarshal([]byte(v.Value), &content)
 		if err != nil {
 			cblog.Error(err)
-			return []vmPriority{}, err
+			return []TbVmPriority{}, err
 		}
 
 		content2 := mcir.TbSpecInfo{}
@@ -1857,12 +1869,12 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 		keyValue2, err := store.Get(key2)
 		if err != nil {
 			cblog.Error(err)
-			return []vmPriority{}, err
+			return []TbVmPriority{}, err
 		}
 		json.Unmarshal([]byte(keyValue2.Value), &content2)
 		content2.Id = content.Id
 
-		vmPriorityTmp := vmPriority{}
+		vmPriorityTmp := TbVmPriority{}
 		vmPriorityTmp.Priority = strconv.Itoa(cnt)
 		vmPriorityTmp.Vm_spec = content2
 		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
@@ -1877,12 +1889,12 @@ func getRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 // MCIS Control
 
-func createMcis(nsId string, req *mcisReq) string {
+func CreateMcis(nsId string, req *TbMcisReq) string {
 	/*
 		check, _ := checkMcis(nsId, req.Name)
 
 		if check {
-			//temp := mcisInfo{}
+			//temp := McisInfo{}
 			//err := fmt.Errorf("The mcis " + req.Name + " already exists.")
 			return ""
 		}
@@ -1915,7 +1927,7 @@ func createMcis(nsId string, req *mcisReq) string {
 
 	for _, k := range vmRequest {
 
-		vmInfoData := vmInfo{}
+		vmInfoData := TbVmInfo{}
 		//vmInfoData.Id = common.GenUuid()
 		vmInfoData.Id = common.GenId(k.Name)
 		//vmInfoData.CspVmName = k.CspVmName
@@ -1976,8 +1988,8 @@ func createMcis(nsId string, req *mcisReq) string {
 
 		/////////
 
-		go addVmToMcis(&wg, nsId, mcisId, &vmInfoData)
-		//addVmToMcis(nsId, req.Id, vmInfoData)
+		go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
+		//AddVmToMcis(nsId, req.Id, vmInfoData)
 
 		if err != nil {
 			errMsg := "Failed to add VM " + vmInfoData.Name + " to MCIS " + req.Name
@@ -1986,10 +1998,10 @@ func createMcis(nsId string, req *mcisReq) string {
 	}
 	wg.Wait()
 
-	mcisTmp := mcisInfo{}
+	mcisTmp := McisInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 
-	mcisStatusTmp, _ := getMcisStatus(nsId, mcisId)
+	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
 
 	mcisTmp.Status = mcisStatusTmp.Status
 
@@ -1997,13 +2009,13 @@ func createMcis(nsId string, req *mcisReq) string {
 		mcisTmp.TargetStatus = statusComplete
 		mcisTmp.TargetAction = actionComplete
 	}
-	updateMcisInfo(nsId, mcisTmp)
+	UpdateMcisInfo(nsId, mcisTmp)
 
 	return key
 }
 
-func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *vmInfo) error {
-	fmt.Printf("\n[addVmToMcis]\n")
+func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbVmInfo) error {
+	fmt.Printf("\n[AddVmToMcis]\n")
 	//goroutin
 	defer wg.Done()
 
@@ -2013,14 +2025,20 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *vmI
 		return fmt.Errorf("Cannot find %s", key)
 	}
 
-	addVmInfoToMcis(nsId, mcisId, *vmInfoData)
+	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
+	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+	val, _ := json.Marshal(vmInfoData)
+	err := store.Put(string(key), string(val))
+	if err != nil {
+		cblog.Error(err)
+	}
 	fmt.Printf("\n[vmInfoData]\n %+v\n", vmInfoData)
 
-	//instanceIds, publicIPs := createVm(&vmInfoData)
-	err := createVm(nsId, mcisId, vmInfoData)
+	//instanceIds, publicIPs := CreateVm(&vmInfoData)
+	err = CreateVm(nsId, mcisId, vmInfoData)
 	if err != nil {
 		vmInfoData.Status = statusFailed
-		updateVmInfo(nsId, mcisId, *vmInfoData)
+		UpdateVmInfo(nsId, mcisId, *vmInfoData)
 		cblog.Error(err)
 		return err
 	}
@@ -2030,15 +2048,15 @@ func addVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *vmI
 	vmInfoData.Status = statusRunning
 	vmInfoData.TargetAction = actionComplete
 	vmInfoData.TargetStatus = statusComplete
-	updateVmInfo(nsId, mcisId, *vmInfoData)
+	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 
 	return nil
 
 }
 
-func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
+func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
-	fmt.Printf("\n\n[createVm(vmInfoData *vmInfo)]\n\n")
+	fmt.Printf("\n\n[CreateVm(vmInfoData *TbVmInfo)]\n\n")
 
 	switch {
 	case vmInfoData.Name == "":
@@ -2094,7 +2112,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	fmt.Println("\n\n[Calling SPIDER]START")
 	fmt.Println("url: " + url + " method: " + method)
 
-	tempReq := SpiderVMReqInfo{}
+	tempReq := SpiderVMReqInfoWrapper{}
 	tempReq.ConnectionName = vmInfoData.Config_name
 
 	tempReq.ReqInfo.Name = vmInfoData.Name
@@ -2183,7 +2201,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 
 	//fmt.Println(string(body))
 
-	temp := VMInfo{} // FYI; VMInfo: the struct in CB-Spider
+	temp := SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
 	err2 := json.Unmarshal(body, &temp)
 
 	if err2 != nil {
@@ -2234,7 +2252,7 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	//vmInfoData.KeyValueList = temp.KeyValueList
 
 	configTmp, _ := common.GetConnConfig(vmInfoData.Config_name)
-	vmInfoData.Location = getCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(temp.Region.Region))
+	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(temp.Region.Region))
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.
@@ -2265,9 +2283,9 @@ func createVm(nsId string, mcisId string, vmInfoData *vmInfo) error {
 	return nil
 }
 
-func controlMcis(nsId string, mcisId string, action string) error {
+func ControlMcis(nsId string, mcisId string, action string) error {
 
-	fmt.Println("[controlMcis]" + mcisId + " to " + action)
+	fmt.Println("[ControlMcis]" + mcisId + " to " + action)
 	key := common.GenMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
 	keyValue, err := store.Get(key)
@@ -2279,7 +2297,7 @@ func controlMcis(nsId string, mcisId string, action string) error {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
 		cblog.Error(err)
@@ -2291,7 +2309,7 @@ func controlMcis(nsId string, mcisId string, action string) error {
 
 	// delete vms info
 	for _, v := range vmList {
-		controlVm(nsId, mcisId, v, action)
+		ControlVm(nsId, mcisId, v, action)
 	}
 	return nil
 
@@ -2299,9 +2317,9 @@ func controlMcis(nsId string, mcisId string, action string) error {
 
 }
 
-func checkAllowedTransition(nsId string, mcisId string, action string) error {
+func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 
-	fmt.Println("[checkAllowedTransition]" + mcisId + " to " + action)
+	fmt.Println("[CheckAllowedTransition]" + mcisId + " to " + action)
 	key := common.GenMcisKey(nsId, mcisId, "")
 	keyValue, err := store.Get(key)
 	if err != nil {
@@ -2309,15 +2327,15 @@ func checkAllowedTransition(nsId string, mcisId string, action string) error {
 		return err
 	}
 
-	mcisTmp := mcisInfo{}
+	mcisTmp := McisInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 
-	mcisStatusTmp, _ := getMcisStatus(nsId, mcisId)
+	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
 
-	updateMcisInfo(nsId, mcisTmp)
+	UpdateMcisInfo(nsId, mcisTmp)
 
 	if mcisStatusTmp.Status == statusTerminating || mcisStatusTmp.Status == statusResuming || mcisStatusTmp.Status == statusSuspending || mcisStatusTmp.Status == statusCreating || mcisStatusTmp.Status == statusRebooting {
 		return errors.New(action + " is not allowed for MCIS under " + mcisStatusTmp.Status)
@@ -2335,14 +2353,14 @@ func checkAllowedTransition(nsId string, mcisId string, action string) error {
 	return nil
 }
 
-func controlMcisAsync(nsId string, mcisId string, action string) error {
+func ControlMcisAsync(nsId string, mcisId string, action string) error {
 
-	checkError := checkAllowedTransition(nsId, mcisId, action)
+	checkError := CheckAllowedTransition(nsId, mcisId, action)
 	if checkError != nil {
 		return checkError
 	}
 
-	fmt.Println("[controlMcis]" + mcisId + " to " + action)
+	fmt.Println("[ControlMcis]" + mcisId + " to " + action)
 	key := common.GenMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
 	keyValue, err := store.Get(key)
@@ -2354,13 +2372,13 @@ func controlMcisAsync(nsId string, mcisId string, action string) error {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
-	mcisTmp := mcisInfo{}
+	mcisTmp := McisInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
 		cblog.Error(err)
@@ -2398,16 +2416,16 @@ func controlMcisAsync(nsId string, mcisId string, action string) error {
 	default:
 		return errors.New(action + "is invalid actionType")
 	}
-	updateMcisInfo(nsId, mcisTmp)
+	UpdateMcisInfo(nsId, mcisTmp)
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
-	var results controlVmReturnArray
+	var results ControlVmResultWrapper
 	// delete vms info
 	for _, v := range vmList {
 		wg.Add(1)
 
-		go controlVmAsync(&wg, nsId, mcisId, v, action, &results)
+		go ControlVmAsync(&wg, nsId, mcisId, v, action, &results)
 	}
 	wg.Wait() //goroutine sync wg
 
@@ -2417,16 +2435,16 @@ func controlMcisAsync(nsId string, mcisId string, action string) error {
 
 }
 
-type controlVmReturn struct {
+type ControlVmResult struct {
 	VmId   string `json:"vm_id"`
 	Status string `json:"Status"`
 	Error  error  `json:"Error"`
 }
-type controlVmReturnArray struct {
-	ResultArray []controlVmReturn `json:"resultarray"`
+type ControlVmResultWrapper struct {
+	ResultArray []ControlVmResult `json:"resultarray"`
 }
 
-func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, action string, results *controlVmReturnArray) error {
+func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, action string, results *ControlVmResultWrapper) error {
 	defer wg.Done() //goroutine sync done
 
 	var content struct {
@@ -2434,7 +2452,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		Csp_vm_id string `json:"csp_vm_id"`
 	}
 
-	fmt.Println("[controlVm]" + vmId)
+	fmt.Println("[ControlVm]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	fmt.Println(key)
 
@@ -2447,7 +2465,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	//fmt.Printf("%+v\n", content.Cloud_id)
 	//fmt.Printf("%+v\n", content.Csp_vm_id)
 
-	temp := vmInfo{}
+	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
@@ -2510,7 +2528,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		return errors.New(action + "is invalid actionType")
 	}
 
-	updateVmInfo(nsId, mcisId, temp)
+	UpdateVmInfo(nsId, mcisId, temp)
 	//fmt.Println("url: " + url + " method: " + method)
 
 	type ControlVMReqInfo struct {
@@ -2531,7 +2549,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	if err != nil {
 		fmt.Println(err)
 		temp.Status = statusFailed
-		updateVmInfo(nsId, mcisId, temp)
+		UpdateVmInfo(nsId, mcisId, temp)
 		return err
 	}
 	req.Header.Add("Content-Type", "application/json")
@@ -2560,7 +2578,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	//	return errors.New("whoops: "+ err2.Error())
 	//}
 
-	resultTmp := controlVmReturn{}
+	resultTmp := ControlVmResult{}
 	err2 := json.Unmarshal(body, &resultTmp)
 	if err2 != nil {
 		fmt.Println("whoops:", err2)
@@ -2571,7 +2589,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		resultTmp.Error = errTmp
 
 		temp.Status = statusFailed
-		updateVmInfo(nsId, mcisId, temp)
+		UpdateVmInfo(nsId, mcisId, temp)
 	}
 	results.ResultArray = append(results.ResultArray, resultTmp)
 
@@ -2579,7 +2597,7 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 	fmt.Println("[Calling SPIDER]END vmControl\n\n")
 
-	updateVmNativeIp(nsId, mcisId, temp)
+	UpdateVmPublicIp(nsId, mcisId, temp)
 
 	/*
 		if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
@@ -2600,14 +2618,14 @@ func controlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 }
 
-func controlVm(nsId string, mcisId string, vmId string, action string) error {
+func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	var content struct {
 		Cloud_id  string `json:"cloud_id"`
 		Csp_vm_id string `json:"csp_vm_id"`
 	}
 
-	fmt.Println("[controlVm]" + vmId)
+	fmt.Println("[ControlVm]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	fmt.Println(key)
 
@@ -2620,7 +2638,7 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 	//fmt.Printf("%+v\n", content.Cloud_id)
 	//fmt.Printf("%+v\n", content.Csp_vm_id)
 
-	temp := vmInfo{}
+	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
@@ -2712,38 +2730,38 @@ func controlVm(nsId string, mcisId string, vmId string, action string) error {
 
 }
 
-func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
+func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
-	fmt.Println("[getMcisStatus]" + mcisId)
+	fmt.Println("[GetMcisStatus]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//fmt.Println(key)
 	keyValue, err := store.Get(key)
 	if err != nil {
 		cblog.Error(err)
-		return mcisStatusInfo{}, err
+		return McisStatusInfo{}, err
 	}
 
 	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	//fmt.Println("===============================================")
 
-	mcisStatus := mcisStatusInfo{}
+	mcisStatus := McisStatusInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisStatus)
 
-	mcisTmp := mcisInfo{}
+	mcisTmp := McisInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 
-	vmList, err := getVmList(nsId, mcisId)
+	vmList, err := ListVmId(nsId, mcisId)
 	//fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
 		cblog.Error(err)
-		return mcisStatusInfo{}, err
+		return McisStatusInfo{}, err
 	}
 	if len(vmList) == 0 {
-		return mcisStatusInfo{}, nil
+		return McisStatusInfo{}, nil
 	}
 
 	for _, v := range vmList {
-		vmStatusTmp, err := getVmStatus(nsId, mcisId, v)
+		vmStatusTmp, err := GetVmStatus(nsId, mcisId, v)
 		if err != nil {
 			cblog.Error(err)
 			vmStatusTmp.Status = statusFailed
@@ -2820,7 +2838,7 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 		mcisStatus.TargetStatus = statusComplete
 		mcisTmp.TargetAction = actionComplete
 		mcisTmp.TargetStatus = statusComplete
-		updateMcisInfo(nsId, mcisTmp)
+		UpdateMcisInfo(nsId, mcisTmp)
 	}
 
 	return mcisStatus, nil
@@ -2829,7 +2847,7 @@ func getMcisStatus(nsId string, mcisId string) (mcisStatusInfo, error) {
 
 }
 
-func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) {
+func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
 	/*
 		var content struct {
@@ -2841,7 +2859,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 		}
 	*/
 
-	fmt.Println("[getVmStatus]" + vmId)
+	fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
@@ -2854,14 +2872,14 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	//fmt.Printf("%+v\n", content.Cloud_id)
 	//fmt.Printf("%+v\n", content.Csp_vm_id)
 
-	temp := vmInfo{}
+	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 
-	//updateVmNativeIp. update temp vmInfo{} with changed IP
-	updateVmNativeIp(nsId, mcisId, temp)
+	//UpdateVmPublicIp. update temp TbVmInfo{} with changed IP
+	UpdateVmPublicIp(nsId, mcisId, temp)
 	keyValue, _ = store.Get(key)
 	unmarshalErr = json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
@@ -2899,7 +2917,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	}
 	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-	errorInfo := vmStatusInfo{}
+	errorInfo := TbVmStatusInfo{}
 	errorInfo.Status = statusFailed
 
 	if err != nil {
@@ -2933,7 +2951,7 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 	common.PrintJsonPretty(statusResponseTmp)
 	fmt.Println("[Calling SPIDER]END\n\n")
 
-	vmStatusTmp := vmStatusInfo{}
+	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Id = vmId
 	vmStatusTmp.Name = temp.Name
 	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
@@ -3015,9 +3033,9 @@ func getVmStatus(nsId string, mcisId string, vmId string) (vmStatusInfo, error) 
 
 }
 
-func updateVmNativeIp(nsId string, mcisId string, vmInfoData vmInfo) error {
+func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 
-	vmInfoTmp, err := getVmNativeIp(nsId, mcisId, vmInfoData.Id)
+	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mcisId, vmInfoData.Id)
 
 	if err != nil {
 		cblog.Error(err)
@@ -3026,21 +3044,21 @@ func updateVmNativeIp(nsId string, mcisId string, vmInfoData vmInfo) error {
 
 	vmInfoData.PublicIP = vmInfoTmp.Public_ip
 
-	updateVmInfo(nsId, mcisId, vmInfoData)
+	UpdateVmInfo(nsId, mcisId, vmInfoData)
 
 	return nil
 
 }
 
-func getVmNativeIp(nsId string, mcisId string, vmId string) (vmStatusInfo, error) {
+func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
-	fmt.Println("[getVmStatus]" + vmId)
+	fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
 	keyValue, _ := store.Get(key)
 
-	temp := vmInfo{}
+	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
@@ -3068,7 +3086,7 @@ func getVmNativeIp(nsId string, mcisId string, vmId string) (vmStatusInfo, error
 	}
 	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-	errorInfo := vmStatusInfo{}
+	errorInfo := TbVmStatusInfo{}
 	errorInfo.Status = statusFailed
 
 	if err != nil {
@@ -3103,7 +3121,7 @@ func getVmNativeIp(nsId string, mcisId string, vmId string) (vmStatusInfo, error
 	common.PrintJsonPretty(statusResponseTmp)
 	fmt.Println("[Calling SPIDER]END\n\n")
 
-	vmStatusTmp := vmStatusInfo{}
+	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Public_ip = statusResponseTmp.PublicIP
 
 	return vmStatusTmp, nil
@@ -3120,13 +3138,13 @@ func ValidateStatus() {
 
 }
 
-func getVmKey(nsId string, mcisId string, vmId string) (string, string) {
+func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string) {
 
 	var content struct {
 		Ssh_key_id string `json:"ssh_key_id"`
 	}
 
-	fmt.Println("[getVmIp]" + vmId)
+	fmt.Println("[GetVmIp]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
@@ -3149,13 +3167,13 @@ func getVmKey(nsId string, mcisId string, vmId string) (string, string) {
 	return keyContent.Username, keyContent.PrivateKey
 }
 
-func getVmIp(nsId string, mcisId string, vmId string) string {
+func GetVmIp(nsId string, mcisId string, vmId string) string {
 
 	var content struct {
 		PublicIP string `json:"publicIP"`
 	}
 
-	fmt.Println("[getVmIp]" + vmId)
+	fmt.Println("[GetVmIp]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
@@ -3170,7 +3188,7 @@ func getVmIp(nsId string, mcisId string, vmId string) string {
 	return content.PublicIP
 }
 
-func getVmSpec(nsId string, mcisId string, vmId string) string {
+func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 
 	var content struct {
 		Spec_id string `json:"spec_id"`
@@ -3188,13 +3206,13 @@ func getVmSpec(nsId string, mcisId string, vmId string) string {
 	return content.Spec_id
 }
 
-func getCloudLocation(cloudType string, nativeRegion string) geoLocation {
+func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 
-	location := geoLocation{}
+	location := GeoLocation{}
 
 	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
 
-	fmt.Printf("[getCloudLocation] KEY: %+v\n", key)
+	fmt.Printf("[GetCloudLocation] KEY: %+v\n", key)
 
 	keyValue, err := store.Get(key)
 
@@ -3239,7 +3257,7 @@ func getCloudLocation(cloudType string, nativeRegion string) geoLocation {
 	}
 
 	if keyValue != nil {
-		fmt.Printf("[getCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
+		fmt.Printf("[GetCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
 		err = json.Unmarshal([]byte(keyValue.Value), &location)
 		if err != nil {
 			cblog.Error(err)

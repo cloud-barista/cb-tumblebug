@@ -319,7 +319,7 @@ func DelNs(Id string) error {
 
 	/*
 		// Forbid deleting NS when there is at least one MCIS or one of resources.
-		mcisList := mcis.getMcisList(Id)
+		mcisList := mcis.ListMcisId(Id)
 		imageList := mcir.ListResourceId(Id, "image")
 		vNetList := mcir.ListResourceId(Id, "vNet")
 		publicIpList := mcir.ListResourceId(Id, "publicIp")
