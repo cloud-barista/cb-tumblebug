@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"time"
 
 	//"encoding/json"
 
@@ -47,10 +48,13 @@ var DB_USER string
 var DB_PASSWORD string
 var MYDB *sql.DB
 
+var StartTime string
+
 func init() {
 	cblog = config.Cblogger
 	store = cbstore.GetStore()
-	//SPIDER_URL = os.Getenv("SPIDER_URL")
+
+	StartTime = time.Now().Format("2006.01.02 15:04:05 Mon")
 }
 
 // Spider 2020-03-30 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/IId.go

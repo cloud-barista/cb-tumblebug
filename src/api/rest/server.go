@@ -4,6 +4,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/cloud-barista/cb-tumblebug/src/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/webadmin"
 
 	//"os"
 
@@ -192,6 +193,11 @@ func ApiServer() {
 
 	e.GET("/tumblebug/lookupSpec", mcir.RestLookupSpecList)
 	e.GET("/tumblebug/lookupSpec/:specName", mcir.RestLookupSpec)
+
+	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
+	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
+	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
+	e.GET("/tumblebug/webadmin/spec", webadmin.Spec)
 
 	e.Logger.Fatal(e.Start(":1323"))
 
