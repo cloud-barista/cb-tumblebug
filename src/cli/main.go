@@ -18,5 +18,5 @@ package main
 import "github.com/cloud-barista/cb-tumblebug/src/cli/cmd"
 
 func main() {
-  cmd.Execute()
+	cmd.Execute()
 }

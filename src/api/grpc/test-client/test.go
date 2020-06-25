@@ -23,7 +23,8 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewNsClient(conn)
+	nsClient := pb.NewNsClient(conn)
+	imageClient := pb.NewImageClient(conn)
 
 	// Contact the server and print out its response.
 	name := defaultName
@@ -36,7 +37,7 @@ func main() {
 	// CheckNs
 	log.Printf("")
 	log.Printf("CheckNs()")
-	check, err := c.CheckNs(ctx, &pb.NsId{Id: name})
+	check, err := nsClient.CheckNs(ctx, &pb.NsId{Id: name})
 	if err != nil {
 		log.Fatalf("CheckNs failed: %v", err)
 	}
@@ -49,17 +50,17 @@ func main() {
 	// CreateNs
 	log.Printf("")
 	log.Printf("CreateNs()")
-	r, err := c.CreateNs(ctx, &pb.NsReq{Name: name})
+	nsGrpcResult, err := nsClient.CreateNs(ctx, &pb.NsReq{Name: name})
 	if err != nil {
 		log.Printf("CreateNS failed: %v", err)
 	} else {
-		log.Printf("CreateNS success: %s", r.GetName())
+		log.Printf("CreateNS success: %s", nsGrpcResult.GetName())
 	}
 
 	// CheckNs
 	log.Printf("")
 	log.Printf("CheckNs()")
-	check, err = c.CheckNs(ctx, &pb.NsId{Id: name})
+	check, err = nsClient.CheckNs(ctx, &pb.NsId{Id: name})
 	if err != nil {
 		log.Fatalf("CheckNs failed: %v", err)
 	}
@@ -72,17 +73,17 @@ func main() {
 	// GetNs
 	log.Printf("")
 	log.Printf("GetNs()")
-	r, err = c.GetNs(ctx, &pb.NsId{Id: name})
+	nsGrpcResult, err = nsClient.GetNs(ctx, &pb.NsId{Id: name})
 	if err != nil {
 		log.Fatalf("GetNs failed: %v", err)
 	} else {
-		log.Printf("GetNS success: %s", r.GetName())
+		log.Printf("GetNS success: %s", nsGrpcResult.GetName())
 	}
 
 	// ListNs
 	log.Printf("")
 	log.Printf("ListNs()")
-	grpcNsList, err := c.ListNs(ctx, &types.Empty{})
+	grpcNsList, err := nsClient.ListNs(ctx, &types.Empty{})
 	if err != nil {
 		log.Fatalf("ListNs failed: %v", err)
 	} else {
@@ -95,7 +96,7 @@ func main() {
 	// ListNsId
 	log.Printf("")
 	log.Printf("ListNsId()")
-	grpcNsIdList, err := c.ListNsId(ctx, &types.Empty{})
+	grpcNsIdList, err := nsClient.ListNsId(ctx, &types.Empty{})
 	if err != nil {
 		log.Fatalf("ListNsId failed: %v", err)
 	} else {
@@ -108,7 +109,7 @@ func main() {
 	// DelNs
 	log.Printf("")
 	log.Printf("DelNs()")
-	_, err = c.DelNs(ctx, &pb.NsId{Id: name})
+	_, err = nsClient.DelNs(ctx, &pb.NsId{Id: name})
 	if err != nil {
 		log.Fatalf("DelNs failed: %v", err)
 	} else {
@@ -118,7 +119,7 @@ func main() {
 	// DelNs
 	log.Printf("")
 	log.Printf("DelNs()")
-	_, err = c.DelNs(ctx, &pb.NsId{Id: name})
+	_, err = nsClient.DelNs(ctx, &pb.NsId{Id: name})
 	if err != nil {
 		log.Printf("DelNs failed: %v", err)
 	} else {
@@ -128,17 +129,17 @@ func main() {
 	// GetNs
 	log.Printf("")
 	log.Printf("GetNs()")
-	r, err = c.GetNs(ctx, &pb.NsId{Id: name})
+	nsGrpcResult, err = nsClient.GetNs(ctx, &pb.NsId{Id: name})
 	if err != nil {
 		log.Printf("GetNs failed: %v", err)
 	} else {
-		log.Printf("GetNS success: %s", r.GetName())
+		log.Printf("GetNS success: %s", nsGrpcResult.GetName())
 	}
 
 	// ListNs
 	log.Printf("")
 	log.Printf("ListNs()")
-	grpcNsList, err = c.ListNs(ctx, &types.Empty{})
+	grpcNsList, err = nsClient.ListNs(ctx, &types.Empty{})
 	if err != nil {
 		log.Fatalf("ListNs failed: %v", err)
 	} else {
@@ -151,7 +152,7 @@ func main() {
 	// ListNsId
 	log.Printf("")
 	log.Printf("ListNsId()")
-	grpcNsIdList, err = c.ListNsId(ctx, &types.Empty{})
+	grpcNsIdList, err = nsClient.ListNsId(ctx, &types.Empty{})
 	if err != nil {
 		log.Fatalf("ListNsId failed: %v", err)
 	} else {
@@ -159,6 +160,143 @@ func main() {
 		for _, v := range grpcNsIdList.Items {
 			log.Printf("%s", v)
 		}
+	}
+
+	// CreateNs
+	log.Printf("")
+	log.Printf("CreateNs()")
+	nsGrpcResult, err = nsClient.CreateNs(ctx, &pb.NsReq{Name: name})
+	if err != nil {
+		log.Printf("CreateNS failed: %v", err)
+	} else {
+		log.Printf("CreateNS success: %s", nsGrpcResult.GetName())
+	}
+
+	// ListImage
+	log.Printf("")
+	log.Printf("ListImage()")
+	grpcImageList, err := imageClient.ListImage(ctx, &pb.NsId{Id: name})
+	if err != nil {
+		log.Fatalf("ListImage failed: %v", err)
+	} else {
+		log.Printf("ListImage success")
+		for _, v := range grpcImageList.TbImageInfos {
+			log.Printf("%s", v.GetName())
+		}
+	}
+
+	// RegisterImageWithInfo
+	log.Printf("")
+	log.Printf("RegisterImageWithInfo()")
+	imageGrpcResult, err := imageClient.RegisterImageWithInfo(ctx, &pb.RegisterImageWithInfoWrapper{
+		NsId: name,
+		TbImageInfo: &pb.TbImageInfo{
+			Name:           name,
+			ConnectionName: "aws-us-east-1",
+			CspImageId:     "ami-07ebfd5b3428b6f4d",
+			CspImageName:   "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20190814",
+		},
+	})
+	if err != nil {
+		log.Printf("RegisterImageWithInfo failed: %v", err)
+	} else {
+		log.Printf("RegisterImageWithInfo success: %s", imageGrpcResult.GetId())
+	}
+
+	// GetImage
+	log.Printf("")
+	log.Printf("GetImage()")
+	imageGrpcResult, err = imageClient.GetImage(ctx, &pb.GetResourceWrapper{
+		NsId:       name,
+		ResourceId: name,
+	})
+	if err != nil {
+		log.Printf("GetImage failed: %v", err)
+	} else {
+		log.Printf("GetImage success: %s", imageGrpcResult.GetId())
+	}
+
+	// ListImage
+	log.Printf("")
+	log.Printf("ListImage()")
+	grpcImageList, err = imageClient.ListImage(ctx, &pb.NsId{Id: name})
+	if err != nil {
+		log.Fatalf("ListImage failed: %v", err)
+	} else {
+		log.Printf("ListImage success")
+		for _, v := range grpcImageList.TbImageInfos {
+			log.Printf("%s", v.GetName())
+		}
+	}
+
+	// ListImageId
+	log.Printf("")
+	log.Printf("ListImageId()")
+	grpcImageIdList, err := imageClient.ListImageId(ctx, &pb.NsId{Id: name})
+	if err != nil {
+		log.Fatalf("ListImageId failed: %v", err)
+	} else {
+		log.Printf("ListImageId success")
+		for _, v := range grpcImageIdList.Items {
+			log.Printf("%s", v)
+		}
+	}
+
+	// DelImage
+	log.Printf("")
+	log.Printf("DelImage()")
+	_, err = imageClient.DelImage(ctx, &pb.DelResourceWrapper{
+		NsId:       name,
+		ResourceId: name,
+		ForceFlag:  "false",
+	})
+	if err != nil {
+		log.Fatalf("DelImage failed: %v", err)
+	} else {
+		log.Printf("DelImage success: %s", name)
+	}
+
+	/*
+		// RegisterImageWithId: Not yet implemented in CB-Tumblebug
+		log.Printf("")
+		log.Printf("RegisterImageWithId()")
+		imageGrpcResult, err = imageClient.RegisterImageWithId(ctx, &pb.RegisterImageWithIdWrapper{
+			NsId: name,
+			TbImageReq: &pb.TbImageReq{
+				Name:           name,
+				ConnectionName: "aws-us-east-1",
+				CspImageId:     "ami-07ebfd5b3428b6f4d",
+			},
+		})
+		if err != nil {
+			log.Printf("RegisterImageWithId failed: %v", err)
+		} else {
+			log.Printf("RegisterImageWithId success: %s", imageGrpcResult.GetId())
+		}
+	*/
+
+	// DelImage
+	log.Printf("")
+	log.Printf("DelImage()")
+	_, err = imageClient.DelImage(ctx, &pb.DelResourceWrapper{
+		NsId:       name,
+		ResourceId: name,
+		ForceFlag:  "false",
+	})
+	if err != nil {
+		log.Printf("DelImage failed: %v", err)
+	} else {
+		log.Printf("DelImage success: %s", name)
+	}
+
+	// DelNs
+	log.Printf("")
+	log.Printf("DelNs()")
+	_, err = nsClient.DelNs(ctx, &pb.NsId{Id: name})
+	if err != nil {
+		log.Printf("DelNs failed: %v", err)
+	} else {
+		log.Printf("DelNS success: %s", name)
 	}
 
 }

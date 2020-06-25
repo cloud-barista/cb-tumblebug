@@ -264,7 +264,7 @@ func createImage(nsId string, u *TbImageReq) (TbImageInfo, error) {
 }
 */
 
-//func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, int, []byte, error) {
+// TODO: Need to update (after CB-Spider's implementing lookupImage feature)
 func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	check, _ := CheckResource(nsId, "image", u.Name)
 

@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/empty.proto";
+
+package cbtumblebug;
+
+service Ns {
+    rpc CheckNs (NsId) returns (BooleanResponse) {}
+    rpc CreateNs (NsReq) returns (NsInfo) {}
+    rpc DelAllNs (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    rpc DelNs (NsId) returns (google.protobuf.Empty) {}
+    rpc GetNs (NsId) returns (NsInfo) {}
+    rpc ListNs (google.protobuf.Empty) returns (NsInfoList) {}
+    rpc ListNsId (google.protobuf.Empty) returns (NsIdList) {}
+}
+
+message NsReq {
+    string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+    string description = 2 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+}
+
+message NsInfo {
+    string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+    string description = 2 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+    string id = 3 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
+}
+
+message NsInfoList {
+    repeated NsInfo items = 1 [json_name="ns", (gogoproto.jsontag) = "ns", (gogoproto.moretags) = "yaml:\"ns\""];
+}
+
+message NsIdList {
+    //repeated NsId items = 1 [json_name="ns", (gogoproto.jsontag) = "ns", (gogoproto.moretags) = "yaml:\"ns\""];
+    repeated string items = 1 [json_name="ns", (gogoproto.jsontag) = "ns", (gogoproto.moretags) = "yaml:\"ns\""];
+}
+
+message NsId {
+    string id = 1 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
+}
+
+message ResourceType {
+    string resource_type = 1 [json_name="resourceType", (gogoproto.jsontag) = "resourceType", (gogoproto.moretags) = "yaml:\"resourceType\""];
+}
+
+message ResourceId {
+    string resource_id = 1 [json_name="resourceId", (gogoproto.jsontag) = "resourceId", (gogoproto.moretags) = "yaml:\"resourceId\""];
+}
+
+message ResourceIdList {
+    //repeated ResourceId items = 1 [json_name="ids", (gogoproto.jsontag) = "ids", (gogoproto.moretags) = "yaml:\"ids\""];
+    repeated string items = 1 [json_name="ids", (gogoproto.jsontag) = "ids", (gogoproto.moretags) = "yaml:\"ids\""];
+}
+
+message ForceFlag {
+    string force_flag = 1 [json_name="forceFlag", (gogoproto.jsontag) = "forceFlag", (gogoproto.moretags) = "yaml:\"forceFlag\""];
+}
+
+message BooleanResponse {
+    bool exists = 1 [json_name="exists", (gogoproto.jsontag) = "exists", (gogoproto.moretags) = "yaml:\"exists\""];
+}
+
+message KeyValue {
+    string key = 1 [json_name="key", (gogoproto.jsontag) = "key", (gogoproto.moretags) = "yaml:\"key\""];
+    string value = 2 [json_name="value", (gogoproto.jsontag) = "value", (gogoproto.moretags) = "yaml:\"value\""];
+}
+
+message DelAllResourcesWrapper {
+    string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+    string force_flag = 2 [json_name="forceFlag", (gogoproto.jsontag) = "forceFlag", (gogoproto.moretags) = "yaml:\"forceFlag\""];
+}
+
+message DelResourceWrapper {
+    string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+    string resource_id = 2 [json_name="resourceId", (gogoproto.jsontag) = "resourceId", (gogoproto.moretags) = "yaml:\"resourceId\""];
+    string force_flag = 3 [json_name="forceFlag", (gogoproto.jsontag) = "forceFlag", (gogoproto.moretags) = "yaml:\"forceFlag\""];
+}
+
+message GetResourceWrapper {
+    string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+    string resource_id = 2 [json_name="resourceId", (gogoproto.jsontag) = "resourceId", (gogoproto.moretags) = "yaml:\"resourceId\""];    
+}
+
