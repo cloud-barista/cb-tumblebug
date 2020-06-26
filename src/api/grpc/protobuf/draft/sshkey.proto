@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/empty.proto";
+
+import "common.proto";
+
+package cbtumblebug;
+
+service SshKey {
+    rpc CreateSshKey (TbSshKeyReqWrapper) returns (TbSshKeyInfo) {}
+    rpc DelAllSshKeys (DelAllResourcesWrapper) returns (google.protobuf.Empty) {}
+    rpc DelSshKey (DelResourceWrapper) returns (google.protobuf.Empty) {}
+    rpc GetSshKey (GetResourceWrapper) returns (TbSshKeyInfo) {}
+    rpc ListSshKey (NsId) returns (TbSshKeyInfoList) {}
+    rpc ListSshKeyId (NsId) returns (ResourceIdList) {}
+}
+
+message TbSshKeyReq {
+    string name = 2 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+    string connection_name = 3 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
+    
+    string description = 11 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+}
+
+message TbSshKeyReqWrapper {
+    string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+    TbSshKeyReq tb_sshkey_req = 2 [json_name="tbSshKeyReq", (gogoproto.jsontag) = "tbSshKeyReq", (gogoproto.moretags) = "yaml:\"tbSshKeyReq\""];
+}
+
+message TbSshKeyInfo {
+    string id = 1 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
+    
+    string name = 2 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+    string connection_name = 3 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
+    string csp_sshkey_name = 4 [json_name="cspSshKeyName", (gogoproto.jsontag) = "cspSshKeyName", (gogoproto.moretags) = "yaml:\"cspSshKeyName\""];
+    string fingerprint = 5 [json_name="fingerprint", (gogoproto.jsontag) = "fingerprint", (gogoproto.moretags) = "yaml:\"fingerprint\""];
+    string username = 6 [json_name="username", (gogoproto.jsontag) = "username", (gogoproto.moretags) = "yaml:\"username\""];
+    string public_key = 7 [json_name="publicKey", (gogoproto.jsontag) = "publicKey", (gogoproto.moretags) = "yaml:\"publicKey\""];
+    string private_key = 8 [json_name="privateKey", (gogoproto.jsontag) = "privateKey", (gogoproto.moretags) = "yaml:\"privateKey\""];
+    
+    string description = 11 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+    
+    repeated KeyValue key_value_list = 12 [json_name="keyValueList", (gogoproto.jsontag) = "keyValueList", (gogoproto.moretags) = "yaml:\"keyValueList\""];
+}
+
+message TbSshKeyInfoList {
+    repeated TbSshKeyInfo tb_sshkey_infos = 1 [json_name="sshKey", (gogoproto.jsontag) = "sshKey", (gogoproto.moretags) = "yaml:\"sshKey\""];
+}

@@ -28,6 +28,7 @@ func RunServer() {
 	s := grpc.NewServer()
 	pb.RegisterNsServer(s, &server{})
 	pb.RegisterImageServer(s, &server{})
+	pb.RegisterSpecServer(s, &server{})
 
 	// Register reflection service on gRPC server.
 	reflection.Register(s)

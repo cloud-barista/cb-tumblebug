@@ -39,7 +39,7 @@ message TbImageInfo {
     string creation_date = 6 [json_name="creationDate", (gogoproto.jsontag) = "creationDate", (gogoproto.moretags) = "yaml:\"creationDate\""];
     string guest_os = 7 [json_name="guestOS", (gogoproto.jsontag) = "guestOS", (gogoproto.moretags) = "yaml:\"guestOS\""];
     string status = 8 [json_name="status", (gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
-    repeated KeyValue key_values = 9 [json_name="keyValues", (gogoproto.jsontag) = "keyValues", (gogoproto.moretags) = "yaml:\"keyValues\""];
+    repeated KeyValue key_value_list = 9 [json_name="keyValueList", (gogoproto.jsontag) = "keyValueList", (gogoproto.moretags) = "yaml:\"keyValueList\""];
     string id = 10 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
 }
 
