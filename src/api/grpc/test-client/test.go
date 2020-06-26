@@ -25,13 +25,14 @@ func main() {
 	defer conn.Close()
 	nsClient := pb.NewNsClient(conn)
 	imageClient := pb.NewImageClient(conn)
+	specClient := pb.NewSpecClient(conn)
 
 	// Contact the server and print out its response.
 	name := defaultName
 	if len(os.Args) > 1 {
 		name = os.Args[1]
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	// CheckNs
@@ -287,6 +288,119 @@ func main() {
 		log.Printf("DelImage failed: %v", err)
 	} else {
 		log.Printf("DelImage success: %s", name)
+	}
+
+	// ListSpec
+	log.Printf("")
+	log.Printf("ListSpec()")
+	grpcSpecList, err := specClient.ListSpec(ctx, &pb.NsId{Id: name})
+	if err != nil {
+		log.Fatalf("ListSpec failed: %v", err)
+	} else {
+		log.Printf("ListSpec success")
+		for _, v := range grpcSpecList.TbSpecInfos {
+			log.Printf("%s", v.GetName())
+		}
+	}
+
+	// RegisterSpecWithInfo
+	log.Printf("")
+	log.Printf("RegisterSpecWithInfo()")
+	specGrpcResult, err := specClient.RegisterSpecWithInfo(ctx, &pb.RegisterSpecWithInfoWrapper{
+		NsId: name,
+		TbSpecInfo: &pb.TbSpecInfo{
+			Name:           name,
+			ConnectionName: "aws-us-east-1",
+			CspSpecName:    "t2.micro",
+		},
+	})
+	if err != nil {
+		log.Printf("RegisterSpecWithInfo failed: %v", err)
+	} else {
+		log.Printf("RegisterSpecWithInfo success: %s", specGrpcResult.GetId())
+	}
+
+	// GetSpec
+	log.Printf("")
+	log.Printf("GetSpec()")
+	specGrpcResult, err = specClient.GetSpec(ctx, &pb.GetResourceWrapper{
+		NsId:       name,
+		ResourceId: name,
+	})
+	if err != nil {
+		log.Printf("GetSpec failed: %v", err)
+	} else {
+		log.Printf("GetSpec success: %s", specGrpcResult.GetId())
+	}
+
+	// ListSpec
+	log.Printf("")
+	log.Printf("ListSpec()")
+	grpcSpecList, err = specClient.ListSpec(ctx, &pb.NsId{Id: name})
+	if err != nil {
+		log.Fatalf("ListSpec failed: %v", err)
+	} else {
+		log.Printf("ListSpec success")
+		for _, v := range grpcSpecList.TbSpecInfos {
+			log.Printf("%s", v.GetName())
+		}
+	}
+
+	// ListSpecId
+	log.Printf("")
+	log.Printf("ListSpecId()")
+	grpcSpecIdList, err := specClient.ListSpecId(ctx, &pb.NsId{Id: name})
+	if err != nil {
+		log.Fatalf("ListSpecId failed: %v", err)
+	} else {
+		log.Printf("ListSpecId success")
+		for _, v := range grpcSpecIdList.Items {
+			log.Printf("%s", v)
+		}
+	}
+
+	// DelSpec
+	log.Printf("")
+	log.Printf("DelSpec()")
+	_, err = specClient.DelSpec(ctx, &pb.DelResourceWrapper{
+		NsId:       name,
+		ResourceId: name,
+		ForceFlag:  "false",
+	})
+	if err != nil {
+		log.Fatalf("DelSpec failed: %v", err)
+	} else {
+		log.Printf("DelSpec success: %s", name)
+	}
+
+	log.Printf("")
+	log.Printf("RegisterSpecWithCspSpecName()")
+	specGrpcResult, err = specClient.RegisterSpecWithCspSpecName(ctx, &pb.RegisterSpecWithCspSpecNameWrapper{
+		NsId: name,
+		TbSpecReq: &pb.TbSpecReq{
+			Name:           name,
+			ConnectionName: "aws-us-east-1",
+			CspSpecName:    "t2.micro",
+		},
+	})
+	if err != nil {
+		log.Printf("RegisterSpecWithCspSpecName failed: %v", err)
+	} else {
+		log.Printf("RegisterSpecWithCspSpecName success: %s", specGrpcResult.GetId())
+	}
+
+	// DelSpec
+	log.Printf("")
+	log.Printf("DelSpec()")
+	_, err = specClient.DelSpec(ctx, &pb.DelResourceWrapper{
+		NsId:       name,
+		ResourceId: name,
+		ForceFlag:  "false",
+	})
+	if err != nil {
+		log.Printf("DelSpec failed: %v", err)
+	} else {
+		log.Printf("DelSpec success: %s", name)
 	}
 
 	// DelNs
