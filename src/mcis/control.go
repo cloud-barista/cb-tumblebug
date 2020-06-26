@@ -56,30 +56,60 @@ const sshDefaultUserName02 string = "ubuntu"
 const sshDefaultUserName03 string = "root"
 const sshDefaultUserName04 string = "ec2-user"
 
-type KeyValue struct {
-	Key   string
-	Value string
-}
-
 // Structs for REST API
 
 // 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
 type SpiderVMReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        SpiderVMReqInfo
+	ReqInfo        SpiderVMInfo
 }
 
+/*
 type SpiderVMReqInfo struct { // Spider
 	Name               string
 	ImageName          string
 	VPCName            string
 	SubnetName         string
 	SecurityGroupNames []string
-	VMSpecName         string
 	KeyPairName        string
+	VMSpecName         string
 
 	VMUserId     string
 	VMUserPasswd string
+}
+*/
+
+type SpiderVMInfo struct { // Spider
+	// Fields for request
+	Name               string
+	ImageName          string
+	VPCName            string
+	SubnetName         string
+	SecurityGroupNames []string
+	KeyPairName        string
+
+	// Fields for both request and response
+	VMSpecName   string //  instance type or flavour, etc... ex) t2.micro or f1.micro
+	VMUserId     string // ex) user1
+	VMUserPasswd string
+
+	// Fields for response
+	IId               common.IID // {NameId, SystemId}
+	ImageIId          common.IID
+	VpcIID            common.IID
+	SubnetIID         common.IID   // AWS, ex) subnet-8c4a53e4
+	SecurityGroupIIds []common.IID // AWS, ex) sg-0b7452563e1121bb6
+	KeyPairIId        common.IID
+	StartTime         time.Time  // Timezone: based on cloud-barista server location.
+	Region            RegionInfo //  ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	NetworkInterface  string     // ex) eth0
+	PublicIP          string
+	PublicDNS         string
+	PrivateIP         string
+	PrivateDNS        string
+	VMBootDisk        string // ex) /dev/sda1
+	VMBlockDisk       string // ex)
+	KeyValueList      []common.KeyValue
 }
 
 /* Not used yet
@@ -115,45 +145,36 @@ type RegionInfo struct { // Spider
 	Zone   string
 }
 
-type SpiderVMInfo struct { // Spider
-	IId               common.IID // {NameId, SystemId}
-	ImageIId          common.IID
-	VpcIID            common.IID
-	SubnetIID         common.IID   // AWS, ex) subnet-8c4a53e4
-	SecurityGroupIIds []common.IID // AWS, ex) sg-0b7452563e1121bb6
-	KeyPairIId        common.IID
-	VMSpecName        string //  instance type or flavour, etc... ex) t2.micro or f1.micro
-
-	StartTime time.Time // Timezone: based on cloud-barista server location.
-
-	Region RegionInfo //  ex) {us-east1, us-east1-c} or {ap-northeast-2}
-
-	VMUserId     string // ex) user1
-	VMUserPasswd string
-
-	NetworkInterface string // ex) eth0
-	PublicIP         string
-	PublicDNS        string
-	PrivateIP        string
-	PrivateDNS       string
-
-	VMBootDisk  string // ex) /dev/sda1
-	VMBlockDisk string // ex)
-
-	KeyValueList []KeyValue
-}
-
+/*
 type TbMcisReq struct {
-	Id     string    `json:"id"`
+	//Id     string    `json:"id"`
 	Name   string    `json:"name"`
 	Vm_req []TbVmReq `json:"vm_req"`
 	//Vm_num         string  `json:"vm_num"`
 	Placement_algo string `json:"placement_algo"`
 	Description    string `json:"description"`
 }
+*/
+
+type TbMcisInfo struct {
+	// Fields for both request and response
+	Name           string     `json:"name"`
+	Vm             []TbVmInfo `json:"vm"`
+	Placement_algo string     `json:"placement_algo"`
+	Description    string     `json:"description"`
+
+	// Additional fields for response
+	Id           string `json:"id"`
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+
+	// Disabled for now
+	//Vm             []vmOverview `json:"vm"`
+}
 
 type TbVmReq struct {
-	Id             string `json:"id"`
+	//Id             string `json:"id"`
 	ConnectionName string `json:"connectionName"`
 
 	// 1. Required by CB-Spider
@@ -191,46 +212,6 @@ type TbVmReq struct {
 	Description        string   `json:"description"`
 	Vm_access_id       string   `json:"vm_access_id"`
 	Vm_access_passwd   string   `json:"vm_access_passwd"`
-}
-
-/*
-type placementKeyValue struct {
-	Key   string
-	Value string
-}
-*/
-
-type McisInfo struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	Status         string `json:"status"`
-	TargetStatus   string `json:"targetStatus"`
-	TargetAction   string `json:"targetAction"`
-	Placement_algo string `json:"placement_algo"`
-	Description    string `json:"description"`
-	//Vm             []vmOverview `json:"vm"`
-	Vm []TbVmInfo `json:"vm"`
-}
-
-/*
-type vmOverview struct {
-	Id          string      `json:"id"`
-	Name        string      `json:"name"`
-	Config_name string      `json:"config_name"`
-	Region      RegionInfo  `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	Location    GeoLocation `json:"location"`
-	PublicIP    string      `json:"publicIP"`
-	PublicDNS   string      `json:"publicDNS"`
-	Status      string      `json:"status"`
-}
-*/
-
-type GeoLocation struct {
-	Latitude     string `json:"latitude"`
-	Longitude    string `json:"longitude"`
-	BriefAddr    string `json:"briefAddr"`
-	CloudType    string `json:"cloudType"`
-	NativeRegion string `json:"nativeRegion"`
 }
 
 type TbVmInfo struct {
@@ -271,34 +252,13 @@ type TbVmInfo struct {
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
 
-/* Use "SpiderVMInfo" (from Spider), instead of this.
-type vmCspViewInfo struct {
-	Name      string    // AWS,
-	Id        string    // AWS,
-	StartTime time.Time // Timezone: based on cloud-barista server location.
-
-	Region           RegionInfo // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	ImageId          string
-	VMSpecId         string   // AWS, instance type or flavour, etc... ex) t2.micro or f1.micro
-	VirtualNetworkId string   // AWS, ex) subnet-8c4a53e4
-	SecurityGroupIds []string // AWS, ex) sg-0b7452563e1121bb6
-
-	NetworkInterfaceId string // ex) eth0
-	PublicIP           string // ex) AWS, 13.125.43.21
-	PublicDNS          string // ex) AWS, ec2-13-125-43-0.ap-northeast-2.compute.amazonaws.com
-	PrivateIP          string // ex) AWS, ip-172-31-4-60.ap-northeast-2.compute.internal
-	PrivateDNS         string // ex) AWS, 172.31.4.60
-
-	KeyPairName  string // ex) AWS, powerkimKeyPair
-	VMUserId     string // ex) user1
-	VMUserPasswd string
-
-	VMBootDisk  string // ex) /dev/sda1
-	VMBlockDisk string // ex)
-
-	KeyValueList []KeyValue
+type GeoLocation struct {
+	Latitude     string `json:"latitude"`
+	Longitude    string `json:"longitude"`
+	BriefAddr    string `json:"briefAddr"`
+	CloudType    string `json:"cloudType"`
+	NativeRegion string `json:"nativeRegion"`
 }
-*/
 
 type McisStatusInfo struct {
 	Id   string `json:"id"`
@@ -324,7 +284,7 @@ type TbVmStatusInfo struct {
 type McisRecommendReq struct {
 	Vm_req          []TbVmRecommendReq `json:"vm_req"`
 	Placement_algo  string             `json:"placement_algo"`
-	Placement_param []KeyValue         `json:"placement_param"`
+	Placement_param []common.KeyValue  `json:"placement_param"`
 	Max_result_num  string             `json:"max_result_num"`
 }
 
@@ -337,8 +297,8 @@ type TbVmRecommendReq struct {
 	Disk_size   string `json:"disk_size"`
 	//Disk_type   string `json:"disk_type"`
 
-	Placement_algo  string     `json:"placement_algo"`
-	Placement_param []KeyValue `json:"placement_param"`
+	Placement_algo  string            `json:"placement_algo"`
+	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
 type McisCmdReq struct {
@@ -355,10 +315,10 @@ type TbVmPriority struct {
 	Vm_spec  mcir.TbSpecInfo `json:"vm_spec"`
 }
 type TbVmRecommendInfo struct {
-	Vm_req          TbVmRecommendReq `json:"vm_req"`
-	Vm_priority     []TbVmPriority   `json:"vm_priority"`
-	Placement_algo  string           `json:"placement_algo"`
-	Placement_param []KeyValue       `json:"placement_param"`
+	Vm_req          TbVmRecommendReq  `json:"vm_req"`
+	Vm_priority     []TbVmPriority    `json:"vm_priority"`
+	Placement_algo  string            `json:"placement_algo"`
+	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
 // MCIS API Proxy
@@ -367,7 +327,7 @@ func RestPostMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	req := &TbMcisReq{}
+	req := &TbMcisInfo{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
@@ -390,7 +350,7 @@ func RestPostMcis(c echo.Context) error {
 			Description    string   `json:"description"`
 		}
 	*/
-	content := McisInfo{}
+	content := TbMcisInfo{}
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
@@ -605,7 +565,7 @@ func RestGetAllMcis(c echo.Context) error {
 
 	var content struct {
 		//Name string     `json:"name"`
-		Mcis []McisInfo `json:"mcis"`
+		Mcis []TbMcisInfo `json:"mcis"`
 	}
 
 	mcisList := ListMcisId(nsId)
@@ -620,7 +580,7 @@ func RestGetAllMcis(c echo.Context) error {
 			return c.JSON(http.StatusOK, &mapA)
 		}
 		//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		mcisTmp := McisInfo{}
+		mcisTmp := TbMcisInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 		mcisId := v
 		mcisTmp.Id = mcisId
@@ -740,7 +700,7 @@ func RestPostMcisRecommand(c echo.Context) error {
 		//Vm_req          []TbVmRecommendReq    `json:"vm_req"`
 		Vm_recommend    []TbVmRecommendInfo `json:"vm_recommend"`
 		Placement_algo  string              `json:"placement_algo"`
-		Placement_param []KeyValue          `json:"placement_param"`
+		Placement_param []common.KeyValue   `json:"placement_param"`
 	}
 	//content.Vm_req = req.Vm_req
 	content.Placement_algo = req.Placement_algo
@@ -1473,7 +1433,7 @@ func RestPostMcisVm(c echo.Context) error {
 	vmInfoData := TbVmInfo{}
 	//vmInfoData.Id = common.GenUuid()
 	vmInfoData.Id = common.GenId(req.Name)
-	req.Id = vmInfoData.Id
+	//req.Id = vmInfoData.Id
 	//vmInfoData.CspVmName = req.CspVmName
 
 	//vmInfoData.Placement_algo = req.Placement_algo
@@ -1693,7 +1653,7 @@ func AddVmInfoToMcis(nsId string, mcisId string, vmInfoData TbVmInfo) {
 }
 */
 
-func UpdateMcisInfo(nsId string, mcisInfoData McisInfo) {
+func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 	key := common.GenMcisKey(nsId, mcisInfoData.Id, "")
 	val, _ := json.Marshal(mcisInfoData)
 	err := store.Put(string(key), string(val))
@@ -1889,12 +1849,12 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 // MCIS Control
 
-func CreateMcis(nsId string, req *TbMcisReq) string {
+func CreateMcis(nsId string, req *TbMcisInfo) string {
 	/*
 		check, _ := checkMcis(nsId, req.Name)
 
 		if check {
-			//temp := McisInfo{}
+			//temp := TbMcisInfo{}
 			//err := fmt.Errorf("The mcis " + req.Name + " already exists.")
 			return ""
 		}
@@ -1905,7 +1865,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 
 	//req.Id = common.GenUuid()
 	req.Id = common.GenId(req.Name)
-	vmRequest := req.Vm_req
+	vmRequest := req.Vm
 	mcisId := req.Id
 
 	fmt.Println("=========================== Put createSvc")
@@ -1998,7 +1958,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 	}
 	wg.Wait()
 
-	mcisTmp := McisInfo{}
+	mcisTmp := TbMcisInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 
 	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
@@ -2265,9 +2225,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		Val, _ := json.Marshal(content)
 		fmt.Println("Key: ", Key)
 		fmt.Println("Val: ", Val)
-		cbStorePutErr := store.Put(string(Key), string(Val))
-		if cbStorePutErr != nil {
-			cblog.Error(cbStorePutErr)
+		err := store.Put(string(Key), string(Val))
+		if err != nil {
+			cblog.Error(err)
 			return nil, nil
 		}
 		keyValue, _ := store.Get(string(Key))
@@ -2327,7 +2287,7 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 		return err
 	}
 
-	mcisTmp := McisInfo{}
+	mcisTmp := TbMcisInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
@@ -2372,7 +2332,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
-	mcisTmp := McisInfo{}
+	mcisTmp := TbMcisInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
@@ -2747,7 +2707,7 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 	mcisStatus := McisStatusInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisStatus)
 
-	mcisTmp := McisInfo{}
+	mcisTmp := TbMcisInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 
 	vmList, err := ListVmId(nsId, mcisId)
@@ -3267,3 +3227,45 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 
 	return location
 }
+
+/*
+type vmOverview struct {
+	Id          string      `json:"id"`
+	Name        string      `json:"name"`
+	Config_name string      `json:"config_name"`
+	Region      RegionInfo  `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	Location    GeoLocation `json:"location"`
+	PublicIP    string      `json:"publicIP"`
+	PublicDNS   string      `json:"publicDNS"`
+	Status      string      `json:"status"`
+}
+*/
+
+/* Use "SpiderVMInfo" (from Spider), instead of this.
+type vmCspViewInfo struct {
+	Name      string    // AWS,
+	Id        string    // AWS,
+	StartTime time.Time // Timezone: based on cloud-barista server location.
+
+	Region           RegionInfo // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	ImageId          string
+	VMSpecId         string   // AWS, instance type or flavour, etc... ex) t2.micro or f1.micro
+	VirtualNetworkId string   // AWS, ex) subnet-8c4a53e4
+	SecurityGroupIds []string // AWS, ex) sg-0b7452563e1121bb6
+
+	NetworkInterfaceId string // ex) eth0
+	PublicIP           string // ex) AWS, 13.125.43.21
+	PublicDNS          string // ex) AWS, ec2-13-125-43-0.ap-northeast-2.compute.amazonaws.com
+	PrivateIP          string // ex) AWS, ip-172-31-4-60.ap-northeast-2.compute.internal
+	PrivateDNS         string // ex) AWS, 172.31.4.60
+
+	KeyPairName  string // ex) AWS, powerkimKeyPair
+	VMUserId     string // ex) user1
+	VMUserPasswd string
+
+	VMBootDisk  string // ex) /dev/sda1
+	VMBlockDisk string // ex)
+
+	KeyValueList []common.KeyValue
+}
+*/

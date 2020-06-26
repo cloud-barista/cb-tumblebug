@@ -18,24 +18,30 @@ import (
 
 type SpiderImageReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        SpiderImageReqInfo
+	ReqInfo        SpiderImageInfo
 }
 
+/*
 type SpiderImageReqInfo struct { // Spider
 	//IId   IID 	// {NameId, SystemId}
 	Name string
 	// @todo
 }
+*/
 
+// TODO: Need to update (after CB-Spider's implementing lookupImage feature)
 type SpiderImageInfo struct { // Spider
-	//IId     IID    // {NameId, SystemId}
-	Name    string
-	GuestOS string // Windows7, Ubuntu etc.
-	Status  string // available, unavailable
+	// Fields for request
+	Name string
 
+	// Fields for response
+	IId          common.IID // {NameId, SystemId}
+	GuestOS      string     // Windows7, Ubuntu etc.
+	Status       string     // available, unavailable
 	KeyValueList []common.KeyValue
 }
 
+/*
 type TbImageReq struct {
 	//Id             string `json:"id"`
 	Name           string `json:"name"`
@@ -45,18 +51,22 @@ type TbImageReq struct {
 	//CreationDate   string `json:"creationDate"`
 	Description string `json:"description"`
 }
+*/
 
 type TbImageInfo struct {
-	Id             string            `json:"id"`
-	Name           string            `json:"name"`
-	ConnectionName string            `json:"connectionName"`
-	CspImageId     string            `json:"cspImageId"`
-	CspImageName   string            `json:"cspImageName"`
-	CreationDate   string            `json:"creationDate"`
-	Description    string            `json:"description"`
-	GuestOS        string            `json:"guestOS"` // Windows7, Ubuntu etc.
-	Status         string            `json:"status"`  // available, unavailable
-	KeyValueList   []common.KeyValue `json:"keyValueList"`
+	// Fields for both request and response
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	CspImageId     string `json:"cspImageId"`
+	CspImageName   string `json:"cspImageName"`
+	Description    string `json:"description"`
+
+	// Additional fields for response
+	Id           string            `json:"id"`
+	CreationDate string            `json:"creationDate"`
+	GuestOS      string            `json:"guestOS"` // Windows7, Ubuntu etc.
+	Status       string            `json:"status"`  // available, unavailable
+	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
 // MCIS API Proxy: Image
@@ -88,7 +98,7 @@ func RestPostImage(c echo.Context) error {
 		return c.JSON(http.StatusCreated, content)
 	} else if action == "registerWithId" {
 		fmt.Println("[Registering Image with ID]")
-		u := &TbImageReq{}
+		u := &TbImageInfo{}
 		if err := c.Bind(u); err != nil {
 			return err
 		}
@@ -265,7 +275,7 @@ func createImage(nsId string, u *TbImageReq) (TbImageInfo, error) {
 */
 
 // TODO: Need to update (after CB-Spider's implementing lookupImage feature)
-func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
+func RegisterImageWithId(nsId string, u *TbImageInfo) (TbImageInfo, error) {
 	check, _ := CheckResource(nsId, "image", u.Name)
 
 	if check {
@@ -384,11 +394,11 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, "image", content.Id)
 	Val, _ := json.Marshal(content)
-	cbStorePutErr := store.Put(string(Key), string(Val))
-	if cbStorePutErr != nil {
-		cblog.Error(cbStorePutErr)
-		//return content, res.StatusCode, body, cbStorePutErr
-		return content, cbStorePutErr
+	err = store.Put(string(Key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)

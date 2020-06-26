@@ -7,7 +7,7 @@ package cbtumblebug;
 
 service Ns {
     rpc CheckNs (NsId) returns (BooleanResponse) {}
-    rpc CreateNs (NsReq) returns (NsInfo) {}
+    rpc CreateNs (NsInfo) returns (NsInfo) {}
     rpc DelAllNs (google.protobuf.Empty) returns (google.protobuf.Empty) {}
     rpc DelNs (NsId) returns (google.protobuf.Empty) {}
     rpc GetNs (NsId) returns (NsInfo) {}
@@ -15,15 +15,20 @@ service Ns {
     rpc ListNsId (google.protobuf.Empty) returns (NsIdList) {}
 }
 
+/*
 message NsReq {
-    string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
-    string description = 2 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+    string name = 2 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+    string description = 3 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
 }
+*/
 
 message NsInfo {
-    string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
-    string description = 2 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
-    string id = 3 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
+    // Fields for both request and response
+    string name = 2 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+    string description = 3 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+    
+    // Additional fields for response
+    string id = 1 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
 }
 
 message NsInfoList {

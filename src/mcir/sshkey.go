@@ -16,23 +16,29 @@ import (
 
 type SpiderKeyPairReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        SpiderKeyPairReqInfo
+	ReqInfo        SpiderKeyPairInfo
 }
 
+/*
 type SpiderKeyPairReqInfo struct { // Spider
 	Name string
 }
+*/
 
 type SpiderKeyPairInfo struct { // Spider
-	IId         common.IID // {NameId, SystemId}
-	Fingerprint string
-	PublicKey   string
-	PrivateKey  string
-	VMUserID    string
+	// Fields for request
+	Name string
 
+	// Fields for response
+	IId          common.IID // {NameId, SystemId}
+	Fingerprint  string
+	PublicKey    string
+	PrivateKey   string
+	VMUserID     string
 	KeyValueList []common.KeyValue
 }
 
+/*
 type TbSshKeyReq struct {
 	//Id             string `json:"id"`
 	Name           string `json:"name"`
@@ -44,18 +50,22 @@ type TbSshKeyReq struct {
 	//PrivateKey     string `json:"privateKey"`
 	Description string `json:"description"`
 }
+*/
 
 type TbSshKeyInfo struct {
-	Id             string            `json:"id"`
-	Name           string            `json:"name"`
-	ConnectionName string            `json:"connectionName"`
-	CspSshKeyName  string            `json:"cspSshKeyName"`
-	Fingerprint    string            `json:"fingerprint"`
-	Username       string            `json:"username"`
-	PublicKey      string            `json:"publicKey"`
-	PrivateKey     string            `json:"privateKey"`
-	Description    string            `json:"description"`
-	KeyValueList   []common.KeyValue `json:"keyValueList"`
+	// Fields for both request and response
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	Description    string `json:"description"`
+
+	// Additional fields for response
+	Id            string            `json:"id"`
+	CspSshKeyName string            `json:"cspSshKeyName"`
+	Fingerprint   string            `json:"fingerprint"`
+	Username      string            `json:"username"`
+	PublicKey     string            `json:"publicKey"`
+	PrivateKey    string            `json:"privateKey"`
+	KeyValueList  []common.KeyValue `json:"keyValueList"`
 }
 
 // MCIS API Proxy: SshKey
@@ -63,7 +73,7 @@ func RestPostSshKey(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &TbSshKeyReq{}
+	u := &TbSshKeyInfo{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -89,7 +99,8 @@ func RestPostSshKey(c echo.Context) error {
 
 	fmt.Println("[POST SshKey")
 	fmt.Println("[Creating SshKey]")
-	content, responseCode, _, err := CreateSshKey(nsId, u)
+	//content, responseCode, _, err := CreateSshKey(nsId, u)
+	content, err := CreateSshKey(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
@@ -100,7 +111,7 @@ func RestPostSshKey(c echo.Context) error {
 		//return c.JSON(res.StatusCode, res)
 		//body, _ := ioutil.ReadAll(res.Body)
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(responseCode, &mapA)
+		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -264,13 +275,15 @@ func RestDelAllSshKey(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error) {
+//func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error) {
+func CreateSshKey(nsId string, u *TbSshKeyInfo) (TbSshKeyInfo, error) {
 	check, _ := CheckResource(nsId, "sshKey", u.Name)
 
 	if check {
 		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey " + u.Name + " already exists.")
-		return temp, http.StatusConflict, nil, err
+		//return temp, http.StatusConflict, nil, err
+		return temp, err
 	}
 
 	//url := common.SPIDER_URL + "/keypair?connection_name=" + u.ConnectionName
@@ -301,7 +314,8 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error
 	if err != nil {
 		cblog.Error(err)
 		content := TbSshKeyInfo{}
-		return content, res.StatusCode, nil, err
+		//return content, res.StatusCode, nil, err
+		return content, err
 	}
 	defer res.Body.Close()
 
@@ -310,7 +324,8 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error
 	if err != nil {
 		cblog.Error(err)
 		content := TbSshKeyInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
@@ -320,7 +335,8 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error
 		fmt.Println("body: ", string(body))
 		cblog.Error(err)
 		content := TbSshKeyInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	temp := SpiderKeyPairInfo{}
@@ -345,25 +361,16 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error
 	// cb-store
 	fmt.Println("=========================== PUT CreateSshKey")
 	Key := common.GenResourceKey(nsId, "sshKey", content.Id)
-	/*
-		mapA := map[string]string{
-			"connectionName": content.ConnectionName,
-			"cspSshKeyName":  content.CspSshKeyName,
-			"fingerprint":    content.Fingerprint,
-			"username":       content.Username,
-			"publicKey":      content.PublicKey,
-			"privateKey":     content.PrivateKey,
-			"description":    content.Description}
-		Val, _ := json.Marshal(mapA)
-	*/
 	Val, _ := json.Marshal(content)
-	cbStorePutErr := store.Put(string(Key), string(Val))
-	if cbStorePutErr != nil {
-		cblog.Error(cbStorePutErr)
-		return content, res.StatusCode, body, cbStorePutErr
+	err = store.Put(string(Key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res.StatusCode, body, nil
+	//return content, res.StatusCode, body, nil
+	return content, nil
 }

@@ -17,6 +17,7 @@ service Image {
     rpc ListImageId (NsId) returns (ResourceIdList) {}
 }
 
+/*
 message TbImageReq {
     string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
     string connection_name = 2 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
@@ -24,23 +25,28 @@ message TbImageReq {
     string csp_image_name = 4 [json_name="cspImageName", (gogoproto.jsontag) = "cspImageName", (gogoproto.moretags) = "yaml:\"cspImageName\""];
     string description = 5 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
 }
+*/
 
 message RegisterImageWithIdWrapper {
     string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
-    TbImageReq tb_image_req = 2 [json_name="tbImageReq", (gogoproto.jsontag) = "tbImageReq", (gogoproto.moretags) = "yaml:\"tbImageReq\""];
+    //TbImageReq tb_image_req = 2 [json_name="tbImageReq", (gogoproto.jsontag) = "tbImageReq", (gogoproto.moretags) = "yaml:\"tbImageReq\""];
+    TbImageInfo tb_image_info = 2 [json_name="tbImageInfo", (gogoproto.jsontag) = "tbImageInfo", (gogoproto.moretags) = "yaml:\"tbImageInfo\""];
 }
 
 message TbImageInfo {
-    string name = 1 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
-    string connection_name = 2 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
-    string csp_image_id = 3 [json_name="cspImageId", (gogoproto.jsontag) = "cspImageId", (gogoproto.moretags) = "yaml:\"cspImageId\""];
-    string csp_image_name = 4 [json_name="cspImageName", (gogoproto.jsontag) = "cspImageName", (gogoproto.moretags) = "yaml:\"cspImageName\""];
-    string description = 5 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
-    string creation_date = 6 [json_name="creationDate", (gogoproto.jsontag) = "creationDate", (gogoproto.moretags) = "yaml:\"creationDate\""];
-    string guest_os = 7 [json_name="guestOS", (gogoproto.jsontag) = "guestOS", (gogoproto.moretags) = "yaml:\"guestOS\""];
-    string status = 8 [json_name="status", (gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
-    repeated KeyValue key_value_list = 9 [json_name="keyValueList", (gogoproto.jsontag) = "keyValueList", (gogoproto.moretags) = "yaml:\"keyValueList\""];
-    string id = 10 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
+    // Fields for both request and response
+    string name = 2 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+    string connection_name = 3 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
+    string csp_image_id = 4 [json_name="cspImageId", (gogoproto.jsontag) = "cspImageId", (gogoproto.moretags) = "yaml:\"cspImageId\""];
+    string csp_image_name = 5 [json_name="cspImageName", (gogoproto.jsontag) = "cspImageName", (gogoproto.moretags) = "yaml:\"cspImageName\""];
+    string description = 6 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+    
+    // Additional fields for response
+    string id = 1 [json_name="id", (gogoproto.jsontag) = "id", (gogoproto.moretags) = "yaml:\"id\""];
+    string creation_date = 7 [json_name="creationDate", (gogoproto.jsontag) = "creationDate", (gogoproto.moretags) = "yaml:\"creationDate\""];
+    string guest_os = 8 [json_name="guestOS", (gogoproto.jsontag) = "guestOS", (gogoproto.moretags) = "yaml:\"guestOS\""];
+    string status = 9 [json_name="status", (gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
+    repeated KeyValue key_value_list = 10 [json_name="keyValueList", (gogoproto.jsontag) = "keyValueList", (gogoproto.moretags) = "yaml:\"keyValueList\""];    
 }
 
 message RegisterImageWithInfoWrapper {

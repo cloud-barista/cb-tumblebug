@@ -16,37 +16,53 @@ import (
 
 type SpiderVPCReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        SpiderVPCReqInfo
+	ReqInfo        SpiderVPCInfo
 }
 
+/*
 type SpiderVPCReqInfo struct { // Spider
-	Name           string
-	IPv4_CIDR      string
-	SubnetInfoList []SpiderSubnetReqInfo
+	Name      string
+	IPv4_CIDR string
+	//SubnetInfoList []SpiderSubnetReqInfo
+	SubnetInfoList []SpiderSubnetInfo
 }
+*/
 
+/*
 type SpiderSubnetReqInfo struct { // Spider
 	Name      string
 	IPv4_CIDR string
 
 	KeyValueList []common.KeyValue
 }
+*/
 
 type SpiderVPCInfo struct { // Spider
-	IId            common.IID // {NameId, SystemId}
+	// Fields for request
+	Name string
+
+	// Fields for both request and response
 	IPv4_CIDR      string
 	SubnetInfoList []SpiderSubnetInfo
 
+	// Fields for response
+	IId          common.IID // {NameId, SystemId}
 	KeyValueList []common.KeyValue
 }
 
 type SpiderSubnetInfo struct { // Spider
-	IId       common.IID // {NameId, SystemId}
-	IPv4_CIDR string
+	// Fields for request
+	Name string
 
+	// Fields for both request and response
+	IPv4_CIDR    string
 	KeyValueList []common.KeyValue
+
+	// Fields for response
+	IId common.IID // {NameId, SystemId}
 }
 
+/*
 type TbVNetReq struct { // Tumblebug
 	Name              string                `json:"name"`
 	ConnectionName    string                `json:"connectionName"`
@@ -56,20 +72,26 @@ type TbVNetReq struct { // Tumblebug
 	//ResourceGroupName string `json:"resourceGroupName"`
 	Description string `json:"description"`
 }
+*/
 
 type TbVNetInfo struct { // Tumblebug
-	Id             string             `json:"id"`
+	// Fields for both request and response
 	Name           string             `json:"name"`
 	ConnectionName string             `json:"connectionName"`
-	CspVNetId      string             `json:"cspVNetId"`
-	CspVNetName    string             `json:"cspVNetName"`
 	CidrBlock      string             `json:"cidrBlock"`
 	SubnetInfoList []SpiderSubnetInfo `json:"subnetInfoList"`
-	//Region         string `json:"region"`
-	//ResourceGroupName string `json:"resourceGroupName"`
-	Description  string            `json:"description"`
+	Description    string             `json:"description"`
+
+	// Additional fields for response
+	Id           string            `json:"id"`
+	CspVNetId    string            `json:"cspVNetId"`
+	CspVNetName  string            `json:"cspVNetName"`
 	Status       string            `json:"status"`
 	KeyValueList []common.KeyValue `json:"keyValueList"`
+
+	// Disabled for now
+	//Region         string `json:"region"`
+	//ResourceGroupName string `json:"resourceGroupName"`
 }
 
 // MCIS API Proxy: VNet
@@ -77,7 +99,7 @@ func RestPostVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &TbVNetReq{}
+	u := &TbVNetInfo{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -271,7 +293,7 @@ func RestDelAllVNet(c echo.Context) error {
 }
 
 //func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, int, []byte, error) {
-func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
+func CreateVNet(nsId string, u *TbVNetInfo) (TbVNetInfo, error) {
 	check, _ := CheckResource(nsId, "vNet", u.Name)
 
 	if check {
@@ -289,7 +311,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	tempReq.ConnectionName = u.ConnectionName
 	tempReq.ReqInfo.Name = u.Name
 	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
-	tempReq.ReqInfo.SubnetInfoList = u.SubnetReqInfoList
+	tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
 	fmt.Println("payload: " + string(payload)) // for debug
 

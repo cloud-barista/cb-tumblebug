@@ -32,7 +32,7 @@ curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/vNet -H 'Con
 		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 		"cidrBlock": "192.168.0.0/16",
-		"subnetReqInfoList": [ {
+		"subnetInfoList": [ {
 			"Name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"IPv4_CIDR": "192.168.1.0/24"
 		} ]

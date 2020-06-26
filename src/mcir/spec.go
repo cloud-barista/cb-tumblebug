@@ -19,45 +19,6 @@ import (
 	"github.com/xwb1989/sqlparser"
 )
 
-type TbSpecReq struct { // Tumblebug
-	//Id             string `json:"id"`
-	ConnectionName string `json:"connectionName"`
-	CspSpecName    string `json:"cspSpecName"`
-	Name           string `json:"name"`
-	Os_type        string `json:"os_type"`
-	Num_vCPU       string `json:"num_vCPU"`
-	Num_core       string `json:"num_core"`
-	Mem_GiB        string `json:"mem_GiB"`
-	Mem_MiB        string `json:"mem_MiB"`
-	Storage_GiB    string `json:"storage_GiB"`
-	Description    string `json:"description"`
-}
-
-type TbSpecInfo struct { // Tumblebug
-	Id             string `json:"id"`
-	ConnectionName string `json:"connectionName"`
-	CspSpecName    string `json:"cspSpecName"`
-	Name           string `json:"name"`
-	Os_type        string `json:"os_type"`
-	Num_vCPU       string `json:"num_vCPU"`
-	Num_core       string `json:"num_core"`
-	Mem_GiB        string `json:"mem_GiB"`
-	Mem_MiB        string `json:"mem_MiB"`
-	Storage_GiB    string `json:"storage_GiB"`
-	Description    string `json:"description"`
-
-	Cost_per_hour         string `json:"cost_per_hour"`
-	Num_storage           string `json:"num_storage"`
-	Max_num_storage       string `json:"max_num_storage"`
-	Max_total_storage_TiB string `json:"max_total_storage_TiB"`
-	Net_bw_Gbps           string `json:"net_bw_Gbps"`
-	Ebs_bw_Mbps           string `json:"ebs_bw_Mbps"`
-	Gpu_model             string `json:"gpu_model"`
-	Num_gpu               string `json:"num_gpu"`
-	Gpumem_GiB            string `json:"gpumem_GiB"`
-	Gpu_p2p               string `json:"gpu_p2p"`
-}
-
 type SpiderSpecInfo struct { // Spider
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
@@ -80,6 +41,49 @@ type SpiderGpuInfo struct { // Spider
 	Mfr   string
 	Model string
 	Mem   string
+}
+
+/*
+type TbSpecReq struct { // Tumblebug
+	//Id             string `json:"id"`
+	ConnectionName string `json:"connectionName"`
+	CspSpecName    string `json:"cspSpecName"`
+	Name           string `json:"name"`
+	Os_type        string `json:"os_type"`
+	Num_vCPU       string `json:"num_vCPU"`
+	Num_core       string `json:"num_core"`
+	Mem_GiB        string `json:"mem_GiB"`
+	Mem_MiB        string `json:"mem_MiB"`
+	Storage_GiB    string `json:"storage_GiB"`
+	Description    string `json:"description"`
+}
+*/
+
+type TbSpecInfo struct { // Tumblebug
+	// Fields for both request and response
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	CspSpecName    string `json:"cspSpecName"`
+	Os_type        string `json:"os_type"`
+	Num_vCPU       string `json:"num_vCPU"`
+	Num_core       string `json:"num_core"`
+	Mem_GiB        string `json:"mem_GiB"`
+	Mem_MiB        string `json:"mem_MiB"`
+	Storage_GiB    string `json:"storage_GiB"`
+	Description    string `json:"description"`
+
+	// Additional fields for response
+	Id                    string `json:"id"`
+	Cost_per_hour         string `json:"cost_per_hour"`
+	Num_storage           string `json:"num_storage"`
+	Max_num_storage       string `json:"max_num_storage"`
+	Max_total_storage_TiB string `json:"max_total_storage_TiB"`
+	Net_bw_Gbps           string `json:"net_bw_Gbps"`
+	Ebs_bw_Mbps           string `json:"ebs_bw_Mbps"`
+	Gpu_model             string `json:"gpu_model"`
+	Num_gpu               string `json:"num_gpu"`
+	Gpumem_GiB            string `json:"gpumem_GiB"`
+	Gpu_p2p               string `json:"gpu_p2p"`
 }
 
 // MCIS API Proxy: Spec
@@ -107,7 +111,7 @@ func RestPostSpec(c echo.Context) error {
 
 	} else { // if action == "registerWithCspSpecName" { // The default mode.
 		fmt.Println("[Registering Spec with CspSpecName]")
-		u := &TbSpecReq{}
+		u := &TbSpecInfo{}
 		if err := c.Bind(u); err != nil {
 			return err
 		}
@@ -128,7 +132,7 @@ func RestPostSpec(c echo.Context) error {
 }
 
 func RestLookupSpec(c echo.Context) error {
-	u := &TbSpecReq{}
+	u := &TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -459,7 +463,7 @@ func RestLookupSpecList(c echo.Context) error {
 
 }
 
-func LookupSpec(u *TbSpecReq) (SpiderSpecInfo, error) {
+func LookupSpec(u *TbSpecInfo) (SpiderSpecInfo, error) {
 	url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
 
 	method := "GET"
@@ -520,7 +524,7 @@ func LookupSpec(u *TbSpecReq) (SpiderSpecInfo, error) {
 	return temp, nil
 }
 
-func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
+func RegisterSpecWithCspSpecName(nsId string, u *TbSpecInfo) (TbSpecInfo, error) {
 	check, _ := CheckResource(nsId, "spec", u.Name)
 
 	if check {

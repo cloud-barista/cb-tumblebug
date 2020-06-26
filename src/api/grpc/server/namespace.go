@@ -25,11 +25,11 @@ func (s *server) CheckNs(ctx context.Context, in *pb.NsId) (*pb.BooleanResponse,
 	return &pbBool, nil
 }
 
-func (s *server) CreateNs(ctx context.Context, in *pb.NsReq) (*pb.NsInfo, error) {
+func (s *server) CreateNs(ctx context.Context, in *pb.NsInfo) (*pb.NsInfo, error) {
 	log.Printf("CreateNs Received: %v", in.Name)
 	//	return &pb.NsInfo{Name: in.Name, Description: "CB-TB gRPC PB test"}, nil
 
-	var tbNsReq common.NsReq
+	var tbNsReq common.NsInfo
 	err := common.CopySrcToDest(&in, &tbNsReq)
 	if err != nil {
 		//cblog.Error(err)
