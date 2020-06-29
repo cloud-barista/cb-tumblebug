@@ -30,7 +30,7 @@ func callService(c echo.Context) error {
 	}
 	
 	date := strings.ReplaceAll(req.Date, "%20", " ")	
-	cblog.Infof("DATE: %#v, HOSTNAME: %#v", date, req.HostName)
+	common.CBLog.Infof("DATE: %#v, HOSTNAME: %#v", date, req.HostName)
 
         resultInfo := BooleanInfo{
                 Result: "OK",

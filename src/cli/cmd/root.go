@@ -31,20 +31,20 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/mcir"
 )
 
-const actionTerminate string = "Terminate"
-const actionSuspend string = "Suspend"
-const actionResume string = "Resume"
-const actionReboot string = "Reboot"
+const ActionTerminate string = "Terminate"
+const ActionSuspend string = "Suspend"
+const ActionResume string = "Resume"
+const ActionReboot string = "Reboot"
 
-const statusRunning string = "Running"
-const statusSuspended string = "Suspended"
-const statusFailed string = "Failed"
-const statusTerminated string = "Terminated"
-const statusCreating string = "Creating"
-const statusSuspending string = "Suspending"
-const statusResuming string = "Resuming"
-const statusRebooting string = "Rebooting"
-const statusTerminating string = "Terminating"
+const StatusRunning string = "Running"
+const StatusSuspended string = "Suspended"
+const StatusFailed string = "Failed"
+const StatusTerminated string = "Terminated"
+const StatusCreating string = "Creating"
+const StatusSuspending string = "Suspending"
+const StatusResuming string = "Resuming"
+const StatusRebooting string = "Rebooting"
+const StatusTerminating string = "Terminating"
 
 type KeyValue struct {
 	Key   string

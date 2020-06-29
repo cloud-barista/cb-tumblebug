@@ -102,7 +102,7 @@ func makeDeleteSpecFunc_js() string {
 }
 
 func Spec(c echo.Context) error {
-	cblog.Info("call Spec()")
+	common.CBLog.Info("call Spec()")
 
 	// make page header
 	htmlStr := ` 
@@ -146,7 +146,7 @@ func Spec(c echo.Context) error {
 	// (4-1) get driver info list @todo if empty list
 	resBody, err := getTbResourceList_JsonByte("spec")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	var info struct {

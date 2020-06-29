@@ -91,7 +91,7 @@ func RestPostPublicIp(c echo.Context) error {
 	fmt.Println("[Creating PublicIp]")
 	content, responseCode, body, err := createPublicIp(nsId, u)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		/*
 			mapA := map[string]string{
 				"message": "Failed to create a PublicIp"}
@@ -113,7 +113,7 @@ func RestGetPublicIp(c echo.Context) error {
 	key := common.GenResourceKey(nsId, "publicIp", id)
 	fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, _ := common.CBStore.Get(key)
 	if keyValue == nil {
 		mapA := map[string]string{"message": "Failed to find the publicIp with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
@@ -143,7 +143,7 @@ func RestGetAllPublicIp(c echo.Context) error {
 
 		key := common.GenResourceKey(nsId, "publicIp", v)
 		fmt.Println(key)
-		keyValue, _ := store.Get(key)
+		keyValue, _ := common.CBStore.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		publicIpTmp := publicIpInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &publicIpTmp)
@@ -173,7 +173,7 @@ func RestDelPublicIp(c echo.Context) error {
 
 	responseCode, body, err := DelResource(nsId, "publicIp", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the publicIp"}
 		return c.JSONBlob(responseCode, body)
 	}
@@ -198,7 +198,7 @@ func RestDelAllPublicIp(c echo.Context) error {
 
 			responseCode, body, err := DelResource(nsId, "publicIp", v, forceFlag)
 			if err != nil {
-				cblog.Error(err)
+				common.CBLog.Error(err)
 				//mapA := map[string]string{"message": "Failed to delete the publicIp"}
 				return c.JSONBlob(responseCode, body)
 			}
@@ -268,7 +268,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := publicIpInfo{}
 		return content, res.StatusCode, nil, err
 	}
@@ -276,7 +276,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := publicIpInfo{}
 		return content, res.StatusCode, body, err
 	}
@@ -287,7 +287,7 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := publicIpInfo{}
 		return content, res.StatusCode, body, err
 	}
@@ -341,12 +341,12 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	Val, _ := json.Marshal(content)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
-	err := store.Put(string(Key), string(Val))
+	err := common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return content, res.StatusCode, body, err
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	return content, res.StatusCode, body, nil
@@ -359,7 +359,7 @@ func getPublicIpList(nsId string) []string {
 	key := "/ns/" + nsId + "/resources/publicIp"
 	fmt.Println(key)
 
-	keyValue, _ := store.GetList(key, true)
+	keyValue, _ := common.CBStore.GetList(key, true)
 	var publicIpList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
@@ -383,7 +383,7 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 	key := genResourceKey(nsId, "publicIp", Id)
 	fmt.Println("key: " + key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, _ := common.CBStore.Get(key)
 	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
 	temp := publicIpInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -411,7 +411,7 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return res.StatusCode, nil, err
 	}
 	defer res.Body.Close()
@@ -419,27 +419,27 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return res.StatusCode, body, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
-		cbStoreDeleteErr := store.Delete(key)
+		cbStoreDeleteErr := common.CBStore.Delete(key)
 		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
+			common.CBLog.Error(cbStoreDeleteErr)
 			return res.StatusCode, body, cbStoreDeleteErr
 		}
 		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return res.StatusCode, body, err
 	default:
-		cbStoreDeleteErr := store.Delete(key)
+		cbStoreDeleteErr := common.CBStore.Delete(key)
 		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
+			common.CBLog.Error(cbStoreDeleteErr)
 			return res.StatusCode, body, cbStoreDeleteErr
 		}
 		return res.StatusCode, body, nil

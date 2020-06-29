@@ -88,7 +88,7 @@ func callService(c echo.Context) error {
 
 	fmt.Println("\n")
 
-	//cblog.Infof("[%#v][Request From] DATE: %#v, HOSTNAME: %#v", cnt, date, req.HostName)
+	//common.CBLog.Infof("[%#v][Request From] DATE: %#v, HOSTNAME: %#v", cnt, date, req.HostName)
 	fmt.Printf("\n[%d] Request From =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [[ %#v ]] \n", cnt, Country)
 	fmt.Printf("[%d] HOSTNAME: %#v \n", cnt, req.HostName)
 	fmt.Printf("[%d] IP: %#v \n", cnt, req.IP)

@@ -28,26 +28,6 @@ type NsInfo struct {
 	Id string `json:"id"`
 }
 
-// MCIS API Proxy: Ns
-func RestPostNs(c echo.Context) error {
-
-	u := &NsInfo{}
-	if err := c.Bind(u); err != nil {
-		return err
-	}
-
-	fmt.Println("[Creating Ns]")
-	content, err := CreateNs(u)
-	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": "Failed to create the ns " + u.Name}
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
-
-}
-
 func NsValidation() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -64,139 +44,6 @@ func NsValidation() echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
-}
-
-func RestGetNs(c echo.Context) error {
-	id := c.Param("nsId")
-
-	/*
-		content := NsInfo{}
-
-		fmt.Println("[Get ns for id]" + id)
-		key := "/ns/" + id
-		fmt.Println(key)
-
-		keyValue, err := store.Get(key)
-		if err != nil {
-			cblog.Error(err)
-			return err
-		}
-		if keyValue == nil {
-			mapA := map[string]string{"message": "Cannot find the NS " + key}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===============================================")
-
-		json.Unmarshal([]byte(keyValue.Value), &content)
-		content.Id = id // Optional. Can be omitted.
-
-		return c.JSON(http.StatusOK, &content)
-	*/
-
-	res, err := GetNs(id)
-	if err != nil {
-		mapA := map[string]string{"message": "Failed to find the namespace " + id}
-		return c.JSON(http.StatusNotFound, &mapA)
-	} else {
-		return c.JSON(http.StatusOK, &res)
-	}
-}
-
-func RestGetAllNs(c echo.Context) error {
-
-	var content struct {
-		//Name string     `json:"name"`
-		Ns []NsInfo `json:"ns"`
-	}
-
-	/*
-		nsList := ListNsId()
-
-		for _, v := range nsList {
-
-			key := "/ns/" + v
-			fmt.Println(key)
-			keyValue, err := store.Get(key)
-			if err != nil {
-				cblog.Error(err)
-				return err
-			}
-
-			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-			nsTmp := NsInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &nsTmp)
-			nsTmp.Id = v
-			content.Ns = append(content.Ns, nsTmp)
-
-		}
-		fmt.Printf("content %+v\n", content)
-
-		return c.JSON(http.StatusOK, &content)
-	*/
-
-	nsList, err := ListNs()
-	if err != nil {
-		mapA := map[string]string{"message": "Failed to list namespaces."}
-		return c.JSON(http.StatusNotFound, &mapA)
-	}
-
-	if nsList == nil {
-		return c.JSON(http.StatusOK, &content)
-	}
-
-	// When err == nil && resourceList != nil
-	content.Ns = nsList
-	return c.JSON(http.StatusOK, &content)
-
-}
-
-func RestPutNs(c echo.Context) error {
-	return nil
-}
-
-func RestDelNs(c echo.Context) error {
-
-	id := c.Param("nsId")
-
-	err := DelNs(id)
-	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
-	}
-
-	mapA := map[string]string{"message": "The ns has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-}
-
-func RestDelAllNs(c echo.Context) error {
-	/*
-		nsList := ListNsId()
-
-		for _, v := range nsList {
-			err := DelNs(v)
-			if err != nil {
-				cblog.Error(err)
-				mapA := map[string]string{"message": err.Error()}
-				return c.JSON(http.StatusFailedDependency, &mapA)
-			}
-		}
-
-		mapA := map[string]string{"message": "All nss has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
-
-	err := DelAllNs()
-	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusConflict, &mapA)
-	}
-
-	mapA := map[string]string{"message": "All namespaces has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
 }
 
 //func CreateNs(u *NsReq) (NsInfo, error) {
@@ -221,12 +68,12 @@ func CreateNs(u *NsInfo) (NsInfo, error) {
 	Key := "/ns/" + content.Id
 	//mapA := map[string]string{"name": content.Name, "description": content.Description}
 	Val, _ := json.Marshal(content)
-	err := store.Put(string(Key), string(Val))
+	err := CBStore.Put(string(Key), string(Val))
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := CBStore.Get(string(Key))
 	fmt.Println("CreateNs(); ===========================")
 	fmt.Println("CreateNs(); Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
 	fmt.Println("CreateNs(); ===========================")
@@ -250,9 +97,9 @@ func GetNs(id string) (NsInfo, error) {
 	key := "/ns/" + id
 	fmt.Println(key)
 
-	keyValue, err := store.Get(key)
+	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		return res, err
 	}
 
@@ -268,10 +115,10 @@ func ListNs() ([]NsInfo, error) {
 	key := "/ns"
 	fmt.Println(key)
 
-	keyValue, err := store.GetList(key, true)
+	keyValue, err := CBStore.GetList(key, true)
 
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		return nil, err
 	}
 	if keyValue != nil {
@@ -293,7 +140,7 @@ func ListNsId() []string {
 	key := "/ns"
 	fmt.Println(key)
 
-	keyValue, _ := store.GetList(key, true)
+	keyValue, _ := CBStore.GetList(key, true)
 	var nsList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
@@ -348,7 +195,7 @@ func DelNs(Id string) error {
 			errString += " \n len(vNicList): " + len(vNicList)
 
 			err := fmt.Errorf(errString)
-			cblog.Error(err)
+			CBLog.Error(err)
 			return err
 		}
 	*/
@@ -366,9 +213,9 @@ func DelNs(Id string) error {
 	fmt.Println(key)
 
 	// delete ns info
-	err := store.Delete(key)
+	err := CBStore.Delete(key)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		return err
 	}
 
@@ -404,10 +251,10 @@ func CheckNs(Id string) (bool, error) {
 	key := "/ns/" + Id
 	//fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, _ := CBStore.Get(key)
 	/*
 		if err != nil {
-			cblog.Error(err)
+			CBLog.Error(err)
 			return false, err
 		}
 	*/
@@ -415,26 +262,4 @@ func CheckNs(Id string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
-}
-
-func RestCheckNs(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-
-	exists, err := CheckNs(nsId)
-
-	type JsonTemplate struct {
-		Exists bool `json:exists`
-	}
-	content := JsonTemplate{}
-	content.Exists = exists
-
-	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
-		return c.JSON(http.StatusNotFound, &content)
-	}
-
-	return c.JSON(http.StatusOK, &content)
 }

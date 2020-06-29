@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo"
 	"github.com/xwb1989/sqlparser"
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
@@ -69,205 +68,6 @@ type TbImageInfo struct {
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-// MCIS API Proxy: Image
-func RestPostImage(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-
-	action := c.QueryParam("action")
-	fmt.Println("[POST Image requested action: " + action)
-	/*
-		if action == "create" {
-			fmt.Println("[Creating Image]")
-			content, _ := createImage(nsId, u)
-			return c.JSON(http.StatusCreated, content)
-
-		} else */
-	if action == "registerWithInfo" {
-		fmt.Println("[Registering Image with info]")
-		u := &TbImageInfo{}
-		if err := c.Bind(u); err != nil {
-			return err
-		}
-		content, err := RegisterImageWithInfo(nsId, u)
-		if err != nil {
-			cblog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-		return c.JSON(http.StatusCreated, content)
-	} else if action == "registerWithId" {
-		fmt.Println("[Registering Image with ID]")
-		u := &TbImageInfo{}
-		if err := c.Bind(u); err != nil {
-			return err
-		}
-		//content, responseCode, body, err := RegisterImageWithId(nsId, u)
-		content, err := RegisterImageWithId(nsId, u)
-		if err != nil {
-			cblog.Error(err)
-			//fmt.Println("body: ", string(body))
-			//return c.JSONBlob(responseCode, body)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-		return c.JSON(http.StatusCreated, content)
-	} else {
-		mapA := map[string]string{"message": "You must specify: action=registerWithInfo or action=registerWithId"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
-	}
-
-}
-
-func RestGetImage(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-
-	resourceType := "image"
-
-	id := c.Param("imageId")
-
-	/*
-		content := TbImageInfo{}
-
-		fmt.Println("[Get image for id]" + id)
-		key := common.GenResourceKey(nsId, "image", id)
-		fmt.Println(key)
-
-		keyValue, _ := store.Get(key)
-		if keyValue == nil {
-			mapA := map[string]string{"message": "Failed to find the image with given ID."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-			fmt.Println("===============================================")
-
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			content.Id = id // Optional. Can be omitted.
-
-			return c.JSON(http.StatusOK, &content)
-		}
-	*/
-
-	res, err := GetResource(nsId, resourceType, id)
-	if err != nil {
-		mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
-		return c.JSON(http.StatusNotFound, &mapA)
-	} else {
-		return c.JSON(http.StatusOK, &res)
-	}
-}
-
-func RestGetAllImage(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-
-	resourceType := "image"
-
-	var content struct {
-		Image []TbImageInfo `json:"image"`
-	}
-
-	/*
-		imageList := ListResourceId(nsId, "image")
-
-		for _, v := range imageList {
-
-			key := common.GenResourceKey(nsId, "image", v)
-			fmt.Println(key)
-			keyValue, _ := store.Get(key)
-			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-			imageTmp := TbImageInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &imageTmp)
-			imageTmp.Id = v
-			content.Image = append(content.Image, imageTmp)
-
-		}
-		fmt.Printf("content %+v\n", content)
-
-		return c.JSON(http.StatusOK, &content)
-	*/
-
-	resourceList, err := ListResource(nsId, resourceType)
-	if err != nil {
-		mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
-		return c.JSON(http.StatusNotFound, &mapA)
-	}
-
-	if resourceList == nil {
-		return c.JSON(http.StatusOK, &content)
-	}
-
-	// When err == nil && resourceList != nil
-	content.Image = resourceList.([]TbImageInfo) // type assertion (interface{} -> array)
-	return c.JSON(http.StatusOK, &content)
-}
-
-func RestPutImage(c echo.Context) error {
-	//nsId := c.Param("nsId")
-
-	return nil
-}
-
-func RestDelImage(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	resourceType := "image"
-	id := c.Param("imageId")
-	forceFlag := c.QueryParam("force")
-
-	err := DelResource(nsId, resourceType, id, forceFlag)
-	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
-	}
-
-	mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-}
-
-func RestDelAllImage(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	resourceType := "image"
-	forceFlag := c.QueryParam("force")
-
-	/*
-		imageList := ListResourceId(nsId, "image")
-
-		if len(imageList) == 0 {
-			mapA := map[string]string{"message": "There is no image element in this namespace."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			for _, v := range imageList {
-				//responseCode, _, err := delImage(nsId, v, forceFlag)
-
-				responseCode, _, err := DelResource(nsId, "image", v, forceFlag)
-				if err != nil {
-					cblog.Error(err)
-					mapA := map[string]string{"message": "Failed to delete the image"}
-					return c.JSON(responseCode, &mapA)
-				}
-
-			}
-
-			mapA := map[string]string{"message": "All images has been deleted"}
-			return c.JSON(http.StatusOK, &mapA)
-		}
-	*/
-
-	err := DelAllResources(nsId, resourceType, forceFlag)
-	if err != nil {
-		cblog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusConflict, &mapA)
-	}
-
-	mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
-}
-
 /*
 func createImage(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
@@ -317,7 +117,7 @@ func RegisterImageWithId(nsId string, u *TbImageInfo) (TbImageInfo, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := TbImageInfo{}
 		//return content, res.StatusCode, nil, err
 		return content, err
@@ -327,7 +127,7 @@ func RegisterImageWithId(nsId string, u *TbImageInfo) (TbImageInfo, error) {
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := TbImageInfo{}
 		//return content, res.StatusCode, body, err
 		return content, err
@@ -338,7 +138,7 @@ func RegisterImageWithId(nsId string, u *TbImageInfo) (TbImageInfo, error) {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
 		fmt.Println("body: ", string(body))
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := TbImageInfo{}
 		//return content, res.StatusCode, body, err
 		return content, err
@@ -394,13 +194,13 @@ func RegisterImageWithId(nsId string, u *TbImageInfo) (TbImageInfo, error) {
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, "image", content.Id)
 	Val, _ := json.Marshal(content)
-	err = store.Put(string(Key), string(Val))
+	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		//return content, res.StatusCode, body, err
 		return content, err
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -462,12 +262,12 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, "image", content.Id)
 	Val, _ := json.Marshal(content)
-	err = store.Put(string(Key), string(Val))
+	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return *content, err
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 

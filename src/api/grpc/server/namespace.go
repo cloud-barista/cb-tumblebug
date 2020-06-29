@@ -16,7 +16,7 @@ func (s *server) CheckNs(ctx context.Context, in *pb.NsId) (*pb.BooleanResponse,
 
 	res, err := common.CheckNs(in.Id)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "CheckNs()")
 	}
 
@@ -32,20 +32,20 @@ func (s *server) CreateNs(ctx context.Context, in *pb.NsInfo) (*pb.NsInfo, error
 	var tbNsReq common.NsInfo
 	err := common.CopySrcToDest(&in, &tbNsReq)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "CreateNs()")
 	}
 
 	tbNsInfo, err := common.CreateNs(&tbNsReq)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "CreateNs()")
 	}
 
 	var pbNsInfo pb.NsInfo
 	err = common.CopySrcToDest(&tbNsInfo, &pbNsInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "CreateNs()")
 	}
 
@@ -57,7 +57,7 @@ func (s *server) DelAllNs(ctx context.Context, req *types.Empty) (*types.Empty, 
 
 	err := common.DelAllNs()
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "DelAllNs()")
 	}
 	return &types.Empty{}, nil
@@ -68,7 +68,7 @@ func (s *server) DelNs(ctx context.Context, in *pb.NsId) (*types.Empty, error) {
 
 	err := common.DelNs(in.Id)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "DelNs()")
 	}
 	return &types.Empty{}, nil
@@ -79,14 +79,14 @@ func (s *server) GetNs(ctx context.Context, in *pb.NsId) (*pb.NsInfo, error) {
 
 	tbNsInfo, err := common.GetNs(in.Id)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "GetNs()")
 	}
 
 	var pbNsInfo pb.NsInfo
 	err = common.CopySrcToDest(&tbNsInfo, &pbNsInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "GetNs()")
 	}
 
@@ -98,7 +98,7 @@ func (s *server) ListNs(ctx context.Context, req *types.Empty) (*pb.NsInfoList, 
 
 	tbNsInfoList, err := common.ListNs()
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListNs()")
 	}
 
@@ -106,7 +106,7 @@ func (s *server) ListNs(ctx context.Context, req *types.Empty) (*pb.NsInfoList, 
 	var grpcObj []*pb.NsInfo
 	err = common.CopySrcToDest(&tbNsInfoList, &grpcObj)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListNs()")
 	}
 
@@ -120,7 +120,7 @@ func (s *server) ListNsId(ctx context.Context, req *types.Empty) (*pb.NsIdList, 
 	tbNsIdList := common.ListNsId()
 	/*
 		if err != nil {
-			//cblog.Error(err)
+			//common.CBLog.Error(err)
 			return nil, common.ConvGrpcStatusErr(err, "", "ListNsId()")
 		}
 	*/
@@ -130,7 +130,7 @@ func (s *server) ListNsId(ctx context.Context, req *types.Empty) (*pb.NsIdList, 
 	var grpcObj []string
 	err := common.CopySrcToDest(&tbNsIdList, &grpcObj)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListNsId()")
 	}
 

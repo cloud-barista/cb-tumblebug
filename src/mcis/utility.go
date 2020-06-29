@@ -4,7 +4,6 @@ import (
 	//"encoding/json"
 	//uuid "github.com/google/uuid"
 	"fmt"
-	"net/http"
 	"sync"
 
 	//"fmt"
@@ -13,26 +12,22 @@ import (
 	//"strconv"
 
 	// CB-Store
-	cbstore "github.com/cloud-barista/cb-store"
-	"github.com/cloud-barista/cb-store/config"
-	icbs "github.com/cloud-barista/cb-store/interfaces"
+
 	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/labstack/echo"
-	"github.com/sirupsen/logrus"
 	//"github.com/cloud-barista/cb-spider/cloud-control-manager/vm-ssh"
 	//"github.com/cloud-barista/cb-tumblebug/src/mcism"
 	//"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
 // CB-Store
-var cblog *logrus.Logger
-var store icbs.Store
+//var cblog *logrus.Logger
+//var store icbs.Store
 
 //var SPIDER_URL string
 
 func init() {
-	cblog = config.Cblogger
-	store = cbstore.GetStore()
+	//cblog = config.Cblogger
+	//store = cbstore.GetStore()
 	//SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
@@ -61,14 +56,14 @@ type mcirIds struct {
 }
 */
 
-func checkMcis(nsId string, mcisId string) (bool, error) {
+func CheckMcis(nsId string, mcisId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("checkMcis failed; nsId given is null.")
+		err := fmt.Errorf("CheckMcis failed; nsId given is null.")
 		return false, err
 	} else if mcisId == "" {
-		err := fmt.Errorf("checkMcis failed; mcisId given is null.")
+		err := fmt.Errorf("CheckMcis failed; mcisId given is null.")
 		return false, err
 	}
 
@@ -78,9 +73,9 @@ func checkMcis(nsId string, mcisId string) (bool, error) {
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//fmt.Println(key)
 
-	keyValue, err := store.Get(key)
+	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return false, err
 	}
 	if keyValue != nil {
@@ -90,40 +85,17 @@ func checkMcis(nsId string, mcisId string) (bool, error) {
 
 }
 
-func RestCheckMcis(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
-
-	exists, err := checkMcis(nsId, mcisId)
-
-	type JsonTemplate struct {
-		Exists bool `json:exists`
-	}
-	content := JsonTemplate{}
-	content.Exists = exists
-
-	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
-		return c.JSON(http.StatusNotFound, &content)
-	}
-
-	return c.JSON(http.StatusOK, &content)
-}
-
-func checkVm(nsId string, mcisId string, vmId string) (bool, error) {
+func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
-		err := fmt.Errorf("checkVm failed; nsId given is null.")
+		err := fmt.Errorf("CheckVm failed; nsId given is null.")
 		return false, err
 	} else if mcisId == "" {
-		err := fmt.Errorf("checkVm failed; mcisId given is null.")
+		err := fmt.Errorf("CheckVm failed; mcisId given is null.")
 		return false, err
 	} else if vmId == "" {
-		err := fmt.Errorf("checkVm failed; vmId given is null.")
+		err := fmt.Errorf("CheckVm failed; vmId given is null.")
 		return false, err
 	}
 
@@ -132,9 +104,9 @@ func checkVm(nsId string, mcisId string, vmId string) (bool, error) {
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
-	keyValue, err := store.Get(key)
+	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return false, err
 	}
 	if keyValue != nil {
@@ -142,30 +114,6 @@ func checkVm(nsId string, mcisId string, vmId string) (bool, error) {
 	}
 	return false, nil
 
-}
-
-func RestCheckVm(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
-	vmId := c.Param("vmId")
-
-	exists, err := checkVm(nsId, mcisId, vmId)
-
-	type JsonTemplate struct {
-		Exists bool `json:exists`
-	}
-	content := JsonTemplate{}
-	content.Exists = exists
-
-	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
-		return c.JSON(http.StatusNotFound, &content)
-	}
-
-	return c.JSON(http.StatusOK, &content)
 }
 
 func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*string, error) {

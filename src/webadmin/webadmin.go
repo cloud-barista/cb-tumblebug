@@ -5,16 +5,15 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/cloud-barista/cb-store/config"
 	"github.com/labstack/echo"
-	"github.com/sirupsen/logrus"
 	//cr "github.com/cloud-barista/cb-spider/api-runtime/common-runtime"
+	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
-var cblog *logrus.Logger
+//var cblog *logrus.Logger
 
 func init() {
-	cblog = config.Cblogger
+	//cblog = config.Cblogger
 }
 
 type NameWidth struct {
@@ -24,7 +23,7 @@ type NameWidth struct {
 
 //================ Mainpage
 func Mainpage(c echo.Context) error {
-	cblog.Info("call frame()")
+	common.CBLog.Info("call frame()")
 
 	htmlStr := `
 <html>
@@ -52,7 +51,7 @@ func Mainpage(c echo.Context) error {
 
 //================ Menu
 func Menu(c echo.Context) error {
-	cblog.Info("call Menu()")
+	common.CBLog.Info("call Menu()")
 
 	htmlStr := ` 
 <html>
@@ -243,13 +242,13 @@ func getTbResourceList_JsonByte(resourceName string) ([]byte, error) {
 	// get object list
 	res, err := http.Get(url)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return nil, err
 	}
 	resBody, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return nil, err
 	}
 	fmt.Println("resBody: " + string(resBody)) // for debug
@@ -264,13 +263,13 @@ func getSpiderResourceList_JsonByte(resourceName string) ([]byte, error) {
 	// get object list
 	res, err := http.Get(url)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return nil, err
 	}
 	resBody, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return nil, err
 	}
 	fmt.Println("resBody: " + string(resBody)) // for debug

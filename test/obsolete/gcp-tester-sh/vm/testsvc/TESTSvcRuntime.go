@@ -11,25 +11,21 @@ package main
 import (
 	"fmt"
 
-	"github.com/cloud-barista/cb-store/config"
-	"github.com/sirupsen/logrus"
-
 	// REST API (echo)
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
 
-var cblog *logrus.Logger
+//var cblog *logrus.Logger
 
 func init() {
-	cblog = config.Cblogger
+	//cblog = config.Cblogger
 }
 
 // REST API Return struct for boolena type
 type BooleanInfo struct {
-        Result string // true or false
+	Result string // true or false
 }
-
 
 type route struct {
 	method, path string

@@ -120,7 +120,7 @@ func makeNsTRList_html(bgcolor string, height string, fontSize string, infoList 
 func listNsId() []string {
 	resBody, err := getTbResourceList_JsonByte("ns")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 	}
 	var info struct {
 		ResultList []common.NsInfo `json:"ns"`
@@ -153,7 +153,7 @@ func makeNsSelector_html(onchangeFunctionName string) string {
 }
 
 func Ns(c echo.Context) error {
-	cblog.Info("call Ns()")
+	common.CBLog.Info("call Ns()")
 
 	// make page header
 	htmlStr := ` 
@@ -193,7 +193,7 @@ func Ns(c echo.Context) error {
 	// (4-1) get driver info list @todo if empty list
 	resBody, err := getTbResourceList_JsonByte("ns")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	var info struct {
