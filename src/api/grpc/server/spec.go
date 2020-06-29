@@ -12,10 +12,10 @@ import (
 )
 
 func (s *server) RegisterSpecWithCspSpecName(ctx context.Context, req *pb.RegisterSpecWithCspSpecNameWrapper) (*pb.TbSpecInfo, error) {
-	log.Printf("RegisterSpecWithCspSpecName Received: %v", req.TbSpecReq.Name)
+	log.Printf("RegisterSpecWithCspSpecName Received: %v", req.TbSpecInfo.Name)
 
-	var tbSpecReq mcir.TbSpecReq
-	err := common.CopySrcToDest(&req.TbSpecReq, &tbSpecReq)
+	var tbSpecReq mcir.TbSpecInfo
+	err := common.CopySrcToDest(&req.TbSpecInfo, &tbSpecReq)
 	if err != nil {
 		//cblog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterSpecWithCspSpecName()")

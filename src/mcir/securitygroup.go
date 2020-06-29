@@ -16,15 +16,17 @@ import (
 
 type SpiderSecurityReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        SpiderSecurityReqInfo
+	ReqInfo        SpiderSecurityInfo
 }
 
+/*
 type SpiderSecurityReqInfo struct { // Spider
 	Name          string
 	VPCName       string
 	SecurityRules *[]SpiderSecurityRuleInfo
 	//Direction     string // @todo used??
 }
+*/
 
 type SpiderSecurityRuleInfo struct { // Spider
 	FromPort   string `json:"fromPort"`
@@ -34,14 +36,21 @@ type SpiderSecurityRuleInfo struct { // Spider
 }
 
 type SpiderSecurityInfo struct { // Spider
-	IId           common.IID // {NameId, SystemId}
-	VpcIID        common.IID // {NameId, SystemId}
-	Direction     string     // @todo userd??
+	// Fields for request
+	Name    string
+	VPCName string
+
+	// Fields for both request and response
 	SecurityRules *[]SpiderSecurityRuleInfo
 
+	// Fields for response
+	IId          common.IID // {NameId, SystemId}
+	VpcIID       common.IID // {NameId, SystemId}
+	Direction    string     // @todo userd??
 	KeyValueList []common.KeyValue
 }
 
+/*
 type TbSecurityGroupReq struct { // Tumblebug
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
@@ -50,18 +59,24 @@ type TbSecurityGroupReq struct { // Tumblebug
 	Description   string                    `json:"description"`
 	FirewallRules *[]SpiderSecurityRuleInfo `json:"firewallRules"`
 }
+*/
 
 type TbSecurityGroupInfo struct { // Tumblebug
-	Id                   string `json:"id"`
-	Name                 string `json:"name"`
-	ConnectionName       string `json:"connectionName"`
-	VNetId               string `json:"vNetId"`
-	CspSecurityGroupId   string `json:"cspSecurityGroupId"`
-	CspSecurityGroupName string `json:"cspSecurityGroupName"`
+	// Fields for both request and response
+	Name           string                    `json:"name"`
+	ConnectionName string                    `json:"connectionName"`
+	VNetId         string                    `json:"vNetId"`
+	Description    string                    `json:"description"`
+	FirewallRules  *[]SpiderSecurityRuleInfo `json:"firewallRules"`
+
+	// Additional fields for response
+	Id                   string            `json:"id"`
+	CspSecurityGroupId   string            `json:"cspSecurityGroupId"`
+	CspSecurityGroupName string            `json:"cspSecurityGroupName"`
+	KeyValueList         []common.KeyValue `json:"keyValueList"`
+
+	// Disabled for now
 	//ResourceGroupName  string `json:"resourceGroupName"`
-	Description   string                    `json:"description"`
-	FirewallRules *[]SpiderSecurityRuleInfo `json:"firewallRules"`
-	KeyValueList  []common.KeyValue         `json:"keyValueList"`
 }
 
 // MCIS API Proxy: SecurityGroup
@@ -69,7 +84,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	u := &TbSecurityGroupReq{}
+	u := &TbSecurityGroupInfo{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -95,7 +110,8 @@ func RestPostSecurityGroup(c echo.Context) error {
 
 	fmt.Println("[POST SecurityGroup")
 	fmt.Println("[Creating SecurityGroup]")
-	content, responseCode, _, err := CreateSecurityGroup(nsId, u)
+	//content, responseCode, _, err := CreateSecurityGroup(nsId, u)
+	content, err := CreateSecurityGroup(nsId, u)
 	if err != nil {
 		cblog.Error(err)
 		/*
@@ -103,7 +119,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 				"message": "Failed to create a SecurityGroup"}
 		*/
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(responseCode, &mapA)
+		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }
@@ -260,13 +276,15 @@ func RestDelAllSecurityGroup(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, int, []byte, error) {
+//func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, int, []byte, error) {
+func CreateSecurityGroup(nsId string, u *TbSecurityGroupInfo) (TbSecurityGroupInfo, error) {
 	check, _ := CheckResource(nsId, "securityGroup", u.Name)
 
 	if check {
 		temp := TbSecurityGroupInfo{}
 		err := fmt.Errorf("The securityGroup " + u.Name + " already exists.")
-		return temp, http.StatusConflict, nil, err
+		//return temp, http.StatusConflict, nil, err
+		return temp, err
 	}
 
 	//url := common.SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
@@ -300,7 +318,8 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	if err != nil {
 		cblog.Error(err)
 		content := TbSecurityGroupInfo{}
-		return content, res.StatusCode, nil, err
+		//return content, res.StatusCode, nil, err
+		return content, err
 	}
 	defer res.Body.Close()
 
@@ -309,7 +328,8 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	if err != nil {
 		cblog.Error(err)
 		content := TbSecurityGroupInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
@@ -318,7 +338,8 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		err := fmt.Errorf(string(body))
 		cblog.Error(err)
 		content := TbSecurityGroupInfo{}
-		return content, res.StatusCode, body, err
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 
 	temp := SpiderSecurityInfo{}
@@ -343,13 +364,15 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	fmt.Println("=========================== PUT CreateSecurityGroup")
 	Key := common.GenResourceKey(nsId, "securityGroup", content.Id)
 	Val, _ := json.Marshal(content)
-	cbStorePutErr := store.Put(string(Key), string(Val))
-	if cbStorePutErr != nil {
-		cblog.Error(cbStorePutErr)
-		return content, res.StatusCode, body, cbStorePutErr
+	err = store.Put(string(Key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+		//return content, res.StatusCode, body, err
+		return content, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, res.StatusCode, body, nil
+	//return content, res.StatusCode, body, nil
+	return content, nil
 }

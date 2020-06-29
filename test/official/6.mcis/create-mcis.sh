@@ -31,7 +31,7 @@ curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type:
 	'{
 		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 		"description": "Tumblebug Demo",
-		"vm_req": [ {
+		"vm": [ {
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-01",
 			"image_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vm_access_id": "cb-user",

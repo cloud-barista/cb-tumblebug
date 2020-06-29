@@ -397,10 +397,10 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	Val, _ := json.Marshal(content)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
-	cbStorePutErr := store.Put(string(Key), string(Val))
-	if cbStorePutErr != nil {
-		cblog.Error(cbStorePutErr)
-		return content, res.StatusCode, body, cbStorePutErr
+	err := store.Put(string(Key), string(Val))
+	if err != nil {
+		cblog.Error(err)
+		return content, res.StatusCode, body, err
 	}
 	keyValue, _ := store.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)

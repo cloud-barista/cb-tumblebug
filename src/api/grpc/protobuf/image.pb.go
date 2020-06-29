@@ -28,98 +28,20 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type TbImageReq struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name" yaml:"name"`
-	ConnectionName       string   `protobuf:"bytes,2,opt,name=connection_name,json=connectionName,proto3" json:"connectionName" yaml:"connectionName"`
-	CspImageId           string   `protobuf:"bytes,3,opt,name=csp_image_id,json=cspImageId,proto3" json:"cspImageId" yaml:"cspImageId"`
-	CspImageName         string   `protobuf:"bytes,4,opt,name=csp_image_name,json=cspImageName,proto3" json:"cspImageName" yaml:"cspImageName"`
-	Description          string   `protobuf:"bytes,5,opt,name=description,proto3" json:"description" yaml:"description"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *TbImageReq) Reset()         { *m = TbImageReq{} }
-func (m *TbImageReq) String() string { return proto.CompactTextString(m) }
-func (*TbImageReq) ProtoMessage()    {}
-func (*TbImageReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9624c68e2b547544, []int{0}
-}
-func (m *TbImageReq) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *TbImageReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_TbImageReq.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *TbImageReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TbImageReq.Merge(m, src)
-}
-func (m *TbImageReq) XXX_Size() int {
-	return m.Size()
-}
-func (m *TbImageReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_TbImageReq.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TbImageReq proto.InternalMessageInfo
-
-func (m *TbImageReq) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *TbImageReq) GetConnectionName() string {
-	if m != nil {
-		return m.ConnectionName
-	}
-	return ""
-}
-
-func (m *TbImageReq) GetCspImageId() string {
-	if m != nil {
-		return m.CspImageId
-	}
-	return ""
-}
-
-func (m *TbImageReq) GetCspImageName() string {
-	if m != nil {
-		return m.CspImageName
-	}
-	return ""
-}
-
-func (m *TbImageReq) GetDescription() string {
-	if m != nil {
-		return m.Description
-	}
-	return ""
-}
-
 type RegisterImageWithIdWrapper struct {
-	NsId                 string      `protobuf:"bytes,1,opt,name=ns_id,json=nsId,proto3" json:"nsId" yaml:"nsId"`
-	TbImageReq           *TbImageReq `protobuf:"bytes,2,opt,name=tb_image_req,json=tbImageReq,proto3" json:"tbImageReq" yaml:"tbImageReq"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
+	NsId string `protobuf:"bytes,1,opt,name=ns_id,json=nsId,proto3" json:"nsId" yaml:"nsId"`
+	//TbImageReq tb_image_req = 2 [json_name="tbImageReq", (gogoproto.jsontag) = "tbImageReq", (gogoproto.moretags) = "yaml:\"tbImageReq\""];
+	TbImageInfo          *TbImageInfo `protobuf:"bytes,2,opt,name=tb_image_info,json=tbImageInfo,proto3" json:"tbImageInfo" yaml:"tbImageInfo"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
 func (m *RegisterImageWithIdWrapper) Reset()         { *m = RegisterImageWithIdWrapper{} }
 func (m *RegisterImageWithIdWrapper) String() string { return proto.CompactTextString(m) }
 func (*RegisterImageWithIdWrapper) ProtoMessage()    {}
 func (*RegisterImageWithIdWrapper) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9624c68e2b547544, []int{1}
+	return fileDescriptor_9624c68e2b547544, []int{0}
 }
 func (m *RegisterImageWithIdWrapper) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -155,24 +77,26 @@ func (m *RegisterImageWithIdWrapper) GetNsId() string {
 	return ""
 }
 
-func (m *RegisterImageWithIdWrapper) GetTbImageReq() *TbImageReq {
+func (m *RegisterImageWithIdWrapper) GetTbImageInfo() *TbImageInfo {
 	if m != nil {
-		return m.TbImageReq
+		return m.TbImageInfo
 	}
 	return nil
 }
 
 type TbImageInfo struct {
-	Name                 string      `protobuf:"bytes,1,opt,name=name,proto3" json:"name" yaml:"name"`
-	ConnectionName       string      `protobuf:"bytes,2,opt,name=connection_name,json=connectionName,proto3" json:"connectionName" yaml:"connectionName"`
-	CspImageId           string      `protobuf:"bytes,3,opt,name=csp_image_id,json=cspImageId,proto3" json:"cspImageId" yaml:"cspImageId"`
-	CspImageName         string      `protobuf:"bytes,4,opt,name=csp_image_name,json=cspImageName,proto3" json:"cspImageName" yaml:"cspImageName"`
-	Description          string      `protobuf:"bytes,5,opt,name=description,proto3" json:"description" yaml:"description"`
-	CreationDate         string      `protobuf:"bytes,6,opt,name=creation_date,json=creationDate,proto3" json:"creationDate" yaml:"creationDate"`
-	GuestOs              string      `protobuf:"bytes,7,opt,name=guest_os,json=guestOS,proto3" json:"guestOS" yaml:"guestOS"`
-	Status               string      `protobuf:"bytes,8,opt,name=status,proto3" json:"status" yaml:"status"`
-	KeyValueList         []*KeyValue `protobuf:"bytes,9,rep,name=key_value_list,json=keyValueList,proto3" json:"keyValueList" yaml:"keyValueList"`
-	Id                   string      `protobuf:"bytes,10,opt,name=id,proto3" json:"id" yaml:"id"`
+	// Fields for both request and response
+	Name           string `protobuf:"bytes,2,opt,name=name,proto3" json:"name" yaml:"name"`
+	ConnectionName string `protobuf:"bytes,3,opt,name=connection_name,json=connectionName,proto3" json:"connectionName" yaml:"connectionName"`
+	CspImageId     string `protobuf:"bytes,4,opt,name=csp_image_id,json=cspImageId,proto3" json:"cspImageId" yaml:"cspImageId"`
+	CspImageName   string `protobuf:"bytes,5,opt,name=csp_image_name,json=cspImageName,proto3" json:"cspImageName" yaml:"cspImageName"`
+	Description    string `protobuf:"bytes,6,opt,name=description,proto3" json:"description" yaml:"description"`
+	// Additional fields for response
+	Id                   string      `protobuf:"bytes,1,opt,name=id,proto3" json:"id" yaml:"id"`
+	CreationDate         string      `protobuf:"bytes,7,opt,name=creation_date,json=creationDate,proto3" json:"creationDate" yaml:"creationDate"`
+	GuestOs              string      `protobuf:"bytes,8,opt,name=guest_os,json=guestOS,proto3" json:"guestOS" yaml:"guestOS"`
+	Status               string      `protobuf:"bytes,9,opt,name=status,proto3" json:"status" yaml:"status"`
+	KeyValueList         []*KeyValue `protobuf:"bytes,10,rep,name=key_value_list,json=keyValueList,proto3" json:"keyValueList" yaml:"keyValueList"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
@@ -182,7 +106,7 @@ func (m *TbImageInfo) Reset()         { *m = TbImageInfo{} }
 func (m *TbImageInfo) String() string { return proto.CompactTextString(m) }
 func (*TbImageInfo) ProtoMessage()    {}
 func (*TbImageInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9624c68e2b547544, []int{2}
+	return fileDescriptor_9624c68e2b547544, []int{1}
 }
 func (m *TbImageInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -246,6 +170,13 @@ func (m *TbImageInfo) GetDescription() string {
 	return ""
 }
 
+func (m *TbImageInfo) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
 func (m *TbImageInfo) GetCreationDate() string {
 	if m != nil {
 		return m.CreationDate
@@ -274,13 +205,6 @@ func (m *TbImageInfo) GetKeyValueList() []*KeyValue {
 	return nil
 }
 
-func (m *TbImageInfo) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
-}
-
 type RegisterImageWithInfoWrapper struct {
 	NsId                 string       `protobuf:"bytes,1,opt,name=ns_id,json=nsId,proto3" json:"nsId" yaml:"nsId"`
 	TbImageInfo          *TbImageInfo `protobuf:"bytes,2,opt,name=tb_image_info,json=tbImageInfo,proto3" json:"tbImageInfo" yaml:"tbImageInfo"`
@@ -293,7 +217,7 @@ func (m *RegisterImageWithInfoWrapper) Reset()         { *m = RegisterImageWithI
 func (m *RegisterImageWithInfoWrapper) String() string { return proto.CompactTextString(m) }
 func (*RegisterImageWithInfoWrapper) ProtoMessage()    {}
 func (*RegisterImageWithInfoWrapper) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9624c68e2b547544, []int{3}
+	return fileDescriptor_9624c68e2b547544, []int{2}
 }
 func (m *RegisterImageWithInfoWrapper) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -347,7 +271,7 @@ func (m *TbImageInfoList) Reset()         { *m = TbImageInfoList{} }
 func (m *TbImageInfoList) String() string { return proto.CompactTextString(m) }
 func (*TbImageInfoList) ProtoMessage()    {}
 func (*TbImageInfoList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9624c68e2b547544, []int{4}
+	return fileDescriptor_9624c68e2b547544, []int{3}
 }
 func (m *TbImageInfoList) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -384,7 +308,6 @@ func (m *TbImageInfoList) GetTbImageInfos() []*TbImageInfo {
 }
 
 func init() {
-	proto.RegisterType((*TbImageReq)(nil), "cbtumblebug.TbImageReq")
 	proto.RegisterType((*RegisterImageWithIdWrapper)(nil), "cbtumblebug.RegisterImageWithIdWrapper")
 	proto.RegisterType((*TbImageInfo)(nil), "cbtumblebug.TbImageInfo")
 	proto.RegisterType((*RegisterImageWithInfoWrapper)(nil), "cbtumblebug.RegisterImageWithInfoWrapper")
@@ -394,57 +317,55 @@ func init() {
 func init() { proto.RegisterFile("image.proto", fileDescriptor_9624c68e2b547544) }
 
 var fileDescriptor_9624c68e2b547544 = []byte{
-	// 796 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x95, 0x4f, 0x4f, 0xfb, 0x36,
-	0x18, 0xc7, 0x9b, 0x42, 0xa1, 0x75, 0x4a, 0x19, 0x46, 0x8c, 0xac, 0xb0, 0x1a, 0x19, 0x4d, 0x30,
-	0xb1, 0x15, 0x09, 0x2e, 0xd3, 0x0e, 0x9b, 0x86, 0x40, 0x55, 0x35, 0x60, 0x52, 0x86, 0x86, 0xb4,
-	0x03, 0x55, 0xfe, 0xb8, 0x21, 0x22, 0x89, 0x4b, 0xec, 0x4c, 0xea, 0x3b, 0xd9, 0x7d, 0xb7, 0xdd,
-	0x76, 0xda, 0x5b, 0xd8, 0x71, 0xaf, 0x20, 0x9a, 0xd8, 0x2d, 0x87, 0x1d, 0xfa, 0x0a, 0xa6, 0xd8,
-	0x69, 0x93, 0x74, 0x2d, 0x48, 0x93, 0x7e, 0xb7, 0xdf, 0xad, 0xcf, 0xd7, 0xdf, 0xe7, 0xe3, 0xe7,
-	0xf1, 0x63, 0x37, 0x40, 0x75, 0x7d, 0xc3, 0x21, 0xdd, 0x51, 0x48, 0x39, 0x85, 0xaa, 0x65, 0xf2,
-	0xc8, 0x37, 0x3d, 0x62, 0x46, 0x4e, 0xfb, 0x73, 0xc7, 0xe5, 0x8f, 0x91, 0xd9, 0xb5, 0xa8, 0x7f,
-	0xea, 0x50, 0x87, 0x9e, 0x0a, 0x8f, 0x19, 0x0d, 0x45, 0x24, 0x02, 0xf1, 0x4b, 0xe6, 0xb6, 0xf7,
-	0x1c, 0x4a, 0x1d, 0x8f, 0xe4, 0x2e, 0xe2, 0x8f, 0xf8, 0x38, 0x5b, 0x6c, 0x5a, 0xd4, 0xf7, 0x69,
-	0x20, 0x23, 0xfc, 0x4f, 0x15, 0x80, 0x3b, 0xb3, 0x9f, 0x6e, 0xac, 0x93, 0x67, 0x78, 0x02, 0x56,
-	0x03, 0xc3, 0x27, 0x9a, 0x72, 0xa0, 0x1c, 0x37, 0x2e, 0x76, 0x93, 0x18, 0x89, 0x78, 0x12, 0x23,
-	0x75, 0x6c, 0xf8, 0xde, 0x97, 0x38, 0x8d, 0xb0, 0x2e, 0x44, 0x78, 0x07, 0x36, 0x2d, 0x1a, 0x04,
-	0xc4, 0xe2, 0x2e, 0x0d, 0x06, 0x22, 0xaf, 0x2a, 0xf2, 0x4e, 0x92, 0x18, 0xb5, 0xf2, 0xa5, 0x5b,
-	0x49, 0xd8, 0x91, 0x84, 0xb2, 0x8e, 0xf5, 0x39, 0x23, 0xbc, 0x02, 0x4d, 0x8b, 0x8d, 0x06, 0xe2,
-	0x2c, 0x06, 0xae, 0xad, 0xad, 0x08, 0xe4, 0x61, 0x12, 0x23, 0x60, 0xb1, 0x91, 0xa8, 0xb4, 0x6f,
-	0x4f, 0x62, 0xb4, 0x95, 0xe1, 0x66, 0x1a, 0xd6, 0x0b, 0x06, 0x78, 0x03, 0x5a, 0x39, 0x46, 0xd4,
-	0xb6, 0x2a, 0x40, 0x47, 0x49, 0x8c, 0x9a, 0x53, 0x5f, 0x56, 0xd9, 0x76, 0x19, 0x25, 0xeb, 0x2a,
-	0x99, 0x60, 0x0f, 0xa8, 0x36, 0x61, 0x56, 0xe8, 0x8e, 0xd2, 0x42, 0xb5, 0x9a, 0x60, 0x7d, 0x92,
-	0xc4, 0xa8, 0x28, 0x4f, 0x62, 0x04, 0x25, 0xaa, 0x20, 0x62, 0xbd, 0x68, 0xc1, 0xbf, 0x2a, 0xa0,
-	0xad, 0x13, 0xc7, 0x65, 0x9c, 0x84, 0x02, 0x7f, 0xef, 0xf2, 0xc7, 0xbe, 0x7d, 0x1f, 0x1a, 0xa3,
-	0x11, 0x09, 0xe1, 0x67, 0xa0, 0x16, 0xb0, 0xb4, 0xed, 0xe2, 0x04, 0x98, 0x68, 0x78, 0x3a, 0x01,
-	0x96, 0xb6, 0x2a, 0x44, 0xf8, 0x00, 0x9a, 0xdc, 0xcc, 0x7a, 0x0c, 0xc9, 0xb3, 0x38, 0x7e, 0xf5,
-	0x6c, 0xb7, 0x5b, 0xb8, 0x3b, 0xdd, 0x7c, 0xba, 0xf2, 0x10, 0xf9, 0x2c, 0xce, 0x0f, 0x31, 0xd7,
-	0xb0, 0x5e, 0x30, 0xe0, 0xdf, 0x6b, 0x40, 0xcd, 0xf2, 0xfb, 0xc1, 0x90, 0xbe, 0xbf, 0x1e, 0xef,
-	0xfa, 0x7a, 0xc0, 0x6b, 0xb0, 0x61, 0x85, 0xc4, 0x10, 0x47, 0x66, 0x1b, 0x9c, 0x68, 0x6b, 0x85,
-	0xb2, 0xb2, 0x85, 0x4b, 0x83, 0x17, 0xcb, 0x2a, 0xa8, 0x69, 0x59, 0x85, 0x10, 0x7e, 0x01, 0xea,
-	0x4e, 0x44, 0x18, 0x1f, 0x50, 0xa6, 0xad, 0x0b, 0xd0, 0xc7, 0x49, 0x8c, 0xd6, 0x85, 0xf6, 0xdd,
-	0xf7, 0x93, 0x18, 0xb5, 0x24, 0x23, 0x13, 0xb0, 0x3e, 0x5d, 0x82, 0xe7, 0x60, 0x8d, 0x71, 0x83,
-	0x47, 0x4c, 0xab, 0x8b, 0xbc, 0xbd, 0x24, 0x46, 0x99, 0x32, 0x89, 0xd1, 0x86, 0x4c, 0x93, 0x31,
-	0xd6, 0xb3, 0x05, 0x68, 0x83, 0xd6, 0x13, 0x19, 0x0f, 0x7e, 0x32, 0xbc, 0x88, 0x0c, 0x3c, 0x97,
-	0x71, 0xad, 0x71, 0xb0, 0x72, 0xac, 0x9e, 0xed, 0x94, 0x2e, 0xe4, 0xb7, 0x64, 0xfc, 0x43, 0xea,
-	0x90, 0x4d, 0x3d, 0x65, 0xd1, 0xb5, 0xcb, 0x78, 0xde, 0x54, 0x51, 0xc5, 0x7a, 0xc9, 0x04, 0x0f,
-	0x41, 0xd5, 0xb5, 0x35, 0x20, 0xca, 0xda, 0x4e, 0x62, 0x54, 0x75, 0xd3, 0x79, 0x37, 0x64, 0xa2,
-	0x6b, 0x63, 0xbd, 0xea, 0xda, 0xf8, 0x37, 0x05, 0xec, 0xff, 0xf7, 0x99, 0x05, 0x43, 0xfa, 0xff,
-	0x1e, 0x9a, 0x05, 0x36, 0x66, 0x0f, 0xcd, 0x0d, 0x86, 0x34, 0x7b, 0x69, 0xda, 0xa2, 0x97, 0x96,
-	0xee, 0x22, 0x67, 0xcf, 0x73, 0x21, 0x9f, 0x7d, 0x41, 0xc4, 0x7a, 0xd1, 0x82, 0x09, 0xd8, 0x2c,
-	0x20, 0x44, 0xaf, 0x3a, 0x68, 0x95, 0xf6, 0x65, 0x9a, 0x22, 0x4e, 0x74, 0xf9, 0xc6, 0x1f, 0x25,
-	0x31, 0xaa, 0x89, 0x84, 0x49, 0x8c, 0x9a, 0xd9, 0xa1, 0xa4, 0x21, 0xd6, 0xa5, 0x7c, 0xf6, 0xcb,
-	0x2a, 0xa8, 0x09, 0x3f, 0xfc, 0x11, 0x6c, 0x2f, 0xf8, 0x2b, 0x82, 0x47, 0x25, 0xf8, 0xf2, 0x3f,
-	0xab, 0xf6, 0xd2, 0x2a, 0x70, 0x05, 0x3e, 0x80, 0x9d, 0x85, 0xe7, 0x0f, 0x3f, 0x7d, 0x83, 0x9e,
-	0xcf, 0xe8, 0x55, 0xfe, 0x0d, 0x68, 0x5e, 0x12, 0xef, 0x1b, 0xcf, 0x13, 0x22, 0x83, 0x87, 0x25,
-	0xaf, 0x5c, 0xd2, 0x09, 0xa3, 0x51, 0x68, 0x11, 0x36, 0x05, 0x7e, 0xd8, 0x95, 0x5f, 0xc6, 0xee,
-	0xf4, 0xcb, 0xd8, 0xbd, 0x4a, 0xbf, 0x8c, 0xb8, 0x02, 0xaf, 0x40, 0xfd, 0x92, 0x48, 0x16, 0x44,
-	0xf3, 0xa8, 0x29, 0xe7, 0x6d, 0x4c, 0x0f, 0xd4, 0x7b, 0x84, 0x2f, 0xc2, 0xf4, 0x08, 0x9f, 0xc7,
-	0xbc, 0xd6, 0xde, 0x57, 0xa0, 0x91, 0x5e, 0x00, 0x49, 0xda, 0x2a, 0x19, 0x6f, 0x59, 0xdf, 0x6e,
-	0xef, 0x2f, 0xcb, 0x15, 0x2f, 0xa6, 0x02, 0xbf, 0x06, 0xea, 0x2c, 0xbf, 0x6f, 0x2f, 0x22, 0xec,
-	0xcd, 0xcd, 0x41, 0xd6, 0xd6, 0xb7, 0x25, 0xe0, 0xe2, 0x83, 0x3f, 0x5e, 0x3a, 0xca, 0x9f, 0x2f,
-	0x1d, 0xe5, 0xaf, 0x97, 0x8e, 0xf2, 0xf3, 0xdf, 0x9d, 0x8a, 0xb9, 0x26, 0xba, 0x3d, 0xff, 0x37,
-	0x00, 0x00, 0xff, 0xff, 0x0e, 0xc3, 0xa0, 0xd0, 0xa7, 0x08, 0x00, 0x00,
+	// 754 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x94, 0xcf, 0x4e, 0xdb, 0x4c,
+	0x14, 0xc5, 0xe3, 0x90, 0x40, 0x32, 0x0e, 0xe1, 0x63, 0x10, 0x5f, 0xdd, 0x40, 0x63, 0x34, 0xa8,
+	0x82, 0x8a, 0x36, 0x48, 0xb0, 0xa9, 0xba, 0x68, 0x55, 0x04, 0x8a, 0xa2, 0x02, 0x95, 0x5c, 0x54,
+	0xa4, 0x2e, 0x1a, 0xf9, 0xcf, 0xc4, 0x58, 0xd8, 0x9e, 0x28, 0x33, 0xae, 0x94, 0x37, 0xe9, 0xbe,
+	0x0f, 0x50, 0x75, 0xd5, 0x57, 0xe8, 0xb2, 0x4f, 0x60, 0x55, 0x74, 0xe7, 0x65, 0x9e, 0xa0, 0xf2,
+	0x8c, 0x43, 0xc6, 0x69, 0x02, 0xdb, 0xee, 0x72, 0xcf, 0x9c, 0xfb, 0x9b, 0x73, 0x27, 0xe3, 0x01,
+	0xaa, 0x17, 0x98, 0x2e, 0x6e, 0xf5, 0x07, 0x84, 0x11, 0xa8, 0xda, 0x16, 0x8b, 0x02, 0xcb, 0xc7,
+	0x56, 0xe4, 0x36, 0x9e, 0xb9, 0x1e, 0xbb, 0x8a, 0xac, 0x96, 0x4d, 0x82, 0x7d, 0x97, 0xb8, 0x64,
+	0x9f, 0x7b, 0xac, 0xa8, 0xc7, 0x2b, 0x5e, 0xf0, 0x5f, 0xa2, 0xb7, 0xb1, 0xe1, 0x12, 0xe2, 0xfa,
+	0x78, 0xe2, 0xc2, 0x41, 0x9f, 0x0d, 0xb3, 0xc5, 0x9a, 0x4d, 0x82, 0x80, 0x84, 0xa2, 0x42, 0x5f,
+	0x15, 0xd0, 0x30, 0xb0, 0xeb, 0x51, 0x86, 0x07, 0x9d, 0x74, 0xfb, 0x4b, 0x8f, 0x5d, 0x75, 0x9c,
+	0xcb, 0x81, 0xd9, 0xef, 0xe3, 0x01, 0x7c, 0x0a, 0xca, 0x21, 0xed, 0x7a, 0x8e, 0xa6, 0x6c, 0x29,
+	0xbb, 0xd5, 0xa3, 0x07, 0x49, 0xac, 0x97, 0x42, 0xda, 0x71, 0x46, 0xb1, 0xae, 0x0e, 0xcd, 0xc0,
+	0x7f, 0x81, 0xd2, 0x0a, 0x19, 0x5c, 0x84, 0x36, 0x58, 0x66, 0x56, 0x97, 0x4f, 0xd1, 0xf5, 0xc2,
+	0x1e, 0xd1, 0x8a, 0x5b, 0xca, 0xae, 0x7a, 0xa0, 0xb5, 0xa4, 0x59, 0x5a, 0x17, 0x16, 0xdf, 0xa7,
+	0x13, 0xf6, 0xc8, 0xd1, 0xe3, 0x24, 0xd6, 0x55, 0x36, 0x11, 0x46, 0xb1, 0x0e, 0x05, 0x56, 0x12,
+	0x91, 0x21, 0x5b, 0xd0, 0xf7, 0x32, 0x50, 0x25, 0x06, 0xdc, 0x03, 0xa5, 0xd0, 0x0c, 0x30, 0xdf,
+	0x6b, 0x9c, 0xd0, 0x0c, 0xb0, 0x94, 0xd0, 0x0c, 0x70, 0x9a, 0xd0, 0x0c, 0x30, 0xbc, 0x00, 0x2b,
+	0x36, 0x09, 0x43, 0x6c, 0x33, 0x8f, 0x84, 0x5d, 0xde, 0xb7, 0xc0, 0xfb, 0xf6, 0x92, 0x58, 0xaf,
+	0x4f, 0x96, 0xce, 0x05, 0x61, 0x5d, 0x10, 0xf2, 0x3a, 0x32, 0xa6, 0x8c, 0xf0, 0x04, 0xd4, 0x6c,
+	0xda, 0x1f, 0x0f, 0xee, 0x68, 0x25, 0x8e, 0xdc, 0x4e, 0x62, 0x1d, 0xd8, 0xb4, 0x2f, 0xa2, 0xa6,
+	0x47, 0xb6, 0x9a, 0xe1, 0x6e, 0x35, 0x64, 0x48, 0x06, 0x78, 0x06, 0xea, 0x13, 0x0c, 0xcf, 0x56,
+	0xe6, 0xa0, 0x9d, 0x24, 0xd6, 0x6b, 0x63, 0x5f, 0x96, 0x6c, 0x2d, 0x8f, 0x12, 0xb9, 0x72, 0x26,
+	0xd8, 0x06, 0xaa, 0x83, 0xa9, 0x3d, 0xf0, 0xfa, 0x69, 0x50, 0x6d, 0x91, 0xb3, 0xf8, 0x89, 0x4b,
+	0xf2, 0xe4, 0xc4, 0x25, 0x11, 0x19, 0xb2, 0x05, 0x6e, 0x83, 0xe2, 0xed, 0x0d, 0x58, 0x4b, 0x62,
+	0xbd, 0xe8, 0xa5, 0xc3, 0x54, 0x45, 0x9b, 0xe7, 0x20, 0xa3, 0xe8, 0x39, 0xf0, 0x14, 0x2c, 0xdb,
+	0x03, 0x6c, 0xf2, 0x73, 0x75, 0x4c, 0x86, 0xb5, 0x25, 0x29, 0x7b, 0xb6, 0x70, 0x6c, 0x32, 0x39,
+	0xbb, 0xa4, 0xa6, 0xd9, 0xa5, 0x12, 0x3e, 0x07, 0x15, 0x37, 0xc2, 0x94, 0x75, 0x09, 0xd5, 0x2a,
+	0x1c, 0xf4, 0x28, 0x89, 0xf5, 0x25, 0xae, 0xbd, 0x7d, 0x37, 0x8a, 0xf5, 0xba, 0x60, 0x64, 0x02,
+	0x32, 0xc6, 0x4b, 0xf0, 0x10, 0x2c, 0x52, 0x66, 0xb2, 0x88, 0x6a, 0x55, 0xde, 0xb7, 0x91, 0xc4,
+	0x7a, 0xa6, 0x8c, 0x62, 0x7d, 0x59, 0xb4, 0x89, 0x1a, 0x19, 0xd9, 0x02, 0x74, 0x40, 0xfd, 0x1a,
+	0x0f, 0xbb, 0x9f, 0x4c, 0x3f, 0xc2, 0x5d, 0xdf, 0xa3, 0x4c, 0x03, 0x5b, 0x0b, 0xbb, 0xea, 0xc1,
+	0x7a, 0xee, 0xe6, 0xbe, 0xc1, 0xc3, 0xf7, 0xa9, 0x43, 0x0c, 0x75, 0x9d, 0x55, 0xa7, 0x1e, 0x65,
+	0x93, 0xa1, 0x64, 0x15, 0x19, 0x39, 0x13, 0xfa, 0xa6, 0x80, 0xcd, 0xbf, 0xbf, 0xb5, 0xb0, 0x47,
+	0xfe, 0xe1, 0xaf, 0x0d, 0x83, 0x15, 0x09, 0x91, 0x8e, 0x01, 0x0d, 0x50, 0xcf, 0xed, 0x4b, 0x35,
+	0x85, 0x1f, 0xd6, 0xfc, 0x8d, 0x1f, 0x26, 0xb1, 0x5e, 0xe6, 0x0d, 0xa3, 0x58, 0xaf, 0x65, 0xf7,
+	0x26, 0x2d, 0x91, 0x21, 0xe4, 0x83, 0x2f, 0x25, 0x50, 0xe6, 0x7e, 0xf8, 0x01, 0xac, 0xcd, 0x78,
+	0x8f, 0xe0, 0x4e, 0x0e, 0x3e, 0xff, 0xc5, 0x6a, 0xcc, 0x4d, 0x81, 0x0a, 0xf0, 0x23, 0x58, 0x9f,
+	0x79, 0xfe, 0xf0, 0xc9, 0x3d, 0xf4, 0xc9, 0x7f, 0x74, 0x27, 0xff, 0x0c, 0xd4, 0x8e, 0xb1, 0xff,
+	0xda, 0xf7, 0xb9, 0x48, 0xe1, 0x76, 0xce, 0x2b, 0x96, 0x0c, 0x4c, 0x49, 0x34, 0xb0, 0x31, 0x1d,
+	0x03, 0xff, 0x6f, 0x89, 0xd7, 0xba, 0x35, 0x7e, 0xad, 0x5b, 0x27, 0xe9, 0x6b, 0x8d, 0x0a, 0xf0,
+	0x04, 0x54, 0x8e, 0xb1, 0x60, 0x41, 0x7d, 0x1a, 0x35, 0xe6, 0xdc, 0x8f, 0x69, 0x83, 0x4a, 0x1b,
+	0xb3, 0x59, 0x98, 0x36, 0x66, 0xd3, 0x98, 0xbb, 0xc6, 0x7b, 0x09, 0xaa, 0xe9, 0x05, 0x10, 0xa4,
+	0xd5, 0x9c, 0xf1, 0x9c, 0x76, 0x9c, 0xc6, 0xe6, 0xbc, 0x5e, 0x7e, 0xfb, 0x0b, 0xf0, 0x15, 0x50,
+	0x6f, 0xfb, 0x3b, 0xce, 0x2c, 0xc2, 0xc6, 0xd4, 0xff, 0x20, 0xb2, 0x75, 0x1c, 0x01, 0x38, 0xfa,
+	0xef, 0xc7, 0x4d, 0x53, 0xf9, 0x79, 0xd3, 0x54, 0x7e, 0xdd, 0x34, 0x95, 0xcf, 0xbf, 0x9b, 0x05,
+	0x6b, 0x91, 0x4f, 0x7b, 0xf8, 0x27, 0x00, 0x00, 0xff, 0xff, 0xd4, 0xe3, 0x87, 0x57, 0x3b, 0x07,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -743,68 +664,6 @@ var _Image_serviceDesc = grpc.ServiceDesc{
 	Metadata: "image.proto",
 }
 
-func (m *TbImageReq) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *TbImageReq) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *TbImageReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Description) > 0 {
-		i -= len(m.Description)
-		copy(dAtA[i:], m.Description)
-		i = encodeVarintImage(dAtA, i, uint64(len(m.Description)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.CspImageName) > 0 {
-		i -= len(m.CspImageName)
-		copy(dAtA[i:], m.CspImageName)
-		i = encodeVarintImage(dAtA, i, uint64(len(m.CspImageName)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.CspImageId) > 0 {
-		i -= len(m.CspImageId)
-		copy(dAtA[i:], m.CspImageId)
-		i = encodeVarintImage(dAtA, i, uint64(len(m.CspImageId)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.ConnectionName) > 0 {
-		i -= len(m.ConnectionName)
-		copy(dAtA[i:], m.ConnectionName)
-		i = encodeVarintImage(dAtA, i, uint64(len(m.ConnectionName)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = encodeVarintImage(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *RegisterImageWithIdWrapper) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -829,9 +688,9 @@ func (m *RegisterImageWithIdWrapper) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.TbImageReq != nil {
+	if m.TbImageInfo != nil {
 		{
-			size, err := m.TbImageReq.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.TbImageInfo.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -875,13 +734,6 @@ func (m *TbImageInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = encodeVarintImage(dAtA, i, uint64(len(m.Id)))
-		i--
-		dAtA[i] = 0x52
-	}
 	if len(m.KeyValueList) > 0 {
 		for iNdEx := len(m.KeyValueList) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -893,7 +745,7 @@ func (m *TbImageInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintImage(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x4a
+			dAtA[i] = 0x52
 		}
 	}
 	if len(m.Status) > 0 {
@@ -901,54 +753,61 @@ func (m *TbImageInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Status)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.Status)))
 		i--
-		dAtA[i] = 0x42
+		dAtA[i] = 0x4a
 	}
 	if len(m.GuestOs) > 0 {
 		i -= len(m.GuestOs)
 		copy(dAtA[i:], m.GuestOs)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.GuestOs)))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x42
 	}
 	if len(m.CreationDate) > 0 {
 		i -= len(m.CreationDate)
 		copy(dAtA[i:], m.CreationDate)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.CreationDate)))
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x3a
 	}
 	if len(m.Description) > 0 {
 		i -= len(m.Description)
 		copy(dAtA[i:], m.Description)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.Description)))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x32
 	}
 	if len(m.CspImageName) > 0 {
 		i -= len(m.CspImageName)
 		copy(dAtA[i:], m.CspImageName)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.CspImageName)))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x2a
 	}
 	if len(m.CspImageId) > 0 {
 		i -= len(m.CspImageId)
 		copy(dAtA[i:], m.CspImageId)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.CspImageId)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x22
 	}
 	if len(m.ConnectionName) > 0 {
 		i -= len(m.ConnectionName)
 		copy(dAtA[i:], m.ConnectionName)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.ConnectionName)))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x1a
 	}
 	if len(m.Name) > 0 {
 		i -= len(m.Name)
 		copy(dAtA[i:], m.Name)
 		i = encodeVarintImage(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintImage(dAtA, i, uint64(len(m.Id)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1053,38 +912,6 @@ func encodeVarintImage(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *TbImageReq) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + sovImage(uint64(l))
-	}
-	l = len(m.ConnectionName)
-	if l > 0 {
-		n += 1 + l + sovImage(uint64(l))
-	}
-	l = len(m.CspImageId)
-	if l > 0 {
-		n += 1 + l + sovImage(uint64(l))
-	}
-	l = len(m.CspImageName)
-	if l > 0 {
-		n += 1 + l + sovImage(uint64(l))
-	}
-	l = len(m.Description)
-	if l > 0 {
-		n += 1 + l + sovImage(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *RegisterImageWithIdWrapper) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1095,8 +922,8 @@ func (m *RegisterImageWithIdWrapper) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovImage(uint64(l))
 	}
-	if m.TbImageReq != nil {
-		l = m.TbImageReq.Size()
+	if m.TbImageInfo != nil {
+		l = m.TbImageInfo.Size()
 		n += 1 + l + sovImage(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -1111,6 +938,10 @@ func (m *TbImageInfo) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovImage(uint64(l))
+	}
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovImage(uint64(l))
@@ -1148,10 +979,6 @@ func (m *TbImageInfo) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovImage(uint64(l))
 		}
-	}
-	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + sovImage(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1202,220 +1029,6 @@ func sovImage(x uint64) (n int) {
 }
 func sozImage(x uint64) (n int) {
 	return sovImage(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *TbImageReq) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowImage
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: TbImageReq: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TbImageReq: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowImage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthImage
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthImage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConnectionName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowImage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthImage
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthImage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ConnectionName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CspImageId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowImage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthImage
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthImage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CspImageId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CspImageName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowImage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthImage
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthImage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CspImageName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowImage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthImage
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthImage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Description = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipImage(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthImage
-			}
-			if (iNdEx + skippy) < 0 {
-				return ErrInvalidLengthImage
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *RegisterImageWithIdWrapper) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1480,7 +1093,7 @@ func (m *RegisterImageWithIdWrapper) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TbImageReq", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field TbImageInfo", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1507,10 +1120,10 @@ func (m *RegisterImageWithIdWrapper) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.TbImageReq == nil {
-				m.TbImageReq = &TbImageReq{}
+			if m.TbImageInfo == nil {
+				m.TbImageInfo = &TbImageInfo{}
 			}
-			if err := m.TbImageReq.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.TbImageInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1570,6 +1183,38 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowImage
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthImage
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthImage
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
 			var stringLen uint64
@@ -1600,7 +1245,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ConnectionName", wireType)
 			}
@@ -1632,7 +1277,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.ConnectionName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CspImageId", wireType)
 			}
@@ -1664,7 +1309,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.CspImageId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CspImageName", wireType)
 			}
@@ -1696,7 +1341,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.CspImageName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
 			}
@@ -1728,7 +1373,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.Description = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreationDate", wireType)
 			}
@@ -1760,7 +1405,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.CreationDate = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 7:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field GuestOs", wireType)
 			}
@@ -1792,7 +1437,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.GuestOs = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 8:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
 			}
@@ -1824,7 +1469,7 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			}
 			m.Status = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 9:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field KeyValueList", wireType)
 			}
@@ -1857,38 +1502,6 @@ func (m *TbImageInfo) Unmarshal(dAtA []byte) error {
 			if err := m.KeyValueList[len(m.KeyValueList)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		case 10:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowImage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthImage
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthImage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Id = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

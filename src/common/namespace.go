@@ -11,22 +11,27 @@ import (
 	"github.com/labstack/echo"
 )
 
+/*
 type NsReq struct {
 	//Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
+*/
 
 type NsInfo struct {
-	Id          string `json:"id"`
+	// Fields for both request and response
 	Name        string `json:"name"`
 	Description string `json:"description"`
+
+	// Additional fields for response
+	Id string `json:"id"`
 }
 
 // MCIS API Proxy: Ns
 func RestPostNs(c echo.Context) error {
 
-	u := &NsReq{}
+	u := &NsInfo{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -194,7 +199,8 @@ func RestDelAllNs(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-func CreateNs(u *NsReq) (NsInfo, error) {
+//func CreateNs(u *NsReq) (NsInfo, error) {
+func CreateNs(u *NsInfo) (NsInfo, error) {
 	check, _ := CheckNs(u.Name)
 
 	if check {

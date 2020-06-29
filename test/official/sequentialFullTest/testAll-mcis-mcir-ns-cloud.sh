@@ -51,7 +51,7 @@ fi
 ../2.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
 dozing 10
 ../3.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
-../4.image/register-image.sh $CSP $REGION $POSTFIX
+../4.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
 ../5.spec/register-spec.sh $CSP $REGION $POSTFIX
 ../6.mcis/create-mcis.sh $CSP $REGION $POSTFIX
 dozing 1
