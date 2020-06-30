@@ -15,16 +15,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cloud-barista/cb-store/config"
 	"github.com/labstack/echo"
-	"github.com/sirupsen/logrus"
 	//cr "github.com/cloud-barista/cb-spider/api-runtime/common-runtime"
 )
 
-var cblog *logrus.Logger
+//var cblog *logrus.Logger
 
 func init() {
-	cblog = config.Cblogger
+	//cblog = config.Cblogger
 }
 
 type NameWidth struct {
@@ -35,7 +33,7 @@ type NameWidth struct {
 func cloudosList() []string {
 	resBody, err := getResourceList_JsonByte("cloudos")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 	}
 	var info struct {
 		ResultList []string `json:"cloudos"`
@@ -47,7 +45,7 @@ func cloudosList() []string {
 
 //================ Mainpage
 func Mainpage(c echo.Context) error {
-	cblog.Info("call frame()")
+	common.CBLog.Info("call frame()")
 
 	htmlStr := `
 <html>
@@ -75,7 +73,7 @@ func Mainpage(c echo.Context) error {
 
 //================ Menu
 func Menu(c echo.Context) error {
-	cblog.Info("call top()")
+	common.CBLog.Info("call top()")
 
 	htmlStr := ` 
 <html>
@@ -404,7 +402,7 @@ func makeDeleteDriverFunc_js() string {
 //================ Driver Info Management
 // create driver page
 func Driver(c echo.Context) error {
-	cblog.Info("call driver()")
+	common.CBLog.Info("call driver()")
 
 	// make page header
 	htmlStr := ` 
@@ -444,7 +442,7 @@ func Driver(c echo.Context) error {
 	// (4-1) get driver info list @todo if empty list
 	resBody, err := getResourceList_JsonByte("driver")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	var info struct {
@@ -657,7 +655,7 @@ func makeDeleteCredentialFunc_js() string {
 //================ Credential Info Management
 // create credential page
 func Credential(c echo.Context) error {
-	cblog.Info("call credential()")
+	common.CBLog.Info("call credential()")
 
 	// make page header
 	htmlStr := `
@@ -696,7 +694,7 @@ func Credential(c echo.Context) error {
 	// (4-1) get driver info list @todo if empty list
 	resBody, err := getResourceList_JsonByte("credential")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	var info struct {
@@ -927,7 +925,7 @@ func makeDeleteRegionFunc_js() string {
 //================ Region Info Management
 // create region page
 func Region(c echo.Context) error {
-	cblog.Info("call region()")
+	common.CBLog.Info("call region()")
 
 	// make page header
 	htmlStr := `
@@ -966,7 +964,7 @@ func Region(c echo.Context) error {
 	// (4-1) get driver info list @todo if empty list
 	resBody, err := getResourceList_JsonByte("region")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	var info struct {
@@ -1189,7 +1187,7 @@ func makeDeleteConnectionConfigFunc_js() string {
 //================ Connection Config Info Management
 // create Connection page
 func Connectionconfig(c echo.Context) error {
-	cblog.Info("call connectionconfig()")
+	common.CBLog.Info("call connectionconfig()")
 
 	// make page header
 	htmlStr := `
@@ -1230,7 +1228,7 @@ func Connectionconfig(c echo.Context) error {
 	// (4-1) get driver info list @todo if empty list
 	resBody, err := getResourceList_JsonByte("connectionconfig")
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	var info struct {
@@ -1289,7 +1287,7 @@ func Connectionconfig(c echo.Context) error {
 
 //================ This Tumblebug Info
 func SpiderInfo(c echo.Context) error {
-	cblog.Info("call spiderInfo()")
+	common.CBLog.Info("call spiderInfo()")
 
 	htmlStr := `
                 <html>

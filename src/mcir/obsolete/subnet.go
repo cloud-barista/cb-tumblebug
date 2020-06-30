@@ -72,7 +72,7 @@ func RestPostSubnet(c echo.Context) error {
 	fmt.Println("[Creating Subnet]")
 	content, err := createSubnet(nsId, u)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		mapA := map[string]string{
 			"message": "Failed to create a Subnet"}
 		return c.JSON(http.StatusFailedDependency, &mapA)
@@ -92,7 +92,7 @@ func RestGetSubnet(c echo.Context) error {
 	key := common.GenResourceKey(nsId, "subnet", id)
 	fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, _ := common.CBStore.Get(key)
 	if keyValue == nil {
 		mapA := map[string]string{"message": "Failed to find the subnet with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
@@ -122,7 +122,7 @@ func RestGetAllSubnet(c echo.Context) error {
 
 		key := common.GenResourceKey(nsId, "subnet", v)
 		fmt.Println(key)
-		keyValue, _ := store.Get(key)
+		keyValue, _ := common.CBStore.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		subnetTmp := subnetInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &subnetTmp)
@@ -152,7 +152,7 @@ func RestDelSubnet(c echo.Context) error {
 
 	responseCode, _, err := DelResource(nsId, "subnet", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the subnet"}
 		return c.JSON(responseCode, &mapA)
 	}
@@ -177,7 +177,7 @@ func RestDelAllSubnet(c echo.Context) error {
 
 			responseCode, _, err := DelResource(nsId, "subnet", v, forceFlag)
 			if err != nil {
-				cblog.Error(err)
+				common.CBLog.Error(err)
 				mapA := map[string]string{"message": "Failed to delete the subnet"}
 				return c.JSON(responseCode, &mapA)
 			}
@@ -247,12 +247,12 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 	Val, _ := json.Marshal(mapA)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
-	err := store.Put(string(Key), string(Val))
+	err := common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	return content, nil
@@ -290,12 +290,12 @@ func registerSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 		"resourceGroupName":  content.ResourceGroupName,
 		"description":        content.Description}
 	Val, _ := json.Marshal(mapA)
-	err := store.Put(string(Key), string(Val))
+	err := common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	return content, nil
@@ -309,7 +309,7 @@ func getSubnetList(nsId string) []string {
 	key := "/ns/" + nsId + "/resources/subnet"
 	fmt.Println(key)
 
-	keyValue, _ := store.GetList(key, true)
+	keyValue, _ := common.CBStore.GetList(key, true)
 	var subnetList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
@@ -334,9 +334,9 @@ func delSubnet(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	fmt.Println(key)
 
 	// delete mcis info
-	err := store.Delete(key)
+	err := common.CBStore.Delete(key)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return http.StatusInternalServerError, nil, err
 	}
 

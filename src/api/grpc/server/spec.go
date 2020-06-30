@@ -17,20 +17,20 @@ func (s *server) RegisterSpecWithCspSpecName(ctx context.Context, req *pb.Regist
 	var tbSpecReq mcir.TbSpecInfo
 	err := common.CopySrcToDest(&req.TbSpecInfo, &tbSpecReq)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterSpecWithCspSpecName()")
 	}
 
 	tbSpecInfo, err := mcir.RegisterSpecWithCspSpecName(req.NsId, &tbSpecReq)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterSpecWithCspSpecName()")
 	}
 
 	var grpcSpecInfo pb.TbSpecInfo
 	err = common.CopySrcToDest(&tbSpecInfo, &grpcSpecInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterSpecWithCspSpecName()")
 	}
 
@@ -43,20 +43,20 @@ func (s *server) RegisterSpecWithInfo(ctx context.Context, req *pb.RegisterSpecW
 	var tbSpecInfoA mcir.TbSpecInfo
 	err := common.CopySrcToDest(&req.TbSpecInfo, &tbSpecInfoA)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterSpecWithInfo()")
 	}
 
 	tbSpecInfoB, err := mcir.RegisterSpecWithInfo(req.NsId, &tbSpecInfoA)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterSpecWithInfo()")
 	}
 
 	var grpcSpecInfo pb.TbSpecInfo
 	err = common.CopySrcToDest(&tbSpecInfoB, &grpcSpecInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterSpecWithInfo()")
 	}
 
@@ -68,7 +68,7 @@ func (s *server) DelAllSpecs(ctx context.Context, req *pb.DelAllResourcesWrapper
 
 	err := mcir.DelAllResources(req.NsId, "spec", req.ForceFlag)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "DelAllSpecs()")
 	}
 	return &types.Empty{}, nil
@@ -79,7 +79,7 @@ func (s *server) DelSpec(ctx context.Context, req *pb.DelResourceWrapper) (*type
 
 	err := mcir.DelResource(req.NsId, "spec", req.ResourceId, req.ForceFlag)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "DelSpec()")
 	}
 	return &types.Empty{}, nil
@@ -90,14 +90,14 @@ func (s *server) GetSpec(ctx context.Context, req *pb.GetResourceWrapper) (*pb.T
 
 	tbSpecInfo, err := mcir.GetResource(req.NsId, "spec", req.ResourceId)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "GetSpec()")
 	}
 
 	var grpcSpecInfo pb.TbSpecInfo
 	err = common.CopySrcToDest(&tbSpecInfo, &grpcSpecInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "GetSpec()")
 	}
 
@@ -109,14 +109,14 @@ func (s *server) ListSpec(ctx context.Context, req *pb.NsId) (*pb.TbSpecInfoList
 
 	tbSpecInfoList, err := mcir.ListResource(req.Id, "spec")
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListSpec()")
 	}
 
 	var grpcObj []*pb.TbSpecInfo
 	err = common.CopySrcToDest(&tbSpecInfoList, &grpcObj)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListSpec()")
 	}
 
@@ -131,7 +131,7 @@ func (s *server) ListSpecId(ctx context.Context, req *pb.NsId) (*pb.ResourceIdLi
 	var grpcObj []string
 	err := common.CopySrcToDest(&tbSpecIdList, &grpcObj)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListSpecId()")
 	}
 

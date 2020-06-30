@@ -100,7 +100,7 @@ func RestPostVNic(c echo.Context) error {
 	fmt.Println("[Creating VNic]")
 	content, responseCode, body, err := createVNic(nsId, u)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		/*
 			mapA := map[string]string{
 				"message": "Failed to create a VNic"}
@@ -122,7 +122,7 @@ func RestGetVNic(c echo.Context) error {
 	key := common.GenResourceKey(nsId, "vNic", id)
 	fmt.Println(key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, _ := common.CBStore.Get(key)
 	if keyValue == nil {
 		mapA := map[string]string{"message": "Failed to find the vNic with given ID."}
 		return c.JSON(http.StatusNotFound, &mapA)
@@ -152,7 +152,7 @@ func RestGetAllVNic(c echo.Context) error {
 
 		key := common.GenResourceKey(nsId, "vNic", v)
 		fmt.Println(key)
-		keyValue, _ := store.Get(key)
+		keyValue, _ := common.CBStore.Get(key)
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		vNicTmp := vNicInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &vNicTmp)
@@ -182,7 +182,7 @@ func RestDelVNic(c echo.Context) error {
 
 	responseCode, body, err := DelResource(nsId, "vNic", id, forceFlag)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		//mapA := map[string]string{"message": "Failed to delete the vNic"}
 		return c.JSONBlob(responseCode, body)
 	}
@@ -207,7 +207,7 @@ func RestDelAllVNic(c echo.Context) error {
 
 			responseCode, body, err := DelResource(nsId, "vNic", v, forceFlag)
 			if err != nil {
-				cblog.Error(err)
+				common.CBLog.Error(err)
 				//mapA := map[string]string{"message": "Failed to delete the vNic"}
 				return c.JSONBlob(responseCode, body)
 			}
@@ -299,7 +299,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := vNicInfo{}
 		return content, res.StatusCode, nil, err
 	}
@@ -308,7 +308,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := vNicInfo{}
 		return content, res.StatusCode, body, err
 	}
@@ -317,7 +317,7 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		content := vNicInfo{}
 		return content, res.StatusCode, body, err
 	}
@@ -397,12 +397,12 @@ func createVNic(nsId string, u *vNicReq) (vNicInfo, int, []byte, error) {
 	Val, _ := json.Marshal(content)
 	fmt.Println("Key: ", Key)
 	fmt.Println("Val: ", Val)
-	err := store.Put(string(Key), string(Val))
+	err := common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return content, res.StatusCode, body, err
 	}
-	keyValue, _ := store.Get(string(Key))
+	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	return content, res.StatusCode, body, nil
@@ -415,7 +415,7 @@ func getVNicList(nsId string) []string {
 	key := "/ns/" + nsId + "/resources/vNic"
 	fmt.Println(key)
 
-	keyValue, _ := store.GetList(key, true)
+	keyValue, _ := common.CBStore.GetList(key, true)
 	var vNicList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
@@ -439,7 +439,7 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	key := genResourceKey(nsId, "vNic", Id)
 	fmt.Println("key: " + key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, _ := common.CBStore.Get(key)
 	fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
 	temp := vNicInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -467,7 +467,7 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return res.StatusCode, nil, err
 	}
 	defer res.Body.Close()
@@ -475,27 +475,27 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return res.StatusCode, body, err
 	}
 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
-		cbStoreDeleteErr := store.Delete(key)
+		cbStoreDeleteErr := common.CBStore.Delete(key)
 		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
+			common.CBLog.Error(cbStoreDeleteErr)
 			return res.StatusCode, body, cbStoreDeleteErr
 		}
 		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return res.StatusCode, body, err
 	default:
-		cbStoreDeleteErr := store.Delete(key)
+		cbStoreDeleteErr := common.CBStore.Delete(key)
 		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
+			common.CBLog.Error(cbStoreDeleteErr)
 			return res.StatusCode, body, cbStoreDeleteErr
 		}
 		return res.StatusCode, body, nil

@@ -76,7 +76,7 @@ func callService(c echo.Context) error {
 		println("CPU" + strconv.Itoa(i) +":   " + cpupercent + " %")
 	}
 
-	//cblog.Infof("[%#v][Request From] DATE: %#v, HOSTNAME: %#v", cnt, date, req.HostName)
+	//common.CBLog.Infof("[%#v][Request From] DATE: %#v, HOSTNAME: %#v", cnt, date, req.HostName)
 	fmt.Printf("[%#v][Request From] DATE: %#v, HOSTNAME: %#v \n", cnt, date, req.HostName)
 	fmt.Printf("[%#v] IP: %#v, Location: %#v \n", cnt, req.IP, req.Country)
 	fmt.Printf("Processing ............ \n")

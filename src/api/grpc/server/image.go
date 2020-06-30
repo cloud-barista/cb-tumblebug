@@ -17,20 +17,20 @@ func (s *server) RegisterImageWithId(ctx context.Context, req *pb.RegisterImageW
 	var tbImageReq mcir.TbImageInfo
 	err := common.CopySrcToDest(&req.TbImageInfo, &tbImageReq)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterImageWithId()")
 	}
 
 	tbImageInfo, err := mcir.RegisterImageWithId(req.NsId, &tbImageReq)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterImageWithId()")
 	}
 
 	var grpcImageInfo pb.TbImageInfo
 	err = common.CopySrcToDest(&tbImageInfo, &grpcImageInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterImageWithId()")
 	}
 
@@ -43,20 +43,20 @@ func (s *server) RegisterImageWithInfo(ctx context.Context, req *pb.RegisterImag
 	var tbImageInfoA mcir.TbImageInfo
 	err := common.CopySrcToDest(&req.TbImageInfo, &tbImageInfoA)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterImageWithInfo()")
 	}
 
 	tbImageInfoB, err := mcir.RegisterImageWithInfo(req.NsId, &tbImageInfoA)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterImageWithInfo()")
 	}
 
 	var grpcImageInfo pb.TbImageInfo
 	err = common.CopySrcToDest(&tbImageInfoB, &grpcImageInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterImageWithInfo()")
 	}
 
@@ -68,7 +68,7 @@ func (s *server) DelAllImages(ctx context.Context, req *pb.DelAllResourcesWrappe
 
 	err := mcir.DelAllResources(req.NsId, "image", req.ForceFlag)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "DelAllImages()")
 	}
 	return &types.Empty{}, nil
@@ -79,7 +79,7 @@ func (s *server) DelImage(ctx context.Context, req *pb.DelResourceWrapper) (*typ
 
 	err := mcir.DelResource(req.NsId, "image", req.ResourceId, req.ForceFlag)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "DelImage()")
 	}
 	return &types.Empty{}, nil
@@ -90,14 +90,14 @@ func (s *server) GetImage(ctx context.Context, req *pb.GetResourceWrapper) (*pb.
 
 	tbImageInfo, err := mcir.GetResource(req.NsId, "image", req.ResourceId)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "GetImage()")
 	}
 
 	var grpcImageInfo pb.TbImageInfo
 	err = common.CopySrcToDest(&tbImageInfo, &grpcImageInfo)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "GetImage()")
 	}
 
@@ -109,14 +109,14 @@ func (s *server) ListImage(ctx context.Context, req *pb.NsId) (*pb.TbImageInfoLi
 
 	tbImageInfoList, err := mcir.ListResource(req.Id, "image")
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListImage()")
 	}
 
 	var grpcObj []*pb.TbImageInfo
 	err = common.CopySrcToDest(&tbImageInfoList, &grpcObj)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListImage()")
 	}
 
@@ -131,7 +131,7 @@ func (s *server) ListImageId(ctx context.Context, req *pb.NsId) (*pb.ResourceIdL
 	var grpcObj []string
 	err := common.CopySrcToDest(&tbImageIdList, &grpcObj)
 	if err != nil {
-		//cblog.Error(err)
+		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "ListImageId()")
 	}
 

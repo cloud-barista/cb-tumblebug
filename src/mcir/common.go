@@ -10,25 +10,19 @@ import (
 
 	//uuid "github.com/google/uuid"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/labstack/echo"
 	"github.com/xwb1989/sqlparser"
-
 	// CB-Store
-	cbstore "github.com/cloud-barista/cb-store"
-	"github.com/cloud-barista/cb-store/config"
-	icbs "github.com/cloud-barista/cb-store/interfaces"
-	"github.com/sirupsen/logrus"
 )
 
 // CB-Store
-var cblog *logrus.Logger
-var store icbs.Store
+//var cblog *logrus.Logger
+//var store icbs.Store
 
 //var SPIDER_URL string
 
 func init() {
-	cblog = config.Cblogger
-	store = cbstore.GetStore()
+	//cblog = config.Cblogger
+	//store = cbstore.GetStore()
 	//SPIDER_URL = os.Getenv("SPIDER_URL")
 }
 
@@ -68,7 +62,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	fmt.Println("key: " + key)
 
-	keyValue, _ := store.Get(key)
+	keyValue, _ := common.CBStore.Get(key)
 	/*
 		if keyValue == nil {
 			mapA := map[string]string{"message": "Failed to find the resource with given ID."}
@@ -92,9 +86,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	switch resourceType {
 	case "image":
 		// delete image info
-		err := store.Delete(key)
+		err := common.CBStore.Delete(key)
 		if err != nil {
-			cblog.Error(err)
+			common.CBLog.Error(err)
 			//return http.StatusInternalServerError, nil, err
 			return err
 		}
@@ -124,20 +118,20 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// delete spec info
 
 		//get related recommend spec
-		//keyValue, err := store.Get(key)
+		//keyValue, err := common.CBStore.Get(key)
 		content := TbSpecInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		/*
 			if err != nil {
-				cblog.Error(err)
+				common.CBLog.Error(err)
 				return http.StatusInternalServerError, nil, err
 			}
 		*/
 		//
 
-		err := store.Delete(key)
+		err := common.CBStore.Delete(key)
 		if err != nil {
-			cblog.Error(err)
+			common.CBLog.Error(err)
 			//return http.StatusInternalServerError, nil, err
 			return err
 		}
@@ -145,7 +139,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		//delete related recommend spec
 		err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
 		if err != nil {
-			cblog.Error(err)
+			common.CBLog.Error(err)
 			//return http.StatusInternalServerError, nil, err
 			return err
 		}
@@ -229,7 +223,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	req.Header.Add("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		//return res.StatusCode, nil, err
 		return err
 	}
@@ -238,7 +232,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		//return res.StatusCode, body, err
 		return err
 	}
@@ -247,14 +241,14 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		if res.StatusCode == 400 || res.StatusCode == 401 {
 			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
 			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			cblog.Error(err)
+			common.CBLog.Error(err)
 			return res, err
 		}
 
 		// delete vNet info
-		cbStoreDeleteErr := store.Delete(key)
+		cbStoreDeleteErr := common.CBStore.Delete(key)
 		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
+			common.CBLog.Error(cbStoreDeleteErr)
 			return res, cbStoreDeleteErr
 		}
 
@@ -264,9 +258,9 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
-		cbStoreDeleteErr := store.Delete(key)
+		cbStoreDeleteErr := common.CBStore.Delete(key)
 		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
+			common.CBLog.Error(cbStoreDeleteErr)
 			//return res.StatusCode, body, cbStoreDeleteErr
 			return cbStoreDeleteErr
 		}
@@ -274,13 +268,13 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		return nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		//return res.StatusCode, body, err
 		return err
 	default:
-		cbStoreDeleteErr := store.Delete(key)
+		cbStoreDeleteErr := common.CBStore.Delete(key)
 		if cbStoreDeleteErr != nil {
-			cblog.Error(cbStoreDeleteErr)
+			common.CBLog.Error(cbStoreDeleteErr)
 			//return res.StatusCode, body, cbStoreDeleteErr
 			return cbStoreDeleteErr
 		}
@@ -308,7 +302,7 @@ func ListResourceId(nsId string, resourceType string) []string {
 	key := "/ns/" + nsId + "/resources/" + resourceType
 	fmt.Println(key)
 
-	keyValue, _ := store.GetList(key, true)
+	keyValue, _ := common.CBStore.GetList(key, true)
 	var resourceList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
@@ -343,12 +337,12 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 	key := "/ns/" + nsId + "/resources/" + resourceType
 	fmt.Println(key)
 
-	keyValue, err := store.GetList(key, true)
+	keyValue, err := common.CBStore.GetList(key, true)
 
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		/*
-			fmt.Println("func ListResource; store.GetList gave error")
+			fmt.Println("func ListResource; common.CBStore.GetList gave error")
 			var resourceList []string
 			for _, v := range keyValue {
 				resourceList = append(resourceList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/"+resourceType+"/"))
@@ -426,9 +420,9 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	//fmt.Println(key)
 
-	keyValue, err := store.Get(key)
+	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return nil, err
 	}
 	if keyValue != nil {
@@ -496,9 +490,9 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	//fmt.Println(key)
 
-	keyValue, err := store.Get(key)
+	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return false, err
 	}
 	if keyValue != nil {
@@ -506,30 +500,6 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 	}
 	return false, nil
 
-}
-
-func RestCheckResource(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	resourceType := c.Param("resourceType")
-	resourceId := c.Param("resourceId")
-
-	exists, err := CheckResource(nsId, resourceType, resourceId)
-
-	type JsonTemplate struct {
-		Exists bool `json:exists`
-	}
-	content := JsonTemplate{}
-	content.Exists = exists
-
-	if err != nil {
-		cblog.Error(err)
-		//mapA := map[string]string{"message": err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
-		return c.JSON(http.StatusNotFound, &content)
-	}
-
-	return c.JSON(http.StatusOK, &content)
 }
 
 /*
@@ -569,7 +539,7 @@ func RestDelResource(c echo.Context) error {
 
 	responseCode, _, err := DelResource(nsId, resourceType, resourceId, forceFlag)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(responseCode, &mapA)
 	}
@@ -593,7 +563,7 @@ func RestDelAllResources(c echo.Context) error {
 		for _, v := range resourceList {
 			responseCode, _, err := DelResource(nsId, resourceType, v, forceFlag)
 			if err != nil {
-				cblog.Error(err)
+				common.CBLog.Error(err)
 				mapA := map[string]string{"message": err.Error()}
 				return c.JSON(responseCode, &mapA)
 			}

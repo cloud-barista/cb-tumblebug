@@ -1,27 +1,20 @@
 package common
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"net/http"
 	"runtime"
 	"strconv"
-	"time"
 
 	//"encoding/json"
 
 	uuid "github.com/google/uuid"
-	"github.com/labstack/echo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 
 	// CB-Store
 	//"github.com/cloud-barista/cb-grpc-project/pkg/logging"
-	cbstore "github.com/cloud-barista/cb-store"
-	"github.com/cloud-barista/cb-store/config"
-	icbs "github.com/cloud-barista/cb-store/interfaces"
-	"github.com/sirupsen/logrus"
 
 	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
 
@@ -31,37 +24,6 @@ import (
 	//"io/ioutil"
 	//"strconv"
 )
-
-type KeyValue struct {
-	Key   string
-	Value string
-}
-
-// CB-Store
-var cblog *logrus.Logger
-var store icbs.Store
-
-var SPIDER_URL string
-var DB_URL string
-var DB_DATABASE string
-var DB_USER string
-var DB_PASSWORD string
-var MYDB *sql.DB
-
-var StartTime string
-
-func init() {
-	cblog = config.Cblogger
-	store = cbstore.GetStore()
-
-	StartTime = time.Now().Format("2006.01.02 15:04:05 Mon")
-}
-
-// Spider 2020-03-30 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/IId.go
-type IID struct {
-	NameId   string // NameID by user
-	SystemId string // SystemID by CloudOS
-}
 
 // MCIS utilities
 
@@ -122,7 +84,7 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 	}
 }
 
-type mcirIds struct {
+type mcirIds struct { // Tumblebug
 	CspImageId           string
 	CspImageName         string
 	CspSshKeyName        string
@@ -145,14 +107,14 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 	if key == "/invalid_key" {
 		return "invalid nsId or resourceType or resourceId"
 	}
-	keyValue, err := store.Get(key)
+	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
 		return ""
 	}
 	if keyValue == nil {
-		//cblog.Error(err)
+		//CBLog.Error(err)
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
 		return ""
 	}
@@ -177,7 +139,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		return "http request error"
 	}
 	defer res.Body.Close()
@@ -185,7 +147,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		return "ioutil.ReadAll error"
 	}
 
@@ -193,7 +155,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		CBLog.Error(err)
 		return "Cannot get VM's CSP type"
 	default:
 
@@ -218,14 +180,14 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	if key == "/invalid_key" {
 		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
 	}
-	keyValue, err := store.Get(key)
+	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
 		return "", err
 	}
 	if keyValue == nil {
-		//cblog.Error(err)
+		//CBLog.Error(err)
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
 		return "", err
 	}
@@ -264,7 +226,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 			content := mcirIds{}
 			err = json.Unmarshal([]byte(keyValue.Value), &content)
 			if err != nil {
-				cblog.Error(err)
+				CBLog.Error(err)
 				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
 				return ""
 			}
@@ -276,7 +238,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	//}
 }
 
-type ConnConfig struct {
+type ConnConfig struct { // Spider
 	ConfigName     string
 	ProviderName   string
 	DriverName     string
@@ -303,7 +265,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := ConnConfig{}
 		return content, err
 	}
@@ -311,7 +273,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := ConnConfig{}
 		return content, err
 	}
@@ -322,7 +284,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := ConnConfig{}
 		return content, err
 	}
@@ -335,21 +297,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	return temp, nil
 }
 
-func RestGetConnConfig(c echo.Context) error {
-
-	connConfigName := c.Param("connConfigName")
-
-	fmt.Println("[Get ConnConfig for name]" + connConfigName)
-	content, err := GetConnConfig(connConfigName)
-	if err != nil {
-		cblog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
-	}
-	return c.JSON(http.StatusOK, &content)
-
-}
-
-type ConnConfigList struct {
+type ConnConfigList struct { // Spider
 	Connectionconfig []ConnConfig `json:"connectionconfig"`
 }
 
@@ -372,7 +320,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := ConnConfigList{}
 		return content, err
 	}
@@ -380,7 +328,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := ConnConfigList{}
 		return content, err
 	}
@@ -391,7 +339,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := ConnConfigList{}
 		return content, err
 	}
@@ -404,20 +352,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 	return temp, nil
 }
 
-func RestGetConnConfigList(c echo.Context) error {
-
-	fmt.Println("[Get ConnConfig List]")
-	content, err := GetConnConfigList()
-	if err != nil {
-		cblog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
-
-}
-
-type Region struct {
+type Region struct { // Spider
 	RegionName       string
 	ProviderName     string
 	KeyValueInfoList []KeyValue
@@ -442,7 +377,7 @@ func GetRegion(RegionName string) (Region, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := Region{}
 		return content, err
 	}
@@ -450,7 +385,7 @@ func GetRegion(RegionName string) (Region, error) {
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := Region{}
 		return content, err
 	}
@@ -461,7 +396,7 @@ func GetRegion(RegionName string) (Region, error) {
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := Region{}
 		return content, err
 	}
@@ -474,22 +409,7 @@ func GetRegion(RegionName string) (Region, error) {
 	return temp, nil
 }
 
-func RestGetRegion(c echo.Context) error {
-
-	regionName := c.Param("regionName")
-
-	fmt.Println("[Get Region for name]" + regionName)
-	content, err := GetRegion(regionName)
-	if err != nil {
-		cblog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
-
-}
-
-type RegionList struct {
+type RegionList struct { // Spider
 	Region []Region `json:"region"`
 }
 
@@ -512,7 +432,7 @@ func GetRegionList() (RegionList, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := RegionList{}
 		return content, err
 	}
@@ -520,7 +440,7 @@ func GetRegionList() (RegionList, error) {
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := RegionList{}
 		return content, err
 	}
@@ -531,7 +451,7 @@ func GetRegionList() (RegionList, error) {
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
-		cblog.Error(err)
+		CBLog.Error(err)
 		content := RegionList{}
 		return content, err
 	}
@@ -542,19 +462,6 @@ func GetRegionList() (RegionList, error) {
 		fmt.Println("whoops:", err2)
 	}
 	return temp, nil
-}
-
-func RestGetRegionList(c echo.Context) error {
-
-	fmt.Println("[Get Region List]")
-	content, err := GetRegionList()
-	if err != nil {
-		cblog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
-
 }
 
 // ConvertToMessage - 입력 데이터를 grpc 메시지로 변환

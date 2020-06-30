@@ -71,7 +71,7 @@ func registerCloudInfo(resourceType string, param interface{}) error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return err
 	}
 	defer res.Body.Close()
@@ -79,7 +79,7 @@ func registerCloudInfo(resourceType string, param interface{}) error {
 	body, err := ioutil.ReadAll(res.Body)
 	fmt.Println(string(body))
 	if err != nil {
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return err
 	}
 
@@ -88,7 +88,7 @@ func registerCloudInfo(resourceType string, param interface{}) error {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
 		fmt.Println("body: ", string(body))
-		cblog.Error(err)
+		common.CBLog.Error(err)
 		return err
 	}
 

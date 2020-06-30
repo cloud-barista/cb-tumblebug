@@ -2,9 +2,11 @@ package restapiserver
 
 import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/cloud-barista/cb-tumblebug/src/mcir"
-	"github.com/cloud-barista/cb-tumblebug/src/mcis"
 	"github.com/cloud-barista/cb-tumblebug/src/webadmin"
+
+	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
+	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
+	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
 
 	//"os"
 
@@ -87,70 +89,70 @@ func ApiServer() {
 	// Route
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
-	g.POST("", common.RestPostNs)
-	g.GET("/:nsId", common.RestGetNs)
-	g.GET("", common.RestGetAllNs)
-	g.PUT("/:nsId", common.RestPutNs)
-	g.DELETE("/:nsId", common.RestDelNs)
-	g.DELETE("", common.RestDelAllNs)
+	g.POST("", rest_common.RestPostNs)
+	g.GET("/:nsId", rest_common.RestGetNs)
+	g.GET("", rest_common.RestGetAllNs)
+	g.PUT("/:nsId", rest_common.RestPutNs)
+	g.DELETE("/:nsId", rest_common.RestDelNs)
+	g.DELETE("", rest_common.RestDelAllNs)
 
-	g.POST("/:nsId/mcis", mcis.RestPostMcis)
-	g.GET("/:nsId/mcis/:mcisId", mcis.RestGetMcis)
-	g.GET("/:nsId/mcis", mcis.RestGetAllMcis)
-	g.PUT("/:nsId/mcis/:mcisId", mcis.RestPutMcis)
-	g.DELETE("/:nsId/mcis/:mcisId", mcis.RestDelMcis)
-	g.DELETE("/:nsId/mcis", mcis.RestDelAllMcis)
+	g.POST("/:nsId/mcis", rest_mcis.RestPostMcis)
+	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis)
+	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
+	g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
+	g.DELETE("/:nsId/mcis/:mcisId", rest_mcis.RestDelMcis)
+	g.DELETE("/:nsId/mcis", rest_mcis.RestDelAllMcis)
 
-	g.POST("/:nsId/mcis/:mcisId/vm", mcis.RestPostMcisVm)
-	g.GET("/:nsId/mcis/:mcisId/vm/:vmId", mcis.RestGetMcisVm)
-	//g.GET("/:nsId/mcis", mcis.RestGetAllMcis)
-	//g.PUT("/:nsId/mcis/:mcisId", mcis.RestPutMcis)
-	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", mcis.RestDelMcisVm)
-	//g.DELETE("/:nsId/mcis", mcis.RestDelAllMcis)
+	g.POST("/:nsId/mcis/:mcisId/vm", rest_mcis.RestPostMcisVm)
+	g.GET("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetMcisVm)
+	//g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
+	//g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
+	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
+	//g.DELETE("/:nsId/mcis", rest_mcis.RestDelAllMcis)
 
-	g.POST("/:nsId/mcis/recommend", mcis.RestPostMcisRecommand)
-	g.POST("/:nsId/cmd/mcis/:mcisId", mcis.RestPostCmdMcis)
-	g.POST("/:nsId/cmd/mcis/:mcisId/vm/:vmId", mcis.RestPostCmdMcisVm)
-	g.POST("/:nsId/install/mcis/:mcisId", mcis.RestPostInstallAgentToMcis)
-	g.GET("/:nsId/benchmark/mcis/:mcisId", mcis.RestGetBenchmark)
-	g.GET("/:nsId/benchmarkall/mcis/:mcisId", mcis.RestGetAllBenchmark)
+	g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommand)
+	g.POST("/:nsId/cmd/mcis/:mcisId", rest_mcis.RestPostCmdMcis)
+	g.POST("/:nsId/cmd/mcis/:mcisId/vm/:vmId", rest_mcis.RestPostCmdMcisVm)
+	g.POST("/:nsId/install/mcis/:mcisId", rest_mcis.RestPostInstallAgentToMcis)
+	g.GET("/:nsId/benchmark/mcis/:mcisId", rest_mcis.RestGetBenchmark)
+	g.GET("/:nsId/benchmarkall/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
 
-	g.POST("/:nsId/resources/image", mcir.RestPostImage)
-	g.GET("/:nsId/resources/image/:imageId", mcir.RestGetImage)
-	g.GET("/:nsId/resources/image", mcir.RestGetAllImage)
-	g.PUT("/:nsId/resources/image/:imageId", mcir.RestPutImage)
-	g.DELETE("/:nsId/resources/image/:imageId", mcir.RestDelImage)
-	g.DELETE("/:nsId/resources/image", mcir.RestDelAllImage)
+	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
+	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/image", rest_mcir.RestGetAllResources)
+	g.PUT("/:nsId/resources/image/:imageId", rest_mcir.RestPutImage)
+	g.DELETE("/:nsId/resources/image/:resourceId", rest_mcir.RestDelResource)
+	g.DELETE("/:nsId/resources/image", rest_mcir.RestDelAllResources)
 
-	g.POST("/:nsId/resources/sshKey", mcir.RestPostSshKey)
-	g.GET("/:nsId/resources/sshKey/:sshKeyId", mcir.RestGetSshKey)
-	g.GET("/:nsId/resources/sshKey", mcir.RestGetAllSshKey)
-	g.PUT("/:nsId/resources/sshKey/:sshKeyId", mcir.RestPutSshKey)
-	g.DELETE("/:nsId/resources/sshKey/:sshKeyId", mcir.RestDelSshKey)
-	g.DELETE("/:nsId/resources/sshKey", mcir.RestDelAllSshKey)
+	g.POST("/:nsId/resources/sshKey", rest_mcir.RestPostSshKey)
+	g.GET("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/sshKey", rest_mcir.RestGetAllResources)
+	g.PUT("/:nsId/resources/sshKey/:sshKeyId", rest_mcir.RestPutSshKey)
+	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestDelResource)
+	g.DELETE("/:nsId/resources/sshKey", rest_mcir.RestDelAllResources)
 
-	g.POST("/:nsId/resources/spec", mcir.RestPostSpec)
-	g.GET("/:nsId/resources/spec/:specId", mcir.RestGetSpec)
-	g.GET("/:nsId/resources/spec", mcir.RestGetAllSpec)
-	g.PUT("/:nsId/resources/spec/:specId", mcir.RestPutSpec)
-	g.DELETE("/:nsId/resources/spec/:specId", mcir.RestDelSpec)
-	g.DELETE("/:nsId/resources/spec", mcir.RestDelAllSpec)
+	g.POST("/:nsId/resources/spec", rest_mcir.RestPostSpec)
+	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/spec", rest_mcir.RestGetAllResources)
+	g.PUT("/:nsId/resources/spec/:specId", rest_mcir.RestPutSpec)
+	g.DELETE("/:nsId/resources/spec/:resourceId", rest_mcir.RestDelResource)
+	g.DELETE("/:nsId/resources/spec", rest_mcir.RestDelAllResources)
 
-	g.POST("/:nsId/resources/fetchSpecs", mcir.RestFetchSpecs)
+	g.POST("/:nsId/resources/fetchSpecs", rest_mcir.RestFetchSpecs)
 
-	g.POST("/:nsId/resources/securityGroup", mcir.RestPostSecurityGroup)
-	g.GET("/:nsId/resources/securityGroup/:securityGroupId", mcir.RestGetSecurityGroup)
-	g.GET("/:nsId/resources/securityGroup", mcir.RestGetAllSecurityGroup)
-	g.PUT("/:nsId/resources/securityGroup/:securityGroupId", mcir.RestPutSecurityGroup)
-	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId", mcir.RestDelSecurityGroup)
-	g.DELETE("/:nsId/resources/securityGroup", mcir.RestDelAllSecurityGroup)
+	g.POST("/:nsId/resources/securityGroup", rest_mcir.RestPostSecurityGroup)
+	g.GET("/:nsId/resources/securityGroup/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/securityGroup", rest_mcir.RestGetAllResources)
+	g.PUT("/:nsId/resources/securityGroup/:securityGroupId", rest_mcir.RestPutSecurityGroup)
+	g.DELETE("/:nsId/resources/securityGroup/:resourceId", rest_mcir.RestDelResource)
+	g.DELETE("/:nsId/resources/securityGroup", rest_mcir.RestDelAllResources)
 
-	g.POST("/:nsId/resources/vNet", mcir.RestPostVNet)
-	g.GET("/:nsId/resources/vNet/:vNetId", mcir.RestGetVNet)
-	g.GET("/:nsId/resources/vNet", mcir.RestGetAllVNet)
-	g.PUT("/:nsId/resources/vNet/:vNetId", mcir.RestPutVNet)
-	g.DELETE("/:nsId/resources/vNet/:vNetId", mcir.RestDelVNet)
-	g.DELETE("/:nsId/resources/vNet", mcir.RestDelAllVNet)
+	g.POST("/:nsId/resources/vNet", rest_mcir.RestPostVNet)
+	g.GET("/:nsId/resources/vNet/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/vNet", rest_mcir.RestGetAllResources)
+	g.PUT("/:nsId/resources/vNet/:vNetId", rest_mcir.RestPutVNet)
+	g.DELETE("/:nsId/resources/vNet/:resourceId", rest_mcir.RestDelResource)
+	g.DELETE("/:nsId/resources/vNet", rest_mcir.RestDelAllResources)
 
 	/*
 		g.POST("/:nsId/resources/subnet", mcir.RestPostSubnet)
@@ -180,19 +182,19 @@ func ApiServer() {
 	//g.DELETE("/:nsId/resources/:resourceType/:resourceId", mcir.RestDelResource)
 	//g.DELETE("/:nsId/resources/:resourceType", mcir.RestDelAllResources)
 
-	g.GET("/:nsId/checkResource/:resourceType/:resourceId", mcir.RestCheckResource)
-	g.GET("/:nsId/checkMcis/:mcisId", mcis.RestCheckMcis)
-	g.GET("/:nsId/mcis/:mcisId/checkVm/:vmId", mcis.RestCheckVm)
+	g.GET("/:nsId/checkResource/:resourceType/:resourceId", rest_mcir.RestCheckResource)
+	g.GET("/:nsId/checkMcis/:mcisId", rest_mcis.RestCheckMcis)
+	g.GET("/:nsId/mcis/:mcisId/checkVm/:vmId", rest_mcis.RestCheckVm)
 
-	e.GET("/tumblebug/checkNs/:nsId", common.RestCheckNs)
+	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
 
-	e.GET("/tumblebug/connConfig", common.RestGetConnConfigList)
-	e.GET("/tumblebug/connConfig/:connConfigName", common.RestGetConnConfig)
-	e.GET("/tumblebug/region", common.RestGetRegionList)
-	e.GET("/tumblebug/region/:regionName", common.RestGetRegion)
+	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
+	e.GET("/tumblebug/connConfig/:connConfigName", rest_common.RestGetConnConfig)
+	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
+	e.GET("/tumblebug/region/:regionName", rest_common.RestGetRegion)
 
-	e.GET("/tumblebug/lookupSpec", mcir.RestLookupSpecList)
-	e.GET("/tumblebug/lookupSpec/:specName", mcir.RestLookupSpec)
+	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpecList)
+	e.GET("/tumblebug/lookupSpec/:specName", rest_mcir.RestLookupSpec)
 
 	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
 	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
