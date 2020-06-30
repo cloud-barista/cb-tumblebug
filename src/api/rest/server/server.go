@@ -4,9 +4,9 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/cloud-barista/cb-tumblebug/src/webadmin"
 
-	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/common"
-	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/mcir"
-	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/mcis"
+	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
+	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
+	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
 
 	//"os"
 
