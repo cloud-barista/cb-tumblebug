@@ -33,48 +33,48 @@ curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type:
 		"description": "Tumblebug Demo",
 		"vm": [ {
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-01",
-			"image_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"vm_access_id": "cb-user",
-			"config_name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-			"ssh_key_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"spec_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"security_group_ids": [
+			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"vmUserAccount": "cb-user",
+			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+			"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"securityGroupIds": [
 				"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 			],
-			"vnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"subnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
-			"vm_access_passwd": ""
+			"vmUserPassword": ""
 		},
 		{
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-02",
-			"image_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"vm_access_id": "cb-user",
-			"config_name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-			"ssh_key_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"spec_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"security_group_ids": [
+			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"vmUserAccount": "cb-user",
+			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+			"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"securityGroupIds": [
 				"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 			],
-			"vnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"subnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
-			"vm_access_passwd": ""
+			"vmUserPassword": ""
 		},
 		{
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-03",
-			"image_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"vm_access_id": "cb-user",
-			"config_name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-			"ssh_key_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"spec_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"security_group_ids": [
+			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"vmUserAccount": "cb-user",
+			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+			"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"securityGroupIds": [
 				"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 			],
-			"vnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"subnet_id": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
-			"vm_access_passwd": ""
+			"vmUserPassword": ""
 		} ]
 	}' | json_pp || return 1
 

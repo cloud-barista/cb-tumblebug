@@ -67,7 +67,7 @@ type TbVmReq struct {
 	ConnectionName string `json:"connectionName"`
 
 	// 1. Required by CB-Spider
-	CspVmName string `json:"cspVmName"`
+	//CspVmName string `json:"cspVmName"` // will be deprecated
 
 	CspImageName          string   `json:"cspImageName"`
 	CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
@@ -88,18 +88,18 @@ type TbVmReq struct {
 	VMUserId     string `json:"vmUserId"`
 	VMUserPasswd string `json:"vmUserPasswd"`
 
-	Name               string   `json:"name"`
-	Config_name        string   `json:"config_name"`
-	Spec_id            string   `json:"spec_id"`
-	Image_id           string   `json:"image_id"`
-	Vnet_id            string   `json:"vnet_id"`
-	Vnic_id            string   `json:"vnic_id"`
-	Public_ip_id       string   `json:"public_ip_id"`
-	Security_group_ids []string `json:"security_group_ids"`
-	Ssh_key_id         string   `json:"ssh_key_id"`
-	Description        string   `json:"description"`
-	Vm_access_id       string   `json:"vm_access_id"`
-	Vm_access_passwd   string   `json:"vm_access_passwd"`
+	Name             string   `json:"name"`
+	ConnectionName   string   `json:"connectionName"`
+	SpecId           string   `json:"specId"`
+	ImageId          string   `json:"imageId"`
+	VNetId           string   `json:"vNetId"`
+	Vnic_id          string   `json:"vnic_id"`
+	Public_ip_id     string   `json:"public_ip_id"`
+	SecurityGroupIds []string `json:"securityGroupIds"`
+	SshKeyId         string   `json:"sshKeyId"`
+	Description      string   `json:"description"`
+	VmUserAccount    string   `json:"vmUserAccount"`
+	VmUserPassword   string   `json:"vmUserPassword"`
 }
 
 /*
@@ -119,13 +119,13 @@ type McisInfo struct {
 }
 
 type vmOverview struct {
-	Id          string     `json:"id"`
-	Name        string     `json:"name"`
-	Config_name string     `json:"config_name"`
-	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP    string     `json:"publicIP"`
-	PublicDNS   string     `json:"publicDNS"`
-	Status      string     `json:"status"`
+	Id             string     `json:"id"`
+	Name           string     `json:"name"`
+	ConnectionName string     `json:"connectionName"`
+	Region         RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP       string     `json:"publicIP"`
+	PublicDNS      string     `json:"publicDNS"`
+	Status         string     `json:"status"`
 }
 
 type RegionInfo struct {
@@ -134,19 +134,19 @@ type RegionInfo struct {
 }
 
 type TbVmInfo struct {
-	Id                 string   `json:"id"`
-	Name               string   `json:"name"`
-	Config_name        string   `json:"config_name"`
-	Spec_id            string   `json:"spec_id"`
-	Image_id           string   `json:"image_id"`
-	Vnet_id            string   `json:"vnet_id"`
-	Vnic_id            string   `json:"vnic_id"`
-	Public_ip_id       string   `json:"public_ip_id"`
-	Security_group_ids []string `json:"security_group_ids"`
-	Ssh_key_id         string   `json:"ssh_key_id"`
-	Description        string   `json:"description"`
-	Vm_access_id       string   `json:"vm_access_id"`
-	Vm_access_passwd   string   `json:"vm_access_passwd"`
+	Id               string   `json:"id"`
+	Name             string   `json:"name"`
+	ConnectionName   string   `json:"connectionName"`
+	SpecId           string   `json:"specId"`
+	ImageId          string   `json:"imageId"`
+	VNetId           string   `json:"vNetId"`
+	Vnic_id          string   `json:"vnic_id"`
+	Public_ip_id     string   `json:"public_ip_id"`
+	SecurityGroupIds []string `json:"securityGroupIds"`
+	SshKeyId         string   `json:"sshKeyId"`
+	Description      string   `json:"description"`
+	VmUserAccount    string   `json:"vmUserAccount"`
+	VmUserPassword   string   `json:"vmUserPassword"`
 
 	VmUserId     string `json:"vmUserId"`
 	VmUserPasswd string `json:"vmUserPasswd"`
@@ -197,7 +197,7 @@ type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 	//Vm_num string         `json:"vm_num"`
-	Status string         `json:"status"`
+	Status string           `json:"status"`
 	Vm     []TbVmStatusInfo `json:"vm"`
 }
 
@@ -211,9 +211,9 @@ type TbVmStatusInfo struct {
 
 type McisRecommendReq struct {
 	Vm_req          []TbVmRecommendReq `json:"vm_req"`
-	Placement_algo  string           `json:"placement_algo"`
-	Placement_param []KeyValue       `json:"placement_param"`
-	Max_result_num  string           `json:"max_result_num"`
+	Placement_algo  string             `json:"placement_algo"`
+	Placement_param []KeyValue         `json:"placement_param"`
+	Max_result_num  string             `json:"max_result_num"`
 }
 
 type TbVmRecommendReq struct {
@@ -236,8 +236,8 @@ type TbVmPriority struct {
 type TbVmRecommendInfo struct {
 	Vm_req          TbVmRecommendReq `json:"vm_req"`
 	Vm_priority     []TbVmPriority   `json:"vm_priority"`
-	Placement_algo  string         `json:"placement_algo"`
-	Placement_param []KeyValue     `json:"placement_param"`
+	Placement_algo  string           `json:"placement_algo"`
+	Placement_param []KeyValue       `json:"placement_param"`
 }
 
 var cfgFile string

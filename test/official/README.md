@@ -211,7 +211,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
       {
          "vmUserId" : "",
          "targetStatus" : "None",
-         "subnet_id" : "aws-us-east-1-shson",
+         "subnetId" : "aws-us-east-1-shson",
          "location" : {
             "nativeRegion" : "us-east-1",
             "cloudType" : "aws",
@@ -219,19 +219,19 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
             "briefAddr" : "Virginia",
             "longitude" : "-78.4500"
          },
-         "vm_access_id" : "",
+         "vmUserAccount" : "",
          "region" : {
             "Region" : "us-east-1",
             "Zone" : "us-east-1f"
          },
-         "image_id" : "aws-us-east-1-shson",
+         "imageId" : "aws-us-east-1-shson",
          "privateDNS" : "ip-192-168-1-108.ec2.internal",
          "vmBootDisk" : "/dev/sda1",
          "status" : "Running",
-         "security_group_ids" : [
+         "securityGroupIds" : [
             "aws-us-east-1-shson"
          ],
-         "vm_access_passwd" : "",
+         "vmUserPassword" : "",
  .........
             "VMUserId" : "",
             "SecurityGroupIIds" : [
@@ -252,14 +252,14 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
          "publicIP" : "35.173.215.4",
          "name" : "aws-us-east-1-shson-01",
          "id" : "aws-us-east-1-shson-01",
-         "vnet_id" : "aws-us-east-1-shson",
-         "ssh_key_id" : "aws-us-east-1-shson",
+         "vNetId" : "aws-us-east-1-shson",
+         "sshKeyId" : "aws-us-east-1-shson",
          "privateIP" : "192.168.1.108",
-         "config_name" : "aws-us-east-1",
+         "connectionName" : "aws-us-east-1",
          "vmBlockDisk" : "/dev/sda1",
          "targetAction" : "None",
          "description" : "description",
-         "spec_id" : "aws-us-east-1-shson",
+         "specId" : "aws-us-east-1-shson",
          "publicDNS" : "",
          "vmUserPasswd" : ""
       },
@@ -267,7 +267,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
          "vmBlockDisk" : "/dev/sda1",
          "targetAction" : "None",
          "description" : "description",
-         "spec_id" : "aws-us-east-1-shson",
+         "specId" : "aws-us-east-1-shson",
          "vmUserPasswd" : "",
          ..........
       }
