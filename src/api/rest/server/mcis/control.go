@@ -583,69 +583,65 @@ func RestPostMcisVm(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	req := &mcis.TbVmReq{}
-	if err := c.Bind(req); err != nil {
+	/*
+		req := &mcis.TbVmReq{}
+		if err := c.Bind(req); err != nil {
+			return err
+		}
+
+		vmInfoData := mcis.TbVmInfo{}
+		//vmInfoData.Id = common.GenUuid()
+		vmInfoData.Id = common.GenId(req.Name)
+		//req.Id = vmInfoData.Id
+		//vmInfoData.CspVmName = req.CspVmName // will be deprecated
+
+		//vmInfoData.Placement_algo = req.Placement_algo
+
+		//vmInfoData.Location = req.Location
+		//vmInfoData.Cloud_id = req.
+		vmInfoData.Description = req.Description
+
+		//vmInfoData.CspSpecId = req.CspSpecId
+
+		//vmInfoData.Vcpu_size = req.Vcpu_size
+		//vmInfoData.Memory_size = req.Memory_size
+		//vmInfoData.Disk_size = req.Disk_size
+		//vmInfoData.Disk_type = req.Disk_type
+
+		//vmInfoData.CspImageName = req.CspImageName
+
+		//vmInfoData.CspSecurityGroupIds = req.CspSecurityGroupIds
+		//vmInfoData.CspVirtualNetworkId = "TBD"
+		//vmInfoData.Subnet = "TBD"
+		//vmInfoData.CspImageName = "TBD"
+		//vmInfoData.CspSpecId = "TBD"
+
+		//vmInfoData.PublicIP = "Not assigned yet"
+		//vmInfoData.CspVmId = "Not assigned yet"
+		//vmInfoData.PublicDNS = "Not assigned yet"
+		vmInfoData.Status = "Creating"
+
+		vmInfoData.Name = req.Name
+		vmInfoData.ConnectionName = req.ConnectionName
+		vmInfoData.SpecId = req.SpecId
+		vmInfoData.ImageId = req.ImageId
+		vmInfoData.VNetId = req.VNetId
+		vmInfoData.SubnetId = req.SubnetId
+		//vmInfoData.Vnic_id = req.Vnic_id
+		//vmInfoData.Public_ip_id = req.Public_ip_id
+		vmInfoData.SecurityGroupIds = req.SecurityGroupIds
+		vmInfoData.SshKeyId = req.SshKeyId
+		vmInfoData.Description = req.Description
+
+		vmInfoData.ConnectionName = req.ConnectionName
+	*/
+
+	vmInfoData := mcis.TbVmInfo{}
+	if err := c.Bind(vmInfoData); err != nil {
 		return err
 	}
 
-	vmInfoData := mcis.TbVmInfo{}
-	//vmInfoData.Id = common.GenUuid()
-	vmInfoData.Id = common.GenId(req.Name)
-	//req.Id = vmInfoData.Id
-	//vmInfoData.CspVmName = req.CspVmName
-
-	//vmInfoData.Placement_algo = req.Placement_algo
-
-	//vmInfoData.Location = req.Location
-	//vmInfoData.Cloud_id = req.
-	vmInfoData.Description = req.Description
-
-	//vmInfoData.CspSpecId = req.CspSpecId
-
-	//vmInfoData.Vcpu_size = req.Vcpu_size
-	//vmInfoData.Memory_size = req.Memory_size
-	//vmInfoData.Disk_size = req.Disk_size
-	//vmInfoData.Disk_type = req.Disk_type
-
-	//vmInfoData.CspImageName = req.CspImageName
-
-	//vmInfoData.CspSecurityGroupIds = req.CspSecurityGroupIds
-	//vmInfoData.CspVirtualNetworkId = "TBD"
-	//vmInfoData.Subnet = "TBD"
-	//vmInfoData.CspImageName = "TBD"
-	//vmInfoData.CspSpecId = "TBD"
-
-	//vmInfoData.PublicIP = "Not assigned yet"
-	//vmInfoData.CspVmId = "Not assigned yet"
-	//vmInfoData.PublicDNS = "Not assigned yet"
 	vmInfoData.Status = "Creating"
-
-	///////////
-	/*
-		Name              string `json:"name"`
-		Config_name       string `json:"config_name"`
-		Spec_id           string `json:"spec_id"`
-		Image_id          string `json:"image_id"`
-		Vnet_id           string `json:"vnet_id"`
-		Vnic_id           string `json:"vnic_id"`
-		Security_group_id string `json:"security_group_id"`
-		Ssh_key_id        string `json:"ssh_key_id"`
-		Description       string `json:"description"`
-	*/
-
-	vmInfoData.Name = req.Name
-	vmInfoData.Config_name = req.Config_name
-	vmInfoData.Spec_id = req.Spec_id
-	vmInfoData.Image_id = req.Image_id
-	vmInfoData.Vnet_id = req.Vnet_id
-	vmInfoData.Subnet_id = req.Subnet_id
-	//vmInfoData.Vnic_id = req.Vnic_id
-	//vmInfoData.Public_ip_id = req.Public_ip_id
-	vmInfoData.Security_group_ids = req.Security_group_ids
-	vmInfoData.Ssh_key_id = req.Ssh_key_id
-	vmInfoData.Description = req.Description
-
-	vmInfoData.Config_name = req.Config_name
 
 	//goroutin
 	var wg sync.WaitGroup

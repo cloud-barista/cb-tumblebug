@@ -122,17 +122,17 @@ function full_test() {
 			"vm_num": "1",
 			"description": "Tumblebug demo",
 			"vm_req": [ {
-				"image_id": "IMAGE-01",
-				"vm_access_id": "cb-user",
-				"config_name": "aws-us-east-1-config",
-				"ssh_key_id": "KEYPAIR-01",
-				"spec_id": "SPEC-01",
-				"security_group_ids": [
+				"imageId": "IMAGE-01",
+				"vmUserAccount": "cb-user",
+				"connectionName": "aws-us-east-1-config",
+				"sshKeyId": "KEYPAIR-01",
+				"specId": "SPEC-01",
+				"securityGroupIds": [
 					"SG-01"
 				],
-				"vnet_id": "VPC-01",
+				"vNetId": "VPC-01",
 				"description": "description",
-				"vm_access_passwd": "",
+				"vmUserPassword": "",
 				"name": "VM-01"
 			} ]
 		}' | json_pp || return 1

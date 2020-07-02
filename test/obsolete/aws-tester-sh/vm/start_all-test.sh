@@ -183,19 +183,19 @@ do
 	    "vm_req": [
 		{
 		    "name": "aws-jhseo-vm'$num'",
-		    "config_name": "'$NAME'",
-		    "spec_id": "'$SPEC_ID'",
-		    "image_id": "'$IMAGE_ID'",
-		    "vnet_id": "'$VNET_ID'",
+		    "connectionName": "'$NAME'",
+		    "specId": "'$SPEC_ID'",
+		    "imageId": "'$IMAGE_ID'",
+		    "vNetId": "'$VNET_ID'",
 		    "vnic_id": "",
 		    "public_ip_id": "'$PIP_ID'",
-		    "security_group_ids": [
+		    "securityGroupIds": [
 				"'$SG_ID'"
 			],
-		    "ssh_key_id": "'$SSHKEY_ID'",
+		    "sshKeyId": "'$SSHKEY_ID'",
 		    "description": "description",
-		    "vm_access_id": "",
-		    "vm_access_passwd": ""
+		    "vmUserAccount": "",
+		    "vmUserPassword": ""
 		}    
 	    ]
 	}' | json_pp
@@ -204,19 +204,19 @@ do
 		MCIS_ID=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis | jq -r '.mcis[].id'`
 		curl -sX POST http://$TUMBLEBUG_IP:1323/ns/$NS_ID/mcis/$MCIS_ID/vm -H 'Content-Type: application/json' -d '{
 		"name": "aws-jhseo-vm'$num'",
-		    "config_name": "'$NAME'",
-		    "spec_id": "'$SPEC_ID'",
-		    "image_id": "'$IMAGE_ID'",
-		    "vnet_id": "'$VNET_ID'",
+		    "connectionName": "'$NAME'",
+		    "specId": "'$SPEC_ID'",
+		    "imageId": "'$IMAGE_ID'",
+		    "vNetId": "'$VNET_ID'",
 		    "vnic_id": "",
 		    "public_ip_id": "'$PIP_ID'",
-		    "security_group_ids": [
+		    "securityGroupIds": [
 				"'$SG_ID'"
 			],
-		    "ssh_key_id": "'$SSHKEY_ID'",
+		    "sshKeyId": "'$SSHKEY_ID'",
 		    "description": "description",
-		    "vm_access_id": "",
-		    "vm_access_passwd": ""
+		    "vmUserAccount": "",
+		    "vmUserPassword": ""
 		}' | json_pp
 
 	fi
