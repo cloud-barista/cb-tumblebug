@@ -12,7 +12,7 @@ import (
 	"fmt"
 
 	// REST API (echo)
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/middleware"
 )
 

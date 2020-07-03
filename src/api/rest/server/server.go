@@ -15,9 +15,13 @@ import (
 	// REST API (echo)
 	"net/http"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	// CB-Store
+
+
+	"github.com/swaggo/echo-swagger" // echo-swagger middleware
+	_ "github.com/cloud-barista/cb-tumblebug/src/docs"
 )
 
 //var masterConfigInfos confighandler.MASTERCONFIGTYPE
@@ -53,7 +57,7 @@ const (
  ________________________________________________`
 )
 
-// Main Body
+
 
 func ApiServer() {
 
@@ -62,6 +66,8 @@ func ApiServer() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World! This is cloud-barista cb-tumblebug")
@@ -87,7 +93,7 @@ func ApiServer() {
 	fmt.Println("")
 
 	// Route
-	g := e.Group("/tumblebug/ns", common.NsValidation())
+	g := e.Group("/tumblebug/ns", common.NsValidation() )
 
 	g.POST("", rest_common.RestPostNs)
 	g.GET("/:nsId", rest_common.RestGetNs)

@@ -1,0 +1,196 @@
+basePath: /tumblebug
+definitions:
+  common.NsInfo:
+    properties:
+      description:
+        example: Description for this namespace
+        type: string
+      id:
+        description: Additional fields for response
+        type: string
+      name:
+        description: Fields for both request and response
+        example: namespaceid01
+        type: string
+    type: object
+  common.RestGetAllNsResponse:
+    properties:
+      ns:
+        description: Name string     `json:"name"`
+        items:
+          $ref: '#/definitions/common.NsInfo'
+        type: array
+    type: object
+  common.SimpleMsg:
+    properties:
+      message:
+        example: Any message
+        type: string
+    type: object
+host: localhost:1323
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server Petstore server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /ns:
+    delete:
+      consumes:
+      - application/json
+      description: delete by json RestDelAllNs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: delete all RestDelAllNs
+      tags:
+      - Delete all NS
+    get:
+      consumes:
+      - application/json
+      description: list namespace by json RestGetAllNs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.RestGetAllNsResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: RestGetAllNs namespace
+      tags:
+      - List NS
+    post:
+      consumes:
+      - application/json
+      description: Create namespace by json RestPostNs
+      parameters:
+      - description: Post Ns
+        in: body
+        name: namespace
+        required: true
+        schema:
+          $ref: '#/definitions/common.NsInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.NsInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create namespace
+      tags:
+      - Create NS
+    put:
+      consumes:
+      - application/json
+      description: Update namespace by json RestPutNs
+      parameters:
+      - description: put Ns
+        in: body
+        name: namespace
+        required: true
+        schema:
+          $ref: '#/definitions/common.NsInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.NsInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Update namespace
+      tags:
+      - Put NS (TBI)
+  /ns/{nsId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete namespace by json RestDelNs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: RestDelNs namespace
+      tags:
+      - Del NS
+    get:
+      consumes:
+      - application/json
+      description: Get namespace by json RestGetNs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.NsInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: RestGetNs namespace
+      tags:
+      - Get NS
+swagger: "2.0"

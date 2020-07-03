@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	//cr "github.com/cloud-barista/cb-spider/api-runtime/common-runtime"
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 )

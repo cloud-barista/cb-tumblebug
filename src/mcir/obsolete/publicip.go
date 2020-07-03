@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 // https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/new-resources/PublicIPHandler.go
