@@ -43,7 +43,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "List NS"
+                    "Namespace"
                 ],
                 "summary": "RestGetAllNs namespace",
                 "responses": {
@@ -76,7 +76,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Put NS (TBI)"
+                    "Namespace"
                 ],
                 "summary": "Update namespace",
                 "parameters": [
@@ -120,7 +120,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Create NS"
+                    "Namespace"
                 ],
                 "summary": "Create namespace",
                 "parameters": [
@@ -164,7 +164,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Delete all NS"
+                    "Namespace"
                 ],
                 "summary": "delete all RestDelAllNs",
                 "responses": {
@@ -193,7 +193,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Get NS"
+                    "Namespace"
                 ],
                 "summary": "RestGetNs namespace",
                 "parameters": [
@@ -235,7 +235,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Del NS"
+                    "Namespace"
                 ],
                 "summary": "RestDelNs namespace",
                 "parameters": [
