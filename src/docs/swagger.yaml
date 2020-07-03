@@ -59,7 +59,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: delete all RestDelAllNs
       tags:
-      - Delete all NS
+      - Namespace
     get:
       consumes:
       - application/json
@@ -81,7 +81,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: RestGetAllNs namespace
       tags:
-      - List NS
+      - Namespace
     post:
       consumes:
       - application/json
@@ -110,7 +110,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create namespace
       tags:
-      - Create NS
+      - Namespace
     put:
       consumes:
       - application/json
@@ -139,7 +139,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update namespace
       tags:
-      - Put NS (TBI)
+      - Namespace
   /ns/{nsId}:
     delete:
       consumes:
@@ -164,7 +164,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: RestDelNs namespace
       tags:
-      - Del NS
+      - Namespace
     get:
       consumes:
       - application/json
@@ -192,5 +192,5 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: RestGetNs namespace
       tags:
-      - Get NS
+      - Namespace
 swagger: "2.0"

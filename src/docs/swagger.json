@@ -28,7 +28,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "List NS"
+                    "Namespace"
                 ],
                 "summary": "RestGetAllNs namespace",
                 "responses": {
@@ -61,7 +61,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Put NS (TBI)"
+                    "Namespace"
                 ],
                 "summary": "Update namespace",
                 "parameters": [
@@ -105,7 +105,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Create NS"
+                    "Namespace"
                 ],
                 "summary": "Create namespace",
                 "parameters": [
@@ -149,7 +149,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Delete all NS"
+                    "Namespace"
                 ],
                 "summary": "delete all RestDelAllNs",
                 "responses": {
@@ -178,7 +178,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Get NS"
+                    "Namespace"
                 ],
                 "summary": "RestGetNs namespace",
                 "parameters": [
@@ -220,7 +220,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Del NS"
+                    "Namespace"
                 ],
                 "summary": "RestDelNs namespace",
                 "parameters": [
