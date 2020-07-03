@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func makePostNsFunc_js() string {

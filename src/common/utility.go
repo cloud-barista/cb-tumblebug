@@ -27,6 +27,11 @@ import (
 
 // MCIS utilities
 
+// JSON Simple message struct
+type SimpleMsg struct {
+	Message string `json:"message" example:"Any message"`
+}
+
 func GenUuid() string {
 	return uuid.New().String()
 }

@@ -8,7 +8,7 @@ import (
 
 	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
 	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 /*
@@ -19,10 +19,11 @@ type NsReq struct {
 }
 */
 
+// swagger:response NsInfo
 type NsInfo struct {
 	// Fields for both request and response
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string `json:"name" example:"namespaceid01"`
+	Description string `json:"description" example:"Description for this namespace"`
 
 	// Additional fields for response
 	Id string `json:"id"`

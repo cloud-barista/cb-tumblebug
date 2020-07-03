@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 	"github.com/cloud-barista/cb-tumblebug/src/mcis"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func RestCheckMcis(c echo.Context) error {

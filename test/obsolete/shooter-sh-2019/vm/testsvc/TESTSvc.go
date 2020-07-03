@@ -14,7 +14,7 @@ import (
 	"runtime"
 	"strconv"
 	"github.com/shirou/gopsutil/cpu"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
