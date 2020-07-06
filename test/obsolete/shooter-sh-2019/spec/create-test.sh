@@ -4,7 +4,7 @@ source ../setup.env
 num=0
 for NAME in "${CONNECT_NAMES[@]}"
 do
-        curl -sX POST http://$TUMBLEBUG_IP:1323/tumblebug/ns/$NS_ID/resources/spec -H 'Content-Type: application/json' -d '{"connectionName":"'$NAME'", 
+        curl -H "${AUTH}" -sX POST http://$TUMBLEBUG_IP:1323/tumblebug/ns/$NS_ID/resources/spec -H 'Content-Type: application/json' -d '{"connectionName":"'$NAME'", 
         "name": "'${SPEC_IDS[num]}'",
     "os_type": "",
     "num_vCPU": "",

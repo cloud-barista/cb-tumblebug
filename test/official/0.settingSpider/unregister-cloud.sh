@@ -1,6 +1,7 @@
 #!/bin/bash
 source ../conf.env
 source ../credentials.conf
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 0. Remove All Cloud Connction Config(s)"
@@ -32,10 +33,10 @@ OPTION=${4:-none}
 RESTSERVER=localhost
 
 # for Cloud Connection Config Info
-curl -sX DELETE http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]}
+curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]}
 
 # for Cloud Region Info
-curl -sX DELETE http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]}
+curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]}
 
 if [ "${OPTION}" == "leave" ]; then
 	echo "[Leave Cloud Credential and Cloud Driver for other Regions]"
@@ -43,7 +44,7 @@ if [ "${OPTION}" == "leave" ]; then
 fi
 
 # for Cloud Credential Info
-curl -sX DELETE http://$SpiderServer/spider/credential/${CredentialName[INDEX]}
+curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/credential/${CredentialName[INDEX]}
  
 # for Cloud Driver Info
-curl -sX DELETE http://$SpiderServer/spider/driver/${DriverName[INDEX]}
+curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/driver/${DriverName[INDEX]}

@@ -13,6 +13,7 @@ function dozing()
 }
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 source ../credentials.conf
 
 echo "####################################################################"

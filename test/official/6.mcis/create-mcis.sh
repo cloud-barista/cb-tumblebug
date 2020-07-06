@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 6. vm: Create MCIS"
@@ -27,7 +28,7 @@ else
 	INDEX=1
 fi
 
-curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 	'{
 		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 		"description": "Tumblebug Demo",

@@ -1,6 +1,7 @@
 #!/bin/bash
 source ../conf.env
 source ../credentials.conf
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 0. Create Cloud Connction Config"
@@ -30,7 +31,7 @@ fi
 RESTSERVER=localhost
 
  # for Cloud Driver Info
-curl -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d \
 	'{
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "DriverLibFileName" : "'${DriverLibFileName[INDEX]}'",
@@ -38,7 +39,7 @@ curl -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/j
 	}' | json_pp
 
  # for Cloud Credential Info
-curl -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d \
     "{
         \"ProviderName\" : \"${ProviderName[INDEX]}\",
         \"CredentialName\" : \"${CredentialName[INDEX]}\",
@@ -66,7 +67,7 @@ curl -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: applicati
 
 if [ "${CSP}" == "azure" ]; then
     # Differenciate Cloud Region Value for Resource Group Name
-	curl -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
     '{
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "KeyValueInfoList" : [
@@ -82,7 +83,7 @@ if [ "${CSP}" == "azure" ]; then
         "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
     }' | json_pp
 else
-curl -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
     '{
         "ProviderName" : "'${ProviderName[INDEX]}'",
         "KeyValueInfoList" : [
@@ -101,7 +102,7 @@ fi
 
 
  # for Cloud Connection Config Info
-curl -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d \
     '{
         "CredentialName" : "'${CredentialName[INDEX]}'",
         "ConfigName" : "'${CONN_CONFIG[$INDEX,$REGION]}'",

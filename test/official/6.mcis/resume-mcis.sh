@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 6. VM: Resume from suspended MCIS"
@@ -28,4 +29,4 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=resume | json_pp
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=resume | json_pp

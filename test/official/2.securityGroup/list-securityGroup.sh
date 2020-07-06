@@ -1,11 +1,12 @@
 #!/bin/bash
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 2. SecurityGroup: List"
 echo "####################################################################"
 
 
-curl -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/securityGroup | json_pp #|| return 1
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/securityGroup | json_pp #|| return 1
 

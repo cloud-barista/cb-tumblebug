@@ -5,6 +5,6 @@ source ../setup.env
 #do
 	NAME=${CONNECT_NAMES[0]}
 
-        curl -sX GET http://$RESTSERVER:1024/securitygroup?connection_name=${NAME} |json_pp &
+        curl -H "${AUTH}" -sX GET http://$RESTSERVER:1024/securitygroup?connection_name=${NAME} |json_pp &
 #done
 

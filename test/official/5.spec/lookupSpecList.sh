@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 5. spec: Lookup Spec List"
@@ -27,7 +28,7 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d \
 	'{ 
 		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
 	}' | json_pp #|| return 1
