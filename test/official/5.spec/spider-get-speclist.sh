@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 5. spec: Fetch"
@@ -27,5 +28,5 @@ else
 	INDEX=1
 fi
 
-curl -sX GET http://$SpiderServer/spider/vmspec -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | json_pp
+curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vmspec -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | json_pp
 

@@ -6,6 +6,6 @@ source ../setup.env
 	NAME=${CONNECT_NAMES[0]}
 
         ID=security01-powerkim
-        curl -sX DELETE http://$RESTSERVER:1024/securitygroup/${ID}?connection_name=${NAME} &
+        curl -H "${AUTH}" -sX DELETE http://$RESTSERVER:1024/securitygroup/${ID}?connection_name=${NAME} &
 #done
 

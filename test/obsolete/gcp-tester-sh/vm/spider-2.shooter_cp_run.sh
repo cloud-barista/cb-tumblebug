@@ -10,7 +10,7 @@ do
 		echo .... first vm skipped!!
 	else
 		echo ========================== $NAME
-		PUBLIC_IPS=`curl -sX GET http://$RESTSERVER:1024/vm?connection_name=$NAME |json_pp |grep "\"PublicIP\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+		PUBLIC_IPS=`curl -H "${AUTH}" -sX GET http://$RESTSERVER:1024/vm?connection_name=$NAME |json_pp |grep "\"PublicIP\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
 		for PUBLIC_IP in ${PUBLIC_IPS}
 		do
 			echo $NAME: copy shooter into ${PUBLIC_IP} ...

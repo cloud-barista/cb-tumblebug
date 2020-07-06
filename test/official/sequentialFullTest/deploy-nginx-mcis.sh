@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## Command (SSH) to MCIS "
@@ -29,7 +30,7 @@ fi
 
 MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
-curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
 	'{
 		"command": "wget https://gist.githubusercontent.com/seokho-son/92f757bd4caf50127803833787b5a77d/raw/4f6ced2d04c05910f444af4f202bcef475db73ce/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
 	}' | json_pp #|| return 1

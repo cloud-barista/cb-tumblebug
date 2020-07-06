@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 1. vpc: Create"
@@ -27,7 +28,7 @@ else
 	INDEX=1
 fi
 
-curl -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
 	'{
 		"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 		"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",

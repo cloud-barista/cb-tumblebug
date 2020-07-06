@@ -8,9 +8,9 @@ import (
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
 	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
 
-	//"os"
-
+	"os"
 	"fmt"
+	"crypto/subtle"
 
 	// REST API (echo)
 	"net/http"
@@ -78,6 +78,18 @@ func ApiServer() {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+	}))
+
+	API_USERNAME := os.Getenv("API_USERNAME")
+	API_PASSWORD := os.Getenv("API_PASSWORD")
+	fmt.Println(API_USERNAME, API_PASSWORD)
+	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+		// Be careful to use constant time comparison to prevent timing attacks
+		if subtle.ConstantTimeCompare([]byte(username), []byte(API_USERNAME)) == 1 &&
+			subtle.ConstantTimeCompare([]byte(password), []byte(API_PASSWORD)) == 1 {
+			return true, nil
+		}
+		return false, nil
 	}))
 
 	fmt.Println("")

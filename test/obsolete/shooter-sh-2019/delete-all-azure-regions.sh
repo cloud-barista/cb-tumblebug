@@ -7,6 +7,6 @@ for LOC in "${LOCS[@]}"
 do
 	echo $LOC
 
-	curl -sX DELETE http://$RESTSERVER:1024/region/azure-$LOC
+	curl -H "${AUTH}" -sX DELETE http://$RESTSERVER:1024/region/azure-$LOC
 
 done

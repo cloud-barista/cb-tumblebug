@@ -1,6 +1,7 @@
 #!/bin/bash
 source ../conf.env
 source ../credentials.conf
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 0. Get Cloud Connction Config"
@@ -30,17 +31,17 @@ fi
 RESTSERVER=localhost
 
 # for Cloud Connection Config Info
-curl -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | json_pp
+curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | json_pp
 
 
 # for Cloud Region Info
-curl -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | json_pp
+curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | json_pp
 
 
 # for Cloud Credential Info
-curl -sX GET http://$SpiderServer/spider/credential/${CredentialName[INDEX]} | json_pp
+curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[INDEX]} | json_pp
 
  
 # for Cloud Driver Info
-curl -sX GET http://$SpiderServer/spider/driver/${DriverName[INDEX]} | json_pp
+curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[INDEX]} | json_pp
 

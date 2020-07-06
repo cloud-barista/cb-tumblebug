@@ -19,10 +19,10 @@ function full_test() {
 	echo "####################################################################"
 
 #	echo "## 1. VPC: Delete"
-#	curl -sX DELETE http://localhost:1024/spider/vpc/VPC-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+#	curl -H "${AUTH}" -sX DELETE http://localhost:1024/spider/vpc/VPC-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 
 	echo "## 1. VPC: Create"
-	curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
 		'{
 			"name": "VPC-01",
 			"connectionName": "'${CONN_CONFIG}'",
@@ -35,13 +35,13 @@ function full_test() {
 		}' | json_pp || return 1
 
 #	echo "## 1. VPC: List"
-#	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
+#	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d \
 #		'{ 
 #			"connectionName": "'${CONN_CONFIG}'"
 #		}' | json_pp || return 1
 
 	echo "## 1. VPC: Get"
-	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet/VPC-01 | json_pp || return 1 #-H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/vNet/VPC-01 | json_pp || return 1 #-H 'Content-Type: application/json' -d \
 #		'{ 
 #			"connectionName": "'${CONN_CONFIG}'"
 #		}' | json_pp || return 1
@@ -56,7 +56,7 @@ function full_test() {
 	echo "####################################################################"
 
 	echo "## 2. SecurityGroup: Create"
-	curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d \
 		'{
 			"name": "SG-01",
 			"connectionName": "'${CONN_CONFIG}'",
@@ -76,13 +76,13 @@ function full_test() {
 #		'{ "ConnectionName": "'${CONN_CONFIG}'", "ReqInfo": { "Name": "SG-01", "VPCName": "VPC-01", "SecurityRules": [ {"FromPort": "1", "ToPort" : "65535", "IPProtocol" : "tcp", "Direction" : "inbound"} ] } }' | json_pp || return 1
 
 #	echo "## 2. SecurityGroup: List"
-#	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d \
+#	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d \
 #		'{ 
 #			"ConnectionName": "'${CONN_CONFIG}'"
 #		}' | json_pp || return 1
 
 	echo "## 2. SecurityGroup: Get"
-	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup/SG-01 | json_pp || return 1 #-H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/securityGroup/SG-01 | json_pp || return 1 #-H 'Content-Type: application/json' -d \
 #		'{ 
 #			"ConnectionName": "'${CONN_CONFIG}'"
 #		}' | json_pp || return 1
@@ -94,17 +94,17 @@ function full_test() {
 	echo "####################################################################"
 
 	echo "## 3. KeyPair: Create"
-	curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey -H 'Content-Type: application/json' -d \
 		'{ 
 			"connectionName": "'${CONN_CONFIG}'", 
 			"name": "KEYPAIR-01" 
 		}' || return 1
 
 #	echo "## 3. KeyPair: Create"
-#	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+#	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 
 	echo "## 3. KeyPair: Get"
-	curl -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey/KEYPAIR-01 | json_pp || return 1 #-H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/ns/$NS_ID/resources/sshKey/KEYPAIR-01 | json_pp || return 1 #-H 'Content-Type: application/json' -d \
 #		'{ 
 #			"connectionName": "'${CONN_CONFIG}'"
 #		}' | json_pp || return 1
@@ -116,7 +116,7 @@ function full_test() {
 	echo "####################################################################"
 
 	echo "## 4. VM: Create MCIS"
-	curl -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://localhost:1323/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 		'{
 			"name": "MCIS-01",
 			"vm_num": "1",
@@ -140,17 +140,17 @@ function full_test() {
 
 	echo "============== sleep 30 after start VM"
 	sleep 30
-	curl -sX GET http://localhost:1323/tumblebug/vm -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/vm/VM-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/vmstatus -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/vmstatus/VM-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
-	curl -sX GET http://localhost:1323/tumblebug/controlvm/VM-01?action=suspend -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/vm -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/vm/VM-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/vmstatus -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/vmstatus/VM-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/controlvm/VM-01?action=suspend -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "============== sleep 50 after suspend VM"
 	sleep 50
-	curl -sX GET http://localhost:1323/tumblebug/controlvm/VM-01?action=resume -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/controlvm/VM-01?action=resume -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "============== sleep 30 after resume VM"
 	sleep 30
-	curl -sX GET http://localhost:1323/tumblebug/controlvm/VM-01?action=reboot -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX GET http://localhost:1323/tumblebug/controlvm/VM-01?action=reboot -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "============== sleep 60 after reboot VM"
 	sleep 60 
 	echo "#-----------------------------"
@@ -163,22 +163,22 @@ function full_test() {
 	echo "####################################################################"
 	echo "## 4. VM: Terminate(Delete)"
 	echo "####################################################################"
-	curl -sX DELETE http://localhost:1323/tumblebug/vm/VM-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX DELETE http://localhost:1323/tumblebug/vm/VM-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "============== sleep 60 after delete VM"
 	sleep 60 
 
 	echo "####################################################################"
 	echo "## 3. KeyPair: Delete"
 	echo "####################################################################"
-	curl -sX DELETE http://localhost:1323/tumblebug/keypair/KEYPAIR-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX DELETE http://localhost:1323/tumblebug/keypair/KEYPAIR-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "####################################################################"
 	echo "## 2. SecurityGroup: Delete"
 	echo "####################################################################"
-	curl -sX DELETE http://localhost:1323/tumblebug/securitygroup/SG-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX DELETE http://localhost:1323/tumblebug/securitygroup/SG-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 	echo "####################################################################"
 	echo "## 1. VPC: Delete"
 	echo "####################################################################"
-	curl -sX DELETE http://localhost:1323/tumblebug/vNet/VPC-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
+	curl -H "${AUTH}" -sX DELETE http://localhost:1323/tumblebug/vNet/VPC-01 -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG}'"}' | json_pp || return 1
 
 END
 	echo This is the end of the block comment

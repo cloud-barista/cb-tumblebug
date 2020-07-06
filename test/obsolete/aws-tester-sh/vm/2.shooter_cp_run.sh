@@ -8,7 +8,7 @@ source ../setup.env
 #		echo .... first vm skipped!!
 #	else
 #		echo ========================== $NAME
-#		PUBLIC_IPS=`curl -sX GET http://$RESTSERVER:1024/vm?connection_name=$NAME |json_pp |grep "\"PublicIP\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
+#		PUBLIC_IPS=`curl -H "${AUTH}" -sX GET http://$RESTSERVER:1024/vm?connection_name=$NAME |json_pp |grep "\"PublicIP\"" |awk '{print $3}' |sed 's/"//g' |sed 's/,//g'`
 #		for PUBLIC_IP in ${PUBLIC_IPS}
 #		do
 #			echo $NAME: copy shooter into ${PUBLIC_IP} ...
@@ -21,22 +21,22 @@ source ../setup.env
 #	fi
 #done
 
-TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
+TB_PUBLICIP_IDS=`curl -H "${AUTH}" -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 #echo $TB_PUBLICIP_IDS | json_pp
 
 if [ -n "$TB_PUBLICIP_IDS" ]
 then
-	#TB_PUBLICIP_IDS=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
+	#TB_PUBLICIP_IDS=`curl -H "${AUTH}" -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp | jq -r '.publicIp[].id'`
 	for TB_PUBLICIP_ID in ${TB_PUBLICIP_IDS}
 	do
 		echo ....Get ${TB_PUBLICIP_ID} ...
-		PIPS_CONN_NAME=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.connectionName'`
+		PIPS_CONN_NAME=`curl -H "${AUTH}" -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.connectionName'`
 		if [ "$PIPS_CONN_NAME" == "${CONNECT_NAMES[0]}" ]
 		then
 			echo Skipping first VM
 			continue
 		else
-			PUBLIC_IP=`curl -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.publicIp'`
+			PUBLIC_IP=`curl -H "${AUTH}" -sX GET http://$TUMBLEBUG_IP:1323/ns/$NS_ID/resources/publicIp/${TB_PUBLICIP_ID} | jq -r '.publicIp'`
 			echo $PIPS_CONN_NAME: copy shooter into ${PUBLIC_IP} ...
 			ssh-keygen -f "/root/.ssh/known_hosts" -R ${PUBLIC_IP}
 			scp -i ../keypair/$PIPS_CONN_NAME.key -o "StrictHostKeyChecking no" ./shooter/shooter.sh ubuntu@$PUBLIC_IP:/tmp
