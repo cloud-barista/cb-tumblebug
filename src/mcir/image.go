@@ -40,32 +40,24 @@ type SpiderImageInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-/*
 type TbImageReq struct {
-	//Id             string `json:"id"`
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	CspImageId     string `json:"cspImageId"`
-	CspImageName   string `json:"cspImageName"`
-	//CreationDate   string `json:"creationDate"`
-	Description string `json:"description"`
+	Description    string `json:"description"`
 }
-*/
 
 type TbImageInfo struct {
-	// Fields for both request and response
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	CspImageId     string `json:"cspImageId"`
-	CspImageName   string `json:"cspImageName"`
-	Description    string `json:"description"`
-
-	// Additional fields for response
-	Id           string            `json:"id"`
-	CreationDate string            `json:"creationDate"`
-	GuestOS      string            `json:"guestOS"` // Windows7, Ubuntu etc.
-	Status       string            `json:"status"`  // available, unavailable
-	KeyValueList []common.KeyValue `json:"keyValueList"`
+	Id             string            `json:"id"`
+	Name           string            `json:"name"`
+	ConnectionName string            `json:"connectionName"`
+	CspImageId     string            `json:"cspImageId"`
+	CspImageName   string            `json:"cspImageName"`
+	Description    string            `json:"description"`
+	CreationDate   string            `json:"creationDate"`
+	GuestOS        string            `json:"guestOS"` // Windows7, Ubuntu etc.
+	Status         string            `json:"status"`  // available, unavailable
+	KeyValueList   []common.KeyValue `json:"keyValueList"`
 }
 
 /*
@@ -75,7 +67,7 @@ func createImage(nsId string, u *TbImageReq) (TbImageInfo, error) {
 */
 
 // TODO: Need to update (after CB-Spider's implementing lookupImage feature)
-func RegisterImageWithId(nsId string, u *TbImageInfo) (TbImageInfo, error) {
+func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	check, _ := CheckResource(nsId, "image", u.Name)
 
 	if check {
@@ -101,7 +93,7 @@ func RegisterImageWithId(nsId string, u *TbImageInfo) (TbImageInfo, error) {
 
 	method := "GET"
 
-	payload := strings.NewReader("{ \"Name\": \"" + u.CspImageName + "\"}")
+	payload := strings.NewReader("{ \"Name\": \"" + u.CspImageId + "\"}")
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {

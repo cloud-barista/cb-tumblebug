@@ -41,7 +41,7 @@ else
 	INDEX=1
 fi
 
-../0.settingSpider/register-cloud.sh $CSP $REGION $POSTFIX
+../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
 
 
 _self="${0##*/}"

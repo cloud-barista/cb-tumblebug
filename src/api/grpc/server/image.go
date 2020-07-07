@@ -12,10 +12,10 @@ import (
 )
 
 func (s *server) RegisterImageWithId(ctx context.Context, req *pb.RegisterImageWithIdWrapper) (*pb.TbImageInfo, error) {
-	log.Printf("RegisterImageWithId Received: %v", req.TbImageInfo.Name)
+	log.Printf("RegisterImageWithId Received: %v", req.TbImageReq.Name)
 
-	var tbImageReq mcir.TbImageInfo
-	err := common.CopySrcToDest(&req.TbImageInfo, &tbImageReq)
+	var tbImageReq mcir.TbImageReq
+	err := common.CopySrcToDest(&req.TbImageReq, &tbImageReq)
 	if err != nil {
 		//common.CBLog.Error(err)
 		return nil, common.ConvGrpcStatusErr(err, "", "RegisterImageWithId()")

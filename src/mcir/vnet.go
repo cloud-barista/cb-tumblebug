@@ -15,86 +15,61 @@ import (
 
 type SpiderVPCReqInfoWrapper struct { // Spider
 	ConnectionName string
-	ReqInfo        SpiderVPCInfo
+	ReqInfo        SpiderVPCReqInfo
 }
 
-/*
 type SpiderVPCReqInfo struct { // Spider
-	Name      string
-	IPv4_CIDR string
-	//SubnetInfoList []SpiderSubnetReqInfo
-	SubnetInfoList []SpiderSubnetInfo
+	Name           string
+	IPv4_CIDR      string
+	SubnetInfoList []SpiderSubnetReqInfo
+	//SubnetInfoList []SpiderSubnetInfo
 }
-*/
 
-/*
 type SpiderSubnetReqInfo struct { // Spider
-	Name      string
-	IPv4_CIDR string
-
+	Name         string
+	IPv4_CIDR    string
 	KeyValueList []common.KeyValue
 }
-*/
 
 type SpiderVPCInfo struct { // Spider
-	// Fields for request
-	Name string
-
-	// Fields for both request and response
+	IId            common.IID // {NameId, SystemId}
 	IPv4_CIDR      string
 	SubnetInfoList []SpiderSubnetInfo
-
-	// Fields for response
-	IId          common.IID // {NameId, SystemId}
-	KeyValueList []common.KeyValue
+	KeyValueList   []common.KeyValue
 }
 
 type SpiderSubnetInfo struct { // Spider
-	// Fields for request
-	Name string
-
-	// Fields for both request and response
+	IId          common.IID // {NameId, SystemId}
 	IPv4_CIDR    string
 	KeyValueList []common.KeyValue
-
-	// Fields for response
-	IId common.IID // {NameId, SystemId}
 }
 
-/*
 type TbVNetReq struct { // Tumblebug
-	Name              string                `json:"name"`
-	ConnectionName    string                `json:"connectionName"`
-	CidrBlock         string                `json:"cidrBlock"`
-	SubnetReqInfoList []SpiderSubnetReqInfo `json:"subnetReqInfoList"`
-	//Region            string `json:"region"`
-	//ResourceGroupName string `json:"resourceGroupName"`
-	Description string `json:"description"`
+	Name           string                `json:"name"`
+	ConnectionName string                `json:"connectionName"`
+	CidrBlock      string                `json:"cidrBlock"`
+	SubnetInfoList []SpiderSubnetReqInfo `json:"subnetInfoList"`
+	Description    string                `json:"description"`
 }
-*/
 
 type TbVNetInfo struct { // Tumblebug
-	// Fields for both request and response
+	Id             string             `json:"id"`
 	Name           string             `json:"name"`
 	ConnectionName string             `json:"connectionName"`
 	CidrBlock      string             `json:"cidrBlock"`
 	SubnetInfoList []SpiderSubnetInfo `json:"subnetInfoList"`
 	Description    string             `json:"description"`
-
-	// Additional fields for response
-	Id           string            `json:"id"`
-	CspVNetId    string            `json:"cspVNetId"`
-	CspVNetName  string            `json:"cspVNetName"`
-	Status       string            `json:"status"`
-	KeyValueList []common.KeyValue `json:"keyValueList"`
+	CspVNetId      string             `json:"cspVNetId"`
+	CspVNetName    string             `json:"cspVNetName"`
+	Status         string             `json:"status"`
+	KeyValueList   []common.KeyValue  `json:"keyValueList"`
 
 	// Disabled for now
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 }
 
-//func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, int, []byte, error) {
-func CreateVNet(nsId string, u *TbVNetInfo) (TbVNetInfo, error) {
+func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	check, _ := CheckResource(nsId, "vNet", u.Name)
 
 	if check {

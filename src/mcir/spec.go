@@ -42,37 +42,25 @@ type SpiderGpuInfo struct { // Spider
 	Mem   string
 }
 
-/*
 type TbSpecReq struct { // Tumblebug
-	//Id             string `json:"id"`
+	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	CspSpecName    string `json:"cspSpecName"`
-	Name           string `json:"name"`
-	Os_type        string `json:"os_type"`
-	Num_vCPU       string `json:"num_vCPU"`
-	Num_core       string `json:"num_core"`
-	Mem_GiB        string `json:"mem_GiB"`
-	Mem_MiB        string `json:"mem_MiB"`
-	Storage_GiB    string `json:"storage_GiB"`
 	Description    string `json:"description"`
 }
-*/
 
 type TbSpecInfo struct { // Tumblebug
-	// Fields for both request and response
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	CspSpecName    string `json:"cspSpecName"`
-	Os_type        string `json:"os_type"`
-	Num_vCPU       string `json:"num_vCPU"`
-	Num_core       string `json:"num_core"`
-	Mem_GiB        string `json:"mem_GiB"`
-	Mem_MiB        string `json:"mem_MiB"`
-	Storage_GiB    string `json:"storage_GiB"`
-	Description    string `json:"description"`
-
-	// Additional fields for response
 	Id                    string `json:"id"`
+	Name                  string `json:"name"`
+	ConnectionName        string `json:"connectionName"`
+	CspSpecName           string `json:"cspSpecName"`
+	Os_type               string `json:"os_type"`
+	Num_vCPU              string `json:"num_vCPU"`
+	Num_core              string `json:"num_core"`
+	Mem_GiB               string `json:"mem_GiB"`
+	Mem_MiB               string `json:"mem_MiB"`
+	Storage_GiB           string `json:"storage_GiB"`
+	Description           string `json:"description"`
 	Cost_per_hour         string `json:"cost_per_hour"`
 	Num_storage           string `json:"num_storage"`
 	Max_num_storage       string `json:"max_num_storage"`
@@ -166,8 +154,10 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 	return temp, nil
 }
 
-func LookupSpec(u *TbSpecInfo) (SpiderSpecInfo, error) {
-	url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
+//func LookupSpec(u *TbSpecInfo) (SpiderSpecInfo, error) {
+func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
+	//url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
+	url := common.SPIDER_URL + "/vmspec/" + specName
 
 	method := "GET"
 
@@ -182,7 +172,7 @@ func LookupSpec(u *TbSpecInfo) (SpiderSpecInfo, error) {
 		ConnectionName string
 	}
 	tempReq := JsonTemplate{}
-	tempReq.ConnectionName = u.ConnectionName
+	tempReq.ConnectionName = connConfig
 	payload, _ := json.MarshalIndent(tempReq, "", "  ")
 	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
@@ -227,7 +217,55 @@ func LookupSpec(u *TbSpecInfo) (SpiderSpecInfo, error) {
 	return temp, nil
 }
 
-func RegisterSpecWithCspSpecName(nsId string, u *TbSpecInfo) (TbSpecInfo, error) {
+func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
+	connConfigs, err := common.GetConnConfigList()
+	if err != nil {
+		common.CBLog.Error(err)
+		return 0, 0, err
+	}
+
+	for _, connConfig := range connConfigs.Connectionconfig {
+		fmt.Println("connConfig " + connConfig.ConfigName)
+
+		spiderSpecList, err := LookupSpecList(connConfig.ConfigName)
+		if err != nil {
+			common.CBLog.Error(err)
+			return 0, 0, err
+		}
+
+		for _, spiderSpec := range spiderSpecList.Vmspec {
+			tumblebugSpec, err := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+			if err != nil {
+				common.CBLog.Error(err)
+				return 0, 0, err
+			}
+
+			tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
+			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
+
+			check, _ := CheckResource(nsId, "spec", tumblebugSpecId)
+			if check {
+				common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
+				continue
+			} else {
+				tumblebugSpec.Id = tumblebugSpecId
+				tumblebugSpec.Name = tumblebugSpecId
+				tumblebugSpec.ConnectionName = connConfig.ConfigName
+
+				_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec)
+				if err != nil {
+					common.CBLog.Error(err)
+					return 0, 0, err
+				}
+			}
+			specCount++
+		}
+		connConfigCount++
+	}
+	return connConfigCount, specCount, nil
+}
+
+func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
 	check, _ := CheckResource(nsId, "spec", u.Name)
 
 	if check {
@@ -236,7 +274,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecInfo) (TbSpecInfo, error)
 		return temp, err
 	}
 
-	res, err := LookupSpec(u)
+	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
 		common.CBLog.Error(err)
 		err := fmt.Errorf("an error occurred while lookup spec via CB-Spider")

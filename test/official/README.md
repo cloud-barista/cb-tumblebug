@@ -28,14 +28,14 @@
 ### (1) 클라우드정보, Namespace, MCIR, MCIS 등 개별 제어 시험
 - 제어하고 싶은 리소스 오브젝트에 대해, 해당 디렉토리로 이동하여 필요한 시험 수행
   - 오브젝트는 서로 의존성이 있으므로, 번호를 참고하여 오름차순으로 수행하는 것이 바람직함
-    - 0.settingSpider  # 클라우드 정보 등록 관련 스크립트 모음
-    - 0.settingTB  # 네임스페이스 관련 스크립트 모음
-    - 1.vNet  # MCIR vNet 생성 관련 스크립트 모음
-    - 2.securityGroup  # MCIR securityGroup 생성 관련 스크립트 모음
-    - 3.sshKey  # MCIR sshKey 생성 관련 스크립트 모음
-    - 4.image  # MCIR image 등록 관련 스크립트 모음
-    - 5.spec  # MCIR spec 등록 관련 스크립트 모음
-    - 6.mcis  # MCIS 생성 및 제어 관련 스크립트 모음
+    - 1.configureSpider  # 클라우드 정보 등록 관련 스크립트 모음
+    - 2.configureTumblebug  # 네임스페이스 관련 스크립트 모음
+    - 3.vNet  # MCIR vNet 생성 관련 스크립트 모음
+    - 4.securityGroup  # MCIR securityGroup 생성 관련 스크립트 모음
+    - 5.sshKey  # MCIR sshKey 생성 관련 스크립트 모음
+    - 6.image  # MCIR image 등록 관련 스크립트 모음
+    - 7.spec  # MCIR spec 등록 관련 스크립트 모음
+    - 8.mcis  # MCIS 생성 및 제어 관련 스크립트 모음
 
 ### (2) 한꺼번에 통합 시험 
 - sequentialFullTest 에 포함된 cleanAll-mcis-mcir-ns-cloud.sh 을 수행하면 모든 것을 한번에 테스트 가능
@@ -100,7 +100,7 @@
    "message" : "The namespace NS-01 already exists."
 }
 ####################################################################
-## 1. vpc: Create
+## 3. vNet: Create
 ####################################################################
 [Test for AWS]
 {
@@ -119,7 +119,7 @@
 }
 Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
 ####################################################################
-## 2. SecurityGroup: Create
+## 4. SecurityGroup: Create
 ####################################################################
 [Test for AWS]
 {
@@ -138,7 +138,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
 }
 Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
 ####################################################################
-## 3. sshKey: Create
+## 5. sshKey: Create
 ####################################################################
 [Test for AWS]
 {
@@ -151,7 +151,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
    "username" : ""
 }
 ####################################################################
-## 4. image: Register
+## 6. image: Register
 ####################################################################
 [Test for AWS]
 {
@@ -176,7 +176,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
    "id" : "aws-us-east-1-shson"
 }
 ####################################################################
-## 5. spec: Register
+## 7. spec: Register
 ####################################################################
 [Test for AWS]
 {
@@ -196,7 +196,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
    "name" : "aws-us-east-1-shson"
 }
 ####################################################################
-## 6. vm: Create MCIS
+## 8. vm: Create MCIS
 ####################################################################
 [Test for AWS]
 {
@@ -209,7 +209,6 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
    "placement_algo" : "",
    "vm" : [
       {
-         "vmUserId" : "",
          "targetStatus" : "None",
          "subnetId" : "aws-us-east-1-shson",
          "location" : {
@@ -275,7 +274,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
 }
 Dozing for 1 : 1 (Back to work)
 ####################################################################
-## 6. VM: Status MCIS
+## 8. VM: Status MCIS
 ####################################################################
 [Test for AWS]
 {
@@ -372,41 +371,41 @@ Dozing for 1 : 1 (Back to work)
 ```
 ~/go/src/github.com/cloud-barista/cb-tumblebug/test/official$ tree
 .
-├── 0.settingSpider  # 클라우드 정보 등록 관련 스크립트 모음
+├── 1.configureSpider  # 클라우드 정보 등록 관련 스크립트 모음
 │   ├── get-cloud.sh
 │   ├── list-cloud.sh
 │   ├── register-cloud.sh
 │   └── unregister-cloud.sh
-├── 0.settingTB  # 네임스페이스 관련 스크립트 모음
+├── 2.configureTumblebug  # 네임스페이스 관련 스크립트 모음
 │   ├── create-ns.sh
 │   ├── delete-ns.sh
 │   ├── get-ns.sh
 │   └── list-ns.sh
-├── 1.vNet  # MCIR vNet 생성 관련 스크립트 모음
+├── 3.vNet  # MCIR vNet 생성 관련 스크립트 모음
 │   ├── create-vNet.sh
 │   ├── delete-vNet.sh
 │   ├── get-vNet.sh
 │   ├── list-vNet.sh
 │   └── spider-get-vNet.sh
-├── 2.securityGroup  # MCIR securityGroup 생성 관련 스크립트 모음
+├── 4.securityGroup  # MCIR securityGroup 생성 관련 스크립트 모음
 │   ├── create-securityGroup.sh
 │   ├── delete-securityGroup.sh
 │   ├── get-securityGroup.sh
 │   ├── list-securityGroup.sh
 │   └── spider-get-securityGroup.sh
-├── 3.sshKey  # MCIR sshKey 생성 관련 스크립트 모음
+├── 5.sshKey  # MCIR sshKey 생성 관련 스크립트 모음
 │   ├── create-sshKey.sh
 │   ├── delete-sshKey.sh
 │   ├── get-sshKey.sh
 │   ├── list-sshKey.sh
 │   ├── spider-delete-sshKey.sh
 │   └── spider-get-sshKey.sh
-├── 4.image  # MCIR image 등록 관련 스크립트 모음
+├── 6.image  # MCIR image 등록 관련 스크립트 모음
 │   ├── get-image.sh
 │   ├── list-image.sh
 │   ├── register-image.sh
 │   └── unregister-image.sh
-├── 5.spec  # MCIR spec 등록 관련 스크립트 모음
+├── 7.spec  # MCIR spec 등록 관련 스크립트 모음
 │   ├── fetch-specs.sh
 │   ├── get-spec.sh
 │   ├── list-spec.sh
@@ -416,7 +415,7 @@ Dozing for 1 : 1 (Back to work)
 │   ├── spider-get-speclist.sh
 │   ├── spider-get-spec.sh
 │   └── unregister-spec.sh
-├── 6.mcis  # MCIS 생성 및 제어 관련 스크립트 모음
+├── 8.mcis  # MCIS 생성 및 제어 관련 스크립트 모음
 │   ├── create-mcis.sh
 │   ├── get-mcis.sh
 │   ├── just-terminate-mcis.sh

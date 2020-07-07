@@ -17,11 +17,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	// CB-Store
 
-
-	"github.com/swaggo/echo-swagger" // echo-swagger middleware
 	_ "github.com/cloud-barista/cb-tumblebug/src/docs"
+	"github.com/swaggo/echo-swagger" // echo-swagger middleware
 )
 
 //var masterConfigInfos confighandler.MASTERCONFIGTYPE
@@ -56,8 +56,6 @@ const (
  Multi-cloud infra service managemenet framework
  ________________________________________________`
 )
-
-
 
 func ApiServer() {
 
@@ -105,7 +103,7 @@ func ApiServer() {
 	fmt.Println("")
 
 	// Route
-	g := e.Group("/tumblebug/ns", common.NsValidation() )
+	g := e.Group("/tumblebug/ns", common.NsValidation())
 
 	g.POST("", rest_common.RestPostNs)
 	g.GET("/:nsId", rest_common.RestGetNs)
@@ -123,10 +121,10 @@ func ApiServer() {
 
 	g.POST("/:nsId/mcis/:mcisId/vm", rest_mcis.RestPostMcisVm)
 	g.GET("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetMcisVm)
-	//g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
-	//g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
+	//g.GET("/:nsId/mcis/:mcisId/vm", rest_mcis.RestGetAllMcisVm)
+	//g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
-	//g.DELETE("/:nsId/mcis", rest_mcis.RestDelAllMcis)
+	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 
 	g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommand)
 	g.POST("/:nsId/cmd/mcis/:mcisId", rest_mcis.RestPostCmdMcis)

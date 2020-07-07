@@ -37,38 +37,26 @@ type SpiderKeyPairInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-/*
 type TbSshKeyReq struct {
-	//Id             string `json:"id"`
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	//CspSshKeyName  string `json:"cspSshKeyName"`
-	//Fingerprint    string `json:"fingerprint"`
-	//Username       string `json:"username"`
-	//PublicKey      string `json:"publicKey"`
-	//PrivateKey     string `json:"privateKey"`
-	Description string `json:"description"`
-}
-*/
-
-type TbSshKeyInfo struct {
-	// Fields for both request and response
 	Name           string `json:"name"`
 	ConnectionName string `json:"connectionName"`
 	Description    string `json:"description"`
-
-	// Additional fields for response
-	Id            string            `json:"id"`
-	CspSshKeyName string            `json:"cspSshKeyName"`
-	Fingerprint   string            `json:"fingerprint"`
-	Username      string            `json:"username"`
-	PublicKey     string            `json:"publicKey"`
-	PrivateKey    string            `json:"privateKey"`
-	KeyValueList  []common.KeyValue `json:"keyValueList"`
 }
 
-//func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, int, []byte, error) {
-func CreateSshKey(nsId string, u *TbSshKeyInfo) (TbSshKeyInfo, error) {
+type TbSshKeyInfo struct {
+	Id             string            `json:"id"`
+	Name           string            `json:"name"`
+	ConnectionName string            `json:"connectionName"`
+	Description    string            `json:"description"`
+	CspSshKeyName  string            `json:"cspSshKeyName"`
+	Fingerprint    string            `json:"fingerprint"`
+	Username       string            `json:"username"`
+	PublicKey      string            `json:"publicKey"`
+	PrivateKey     string            `json:"privateKey"`
+	KeyValueList   []common.KeyValue `json:"keyValueList"`
+}
+
+func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 	check, _ := CheckResource(nsId, "sshKey", u.Name)
 
 	if check {

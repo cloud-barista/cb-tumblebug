@@ -21,8 +21,8 @@ var doc = `{
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
+            "url": "http://cloud-barista.github.io",
+            "email": "contact-to-cloud-barista@googlegroups.com"
         },
         "license": {
             "name": "Apache 2.0",
@@ -33,9 +33,108 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/lookupSpec": {
+            "get": {
+                "description": "Lookup spec list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Lookup spec list",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName",
+                        "name": "connectionName",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestLookupSpecRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.SpiderSpecList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/lookupSpec/{specName}": {
+            "get": {
+                "description": "Lookup spec",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Lookup spec",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName",
+                        "name": "connectionName",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestLookupSpecRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Spec name",
+                        "name": "specName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.SpiderSpecInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns": {
             "get": {
-                "description": "list namespace by json RestGetAllNs",
+                "description": "List all namespaces",
                 "consumes": [
                     "application/json"
                 ],
@@ -45,7 +144,7 @@ var doc = `{
                 "tags": [
                     "Namespace"
                 ],
-                "summary": "RestGetAllNs namespace",
+                "summary": "List all namespaces",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -67,52 +166,8 @@ var doc = `{
                     }
                 }
             },
-            "put": {
-                "description": "Update namespace by json RestPutNs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Namespace"
-                ],
-                "summary": "Update namespace",
-                "parameters": [
-                    {
-                        "description": "put Ns",
-                        "name": "namespace",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/common.NsInfo"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.NsInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
             "post": {
-                "description": "Create namespace by json RestPostNs",
+                "description": "Create namespace",
                 "consumes": [
                     "application/json"
                 ],
@@ -125,12 +180,12 @@ var doc = `{
                 "summary": "Create namespace",
                 "parameters": [
                     {
-                        "description": "Post Ns",
-                        "name": "namespace",
+                        "description": "Details for a new namespace",
+                        "name": "nsReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.NsInfo"
+                            "$ref": "#/definitions/common.NsReq"
                         }
                     }
                 ],
@@ -156,7 +211,7 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "delete by json RestDelAllNs",
+                "description": "Delete all namespaces",
                 "consumes": [
                     "application/json"
                 ],
@@ -166,7 +221,7 @@ var doc = `{
                 "tags": [
                     "Namespace"
                 ],
-                "summary": "delete all RestDelAllNs",
+                "summary": "Delete all namespaces",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -185,7 +240,7 @@ var doc = `{
         },
         "/ns/{nsId}": {
             "get": {
-                "description": "Get namespace by json RestGetNs",
+                "description": "Get namespace",
                 "consumes": [
                     "application/json"
                 ],
@@ -195,7 +250,7 @@ var doc = `{
                 "tags": [
                     "Namespace"
                 ],
-                "summary": "RestGetNs namespace",
+                "summary": "Get namespace",
                 "parameters": [
                     {
                         "type": "string",
@@ -227,7 +282,7 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "Delete namespace by json RestDelNs",
+                "description": "Delete namespace",
                 "consumes": [
                     "application/json"
                 ],
@@ -237,12 +292,1904 @@ var doc = `{
                 "tags": [
                     "Namespace"
                 ],
-                "summary": "RestDelNs namespace",
+                "summary": "Delete namespace",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Namespace ID",
                         "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/benchmark/mcis/{mcisId}": {
+            "get": {
+                "description": "Get MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Get MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/benchmarkall/mcis/{mcisId}": {
+            "get": {
+                "description": "List all MCISs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "List all MCISs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Host IP address to benchmark",
+                        "name": "hostIP",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.RestGetAllBenchmarkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.BenchmarkInfoArray"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cmd/mcis/{mcisId}": {
+            "post": {
+                "description": "Create MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Create MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object",
+                        "name": "mcisInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}": {
+            "post": {
+                "description": "Create MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Create MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object",
+                        "name": "mcisInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/install/mcis/{mcisId}": {
+            "post": {
+                "description": "Create MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Create MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object",
+                        "name": "mcisInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis": {
+            "get": {
+                "description": "List all MCISs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "List all MCISs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.RestGetAllMcisResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Create MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object",
+                        "name": "mcisReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all MCISs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Delete all MCISs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis/recommend": {
+            "post": {
+                "description": "Create MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Create MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object",
+                        "name": "mcisInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis/{mcisId}": {
+            "get": {
+                "description": "Get MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Get MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Delete MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis/{mcisId}/vm": {
+            "post": {
+                "description": "Create MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Create MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an VM object",
+                        "name": "vmReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbVmReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}": {
+            "get": {
+                "description": "Get MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Get MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS"
+                ],
+                "summary": "Delete MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/fetchSpecs": {
+            "post": {
+                "description": "Fetch specs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Fetch specs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/image": {
+            "get": {
+                "description": "List all images",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "List all images",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestGetAllImageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Register image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Register image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "registerWithInfo or registerWithId",
+                        "name": "registeringMethod",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an image object",
+                        "name": "imageInfo",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbImageInfo"
+                        }
+                    },
+                    {
+                        "description": "name, connectionName and cspImageId",
+                        "name": "imageId",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbImageReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbImageInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all images",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Delete all images",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/image/{imageId}": {
+            "get": {
+                "description": "Get image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Get image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image ID",
+                        "name": "imageId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbImageInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Delete image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image ID",
+                        "name": "imageId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/securityGroup": {
+            "get": {
+                "description": "List all Security Groups",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Security Group"
+                ],
+                "summary": "List all Security Groups",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestGetAllSecurityGroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create Security Group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Security Group"
+                ],
+                "summary": "Create Security Group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an securityGroup object",
+                        "name": "securityGroupReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSecurityGroupReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all Security Groups",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Security Group"
+                ],
+                "summary": "Delete all Security Groups",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/securityGroup/{securityGroupId}": {
+            "get": {
+                "description": "Get Security Group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Security Group"
+                ],
+                "summary": "Get Security Group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Security Group ID",
+                        "name": "securityGroupId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete Security Group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Security Group"
+                ],
+                "summary": "Delete Security Group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Security Group ID",
+                        "name": "securityGroupId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/spec": {
+            "get": {
+                "description": "List all specs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "List all specs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestGetAllSpecResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Register spec",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Register spec",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "registerWithInfo or else",
+                        "name": "registeringMethod",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an spec object",
+                        "name": "specInfo",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                        }
+                    },
+                    {
+                        "description": "name, connectionName and cspSpecName",
+                        "name": "specName",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSpecReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all specs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Delete all specs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/spec/{specId}": {
+            "get": {
+                "description": "Get spec",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Get spec",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Spec ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete spec",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Delete spec",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Spec ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/sshKey": {
+            "get": {
+                "description": "List all SSH Keys",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SSH Key"
+                ],
+                "summary": "List all SSH Keys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestGetAllSshKeyResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create SSH Key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SSH Key"
+                ],
+                "summary": "Create SSH Key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an SSH Key object",
+                        "name": "sshKeyInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all SSH Keys",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SSH Key"
+                ],
+                "summary": "Delete all SSH Keys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/sshKey/{sshKeyId}": {
+            "get": {
+                "description": "Get SSH Key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SSH Key"
+                ],
+                "summary": "Get SSH Key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SSH Key ID",
+                        "name": "sshKeyId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete SSH Key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SSH Key"
+                ],
+                "summary": "Delete SSH Key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SSH Key ID",
+                        "name": "sshKeyId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/vNet": {
+            "get": {
+                "description": "List all VNets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VNet"
+                ],
+                "summary": "List all VNets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestGetAllVNetResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create VNet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VNet"
+                ],
+                "summary": "Create VNet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an VNet object",
+                        "name": "vNetReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbVNetReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbVNetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all VNets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VNet"
+                ],
+                "summary": "Delete all VNets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/vNet/{vNetId}": {
+            "get": {
+                "description": "Get VNet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VNet"
+                ],
+                "summary": "Get VNet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbVNetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete VNet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "VNet"
+                ],
+                "summary": "Delete VNet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
                         "in": "path",
                         "required": true
                     }
@@ -265,6 +2212,30 @@ var doc = `{
         }
     },
     "definitions": {
+        "common.IID": {
+            "type": "object",
+            "properties": {
+                "nameId": {
+                    "description": "NameID by user",
+                    "type": "string"
+                },
+                "systemId": {
+                    "description": "SystemID by CloudOS",
+                    "type": "string"
+                }
+            }
+        },
+        "common.KeyValue": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "common.NsInfo": {
             "type": "object",
             "properties": {
@@ -273,13 +2244,23 @@ var doc = `{
                     "example": "Description for this namespace"
                 },
                 "id": {
-                    "description": "Additional fields for response",
+                    "type": "string",
+                    "example": "namespaceid01"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "namespacename01"
+                }
+            }
+        },
+        "common.NsReq": {
+            "type": "object",
+            "properties": {
+                "description": {
                     "type": "string"
                 },
                 "name": {
-                    "description": "Fields for both request and response",
-                    "type": "string",
-                    "example": "namespaceid01"
+                    "type": "string"
                 }
             }
         },
@@ -303,6 +2284,873 @@ var doc = `{
                     "example": "Any message"
                 }
             }
+        },
+        "mcir.RestGetAllImageResponse": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbImageInfo"
+                    }
+                }
+            }
+        },
+        "mcir.RestGetAllSecurityGroupResponse": {
+            "type": "object",
+            "properties": {
+                "securityGroup": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
+                    }
+                }
+            }
+        },
+        "mcir.RestGetAllSpecResponse": {
+            "type": "object",
+            "properties": {
+                "spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbSpecInfo"
+                    }
+                }
+            }
+        },
+        "mcir.RestGetAllSshKeyResponse": {
+            "type": "object",
+            "properties": {
+                "sshKey": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                    }
+                }
+            }
+        },
+        "mcir.RestGetAllVNetResponse": {
+            "type": "object",
+            "properties": {
+                "vNet": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbVNetInfo"
+                    }
+                }
+            }
+        },
+        "mcir.RestLookupSpecRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.SpiderGpuInfo": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "string"
+                },
+                "mem": {
+                    "type": "string"
+                },
+                "mfr": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.SpiderSecurityRuleInfo": {
+            "type": "object",
+            "properties": {
+                "direction": {
+                    "type": "string"
+                },
+                "fromPort": {
+                    "type": "string"
+                },
+                "ipProtocol": {
+                    "type": "string"
+                },
+                "toPort": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.SpiderSpecInfo": {
+            "type": "object",
+            "properties": {
+                "gpu": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.SpiderGpuInfo"
+                    }
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "mem": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "vcpu": {
+                    "$ref": "#/definitions/mcir.SpiderVCpuInfo"
+                }
+            }
+        },
+        "mcir.SpiderSpecList": {
+            "type": "object",
+            "properties": {
+                "vmspec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.SpiderSpecInfo"
+                    }
+                }
+            }
+        },
+        "mcir.SpiderSubnetInfo": {
+            "type": "object",
+            "properties": {
+                "iid": {
+                    "description": "{NameId, SystemId}",
+                    "$ref": "#/definitions/common.IID"
+                },
+                "ipv4_CIDR": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                }
+            }
+        },
+        "mcir.SpiderSubnetReqInfo": {
+            "type": "object",
+            "properties": {
+                "ipv4_CIDR": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.SpiderVCpuInfo": {
+            "type": "object",
+            "properties": {
+                "clock": {
+                    "description": "GHz",
+                    "type": "string"
+                },
+                "count": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbImageInfo": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "creationDate": {
+                    "type": "string"
+                },
+                "cspImageId": {
+                    "type": "string"
+                },
+                "cspImageName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "guestOS": {
+                    "description": "Windows7, Ubuntu etc.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "available, unavailable",
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbImageReq": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspImageId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbSecurityGroupInfo": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSecurityGroupId": {
+                    "type": "string"
+                },
+                "cspSecurityGroupName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "firewallRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.SpiderSecurityRuleInfo"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbSecurityGroupReq": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "firewallRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.SpiderSecurityRuleInfo"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbSpecInfo": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cost_per_hour": {
+                    "type": "string"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "ebs_bw_Mbps": {
+                    "type": "string"
+                },
+                "gpu_model": {
+                    "type": "string"
+                },
+                "gpu_p2p": {
+                    "type": "string"
+                },
+                "gpumem_GiB": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "max_num_storage": {
+                    "type": "string"
+                },
+                "max_total_storage_TiB": {
+                    "type": "string"
+                },
+                "mem_GiB": {
+                    "type": "string"
+                },
+                "mem_MiB": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "net_bw_Gbps": {
+                    "type": "string"
+                },
+                "num_core": {
+                    "type": "string"
+                },
+                "num_gpu": {
+                    "type": "string"
+                },
+                "num_storage": {
+                    "type": "string"
+                },
+                "num_vCPU": {
+                    "type": "string"
+                },
+                "os_type": {
+                    "type": "string"
+                },
+                "storage_GiB": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbSpecReq": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbSshKeyInfo": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspSshKeyName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "fingerprint": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbSshKeyReq": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbVNetInfo": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspVNetId": {
+                    "type": "string"
+                },
+                "cspVNetName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "subnetInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.SpiderSubnetInfo"
+                    }
+                }
+            }
+        },
+        "mcir.TbVNetReq": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnetInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.SpiderSubnetReqInfo"
+                    }
+                }
+            }
+        },
+        "mcis.BenchmarkInfo": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "elapsed": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "resultarray": {
+                    "description": "struct-element cycle ?",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.BenchmarkInfo"
+                    }
+                },
+                "specid": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.BenchmarkInfoArray": {
+            "type": "object",
+            "properties": {
+                "resultarray": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.BenchmarkInfo"
+                    }
+                }
+            }
+        },
+        "mcis.GeoLocation": {
+            "type": "object",
+            "properties": {
+                "briefAddr": {
+                    "type": "string"
+                },
+                "cloudType": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "string"
+                },
+                "longitude": {
+                    "type": "string"
+                },
+                "nativeRegion": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.RegionInfo": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.RestGetAllBenchmarkRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.RestGetAllMcisResponse": {
+            "type": "object",
+            "properties": {
+                "mcis": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbMcisInfo"
+                    }
+                }
+            }
+        },
+        "mcis.SpiderVMInfo": {
+            "type": "object",
+            "properties": {
+                "iid": {
+                    "description": "Fields for response",
+                    "$ref": "#/definitions/common.IID"
+                },
+                "imageIId": {
+                    "$ref": "#/definitions/common.IID"
+                },
+                "imageName": {
+                    "type": "string"
+                },
+                "keyPairIId": {
+                    "$ref": "#/definitions/common.IID"
+                },
+                "keyPairName": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "description": "Fields for request",
+                    "type": "string"
+                },
+                "networkInterface": {
+                    "description": "ex) eth0",
+                    "type": "string"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "$ref": "#/definitions/mcis.RegionInfo"
+                },
+                "securityGroupIIds": {
+                    "description": "AWS, ex) sg-0b7452563e1121bb6",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.IID"
+                    }
+                },
+                "securityGroupNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "startTime": {
+                    "description": "Timezone: based on cloud-barista server location.",
+                    "type": "string"
+                },
+                "subnetIID": {
+                    "description": "AWS, ex) subnet-8c4a53e4",
+                    "$ref": "#/definitions/common.IID"
+                },
+                "subnetName": {
+                    "type": "string"
+                },
+                "vmblockDisk": {
+                    "description": "ex)",
+                    "type": "string"
+                },
+                "vmbootDisk": {
+                    "description": "ex) /dev/sda1",
+                    "type": "string"
+                },
+                "vmspecName": {
+                    "description": "Fields for both request and response",
+                    "type": "string"
+                },
+                "vmuserId": {
+                    "description": "ex) user1",
+                    "type": "string"
+                },
+                "vmuserPasswd": {
+                    "type": "string"
+                },
+                "vpcIID": {
+                    "$ref": "#/definitions/common.IID"
+                },
+                "vpcname": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.TbMcisInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "placement_algo": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbVmInfo"
+                    }
+                }
+            }
+        },
+        "mcis.TbMcisReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "placement_algo": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbVmReq"
+                    }
+                }
+            }
+        },
+        "mcis.TbVmInfo": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspViewVmDetail": {
+                    "$ref": "#/definitions/mcis.SpiderVMInfo"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/mcis.GeoLocation"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "privateDNS": {
+                    "type": "string"
+                },
+                "privateIP": {
+                    "type": "string"
+                },
+                "publicDNS": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "region": {
+                    "description": "2. Provided by CB-Spider",
+                    "$ref": "#/definitions/mcis.RegionInfo"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "3. Required by CB-Tumblebug",
+                    "type": "string"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmBlockDisk": {
+                    "type": "string"
+                },
+                "vmBootDisk": {
+                    "description": "ex) /dev/sda1",
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.TbVmReq": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "subnetId": {
+                    "type": "string"
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -318,12 +3166,12 @@ type swaggerInfo struct {
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
-	Version:     "1.0",
+	Version:     "0.2.0",
 	Host:        "localhost:1323",
 	BasePath:    "/tumblebug",
 	Schemes:     []string{},
-	Title:       "Swagger Example API",
-	Description: "This is a sample server Petstore server.",
+	Title:       "CB-Tumblebug REST API",
+	Description: "CB-Tumblebug REST API",
 }
 
 type s struct{}

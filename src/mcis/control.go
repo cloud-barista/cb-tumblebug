@@ -143,95 +143,97 @@ type RegionInfo struct { // Spider
 	Zone   string
 }
 
-/*
 type TbMcisReq struct {
-	//Id     string    `json:"id"`
-	Name   string    `json:"name"`
-	Vm_req []TbVmReq `json:"vm_req"`
-	//Vm_num         string  `json:"vm_num"`
-	Placement_algo string `json:"placement_algo"`
-	Description    string `json:"description"`
+	Name           string    `json:"name"`
+	Vm             []TbVmReq `json:"vm"`
+	Placement_algo string    `json:"placement_algo"`
+	Description    string    `json:"description"`
 }
-*/
 
 type TbMcisInfo struct {
-	// Fields for both request and response
+	Id             string     `json:"id"`
 	Name           string     `json:"name"`
 	Vm             []TbVmInfo `json:"vm"`
 	Placement_algo string     `json:"placement_algo"`
 	Description    string     `json:"description"`
-
-	// Additional fields for response
-	Id           string `json:"id"`
-	Status       string `json:"status"`
-	TargetStatus string `json:"targetStatus"`
-	TargetAction string `json:"targetAction"`
+	Status         string     `json:"status"`
+	TargetStatus   string     `json:"targetStatus"`
+	TargetAction   string     `json:"targetAction"`
 
 	// Disabled for now
 	//Vm             []vmOverview `json:"vm"`
 }
 
-/*
 type TbVmReq struct {
-	//Id             string `json:"id"`
-	//ConnectionName string `json:"connectionName"`
-
-	// 1. Required by CB-Spider
-	//CspVmName string `json:"cspVmName"` // will be deprecated
-
-	CspImageName        string `json:"cspImageName"`
-	CspVirtualNetworkId string `json:"cspVirtualNetworkId"`
-	//CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
-	//CspPublicIPId         string   `json:"cspPublicIPId"`
-	CspSecurityGroupIds []string `json:"cspSecurityGroupIds"`
-	CspSpecId           string   `json:"cspSpecId"`
-	CspKeyPairName      string   `json:"cspKeyPairName"`
-
-	CbImageId          string `json:"cbImageId"`
-	CbVirtualNetworkId string `json:"cbVirtualNetworkId"`
-	//CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
-	//CbPublicIPId         string   `json:"cbPublicIPId"`
-	CbSecurityGroupIds []string `json:"cbSecurityGroupIds"`
-	CbSpecId           string   `json:"cbSpecId"`
-	CbKeyPairId        string   `json:"cbKeyPairId"`
-
-	VMUserId     string `json:"vmUserId"`
-	VMUserPasswd string `json:"vmUserPasswd"`
-
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	SpecId         string `json:"specId"`
-	ImageId        string `json:"imageId"`
-	VNetId         string `json:"vNetId"`
-	SubnetId       string `json:"subnetId"`
-	//Vnic_id            string   `json:"vnic_id"`
-	//Public_ip_id       string   `json:"public_ip_id"`
+	Name             string   `json:"name"`
+	ConnectionName   string   `json:"connectionName"`
+	SpecId           string   `json:"specId"`
+	ImageId          string   `json:"imageId"`
+	VNetId           string   `json:"vNetId"`
+	SubnetId         string   `json:"subnetId"`
 	SecurityGroupIds []string `json:"securityGroupIds"`
 	SshKeyId         string   `json:"sshKeyId"`
-	Description      string   `json:"description"`
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
+	Description      string   `json:"description"`
+
+	/*
+		//Id             string `json:"id"`
+		//ConnectionName string `json:"connectionName"`
+
+		// 1. Required by CB-Spider
+		//CspVmName string `json:"cspVmName"` // will be deprecated
+
+		CspImageName        string `json:"cspImageName"`
+		CspVirtualNetworkId string `json:"cspVirtualNetworkId"`
+		//CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
+		//CspPublicIPId         string   `json:"cspPublicIPId"`
+		CspSecurityGroupIds []string `json:"cspSecurityGroupIds"`
+		CspSpecId           string   `json:"cspSpecId"`
+		CspKeyPairName      string   `json:"cspKeyPairName"`
+
+		CbImageId          string `json:"cbImageId"`
+		CbVirtualNetworkId string `json:"cbVirtualNetworkId"`
+		//CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
+		//CbPublicIPId         string   `json:"cbPublicIPId"`
+		CbSecurityGroupIds []string `json:"cbSecurityGroupIds"`
+		CbSpecId           string   `json:"cbSpecId"`
+		CbKeyPairId        string   `json:"cbKeyPairId"`
+
+		VMUserId     string `json:"vmUserId"`
+		VMUserPasswd string `json:"vmUserPasswd"`
+
+		Name           string `json:"name"`
+		ConnectionName string `json:"connectionName"`
+		SpecId         string `json:"specId"`
+		ImageId        string `json:"imageId"`
+		VNetId         string `json:"vNetId"`
+		SubnetId       string `json:"subnetId"`
+		//Vnic_id            string   `json:"vnic_id"`
+		//Public_ip_id       string   `json:"public_ip_id"`
+		SecurityGroupIds []string `json:"securityGroupIds"`
+		SshKeyId         string   `json:"sshKeyId"`
+		Description      string   `json:"description"`
+		VmUserAccount    string   `json:"vmUserAccount"`
+		VmUserPassword   string   `json:"vmUserPassword"`
+	*/
 }
-*/
 
 type TbVmInfo struct {
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	SpecId         string `json:"specId"`
-	ImageId        string `json:"imageId"`
-	VNetId         string `json:"vNetId"`
-	SubnetId       string `json:"subnetId"`
-	//Vnic_id            string   `json:"vnic_id"`
-	//Public_ip_id       string   `json:"public_ip_id"`
+	Id               string   `json:"id"`
+	Name             string   `json:"name"`
+	ConnectionName   string   `json:"connectionName"`
+	SpecId           string   `json:"specId"`
+	ImageId          string   `json:"imageId"`
+	VNetId           string   `json:"vNetId"`
+	SubnetId         string   `json:"subnetId"`
 	SecurityGroupIds []string `json:"securityGroupIds"`
 	SshKeyId         string   `json:"sshKeyId"`
-	Description      string   `json:"description"`
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
-
-	VmUserId     string `json:"vmUserId"`
-	VmUserPasswd string `json:"vmUserPasswd"`
+	Description      string   `json:"description"`
+	//Vnic_id            string   `json:"vnic_id"`
+	//Public_ip_id       string   `json:"public_ip_id"`
 
 	Location GeoLocation `json:"location"`
 
@@ -897,7 +899,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 // MCIS Control
 
-func CreateMcis(nsId string, req *TbMcisInfo) string {
+func CreateMcis(nsId string, req *TbMcisReq) string {
 	/*
 		check, _ := CheckMcis(nsId, req.Name)
 
@@ -912,14 +914,21 @@ func CreateMcis(nsId string, req *TbMcisInfo) string {
 	targetStatus := StatusRunning
 
 	//req.Id = common.GenUuid()
-	req.Id = common.GenId(req.Name)
+	//req.Id = common.GenId(req.Name)
+	mcisId := common.GenId(req.Name)
 	vmRequest := req.Vm
-	mcisId := req.Id
 
 	fmt.Println("=========================== Put createSvc")
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
-	mapA := map[string]string{"id": mcisId, "name": req.Name, "description": req.Description, "status": StatusCreating, "targetAction": targetAction, "targetStatus": targetStatus}
+	mapA := map[string]string{
+		"id":           mcisId,
+		"name":         req.Name,
+		"description":  req.Description,
+		"status":       StatusCreating,
+		"targetAction": targetAction,
+		"targetStatus": targetStatus,
+	}
 	val, _ := json.Marshal(mapA)
 	err := common.CBStore.Put(string(key), string(val))
 	if err != nil {
