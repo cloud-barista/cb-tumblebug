@@ -9,7 +9,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/common"
 )
 
-
 func RestCheckNs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -33,8 +32,8 @@ func RestCheckNs(c echo.Context) error {
 }
 
 // RestDelAllNs godoc
-// @Summary delete all RestDelAllNs
-// @Description delete by json RestDelAllNs
+// @Summary Delete all namespaces
+// @Description Delete all namespaces
 // @Tags Namespace
 // @Accept  json
 // @Produce  json
@@ -55,8 +54,8 @@ func RestDelAllNs(c echo.Context) error {
 }
 
 // RestDelNs godoc
-// @Summary RestDelNs namespace
-// @Description Delete namespace by json RestDelNs
+// @Summary Delete namespace
+// @Description Delete namespace
 // @Tags Namespace
 // @Accept  json
 // @Produce  json
@@ -71,14 +70,13 @@ func RestDelNs(c echo.Context) error {
 	err := common.DelNs(id)
 	if err != nil {
 		common.CBLog.Error(err)
-		mapA :=  common.SimpleMsg{err.Error()}
+		mapA := common.SimpleMsg{err.Error()}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
 
-	mapA := common.SimpleMsg{"The ns has been deleted"} 
+	mapA := common.SimpleMsg{"The ns has been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
 }
-
 
 // Response structure for RestGetAllNs
 type RestGetAllNsResponse struct {
@@ -87,8 +85,8 @@ type RestGetAllNsResponse struct {
 }
 
 // RestGetAllNs godoc
-// @Summary RestGetAllNs namespace
-// @Description list namespace by json RestGetAllNs
+// @Summary List all namespaces
+// @Description List all namespaces
 // @Tags Namespace
 // @Accept  json
 // @Produce  json
@@ -117,8 +115,8 @@ func RestGetAllNs(c echo.Context) error {
 }
 
 // RestGetNs godoc
-// @Summary RestGetNs namespace
-// @Description Get namespace by json RestGetNs
+// @Summary Get namespace
+// @Description Get namespace
 // @Tags Namespace
 // @Accept  json
 // @Produce  json
@@ -139,20 +137,20 @@ func RestGetNs(c echo.Context) error {
 	}
 }
 
-// PostNs godoc
+// RestPostNs godoc
 // @Summary Create namespace
-// @Description Create namespace by json RestPostNs
+// @Description Create namespace
 // @Tags Namespace
 // @Accept  json
 // @Produce  json
-// @Param namespace body common.NsInfo true "Post Ns"
+// @Param nsReq body common.NsReq true "Details for a new namespace"
 // @Success 200 {object} common.NsInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns [post]
 func RestPostNs(c echo.Context) error {
 
-	u := &common.NsInfo{}
+	u := &common.NsReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
@@ -169,17 +167,19 @@ func RestPostNs(c echo.Context) error {
 
 }
 
-// PutNs godoc
+/* function RestPutNs not yet implemented
+// RestPutNs godoc
 // @Summary Update namespace
-// @Description Update namespace by json RestPutNs
+// @Description Update namespace
 // @Tags Namespace
 // @Accept  json
 // @Produce  json
-// @Param namespace body common.NsInfo true "put Ns"
+// @Param namespace body common.NsInfo true "Details to update existing namespace"
 // @Success 200 {object} common.NsInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns [put]
+// @Router /ns/{nsId} [put]
+*/
 func RestPutNs(c echo.Context) error {
 	return nil
 }

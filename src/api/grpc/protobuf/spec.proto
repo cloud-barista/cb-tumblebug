@@ -17,7 +17,6 @@ service Spec {
     rpc ListSpecId (NsId) returns (ResourceIdList) {}
 }
 
-/*
 message TbSpecReq {
     string name = 2 [json_name="name", (gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
     string connection_name = 3 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
@@ -30,12 +29,10 @@ message TbSpecReq {
     string storage_gib = 10 [json_name="storage_GiB", (gogoproto.jsontag) = "storage_GiB", (gogoproto.moretags) = "yaml:\"storage_GiB\""];
     string description = 11 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
 }
-*/
 
 message RegisterSpecWithCspSpecNameWrapper {
     string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
-    //TbSpecReq tb_spec_req = 2 [json_name="tbSpecReq", (gogoproto.jsontag) = "tbSpecReq", (gogoproto.moretags) = "yaml:\"tbSpecReq\""];
-    TbSpecInfo tb_spec_info = 2 [json_name="tbSpecInfo", (gogoproto.jsontag) = "tbSpecInfo", (gogoproto.moretags) = "yaml:\"tbSpecInfo\""];
+    TbSpecReq tb_spec_req = 2 [json_name="tbSpecReq", (gogoproto.jsontag) = "tbSpecReq", (gogoproto.moretags) = "yaml:\"tbSpecReq\""];    
 }
 
 message TbSpecInfo {

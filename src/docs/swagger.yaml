@@ -1,16 +1,38 @@
 basePath: /tumblebug
 definitions:
+  common.IID:
+    properties:
+      nameId:
+        description: NameID by user
+        type: string
+      systemId:
+        description: SystemID by CloudOS
+        type: string
+    type: object
+  common.KeyValue:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
   common.NsInfo:
     properties:
       description:
         example: Description for this namespace
         type: string
       id:
-        description: Additional fields for response
+        example: namespaceid01
         type: string
       name:
-        description: Fields for both request and response
-        example: namespaceid01
+        example: namespacename01
+        type: string
+    type: object
+  common.NsReq:
+    properties:
+      description:
+        type: string
+      name:
         type: string
     type: object
   common.RestGetAllNsResponse:
@@ -27,25 +49,663 @@ definitions:
         example: Any message
         type: string
     type: object
+  mcir.RestGetAllImageResponse:
+    properties:
+      image:
+        items:
+          $ref: '#/definitions/mcir.TbImageInfo'
+        type: array
+    type: object
+  mcir.RestGetAllSecurityGroupResponse:
+    properties:
+      securityGroup:
+        items:
+          $ref: '#/definitions/mcir.TbSecurityGroupInfo'
+        type: array
+    type: object
+  mcir.RestGetAllSpecResponse:
+    properties:
+      spec:
+        items:
+          $ref: '#/definitions/mcir.TbSpecInfo'
+        type: array
+    type: object
+  mcir.RestGetAllSshKeyResponse:
+    properties:
+      sshKey:
+        items:
+          $ref: '#/definitions/mcir.TbSshKeyInfo'
+        type: array
+    type: object
+  mcir.RestGetAllVNetResponse:
+    properties:
+      vNet:
+        items:
+          $ref: '#/definitions/mcir.TbVNetInfo'
+        type: array
+    type: object
+  mcir.RestLookupSpecRequest:
+    properties:
+      connectionName:
+        type: string
+    type: object
+  mcir.SpiderGpuInfo:
+    properties:
+      count:
+        type: string
+      mem:
+        type: string
+      mfr:
+        type: string
+      model:
+        type: string
+    type: object
+  mcir.SpiderSecurityRuleInfo:
+    properties:
+      direction:
+        type: string
+      fromPort:
+        type: string
+      ipProtocol:
+        type: string
+      toPort:
+        type: string
+    type: object
+  mcir.SpiderSpecInfo:
+    properties:
+      gpu:
+        items:
+          $ref: '#/definitions/mcir.SpiderGpuInfo'
+        type: array
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      mem:
+        type: string
+      name:
+        type: string
+      region:
+        type: string
+      vcpu:
+        $ref: '#/definitions/mcir.SpiderVCpuInfo'
+    type: object
+  mcir.SpiderSpecList:
+    properties:
+      vmspec:
+        items:
+          $ref: '#/definitions/mcir.SpiderSpecInfo'
+        type: array
+    type: object
+  mcir.SpiderSubnetInfo:
+    properties:
+      iid:
+        $ref: '#/definitions/common.IID'
+        description: '{NameId, SystemId}'
+      ipv4_CIDR:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+    type: object
+  mcir.SpiderSubnetReqInfo:
+    properties:
+      ipv4_CIDR:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+    type: object
+  mcir.SpiderVCpuInfo:
+    properties:
+      clock:
+        description: GHz
+        type: string
+      count:
+        type: string
+    type: object
+  mcir.TbImageInfo:
+    properties:
+      connectionName:
+        type: string
+      creationDate:
+        type: string
+      cspImageId:
+        type: string
+      cspImageName:
+        type: string
+      description:
+        type: string
+      guestOS:
+        description: Windows7, Ubuntu etc.
+        type: string
+      id:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      status:
+        description: available, unavailable
+        type: string
+    type: object
+  mcir.TbImageReq:
+    properties:
+      connectionName:
+        type: string
+      cspImageId:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  mcir.TbSecurityGroupInfo:
+    properties:
+      connectionName:
+        type: string
+      cspSecurityGroupId:
+        type: string
+      cspSecurityGroupName:
+        type: string
+      description:
+        type: string
+      firewallRules:
+        items:
+          $ref: '#/definitions/mcir.SpiderSecurityRuleInfo'
+        type: array
+      id:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      vNetId:
+        type: string
+    type: object
+  mcir.TbSecurityGroupReq:
+    properties:
+      connectionName:
+        type: string
+      description:
+        type: string
+      firewallRules:
+        items:
+          $ref: '#/definitions/mcir.SpiderSecurityRuleInfo'
+        type: array
+      name:
+        type: string
+      vNetId:
+        type: string
+    type: object
+  mcir.TbSpecInfo:
+    properties:
+      connectionName:
+        type: string
+      cost_per_hour:
+        type: string
+      cspSpecName:
+        type: string
+      description:
+        type: string
+      ebs_bw_Mbps:
+        type: string
+      gpu_model:
+        type: string
+      gpu_p2p:
+        type: string
+      gpumem_GiB:
+        type: string
+      id:
+        type: string
+      max_num_storage:
+        type: string
+      max_total_storage_TiB:
+        type: string
+      mem_GiB:
+        type: string
+      mem_MiB:
+        type: string
+      name:
+        type: string
+      net_bw_Gbps:
+        type: string
+      num_core:
+        type: string
+      num_gpu:
+        type: string
+      num_storage:
+        type: string
+      num_vCPU:
+        type: string
+      os_type:
+        type: string
+      storage_GiB:
+        type: string
+    type: object
+  mcir.TbSpecReq:
+    properties:
+      connectionName:
+        type: string
+      cspSpecName:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  mcir.TbSshKeyInfo:
+    properties:
+      connectionName:
+        type: string
+      cspSshKeyName:
+        type: string
+      description:
+        type: string
+      fingerprint:
+        type: string
+      id:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      privateKey:
+        type: string
+      publicKey:
+        type: string
+      username:
+        type: string
+    type: object
+  mcir.TbSshKeyReq:
+    properties:
+      connectionName:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  mcir.TbVNetInfo:
+    properties:
+      cidrBlock:
+        type: string
+      connectionName:
+        type: string
+      cspVNetId:
+        type: string
+      cspVNetName:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      status:
+        type: string
+      subnetInfoList:
+        items:
+          $ref: '#/definitions/mcir.SpiderSubnetInfo'
+        type: array
+    type: object
+  mcir.TbVNetReq:
+    properties:
+      cidrBlock:
+        type: string
+      connectionName:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      subnetInfoList:
+        items:
+          $ref: '#/definitions/mcir.SpiderSubnetReqInfo'
+        type: array
+    type: object
+  mcis.BenchmarkInfo:
+    properties:
+      desc:
+        type: string
+      elapsed:
+        type: string
+      result:
+        type: string
+      resultarray:
+        description: struct-element cycle ?
+        items:
+          $ref: '#/definitions/mcis.BenchmarkInfo'
+        type: array
+      specid:
+        type: string
+      unit:
+        type: string
+    type: object
+  mcis.BenchmarkInfoArray:
+    properties:
+      resultarray:
+        items:
+          $ref: '#/definitions/mcis.BenchmarkInfo'
+        type: array
+    type: object
+  mcis.GeoLocation:
+    properties:
+      briefAddr:
+        type: string
+      cloudType:
+        type: string
+      latitude:
+        type: string
+      longitude:
+        type: string
+      nativeRegion:
+        type: string
+    type: object
+  mcis.RegionInfo:
+    properties:
+      region:
+        type: string
+      zone:
+        type: string
+    type: object
+  mcis.RestGetAllBenchmarkRequest:
+    properties:
+      host:
+        type: string
+    type: object
+  mcis.RestGetAllMcisResponse:
+    properties:
+      mcis:
+        items:
+          $ref: '#/definitions/mcis.TbMcisInfo'
+        type: array
+    type: object
+  mcis.SpiderVMInfo:
+    properties:
+      iid:
+        $ref: '#/definitions/common.IID'
+        description: Fields for response
+      imageIId:
+        $ref: '#/definitions/common.IID'
+      imageName:
+        type: string
+      keyPairIId:
+        $ref: '#/definitions/common.IID'
+      keyPairName:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        description: Fields for request
+        type: string
+      networkInterface:
+        description: ex) eth0
+        type: string
+      privateDNS:
+        type: string
+      privateIP:
+        type: string
+      publicDNS:
+        type: string
+      publicIP:
+        type: string
+      region:
+        $ref: '#/definitions/mcis.RegionInfo'
+        description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
+      securityGroupIIds:
+        description: AWS, ex) sg-0b7452563e1121bb6
+        items:
+          $ref: '#/definitions/common.IID'
+        type: array
+      securityGroupNames:
+        items:
+          type: string
+        type: array
+      startTime:
+        description: 'Timezone: based on cloud-barista server location.'
+        type: string
+      subnetIID:
+        $ref: '#/definitions/common.IID'
+        description: AWS, ex) subnet-8c4a53e4
+      subnetName:
+        type: string
+      vmblockDisk:
+        description: ex)
+        type: string
+      vmbootDisk:
+        description: ex) /dev/sda1
+        type: string
+      vmspecName:
+        description: Fields for both request and response
+        type: string
+      vmuserId:
+        description: ex) user1
+        type: string
+      vmuserPasswd:
+        type: string
+      vpcIID:
+        $ref: '#/definitions/common.IID'
+      vpcname:
+        type: string
+    type: object
+  mcis.TbMcisInfo:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      placement_algo:
+        type: string
+      status:
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mcis.TbVmInfo'
+        type: array
+    type: object
+  mcis.TbMcisReq:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      placement_algo:
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mcis.TbVmReq'
+        type: array
+    type: object
+  mcis.TbVmInfo:
+    properties:
+      connectionName:
+        type: string
+      cspViewVmDetail:
+        $ref: '#/definitions/mcis.SpiderVMInfo'
+      description:
+        type: string
+      id:
+        type: string
+      imageId:
+        type: string
+      location:
+        $ref: '#/definitions/mcis.GeoLocation'
+      name:
+        type: string
+      privateDNS:
+        type: string
+      privateIP:
+        type: string
+      publicDNS:
+        type: string
+      publicIP:
+        type: string
+      region:
+        $ref: '#/definitions/mcis.RegionInfo'
+        description: 2. Provided by CB-Spider
+      securityGroupIds:
+        items:
+          type: string
+        type: array
+      specId:
+        type: string
+      sshKeyId:
+        type: string
+      status:
+        description: 3. Required by CB-Tumblebug
+        type: string
+      subnetId:
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+      vNetId:
+        type: string
+      vmBlockDisk:
+        type: string
+      vmBootDisk:
+        description: ex) /dev/sda1
+        type: string
+      vmUserAccount:
+        type: string
+      vmUserPassword:
+        type: string
+    type: object
+  mcis.TbVmReq:
+    properties:
+      connectionName:
+        type: string
+      description:
+        type: string
+      imageId:
+        type: string
+      name:
+        type: string
+      securityGroupIds:
+        items:
+          type: string
+        type: array
+      specId:
+        type: string
+      sshKeyId:
+        type: string
+      subnetId:
+        type: string
+      vNetId:
+        type: string
+      vmUserAccount:
+        type: string
+      vmUserPassword:
+        type: string
+    type: object
 host: localhost:1323
 info:
   contact:
-    email: support@swagger.io
+    email: contact-to-cloud-barista@googlegroups.com
     name: API Support
-    url: http://www.swagger.io/support
-  description: This is a sample server Petstore server.
+    url: http://cloud-barista.github.io
+  description: CB-Tumblebug REST API
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: Swagger Example API
-  version: "1.0"
+  title: CB-Tumblebug REST API
+  version: 0.2.0
 paths:
+  /lookupSpec:
+    get:
+      consumes:
+      - application/json
+      description: Lookup spec list
+      parameters:
+      - description: Specify connectionName
+        in: body
+        name: connectionName
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestLookupSpecRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.SpiderSpecList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Lookup spec list
+      tags:
+      - Spec
+  /lookupSpec/{specName}:
+    get:
+      consumes:
+      - application/json
+      description: Lookup spec
+      parameters:
+      - description: Specify connectionName
+        in: body
+        name: connectionName
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestLookupSpecRequest'
+      - description: Spec name
+        in: path
+        name: specName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.SpiderSpecInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Lookup spec
+      tags:
+      - Spec
   /ns:
     delete:
       consumes:
       - application/json
-      description: delete by json RestDelAllNs
+      description: Delete all namespaces
       produces:
       - application/json
       responses:
@@ -57,13 +717,13 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: delete all RestDelAllNs
+      summary: Delete all namespaces
       tags:
       - Namespace
     get:
       consumes:
       - application/json
-      description: list namespace by json RestGetAllNs
+      description: List all namespaces
       produces:
       - application/json
       responses:
@@ -79,20 +739,20 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: RestGetAllNs namespace
+      summary: List all namespaces
       tags:
       - Namespace
     post:
       consumes:
       - application/json
-      description: Create namespace by json RestPostNs
+      description: Create namespace
       parameters:
-      - description: Post Ns
+      - description: Details for a new namespace
         in: body
-        name: namespace
+        name: nsReq
         required: true
         schema:
-          $ref: '#/definitions/common.NsInfo'
+          $ref: '#/definitions/common.NsReq'
       produces:
       - application/json
       responses:
@@ -111,40 +771,11 @@ paths:
       summary: Create namespace
       tags:
       - Namespace
-    put:
-      consumes:
-      - application/json
-      description: Update namespace by json RestPutNs
-      parameters:
-      - description: put Ns
-        in: body
-        name: namespace
-        required: true
-        schema:
-          $ref: '#/definitions/common.NsInfo'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.NsInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Update namespace
-      tags:
-      - Namespace
   /ns/{nsId}:
     delete:
       consumes:
       - application/json
-      description: Delete namespace by json RestDelNs
+      description: Delete namespace
       parameters:
       - description: Namespace ID
         in: path
@@ -162,13 +793,13 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: RestDelNs namespace
+      summary: Delete namespace
       tags:
       - Namespace
     get:
       consumes:
       - application/json
-      description: Get namespace by json RestGetNs
+      description: Get namespace
       parameters:
       - description: Namespace ID
         in: path
@@ -190,7 +821,1266 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: RestGetNs namespace
+      summary: Get namespace
       tags:
       - Namespace
+  /ns/{nsId}/benchmark/mcis/{mcisId}:
+    get:
+      consumes:
+      - application/json
+      description: Get MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/benchmarkall/mcis/{mcisId}:
+    get:
+      consumes:
+      - application/json
+      description: List all MCISs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Host IP address to benchmark
+        in: body
+        name: hostIP
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.RestGetAllBenchmarkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.BenchmarkInfoArray'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all MCISs
+      tags:
+      - MCIS
+  /ns/{nsId}/cmd/mcis/{mcisId}:
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSshKeyInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}:
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSshKeyInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/install/mcis/{mcisId}:
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSshKeyInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/mcis:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all MCISs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all MCISs
+      tags:
+      - MCIS
+    get:
+      consumes:
+      - application/json
+      description: List all MCISs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.RestGetAllMcisResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all MCISs
+      tags:
+      - MCIS
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbMcisReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/mcis/{mcisId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete MCIS
+      tags:
+      - MCIS
+    get:
+      consumes:
+      - application/json
+      description: Get MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/mcis/{mcisId}/vm:
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an VM object
+        in: body
+        name: vmReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbVmReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete MCIS
+      tags:
+      - MCIS
+    get:
+      consumes:
+      - application/json
+      description: Get MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/mcis/recommend:
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSshKeyInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS
+      tags:
+      - MCIS
+  /ns/{nsId}/resources/fetchSpecs:
+    post:
+      consumes:
+      - application/json
+      description: Fetch specs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Fetch specs
+      tags:
+      - Spec
+  /ns/{nsId}/resources/image:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all images
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all images
+      tags:
+      - Image
+    get:
+      consumes:
+      - application/json
+      description: List all images
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestGetAllImageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all images
+      tags:
+      - Image
+    post:
+      consumes:
+      - application/json
+      description: Register image
+      parameters:
+      - description: registerWithInfo or registerWithId
+        in: query
+        name: registeringMethod
+        required: true
+        type: string
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an image object
+        in: body
+        name: imageInfo
+        schema:
+          $ref: '#/definitions/mcir.TbImageInfo'
+      - description: name, connectionName and cspImageId
+        in: body
+        name: imageId
+        schema:
+          $ref: '#/definitions/mcir.TbImageReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbImageInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Register image
+      tags:
+      - Image
+  /ns/{nsId}/resources/image/{imageId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete image
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Image ID
+        in: path
+        name: imageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete image
+      tags:
+      - Image
+    get:
+      consumes:
+      - application/json
+      description: Get image
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Image ID
+        in: path
+        name: imageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbImageInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get image
+      tags:
+      - Image
+  /ns/{nsId}/resources/securityGroup:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all Security Groups
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all Security Groups
+      tags:
+      - Security Group
+    get:
+      consumes:
+      - application/json
+      description: List all Security Groups
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestGetAllSecurityGroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all Security Groups
+      tags:
+      - Security Group
+    post:
+      consumes:
+      - application/json
+      description: Create Security Group
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an securityGroup object
+        in: body
+        name: securityGroupReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSecurityGroupReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create Security Group
+      tags:
+      - Security Group
+  /ns/{nsId}/resources/securityGroup/{securityGroupId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Security Group
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Security Group ID
+        in: path
+        name: securityGroupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete Security Group
+      tags:
+      - Security Group
+    get:
+      consumes:
+      - application/json
+      description: Get Security Group
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Security Group ID
+        in: path
+        name: securityGroupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get Security Group
+      tags:
+      - Security Group
+  /ns/{nsId}/resources/spec:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all specs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all specs
+      tags:
+      - Spec
+    get:
+      consumes:
+      - application/json
+      description: List all specs
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestGetAllSpecResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all specs
+      tags:
+      - Spec
+    post:
+      consumes:
+      - application/json
+      description: Register spec
+      parameters:
+      - description: registerWithInfo or else
+        in: query
+        name: registeringMethod
+        required: true
+        type: string
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an spec object
+        in: body
+        name: specInfo
+        schema:
+          $ref: '#/definitions/mcir.TbSpecInfo'
+      - description: name, connectionName and cspSpecName
+        in: body
+        name: specName
+        schema:
+          $ref: '#/definitions/mcir.TbSpecReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSpecInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Register spec
+      tags:
+      - Spec
+  /ns/{nsId}/resources/spec/{specId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete spec
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Spec ID
+        in: path
+        name: specId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete spec
+      tags:
+      - Spec
+    get:
+      consumes:
+      - application/json
+      description: Get spec
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Spec ID
+        in: path
+        name: specId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSpecInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get spec
+      tags:
+      - Spec
+  /ns/{nsId}/resources/sshKey:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all SSH Keys
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all SSH Keys
+      tags:
+      - SSH Key
+    get:
+      consumes:
+      - application/json
+      description: List all SSH Keys
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestGetAllSshKeyResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all SSH Keys
+      tags:
+      - SSH Key
+    post:
+      consumes:
+      - application/json
+      description: Create SSH Key
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an SSH Key object
+        in: body
+        name: sshKeyInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSshKeyReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create SSH Key
+      tags:
+      - SSH Key
+  /ns/{nsId}/resources/sshKey/{sshKeyId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete SSH Key
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: SSH Key ID
+        in: path
+        name: sshKeyId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete SSH Key
+      tags:
+      - SSH Key
+    get:
+      consumes:
+      - application/json
+      description: Get SSH Key
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: SSH Key ID
+        in: path
+        name: sshKeyId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get SSH Key
+      tags:
+      - SSH Key
+  /ns/{nsId}/resources/vNet:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all VNets
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all VNets
+      tags:
+      - VNet
+    get:
+      consumes:
+      - application/json
+      description: List all VNets
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestGetAllVNetResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all VNets
+      tags:
+      - VNet
+    post:
+      consumes:
+      - application/json
+      description: Create VNet
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an VNet object
+        in: body
+        name: vNetReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbVNetReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create VNet
+      tags:
+      - VNet
+  /ns/{nsId}/resources/vNet/{vNetId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete VNet
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete VNet
+      tags:
+      - VNet
+    get:
+      consumes:
+      - application/json
+      description: Get VNet
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbVNetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get VNet
+      tags:
+      - VNet
 swagger: "2.0"

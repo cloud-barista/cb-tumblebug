@@ -49,37 +49,30 @@ type SpiderSecurityInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-/*
 type TbSecurityGroupReq struct { // Tumblebug
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
-	VNetId         string `json:"vNetId"`
-	//ResourceGroupName    string `json:"resourceGroupName"`
-	Description   string                    `json:"description"`
-	FirewallRules *[]SpiderSecurityRuleInfo `json:"firewallRules"`
-}
-*/
-
-type TbSecurityGroupInfo struct { // Tumblebug
-	// Fields for both request and response
 	Name           string                    `json:"name"`
 	ConnectionName string                    `json:"connectionName"`
 	VNetId         string                    `json:"vNetId"`
 	Description    string                    `json:"description"`
 	FirewallRules  *[]SpiderSecurityRuleInfo `json:"firewallRules"`
+}
 
-	// Additional fields for response
-	Id                   string            `json:"id"`
-	CspSecurityGroupId   string            `json:"cspSecurityGroupId"`
-	CspSecurityGroupName string            `json:"cspSecurityGroupName"`
-	KeyValueList         []common.KeyValue `json:"keyValueList"`
+type TbSecurityGroupInfo struct { // Tumblebug
+	Id                   string                    `json:"id"`
+	Name                 string                    `json:"name"`
+	ConnectionName       string                    `json:"connectionName"`
+	VNetId               string                    `json:"vNetId"`
+	Description          string                    `json:"description"`
+	FirewallRules        *[]SpiderSecurityRuleInfo `json:"firewallRules"`
+	CspSecurityGroupId   string                    `json:"cspSecurityGroupId"`
+	CspSecurityGroupName string                    `json:"cspSecurityGroupName"`
+	KeyValueList         []common.KeyValue         `json:"keyValueList"`
 
 	// Disabled for now
 	//ResourceGroupName  string `json:"resourceGroupName"`
 }
 
-//func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, int, []byte, error) {
-func CreateSecurityGroup(nsId string, u *TbSecurityGroupInfo) (TbSecurityGroupInfo, error) {
+func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, error) {
 	check, _ := CheckResource(nsId, "securityGroup", u.Name)
 
 	if check {

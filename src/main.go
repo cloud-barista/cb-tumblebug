@@ -19,14 +19,14 @@ import (
 
 // Main Body
 
-// @title Swagger Example API
-// @version 1.0
-// @description This is a sample server Petstore server.
+// @title CB-Tumblebug REST API
+// @version 0.2.0
+// @description CB-Tumblebug REST API
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
+// @contact.url http://cloud-barista.github.io
+// @contact.email contact-to-cloud-barista@googlegroups.com
 
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html

@@ -41,8 +41,8 @@ else
 	INDEX=1
 fi
 
-../0.settingSpider/register-cloud.sh $CSP $REGION $POSTFIX
-../0.settingTB/create-ns.sh $CSP $REGION $POSTFIX
+../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
+../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX
 
 
 _self="${0##*/}"

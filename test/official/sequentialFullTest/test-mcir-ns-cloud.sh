@@ -41,19 +41,19 @@ else
 	INDEX=1
 fi
 
-../0.settingSpider/register-cloud.sh $CSP $REGION $POSTFIX
-../0.settingTB/create-ns.sh $CSP $REGION $POSTFIX
-../1.vNet/create-vNet.sh $CSP $REGION $POSTFIX
+../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
+../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX
+../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX
 dozing 10
 if [ "${CSP}" == "gcp" ]; then
 	echo "[Test for GCP needs more preparation time]"
 	dozing 20
 fi
-../2.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
+../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
 dozing 10
-../3.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
-../4.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
-../5.spec/register-spec.sh $CSP $REGION $POSTFIX
+../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
+../6.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
+../7.spec/register-spec.sh $CSP $REGION $POSTFIX
 
 
 _self="${0##*/}"

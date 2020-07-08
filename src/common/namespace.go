@@ -11,22 +11,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-/*
 type NsReq struct {
-	//Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
-*/
 
 // swagger:response NsInfo
 type NsInfo struct {
-	// Fields for both request and response
-	Name        string `json:"name" example:"namespaceid01"`
+	Id          string `json:"id" example:"namespaceid01"`
+	Name        string `json:"name" example:"namespacename01"`
 	Description string `json:"description" example:"Description for this namespace"`
-
-	// Additional fields for response
-	Id string `json:"id"`
 }
 
 func NsValidation() echo.MiddlewareFunc {
@@ -47,8 +41,7 @@ func NsValidation() echo.MiddlewareFunc {
 	}
 }
 
-//func CreateNs(u *NsReq) (NsInfo, error) {
-func CreateNs(u *NsInfo) (NsInfo, error) {
+func CreateNs(u *NsReq) (NsInfo, error) {
 	check, _ := CheckNs(u.Name)
 
 	if check {

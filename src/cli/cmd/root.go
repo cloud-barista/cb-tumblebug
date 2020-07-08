@@ -53,69 +53,110 @@ type KeyValue struct {
 
 // Structs for REST API
 
+/*
 type TbMcisReq struct {
-	Id     string    `json:"id"`
+	//Id     string    `json:"id"`
 	Name   string    `json:"name"`
 	Vm_req []TbVmReq `json:"vm_req"`
 	//Vm_num         string  `json:"vm_num"`
 	Placement_algo string `json:"placement_algo"`
 	Description    string `json:"description"`
 }
+*/
 
+type TbMcisInfo struct {
+	// Fields for both request and response
+	Name           string     `json:"name"`
+	Vm             []TbVmInfo `json:"vm"`
+	Placement_algo string     `json:"placement_algo"`
+	Description    string     `json:"description"`
+
+	// Additional fields for response
+	Id           string `json:"id"`
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+
+	// Disabled for now
+	//Vm             []vmOverview `json:"vm"`
+}
+
+/*
 type TbVmReq struct {
-	Id             string `json:"id"`
-	ConnectionName string `json:"connectionName"`
+	//Id             string `json:"id"`
+	//ConnectionName string `json:"connectionName"`
 
 	// 1. Required by CB-Spider
 	//CspVmName string `json:"cspVmName"` // will be deprecated
 
-	CspImageName          string   `json:"cspImageName"`
-	CspVirtualNetworkId   string   `json:"cspVirtualNetworkId"`
-	CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
-	CspPublicIPId         string   `json:"cspPublicIPId"`
-	CspSecurityGroupIds   []string `json:"cspSecurityGroupIds"`
-	CspSpecId             string   `json:"cspSpecId"`
-	CspKeyPairName        string   `json:"cspKeyPairName"`
+	CspImageName        string `json:"cspImageName"`
+	CspVirtualNetworkId string `json:"cspVirtualNetworkId"`
+	//CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
+	//CspPublicIPId         string   `json:"cspPublicIPId"`
+	CspSecurityGroupIds []string `json:"cspSecurityGroupIds"`
+	CspSpecId           string   `json:"cspSpecId"`
+	CspKeyPairName      string   `json:"cspKeyPairName"`
 
-	CbImageId            string   `json:"cbImageId"`
-	CbVirtualNetworkId   string   `json:"cbVirtualNetworkId"`
-	CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
-	CbPublicIPId         string   `json:"cbPublicIPId"`
-	CbSecurityGroupIds   []string `json:"cbSecurityGroupIds"`
-	CbSpecId             string   `json:"cbSpecId"`
-	CbKeyPairId          string   `json:"cbKeyPairId"`
+	CbImageId          string `json:"cbImageId"`
+	CbVirtualNetworkId string `json:"cbVirtualNetworkId"`
+	//CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
+	//CbPublicIPId         string   `json:"cbPublicIPId"`
+	CbSecurityGroupIds []string `json:"cbSecurityGroupIds"`
+	CbSpecId           string   `json:"cbSpecId"`
+	CbKeyPairId        string   `json:"cbKeyPairId"`
 
 	VMUserId     string `json:"vmUserId"`
 	VMUserPasswd string `json:"vmUserPasswd"`
 
-	Name             string   `json:"name"`
-	ConnectionName   string   `json:"connectionName"`
-	SpecId           string   `json:"specId"`
-	ImageId          string   `json:"imageId"`
-	VNetId           string   `json:"vNetId"`
-	Vnic_id          string   `json:"vnic_id"`
-	Public_ip_id     string   `json:"public_ip_id"`
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	SpecId         string `json:"specId"`
+	ImageId        string `json:"imageId"`
+	VNetId         string `json:"vNetId"`
+	SubnetId       string `json:"subnetId"`
+	//Vnic_id            string   `json:"vnic_id"`
+	//Public_ip_id       string   `json:"public_ip_id"`
 	SecurityGroupIds []string `json:"securityGroupIds"`
 	SshKeyId         string   `json:"sshKeyId"`
 	Description      string   `json:"description"`
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
 }
-
-/*
-type placementKeyValue struct {
-	Key   string
-	Value string
-}
 */
 
-type McisInfo struct {
-	Id             string       `json:"id"`
-	Name           string       `json:"name"`
-	Status         string       `json:"status"`
-	Placement_algo string       `json:"placement_algo"`
-	Description    string       `json:"description"`
-	Vm             []vmOverview `json:"vm"`
+type TbVmInfo struct {
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	ConnectionName string `json:"connectionName"`
+	SpecId         string `json:"specId"`
+	ImageId        string `json:"imageId"`
+	VNetId         string `json:"vNetId"`
+	SubnetId       string `json:"subnetId"`
+	//Vnic_id            string   `json:"vnic_id"`
+	//Public_ip_id       string   `json:"public_ip_id"`
+	SecurityGroupIds []string `json:"securityGroupIds"`
+	SshKeyId         string   `json:"sshKeyId"`
+	Description      string   `json:"description"`
+	VmUserAccount    string   `json:"vmUserAccount"`
+	VmUserPassword   string   `json:"vmUserPassword"`
+
+	Location GeoLocation `json:"location"`
+
+	// 2. Provided by CB-Spider
+	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP    string     `json:"publicIP"`
+	PublicDNS   string     `json:"publicDNS"`
+	PrivateIP   string     `json:"privateIP"`
+	PrivateDNS  string     `json:"privateDNS"`
+	VMBootDisk  string     `json:"vmBootDisk"` // ex) /dev/sda1
+	VMBlockDisk string     `json:"vmBlockDisk"`
+
+	// 3. Required by CB-Tumblebug
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+
+	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
 
 type vmOverview struct {
@@ -131,39 +172,6 @@ type vmOverview struct {
 type RegionInfo struct {
 	Region string
 	Zone   string
-}
-
-type TbVmInfo struct {
-	Id               string   `json:"id"`
-	Name             string   `json:"name"`
-	ConnectionName   string   `json:"connectionName"`
-	SpecId           string   `json:"specId"`
-	ImageId          string   `json:"imageId"`
-	VNetId           string   `json:"vNetId"`
-	Vnic_id          string   `json:"vnic_id"`
-	Public_ip_id     string   `json:"public_ip_id"`
-	SecurityGroupIds []string `json:"securityGroupIds"`
-	SshKeyId         string   `json:"sshKeyId"`
-	Description      string   `json:"description"`
-	VmUserAccount    string   `json:"vmUserAccount"`
-	VmUserPassword   string   `json:"vmUserPassword"`
-
-	VmUserId     string `json:"vmUserId"`
-	VmUserPasswd string `json:"vmUserPasswd"`
-
-	// 2. Provided by CB-Spider
-	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP    string     `json:"publicIP"`
-	PublicDNS   string     `json:"publicDNS"`
-	PrivateIP   string     `json:"privateIP"`
-	PrivateDNS  string     `json:"privateDNS"`
-	VMBootDisk  string     `json:"vmBootDisk"` // ex) /dev/sda1
-	VMBlockDisk string     `json:"vmBlockDisk"`
-
-	// 3. Required by CB-Tumblebug
-	Status string `json:"status"`
-
-	CspViewVmDetail vmCspViewInfo `json:"cspViewVmDetail"`
 }
 
 type vmCspViewInfo struct {

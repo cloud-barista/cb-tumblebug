@@ -51,7 +51,7 @@ func main() {
 	// CreateNs
 	log.Printf("")
 	log.Printf("CreateNs()")
-	nsGrpcResult, err := nsClient.CreateNs(ctx, &pb.NsInfo{Name: name})
+	nsGrpcResult, err := nsClient.CreateNs(ctx, &pb.NsReq{Name: name})
 	if err != nil {
 		log.Printf("CreateNS failed: %v", err)
 	} else {
@@ -166,7 +166,7 @@ func main() {
 	// CreateNs
 	log.Printf("")
 	log.Printf("CreateNs()")
-	nsGrpcResult, err = nsClient.CreateNs(ctx, &pb.NsInfo{Name: name})
+	nsGrpcResult, err = nsClient.CreateNs(ctx, &pb.NsReq{Name: name})
 	if err != nil {
 		log.Printf("CreateNS failed: %v", err)
 	} else {
@@ -373,11 +373,12 @@ func main() {
 		log.Printf("DelSpec success: %s", name)
 	}
 
+	// RegisterSpecWithCspSpecName
 	log.Printf("")
 	log.Printf("RegisterSpecWithCspSpecName()")
 	specGrpcResult, err = specClient.RegisterSpecWithCspSpecName(ctx, &pb.RegisterSpecWithCspSpecNameWrapper{
 		NsId: name,
-		TbSpecInfo: &pb.TbSpecInfo{
+		TbSpecReq: &pb.TbSpecReq{
 			Name:           name,
 			ConnectionName: "aws-us-east-1",
 			CspSpecName:    "t2.micro",

@@ -15,19 +15,29 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// MCIS API Proxy
-
+// RestPostMcis godoc
+// @Summary Create MCIS
+// @Description Create MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisReq body TbMcisReq true "Details for an MCIS object"
+// @Success 200 {object} TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis [post]
 func RestPostMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	req := &mcis.TbMcisInfo{}
+	req := &mcis.TbMcisReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
 	key := mcis.CreateMcis(nsId, req)
-	mcisId := req.Id
+	mcisId := common.GenId(req.Name)
 
 	keyValue, _ := common.CBStore.Get(key)
 
@@ -78,6 +88,18 @@ func RestPostMcis(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
+// RestGetMcis godoc
+// @Summary Get MCIS
+// @Description Get MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisId path string true "MCIS ID"
+// @Success 200 {object} TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId} [get]
 func RestGetMcis(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
@@ -251,16 +273,35 @@ func RestGetMcis(c echo.Context) error {
 	}
 }
 
+// Response structure for RestGetAllMcis
+type RestGetAllMcisResponse struct {
+	Mcis []mcis.TbMcisInfo `json:"mcis"`
+}
+
+// RestGetAllMcis godoc
+// @Summary List all MCISs
+// @Description List all MCISs
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Success 200 {object} RestGetAllMcisResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis [get]
 func RestGetAllMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 	fmt.Println("[Get MCIS List requested with option: " + option)
 
-	var content struct {
-		//Name string     `json:"name"`
-		Mcis []mcis.TbMcisInfo `json:"mcis"`
-	}
+	/*
+		var content struct {
+			//Name string     `json:"name"`
+			Mcis []mcis.TbMcisInfo `json:"mcis"`
+		}
+	*/
+	content := RestGetAllMcisResponse{}
 
 	mcisList := mcis.ListMcisId(nsId)
 
@@ -337,10 +378,34 @@ func RestGetAllMcis(c echo.Context) error {
 
 }
 
+/* function RestPutMcis not yet implemented
+// RestPutMcis godoc
+// @Summary Update MCIS
+// @Description Update MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param mcisInfo body TbMcisInfo true "Details for an MCIS object"
+// @Success 200 {object} TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId} [put]
+*/
 func RestPutMcis(c echo.Context) error {
 	return nil
 }
 
+// RestDelMcis godoc
+// @Summary Delete MCIS
+// @Description Delete MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisId path string true "MCIS ID"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId} [delete]
 func RestDelMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -357,6 +422,16 @@ func RestDelMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
+// RestDelAllMcis godoc
+// @Summary Delete all MCISs
+// @Description Delete all MCISs
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis [delete]
 func RestDelAllMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 
@@ -381,6 +456,18 @@ func RestDelAllMcis(c echo.Context) error {
 
 }
 
+// RestPostMcisRecommand godoc
+// @Summary Create MCIS
+// @Description Create MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisInfo body mcir.TbSshKeyInfo true "Details for an MCIS object"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/recommend [post]
 func RestPostMcisRecommand(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -426,6 +513,18 @@ func RestPostMcisRecommand(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
+// RestPostCmdMcisVm godoc
+// @Summary Create MCIS
+// @Description Create MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisInfo body mcir.TbSshKeyInfo true "Details for an MCIS object"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId} [post]
 func RestPostCmdMcisVm(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -473,6 +572,18 @@ func RestPostCmdMcisVm(c echo.Context) error {
 	}
 }
 
+// RestPostCmdMcis godoc
+// @Summary Create MCIS
+// @Description Create MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisInfo body mcir.TbSshKeyInfo true "Details for an MCIS object"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/cmd/mcis/{mcisId} [post]
 func RestPostCmdMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -557,6 +668,18 @@ func RestPostCmdMcis(c echo.Context) error {
 
 }
 
+// RestPostInstallAgentToMcis godoc
+// @Summary Create MCIS
+// @Description Create MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisInfo body mcir.TbSshKeyInfo true "Details for an MCIS object"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/install/mcis/{mcisId} [post]
 func RestPostInstallAgentToMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -576,8 +699,18 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, content)
 }
 
-// VM API Proxy
-
+// RestPostMcisVm godoc
+// @Summary Create MCIS
+// @Description Create MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param vmReq body mcis.TbVmReq true "Details for an VM object"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm [post]
 func RestPostMcisVm(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -666,6 +799,18 @@ func RestPostMcisVm(c echo.Context) error {
 	return c.JSON(http.StatusCreated, vmInfoData)
 }
 
+// RestGetMcisVm godoc
+// @Summary Get MCIS
+// @Description Get MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisId path string true "MCIS ID"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [get]
 func RestGetMcisVm(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
@@ -767,10 +912,34 @@ func RestGetMcisVm(c echo.Context) error {
 	}
 }
 
+/* function RestPutMcisVm not yet implemented
+// RestPutSshKey godoc
+// @Summary Update MCIS
+// @Description Update MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param mcisInfo body mcir.TbSshKeyInfo true "Details for an MCIS object"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [put]
+*/
 func RestPutMcisVm(c echo.Context) error {
 	return nil
 }
 
+// RestDelMcisVm godoc
+// @Summary Delete MCIS
+// @Description Delete MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisId path string true "MCIS ID"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [delete]
 func RestDelMcisVm(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -788,16 +957,37 @@ func RestDelMcisVm(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
+// Request struct for RestGetAllBenchmark
+type RestGetAllBenchmarkRequest struct {
+	Host string `json:"host"`
+}
+
+// RestGetAllBenchmark godoc
+// @Summary List all MCISs
+// @Description List all MCISs
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisId path string true "MCIS ID"
+// @Param hostIP body RestGetAllBenchmarkRequest true "Host IP address to benchmark"
+// @Success 200 {object} mcis.BenchmarkInfoArray
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/benchmarkall/mcis/{mcisId} [get]
 func RestGetAllBenchmark(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	type bmReq struct {
-		Host string `json:"host"`
-	}
-	req := &bmReq{}
+	/*
+		type bmReq struct {
+			Host string `json:"host"`
+		}
+		req := &bmReq{}
+	*/
+	req := &RestGetAllBenchmarkRequest{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
@@ -935,6 +1125,18 @@ func RestGetAllBenchmark(c echo.Context) error {
 	return c.JSON(http.StatusOK, content)
 }
 
+// RestGetBenchmark godoc
+// @Summary Get MCIS
+// @Description Get MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisId path string true "MCIS ID"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/benchmark/mcis/{mcisId} [get]
 func RestGetBenchmark(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
