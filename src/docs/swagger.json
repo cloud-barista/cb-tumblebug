@@ -2392,6 +2392,7 @@
                     "type": "string"
                 },
                 "vcpu": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -2412,6 +2413,7 @@
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -2866,15 +2868,18 @@
             "properties": {
                 "iid": {
                     "description": "Fields for response",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -2908,6 +2913,7 @@
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -2929,6 +2935,7 @@
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -2954,6 +2961,7 @@
                     "type": "string"
                 },
                 "vpcIID": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -3020,6 +3028,7 @@
                     "type": "string"
                 },
                 "cspViewVmDetail": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -3032,6 +3041,7 @@
                     "type": "string"
                 },
                 "location": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "name": {
@@ -3051,6 +3061,7 @@
                 },
                 "region": {
                     "description": "2. Provided by CB-Spider",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -3136,6 +3147,11 @@
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
         }
     }
 }
