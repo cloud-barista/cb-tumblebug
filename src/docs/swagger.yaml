@@ -129,7 +129,6 @@ definitions:
         type: string
       vcpu:
         $ref: '#/definitions/mcir.SpiderVCpuInfo'
-        type: object
     type: object
   mcir.SpiderSpecList:
     properties:
@@ -143,7 +142,6 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: '{NameId, SystemId}'
-        type: object
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -380,6 +378,24 @@ definitions:
           $ref: '#/definitions/mcir.SpiderSubnetReqInfo'
         type: array
     type: object
+  mcis.AgentInstallContent:
+    properties:
+      mcis_id:
+        type: string
+      result:
+        type: string
+      vm_id:
+        type: string
+      vm_ip:
+        type: string
+    type: object
+  mcis.AgentInstallContentWrapper:
+    properties:
+      result_array:
+        items:
+          $ref: '#/definitions/mcis.AgentInstallContent'
+        type: array
+    type: object
   mcis.BenchmarkInfo:
     properties:
       desc:
@@ -418,6 +434,36 @@ definitions:
       nativeRegion:
         type: string
     type: object
+  mcis.McisCmdReq:
+    properties:
+      command:
+        type: string
+      ip:
+        type: string
+      mcis_id:
+        type: string
+      ssh_key:
+        type: string
+      user_name:
+        type: string
+      vm_id:
+        type: string
+    type: object
+  mcis.McisRecommendReq:
+    properties:
+      max_result_num:
+        type: string
+      placement_algo:
+        type: string
+      placement_param:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      vm_req:
+        items:
+          $ref: '#/definitions/mcis.TbVmRecommendReq'
+        type: array
+    type: object
   mcis.RegionInfo:
     properties:
       region:
@@ -437,20 +483,59 @@ definitions:
           $ref: '#/definitions/mcis.TbMcisInfo'
         type: array
     type: object
+  mcis.RestGetBenchmarkRequest:
+    properties:
+      host:
+        type: string
+    type: object
+  mcis.RestPostCmdMcisResponse:
+    properties:
+      mcis_id:
+        type: string
+      result:
+        type: string
+      vm_id:
+        type: string
+      vm_ip:
+        type: string
+    type: object
+  mcis.RestPostCmdMcisResponseWrapper:
+    properties:
+      result_array:
+        items:
+          $ref: '#/definitions/mcis.RestPostCmdMcisResponse'
+        type: array
+    type: object
+  mcis.RestPostCmdMcisVmResponse:
+    properties:
+      result:
+        type: string
+    type: object
+  mcis.RestPostMcisRecommandResponse:
+    properties:
+      placement_algo:
+        type: string
+      placement_param:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      vm_recommend:
+        description: Vm_req          []TbVmRecommendReq    `json:"vm_req"`
+        items:
+          $ref: '#/definitions/mcis.TbVmRecommendInfo'
+        type: array
+    type: object
   mcis.SpiderVMInfo:
     properties:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
-        type: object
       imageIId:
         $ref: '#/definitions/common.IID'
-        type: object
       imageName:
         type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
-        type: object
       keyPairName:
         type: string
       keyValueList:
@@ -474,7 +559,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
-        type: object
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -490,7 +574,6 @@ definitions:
       subnetIID:
         $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
-        type: object
       subnetName:
         type: string
       vmblockDisk:
@@ -509,7 +592,6 @@ definitions:
         type: string
       vpcIID:
         $ref: '#/definitions/common.IID'
-        type: object
       vpcname:
         type: string
     type: object
@@ -553,7 +635,6 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
-        type: object
       description:
         type: string
       id:
@@ -562,7 +643,6 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
-        type: object
       name:
         type: string
       privateDNS:
@@ -576,7 +656,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: 2. Provided by CB-Spider
-        type: object
       securityGroupIds:
         items:
           type: string
@@ -604,6 +683,47 @@ definitions:
       vmUserAccount:
         type: string
       vmUserPassword:
+        type: string
+    type: object
+  mcis.TbVmPriority:
+    properties:
+      priority:
+        type: string
+      vm_spec:
+        $ref: '#/definitions/mcir.TbSpecInfo'
+    type: object
+  mcis.TbVmRecommendInfo:
+    properties:
+      placement_algo:
+        type: string
+      placement_param:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      vm_priority:
+        items:
+          $ref: '#/definitions/mcis.TbVmPriority'
+        type: array
+      vm_req:
+        $ref: '#/definitions/mcis.TbVmRecommendReq'
+    type: object
+  mcis.TbVmRecommendReq:
+    properties:
+      disk_size:
+        type: string
+      max_result_num:
+        type: string
+      memory_size:
+        type: string
+      placement_algo:
+        type: string
+      placement_param:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      request_name:
+        type: string
+      vcpu_size:
         type: string
     type: object
   mcis.TbVmReq:
@@ -851,13 +971,19 @@ paths:
         name: mcisId
         required: true
         type: string
+      - description: Host IP address to benchmark
+        in: body
+        name: hostIP
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.RestGetBenchmarkRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.BenchmarkInfoArray'
         "404":
           description: Not Found
           schema:
@@ -920,19 +1046,24 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Details for an MCIS object
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: MCIS Command Request
         in: body
-        name: mcisInfo
+        name: mcisCmdReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSshKeyInfo'
+          $ref: '#/definitions/mcis.McisCmdReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.RestPostCmdMcisResponseWrapper'
         "404":
           description: Not Found
           schema:
@@ -955,19 +1086,29 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Details for an MCIS object
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: MCIS Command Request
         in: body
-        name: mcisInfo
+        name: mcisCmdReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSshKeyInfo'
+          $ref: '#/definitions/mcis.McisCmdReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.RestPostCmdMcisVmResponse'
         "404":
           description: Not Found
           schema:
@@ -990,19 +1131,24 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Details for an MCIS object
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: MCIS Command Request
         in: body
-        name: mcisInfo
+        name: mcisCmdReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSshKeyInfo'
+          $ref: '#/definitions/mcis.McisCmdReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.AgentInstallContentWrapper'
         "404":
           description: Not Found
           schema:
@@ -1175,6 +1321,11 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
       - description: Details for an VM object
         in: body
         name: vmReq
@@ -1187,7 +1338,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -1213,6 +1364,11 @@ paths:
       - description: MCIS ID
         in: path
         name: mcisId
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
         required: true
         type: string
       produces:
@@ -1244,13 +1400,18 @@ paths:
         name: mcisId
         required: true
         type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.TbVmInfo'
         "404":
           description: Not Found
           schema:
@@ -1275,17 +1436,17 @@ paths:
         type: string
       - description: Details for an MCIS object
         in: body
-        name: mcisInfo
+        name: mcisRecommendReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.TbSshKeyInfo'
+          $ref: '#/definitions/mcis.McisRecommendReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.RestPostMcisRecommandResponse'
         "404":
           description: Not Found
           schema:

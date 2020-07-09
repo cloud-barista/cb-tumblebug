@@ -345,13 +345,22 @@ var doc = `{
                         "name": "mcisId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Host IP address to benchmark",
+                        "name": "hostIP",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.RestGetBenchmarkRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.BenchmarkInfoArray"
                         }
                     },
                     "404": {
@@ -451,12 +460,19 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
-                        "name": "mcisInfo",
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCIS Command Request",
+                        "name": "mcisCmdReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.McisCmdReq"
                         }
                     }
                 ],
@@ -464,7 +480,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
                         }
                     },
                     "404": {
@@ -504,12 +520,26 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
-                        "name": "mcisInfo",
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCIS Command Request",
+                        "name": "mcisCmdReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.McisCmdReq"
                         }
                     }
                 ],
@@ -517,7 +547,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.RestPostCmdMcisVmResponse"
                         }
                     },
                     "404": {
@@ -557,12 +587,19 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
-                        "name": "mcisInfo",
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "MCIS Command Request",
+                        "name": "mcisCmdReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.McisCmdReq"
                         }
                     }
                 ],
@@ -570,7 +607,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
@@ -742,11 +779,11 @@ var doc = `{
                     },
                     {
                         "description": "Details for an MCIS object",
-                        "name": "mcisInfo",
+                        "name": "mcisRecommendReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.McisRecommendReq"
                         }
                     }
                 ],
@@ -754,7 +791,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.RestPostMcisRecommandResponse"
                         }
                     },
                     "404": {
@@ -888,6 +925,13 @@ var doc = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Details for an VM object",
                         "name": "vmReq",
                         "in": "body",
@@ -901,7 +945,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.TbVmInfo"
                         }
                     },
                     "404": {
@@ -946,13 +990,20 @@ var doc = `{
                         "name": "mcisId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.TbVmInfo"
                         }
                     },
                     "404": {
@@ -993,6 +1044,13 @@ var doc = `{
                         "type": "string",
                         "description": "MCIS ID",
                         "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
                         "in": "path",
                         "required": true
                     }
@@ -2407,7 +2465,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vcpu": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -2428,7 +2485,6 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -2790,6 +2846,34 @@ var doc = `{
                 }
             }
         },
+        "mcis.AgentInstallContent": {
+            "type": "object",
+            "properties": {
+                "mcis_id": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "vm_id": {
+                    "type": "string"
+                },
+                "vm_ip": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.AgentInstallContentWrapper": {
+            "type": "object",
+            "properties": {
+                "result_array": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.AgentInstallContent"
+                    }
+                }
+            }
+        },
         "mcis.BenchmarkInfo": {
             "type": "object",
             "properties": {
@@ -2848,6 +2932,52 @@ var doc = `{
                 }
             }
         },
+        "mcis.McisCmdReq": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "mcis_id": {
+                    "type": "string"
+                },
+                "ssh_key": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                },
+                "vm_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.McisRecommendReq": {
+            "type": "object",
+            "properties": {
+                "max_result_num": {
+                    "type": "string"
+                },
+                "placement_algo": {
+                    "type": "string"
+                },
+                "placement_param": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "vm_req": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbVmRecommendReq"
+                    }
+                }
+            }
+        },
         "mcis.RegionInfo": {
             "type": "object",
             "properties": {
@@ -2878,23 +3008,85 @@ var doc = `{
                 }
             }
         },
+        "mcis.RestGetBenchmarkRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.RestPostCmdMcisResponse": {
+            "type": "object",
+            "properties": {
+                "mcis_id": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "vm_id": {
+                    "type": "string"
+                },
+                "vm_ip": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.RestPostCmdMcisResponseWrapper": {
+            "type": "object",
+            "properties": {
+                "result_array": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.RestPostCmdMcisResponse"
+                    }
+                }
+            }
+        },
+        "mcis.RestPostCmdMcisVmResponse": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.RestPostMcisRecommandResponse": {
+            "type": "object",
+            "properties": {
+                "placement_algo": {
+                    "type": "string"
+                },
+                "placement_param": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "vm_recommend": {
+                    "description": "Vm_req          []TbVmRecommendReq    ` + "`" + `json:\"vm_req\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbVmRecommendInfo"
+                    }
+                }
+            }
+        },
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
                 "iid": {
                     "description": "Fields for response",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -2928,7 +3120,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -2950,7 +3141,6 @@ var doc = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -2976,7 +3166,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vpcIID": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -3043,7 +3232,6 @@ var doc = `{
                     "type": "string"
                 },
                 "cspViewVmDetail": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -3056,7 +3244,6 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "name": {
@@ -3076,7 +3263,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "2. Provided by CB-Spider",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -3118,6 +3304,69 @@ var doc = `{
                     "type": "string"
                 },
                 "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.TbVmPriority": {
+            "type": "object",
+            "properties": {
+                "priority": {
+                    "type": "string"
+                },
+                "vm_spec": {
+                    "$ref": "#/definitions/mcir.TbSpecInfo"
+                }
+            }
+        },
+        "mcis.TbVmRecommendInfo": {
+            "type": "object",
+            "properties": {
+                "placement_algo": {
+                    "type": "string"
+                },
+                "placement_param": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "vm_priority": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbVmPriority"
+                    }
+                },
+                "vm_req": {
+                    "$ref": "#/definitions/mcis.TbVmRecommendReq"
+                }
+            }
+        },
+        "mcis.TbVmRecommendReq": {
+            "type": "object",
+            "properties": {
+                "disk_size": {
+                    "type": "string"
+                },
+                "max_result_num": {
+                    "type": "string"
+                },
+                "memory_size": {
+                    "type": "string"
+                },
+                "placement_algo": {
+                    "type": "string"
+                },
+                "placement_param": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "request_name": {
+                    "type": "string"
+                },
+                "vcpu_size": {
                     "type": "string"
                 }
             }
