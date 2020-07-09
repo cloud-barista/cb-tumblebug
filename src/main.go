@@ -33,6 +33,9 @@ import (
 
 // @host localhost:1323
 // @BasePath /tumblebug
+
+// @securityDefinitions.basic BasicAuth
+
 func main() {
 	common.SPIDER_URL = os.Getenv("SPIDER_URL")
 	common.DB_URL = os.Getenv("DB_URL")
