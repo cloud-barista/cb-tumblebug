@@ -129,6 +129,7 @@ definitions:
         type: string
       vcpu:
         $ref: '#/definitions/mcir.SpiderVCpuInfo'
+        type: object
     type: object
   mcir.SpiderSpecList:
     properties:
@@ -142,6 +143,7 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: '{NameId, SystemId}'
+        type: object
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -530,12 +532,15 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
+        type: object
       imageIId:
         $ref: '#/definitions/common.IID'
+        type: object
       imageName:
         type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
+        type: object
       keyPairName:
         type: string
       keyValueList:
@@ -559,6 +564,7 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
+        type: object
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -574,6 +580,7 @@ definitions:
       subnetIID:
         $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
+        type: object
       subnetName:
         type: string
       vmblockDisk:
@@ -592,6 +599,7 @@ definitions:
         type: string
       vpcIID:
         $ref: '#/definitions/common.IID'
+        type: object
       vpcname:
         type: string
     type: object
@@ -635,6 +643,7 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
+        type: object
       description:
         type: string
       id:
@@ -643,6 +652,7 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
+        type: object
       name:
         type: string
       privateDNS:
@@ -656,6 +666,7 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: 2. Provided by CB-Spider
+        type: object
       securityGroupIds:
         items:
           type: string
@@ -691,6 +702,7 @@ definitions:
         type: string
       vm_spec:
         $ref: '#/definitions/mcir.TbSpecInfo'
+        type: object
     type: object
   mcis.TbVmRecommendInfo:
     properties:
@@ -706,6 +718,7 @@ definitions:
         type: array
       vm_req:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
+        type: object
     type: object
   mcis.TbVmRecommendReq:
     properties:

@@ -133,6 +133,9 @@ func ApiServer() {
 	g.GET("/:nsId/benchmark/mcis/:mcisId", rest_mcis.RestGetBenchmark)
 	g.GET("/:nsId/benchmarkall/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
 
+	g.POST("/:nsId/monitoring/install/mcis/:mcisId", rest_mcis.RestPostInstallMonitorAgentToMcis)
+	
+
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)
 	g.GET("/:nsId/resources/image", rest_mcir.RestGetAllResources)

@@ -38,6 +38,7 @@ import (
 
 func main() {
 	common.SPIDER_URL = os.Getenv("SPIDER_URL")
+	common.DRAGONFLY_URL = os.Getenv("DRAGONFLY_URL")
 	common.DB_URL = os.Getenv("DB_URL")
 	common.DB_DATABASE = os.Getenv("DB_DATABASE")
 	common.DB_USER = os.Getenv("DB_USER")
