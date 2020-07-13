@@ -181,3 +181,126 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 	return content, nil
 
 }
+
+
+
+func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallContentWrapper, error) {
+
+	content := AgentInstallContentWrapper{}
+
+	vmList, err := ListVmId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return content, err
+	}
+
+	//goroutin sync wg
+	var wg sync.WaitGroup
+
+	var resultArray []SshCmdResult
+
+	method := "GET"
+
+	for _, v := range vmList {
+		wg.Add(1)
+
+		vmId := v
+
+		cmd := "/mcis/"+mcisId+"/vm/"+vmId+"/metric/"+metric+"/rt-info?statisticsCriteria=avg"
+		fmt.Println("[CMD] " + cmd)
+
+		go CallGetMonitoringAsync(&wg, mcisId, vmId, method, cmd, &resultArray)
+
+	}
+	wg.Wait() //goroutin sync wg
+
+	for _, v := range resultArray {
+
+		resultTmp := AgentInstallContent{}
+		resultTmp.Mcis_id = mcisId
+		resultTmp.Vm_id = v.Vm_id
+		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.Result = v.Result
+		content.Result_array = append(content.Result_array, resultTmp)
+		//fmt.Println("result from goroutin " + v)
+	}
+
+	//fmt.Printf("%+v\n", content)
+	common.PrintJsonPretty(content)
+
+	return content, nil
+
+}
+
+
+
+func CallGetMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, method string, cmd string, returnResult *[]SshCmdResult) {
+
+	defer wg.Done() //goroutin sync done
+
+	url := common.DRAGONFLY_URL + cmd
+	fmt.Println("\n\n[Calling DRAGONFLY] START")
+	fmt.Println("url: " + url + " method: " + method)
+
+	tempReq := MonAgentInstallReq{
+		Mcis_id: mcisID,
+		Vm_id: vmID,
+	}
+	fmt.Printf("\n[Request body to CB-DRAGONFLY for installing monitoring agent in VM]\n")
+	common.PrintJsonPretty(tempReq)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, nil)
+	errStr := ""
+	if err != nil {
+		common.CBLog.Error(err)
+		errStr = err.Error()
+	}
+
+	res, err := client.Do(req)
+
+	fmt.Println("Called CB-DRAGONFLY API")
+	if err != nil {
+		common.CBLog.Error(err)
+		errStr = err.Error()
+	}
+	
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		common.CBLog.Error(err)
+		errStr = err.Error()
+	}
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf(string(body))
+		common.CBLog.Error(err)
+		errStr = err.Error()
+	}
+
+	result := string(body)
+
+	//wg.Done() //goroutin sync done
+
+	sshResultTmp := SshCmdResult{}
+	sshResultTmp.Mcis_id = mcisID
+	sshResultTmp.Vm_id = vmID
+
+	if err != nil {
+		sshResultTmp.Result = errStr
+		sshResultTmp.Err = err
+		*returnResult = append(*returnResult, sshResultTmp)
+	} else {
+		fmt.Println("result " + result)
+		sshResultTmp.Result = result
+		sshResultTmp.Err = nil
+		*returnResult = append(*returnResult, sshResultTmp)
+	}
+
+}
