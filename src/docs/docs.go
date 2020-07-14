@@ -1081,7 +1081,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MONITOR"
+                    "Monitor"
                 ],
                 "summary": "InstallMonitorAgent MCIS",
                 "parameters": [
@@ -1141,7 +1141,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MONITOR"
+                    "Monitor"
                 ],
                 "summary": "GetMonitorData MCIS",
                 "parameters": [

@@ -15,7 +15,7 @@ import (
 // RestPostInstallMonitorAgentToMcis godoc
 // @Summary InstallMonitorAgent MCIS
 // @Description InstallMonitorAgent MCIS
-// @Tags MONITOR
+// @Tags Monitor
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -47,7 +47,7 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 // RestGetMonitorData godoc
 // @Summary GetMonitorData MCIS
 // @Description GetMonitorData MCIS
-// @Tags MONITOR
+// @Tags Monitor
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"

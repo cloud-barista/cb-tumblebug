@@ -1510,7 +1510,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: InstallMonitorAgent MCIS
       tags:
-      - MONITOR
+      - Monitor
   /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
     get:
       consumes:
@@ -1544,7 +1544,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: GetMonitorData MCIS
       tags:
-      - MONITOR
+      - Monitor
   /ns/{nsId}/resources/fetchSpecs:
     post:
       consumes:
