@@ -15,7 +15,7 @@ import (
 // RestPostInstallMonitorAgentToMcis godoc
 // @Summary InstallMonitorAgent MCIS
 // @Description InstallMonitorAgent MCIS
-// @Tags MCIS
+// @Tags Monitor
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -24,7 +24,7 @@ import (
 // @Success 200 {object} mcir.TbSshKeyInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/install/mcis/{mcisId} [post]
+// @Router /ns/{nsId}/monitoring/install/mcis/{mcisId} [post]
 func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -36,6 +36,38 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 	}
 
 	content, err := mcis.InstallMonitorAgentToMcis(nsId, mcisId, req)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	return c.JSON(http.StatusOK, content)
+}
+
+// RestGetMonitorData godoc
+// @Summary GetMonitorData MCIS
+// @Description GetMonitorData MCIS
+// @Tags Monitor
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "MCIS ID"
+// @Success 200 {object} mcir.TbSshKeyInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric} [get]
+func RestGetMonitorData(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	metric := c.Param("metric")
+
+	req := &mcis.McisCmdReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	content, err := mcis.GetMonitoringData(nsId, mcisId, metric)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err

@@ -1471,6 +1471,80 @@ paths:
       summary: Create MCIS
       tags:
       - MCIS
+  /ns/{nsId}/monitoring/install/mcis/{mcisId}:
+    post:
+      consumes:
+      - application/json
+      description: InstallMonitorAgent MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.McisCmdReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: InstallMonitorAgent MCIS
+      tags:
+      - Monitor
+  /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
+    get:
+      consumes:
+      - application/json
+      description: GetMonitorData MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: GetMonitorData MCIS
+      tags:
+      - Monitor
   /ns/{nsId}/resources/fetchSpecs:
     post:
       consumes:

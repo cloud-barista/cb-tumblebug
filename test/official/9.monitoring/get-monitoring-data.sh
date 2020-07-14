@@ -1,10 +1,10 @@
 #!/bin/bash
+
 source ../conf.env
-source ../credentials.conf
 AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
-echo "## 0. Get Cloud Connction Config"
+echo "## Get monitoring data for MCIS (cpu/memory/disk/network)"
 echo "####################################################################"
 
 CSP=${1}
@@ -28,20 +28,7 @@ else
 	INDEX=1
 fi
 
-RESTSERVER=localhost
+MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+USERCMD=${4}
 
-# for Cloud Connection Config Info
-curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | json_pp
-
-
-# for Cloud Region Info
-curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | json_pp
-
-
-# for Cloud Credential Info
-curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[INDEX]} | json_pp
-
- 
-# for Cloud Driver Info
-curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[INDEX]} | json_pp
-
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/monitoring/mcis/$MCISID/metric/$USERCMD | json_pp #|| return 1
