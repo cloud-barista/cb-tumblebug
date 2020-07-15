@@ -2,11 +2,15 @@
 ## Stage 1 - Go Build
 ##############################################################
 
-FROM golang:alpine AS builder
+FROM golang:1.14.5-alpine3.12 AS builder
 
-RUN apk update && apk add --no-cache bash
+#RUN apk update && apk add --no-cache bash
 
 #RUN apk add gcc
+
+RUN apk add --no-cache sqlite-libs sqlite-dev
+
+RUN apk add --no-cache build-base
 
 ADD . /go/src/github.com/cloud-barista/cb-tumblebug
 
@@ -14,7 +18,7 @@ WORKDIR /go/src/github.com/cloud-barista/cb-tumblebug
 
 WORKDIR src
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumblebug -v
+RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumblebug -v
 
 #############################################################
 ## Stage 2 - Application Setup
@@ -25,7 +29,7 @@ FROM ubuntu:latest
 # use bash
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
-WORKDIR /app
+WORKDIR /app/src
 
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/conf/* /app/conf/
 
@@ -35,6 +39,12 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumbleb
 ENV CBSTORE_ROOT /app
 ENV CBLOG_ROOT /app
 ENV SPIDER_URL http://cb-spider:1024/spider
+ENV DB_URL localhost:3306
+ENV DB_DATABASE cb_tumblebug
+ENV DB_USER cb_tumblebug
+ENV DB_PASSWORD cb_tumblebug
+ENV API_USERNAME default
+ENV API_PASSWORD default
 
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
 
