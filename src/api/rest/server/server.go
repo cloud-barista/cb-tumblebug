@@ -8,9 +8,9 @@ import (
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
 	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
 
-	"os"
-	"fmt"
 	"crypto/subtle"
+	"fmt"
+	"os"
 
 	// REST API (echo)
 	"net/http"
@@ -103,6 +103,22 @@ func ApiServer() {
 	fmt.Println("")
 
 	// Route
+
+	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
+
+	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
+	e.GET("/tumblebug/connConfig/:connConfigName", rest_common.RestGetConnConfig)
+	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
+	e.GET("/tumblebug/region/:regionName", rest_common.RestGetRegion)
+
+	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpecList)
+	e.GET("/tumblebug/lookupSpec/:specName", rest_mcir.RestLookupSpec)
+
+	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
+	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
+	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
+	e.GET("/tumblebug/webadmin/spec", webadmin.Spec)
+
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
 	g.POST("", rest_common.RestPostNs)
@@ -204,21 +220,6 @@ func ApiServer() {
 	g.GET("/:nsId/checkResource/:resourceType/:resourceId", rest_mcir.RestCheckResource)
 	g.GET("/:nsId/checkMcis/:mcisId", rest_mcis.RestCheckMcis)
 	g.GET("/:nsId/mcis/:mcisId/checkVm/:vmId", rest_mcis.RestCheckVm)
-
-	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
-
-	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
-	e.GET("/tumblebug/connConfig/:connConfigName", rest_common.RestGetConnConfig)
-	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
-	e.GET("/tumblebug/region/:regionName", rest_common.RestGetRegion)
-
-	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpecList)
-	e.GET("/tumblebug/lookupSpec/:specName", rest_mcir.RestLookupSpec)
-
-	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
-	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
-	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
-	e.GET("/tumblebug/webadmin/spec", webadmin.Spec)
 
 	e.Logger.Fatal(e.Start(":1323"))
 
