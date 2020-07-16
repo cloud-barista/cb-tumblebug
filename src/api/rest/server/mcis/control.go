@@ -36,6 +36,20 @@ func RestPostMcis(c echo.Context) error {
 		return err
 	}
 
+	result, err := CorePostMcis(nsId, req)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
+
+	//fmt.Printf("%+v\n", *result)
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusCreated, result)
+}
+
+func CorePostMcis(nsId string, req *mcis.TbMcisReq) (*mcis.TbMcisInfo, error) {
+
 	key := mcis.CreateMcis(nsId, req)
 	mcisId := common.GenId(req.Name)
 
@@ -61,7 +75,7 @@ func RestPostMcis(c echo.Context) error {
 	vmList, err := mcis.ListVmId(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		return nil, err
 	}
 
 	for _, v := range vmList {
@@ -69,8 +83,9 @@ func RestPostMcis(c echo.Context) error {
 		//fmt.Println(vmKey)
 		vmKeyValue, _ := common.CBStore.Get(vmKey)
 		if vmKeyValue == nil {
-			mapA := map[string]string{"message": "Cannot find " + key}
-			return c.JSON(http.StatusOK, &mapA)
+			//mapA := map[string]string{"message": "Cannot find " + key}
+			//return c.JSON(http.StatusOK, &mapA)
+			return nil, fmt.Errorf("Cannot find " + key)
 		}
 		//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
 		vmTmp := mcis.TbVmInfo{}
@@ -82,10 +97,7 @@ func RestPostMcis(c echo.Context) error {
 	//mcisStatus, err := GetMcisStatus(nsId, mcisId)
 	//content.Status = mcisStatus.Status
 
-	//fmt.Printf("%+v\n", content)
-	common.PrintJsonPretty(content)
-
-	return c.JSON(http.StatusCreated, content)
+	return &content, nil
 }
 
 // RestGetMcis godoc
@@ -107,42 +119,97 @@ func RestGetMcis(c echo.Context) error {
 	mcisId := c.Param("mcisId")
 
 	action := c.QueryParam("action")
+
+	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
+
+		result, err := CoreGetMcisAction(nsId, mcisId, action)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+
+		mapA := map[string]string{"message": result}
+		return c.JSON(http.StatusOK, &mapA)
+
+	} else if action == "status" {
+
+		result, err := CoreGetMcisStatus(nsId, mcisId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+
+		var content struct {
+			Result *mcis.McisStatusInfo `json:"status"`
+		}
+		content.Result = result
+
+		//fmt.Printf("%+v\n", content)
+		common.PrintJsonPretty(content)
+
+		return c.JSON(http.StatusOK, &content)
+
+	} else {
+
+		result, err := CoreGetMcisInfo(nsId, mcisId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+
+		//fmt.Printf("%+v\n", *result)
+		common.PrintJsonPretty(*result)
+		//return by string
+		//return c.String(http.StatusOK, keyValue.Value)
+		return c.JSON(http.StatusOK, result)
+
+	}
+}
+
+func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
+
 	fmt.Println("[Get MCIS requested action: " + action)
 	if action == "suspend" {
 		fmt.Println("[suspend MCIS]")
 
 		err := mcis.ControlMcisAsync(nsId, mcisId, mcis.ActionSuspend)
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			//mapA := map[string]string{"message": err.Error()}
+			//return c.JSON(http.StatusFailedDependency, &mapA)
+			return "", err
 		}
 
-		mapA := map[string]string{"message": "Suspending the MCIS"}
-		return c.JSON(http.StatusOK, &mapA)
+		//mapA := map[string]string{"message": "Suspending the MCIS"}
+		//return c.JSON(http.StatusOK, &mapA)
+		return "Suspending the MCIS", nil
 
 	} else if action == "resume" {
 		fmt.Println("[resume MCIS]")
 
 		err := mcis.ControlMcisAsync(nsId, mcisId, mcis.ActionResume)
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			//mapA := map[string]string{"message": err.Error()}
+			//return c.JSON(http.StatusFailedDependency, &mapA)
+			return "", err
 		}
 
-		mapA := map[string]string{"message": "Resuming the MCIS"}
-		return c.JSON(http.StatusOK, &mapA)
+		//mapA := map[string]string{"message": "Resuming the MCIS"}
+		//return c.JSON(http.StatusOK, &mapA)
+		return "Resuming the MCIS", nil
 
 	} else if action == "reboot" {
 		fmt.Println("[reboot MCIS]")
 
 		err := mcis.ControlMcisAsync(nsId, mcisId, mcis.ActionReboot)
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			//mapA := map[string]string{"message": err.Error()}
+			//return c.JSON(http.StatusFailedDependency, &mapA)
+			return "", err
 		}
 
-		mapA := map[string]string{"message": "Rebooting the MCIS"}
-		return c.JSON(http.StatusOK, &mapA)
+		//mapA := map[string]string{"message": "Rebooting the MCIS"}
+		//return c.JSON(http.StatusOK, &mapA)
+		return "Rebooting the MCIS", nil
 
 	} else if action == "terminate" {
 		fmt.Println("[terminate MCIS]")
@@ -150,13 +217,14 @@ func RestGetMcis(c echo.Context) error {
 		vmList, err := mcis.ListVmId(nsId, mcisId)
 		if err != nil {
 			common.CBLog.Error(err)
-			return err
+			return "", err
 		}
 
 		//fmt.Println("len(vmList) %d ", len(vmList))
 		if len(vmList) == 0 {
-			mapA := map[string]string{"message": "No VM to terminate in the MCIS"}
-			return c.JSON(http.StatusOK, &mapA)
+			//mapA := map[string]string{"message": "No VM to terminate in the MCIS"}
+			//return c.JSON(http.StatusOK, &mapA)
+			return "No VM to terminate in the MCIS", nil
 		}
 
 		/*
@@ -166,40 +234,46 @@ func RestGetMcis(c echo.Context) error {
 		*/
 		err = mcis.ControlMcisAsync(nsId, mcisId, mcis.ActionTerminate)
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			//mapA := map[string]string{"message": err.Error()}
+			//return c.JSON(http.StatusFailedDependency, &mapA)
+			return "", err
 		}
 
-		mapA := map[string]string{"message": "Terminating the MCIS"}
-		return c.JSON(http.StatusOK, &mapA)
-
-	} else if action == "status" {
-
-		fmt.Println("[status MCIS]")
-
-		vmList, err := mcis.ListVmId(nsId, mcisId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		if len(vmList) == 0 {
-			mapA := map[string]string{"message": "No VM to check in the MCIS"}
-			return c.JSON(http.StatusOK, &mapA)
-		}
-		mcisStatusResponse, err := mcis.GetMcisStatus(nsId, mcisId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		//fmt.Printf("%+v\n", mcisStatusResponse)
-		common.PrintJsonPretty(mcisStatusResponse)
-
-		return c.JSON(http.StatusOK, &mcisStatusResponse)
-
+		//mapA := map[string]string{"message": "Terminating the MCIS"}
+		//return c.JSON(http.StatusOK, &mapA)
+		return "Terminating the MCIS", nil
 	} else {
+		return "", fmt.Errorf(action + " not supported")
+	}
+}
 
+func CoreGetMcisStatus(nsId string, mcisId string) (*mcis.McisStatusInfo, error) {
+
+	fmt.Println("[status MCIS]")
+
+	vmList, err := mcis.ListVmId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	if len(vmList) == 0 {
+		//mapA := map[string]string{"message": "No VM to check in the MCIS"}
+		//return c.JSON(http.StatusOK, &mapA)
+		return nil, nil
+	}
+	mcisStatusResponse, err := mcis.GetMcisStatus(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	return &mcisStatusResponse, nil
+}
+
+func CoreGetMcisInfo(nsId string, mcisId string) (*mcis.TbMcisInfo, error) {
+
+	/*
 		var content struct {
 			Id   string `json:"id"`
 			Name string `json:"name"`
@@ -211,66 +285,65 @@ func RestGetMcis(c echo.Context) error {
 			Placement_algo string          `json:"placement_algo"`
 			Description    string          `json:"description"`
 		}
+	*/
+	content := mcis.TbMcisInfo{}
 
-		fmt.Println("[Get MCIS for id]" + mcisId)
-		key := common.GenMcisKey(nsId, mcisId, "")
-		//fmt.Println(key)
+	fmt.Println("[Get MCIS for id]" + mcisId)
+	key := common.GenMcisKey(nsId, mcisId, "")
+	//fmt.Println(key)
 
-		keyValue, _ := common.CBStore.Get(key)
-		if keyValue == nil {
-			mapA := map[string]string{"message": "Cannot find " + key}
-			return c.JSON(http.StatusOK, &mapA)
-		}
-		//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		//fmt.Println("===============================================")
-
-		json.Unmarshal([]byte(keyValue.Value), &content)
-
-		mcisStatus, err := mcis.GetMcisStatus(nsId, mcisId)
-		content.Status = mcisStatus.Status
-
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		vmList, err := mcis.ListVmId(nsId, mcisId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		for _, v := range vmList {
-			vmKey := common.GenMcisKey(nsId, mcisId, v)
-			//fmt.Println(vmKey)
-			vmKeyValue, _ := common.CBStore.Get(vmKey)
-			if vmKeyValue == nil {
-				mapA := map[string]string{"message": "Cannot find " + key}
-				return c.JSON(http.StatusOK, &mapA)
-			}
-			//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-			vmTmp := mcis.TbVmInfo{}
-			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-			vmTmp.Id = v
-
-			//get current vm status
-			vmStatusInfoTmp, err := mcis.GetVmStatus(nsId, mcisId, v)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-			vmTmp.Status = vmStatusInfoTmp.Status
-			vmTmp.TargetStatus = vmStatusInfoTmp.TargetStatus
-			vmTmp.TargetAction = vmStatusInfoTmp.TargetAction
-
-			content.Vm = append(content.Vm, vmTmp)
-		}
-		//fmt.Printf("%+v\n", content)
-		common.PrintJsonPretty(content)
-		//return by string
-		//return c.String(http.StatusOK, keyValue.Value)
-		return c.JSON(http.StatusOK, &content)
-
+	keyValue, _ := common.CBStore.Get(key)
+	if keyValue == nil {
+		//mapA := map[string]string{"message": "Cannot find " + key}
+		//return c.JSON(http.StatusOK, &mapA)
+		return nil, fmt.Errorf("Cannot find " + key)
 	}
+	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	//fmt.Println("===============================================")
+
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	mcisStatus, err := mcis.GetMcisStatus(nsId, mcisId)
+	content.Status = mcisStatus.Status
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	vmList, err := mcis.ListVmId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	for _, v := range vmList {
+		vmKey := common.GenMcisKey(nsId, mcisId, v)
+		//fmt.Println(vmKey)
+		vmKeyValue, _ := common.CBStore.Get(vmKey)
+		if vmKeyValue == nil {
+			//mapA := map[string]string{"message": "Cannot find " + key}
+			//return c.JSON(http.StatusOK, &mapA)
+			return nil, fmt.Errorf("Cannot find " + key)
+		}
+		//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+		vmTmp := mcis.TbVmInfo{}
+		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+		vmTmp.Id = v
+
+		//get current vm status
+		vmStatusInfoTmp, err := mcis.GetVmStatus(nsId, mcisId, v)
+		if err != nil {
+			common.CBLog.Error(err)
+		}
+		vmTmp.Status = vmStatusInfoTmp.Status
+		vmTmp.TargetStatus = vmStatusInfoTmp.TargetStatus
+		vmTmp.TargetAction = vmStatusInfoTmp.TargetAction
+
+		content.Vm = append(content.Vm, vmTmp)
+	}
+
+	return &content, nil
 }
 
 // Response structure for RestGetAllMcis
