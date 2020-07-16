@@ -217,14 +217,14 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 	if err != nil {
-		fmt.Println(err)
+		common.CBLog.Error(err)
+		return err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
 		common.CBLog.Error(err)
-		//return res.StatusCode, nil, err
 		return err
 	}
 	defer res.Body.Close()
@@ -233,7 +233,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	fmt.Println(string(body))
 	if err != nil {
 		common.CBLog.Error(err)
-		//return res.StatusCode, body, err
 		return err
 	}
 
@@ -246,10 +245,10 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 
 		// delete vNet info
-		cbStoreDeleteErr := common.CBStore.Delete(key)
-		if cbStoreDeleteErr != nil {
-			common.CBLog.Error(cbStoreDeleteErr)
-			return res, cbStoreDeleteErr
+		err := common.CBStore.Delete(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			return res, err
 		}
 
 		return res, nil
@@ -258,11 +257,32 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
-		cbStoreDeleteErr := common.CBStore.Delete(key)
-		if cbStoreDeleteErr != nil {
-			common.CBLog.Error(cbStoreDeleteErr)
-			//return res.StatusCode, body, cbStoreDeleteErr
-			return cbStoreDeleteErr
+		url += "?force=true"
+		fmt.Println("forceFlag == true; url: " + url)
+		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+		if err != nil {
+			common.CBLog.Error(err)
+			//return err
+		}
+		req.Header.Add("Content-Type", "application/json")
+		res, err := client.Do(req)
+		if err != nil {
+			common.CBLog.Error(err)
+			//return err
+		}
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		fmt.Println(string(body))
+		if err != nil {
+			common.CBLog.Error(err)
+			//return err
+		}
+
+		err = common.CBStore.Delete(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			//return res.StatusCode, body, err
+			return err
 		}
 		//return res.StatusCode, body, nil
 		return nil
@@ -272,11 +292,11 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		//return res.StatusCode, body, err
 		return err
 	default:
-		cbStoreDeleteErr := common.CBStore.Delete(key)
-		if cbStoreDeleteErr != nil {
-			common.CBLog.Error(cbStoreDeleteErr)
-			//return res.StatusCode, body, cbStoreDeleteErr
-			return cbStoreDeleteErr
+		err := common.CBStore.Delete(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			//return res.StatusCode, body, err
+			return err
 		}
 		//return res.StatusCode, body, nil
 		return nil

@@ -482,10 +482,10 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 	switch {
 	case forceFlag == "true":
-		cbStoreDeleteErr := common.CBStore.Delete(key)
-		if cbStoreDeleteErr != nil {
-			common.CBLog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
+		err := common.CBStore.Delete(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			return res.StatusCode, body, err
 		}
 		return res.StatusCode, body, nil
 	case res.StatusCode >= 400 || res.StatusCode < 200:
@@ -493,10 +493,10 @@ func delVNic(nsId string, Id string, forceFlag string) (int, []byte, error) {
 		common.CBLog.Error(err)
 		return res.StatusCode, body, err
 	default:
-		cbStoreDeleteErr := common.CBStore.Delete(key)
-		if cbStoreDeleteErr != nil {
-			common.CBLog.Error(cbStoreDeleteErr)
-			return res.StatusCode, body, cbStoreDeleteErr
+		err := common.CBStore.Delete(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			return res.StatusCode, body, err
 		}
 		return res.StatusCode, body, nil
 	}
