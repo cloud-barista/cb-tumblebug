@@ -19,7 +19,7 @@ import (
 
 	"github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"golang.org/x/crypto/ssh"
 )
 

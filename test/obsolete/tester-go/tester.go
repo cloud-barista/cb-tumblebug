@@ -7,7 +7,7 @@ import (
 
 	// CB-Store
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
 /*

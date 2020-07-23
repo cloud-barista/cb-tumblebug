@@ -10,8 +10,8 @@ import (
 	//_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/cloud-barista/cb-tumblebug/src/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 
 	grpcserver "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server"
 	restapiserver "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"

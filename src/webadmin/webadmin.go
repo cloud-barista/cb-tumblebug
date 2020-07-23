@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	//cr "github.com/cloud-barista/cb-spider/api-runtime/common-runtime"
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
 //var cblog *logrus.Logger

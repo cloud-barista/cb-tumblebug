@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
 // 2020-04-09 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go

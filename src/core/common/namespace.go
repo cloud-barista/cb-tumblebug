@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
-	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
 
@@ -198,9 +198,9 @@ func DelNs(Id string) error {
 			import cycle not allowed
 			package github.com/cloud-barista/cb-tumblebug/src
 		        imports github.com/cloud-barista/cb-tumblebug/src/restapiserver
-		        imports github.com/cloud-barista/cb-tumblebug/src/common
-		        imports github.com/cloud-barista/cb-tumblebug/src/mcir
-				imports github.com/cloud-barista/cb-tumblebug/src/common
+		        imports github.com/cloud-barista/cb-tumblebug/src/core/common
+		        imports github.com/cloud-barista/cb-tumblebug/src/core/mcir
+				imports github.com/cloud-barista/cb-tumblebug/src/core/common
 	*/
 
 	key := "/ns/" + Id

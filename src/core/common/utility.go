@@ -16,7 +16,7 @@ import (
 	// CB-Store
 	//"github.com/cloud-barista/cb-grpc-project/pkg/logging"
 
-	//"github.com/cloud-barista/cb-tumblebug/src/mcir"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 
 	"encoding/json"
 	"fmt"

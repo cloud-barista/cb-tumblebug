@@ -7,8 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/cloud-barista/cb-tumblebug/src/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 )
 
 func RestDelAllResources(c echo.Context) error {

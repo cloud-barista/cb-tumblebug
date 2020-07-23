@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	//uuid "github.com/google/uuid"
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/xwb1989/sqlparser"
 	// CB-Store
 )
