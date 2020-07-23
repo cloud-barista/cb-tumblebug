@@ -19,28 +19,6 @@ func RestDelAllResources(c echo.Context) error {
 
 	forceFlag := c.QueryParam("force")
 
-	/*
-		specList := ListResourceId(nsId, "spec")
-
-		if len(specList) == 0 {
-			mapA := map[string]string{"message": "There is no spec element in this namespace."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			for _, v := range specList {
-				responseCode, _, err := DelResource(nsId, "spec", v, forceFlag)
-				if err != nil {
-					common.CBLog.Error(err)
-					mapA := map[string]string{"message": err.Error()}
-					return c.JSON(responseCode, &mapA)
-				}
-
-			}
-
-			mapA := map[string]string{"message": "All specs has been deleted"}
-			return c.JSON(http.StatusOK, &mapA)
-		}
-	*/
-
 	err := mcir.DelAllResources(nsId, resourceType, forceFlag)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -81,47 +59,12 @@ func RestGetAllResources(c echo.Context) error {
 	resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
-	/*
-		var content struct {
-			SecurityGroup []TbSecurityGroupInfo `json:"securityGroup"`
-		}
-	*/
-
-	/*
-		securityGroupList := ListResourceId(nsId, "securityGroup")
-
-		for _, v := range securityGroupList {
-
-			key := common.GenResourceKey(nsId, "securityGroup", v)
-			fmt.Println(key)
-			keyValue, _ := common.CBStore.Get(key)
-			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-			securityGroupTmp := TbSecurityGroupInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &securityGroupTmp)
-			securityGroupTmp.Id = v
-			content.SecurityGroup = append(content.SecurityGroup, securityGroupTmp)
-
-		}
-		fmt.Printf("content %+v\n", content)
-
-		return c.JSON(http.StatusOK, &content)
-	*/
-
 	resourceList, err := mcir.ListResource(nsId, resourceType)
 	if err != nil {
 		mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
 		return c.JSON(http.StatusNotFound, &mapA)
 	}
 
-	/*
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.SecurityGroup = resourceList.([]TbSecurityGroupInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	*/
 	switch resourceType {
 	case "image":
 		var content struct {
@@ -199,28 +142,6 @@ func RestGetResource(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
 	resourceId := c.Param("resourceId")
-
-	/*
-		content := TbSpecInfo{}
-
-		fmt.Println("[Get spec for resourceId]" + resourceId)
-		key := common.GenResourceKey(nsId, "spec", resourceId)
-		fmt.Println(key)
-
-		keyValue, _ := common.CBStore.Get(key)
-		if keyValue == nil {
-			mapA := map[string]string{"message": "Failed to find the spec with given ID."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-			fmt.Println("===============================================")
-
-			json.Unmarshal([]byte(keyValue.Value), &content)
-			content.Id = resourceId // Optional. Can be omitted.
-
-			return c.JSON(http.StatusOK, &content)
-		}
-	*/
 
 	res, err := mcir.GetResource(nsId, resourceType, resourceId)
 	if err != nil {

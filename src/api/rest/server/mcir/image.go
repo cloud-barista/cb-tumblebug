@@ -105,21 +105,6 @@ func RestPutImage(c echo.Context) error {
 // @Router /ns/{nsId}/resources/image/{imageId} [get]
 func RestGetImage(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-
-		resourceType := "image"
-
-		id := c.Param("imageId")
-
-		res, err := GetResource(nsId, resourceType, id)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			return c.JSON(http.StatusOK, &res)
-		}
-	*/
 	return nil
 }
 
@@ -141,29 +126,6 @@ type RestGetAllImageResponse struct {
 // @Router /ns/{nsId}/resources/image [get]
 func RestGetAllImage(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-
-		resourceType := "image"
-
-		var content struct {
-			Image []TbImageInfo `json:"image"`
-		}
-
-		resourceList, err := ListResource(nsId, resourceType)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.Image = resourceList.([]TbImageInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	*/
 	return nil
 }
 
@@ -180,22 +142,6 @@ func RestGetAllImage(c echo.Context) error {
 // @Router /ns/{nsId}/resources/image/{imageId} [delete]
 func RestDelImage(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "image"
-		id := c.Param("imageId")
-		forceFlag := c.QueryParam("force")
-
-		err := DelResource(nsId, resourceType, id, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-
-		mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
 	return nil
 }
 
@@ -211,20 +157,5 @@ func RestDelImage(c echo.Context) error {
 // @Router /ns/{nsId}/resources/image [delete]
 func RestDelAllImage(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "image"
-		forceFlag := c.QueryParam("force")
-
-		err := DelAllResources(nsId, resourceType, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusConflict, &mapA)
-		}
-
-		mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
 	return nil
 }

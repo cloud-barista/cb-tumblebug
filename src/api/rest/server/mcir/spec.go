@@ -170,67 +170,6 @@ func RestFetchSpecs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	/*
-		connConfigs, err := common.GetConnConfigList()
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-
-		var connConfigCount uint
-		var specCount uint
-
-		for _, connConfig := range connConfigs.Connectionconfig {
-			fmt.Println("connConfig " + connConfig.ConfigName)
-
-			spiderSpecList, err := mcir.LookupSpecList(connConfig.ConfigName)
-			if err != nil {
-				common.CBLog.Error(err)
-				mapA := map[string]string{
-					"message": err.Error()}
-				return c.JSON(http.StatusFailedDependency, &mapA)
-			}
-
-			for _, spiderSpec := range spiderSpecList.Vmspec {
-				tumblebugSpec, err := mcir.ConvertSpiderSpecToTumblebugSpec(spiderSpec)
-				if err != nil {
-					common.CBLog.Error(err)
-					mapA := map[string]string{
-						"message": err.Error()}
-					return c.JSON(http.StatusFailedDependency, &mapA)
-				}
-
-				tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
-				//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
-
-				check, _ := mcir.CheckResource(nsId, "spec", tumblebugSpecId)
-				if check {
-					common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
-					continue
-				} else {
-					tumblebugSpec.Id = tumblebugSpecId
-					tumblebugSpec.Name = tumblebugSpecId
-					tumblebugSpec.ConnectionName = connConfig.ConfigName
-
-					_, err := mcir.RegisterSpecWithInfo(nsId, &tumblebugSpec)
-					if err != nil {
-						common.CBLog.Error(err)
-						mapA := map[string]string{
-							"message": err.Error()}
-						return c.JSON(http.StatusFailedDependency, &mapA)
-					}
-				}
-				specCount++
-			}
-			connConfigCount++
-		}
-		mapA := map[string]string{
-			"message": "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-		return c.JSON(http.StatusCreated, &mapA) //content)
-	*/
-
 	connConfigCount, specCount, err := mcir.FetchSpecs(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -258,32 +197,6 @@ func RestFetchSpecs(c echo.Context) error {
 // @Router /ns/{nsId}/resources/spec/{specId} [get]
 func RestGetSpec(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		fmt.Println("RestGetSpec called;") // for debug
-		//fmt.Println("c.QueryString(): " + c.QueryString()) // for debug
-		fmt.Println("c.Path(): " + c.Path()) // for debug
-
-		stringList := strings.Split(c.Path(), "/")
-		for i, v := range stringList {
-			fmt.Println("i: " + string(i) + ", v: " + v)
-		}
-
-		nsId := c.Param("nsId")
-
-		//resourceType := "spec"
-		resourceType := strings.Split(c.Path(), "/")[5]
-		// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
-
-		id := c.Param("specId")
-
-		res, err := GetResource(nsId, resourceType, id)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			return c.JSON(http.StatusOK, &res)
-		}
-	*/
 	return nil
 }
 
@@ -305,29 +218,6 @@ type RestGetAllSpecResponse struct {
 // @Router /ns/{nsId}/resources/spec [get]
 func RestGetAllSpec(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-
-		resourceType := "spec"
-
-		var content struct {
-			Spec []TbSpecInfo `json:"spec"`
-		}
-
-		resourceList, err := ListResource(nsId, resourceType)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.Spec = resourceList.([]TbSpecInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	*/
 	return nil
 }
 
@@ -344,22 +234,6 @@ func RestGetAllSpec(c echo.Context) error {
 // @Router /ns/{nsId}/resources/spec/{specId} [delete]
 func RestDelSpec(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "spec"
-		id := c.Param("specId")
-		forceFlag := c.QueryParam("force")
-
-		err := DelResource(nsId, resourceType, id, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-
-		mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
 	return nil
 }
 
@@ -375,20 +249,5 @@ func RestDelSpec(c echo.Context) error {
 // @Router /ns/{nsId}/resources/spec [delete]
 func RestDelAllSpec(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "spec"
-		forceFlag := c.QueryParam("force")
-
-		err := DelAllResources(nsId, resourceType, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusConflict, &mapA)
-		}
-
-		mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
 	return nil
 }

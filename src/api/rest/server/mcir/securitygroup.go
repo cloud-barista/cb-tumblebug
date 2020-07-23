@@ -30,25 +30,6 @@ func RestPostSecurityGroup(c echo.Context) error {
 		return err
 	}
 
-	/*
-		action := c.QueryParam("action")
-		fmt.Println("[POST SecurityGroup requested action: " + action)
-		if action == "create" {
-			fmt.Println("[Creating SecurityGroup]")
-			content, _ := CreateSecurityGroup(nsId, u)
-			return c.JSON(http.StatusCreated, content)
-
-		} else if action == "register" {
-			fmt.Println("[Registering SecurityGroup]")
-			content, _ := registerSecurityGroup(nsId, u)
-			return c.JSON(http.StatusCreated, content)
-
-		} else {
-			mapA := map[string]string{"message": "You must specify: action=create"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-	*/
-
 	fmt.Println("[POST SecurityGroup")
 	fmt.Println("[Creating SecurityGroup]")
 	//content, responseCode, _, err := CreateSecurityGroup(nsId, u)
@@ -98,21 +79,6 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [get]
 func RestGetSecurityGroup(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-
-		resourceType := "securityGroup"
-
-		id := c.Param("securityGroupId")
-
-		res, err := GetResource(nsId, resourceType, id)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			return c.JSON(http.StatusOK, &res)
-		}
-	*/
 	return nil
 }
 
@@ -134,29 +100,6 @@ type RestGetAllSecurityGroupResponse struct {
 // @Router /ns/{nsId}/resources/securityGroup [get]
 func RestGetAllSecurityGroup(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-
-		resourceType := "securityGroup"
-
-		var content struct {
-			SecurityGroup []TbSecurityGroupInfo `json:"securityGroup"`
-		}
-
-		resourceList, err := ListResource(nsId, resourceType)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.SecurityGroup = resourceList.([]TbSecurityGroupInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	*/
 	return nil
 }
 
@@ -173,25 +116,6 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [delete]
 func RestDelSecurityGroup(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "securityGroup"
-		id := c.Param("securityGroupId")
-		forceFlag := c.QueryParam("force")
-
-		//responseCode, body, err := delSecurityGroup(nsId, id, forceFlag)
-
-		err := DelResource(nsId, resourceType, id, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete the securityGroup"}
-			//return c.JSONBlob(responseCode, body)
-			return c.JSON(http.StatusFailedDependency, err)
-		}
-
-		mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
 	return nil
 }
 
@@ -207,20 +131,5 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Router /ns/{nsId}/resources/securityGroup [delete]
 func RestDelAllSecurityGroup(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "securityGroup"
-		forceFlag := c.QueryParam("force")
-
-		err := DelAllResources(nsId, resourceType, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusConflict, &mapA)
-		}
-
-		mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
 	return nil
 }
