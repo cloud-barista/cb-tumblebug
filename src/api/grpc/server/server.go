@@ -1,41 +1,137 @@
 package server
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"net"
+	"os"
 
-	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf"
-	"google.golang.org/grpc"
+	gc "github.com/cloud-barista/cb-tumblebug/src/api/grpc/common"
+	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/config"
+	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/logger"
+	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf/cbtumblebug"
+	grpc_common "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server/common"
+	grpc_mcir "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server/mcir"
+	grpc_mcis "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server/mcis"
+
 	"google.golang.org/grpc/reflection"
 )
 
-const (
-	Port = ":50051"
-)
-
-// server는 protobuf에서 정의된 함수의 인자로서 사용된다.
-type server struct{}
-
-// ProtoBuf의 IDL에 정의되어 있는 함수
-// 함수의 인자와 리턴 값인 HelloRequest, HelloReply, 그리고 아래의 함수들은 모두
-// protoc에서 생성된 skeleton 코드를 그대로 사용한다.
-
+// RunServer - GRPC 서버 구동
 func RunServer() {
-	lis, err := net.Listen("tcp", Port)
+	logger := logger.NewLogger()
+
+	configPath := os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml"
+	gConf, err := configLoad(configPath)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	s := grpc.NewServer()
-	pb.RegisterNsServer(s, &server{})
-	pb.RegisterImageServer(s, &server{})
-	pb.RegisterSpecServer(s, &server{})
-
-	// Register reflection service on gRPC server.
-	reflection.Register(s)
-
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		logger.Error("failed to load config : ", err)
+		return
 	}
 
-	//fmt.Println("gRPC server started on " + Port)
+	tumblebugsrv := gConf.GSL.TumblebugSrv
+
+	conn, err := net.Listen("tcp", tumblebugsrv.Addr)
+	if err != nil {
+		logger.Error("failed to listen: ", err)
+		return
+	}
+
+	cbserver, closer, err := gc.NewCBServer(tumblebugsrv)
+	if err != nil {
+		logger.Error("failed to create grpc server: ", err)
+		return
+	}
+
+	if closer != nil {
+		defer closer.Close()
+	}
+
+	gs := cbserver.Server
+	pb.RegisterUTILITYServer(gs, &grpc_common.UTILITYService{})
+	pb.RegisterNSServer(gs, &grpc_common.NSService{})
+	pb.RegisterMCIRServer(gs, &grpc_mcir.MCIRService{})
+	pb.RegisterMCISServer(gs, &grpc_mcis.MCISService{})
+
+	if tumblebugsrv.Reflection == "enable" {
+		if tumblebugsrv.Interceptors.AuthJWT != nil {
+			fmt.Printf("\n\n*** you can run reflection when jwt auth interceptor is not used ***\n\n")
+		} else {
+			reflection.Register(gs)
+		}
+	}
+
+	fmt.Printf("\n[CB-Tumblebug: Multi-Cloud Infra Service Management]")
+	fmt.Printf("\n   Initiating GRPC API Server....__^..^__....")
+	fmt.Printf("\n\n => grpc server started on %s\n\n", tumblebugsrv.Addr)
+
+	if err := gs.Serve(conn); err != nil {
+		logger.Error("failed to serve: ", err)
+	}
+}
+
+func configLoad(cf string) (config.GrpcConfig, error) {
+	logger := logger.NewLogger()
+
+	// Viper 를 사용하는 설정 파서 생성
+	parser := config.MakeParser()
+
+	var (
+		gConf config.GrpcConfig
+		err   error
+	)
+
+	if cf == "" {
+		logger.Error("Please, provide the path to your configuration file")
+		return gConf, errors.New("configuration file are not specified")
+	}
+
+	logger.Debug("Parsing configuration file: ", cf)
+	if gConf, err = parser.GrpcParse(cf); err != nil {
+		logger.Error("ERROR - Parsing the configuration file.\n", err.Error())
+		return gConf, err
+	}
+
+	// Command line 에 지정된 옵션을 설정에 적용 (우선권)
+
+	// TUMBLEBUG 필수 입력 항목 체크
+	tumblebugsrv := gConf.GSL.TumblebugSrv
+
+	if tumblebugsrv == nil {
+		return gConf, errors.New("tumblebugsrv field are not specified")
+	}
+
+	if tumblebugsrv.Addr == "" {
+		return gConf, errors.New("tumblebugsrv.addr field are not specified")
+	}
+
+	if tumblebugsrv.TLS != nil {
+		if tumblebugsrv.TLS.TLSCert == "" {
+			return gConf, errors.New("tumblebugsrv.tls.tls_cert field are not specified")
+		}
+		if tumblebugsrv.TLS.TLSKey == "" {
+			return gConf, errors.New("tumblebugsrv.tls.tls_key field are not specified")
+		}
+	}
+
+	if tumblebugsrv.Interceptors != nil {
+		if tumblebugsrv.Interceptors.AuthJWT != nil {
+			if tumblebugsrv.Interceptors.AuthJWT.JWTKey == "" {
+				return gConf, errors.New("tumblebugsrv.interceptors.auth_jwt.jwt_key field are not specified")
+			}
+		}
+		if tumblebugsrv.Interceptors.PrometheusMetrics != nil {
+			if tumblebugsrv.Interceptors.PrometheusMetrics.ListenPort == 0 {
+				return gConf, errors.New("tumblebugsrv.interceptors.prometheus_metrics.listen_port field are not specified")
+			}
+		}
+		if tumblebugsrv.Interceptors.Opentracing != nil {
+			if tumblebugsrv.Interceptors.Opentracing.Jaeger != nil {
+				if tumblebugsrv.Interceptors.Opentracing.Jaeger.Endpoint == "" {
+					return gConf, errors.New("tumblebugsrv.interceptors.opentracing.jaeger.endpoint field are not specified")
+				}
+			}
+		}
+	}
+
+	return gConf, nil
 }
