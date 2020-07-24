@@ -13,10 +13,10 @@ import (
 
 	// CB-Store
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	//"github.com/cloud-barista/cb-spider/cloud-control-manager/vm-ssh"
-	//"github.com/cloud-barista/cb-tumblebug/src/mcism"
-	//"github.com/cloud-barista/cb-tumblebug/src/common"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/mcism"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
 // CB-Store

@@ -7,8 +7,8 @@ import (
 	"github.com/gogo/protobuf/types"
 
 	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf"
-	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/cloud-barista/cb-tumblebug/src/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 )
 
 func (s *server) RegisterImageWithId(ctx context.Context, req *pb.RegisterImageWithIdWrapper) (*pb.TbImageInfo, error) {

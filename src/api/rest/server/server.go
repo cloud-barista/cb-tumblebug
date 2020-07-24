@@ -1,7 +1,7 @@
 package restapiserver
 
 import (
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/webadmin"
 
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"

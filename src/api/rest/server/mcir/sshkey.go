@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
-	"github.com/cloud-barista/cb-tumblebug/src/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
 )
 
@@ -29,25 +29,6 @@ func RestPostSshKey(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-
-	/*
-		action := c.QueryParam("action")
-		fmt.Println("[POST SshKey requested action: " + action)
-		if action == "create" {
-			fmt.Println("[Creating SshKey]")
-			content, _ := CreateSshKey(nsId, u)
-			return c.JSON(http.StatusCreated, content)
-
-		} else if action == "register" {
-			fmt.Println("[Registering SshKey]")
-			content, _ := registerSshKey(nsId, u)
-			return c.JSON(http.StatusCreated, content)
-
-		} else {
-			mapA := map[string]string{"message": "You must specify: action=create"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		}
-	*/
 
 	fmt.Println("[POST SshKey")
 	fmt.Println("[Creating SshKey]")
@@ -101,21 +82,6 @@ func RestPutSshKey(c echo.Context) error {
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [get]
 func RestGetSshKey(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-
-		resourceType := "sshKey"
-
-		id := c.Param("sshKeyId")
-
-		res, err := GetResource(nsId, resourceType, id)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to find " + resourceType + " " + id}
-			return c.JSON(http.StatusNotFound, &mapA)
-		} else {
-			return c.JSON(http.StatusOK, &res)
-		}
-	*/
 	return nil
 }
 
@@ -137,29 +103,6 @@ type RestGetAllSshKeyResponse struct {
 // @Router /ns/{nsId}/resources/sshKey [get]
 func RestGetAllSshKey(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-
-		resourceType := "sshKey"
-
-		var content struct {
-			SshKey []TbSshKeyInfo `json:"sshKey"`
-		}
-
-		resourceList, err := ListResource(nsId, resourceType)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.SshKey = resourceList.([]TbSshKeyInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	*/
 	return nil
 }
 
@@ -176,29 +119,6 @@ func RestGetAllSshKey(c echo.Context) error {
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [delete]
 func RestDelSshKey(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "sshKey"
-		id := c.Param("sshKeyId")
-		forceFlag := c.QueryParam("force")
-
-		//responseCode, body, err := delSshKey(nsId, id, forceFlag)
-
-		err := DelResource(nsId, resourceType, id, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-
-			//mapA := map[string]string{"message": "Failed to delete the sshKey"}
-			//return c.JSON(http.StatusFailedDependency, &mapA)
-
-			//return c.JSONBlob(responseCode, body)
-			return c.JSON(http.StatusFailedDependency, err)
-		}
-
-		mapA := map[string]string{"message": "The " + resourceType + " " + id + " has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-		//return c.JSON(http.StatusOK, body)
-	*/
 	return nil
 }
 
@@ -214,20 +134,5 @@ func RestDelSshKey(c echo.Context) error {
 // @Router /ns/{nsId}/resources/sshKey [delete]
 func RestDelAllSshKey(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
-	/*
-		nsId := c.Param("nsId")
-		resourceType := "sshKey"
-		forceFlag := c.QueryParam("force")
-
-		err := DelAllResources(nsId, resourceType, forceFlag)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusConflict, &mapA)
-		}
-
-		mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
-		return c.JSON(http.StatusOK, &mapA)
-	*/
 	return nil
 }

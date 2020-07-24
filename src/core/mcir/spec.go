@@ -10,9 +10,9 @@ import (
 
 	//"strings"
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
-	//"github.com/cloud-barista/cb-tumblebug/src/mcis"
+	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/xwb1989/sqlparser"

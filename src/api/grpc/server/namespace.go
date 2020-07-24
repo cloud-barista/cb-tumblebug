@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/cloud-barista/cb-tumblebug/src/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/gogo/protobuf/types"
 
 	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf"
