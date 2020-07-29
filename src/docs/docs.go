@@ -440,7 +440,7 @@ var doc = `{
         },
         "/ns/{nsId}/cmd/mcis/{mcisId}": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Send a command to specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -450,7 +450,7 @@ var doc = `{
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Send a command to specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -500,7 +500,7 @@ var doc = `{
         },
         "/ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Send a command to specified VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -510,7 +510,7 @@ var doc = `{
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Send a command to specified VM",
                 "parameters": [
                     {
                         "type": "string",
@@ -567,7 +567,7 @@ var doc = `{
         },
         "/ns/{nsId}/install/mcis/{mcisId}": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Install the benchmark agent to specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -577,7 +577,7 @@ var doc = `{
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Install the benchmark agent to specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -758,7 +758,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/recommend": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Get MCIS recommendation",
                 "consumes": [
                     "application/json"
                 ],
@@ -768,7 +768,7 @@ var doc = `{
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Get MCIS recommendation",
                 "parameters": [
                     {
                         "type": "string",
@@ -905,7 +905,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/{mcisId}/vm": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Create VM in specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -915,7 +915,7 @@ var doc = `{
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Create VM in specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -2576,7 +2576,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vcpu": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -2597,7 +2596,6 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -3191,18 +3189,15 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "Fields for response",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -3236,7 +3231,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -3258,7 +3252,6 @@ var doc = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -3284,7 +3277,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vpcIID": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -3351,7 +3343,6 @@ var doc = `{
                     "type": "string"
                 },
                 "cspViewVmDetail": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -3364,7 +3355,6 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "name": {
@@ -3384,7 +3374,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "2. Provided by CB-Spider",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -3437,7 +3426,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vm_spec": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
@@ -3461,7 +3449,6 @@ var doc = `{
                     }
                 },
                 "vm_req": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
             }

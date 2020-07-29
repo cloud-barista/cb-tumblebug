@@ -221,8 +221,8 @@ type RestPostMcisRecommandResponse struct {
 }
 
 // RestPostMcisRecommand godoc
-// @Summary Create MCIS
-// @Description Create MCIS
+// @Summary Get MCIS recommendation
+// @Description Get MCIS recommendation
 // @Tags MCIS
 // @Accept  json
 // @Produce  json
@@ -263,8 +263,8 @@ type RestPostCmdMcisVmResponse struct {
 }
 
 // RestPostCmdMcisVm godoc
-// @Summary Create MCIS
-// @Description Create MCIS
+// @Summary Send a command to specified VM
+// @Description Send a command to specified VM
 // @Tags MCIS
 // @Accept  json
 // @Produce  json
@@ -309,8 +309,8 @@ type RestPostCmdMcisResponseWrapper struct {
 }
 
 // RestPostCmdMcis godoc
-// @Summary Create MCIS
-// @Description Create MCIS
+// @Summary Send a command to specified MCIS
+// @Description Send a command to specified MCIS
 // @Tags MCIS
 // @Accept  json
 // @Produce  json
@@ -358,8 +358,8 @@ func RestPostCmdMcis(c echo.Context) error {
 }
 
 // RestPostInstallAgentToMcis godoc
-// @Summary Create MCIS
-// @Description Create MCIS
+// @Summary Install the benchmark agent to specified MCIS
+// @Description Install the benchmark agent to specified MCIS
 // @Tags MCIS
 // @Accept  json
 // @Produce  json
@@ -390,8 +390,8 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 }
 
 // RestPostMcisVm godoc
-// @Summary Create MCIS
-// @Description Create MCIS
+// @Summary Create VM in specified MCIS
+// @Description Create VM in specified MCIS
 // @Tags MCIS
 // @Accept  json
 // @Produce  json
