@@ -129,7 +129,6 @@ definitions:
         type: string
       vcpu:
         $ref: '#/definitions/mcir.SpiderVCpuInfo'
-        type: object
     type: object
   mcir.SpiderSpecList:
     properties:
@@ -143,7 +142,6 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: '{NameId, SystemId}'
-        type: object
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -532,15 +530,12 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
-        type: object
       imageIId:
         $ref: '#/definitions/common.IID'
-        type: object
       imageName:
         type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
-        type: object
       keyPairName:
         type: string
       keyValueList:
@@ -564,7 +559,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
-        type: object
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -580,7 +574,6 @@ definitions:
       subnetIID:
         $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
-        type: object
       subnetName:
         type: string
       vmblockDisk:
@@ -599,7 +592,6 @@ definitions:
         type: string
       vpcIID:
         $ref: '#/definitions/common.IID'
-        type: object
       vpcname:
         type: string
     type: object
@@ -643,7 +635,6 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
-        type: object
       description:
         type: string
       id:
@@ -652,7 +643,6 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
-        type: object
       name:
         type: string
       privateDNS:
@@ -666,7 +656,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: 2. Provided by CB-Spider
-        type: object
       securityGroupIds:
         items:
           type: string
@@ -702,7 +691,6 @@ definitions:
         type: string
       vm_spec:
         $ref: '#/definitions/mcir.TbSpecInfo'
-        type: object
     type: object
   mcis.TbVmRecommendInfo:
     properties:
@@ -718,7 +706,6 @@ definitions:
         type: array
       vm_req:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
-        type: object
     type: object
   mcis.TbVmRecommendReq:
     properties:
@@ -1052,7 +1039,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create MCIS
+      description: Send a command to specified MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -1085,14 +1072,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS
+      summary: Send a command to specified MCIS
       tags:
       - MCIS
   /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}:
     post:
       consumes:
       - application/json
-      description: Create MCIS
+      description: Send a command to specified VM
       parameters:
       - description: Namespace ID
         in: path
@@ -1130,14 +1117,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS
+      summary: Send a command to specified VM
       tags:
       - MCIS
   /ns/{nsId}/install/mcis/{mcisId}:
     post:
       consumes:
       - application/json
-      description: Create MCIS
+      description: Install the benchmark agent to specified MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -1170,7 +1157,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS
+      summary: Install the benchmark agent to specified MCIS
       tags:
       - MCIS
   /ns/{nsId}/mcis:
@@ -1327,7 +1314,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create MCIS
+      description: Create VM in specified MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -1360,7 +1347,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS
+      summary: Create VM in specified MCIS
       tags:
       - MCIS
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
@@ -1440,7 +1427,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create MCIS
+      description: Get MCIS recommendation
       parameters:
       - description: Namespace ID
         in: path
@@ -1468,7 +1455,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create MCIS
+      summary: Get MCIS recommendation
       tags:
       - MCIS
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:

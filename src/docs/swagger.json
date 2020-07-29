@@ -425,7 +425,7 @@
         },
         "/ns/{nsId}/cmd/mcis/{mcisId}": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Send a command to specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -435,7 +435,7 @@
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Send a command to specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -485,7 +485,7 @@
         },
         "/ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Send a command to specified VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -495,7 +495,7 @@
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Send a command to specified VM",
                 "parameters": [
                     {
                         "type": "string",
@@ -552,7 +552,7 @@
         },
         "/ns/{nsId}/install/mcis/{mcisId}": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Install the benchmark agent to specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -562,7 +562,7 @@
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Install the benchmark agent to specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -743,7 +743,7 @@
         },
         "/ns/{nsId}/mcis/recommend": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Get MCIS recommendation",
                 "consumes": [
                     "application/json"
                 ],
@@ -753,7 +753,7 @@
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Get MCIS recommendation",
                 "parameters": [
                     {
                         "type": "string",
@@ -890,7 +890,7 @@
         },
         "/ns/{nsId}/mcis/{mcisId}/vm": {
             "post": {
-                "description": "Create MCIS",
+                "description": "Create VM in specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -900,7 +900,7 @@
                 "tags": [
                     "MCIS"
                 ],
-                "summary": "Create MCIS",
+                "summary": "Create VM in specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -2561,7 +2561,6 @@
                     "type": "string"
                 },
                 "vcpu": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -2582,7 +2581,6 @@
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -3176,18 +3174,15 @@
             "properties": {
                 "iid": {
                     "description": "Fields for response",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -3221,7 +3216,6 @@
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -3243,7 +3237,6 @@
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -3269,7 +3262,6 @@
                     "type": "string"
                 },
                 "vpcIID": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -3336,7 +3328,6 @@
                     "type": "string"
                 },
                 "cspViewVmDetail": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -3349,7 +3340,6 @@
                     "type": "string"
                 },
                 "location": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "name": {
@@ -3369,7 +3359,6 @@
                 },
                 "region": {
                     "description": "2. Provided by CB-Spider",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -3422,7 +3411,6 @@
                     "type": "string"
                 },
                 "vm_spec": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
@@ -3446,7 +3434,6 @@
                     }
                 },
                 "vm_req": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
             }
