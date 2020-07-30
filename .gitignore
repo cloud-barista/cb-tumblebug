@@ -23,7 +23,6 @@ src/cli/cli
 meta_db/
 
 # Config file for test
-test/official/credentials.conf
 test/official/sequentialFullTests/executionStatus
 
 # Config file for mcism
