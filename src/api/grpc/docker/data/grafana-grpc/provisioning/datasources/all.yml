@@ -1,0 +1,8 @@
+datasources:
+- name: '${DS_MONITORING}'
+  type: 'prometheus'
+  access: 'proxy'
+  url: 'http://prometheus-tb:9090'
+  is_default: true
+  version: 1
+  editable: true
