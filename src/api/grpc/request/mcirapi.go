@@ -181,7 +181,7 @@ type SpiderSubnetReqInfo struct { // Spider
 
 // ===== [ Implementatiom ] =====
 
-// SetServerAddr - Spider 서버 주소 설정
+// SetServerAddr - Tumblebug 서버 주소 설정
 func (m *MCIRApi) SetServerAddr(addr string) error {
 	if addr == "" {
 		return errors.New("parameter is empty")
@@ -191,7 +191,7 @@ func (m *MCIRApi) SetServerAddr(addr string) error {
 	return nil
 }
 
-// GetServerAddr - Spider 서버 주소 값 조회
+// GetServerAddr - Tumblebug 서버 주소 값 조회
 func (m *MCIRApi) GetServerAddr() (string, error) {
 	return m.gConf.GSL.TumblebugSrv.Addr, nil
 }

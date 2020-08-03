@@ -38,7 +38,7 @@ type NsReq struct {
 
 // ===== [ Implementations ] =====
 
-// SetServerAddr - Spider 서버 주소 설정
+// SetServerAddr - Tumblebug 서버 주소 설정
 func (ns *NSApi) SetServerAddr(addr string) error {
 	if addr == "" {
 		return errors.New("parameter is empty")
@@ -48,7 +48,7 @@ func (ns *NSApi) SetServerAddr(addr string) error {
 	return nil
 }
 
-// GetServerAddr - Spider 서버 주소 값 조회
+// GetServerAddr - Tumblebug 서버 주소 값 조회
 func (ns *NSApi) GetServerAddr() (string, error) {
 	return ns.gConf.GSL.TumblebugSrv.Addr, nil
 }

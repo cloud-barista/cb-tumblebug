@@ -204,7 +204,7 @@ type McisCmdVmCreateRequest struct {
 
 // ===== [ Implementatiom ] =====
 
-// SetServerAddr - Spider 서버 주소 설정
+// SetServerAddr - Tumblebug 서버 주소 설정
 func (m *MCISApi) SetServerAddr(addr string) error {
 	if addr == "" {
 		return errors.New("parameter is empty")
@@ -214,7 +214,7 @@ func (m *MCISApi) SetServerAddr(addr string) error {
 	return nil
 }
 
-// GetServerAddr - Spider 서버 주소 값 조회
+// GetServerAddr - Tumblebug 서버 주소 값 조회
 func (m *MCISApi) GetServerAddr() (string, error) {
 	return m.gConf.GSL.TumblebugSrv.Addr, nil
 }
