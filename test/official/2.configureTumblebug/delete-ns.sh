@@ -1,12 +1,22 @@
 #!/bin/bash
 
-source ../conf.env
-AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+#function delete_ns() {
+    FILE=../conf.env
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
 
-echo "####################################################################"
-echo "## 0. Namespace: Delete"
-echo "####################################################################"
+    source ../conf.env
+    AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
-INDEX=${1}
+    echo "####################################################################"
+    echo "## 0. Namespace: Delete"
+    echo "####################################################################"
 
-curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID | json_pp #|| return 1
+    INDEX=${1}
+
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID | json_pp #|| return 1
+#}
+
+#delete_ns
