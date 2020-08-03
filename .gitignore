@@ -27,7 +27,7 @@ test/official/sequentialFullTests/executionStatus
 test/official/credentials.conf
 
 # Config file for mcism
-conf/
+# conf/
 
 # Runtime files
 src/benchmarking.csv
