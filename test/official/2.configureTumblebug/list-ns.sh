@@ -1,12 +1,22 @@
 #!/bin/bash
 
-source ../conf.env
-AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+#function list_ns() {
+    FILE=../conf.env
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
 
-echo "####################################################################"
-echo "## 0. Namespace: List"
-echo "####################################################################"
+    source ../conf.env
+    AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
-INDEX=${1}
+    echo "####################################################################"
+    echo "## 0. Namespace: List"
+    echo "####################################################################"
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns | json_pp #|| return 1
+    INDEX=${1}
+
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns | json_pp #|| return 1
+#}
+
+#list_ns

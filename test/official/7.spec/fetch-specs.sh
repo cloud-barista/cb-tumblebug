@@ -1,10 +1,20 @@
 #!/bin/bash
 
-source ../conf.env
-AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+#function fetch_specs() {
+    FILE=../conf.env
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
 
-echo "####################################################################"
-echo "## 7. spec: Fetch"
-echo "####################################################################"
+    source ../conf.env
+    AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/fetchSpecs | json_pp #|| return 1
+    echo "####################################################################"
+    echo "## 7. spec: Fetch"
+    echo "####################################################################"
+
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/fetchSpecs | json_pp #|| return 1
+#}
+
+#fetch_specs
