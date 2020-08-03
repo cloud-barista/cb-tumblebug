@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
+	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
@@ -82,65 +84,107 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		return temp, err
 	}
 
-	//url := common.SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
-	url := common.SPIDER_URL + "/securitygroup"
+	var tempSpiderSecurityInfo SpiderSecurityInfo
 
-	method := "POST"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	//payload := strings.NewReader("{ \"Name\": \"" + u.CspSecurityGroupName + "\"}")
-	tempReq := SpiderSecurityReqInfoWrapper{}
-	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.Name
-	tempReq.ReqInfo.VPCName = u.VNetId
-	tempReq.ReqInfo.SecurityRules = u.FirewallRules
+		//url := common.SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
+		url := common.SPIDER_URL + "/securitygroup"
 
-	payload, _ := json.Marshal(tempReq)
-	fmt.Println("payload: " + string(payload)) // for debug
+		method := "POST"
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+		//payload := strings.NewReader("{ \"Name\": \"" + u.CspSecurityGroupName + "\"}")
+		tempReq := SpiderSecurityReqInfoWrapper{}
+		tempReq.ConnectionName = u.ConnectionName
+		tempReq.ReqInfo.Name = u.Name
+		tempReq.ReqInfo.VPCName = u.VNetId
+		tempReq.ReqInfo.SecurityRules = u.FirewallRules
 
-	if err != nil {
-		fmt.Println(err)
-	}
-	req.Header.Add("Content-Type", "application/json")
+		payload, _ := json.Marshal(tempReq)
+		fmt.Println("payload: " + string(payload)) // for debug
 
-	res, err := client.Do(req)
-	if err != nil {
-		common.CBLog.Error(err)
-		content := TbSecurityGroupInfo{}
-		//return content, res.StatusCode, nil, err
-		return content, err
-	}
-	defer res.Body.Close()
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		common.CBLog.Error(err)
-		content := TbSecurityGroupInfo{}
-		//return content, res.StatusCode, body, err
-		return content, err
-	}
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		content := TbSecurityGroupInfo{}
-		//return content, res.StatusCode, body, err
-		return content, err
-	}
+		res, err := client.Do(req)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbSecurityGroupInfo{}
+			//return content, res.StatusCode, nil, err
+			return content, err
+		}
+		defer res.Body.Close()
 
-	temp := SpiderSecurityInfo{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
+		body, err := ioutil.ReadAll(res.Body)
+		fmt.Println(string(body))
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbSecurityGroupInfo{}
+			//return content, res.StatusCode, body, err
+			return content, err
+		}
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			common.CBLog.Error(err)
+			content := TbSecurityGroupInfo{}
+			//return content, res.StatusCode, body, err
+			return content, err
+		}
+
+		tempSpiderSecurityInfo = SpiderSecurityInfo{}
+		err2 := json.Unmarshal(body, &tempSpiderSecurityInfo)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+
+	} else {
+
+		// CCM API 설정
+		ccm := api.NewCloudInfoResourceHandler()
+		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			common.CBLog.Error("ccm failed to set config : ", err)
+			return TbSecurityGroupInfo{}, err
+		}
+		err = ccm.Open()
+		if err != nil {
+			common.CBLog.Error("ccm api open failed : ", err)
+			return TbSecurityGroupInfo{}, err
+		}
+		defer ccm.Close()
+
+		tempReq := SpiderSecurityReqInfoWrapper{}
+		tempReq.ConnectionName = u.ConnectionName
+		tempReq.ReqInfo.Name = u.Name
+		tempReq.ReqInfo.VPCName = u.VNetId
+		tempReq.ReqInfo.SecurityRules = u.FirewallRules
+
+		payload, _ := json.Marshal(tempReq)
+		fmt.Println("payload: " + string(payload)) // for debug
+
+		result, err := ccm.CreateSecurity(string(payload))
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbSecurityGroupInfo{}, err
+		}
+
+		tempSpiderSecurityInfo = SpiderSecurityInfo{}
+		err2 := json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
 	}
 
 	content := TbSecurityGroupInfo{}
@@ -148,18 +192,18 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.VNetId = temp.VpcIID.NameId
-	content.CspSecurityGroupId = temp.IId.SystemId
-	content.CspSecurityGroupName = temp.IId.NameId
+	content.VNetId = tempSpiderSecurityInfo.VpcIID.NameId
+	content.CspSecurityGroupId = tempSpiderSecurityInfo.IId.SystemId
+	content.CspSecurityGroupName = tempSpiderSecurityInfo.IId.NameId
 	content.Description = u.Description
-	content.FirewallRules = temp.SecurityRules
-	content.KeyValueList = temp.KeyValueList
+	content.FirewallRules = tempSpiderSecurityInfo.SecurityRules
+	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateSecurityGroup")
 	Key := common.GenResourceKey(nsId, "securityGroup", content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err := common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		//return content, res.StatusCode, body, err

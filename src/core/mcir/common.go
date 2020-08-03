@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	//uuid "github.com/google/uuid"
+	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/xwb1989/sqlparser"
 	// CB-Store
@@ -75,231 +77,364 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
-	var url string
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	// Create Req body
-	type JsonTemplate struct {
-		ConnectionName string
-	}
-	tempReq := JsonTemplate{}
+		var url string
 
-	switch resourceType {
-	case "image":
-		// delete image info
-		err := common.CBStore.Delete(key)
-		if err != nil {
-			common.CBLog.Error(err)
-			//return http.StatusInternalServerError, nil, err
-			return err
+		// Create Req body
+		type JsonTemplate struct {
+			ConnectionName string
 		}
+		tempReq := JsonTemplate{}
 
-		sql := "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-		fmt.Println("sql: " + sql)
-		// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-		_, err = sqlparser.Parse(sql)
-		if err != nil {
-			//return
-		}
-
-		stmt, err := common.MYDB.Prepare(sql)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		_, err = stmt.Exec()
-		if err != nil {
-			fmt.Println(err.Error())
-		} else {
-			fmt.Println("Data deleted successfully..")
-		}
-
-		//return http.StatusOK, nil, nil
-		return nil
-	case "spec":
-		// delete spec info
-
-		//get related recommend spec
-		//keyValue, err := common.CBStore.Get(key)
-		content := TbSpecInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &content)
-		/*
+		switch resourceType {
+		case "image":
+			// delete image info
+			err := common.CBStore.Delete(key)
 			if err != nil {
 				common.CBLog.Error(err)
-				return http.StatusInternalServerError, nil, err
+				//return http.StatusInternalServerError, nil, err
+				return err
 			}
-		*/
-		//
 
-		err := common.CBStore.Delete(key)
-		if err != nil {
-			common.CBLog.Error(err)
-			//return http.StatusInternalServerError, nil, err
-			return err
-		}
+			sql := "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
+			fmt.Println("sql: " + sql)
+			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+			_, err = sqlparser.Parse(sql)
+			if err != nil {
+				//return
+			}
 
-		//delete related recommend spec
-		err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
-		if err != nil {
-			common.CBLog.Error(err)
-			//return http.StatusInternalServerError, nil, err
-			return err
-		}
+			stmt, err := common.MYDB.Prepare(sql)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			_, err = stmt.Exec()
+			if err != nil {
+				fmt.Println(err.Error())
+			} else {
+				fmt.Println("Data deleted successfully..")
+			}
 
-		sql := "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-		fmt.Println("sql: " + sql)
-		// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-		_, err = sqlparser.Parse(sql)
-		if err != nil {
-			//return
-		}
+			//return http.StatusOK, nil, nil
+			return nil
+		case "spec":
+			// delete spec info
 
-		stmt, err := common.MYDB.Prepare(sql)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		_, err = stmt.Exec()
-		if err != nil {
-			fmt.Println(err.Error())
-		} else {
-			fmt.Println("Data deleted successfully..")
-		}
-
-		//return http.StatusOK, nil, nil
-		return nil
-	case "sshKey":
-		temp := TbSshKeyInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &temp)
-		tempReq.ConnectionName = temp.ConnectionName
-		url = common.SPIDER_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
-	case "vNet":
-		temp := TbVNetInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &temp)
-		tempReq.ConnectionName = temp.ConnectionName
-		url = common.SPIDER_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
-	case "securityGroup":
-		temp := TbSecurityGroupInfo{}
-		json.Unmarshal([]byte(keyValue.Value), &temp)
-		tempReq.ConnectionName = temp.ConnectionName
-		url = common.SPIDER_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
-	/*
-		case "subnet":
-			temp := subnetInfo{}
+			//get related recommend spec
+			//keyValue, err := common.CBStore.Get(key)
+			content := TbSpecInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &content)
-			return content.CspSubnetId
-		case "publicIp":
-			temp := publicIpInfo{}
+			/*
+				if err != nil {
+					common.CBLog.Error(err)
+					return http.StatusInternalServerError, nil, err
+				}
+			*/
+			//
+
+			err := common.CBStore.Delete(key)
+			if err != nil {
+				common.CBLog.Error(err)
+				//return http.StatusInternalServerError, nil, err
+				return err
+			}
+
+			//delete related recommend spec
+			err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+			if err != nil {
+				common.CBLog.Error(err)
+				//return http.StatusInternalServerError, nil, err
+				return err
+			}
+
+			sql := "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
+			fmt.Println("sql: " + sql)
+			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+			_, err = sqlparser.Parse(sql)
+			if err != nil {
+				//return
+			}
+
+			stmt, err := common.MYDB.Prepare(sql)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			_, err = stmt.Exec()
+			if err != nil {
+				fmt.Println(err.Error())
+			} else {
+				fmt.Println("Data deleted successfully..")
+			}
+
+			//return http.StatusOK, nil, nil
+			return nil
+		case "sshKey":
+			temp := TbSshKeyInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_URL + "/publicip/" + temp.CspPublicIpName //+ "?connection_name=" + temp.ConnectionName
-		case "vNic":
-			temp := vNicInfo{}
+			url = common.SPIDER_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+		case "vNet":
+			temp := TbVNetInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_URL + "/vnic/" + temp.CspVNicName //+ "?connection_name=" + temp.ConnectionName
-	*/
-	default:
-		err := fmt.Errorf("invalid resourceType")
-		//return http.StatusBadRequest, nil, err
-		return err
-	}
-
-	fmt.Println("url: " + url)
-
-	method := "DELETE"
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	//req, err := http.NewRequest(method, url, nil)
-	payload, _ := json.MarshalIndent(tempReq, "", "  ")
-	//fmt.Println("payload: " + string(payload))
-	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-	res, err := client.Do(req)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	/*
-		if res.StatusCode == 400 || res.StatusCode == 401 {
-			fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-			err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-			common.CBLog.Error(err)
-			return res, err
+			url = common.SPIDER_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+		case "securityGroup":
+			temp := TbSecurityGroupInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+			tempReq.ConnectionName = temp.ConnectionName
+			url = common.SPIDER_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+		/*
+			case "subnet":
+				temp := subnetInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &content)
+				return content.CspSubnetId
+			case "publicIp":
+				temp := publicIpInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &temp)
+				tempReq.ConnectionName = temp.ConnectionName
+				url = common.SPIDER_URL + "/publicip/" + temp.CspPublicIpName //+ "?connection_name=" + temp.ConnectionName
+			case "vNic":
+				temp := vNicInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &temp)
+				tempReq.ConnectionName = temp.ConnectionName
+				url = common.SPIDER_URL + "/vnic/" + temp.CspVNicName //+ "?connection_name=" + temp.ConnectionName
+		*/
+		default:
+			err := fmt.Errorf("invalid resourceType")
+			//return http.StatusBadRequest, nil, err
+			return err
 		}
 
-		// delete vNet info
-		err := common.CBStore.Delete(key)
-		if err != nil {
-			common.CBLog.Error(err)
-			return res, err
+		fmt.Println("url: " + url)
+
+		method := "DELETE"
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		}
-
-		return res, nil
-	*/
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case forceFlag == "true":
-		url += "?force=true"
-		fmt.Println("forceFlag == true; url: " + url)
+		//req, err := http.NewRequest(method, url, nil)
+		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+		//fmt.Println("payload: " + string(payload))
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
 		if err != nil {
 			common.CBLog.Error(err)
-			//return err
+			return err
 		}
+
 		req.Header.Add("Content-Type", "application/json")
 		res, err := client.Do(req)
 		if err != nil {
 			common.CBLog.Error(err)
-			//return err
+			return err
 		}
 		defer res.Body.Close()
+
 		body, err := ioutil.ReadAll(res.Body)
 		fmt.Println(string(body))
 		if err != nil {
 			common.CBLog.Error(err)
-			//return err
+			return err
+		}
+
+		/*
+			if res.StatusCode == 400 || res.StatusCode == 401 {
+				fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
+				err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
+				common.CBLog.Error(err)
+				return res, err
+			}
+
+			// delete vNet info
+			err := common.CBStore.Delete(key)
+			if err != nil {
+				common.CBLog.Error(err)
+				return res, err
+			}
+
+			return res, nil
+		*/
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case forceFlag == "true":
+			url += "?force=true"
+			fmt.Println("forceFlag == true; url: " + url)
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+			if err != nil {
+				common.CBLog.Error(err)
+				//return err
+			}
+			req.Header.Add("Content-Type", "application/json")
+			res, err := client.Do(req)
+			if err != nil {
+				common.CBLog.Error(err)
+				//return err
+			}
+			defer res.Body.Close()
+			body, err := ioutil.ReadAll(res.Body)
+			fmt.Println(string(body))
+			if err != nil {
+				common.CBLog.Error(err)
+				//return err
+			}
+
+			err = common.CBStore.Delete(key)
+			if err != nil {
+				common.CBLog.Error(err)
+				//return res.StatusCode, body, err
+				return err
+			}
+			//return res.StatusCode, body, nil
+			return nil
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			common.CBLog.Error(err)
+			//return res.StatusCode, body, err
+			return err
+		default:
+			err := common.CBStore.Delete(key)
+			if err != nil {
+				common.CBLog.Error(err)
+				//return res.StatusCode, body, err
+				return err
+			}
+			//return res.StatusCode, body, nil
+			return nil
+		}
+
+	} else {
+
+		// CCM API 설정
+		ccm := api.NewCloudInfoResourceHandler()
+		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			common.CBLog.Error("ccm failed to set config : ", err)
+			return err
+		}
+		err = ccm.Open()
+		if err != nil {
+			common.CBLog.Error("ccm api open failed : ", err)
+			return err
+		}
+		defer ccm.Close()
+
+		switch resourceType {
+		case "image":
+			// delete image info
+			err := common.CBStore.Delete(key)
+			if err != nil {
+				common.CBLog.Error(err)
+				//return http.StatusInternalServerError, nil, err
+				return err
+			}
+
+			sql := "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
+			fmt.Println("sql: " + sql)
+			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+			_, err = sqlparser.Parse(sql)
+			if err != nil {
+				//return
+			}
+
+			stmt, err := common.MYDB.Prepare(sql)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			_, err = stmt.Exec()
+			if err != nil {
+				fmt.Println(err.Error())
+			} else {
+				fmt.Println("Data deleted successfully..")
+			}
+
+			//return http.StatusOK, nil, nil
+			return nil
+		case "spec":
+			// delete spec info
+
+			//get related recommend spec
+			content := TbSpecInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &content)
+
+			err := common.CBStore.Delete(key)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+
+			//delete related recommend spec
+			err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+
+			sql := "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
+			fmt.Println("sql: " + sql)
+			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
+			_, err = sqlparser.Parse(sql)
+			if err != nil {
+				//return
+			}
+
+			stmt, err := common.MYDB.Prepare(sql)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			_, err = stmt.Exec()
+			if err != nil {
+				fmt.Println(err.Error())
+			} else {
+				fmt.Println("Data deleted successfully..")
+			}
+			return nil
+
+		case "sshKey":
+			temp := TbSshKeyInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+
+			_, err := ccm.DeleteKeyByParam(temp.ConnectionName, temp.Name, forceFlag)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+
+		case "vNet":
+			temp := TbVNetInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+
+			_, err := ccm.DeleteVPCByParam(temp.ConnectionName, temp.Name, forceFlag)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+
+		case "securityGroup":
+			temp := TbSecurityGroupInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+
+			_, err := ccm.DeleteSecurityByParam(temp.ConnectionName, temp.Name, forceFlag)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+
+		default:
+			err := fmt.Errorf("invalid resourceType")
+			return err
 		}
 
 		err = common.CBStore.Delete(key)
 		if err != nil {
 			common.CBLog.Error(err)
-			//return res.StatusCode, body, err
 			return err
 		}
-		//return res.StatusCode, body, nil
 		return nil
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		//return res.StatusCode, body, err
-		return err
-	default:
-		err := common.CBStore.Delete(key)
-		if err != nil {
-			common.CBLog.Error(err)
-			//return res.StatusCode, body, err
-			return err
-		}
-		//return res.StatusCode, body, nil
-		return nil
+
 	}
 }
 

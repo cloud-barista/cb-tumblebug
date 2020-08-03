@@ -3,11 +3,13 @@ package common
 import (
 	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime"
 	"strconv"
 
 	//"encoding/json"
 
+	"github.com/cloud-barista/cb-spider/interface/api"
 	uuid "github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -252,54 +254,87 @@ type ConnConfig struct { // Spider
 }
 
 func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
-	url := SPIDER_URL + "/connectionconfig/" + ConnConfigName
 
-	method := "GET"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+		url := SPIDER_URL + "/connectionconfig/" + ConnConfigName
+
+		method := "GET"
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		req, err := http.NewRequest(method, url, nil)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		//req.Header.Add("Content-Type", "application/json")
+
+		res, err := client.Do(req)
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfig{}
+			return content, err
+		}
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfig{}
+			return content, err
+		}
+
+		fmt.Println(string(body))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			CBLog.Error(err)
+			content := ConnConfig{}
+			return content, err
+		}
+
+		temp := ConnConfig{}
+		err2 := json.Unmarshal(body, &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
+	} else {
+
+		// CIM API 설정
+		cim := api.NewCloudInfoManager()
+		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			CBLog.Error("cim failed to set config : ", err)
+			return ConnConfig{}, err
+		}
+		err = cim.Open()
+		if err != nil {
+			CBLog.Error("cim api open failed : ", err)
+			return ConnConfig{}, err
+		}
+		defer cim.Close()
+
+		result, err := cim.GetConnectionConfigByParam(ConnConfigName)
+		if err != nil {
+			CBLog.Error("cim api request failed : ", err)
+			return ConnConfig{}, err
+		}
+
+		temp := ConnConfig{}
+		err2 := json.Unmarshal([]byte(result), &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
 	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	//req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		CBLog.Error(err)
-		content := ConnConfig{}
-		return content, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		CBLog.Error(err)
-		content := ConnConfig{}
-		return content, err
-	}
-
-	fmt.Println(string(body))
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		CBLog.Error(err)
-		content := ConnConfig{}
-		return content, err
-	}
-
-	temp := ConnConfig{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
-	}
-	return temp, nil
 }
 
 type ConnConfigList struct { // Spider
@@ -307,54 +342,88 @@ type ConnConfigList struct { // Spider
 }
 
 func GetConnConfigList() (ConnConfigList, error) {
-	url := SPIDER_URL + "/connectionconfig"
 
-	method := "GET"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+		url := SPIDER_URL + "/connectionconfig"
+
+		method := "GET"
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		req, err := http.NewRequest(method, url, nil)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		//req.Header.Add("Content-Type", "application/json")
+
+		res, err := client.Do(req)
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfigList{}
+			return content, err
+		}
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfigList{}
+			return content, err
+		}
+
+		fmt.Println(string(body))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			CBLog.Error(err)
+			content := ConnConfigList{}
+			return content, err
+		}
+
+		temp := ConnConfigList{}
+		err2 := json.Unmarshal(body, &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
+	} else {
+
+		// CIM API 설정
+		cim := api.NewCloudInfoManager()
+		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			CBLog.Error("cim failed to set config : ", err)
+			return ConnConfigList{}, err
+		}
+		err = cim.Open()
+		if err != nil {
+			CBLog.Error("cim api open failed : ", err)
+			return ConnConfigList{}, err
+		}
+		defer cim.Close()
+
+		result, err := cim.ListConnectionConfig()
+		if err != nil {
+			CBLog.Error("cim api request failed : ", err)
+			return ConnConfigList{}, err
+		}
+
+		temp := ConnConfigList{}
+		err2 := json.Unmarshal([]byte(result), &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
 	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	//req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		CBLog.Error(err)
-		content := ConnConfigList{}
-		return content, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		CBLog.Error(err)
-		content := ConnConfigList{}
-		return content, err
-	}
-
-	fmt.Println(string(body))
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		CBLog.Error(err)
-		content := ConnConfigList{}
-		return content, err
-	}
-
-	temp := ConnConfigList{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
-	}
-	return temp, nil
 }
 
 type Region struct { // Spider
@@ -364,54 +433,88 @@ type Region struct { // Spider
 }
 
 func GetRegion(RegionName string) (Region, error) {
-	url := SPIDER_URL + "/region/" + RegionName
 
-	method := "GET"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+		url := SPIDER_URL + "/region/" + RegionName
+
+		method := "GET"
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		req, err := http.NewRequest(method, url, nil)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		//req.Header.Add("Content-Type", "application/json")
+
+		res, err := client.Do(req)
+		if err != nil {
+			CBLog.Error(err)
+			content := Region{}
+			return content, err
+		}
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			CBLog.Error(err)
+			content := Region{}
+			return content, err
+		}
+
+		fmt.Println(string(body))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			CBLog.Error(err)
+			content := Region{}
+			return content, err
+		}
+
+		temp := Region{}
+		err2 := json.Unmarshal(body, &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
+	} else {
+
+		// CIM API 설정
+		cim := api.NewCloudInfoManager()
+		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			CBLog.Error("cim failed to set config : ", err)
+			return Region{}, err
+		}
+		err = cim.Open()
+		if err != nil {
+			CBLog.Error("cim api open failed : ", err)
+			return Region{}, err
+		}
+		defer cim.Close()
+
+		result, err := cim.GetRegionByParam(RegionName)
+		if err != nil {
+			CBLog.Error("cim api request failed : ", err)
+			return Region{}, err
+		}
+
+		temp := Region{}
+		err2 := json.Unmarshal([]byte(result), &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
 	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	//req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		CBLog.Error(err)
-		content := Region{}
-		return content, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		CBLog.Error(err)
-		content := Region{}
-		return content, err
-	}
-
-	fmt.Println(string(body))
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		CBLog.Error(err)
-		content := Region{}
-		return content, err
-	}
-
-	temp := Region{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
-	}
-	return temp, nil
 }
 
 type RegionList struct { // Spider
@@ -419,54 +522,88 @@ type RegionList struct { // Spider
 }
 
 func GetRegionList() (RegionList, error) {
-	url := SPIDER_URL + "/region"
 
-	method := "GET"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+		url := SPIDER_URL + "/region"
+
+		method := "GET"
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		req, err := http.NewRequest(method, url, nil)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		//req.Header.Add("Content-Type", "application/json")
+
+		res, err := client.Do(req)
+		if err != nil {
+			CBLog.Error(err)
+			content := RegionList{}
+			return content, err
+		}
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			CBLog.Error(err)
+			content := RegionList{}
+			return content, err
+		}
+
+		fmt.Println(string(body))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			CBLog.Error(err)
+			content := RegionList{}
+			return content, err
+		}
+
+		temp := RegionList{}
+		err2 := json.Unmarshal(body, &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
+	} else {
+
+		// CIM API 설정
+		cim := api.NewCloudInfoManager()
+		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			CBLog.Error("cim failed to set config : ", err)
+			return RegionList{}, err
+		}
+		err = cim.Open()
+		if err != nil {
+			CBLog.Error("cim api open failed : ", err)
+			return RegionList{}, err
+		}
+		defer cim.Close()
+
+		result, err := cim.ListRegion()
+		if err != nil {
+			CBLog.Error("cim api request failed : ", err)
+			return RegionList{}, err
+		}
+
+		temp := RegionList{}
+		err2 := json.Unmarshal([]byte(result), &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
 	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	//req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		CBLog.Error(err)
-		content := RegionList{}
-		return content, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		CBLog.Error(err)
-		content := RegionList{}
-		return content, err
-	}
-
-	fmt.Println(string(body))
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		CBLog.Error(err)
-		content := RegionList{}
-		return content, err
-	}
-
-	temp := RegionList{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
-	}
-	return temp, nil
 }
 
 // ConvertToMessage - 입력 데이터를 grpc 메시지로 변환
