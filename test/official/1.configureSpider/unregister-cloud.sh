@@ -7,14 +7,8 @@
         exit
     fi
 
-    FILE=../credentials.conf
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-
 	source ../conf.env
-	source ../credentials.conf
+	#source ../credentials.conf
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
