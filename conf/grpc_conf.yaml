@@ -1,0 +1,32 @@
+version: 1
+grpc:
+  tumblebugsrv:
+    addr: 127.0.0.1:50252
+    #reflection: enable
+    #tls:
+    #  tls_cert: $CBTUMBLEBUG_ROOT/certs/server.crt
+    #  tls_key: $CBTUMBLEBUG_ROOT/certs/server.key
+    interceptors:
+      #auth_jwt:
+      #  jwt_key: your_secret_key
+      prometheus_metrics:
+        listen_port: 9093
+      opentracing:
+        jaeger:
+          endpoint: localhost:6832
+          service_name: tumblebug grpc server
+          sample_rate: 1  
+  spidersrv:
+    addr: 127.0.0.1:50251
+  spidercli:
+    timeout: 90s
+    #tls:
+    #  tls_ca: $CBTUMBLEBUG_ROOT/certs/ca.crt
+    interceptors:
+      #auth_jwt:
+      #  jwt_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJUCI6IjEyNy4wLjAuMSIsImV4cGlyZSI6MTkwODMyNTY1OCwib3JnTmFtZSI6IkVUUkkiLCJ1c2VyTmFtZSI6IkhvbmdHaWxEb25nIn0.4lkjYduo8iwv4AcKH96MpTnk8d7HRhi_p1xlnvZts8A
+      opentracing:
+        jaeger:
+          endpoint: localhost:6832
+          service_name: spider grpc client for tumblebug
+          sample_rate: 1

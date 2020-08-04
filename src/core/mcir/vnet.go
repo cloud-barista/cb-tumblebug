@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
+	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
@@ -78,65 +80,107 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		return temp, err
 	}
 
-	//url := common.SPIDER_URL + "/vpc?connection_name=" + u.ConnectionName
-	url := common.SPIDER_URL + "/vpc"
+	var tempSpiderVPCInfo SpiderVPCInfo
 
-	method := "POST"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	tempReq := SpiderVPCReqInfoWrapper{}
-	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.Name
-	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
-	tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
-	payload, _ := json.MarshalIndent(tempReq, "", "  ")
-	fmt.Println("payload: " + string(payload)) // for debug
+		//url := common.SPIDER_URL + "/vpc?connection_name=" + u.ConnectionName
+		url := common.SPIDER_URL + "/vpc"
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+		method := "POST"
 
-	if err != nil {
-		fmt.Println(err)
-	}
-	req.Header.Add("Content-Type", "application/json")
+		tempReq := SpiderVPCReqInfoWrapper{}
+		tempReq.ConnectionName = u.ConnectionName
+		tempReq.ReqInfo.Name = u.Name
+		tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
+		tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
+		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+		fmt.Println("payload: " + string(payload)) // for debug
 
-	res, err := client.Do(req)
-	if err != nil {
-		common.CBLog.Error(err)
-		content := TbVNetInfo{}
-		//return content, res.StatusCode, nil, err
-		return content, err
-	}
-	defer res.Body.Close()
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-	//fmt.Println("res.Body: " + string(res.Body)) // for debug
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
 
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		common.CBLog.Error(err)
-		content := TbVNetInfo{}
-		//return content, res.StatusCode, body, err
-		return content, err
-	}
+		res, err := client.Do(req)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbVNetInfo{}
+			//return content, res.StatusCode, nil, err
+			return content, err
+		}
+		defer res.Body.Close()
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		content := TbVNetInfo{}
-		//return content, res.StatusCode, body, err
-		return content, err
-	}
+		//fmt.Println("res.Body: " + string(res.Body)) // for debug
 
-	temp := SpiderVPCInfo{} // Spider
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
+		body, err := ioutil.ReadAll(res.Body)
+		fmt.Println(string(body))
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbVNetInfo{}
+			//return content, res.StatusCode, body, err
+			return content, err
+		}
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			common.CBLog.Error(err)
+			content := TbVNetInfo{}
+			//return content, res.StatusCode, body, err
+			return content, err
+		}
+
+		tempSpiderVPCInfo = SpiderVPCInfo{} // Spider
+		err2 := json.Unmarshal(body, &tempSpiderVPCInfo)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+
+	} else {
+
+		// CCM API 설정
+		ccm := api.NewCloudInfoResourceHandler()
+		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			common.CBLog.Error("ccm failed to set config : ", err)
+			return TbVNetInfo{}, err
+		}
+		err = ccm.Open()
+		if err != nil {
+			common.CBLog.Error("ccm api open failed : ", err)
+			return TbVNetInfo{}, err
+		}
+		defer ccm.Close()
+
+		tempReq := SpiderVPCReqInfoWrapper{}
+		tempReq.ConnectionName = u.ConnectionName
+		tempReq.ReqInfo.Name = u.Name
+		tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
+		tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
+		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+		fmt.Println("payload: " + string(payload)) // for debug
+
+		result, err := ccm.CreateVPC(string(payload))
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbVNetInfo{}, err
+		}
+
+		tempSpiderVPCInfo = SpiderVPCInfo{} // Spider
+		err2 := json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+
 	}
 
 	content := TbVNetInfo{}
@@ -144,12 +188,12 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspVNetId = temp.IId.SystemId
-	content.CspVNetName = temp.IId.NameId
-	content.CidrBlock = temp.IPv4_CIDR
-	content.SubnetInfoList = temp.SubnetInfoList
+	content.CspVNetId = tempSpiderVPCInfo.IId.SystemId
+	content.CspVNetName = tempSpiderVPCInfo.IId.NameId
+	content.CidrBlock = tempSpiderVPCInfo.IPv4_CIDR
+	content.SubnetInfoList = tempSpiderVPCInfo.SubnetInfoList
 	content.Description = u.Description
-	content.KeyValueList = temp.KeyValueList
+	content.KeyValueList = tempSpiderVPCInfo.KeyValueList
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateVNet")

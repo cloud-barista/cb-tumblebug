@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/xwb1989/sqlparser"
 
+	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
@@ -76,83 +78,116 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 		return temp, err
 	}
 
-	/*
-		// Step 1. Create a temp `SpiderImageReqInfo (from Spider)` object.
-		type SpiderImageReqInfo struct {
-			Name string
-			Id   string
-			// @todo
+	var tempSpiderImageInfo SpiderImageInfo
+
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+		/*
+			// Step 1. Create a temp `SpiderImageReqInfo (from Spider)` object.
+			type SpiderImageReqInfo struct {
+				Name string
+				Id   string
+				// @todo
+			}
+			tempReq := SpiderImageReqInfo{}
+			tempReq.Name = u.CspImageName
+			tempReq.Id = u.CspImageId
+		*/
+
+		// Step 2. Send a req to Spider and save the response.
+		url := common.SPIDER_URL + "/vmimage/" + u.CspImageId + "?connection_name=" + u.ConnectionName
+
+		method := "GET"
+
+		payload := strings.NewReader("{ \"Name\": \"" + u.CspImageId + "\"}")
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		}
-		tempReq := SpiderImageReqInfo{}
-		tempReq.Name = u.CspImageName
-		tempReq.Id = u.CspImageId
-	*/
+		req, err := http.NewRequest(method, url, payload)
 
-	// Step 2. Send a req to Spider and save the response.
-	url := common.SPIDER_URL + "/vmimage/" + u.CspImageId + "?connection_name=" + u.ConnectionName
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
 
-	method := "GET"
+		res, err := client.Do(req)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbImageInfo{}
+			//return content, res.StatusCode, nil, err
+			return content, err
+		}
+		defer res.Body.Close()
 
-	payload := strings.NewReader("{ \"Name\": \"" + u.CspImageId + "\"}")
+		body, err := ioutil.ReadAll(res.Body)
+		fmt.Println(string(body))
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbImageInfo{}
+			//return content, res.StatusCode, body, err
+			return content, err
+		}
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, payload)
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			fmt.Println("body: ", string(body))
+			common.CBLog.Error(err)
+			content := TbImageInfo{}
+			//return content, res.StatusCode, body, err
+			return content, err
+		}
 
-	if err != nil {
-		fmt.Println(err)
-	}
-	req.Header.Add("Content-Type", "application/json")
+		tempSpiderImageInfo = SpiderImageInfo{}
+		err2 := json.Unmarshal(body, &tempSpiderImageInfo)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
 
-	res, err := client.Do(req)
-	if err != nil {
-		common.CBLog.Error(err)
-		content := TbImageInfo{}
-		//return content, res.StatusCode, nil, err
-		return content, err
-	}
-	defer res.Body.Close()
+	} else {
 
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		common.CBLog.Error(err)
-		content := TbImageInfo{}
-		//return content, res.StatusCode, body, err
-		return content, err
-	}
+		// CCM API 설정
+		ccm := api.NewCloudInfoResourceHandler()
+		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			common.CBLog.Error("ccm failed to set config : ", err)
+			return TbImageInfo{}, err
+		}
+		err = ccm.Open()
+		if err != nil {
+			common.CBLog.Error("ccm api open failed : ", err)
+			return TbImageInfo{}, err
+		}
+		defer ccm.Close()
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		fmt.Println("body: ", string(body))
-		common.CBLog.Error(err)
-		content := TbImageInfo{}
-		//return content, res.StatusCode, body, err
-		return content, err
-	}
+		result, err := ccm.GetImageByParam(u.ConnectionName, u.CspImageId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbImageInfo{}, err
+		}
 
-	temp := SpiderImageInfo{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
+		tempSpiderImageInfo = SpiderImageInfo{}
+		err2 := json.Unmarshal([]byte(result), &tempSpiderImageInfo)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
 	}
 
 	content := TbImageInfo{}
 	content.Id = common.GenId(u.Name)
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspImageId = temp.Name   // = u.CspImageId
-	content.CspImageName = temp.Name // = u.CspImageName
-	content.CreationDate = common.LookupKeyValueList(temp.KeyValueList, "CreationDate")
-	content.Description = common.LookupKeyValueList(temp.KeyValueList, "Description")
-	content.GuestOS = temp.GuestOS
-	content.Status = temp.Status
-	content.KeyValueList = temp.KeyValueList
+	content.CspImageId = tempSpiderImageInfo.Name   // = u.CspImageId
+	content.CspImageName = tempSpiderImageInfo.Name // = u.CspImageName
+	content.CreationDate = common.LookupKeyValueList(tempSpiderImageInfo.KeyValueList, "CreationDate")
+	content.Description = common.LookupKeyValueList(tempSpiderImageInfo.KeyValueList, "Description")
+	content.GuestOS = tempSpiderImageInfo.GuestOS
+	content.Status = tempSpiderImageInfo.Status
+	content.KeyValueList = tempSpiderImageInfo.KeyValueList
 
 	sql := "INSERT INTO `image`(" +
 		"`id`, " +
@@ -177,7 +212,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	fmt.Println("sql: " + sql)
 	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-	_, err = sqlparser.Parse(sql)
+	_, err := sqlparser.Parse(sql)
 	if err != nil {
 		return content, err
 	}

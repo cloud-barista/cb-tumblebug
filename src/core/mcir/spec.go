@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	//"strings"
 
+	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
@@ -97,124 +99,192 @@ type SpiderSpecList struct {
 }
 
 func LookupSpecList(connConfig string) (SpiderSpecList, error) {
-	url := common.SPIDER_URL + "/vmspec"
 
-	method := "GET"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+		url := common.SPIDER_URL + "/vmspec"
+
+		method := "GET"
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		// Create Req body
+		type JsonTemplate struct {
+			ConnectionName string
+		}
+		tempReq := JsonTemplate{}
+		tempReq.ConnectionName = connConfig
+		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		res, err := client.Do(req)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := SpiderSpecList{}
+			return content, err
+		}
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := SpiderSpecList{}
+			return content, err
+		}
+
+		fmt.Println(string(body))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			common.CBLog.Error(err)
+			content := SpiderSpecList{}
+			return content, err
+		}
+
+		temp := SpiderSpecList{}
+		err2 := json.Unmarshal(body, &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
+	} else {
+
+		// CCM API 설정
+		ccm := api.NewCloudInfoResourceHandler()
+		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			common.CBLog.Error("ccm failed to set config : ", err)
+			return SpiderSpecList{}, err
+		}
+		err = ccm.Open()
+		if err != nil {
+			common.CBLog.Error("ccm api open failed : ", err)
+			return SpiderSpecList{}, err
+		}
+		defer ccm.Close()
+
+		result, err := ccm.ListVMSpecByParam(connConfig)
+		if err != nil {
+			common.CBLog.Error(err)
+			return SpiderSpecList{}, err
+		}
+
+		temp := SpiderSpecList{}
+		err2 := json.Unmarshal([]byte(result), &temp)
+		if err2 != nil {
+			fmt.Println("whoops:", err2)
+		}
+		return temp, nil
+
 	}
-	// Create Req body
-	type JsonTemplate struct {
-		ConnectionName string
-	}
-	tempReq := JsonTemplate{}
-	tempReq.ConnectionName = connConfig
-	payload, _ := json.MarshalIndent(tempReq, "", "  ")
-	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		common.CBLog.Error(err)
-		content := SpiderSpecList{}
-		return content, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		common.CBLog.Error(err)
-		content := SpiderSpecList{}
-		return content, err
-	}
-
-	fmt.Println(string(body))
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		content := SpiderSpecList{}
-		return content, err
-	}
-
-	temp := SpiderSpecList{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
-	}
-	return temp, nil
 }
 
 //func LookupSpec(u *TbSpecInfo) (SpiderSpecInfo, error) {
 func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
-	//url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
-	url := common.SPIDER_URL + "/vmspec/" + specName
 
-	method := "GET"
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+		//url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
+		url := common.SPIDER_URL + "/vmspec/" + specName
+
+		method := "GET"
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+
+		// Create Req body
+		type JsonTemplate struct {
+			ConnectionName string
+		}
+		tempReq := JsonTemplate{}
+		tempReq.ConnectionName = connConfig
+		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		res, err := client.Do(req)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := SpiderSpecInfo{}
+			//err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := SpiderSpecInfo{}
+			//err := fmt.Errorf("an error occurred while reading CB-Spider's response")
+			return content, err
+		}
+
+		fmt.Println(string(body))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			common.CBLog.Error(err)
+			content := SpiderSpecInfo{}
+			return content, err
+		}
+
+		temp := SpiderSpecInfo{}
+		err2 := json.Unmarshal(body, &temp)
+		if err2 != nil {
+			fmt.Errorf("an error occurred while unmarshaling:", err2)
+		}
+		return temp, nil
+
+	} else {
+
+		// CCM API 설정
+		ccm := api.NewCloudInfoResourceHandler()
+		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			common.CBLog.Error("ccm failed to set config : ", err)
+			return SpiderSpecInfo{}, err
+		}
+		err = ccm.Open()
+		if err != nil {
+			common.CBLog.Error("ccm api open failed : ", err)
+			return SpiderSpecInfo{}, err
+		}
+		defer ccm.Close()
+
+		result, err := ccm.GetVMSpecByParam(connConfig, specName)
+		if err != nil {
+			common.CBLog.Error(err)
+			return SpiderSpecInfo{}, err
+		}
+
+		temp := SpiderSpecInfo{}
+		err2 := json.Unmarshal([]byte(result), &temp)
+		if err2 != nil {
+			fmt.Errorf("an error occurred while unmarshaling:", err2)
+		}
+		return temp, nil
+
 	}
-
-	// Create Req body
-	type JsonTemplate struct {
-		ConnectionName string
-	}
-	tempReq := JsonTemplate{}
-	tempReq.ConnectionName = connConfig
-	payload, _ := json.MarshalIndent(tempReq, "", "  ")
-	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		common.CBLog.Error(err)
-		content := SpiderSpecInfo{}
-		//err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		common.CBLog.Error(err)
-		content := SpiderSpecInfo{}
-		//err := fmt.Errorf("an error occurred while reading CB-Spider's response")
-		return content, err
-	}
-
-	fmt.Println(string(body))
-
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		content := SpiderSpecInfo{}
-		return content, err
-	}
-
-	temp := SpiderSpecInfo{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Errorf("an error occurred while unmarshaling:", err2)
-	}
-	return temp, nil
 }
 
 func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
