@@ -84,8 +84,8 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		//url := common.SPIDER_URL + "/vpc?connection_name=" + u.ConnectionName
-		url := common.SPIDER_URL + "/vpc"
+		//url := common.SPIDER_REST_URL + "/vpc?connection_name=" + u.ConnectionName
+		url := common.SPIDER_REST_URL + "/vpc"
 
 		method := "POST"
 

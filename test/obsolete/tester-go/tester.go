@@ -28,11 +28,11 @@ func init() {
 	//store = cbstore.GetStore()
 }
 
-var SPIDER_URL string
+var SPIDER_REST_URL string
 
 func main() {
-	//SPIDER_URL = os.Getenv("SPIDER_URL")
-	SPIDER_URL = "http://localhost:1024"
+	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
+	SPIDER_REST_URL = "http://localhost:1024"
 
 	/*
 		// Step 1. Register Cloud Driver info

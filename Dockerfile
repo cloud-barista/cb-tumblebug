@@ -38,14 +38,20 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumbleb
 #RUN /bin/bash -c "source /app/conf/setup.env"
 ENV CBSTORE_ROOT /app
 ENV CBLOG_ROOT /app
-ENV SPIDER_URL http://cb-spider:1024/spider
+ENV CBTUMBLEBUG_ROOT /app
+ENV SPIDER_CALL_METHOD REST
+ENV SPIDER_REST_URL http://cb-spider:1024/spider
+ENV DRAGONFLY_REST_URL http://cb-dragonfly:9090/dragonfly
+
 ENV DB_URL localhost:3306
 ENV DB_DATABASE cb_tumblebug
 ENV DB_USER cb_tumblebug
 ENV DB_PASSWORD cb_tumblebug
+
 ENV API_USERNAME default
 ENV API_PASSWORD default
 
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
 
 EXPOSE 1323
+EXPOSE 50252

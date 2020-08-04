@@ -47,7 +47,7 @@ func registerCloudInfo(resourceType string, param interface{}) error {
 		resourceType == "credential" ||
 		resourceType == "region" ||
 		resourceType == "connectionconfig" {
-		url = SPIDER_URL + "/" + resourceType
+		url = SPIDER_REST_URL + "/" + resourceType
 	} else {
 		err := fmt.Errorf("resourceType must be one of these: driver, credential, region, connectionconfig")
 		return err

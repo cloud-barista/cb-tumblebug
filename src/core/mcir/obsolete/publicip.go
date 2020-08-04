@@ -234,8 +234,8 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	}
 	*/
 
-	//url := common.SPIDER_URL + "/publicip?connection_name=" + u.ConnectionName
-	url := common.SPIDER_URL + "/publicip"
+	//url := common.SPIDER_REST_URL + "/publicip?connection_name=" + u.ConnectionName
+	url := common.SPIDER_REST_URL + "/publicip"
 
 	method := "POST"
 
@@ -392,8 +392,8 @@ func delPublicIp(nsId string, Id string, forceFlag string) (int, []byte, error) 
 	}
 	fmt.Println("temp.CspPublicIpName: " + temp.CspPublicIpName) // Identifier is subject to change.
 
-	//url := common.SPIDER_URL + "/publicip?connection_name=" + temp.ConnectionName // for testapi.io
-	url := common.SPIDER_URL + "/publicip/" + temp.CspPublicIpId + "?connection_name=" + temp.ConnectionName // for CB-Spider
+	//url := common.SPIDER_REST_URL + "/publicip?connection_name=" + temp.ConnectionName // for testapi.io
+	url := common.SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpId + "?connection_name=" + temp.ConnectionName // for CB-Spider
 	fmt.Println("url: " + url)
 
 	method := "DELETE"

@@ -102,7 +102,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_URL + "/vmspec"
+		url := common.SPIDER_REST_URL + "/vmspec"
 
 		method := "GET"
 
@@ -195,8 +195,8 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		//url := common.SPIDER_URL + "/vmspec/" + u.CspSpecName
-		url := common.SPIDER_URL + "/vmspec/" + specName
+		//url := common.SPIDER_REST_URL + "/vmspec/" + u.CspSpecName
+		url := common.SPIDER_REST_URL + "/vmspec/" + specName
 
 		method := "GET"
 

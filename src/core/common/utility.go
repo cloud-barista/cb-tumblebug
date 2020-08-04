@@ -129,7 +129,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 	content := mcirIds{}
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	url := SPIDER_URL + "/connectionconfig/" + content.ConnectionName
+	url := SPIDER_REST_URL + "/connectionconfig/" + content.ConnectionName
 
 	method := "GET"
 
@@ -257,7 +257,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_URL + "/connectionconfig/" + ConnConfigName
+		url := SPIDER_REST_URL + "/connectionconfig/" + ConnConfigName
 
 		method := "GET"
 
@@ -345,7 +345,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_URL + "/connectionconfig"
+		url := SPIDER_REST_URL + "/connectionconfig"
 
 		method := "GET"
 
@@ -436,7 +436,7 @@ func GetRegion(RegionName string) (Region, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_URL + "/region/" + RegionName
+		url := SPIDER_REST_URL + "/region/" + RegionName
 
 		method := "GET"
 
@@ -525,7 +525,7 @@ func GetRegionList() (RegionList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_URL + "/region"
+		url := SPIDER_REST_URL + "/region"
 
 		method := "GET"
 

@@ -88,8 +88,8 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		//url := common.SPIDER_URL + "/securitygroup?connection_name=" + u.ConnectionName
-		url := common.SPIDER_URL + "/securitygroup"
+		//url := common.SPIDER_REST_URL + "/securitygroup?connection_name=" + u.ConnectionName
+		url := common.SPIDER_REST_URL + "/securitygroup"
 
 		method := "POST"
 
