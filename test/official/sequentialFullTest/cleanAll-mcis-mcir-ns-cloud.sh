@@ -19,9 +19,15 @@ function dozing()
         exit
     fi
 
+	FILE=../credentials.conf
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+
 	source ../conf.env
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
-	#source ../credentials.conf
+	source ../credentials.conf
 
 	echo "####################################################################"
 	echo "## Remove MCIS test to Zero Base"
