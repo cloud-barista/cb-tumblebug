@@ -95,7 +95,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 		*/
 
 		// Step 2. Send a req to Spider and save the response.
-		url := common.SPIDER_URL + "/vmimage/" + u.CspImageId + "?connection_name=" + u.ConnectionName
+		url := common.SPIDER_REST_URL + "/vmimage/" + u.CspImageId + "?connection_name=" + u.ConnectionName
 
 		method := "GET"
 

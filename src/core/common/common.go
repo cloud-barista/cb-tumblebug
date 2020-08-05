@@ -19,8 +19,8 @@ type KeyValue struct {
 var CBLog *logrus.Logger
 var CBStore icbs.Store
 
-var SPIDER_URL string
-var DRAGONFLY_URL string
+var SPIDER_REST_URL string
+var DRAGONFLY_REST_URL string
 var DB_URL string
 var DB_DATABASE string
 var DB_USER string

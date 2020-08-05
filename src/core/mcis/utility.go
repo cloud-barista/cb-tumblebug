@@ -23,12 +23,12 @@ import (
 //var cblog *logrus.Logger
 //var store icbs.Store
 
-//var SPIDER_URL string
+//var SPIDER_REST_URL string
 
 func init() {
 	//cblog = config.Cblogger
 	//store = cbstore.GetStore()
-	//SPIDER_URL = os.Getenv("SPIDER_URL")
+	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
 }
 
 /*

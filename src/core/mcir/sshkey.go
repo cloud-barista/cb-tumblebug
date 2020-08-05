@@ -72,8 +72,8 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		//url := common.SPIDER_URL + "/keypair?connection_name=" + u.ConnectionName
-		url := common.SPIDER_URL + "/keypair"
+		//url := common.SPIDER_REST_URL + "/keypair?connection_name=" + u.ConnectionName
+		url := common.SPIDER_REST_URL + "/keypair"
 
 		method := "POST"
 
