@@ -12,47 +12,12 @@ function dozing()
 	echo "(Back to work)"
 }
 
-#function cleanAll() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-
-	FILE=../credentials.conf
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-
-	source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
-	source ../credentials.conf
-
-	echo "####################################################################"
-	echo "## Remove MCIS test to Zero Base"
-	echo "####################################################################"
-
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
-	if [ "${CSP}" == "aws" ]; then
-		echo "[Test for AWS]"
-		INDEX=1
-	elif [ "${CSP}" == "azure" ]; then
-		echo "[Test for Azure]"
-		INDEX=2
-	elif [ "${CSP}" == "gcp" ]; then
-		echo "[Test for GCP]"
-		INDEX=3
-	elif [ "${CSP}" == "alibaba" ]; then
-		echo "[Test for Alibaba]"
-		INDEX=4
-	else
-		echo "[No acceptable argument was provided (aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
-		CSP="aws"
-		INDEX=1
-	fi
+function clean_sequence()
+{
+	local CSP=$1
+	local REGION=$2
+	local POSTFIX=$3
+	local CMDPATH=$4
 
 	echo '## 8. MCIS: Terminate'
 	OUTPUT=$(../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX)
@@ -199,7 +164,7 @@ function dozing()
 		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX
 	fi
 
-	_self="${0##*/}"
+	#_self="${0##*/}"
 
 	echo ""
 	echo "[Cleaning related commands in history file executionStatus]"
@@ -208,6 +173,83 @@ function dozing()
 	echo "[Executed Command List]"
 	cat  ./executionStatus
 	echo ""
+
+}
+
+
+#function cleanAll() {
+    FILE=../conf.env
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+
+	FILE=../credentials.conf
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+
+	source ../conf.env
+	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+	source ../credentials.conf
+
+	echo "####################################################################"
+	echo "## Remove MCIS test to Zero Base"
+	echo "####################################################################"
+
+	CSP=${1}
+	REGION=${2:-1}
+	POSTFIX=${3:-developer}
+	if [ "${CSP}" == "all" ]; then
+		echo "[Test for all CSP regions (AWS, Azure, GCP, Alibaba, ...)]"
+		CSP="aws"
+		INDEX=0
+	elif [ "${CSP}" == "aws" ]; then
+		echo "[Test for AWS]"
+		INDEX=1
+	elif [ "${CSP}" == "azure" ]; then
+		echo "[Test for Azure]"
+		INDEX=2
+	elif [ "${CSP}" == "gcp" ]; then
+		echo "[Test for GCP]"
+		INDEX=3
+	elif [ "${CSP}" == "alibaba" ]; then
+		echo "[Test for Alibaba]"
+		INDEX=4
+	else
+		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
+		CSP="aws"
+		INDEX=1
+	fi
+
+	if [ "${INDEX}" == "0" ]; then
+		echo "[Parallel excution for all CSP regions]"
+
+		INDEXX=${NumCSP}
+		for ((cspi=1;cspi<=INDEXX;cspi++)); do
+			#echo $i
+			INDEXY=${NumRegion[$cspi]}
+			CSP=${CSPType[$cspi]}
+			for ((cspj=1;cspj<=INDEXY;cspj++)); do
+				#echo $j
+				REGION=$cspj
+
+				echo $CSP
+				echo $REGION
+
+				clean_sequence $CSP $REGION $POSTFIX ${0##*/}
+			done
+		done
+	else
+		echo "[Single excution for a CSP region]"
+
+		clean_sequence $CSP $REGION $POSTFIX ${0##*/}
+
+	fi
+
+
+
 #}
 
 #cleanAll
