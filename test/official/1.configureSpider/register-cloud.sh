@@ -75,7 +75,7 @@
                     \"Value\" : \"${CredentialVal04[INDEX]:-NULL}\"
                 }
             ]
-        }" | json_pp
+        }" #| json_pp
 
     # for Cloud Region Info
 

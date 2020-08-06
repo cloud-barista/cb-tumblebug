@@ -20,7 +20,7 @@
 ### (0) 클라우드 인증 정보, 테스트 기본 정보 입력
 - credentials.conf 파일 생성 # Cloud 정보 등록을 위한 CSP별 인증정보 파일 생성 (사용자에 맞게 수정 필요)
   - 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA)에 대해 템플릿 제공
-    - credentials.conf.tmp 템플릿 파일을 참고하여 실재 정보가 포함된 credentials.conf 생성 또는 수정
+    - credentials.conf.example 템플릿 파일을 참고하여 실재 정보가 포함된 credentials.conf 생성 또는 수정
   - 주의: credentials.conf 에는 개인의 중요 정보가 포함되므로 Github에 업로드되지 않도록 주의 필요    
     - credentials.conf가 gitignore에 등록되어 있으므로 git의 추적 대상에서는 제외되어 있음
 - conf.env  # CB-Spider 및 Tumblebug 서버 위치, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
