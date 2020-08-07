@@ -19,6 +19,6 @@ regenerate:
 			./cbtumblebug/cbtumblebug.proto \
 			-I . \
 			-I $(GOPATH)/src/github.com/gogo/protobuf/protobuf \
-			-I ~/cb.grpc.etri.project/cb-tumblebug-dev/src/api/grpc/protobuf \
+			-I $(GOPATH)/src/github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf \
 			--gofast_out=plugins=grpc:\
 	.	
