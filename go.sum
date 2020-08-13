@@ -41,6 +41,7 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/BurntSushi/xgb v0.0.0-20200324125942-20f126ea2843/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
+github.com/Microsoft/go-winio v0.4.14/go.mod h1:qXqCSQ3Xa7+6tgxaGTIe4Kpcdsi+P8jBhyzoq1bpyYA=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/PuerkitoBio/purell v1.1.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/purell v1.1.1 h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tNFfI=
@@ -87,6 +88,8 @@ github.com/cloud-barista/cb-log v0.1.1/go.mod h1:/kfh19vJJ2hNcnhHfgDM2CeZSSGtuc2
 github.com/cloud-barista/cb-spider v0.1.9 h1:4mqHCf3WRtxJo2jlqEpnRa5ACcuuz1f61YH2zVMzTv0=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200723093826-b9576df33790 h1:yI3FH62XEefxjB2yVIZxYx0gGH9j9UPqO062QdijaFc=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200723093826-b9576df33790/go.mod h1:IgFj6vZdpMY+YWoQPlSiHklcDPlja5OEGvw49jSMlic=
+github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200813074209-2d2c79ba698d h1:O1AFq9/GtdL3DnOMna0jetA3Et1lV5kT+phqfQj9maA=
+github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200813074209-2d2c79ba698d/go.mod h1:JJO2zAhvB/jJvBLDeT5AqUJ86xF6Onr9TCEv5E+5J3o=
 github.com/cloud-barista/cb-store v0.1.1 h1:n10JMjMqRVLSqZDU8HaLf1SE62go9tu8wvh5/AqcUHs=
 github.com/cloud-barista/cb-store v0.1.1/go.mod h1:IZkIEZokowBnF7X6DIZt3fANO1qUu0UUAngD4yejURY=
 github.com/cncf/udpa/go v0.0.0-20200313221541-5f7e5dd04533/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
@@ -404,6 +407,7 @@ github.com/shirou/gopsutil v2.20.4+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
+github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMBDgk/93Q=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/sirupsen/logrus v1.5.0/go.mod h1:+F7Ogzej0PZc/94MaYx/nvG9jOFMD2osvC3s+Squfpo=
 github.com/sirupsen/logrus v1.6.0 h1:UBcNElsrwanuuMsnGSlYmtmgbb23qDR5dG+6X6Oo89I=

@@ -210,13 +210,13 @@ func (m *MCISApi) SetServerAddr(addr string) error {
 		return errors.New("parameter is empty")
 	}
 
-	m.gConf.GSL.TumblebugSrv.Addr = addr
+	m.gConf.GSL.TumblebugCli.ServerAddr = addr
 	return nil
 }
 
 // GetServerAddr - Tumblebug 서버 주소 값 조회
 func (m *MCISApi) GetServerAddr() (string, error) {
-	return m.gConf.GSL.TumblebugSrv.Addr, nil
+	return m.gConf.GSL.TumblebugCli.ServerAddr, nil
 }
 
 // SetTLSCA - TLS CA 설정
@@ -306,23 +306,19 @@ func (m *MCISApi) SetConfigPath(configFile string) error {
 		return err
 	}
 
-	// TUMBLEBUG SERVER 필수 입력 항목 체크
-	tumblebugsrv := gConf.GSL.TumblebugSrv
-
-	if tumblebugsrv == nil {
-		return errors.New("tumblebugsrv field are not specified")
-	}
-
-	if tumblebugsrv.Addr == "" {
-		return errors.New("tumblebugsrv.addr field are not specified")
-	}
-
 	// TUMBLEBUG CLIENT 필수 입력 항목 체크
 	tumblebugcli := gConf.GSL.TumblebugCli
 
 	if tumblebugcli == nil {
-		gConf.GSL.TumblebugCli = &config.GrpcClientConfig{Timeout: 90 * time.Second}
-		tumblebugcli = gConf.GSL.TumblebugCli
+		return errors.New("tumblebugcli field are not specified")
+	}
+
+	if tumblebugcli.ServerAddr == "" {
+		return errors.New("tumblebugcli.server_addr field are not specified")
+	}
+
+	if tumblebugcli.Timeout == 0 {
+		tumblebugcli.Timeout = 90 * time.Second
 	}
 
 	if tumblebugcli.TLS != nil {
@@ -353,11 +349,10 @@ func (m *MCISApi) SetConfigPath(configFile string) error {
 // Open - 연결 설정
 func (m *MCISApi) Open() error {
 
-	tumblebugsrv := m.gConf.GSL.TumblebugSrv
 	tumblebugcli := m.gConf.GSL.TumblebugCli
 
 	// grpc 커넥션 생성
-	cbconn, closer, err := gc.NewCBConnection(tumblebugsrv.Addr, tumblebugcli)
+	cbconn, closer, err := gc.NewCBConnection(tumblebugcli)
 	if err != nil {
 		return err
 	}
@@ -1024,7 +1019,6 @@ func NewMCISManager() (m *MCISApi) {
 
 	m = &MCISApi{}
 	m.gConf = &config.GrpcConfig{}
-	m.gConf.GSL.TumblebugSrv = &config.GrpcServerConfig{}
 	m.gConf.GSL.TumblebugCli = &config.GrpcClientConfig{}
 
 	m.jaegerCloser = nil

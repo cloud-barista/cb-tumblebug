@@ -44,13 +44,13 @@ func (ns *NSApi) SetServerAddr(addr string) error {
 		return errors.New("parameter is empty")
 	}
 
-	ns.gConf.GSL.TumblebugSrv.Addr = addr
+	ns.gConf.GSL.TumblebugCli.ServerAddr = addr
 	return nil
 }
 
 // GetServerAddr - Tumblebug 서버 주소 값 조회
 func (ns *NSApi) GetServerAddr() (string, error) {
-	return ns.gConf.GSL.TumblebugSrv.Addr, nil
+	return ns.gConf.GSL.TumblebugCli.ServerAddr, nil
 }
 
 // SetTLSCA - TLS CA 설정
@@ -140,23 +140,19 @@ func (ns *NSApi) SetConfigPath(configFile string) error {
 		return err
 	}
 
-	// TUMBLEBUG SERVER 필수 입력 항목 체크
-	tumblebugsrv := gConf.GSL.TumblebugSrv
-
-	if tumblebugsrv == nil {
-		return errors.New("tumblebugsrv field are not specified")
-	}
-
-	if tumblebugsrv.Addr == "" {
-		return errors.New("tumblebugsrv.addr field are not specified")
-	}
-
 	// TUMBLEBUG CLIENT 필수 입력 항목 체크
 	tumblebugcli := gConf.GSL.TumblebugCli
 
 	if tumblebugcli == nil {
-		gConf.GSL.TumblebugCli = &config.GrpcClientConfig{Timeout: 90 * time.Second}
-		tumblebugcli = gConf.GSL.TumblebugCli
+		return errors.New("tumblebugcli field are not specified")
+	}
+
+	if tumblebugcli.ServerAddr == "" {
+		return errors.New("tumblebugcli.server_addr field are not specified")
+	}
+
+	if tumblebugcli.Timeout == 0 {
+		tumblebugcli.Timeout = 90 * time.Second
 	}
 
 	if tumblebugcli.TLS != nil {
@@ -187,11 +183,10 @@ func (ns *NSApi) SetConfigPath(configFile string) error {
 // Open - 연결 설정
 func (ns *NSApi) Open() error {
 
-	tumblebugsrv := ns.gConf.GSL.TumblebugSrv
 	tumblebugcli := ns.gConf.GSL.TumblebugCli
 
 	// grpc 커넥션 생성
-	cbconn, closer, err := gc.NewCBConnection(tumblebugsrv.Addr, tumblebugcli)
+	cbconn, closer, err := gc.NewCBConnection(tumblebugcli)
 	if err != nil {
 		return err
 	}
@@ -401,7 +396,6 @@ func NewNSManager() (ns *NSApi) {
 
 	ns = &NSApi{}
 	ns.gConf = &config.GrpcConfig{}
-	ns.gConf.GSL.TumblebugSrv = &config.GrpcServerConfig{}
 	ns.gConf.GSL.TumblebugCli = &config.GrpcClientConfig{}
 
 	ns.jaegerCloser = nil

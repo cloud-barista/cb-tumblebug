@@ -9,7 +9,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/bramvdbogaerde/go-scp v0.0.0-20200518191442-5c8efdd1d925
 	github.com/cloud-barista/cb-log v0.1.1
-	github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200723093826-b9576df33790
+	github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200813074209-2d2c79ba698d
 	github.com/cloud-barista/cb-store v0.1.1
 	github.com/coreos/etcd v3.3.21+incompatible // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

@@ -42,6 +42,7 @@ type GrpcServerConfig struct {
 
 // GrpcClientConfig - CB-GRPC 클라이언트 설정 구조
 type GrpcClientConfig struct {
+	ServerAddr   string              `mapstructure:"server_addr"`
 	Timeout      time.Duration       `mapstructure:"timeout"`
 	TLS          *TLSConfig          `mapstructure:"tls"`
 	Interceptors *InterceptorsConfig `mapstructure:"interceptors"`
