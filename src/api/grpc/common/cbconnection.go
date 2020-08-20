@@ -34,7 +34,7 @@ type CBConnection struct {
 // ===== [ Public Functions ] =====
 
 // NewCBConnection - 초기화된 grpc 클라이언트의 인스턴스 생성
-func NewCBConnection(serverAddr string, gConf *config.GrpcClientConfig) (*CBConnection, io.Closer, error) {
+func NewCBConnection(gConf *config.GrpcClientConfig) (*CBConnection, io.Closer, error) {
 
 	var (
 		tracer opentracing.Tracer = nil
@@ -45,7 +45,7 @@ func NewCBConnection(serverAddr string, gConf *config.GrpcClientConfig) (*CBConn
 		return nil, nil, errors.New("grpc connection config is null")
 	}
 
-	if serverAddr == "" {
+	if gConf.ServerAddr == "" {
 		return nil, nil, errors.New("server addr is empty")
 	}
 
@@ -93,7 +93,7 @@ func NewCBConnection(serverAddr string, gConf *config.GrpcClientConfig) (*CBConn
 
 	opts = append(opts, grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(unaryIntercepters...)))
 	opts = append(opts, grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(streamIntercepters...)))
-	conn, err := grpc.Dial(serverAddr, opts...)
+	conn, err := grpc.Dial(gConf.ServerAddr, opts...)
 
 	return &CBConnection{Conn: conn}, closer, err
 }

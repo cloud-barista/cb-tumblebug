@@ -28,7 +28,6 @@ type GrpcConfig struct {
 type GrpcServiceList struct {
 	TumblebugSrv *GrpcServerConfig `mapstructure:"tumblebugsrv"`
 	TumblebugCli *GrpcClientConfig `mapstructure:"tumblebugcli"`
-	SpiderSrv    *GrpcServerConfig `mapstructure:"spidersrv"`
 	SpiderCli    *GrpcClientConfig `mapstructure:"spidercli"`
 }
 
@@ -42,6 +41,7 @@ type GrpcServerConfig struct {
 
 // GrpcClientConfig - CB-GRPC 클라이언트 설정 구조
 type GrpcClientConfig struct {
+	ServerAddr   string              `mapstructure:"server_addr"`
 	Timeout      time.Duration       `mapstructure:"timeout"`
 	TLS          *TLSConfig          `mapstructure:"tls"`
 	Interceptors *InterceptorsConfig `mapstructure:"interceptors"`
@@ -160,34 +160,6 @@ func (gConf *GrpcConfig) initGlobalParams() {
 
 					if gConf.GSL.TumblebugCli.Interceptors.Opentracing.Jaeger.SampleRate == 0 {
 						gConf.GSL.TumblebugCli.Interceptors.Opentracing.Jaeger.SampleRate = 1
-					}
-
-				}
-			}
-		}
-	}
-
-	if gConf.GSL.SpiderSrv != nil {
-
-		if gConf.GSL.SpiderSrv.TLS != nil {
-			if gConf.GSL.SpiderSrv.TLS.TLSCert != "" {
-				gConf.GSL.SpiderSrv.TLS.TLSCert = ReplaceEnvPath(gConf.GSL.SpiderSrv.TLS.TLSCert)
-			}
-			if gConf.GSL.SpiderSrv.TLS.TLSKey != "" {
-				gConf.GSL.SpiderSrv.TLS.TLSKey = ReplaceEnvPath(gConf.GSL.SpiderSrv.TLS.TLSKey)
-			}
-		}
-
-		if gConf.GSL.SpiderSrv.Interceptors != nil {
-			if gConf.GSL.SpiderSrv.Interceptors.Opentracing != nil {
-				if gConf.GSL.SpiderSrv.Interceptors.Opentracing.Jaeger != nil {
-
-					if gConf.GSL.SpiderSrv.Interceptors.Opentracing.Jaeger.ServiceName == "" {
-						gConf.GSL.SpiderSrv.Interceptors.Opentracing.Jaeger.ServiceName = "grpc spider server"
-					}
-
-					if gConf.GSL.SpiderSrv.Interceptors.Opentracing.Jaeger.SampleRate == 0 {
-						gConf.GSL.SpiderSrv.Interceptors.Opentracing.Jaeger.SampleRate = 1
 					}
 
 				}
