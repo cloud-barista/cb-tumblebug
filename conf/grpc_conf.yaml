@@ -17,7 +17,7 @@ grpc:
           service_name: tumblebug grpc server
           sample_rate: 1  
   spidercli:
-    server_addr: 127.0.0.1:50251
+    server_addr: 127.0.0.1:2048
     timeout: 90s
     #tls:
     #  tls_ca: $CBTUMBLEBUG_ROOT/certs/ca.crt

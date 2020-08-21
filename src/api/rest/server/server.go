@@ -21,7 +21,7 @@ import (
 	// CB-Store
 
 	_ "github.com/cloud-barista/cb-tumblebug/src/docs"
-	"github.com/swaggo/echo-swagger" // echo-swagger middleware
+	echoSwagger "github.com/swaggo/echo-swagger" // echo-swagger middleware
 )
 
 //var masterConfigInfos confighandler.MASTERCONFIGTYPE
@@ -114,6 +114,9 @@ func ApiServer() {
 	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpecList)
 	e.GET("/tumblebug/lookupSpec/:specName", rest_mcir.RestLookupSpec)
 
+	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImageList)
+	e.GET("/tumblebug/lookupImage/:imageName", rest_mcir.RestLookupImage)
+
 	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
 	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
 	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
@@ -174,6 +177,7 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/spec", rest_mcir.RestDelAllResources)
 
 	g.POST("/:nsId/resources/fetchSpecs", rest_mcir.RestFetchSpecs)
+	g.POST("/:nsId/resources/fetchImages", rest_mcir.RestFetchImages)
 
 	g.POST("/:nsId/resources/securityGroup", rest_mcir.RestPostSecurityGroup)
 	g.GET("/:nsId/resources/securityGroup/:resourceId", rest_mcir.RestGetResource)
