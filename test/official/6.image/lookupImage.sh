@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function unregister_image() {
+#function lookup_image() {
     FILE=../conf.env
     if [ ! -f "$FILE" ]; then
         echo "$FILE does not exist."
@@ -11,7 +11,7 @@
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
-	echo "## 6. image: Unregister"
+	echo "## 6. image: Lookup Image"
 	echo "####################################################################"
 
 	CSP=${1}
@@ -35,11 +35,11 @@
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/image/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} #-H 'Content-Type: application/json' -d \
-#		'{ 
-#			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-#		}' | json_pp #|| return 1
 
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupImage/${IMAGE_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d \
+		'{ 
+			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
+		}' | json_pp #|| return 1
 #}
 
-#unregister_image
+#lookup_image

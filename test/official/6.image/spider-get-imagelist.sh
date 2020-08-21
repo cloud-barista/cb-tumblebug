@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function unregister_image() {
+#function spider_get_image_list() {
     FILE=../conf.env
     if [ ! -f "$FILE" ]; then
         echo "$FILE does not exist."
@@ -11,7 +11,7 @@
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
-	echo "## 6. image: Unregister"
+	echo "## 7. image: Fetch"
 	echo "####################################################################"
 
 	CSP=${1}
@@ -35,11 +35,7 @@
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/image/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} #-H 'Content-Type: application/json' -d \
-#		'{ 
-#			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-#		}' | json_pp #|| return 1
-
+	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vmimage -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'" }' | json_pp
 #}
 
-#unregister_image
+#spider_get_image_list

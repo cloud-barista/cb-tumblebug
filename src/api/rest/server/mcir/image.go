@@ -91,6 +91,103 @@ func RestPutImage(c echo.Context) error {
 	return nil
 }
 
+// Request structure for RestLookupImage
+type RestLookupImageRequest struct {
+	ConnectionName string `json:"connectionName"`
+}
+
+// RestLookupImage godoc
+// @Summary Lookup image
+// @Description Lookup image
+// @Tags Image
+// @Accept  json
+// @Produce  json
+// @Param connectionName body RestLookupImageRequest true "Imageify connectionName"
+// @Param imageName path string true "Image name"
+// @Success 200 {object} mcir.SpiderImageInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /lookupImage/{imageName} [get]
+func RestLookupImage(c echo.Context) error {
+
+	u := &RestLookupImageRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	imageName := c.Param("imageName")
+	fmt.Println("[Lookup image]" + imageName)
+	content, err := mcir.LookupImage(u.ConnectionName, imageName)
+	if err != nil {
+		common.CBLog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+// RestLookupImageList godoc
+// @Summary Lookup image list
+// @Description Lookup image list
+// @Tags Image
+// @Accept  json
+// @Produce  json
+// @Param connectionName body RestLookupImageRequest true "Imageify connectionName"
+// @Success 200 {object} mcir.SpiderImageList
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /lookupImage [get]
+func RestLookupImageList(c echo.Context) error {
+
+	//type JsonTemplate struct {
+	//	ConnectionName string
+	//}
+
+	u := &RestLookupImageRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[Get Region List]")
+	content, err := mcir.LookupImageList(u.ConnectionName)
+	if err != nil {
+		common.CBLog.Error(err)
+		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+// RestFetchImages godoc
+// @Summary Fetch images
+// @Description Fetch images
+// @Tags Image
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/fetchImages [post]
+func RestFetchImages(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	connConfigCount, imageCount, err := mcir.FetchImages(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{
+			"message": err.Error()}
+		return c.JSON(http.StatusFailedDependency, &mapA)
+	}
+
+	mapA := map[string]string{
+		"message": "Fetched " + fmt.Sprint(imageCount) + " images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
+	return c.JSON(http.StatusCreated, &mapA) //content)
+}
+
 // RestGetImage godoc
 // @Summary Get image
 // @Description Get image
