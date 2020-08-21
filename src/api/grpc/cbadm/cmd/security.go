@@ -20,9 +20,10 @@ import (
 func NewSecurityCmd() *cobra.Command {
 
 	securityCmd := &cobra.Command{
-		Use:   "securities",
-		Short: "This is a manageable command for security",
-		Long:  "This is a manageable command for security",
+		Use:     "securitygroup",
+		Aliases: []string{"sg"},
+		Short:   "This is a manageable command for securitygroup",
+		Long:    "This is a manageable command for securitygroup",
 	}
 
 	//  Adds the commands for application.
@@ -39,8 +40,8 @@ func NewSecurityCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
 		Use:   "create",
-		Short: "This is create command for security",
-		Long:  "This is create command for security",
+		Short: "This is create command for securitygroup",
+		Long:  "This is create command for securitygroup",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			readInDataFromFile()
@@ -66,8 +67,8 @@ func NewSecurityListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
 		Use:   "list",
-		Short: "This is list command for security",
-		Long:  "This is list command for security",
+		Short: "This is list command for securitygroup",
+		Long:  "This is list command for securitygroup",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			if nameSpaceID == "" {
@@ -90,8 +91,8 @@ func NewSecurityGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
 		Use:   "get",
-		Short: "This is get command for security",
-		Long:  "This is get command for security",
+		Short: "This is get command for securitygroup",
+		Long:  "This is get command for securitygroup",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			if nameSpaceID == "" {
@@ -120,8 +121,8 @@ func NewSecurityDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
 		Use:   "delete",
-		Short: "This is delete command for security",
-		Long:  "This is delete command for security",
+		Short: "This is delete command for securitygroup",
+		Long:  "This is delete command for securitygroup",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			if nameSpaceID == "" {

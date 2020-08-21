@@ -90,7 +90,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		defer ns.Close()
 	}
 
-	if cmd.Parent().Name() == "images" || cmd.Parent().Name() == "networks" || cmd.Parent().Name() == "securities" || cmd.Parent().Name() == "keypairs" || cmd.Parent().Name() == "specs" {
+	if cmd.Parent().Name() == "images" || cmd.Parent().Name() == "networks" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypairs" || cmd.Parent().Name() == "specs" {
 		// MCIR API 설정
 		mcir = tb_api.NewMCIRManager()
 		err = mcir.SetConfigPath(configFile)
@@ -140,7 +140,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		ns.SetInType(inType)
 		ns.SetOutType(outType)
 	}
-	if cmd.Parent().Name() == "images" || cmd.Parent().Name() == "networks" || cmd.Parent().Name() == "securities" || cmd.Parent().Name() == "keypairs" || cmd.Parent().Name() == "specs" {
+	if cmd.Parent().Name() == "images" || cmd.Parent().Name() == "networks" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypairs" || cmd.Parent().Name() == "specs" {
 		mcir.SetInType(inType)
 		mcir.SetOutType(outType)
 	}
@@ -244,7 +244,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete":
 			result, err = mcir.DeleteVNetByParam(nameSpaceID, resourceID, force)
 		}
-	case "securities":
+	case "securitygroup":
 		switch cmd.Name() {
 		case "create":
 			result, err = mcir.CreateSecurityGroup(inData)

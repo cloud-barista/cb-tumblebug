@@ -15,7 +15,7 @@
     echo "####################################################################"
 
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm securities list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm securitygroup list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
 #}
 
 #list_securityGroup
