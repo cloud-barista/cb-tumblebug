@@ -1794,6 +1794,9 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 
 		vmInfoData.ConnectionName = k.ConnectionName
 
+		vmInfoData.VmUserAccount = k.VmUserAccount
+		vmInfoData.VmUserPassword = k.VmUserPassword
+
 		/////////
 
 		go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
