@@ -100,12 +100,17 @@ message NSQryRequest {
 //////////////////////////////////
 
 service MCIR {
+	rpc CheckResource (ResourceQryRequest) returns (ExistsResponse) {}
+
 	rpc CreateImageWithInfo (TbImageInfoRequest) returns (TbImageInfoResponse) {}
 	rpc CreateImageWithID (TbImageCreateRequest) returns (TbImageInfoResponse) {}
 	rpc ListImage (ResourceAllQryRequest) returns (ListTbImageInfoResponse) {}
 	rpc GetImage (ResourceQryRequest) returns (TbImageInfoResponse) {}
   rpc DeleteImage (ResourceQryRequest) returns (MessageResponse) {}
   rpc DeleteAllImage (ResourceAllQryRequest) returns (MessageResponse) {}
+  	rpc GetLookupImage (LookupImageQryRequest) returns (SpiderImageInfoResponse) {}
+	rpc ListLookupImage (LookupImageListQryRequest) returns (ListSpiderImageInfoResponse) {}
+	rpc FetchImage (FetchImageQryRequest) returns (MessageResponse) {}
 
 	rpc CreateSshKey (TbSshKeyCreateRequest) returns (TbSshKeyInfoResponse) {}
 	rpc ListSshKey (ResourceAllQryRequest) returns (ListTbSshKeyInfoResponse) {}
@@ -119,6 +124,8 @@ service MCIR {
 	rpc GetSpec (ResourceQryRequest) returns (TbSpecInfoResponse) {}
   rpc DeleteSpec (ResourceQryRequest) returns (MessageResponse) {}
 	rpc DeleteAllSpec (ResourceAllQryRequest) returns (MessageResponse) {}    
+	rpc GetLookupSpec (LookupSpecQryRequest) returns (SpiderSpecInfoResponse) {}
+	rpc ListLookupSpec (LookupSpecListQryRequest) returns (ListSpiderSpecInfoResponse) {}
 	rpc FetchSpec (FetchSpecQryRequest) returns (MessageResponse) {}
 
 	rpc CreateSecurityGroup (TbSecurityGroupCreateRequest) returns (TbSecurityGroupInfoResponse) {}
@@ -133,9 +140,9 @@ service MCIR {
   rpc DeleteVNet (ResourceQryRequest) returns (MessageResponse) {}
   rpc DeleteAllVNet (ResourceAllQryRequest) returns (MessageResponse) {}     
 
-  rpc CheckResource (ResourceQryRequest) returns (ExistsResponse) {}     
-	rpc ListLookupSpec (LookupSpecListQryRequest) returns (ListSpiderSpecInfoResponse) {}
-	rpc GetLookupSpec (LookupSpecQryRequest) returns (SpiderSpecInfoResponse) {}  
+       
+	
+	  
 
 }
 
@@ -197,6 +204,34 @@ message TbImageReq {
 	string connection_name = 2 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];  
 	string csp_image_id = 3 [json_name="cspImageId", (gogoproto.jsontag) = "cspImageId", (gogoproto.moretags) = "yaml:\"cspImageId\""]; 
 	string description = 4 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
+}
+
+message FetchImageQryRequest {
+	string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""]; 
+}
+
+message SpiderImageInfoResponse {
+	SpiderImageInfo item = 1 [json_name="image", (gogoproto.jsontag) = "image", (gogoproto.moretags) = "yaml:\"image\""];  
+}
+
+message ListSpiderImageInfoResponse {
+	repeated SpiderImageInfo items = 1 [json_name="image", (gogoproto.jsontag) = "image", (gogoproto.moretags) = "yaml:\"image\""];  
+}
+
+message SpiderImageInfo {
+	IID iid = 1 [json_name="IId", (gogoproto.jsontag) = "IId", (gogoproto.moretags) = "yaml:\"IId\""];
+    string guest_os = 2 [json_name="GuestOS", (gogoproto.jsontag) = "GuestOS", (gogoproto.moretags) = "yaml:\"GuestOS\""];
+    string status = 3 [json_name="Status", (gogoproto.jsontag) = "Status", (gogoproto.moretags) = "yaml:\"Status\""];
+	repeated KeyValue key_value_list = 4 [json_name="KeyValueList", (gogoproto.jsontag) = "KeyValueList", (gogoproto.moretags) = "yaml:\"KeyValueList\""]; 
+}
+
+message LookupImageListQryRequest {
+	string connection_name = 1 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];    
+}
+
+message LookupImageQryRequest {
+	string connection_name = 1 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];     
+	string image_name = 2 [json_name="imageId", (gogoproto.jsontag) = "imageId", (gogoproto.moretags) = "yaml:\"imageId\""];      
 }
 
 //////////////////////////////////
@@ -292,9 +327,6 @@ message FetchSpecQryRequest {
 	string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""]; 
 }
 
-
-
-// Look Up Sepc
 message SpiderSpecInfoResponse {
 	SpiderSpecInfo item = 1 [json_name="vmspec", (gogoproto.jsontag) = "vmspec", (gogoproto.moretags) = "yaml:\"vmspec\""];  
 }
@@ -326,11 +358,11 @@ message SpiderGpuInfo {
 }
 
 message LookupSpecListQryRequest {
-	string connection_name = 1 [json_name="ConnectionName", (gogoproto.jsontag) = "ConnectionName", (gogoproto.moretags) = "yaml:\"ConnectionName\""];    
+	string connection_name = 1 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];    
 }
 
 message LookupSpecQryRequest {
-	string connection_name = 1 [json_name="ConnectionName", (gogoproto.jsontag) = "ConnectionName", (gogoproto.moretags) = "yaml:\"ConnectionName\""];     
+	string connection_name = 1 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];     
 	string spec_name = 2 [json_name="specName", (gogoproto.jsontag) = "specName", (gogoproto.moretags) = "yaml:\"specName\""];      
 }
 

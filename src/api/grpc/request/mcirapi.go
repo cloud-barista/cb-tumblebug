@@ -566,6 +566,81 @@ func (m *MCIRApi) DeleteAllImageByParam(nameSpaceID string, force string) (strin
 	return result, err
 }
 
+// FetchImage - Image 가져오기
+func (m *MCIRApi) FetchImage(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.FetchImage()
+}
+
+// FetchImageByParam - Image 가져오기
+func (m *MCIRApi) FetchImageByParam(nameSpaceID string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `"}`
+	result, err := m.requestMCIR.FetchImage()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
+// ListLookupImage - Image 목록
+func (m *MCIRApi) ListLookupImage(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.ListLookupImage()
+}
+
+// ListLookupImageByParam - Image 목록
+func (m *MCIRApi) ListLookupImageByParam(connConfigName string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `"}`
+	result, err := m.requestMCIR.ListLookupImage()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
+// GetLookupImage - Image 조회
+func (m *MCIRApi) GetLookupImage(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.GetLookupImage()
+}
+
+// GetLookupImageByParam - Image 조회
+func (m *MCIRApi) GetLookupImageByParam(connConfigName string, imageId string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `", "imageId": "` + imageId + `"}`
+	result, err := m.requestMCIR.GetLookupImage()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
 // CreateSecurityGroup - Security Group 생성
 func (m *MCIRApi) CreateSecurityGroup(doc string) (string, error) {
 	if m.requestMCIR == nil {
@@ -878,6 +953,56 @@ func (m *MCIRApi) FetchSpecByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
+// ListLookupSpec - Spec 목록
+func (m *MCIRApi) ListLookupSpec(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.ListLookupSpec()
+}
+
+// ListLookupSpecByParam - Spec 목록
+func (m *MCIRApi) ListLookupSpecByParam(connConfigName string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `"}`
+	result, err := m.requestMCIR.ListLookupSpec()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
+// GetLookupSpec - Spec 조회
+func (m *MCIRApi) GetLookupSpec(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.GetLookupSpec()
+}
+
+// GetLookupSpecByParam - Spec 조회
+func (m *MCIRApi) GetLookupSpecByParam(connConfigName string, specName string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `", "specName": "` + specName + `"}`
+	result, err := m.requestMCIR.GetLookupSpec()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
 // CreateSshKey - KeyPair 생성
 func (m *MCIRApi) CreateSshKey(doc string) (string, error) {
 	if m.requestMCIR == nil {
@@ -1156,56 +1281,6 @@ func (m *MCIRApi) CheckResourceByParam(nameSpaceID string, resourceID string, re
 	m.SetInType("json")
 	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"vNet", "resourceId":"` + resourceID + `", "resourceType":"` + resourceType + `"}`
 	result, err := m.requestMCIR.CheckResource()
-	m.SetInType(holdType)
-
-	return result, err
-}
-
-// ListLookupSpec - Spec 목록
-func (m *MCIRApi) ListLookupSpec(doc string) (string, error) {
-	if m.requestMCIR == nil {
-		return "", errors.New("The Open() function must be called")
-	}
-
-	m.requestMCIR.InData = doc
-	return m.requestMCIR.ListLookupSpec()
-}
-
-// ListLookupSpecByParam - Spec 목록
-func (m *MCIRApi) ListLookupSpecByParam(connConfigName string) (string, error) {
-	if m.requestMCIR == nil {
-		return "", errors.New("The Open() function must be called")
-	}
-
-	holdType, _ := m.GetInType()
-	m.SetInType("json")
-	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `"}`
-	result, err := m.requestMCIR.ListLookupSpec()
-	m.SetInType(holdType)
-
-	return result, err
-}
-
-// GetLookupSpec - Spec 조회
-func (m *MCIRApi) GetLookupSpec(doc string) (string, error) {
-	if m.requestMCIR == nil {
-		return "", errors.New("The Open() function must be called")
-	}
-
-	m.requestMCIR.InData = doc
-	return m.requestMCIR.GetLookupSpec()
-}
-
-// GetLookupSpecByParam - Spec 조회
-func (m *MCIRApi) GetLookupSpecByParam(connConfigName string, specName string) (string, error) {
-	if m.requestMCIR == nil {
-		return "", errors.New("The Open() function must be called")
-	}
-
-	holdType, _ := m.GetInType()
-	m.SetInType("json")
-	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `", "specName": "` + specName + `"}`
-	result, err := m.requestMCIR.GetLookupSpec()
 	m.SetInType(holdType)
 
 	return result, err

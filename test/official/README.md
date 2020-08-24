@@ -404,8 +404,11 @@ Dozing for 1 : 1 (Back to work)
 │   ├── spider-delete-sshKey.sh
 │   └── spider-get-sshKey.sh
 ├── 6.image  # MCIR image 등록 관련 스크립트 모음
+│   ├── fetch-images.sh
 │   ├── get-image.sh
 │   ├── list-image.sh
+│   ├── lookupImageList.sh
+│   ├── lookupImage.sh
 │   ├── register-image.sh
 │   └── unregister-image.sh
 ├── 7.spec  # MCIR spec 등록 관련 스크립트 모음

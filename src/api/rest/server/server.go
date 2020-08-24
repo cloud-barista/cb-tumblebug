@@ -115,7 +115,7 @@ func ApiServer() {
 	e.GET("/tumblebug/lookupSpec/:specName", rest_mcir.RestLookupSpec)
 
 	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImageList)
-	e.GET("/tumblebug/lookupImage/:imageName", rest_mcir.RestLookupImage)
+	e.GET("/tumblebug/lookupImage/:imageId", rest_mcir.RestLookupImage)
 
 	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
 	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)

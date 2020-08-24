@@ -74,6 +74,49 @@ func (s *MCIRService) GetLookupSpec(ctx context.Context, req *pb.LookupSpecQryRe
 	return resp, nil
 }
 
+// ListLookupImage - Image 목록
+func (s *MCIRService) ListLookupImage(ctx context.Context, req *pb.LookupImageListQryRequest) (*pb.ListSpiderImageInfoResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.ListLookupImage()")
+
+	content, err := mcir.LookupImageList(req.ConnectionName)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListLookupImage()")
+	}
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj pb.ListSpiderImageInfoResponse
+	err = gc.CopySrcToDest(&content, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListLookupImage()")
+	}
+
+	return &grpcObj, nil
+}
+
+// GetLookupImage - Image 조회
+func (s *MCIRService) GetLookupImage(ctx context.Context, req *pb.LookupImageQryRequest) (*pb.SpiderImageInfoResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.GetLookupImage()")
+
+	content, err := mcir.LookupImage(req.ConnectionName, req.ImageName)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.GetLookupImage()")
+	}
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj pb.SpiderImageInfo
+	err = gc.CopySrcToDest(&content, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.GetLookupImage()")
+	}
+
+	resp := &pb.SpiderImageInfoResponse{Item: &grpcObj}
+	return resp, nil
+}
+
 // ===== [ Private Functions ] =====
 
 // ===== [ Public Functions ] =====

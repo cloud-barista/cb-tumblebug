@@ -102,12 +102,12 @@ type RestLookupImageRequest struct {
 // @Tags Image
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestLookupImageRequest true "Imageify connectionName"
-// @Param imageName path string true "Image name"
+// @Param connectionName body RestLookupImageRequest true "Specify connectionName"
+// @Param imageId path string true "Image ID"
 // @Success 200 {object} mcir.SpiderImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupImage/{imageName} [get]
+// @Router /lookupImage/{imageId} [get]
 func RestLookupImage(c echo.Context) error {
 
 	u := &RestLookupImageRequest{}
@@ -115,9 +115,9 @@ func RestLookupImage(c echo.Context) error {
 		return err
 	}
 
-	imageName := c.Param("imageName")
-	fmt.Println("[Lookup image]" + imageName)
-	content, err := mcir.LookupImage(u.ConnectionName, imageName)
+	imageId := c.Param("imageId")
+	fmt.Println("[Lookup image]" + imageId)
+	content, err := mcir.LookupImage(u.ConnectionName, imageId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
@@ -133,7 +133,7 @@ func RestLookupImage(c echo.Context) error {
 // @Tags Image
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestLookupImageRequest true "Imageify connectionName"
+// @Param connectionName body RestLookupImageRequest true "Specify connectionName"
 // @Success 200 {object} mcir.SpiderImageList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

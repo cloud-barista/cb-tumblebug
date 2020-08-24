@@ -38,6 +38,7 @@ var (
 
 	resourceType string
 	specName     string
+	imageId      string
 	host         string
 	action       string
 	metric       string

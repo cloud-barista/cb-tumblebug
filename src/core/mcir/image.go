@@ -501,11 +501,11 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 	}
 }
 
-func LookupImage(connConfig string, imageName string) (SpiderImageInfo, error) {
+func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vmimage/" + imageName
+		url := common.SPIDER_REST_URL + "/vmimage/" + imageId
 
 		method := "GET"
 
@@ -580,7 +580,7 @@ func LookupImage(connConfig string, imageName string) (SpiderImageInfo, error) {
 		}
 		defer ccm.Close()
 
-		result, err := ccm.GetImageByParam(connConfig, imageName)
+		result, err := ccm.GetImageByParam(connConfig, imageId)
 		if err != nil {
 			common.CBLog.Error(err)
 			return SpiderImageInfo{}, err
