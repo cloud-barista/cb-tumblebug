@@ -32,6 +32,7 @@ func NewSpecCmd() *cobra.Command {
 	specCmd.AddCommand(NewSpecGetCmd())
 	specCmd.AddCommand(NewSpecGetCspCmd())
 	specCmd.AddCommand(NewSpecDeleteCmd())
+	specCmd.AddCommand(NewSpecFetchCmd())
 
 	return specCmd
 }
@@ -92,8 +93,8 @@ func NewSpecListCspCmd() *cobra.Command {
 
 	listCspCmd := &cobra.Command{
 		Use:   "list-csp",
-		Short: "This is list-csp command for etc",
-		Long:  "This is list-csp command for etc",
+		Short: "This is list-csp command for spec",
+		Long:  "This is list-csp command for spec",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			if connConfigName == "" {
@@ -146,8 +147,8 @@ func NewSpecGetCspCmd() *cobra.Command {
 
 	getCspCmd := &cobra.Command{
 		Use:   "get-csp",
-		Short: "This is get-csp command for etc",
-		Long:  "This is get-csp command for etc",
+		Short: "This is get-csp command for spec",
+		Long:  "This is get-csp command for spec",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			if connConfigName == "" {
@@ -205,4 +206,28 @@ func NewSpecDeleteCmd() *cobra.Command {
 	deleteCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
 
 	return deleteCmd
+}
+
+// NewSpecFetchCmd - Spec Fetch 기능을 수행하는 Cobra Command 생성
+func NewSpecFetchCmd() *cobra.Command {
+
+	fetchCmd := &cobra.Command{
+		Use:   "fetch",
+		Short: "This is fetch command for spec",
+		Long:  "This is fetch command for spec",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	fetchCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return fetchCmd
 }

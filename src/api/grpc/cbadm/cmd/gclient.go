@@ -230,8 +230,14 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.ListImageByParam(nameSpaceID)
 		case "get":
 			result, err = mcir.GetImageByParam(nameSpaceID, resourceID)
+		case "list-csp":
+			result, err = mcir.ListLookupImageByParam(connConfigName)
+		case "get-csp":
+			result, err = mcir.GetLookupImageByParam(connConfigName, imageId)
 		case "delete":
 			result, err = mcir.DeleteImageByParam(nameSpaceID, resourceID, force)
+		case "fetch":
+			result, err = mcir.FetchImageByParam(nameSpaceID)
 		}
 	case "networks":
 		switch cmd.Name() {
@@ -282,6 +288,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.GetLookupSpecByParam(connConfigName, specName)
 		case "delete":
 			result, err = mcir.DeleteSpecByParam(nameSpaceID, resourceID, force)
+		case "fetch":
+			result, err = mcir.FetchSpecByParam(nameSpaceID)
 		}
 	case "mcis":
 		switch cmd.Name() {

@@ -2,6 +2,7 @@ package mcir
 
 import (
 	"context"
+	"fmt"
 
 	gc "github.com/cloud-barista/cb-tumblebug/src/api/grpc/common"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/logger"
@@ -145,6 +146,21 @@ func (s *MCIRService) DeleteAllImage(ctx context.Context, req *pb.ResourceAllQry
 	}
 
 	resp := &pb.MessageResponse{Message: "All " + req.ResourceType + "s has been deleted"}
+	return resp, nil
+}
+
+// FetchImage - Image 가져오기
+func (s *MCIRService) FetchImage(ctx context.Context, req *pb.FetchImageQryRequest) (*pb.MessageResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.FetchImage()")
+
+	connConfigCount, ImageCount, err := mcir.FetchImages(req.NsId)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchImage()")
+	}
+
+	resp := &pb.MessageResponse{Message: "Fetched " + fmt.Sprint(ImageCount) + " Images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
 	return resp, nil
 }
 
