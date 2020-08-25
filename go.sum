@@ -90,6 +90,8 @@ github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200723093826-b9576df337
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200723093826-b9576df33790/go.mod h1:IgFj6vZdpMY+YWoQPlSiHklcDPlja5OEGvw49jSMlic=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200813074209-2d2c79ba698d h1:O1AFq9/GtdL3DnOMna0jetA3Et1lV5kT+phqfQj9maA=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200813074209-2d2c79ba698d/go.mod h1:JJO2zAhvB/jJvBLDeT5AqUJ86xF6Onr9TCEv5E+5J3o=
+github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200825062504-21e018aacb9f h1:0nUI/SMVZEfXnS1RkVNQgm8rW85XVgstr0si8wycYTs=
+github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200825062504-21e018aacb9f/go.mod h1:JJO2zAhvB/jJvBLDeT5AqUJ86xF6Onr9TCEv5E+5J3o=
 github.com/cloud-barista/cb-store v0.1.1 h1:n10JMjMqRVLSqZDU8HaLf1SE62go9tu8wvh5/AqcUHs=
 github.com/cloud-barista/cb-store v0.1.1/go.mod h1:IZkIEZokowBnF7X6DIZt3fANO1qUu0UUAngD4yejURY=
 github.com/cncf/udpa/go v0.0.0-20200313221541-5f7e5dd04533/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
