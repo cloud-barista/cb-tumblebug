@@ -162,7 +162,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
@@ -472,7 +472,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
@@ -567,7 +567,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)

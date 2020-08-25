@@ -2042,7 +2042,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
@@ -2529,7 +2529,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
@@ -2736,7 +2736,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
@@ -3020,7 +3020,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
@@ -3225,7 +3225,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	} else {
 
 		// CCM API 설정
-		ccm := api.NewCloudInfoResourceHandler()
+		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
