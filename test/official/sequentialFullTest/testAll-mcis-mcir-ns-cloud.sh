@@ -19,32 +19,89 @@ function test_sequence()
 	local POSTFIX=$3
 	local CMDPATH=$4
 
-		../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
-		../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX
-		../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX
-		dozing 10
-		if [ "${CSP}" == "gcp" ]; then
-			echo "[Test for GCP needs more preparation time]"
-			dozing 20
-		fi
-		../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
-		dozing 10
-		../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
-		../6.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
-		../7.spec/register-spec.sh $CSP $REGION $POSTFIX
-		../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX
-		dozing 1
-		../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX
+	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
+	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX
+	../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX
+	dozing 10
+	if [ "${CSP}" == "gcp" ]; then
+		echo "[Test for GCP needs more preparation time]"
+		dozing 20
+	fi
+	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
+	dozing 10
+	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
+	../6.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
+	../7.spec/register-spec.sh $CSP $REGION $POSTFIX
+	../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX
+	dozing 1
+	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX
 
-		_self=$CMDPATH
+	_self=$CMDPATH
 
-		echo ""
-		echo "[Logging to notify latest command history]"
-		echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX}" >> ./executionStatus
-		echo ""
-		echo "[Executed Command List]"
-		cat  ./executionStatus
-		echo ""
+	echo ""
+	echo "[Logging to notify latest command history]"
+	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX}" >> ./executionStatus
+	echo ""
+	echo "[Executed Command List]"
+	cat  ./executionStatus
+	echo ""
+
+}
+
+function test_sequence_allcsp_mcir()
+{
+	local CSP=$1
+	local REGION=$2
+	local POSTFIX=$3
+	local CMDPATH=$4
+
+	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
+	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX
+	../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX
+	dozing 10
+	if [ "${CSP}" == "gcp" ]; then
+		echo "[Test for GCP needs more preparation time]"
+		dozing 20
+	fi
+	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
+	dozing 10
+	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
+	../6.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
+	../7.spec/register-spec.sh $CSP $REGION $POSTFIX
+
+	_self=$CMDPATH
+
+	echo ""
+	echo "[Logging to notify latest command history]"
+	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX}" >> ./executionStatus
+	echo ""
+	echo "[Executed Command List]"
+	cat  ./executionStatus
+	echo ""
+
+}
+
+function test_sequence_allcsp_mcis()
+{
+	local CSP=$1
+	local REGION=$2
+	local POSTFIX=$3
+	local MCISPREFIX=$4
+
+	../8.mcis/create-single-vm-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
+	dozing 1
+	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
+
+}
+
+function test_sequence_allcsp_mcis_vm()
+{
+	local CSP=$1
+	local REGION=$2
+	local POSTFIX=$3
+	local MCISPREFIX=$4
+
+	../8.mcis/add-vm-to-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
 
 }
 
@@ -111,10 +168,33 @@ function test_sequence()
 				echo $CSP
 				echo $REGION
 
-				test_sequence $CSP $REGION $POSTFIX ${0##*/}
+				test_sequence_allcsp_mcir $CSP $REGION $POSTFIX ${0##*/}
 
 			done
 		done
+
+		MCISPREFIX=avengers
+
+		test_sequence_allcsp_mcis ${CSPType[1]} 1 $POSTFIX $MCISPREFIX
+
+		for ((cspi=1;cspi<=INDEXX;cspi++)); do
+			#echo $i
+			INDEXY=${NumRegion[$cspi]}
+			CSP=${CSPType[$cspi]}
+			for ((cspj=1;cspj<=INDEXY;cspj++)); do
+				#echo $j
+				REGION=$cspj
+
+				echo $CSP
+				echo $REGION
+				echo "[Create and Add a VM to MCIS]"
+
+				test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $MCISPREFIX
+
+			done
+		done
+
+		../8.mcis/status-mcis.sh ${CSPType[1]} 1 $POSTFIX $MCISPREFIX
 		
 	else
 		echo "[Single excution for a CSP region]"

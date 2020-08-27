@@ -18,6 +18,7 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
+	MCISPREFIX=${4}
 	if [ "${CSP}" == "aws" ]; then
 		echo "[Test for AWS]"
 		INDEX=1
@@ -36,7 +37,16 @@
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=status | json_pp
+
+	if [ -z "$MCISPREFIX" ]
+	then
+		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=status | json_pp
+	else
+		MCISID=${MCISPREFIX}-${POSTFIX}
+		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status | json_pp
+	fi
+
+	
 #}
 
 #status_mcis
