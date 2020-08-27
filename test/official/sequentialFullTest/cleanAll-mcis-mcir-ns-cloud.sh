@@ -226,6 +226,10 @@ function clean_sequence()
 	if [ "${INDEX}" == "0" ]; then
 		echo "[Parallel excution for all CSP regions]"
 
+		MCISPREFIX=avengers
+		../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
+		../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
+
 		INDEXX=${NumCSP}
 		for ((cspi=1;cspi<=INDEXX;cspi++)); do
 			#echo $i

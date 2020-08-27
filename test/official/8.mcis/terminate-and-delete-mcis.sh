@@ -17,6 +17,7 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
+	MCISPREFIX=${4}
 	if [ "${CSP}" == "aws" ]; then
 		echo "[Test for AWS]"
 		INDEX=1
@@ -34,8 +35,15 @@
 		CSP="aws"
 		INDEX=1
 	fi
+	
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | json_pp || return 1
+	if [ -z "$MCISPREFIX" ]
+	then
+		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | json_pp || return 1
+	else
+		MCISID=${MCISPREFIX}-${POSTFIX}
+		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID} | json_pp || return 1
+	fi
 #}
 
 #terminate_and_delete_mcis
