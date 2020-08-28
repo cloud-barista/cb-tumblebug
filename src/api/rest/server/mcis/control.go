@@ -460,16 +460,18 @@ func RestPostMcisVm(c echo.Context) error {
 		vmInfoData.ConnectionName = req.ConnectionName
 	*/
 
-	vmInfoData := mcis.TbVmInfo{}
+	vmInfoData := &mcis.TbVmInfo{}
 	if err := c.Bind(vmInfoData); err != nil {
 		return err
 	}
+	common.PrintJsonPretty(*vmInfoData)
 
-	result, err := mcis.CorePostMcisVm(nsId, mcisId, &vmInfoData)
+	result, err := mcis.CorePostMcisVm(nsId, mcisId, vmInfoData)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusFailedDependency, &mapA)
 	}
+	common.PrintJsonPretty(*result)
 
 	return c.JSON(http.StatusCreated, result)
 }

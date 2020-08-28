@@ -1560,15 +1560,15 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
-	// 코드 추가 (확인필요)
+	targetAction := ActionCreate
+	targetStatus := StatusRunning
+
 	vmInfoData.Id = common.GenId(vmInfoData.Name)
 	vmInfoData.PublicIP = "Not assigned yet"
 	vmInfoData.PublicDNS = "Not assigned yet"
-	vmInfoData.TargetAction = "Create"
-	vmInfoData.TargetStatus = "Running"
-	//////////////////////////
-
-	vmInfoData.Status = "Creating"
+	vmInfoData.TargetAction = targetAction
+	vmInfoData.TargetStatus = targetStatus
+	vmInfoData.Status = StatusCreating
 
 	//goroutin
 	var wg sync.WaitGroup
@@ -1576,16 +1576,17 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 
 	//CreateMcis(nsId, req)
 	//err := AddVmToMcis(nsId, mcisId, vmInfoData)
-	err := AddVmToMcis(&wg, nsId, mcisId, vmInfoData)
+	
+	go AddVmToMcis(&wg, nsId, mcisId, vmInfoData)
 
+	wg.Wait()
+
+	vmStatus, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
 	if err != nil {
 		//mapA := map[string]string{"message": "Cannot find " + common.GenMcisKey(nsId, mcisId, "")}
 		//return c.JSON(http.StatusOK, &mapA)
 		return nil, fmt.Errorf("Cannot find " + common.GenMcisKey(nsId, mcisId, ""))
 	}
-	wg.Wait()
-
-	vmStatus, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
 
 	vmInfoData.Status = vmStatus.Status
 	vmInfoData.TargetStatus = vmStatus.TargetStatus

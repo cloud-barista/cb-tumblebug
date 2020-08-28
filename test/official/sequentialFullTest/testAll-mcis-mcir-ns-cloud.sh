@@ -12,6 +12,7 @@ function dozing()
 	echo "(Back to work)"
 }
 
+# Function for individual CSP test
 function test_sequence()
 {
 	local CSP=$1
@@ -45,9 +46,9 @@ function test_sequence()
 	echo "[Executed Command List]"
 	cat  ./executionStatus
 	echo ""
-
 }
 
+# Functions for all CSP test
 function test_sequence_allcsp_mcir()
 {
 	local CSP=$1
