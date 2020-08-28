@@ -11,7 +11,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/logger"
 	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf/cbtumblebug"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/request/mcis"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
 	"google.golang.org/grpc"
 )
@@ -160,7 +159,7 @@ type McisRecommendCreateRequest struct {
 type McisRecommendReq struct {
 	Vm_req          []TbVmRecommendReq `yaml:"vm_req" json:"vm_req"`
 	Placement_algo  string             `yaml:"placement_algo" json:"placement_algo"`
-	Placement_param []common.KeyValue  `yaml:"placement_param" json:"placement_param"`
+	Placement_param []KeyValue         `yaml:"placement_param" json:"placement_param"`
 	Max_result_num  string             `yaml:"max_result_num" json:"max_result_num"`
 }
 
