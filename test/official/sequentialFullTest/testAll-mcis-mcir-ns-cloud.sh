@@ -12,7 +12,7 @@ function dozing()
 	echo "(Back to work)"
 }
 
-#functions for individure CSP test
+# Function for individual CSP test
 function test_sequence()
 {
 	local CSP=$1
@@ -48,7 +48,7 @@ function test_sequence()
 	echo ""
 }
 
-#functions for all CSP test
+# Functions for all CSP test
 function test_sequence_allcsp_mcir()
 {
 	local CSP=$1
