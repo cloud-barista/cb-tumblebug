@@ -34,7 +34,7 @@ If you have any difficulties in using CB-Tumblebug, please let us know.
 # docker run -p 1323:1323 \
 -v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
 --name cb-tumblebug \
-cloudbaristaorg/cb-tumblebug:v0.1-yyyymmdd
+cloudbaristaorg/cb-tumblebug:v0.2.x-yyyymmdd
 ```
 
 ### (2) 소스 기반 실행
@@ -54,7 +54,8 @@ https://github.com/cloud-barista/cb-operator 를 통해 Cloud-Barista 전체 FW�
 
 $ git clone https://github.com/cloud-barista/cb-operator.git
 $ cd cb-operator/src
-cb-operator/src$ go build -o operator
+cb-operator/src$ make
+cb-operator/src$ ./operator
 ```
 
 ## [소스 기반 설치 & 실행 상세 정보]
@@ -69,7 +70,7 @@ cb-operator/src$ go build -o operator
   - `tar -C /usr/local -xzf go1.13.4.linux-amd64.tar.gz`
   - `.bashrc` 파일 하단에 다음을 추가: 
   ```
-  export PATH=$PATH:/usr/local/go/bin
+  export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
   export GOPATH=$HOME/go
   ```
 
@@ -80,28 +81,7 @@ cb-operator/src$ go build -o operator
   - `. ~/.bashrc`
 
 - CB-Tumblebug 소스 다운로드
-  - `# go get -u -v github.com/cloud-barista/cb-tumblebug`
-
-- 의존 라이브러리 다운로드
-  - etcd 설치 및 실행
-  ```Shell
-  # apt install etcd-server
-  # etcd --version
-  # ETCD_IP=<ETCD-Host-IPAddress>
-  # etcd --name etcd-01 --initial-advertise-peer-urls http://$ETCD_IP:2380 --listen-peer-urls http://$ETCD_IP:2380 --listen-client-urls http://$ETCD_IP:2379,http://127.0.0.1:2379 --advertise-client-urls http://$ETCD_IP:2379 --initial-cluster-token "etcd-cluster-1" --initial-cluster etcd-01=http://$ETCD_IP:2380 --initial-cluster-state new  &
-  ```
-
-  - Cloud-Barista alliance 설치 (CB-Log)
-    - `go get -u -v github.com/cloud-barista/cb-log`
-    - https://github.com/cloud-barista/cb-log README를 참고하여 설치 및 설정
-  
-  - Cloud-Barista alliance 설치 (CB-Store)
-    - `go get -u -v github.com/cloud-barista/cb-store`
-    - https://github.com/cloud-barista/cb-store README를 참고하여 설치 및 설정
-
-  - Cloud-Barista alliance 설치 (CB-Spider)
-    - `go get -u -v github.com/cloud-barista/cb-spider`
-    - https://github.com/cloud-barista/cb-spider README를 참고하여 설치 및 설정
+  - `# go get -v github.com/cloud-barista/cb-tumblebug`
 
 - CB-Tumblebug 실행에 필요한 환경변수 설정
   - `source setup.env` (cb-tumblebug/conf 에 setup.env)
@@ -115,13 +95,14 @@ cb-operator/src$ go build -o operator
 
 ```Shell
 # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
+# export GO111MODULE=on
 # ./make
 ```
-- 패키지 관련 오류 발생 시, `go get` 명령을 통해 부족한 패키지를 추가
+
 
 ### CB-Tumblebug 실행
 
-- `# ./make run` (또는 `# go run mcism.go`)
+- `# ./make run` (또는 `# go run *.go`)
   - CB-Tumblebug API server가 실행됨
 
 - 만약 `“panic: /debug/requests is already registered. You may have two independent copies of golang.org/x/net/trace in your binary, trying to maintain separate state. This may involve a vendored copy of golang.org/x/net/trace.”` 에러가 발생하면 다음을 실행 (CB-Tumblebug rebuild 가 필요할 수도 있음)
@@ -139,9 +120,9 @@ cb-operator/src$ go build -o operator
 
 - CB-Tumblebug 의 REST API를 사용하여 테스트
   - 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
-    - https://documenter.getpostman.com/view/6451118/SzmfXGk9?version=latest
+    - https://cloud-barista.github.io/rest-api/v0.2.0/tumblebug/namespace/
   - 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
-    - https://documenter.getpostman.com/view/6451118/SzmfXGkB?version=latest
+    - https://cloud-barista.github.io/rest-api/v0.2.0/tumblebug/mcir/
   - 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 원격명령수행, 종료
-    - https://documenter.getpostman.com/view/6451118/SzmfXGkD?version=latest
+    - https://cloud-barista.github.io/rest-api/v0.2.0/tumblebug/mcis/
 
