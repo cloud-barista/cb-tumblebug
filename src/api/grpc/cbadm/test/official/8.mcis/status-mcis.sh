@@ -18,6 +18,7 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
+	MCISPREFIX=${4}
 	if [ "${CSP}" == "aws" ]; then
 		echo "[Test for AWS]"
 		INDEX=1
@@ -36,8 +37,16 @@
 		INDEX=1
 	fi
 
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis status --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID --mcis ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
+	if [ -z "$MCISPREFIX" ]
+	then
+		$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis status --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID --mcis ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	else
+		MCISID=${MCISPREFIX}-${POSTFIX}
+		$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis status --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID --mcis ${MCISID}
+	fi
+
+	
 #}
 
 #status_mcis
