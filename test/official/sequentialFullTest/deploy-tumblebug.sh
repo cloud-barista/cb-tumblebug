@@ -49,7 +49,7 @@
 
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
 		'{
-			"command": "wget https://gist.githubusercontent.com/seokho-son/a6ca34ca8530516bedebd7fdf8ca7f99/raw/f47556d1297e46f66489e00db53bdce3fdbf36f8/setcbtb.sh -O ~/setcbtb.sh; chmod +x ~/setcbtb.sh; sudo ~/setcbtb.sh"
+			"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/asset/script/setcbtb.sh -O ~/setcbtb.sh; chmod +x ~/setcbtb.sh; ~/setcbtb.sh"
 		}' | json_pp #|| return 1
 #}
 
