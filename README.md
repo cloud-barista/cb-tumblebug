@@ -106,14 +106,18 @@ cb-operator/src$ ./operator
   - CB-Tumblebug API server가 실행됨
 
 ``` 
+[NOTE]
 “panic: /debug/requests is already registered. 
 You may have two independent copies of golang.org/x/net/trace in your binary, 
 trying to maintain separate state. 
 This may involve a vendored copy of golang.org/x/net/trace.”
 
-에러 발생 시, 다음을 실행하여 해결 (소스코드 리빌드가 필요할 수 있음)
+에러 발생 시, 다음을 실행하여 해결
+```
 
+```Shell
 # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
+# ./make
 ```
 
 ### CB-Tumblebug 테스트 방법
