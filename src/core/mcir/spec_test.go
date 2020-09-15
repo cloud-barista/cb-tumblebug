@@ -65,4 +65,6 @@ func TestSpec(t *testing.T) {
 
 	resultErr := DelResource(nsName, "spec", specName, "false")
 	assert.Nil(t, resultErr)
+
+	common.DelNs(nsName)
 }

@@ -65,4 +65,6 @@ func TestImage(t *testing.T) {
 
 	resultErr := DelResource(nsName, "image", imageName, "false")
 	assert.Nil(t, resultErr)
+
+	common.DelNs(nsName)
 }
