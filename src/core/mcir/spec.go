@@ -251,7 +251,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		temp := SpiderSpecInfo{}
 		err2 := json.Unmarshal(body, &temp)
 		if err2 != nil {
-			fmt.Errorf("an error occurred while unmarshaling:", err2)
+			fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
 		}
 		return temp, nil
 
@@ -280,7 +280,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		temp := SpiderSpecInfo{}
 		err2 := json.Unmarshal([]byte(result), &temp)
 		if err2 != nil {
-			fmt.Errorf("an error occurred while unmarshaling:", err2)
+			fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
 		}
 		return temp, nil
 

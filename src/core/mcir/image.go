@@ -560,7 +560,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		temp := SpiderImageInfo{}
 		err2 := json.Unmarshal(body, &temp)
 		if err2 != nil {
-			fmt.Errorf("an error occurred while unmarshaling:", err2)
+			fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
 		}
 		return temp, nil
 
@@ -589,7 +589,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		temp := SpiderImageInfo{}
 		err2 := json.Unmarshal([]byte(result), &temp)
 		if err2 != nil {
-			fmt.Errorf("an error occurred while unmarshaling:", err2)
+			fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
 		}
 		return temp, nil
 

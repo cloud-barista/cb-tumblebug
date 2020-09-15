@@ -80,7 +80,7 @@ func ApiServer() {
 
 	API_USERNAME := os.Getenv("API_USERNAME")
 	API_PASSWORD := os.Getenv("API_PASSWORD")
-	fmt.Println(API_USERNAME, API_PASSWORD)
+	fmt.Println("REST API username/password: " + API_USERNAME + "/" + API_PASSWORD)
 	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		// Be careful to use constant time comparison to prevent timing attacks
 		if subtle.ConstantTimeCompare([]byte(username), []byte(API_USERNAME)) == 1 &&
