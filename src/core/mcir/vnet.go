@@ -3,14 +3,12 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/go-resty/resty/v2"
 )
 
 // 2020-04-09 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
@@ -80,70 +78,88 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		return temp, err
 	}
 
-	var tempSpiderVPCInfo SpiderVPCInfo
+	tempReq := SpiderVPCReqInfoWrapper{}
+	tempReq.ConnectionName = u.ConnectionName
+	tempReq.ReqInfo.Name = u.Name
+	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
+	tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
+
+	var tempSpiderVPCInfo *SpiderVPCInfo
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		//url := common.SPIDER_REST_URL + "/vpc?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/vpc"
 
-		method := "POST"
+		/*
+			method := "POST"
 
-		tempReq := SpiderVPCReqInfoWrapper{}
-		tempReq.ConnectionName = u.ConnectionName
-		tempReq.ReqInfo.Name = u.Name
-		tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
-		tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		fmt.Println("payload: " + string(payload)) // for debug
+			tempReq := SpiderVPCReqInfoWrapper{}
+			tempReq.ConnectionName = u.ConnectionName
+			tempReq.ReqInfo.Name = u.Name
+			tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
+			tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+			fmt.Println("payload: " + string(payload)) // for debug
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
+			if err != nil {
+				fmt.Println(err)
+			}
+			req.Header.Add("Content-Type", "application/json")
 
-		res, err := client.Do(req)
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbVNetInfo{}
-			//return content, res.StatusCode, nil, err
-			return content, err
-		}
-		defer res.Body.Close()
+			res, err := client.Do(req)
+			if err != nil {
+				common.CBLog.Error(err)
+				content := TbVNetInfo{}
+				//return content, res.StatusCode, nil, err
+				return content, err
+			}
+			defer res.Body.Close()
 
-		//fmt.Println("res.Body: " + string(res.Body)) // for debug
+			//fmt.Println("res.Body: " + string(res.Body)) // for debug
 
-		body, err := ioutil.ReadAll(res.Body)
-		fmt.Println(string(body))
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbVNetInfo{}
-			//return content, res.StatusCode, body, err
-			return content, err
-		}
+			body, err := ioutil.ReadAll(res.Body)
+			fmt.Println(string(body))
+			if err != nil {
+				common.CBLog.Error(err)
+				content := TbVNetInfo{}
+				//return content, res.StatusCode, body, err
+				return content, err
+			}
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+			tempSpiderVPCInfo = SpiderVPCInfo{} // Spider
+			err2 := json.Unmarshal(body, &tempSpiderVPCInfo)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+		*/
+
+		client := resty.New()
+
+		resp, _ := client.R().
+			SetBody(tempReq).
+			SetResult(&SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Post(url)
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			content := TbVNetInfo{}
 			//return content, res.StatusCode, body, err
 			return content, err
 		}
 
-		tempSpiderVPCInfo = SpiderVPCInfo{} // Spider
-		err2 := json.Unmarshal(body, &tempSpiderVPCInfo)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
+		tempSpiderVPCInfo = resp.Result().(*SpiderVPCInfo)
 
 	} else {
 
@@ -161,11 +177,6 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		}
 		defer ccm.Close()
 
-		tempReq := SpiderVPCReqInfoWrapper{}
-		tempReq.ConnectionName = u.ConnectionName
-		tempReq.ReqInfo.Name = u.Name
-		tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
-		tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
 		fmt.Println("payload: " + string(payload)) // for debug
 
@@ -175,7 +186,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 			return TbVNetInfo{}, err
 		}
 
-		tempSpiderVPCInfo = SpiderVPCInfo{} // Spider
+		tempSpiderVPCInfo = &SpiderVPCInfo{} // Spider
 		err2 := json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)

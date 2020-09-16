@@ -17,6 +17,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-openapi/spec v0.19.8 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
+	github.com/go-resty/resty/v2 v2.3.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2

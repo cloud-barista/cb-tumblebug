@@ -1,8 +1,6 @@
 package common
 
 import (
-	"io/ioutil"
-	"net/http"
 	"os"
 	"runtime"
 	"strconv"
@@ -22,9 +20,11 @@ import (
 
 	"encoding/json"
 	"fmt"
+
 	//"net/http"
 	//"io/ioutil"
 	//"strconv"
+	"github.com/go-resty/resty/v2"
 )
 
 // MCIS utilities
@@ -259,48 +259,55 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 		url := SPIDER_REST_URL + "/connectionconfig/" + ConnConfigName
 
-		method := "GET"
+		/*
+			method := "GET"
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			req, err := http.NewRequest(method, url, nil)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
+			if err != nil {
+				fmt.Println(err)
+			}
+			//req.Header.Add("Content-Type", "application/json")
 
-		res, err := client.Do(req)
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfig{}
-			return content, err
-		}
-		defer res.Body.Close()
+			res, err := client.Do(req)
+			if err != nil {
+				CBLog.Error(err)
+				content := ConnConfig{}
+				return content, err
+			}
+			defer res.Body.Close()
 
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfig{}
-			return content, err
-		}
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				CBLog.Error(err)
+				content := ConnConfig{}
+				return content, err
+			}
+		*/
 
-		fmt.Println(string(body))
+		client := resty.New()
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		resp, _ := client.R().
+			Get(url)
+
+		fmt.Println(string(resp.Body()))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := ConnConfig{}
 			return content, err
 		}
 
 		temp := ConnConfig{}
-		err2 := json.Unmarshal(body, &temp)
+		err2 := json.Unmarshal(resp.Body(), &temp)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)
 		}
@@ -347,48 +354,55 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 		url := SPIDER_REST_URL + "/connectionconfig"
 
-		method := "GET"
+		/*
+			method := "GET"
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			req, err := http.NewRequest(method, url, nil)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
+			if err != nil {
+				fmt.Println(err)
+			}
+			//req.Header.Add("Content-Type", "application/json")
 
-		res, err := client.Do(req)
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfigList{}
-			return content, err
-		}
-		defer res.Body.Close()
+			res, err := client.Do(req)
+			if err != nil {
+				CBLog.Error(err)
+				content := ConnConfigList{}
+				return content, err
+			}
+			defer res.Body.Close()
 
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfigList{}
-			return content, err
-		}
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				CBLog.Error(err)
+				content := ConnConfigList{}
+				return content, err
+			}
+		*/
 
-		fmt.Println(string(body))
+		client := resty.New()
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		resp, _ := client.R().
+			Get(url)
+
+		fmt.Println(string(resp.Body()))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := ConnConfigList{}
 			return content, err
 		}
 
 		temp := ConnConfigList{}
-		err2 := json.Unmarshal(body, &temp)
+		err2 := json.Unmarshal(resp.Body(), &temp)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)
 		}
@@ -438,48 +452,55 @@ func GetRegion(RegionName string) (Region, error) {
 
 		url := SPIDER_REST_URL + "/region/" + RegionName
 
-		method := "GET"
+		/*
+			method := "GET"
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			req, err := http.NewRequest(method, url, nil)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
+			if err != nil {
+				fmt.Println(err)
+			}
+			//req.Header.Add("Content-Type", "application/json")
 
-		res, err := client.Do(req)
-		if err != nil {
-			CBLog.Error(err)
-			content := Region{}
-			return content, err
-		}
-		defer res.Body.Close()
+			res, err := client.Do(req)
+			if err != nil {
+				CBLog.Error(err)
+				content := Region{}
+				return content, err
+			}
+			defer res.Body.Close()
 
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := Region{}
-			return content, err
-		}
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				CBLog.Error(err)
+				content := Region{}
+				return content, err
+			}
+		*/
 
-		fmt.Println(string(body))
+		client := resty.New()
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		resp, _ := client.R().
+			Get(url)
+
+		fmt.Println(string(resp.Body()))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := Region{}
 			return content, err
 		}
 
 		temp := Region{}
-		err2 := json.Unmarshal(body, &temp)
+		err2 := json.Unmarshal(resp.Body(), &temp)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)
 		}
@@ -527,48 +548,55 @@ func GetRegionList() (RegionList, error) {
 
 		url := SPIDER_REST_URL + "/region"
 
-		method := "GET"
+		/*
+			method := "GET"
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			req, err := http.NewRequest(method, url, nil)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
+			if err != nil {
+				fmt.Println(err)
+			}
+			//req.Header.Add("Content-Type", "application/json")
 
-		res, err := client.Do(req)
-		if err != nil {
-			CBLog.Error(err)
-			content := RegionList{}
-			return content, err
-		}
-		defer res.Body.Close()
+			res, err := client.Do(req)
+			if err != nil {
+				CBLog.Error(err)
+				content := RegionList{}
+				return content, err
+			}
+			defer res.Body.Close()
 
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := RegionList{}
-			return content, err
-		}
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				CBLog.Error(err)
+				content := RegionList{}
+				return content, err
+			}
+		*/
 
-		fmt.Println(string(body))
+		client := resty.New()
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		resp, _ := client.R().
+			Get(url)
+
+		fmt.Println(string(resp.Body()))
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := RegionList{}
 			return content, err
 		}
 
 		temp := RegionList{}
-		err2 := json.Unmarshal(body, &temp)
+		err2 := json.Unmarshal(resp.Body(), &temp)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)
 		}
