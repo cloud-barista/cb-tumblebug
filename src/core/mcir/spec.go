@@ -157,12 +157,19 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 		client := resty.New()
 		client.SetAllowGetMethodPayload(true)
 
-		resp, _ := client.R().
+		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			SetResult(&SpiderSpecList{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Get(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			content := SpiderSpecList{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
 
 		fmt.Println(string(resp.Body()))
 
@@ -276,12 +283,19 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		client := resty.New()
 		client.SetAllowGetMethodPayload(true)
 
-		resp, _ := client.R().
+		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Get(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			content := SpiderSpecInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
 
 		fmt.Println(string(resp.Body()))
 

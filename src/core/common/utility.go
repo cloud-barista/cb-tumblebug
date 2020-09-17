@@ -288,14 +288,30 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 				content := ConnConfig{}
 				return content, err
 			}
+
+			temp := ConnConfig{}
+			err2 := json.Unmarshal(resp.Body(), &temp)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+			return temp, nil
 		*/
 
 		client := resty.New()
 
-		resp, _ := client.R().
+		resp, err := client.R().
+			SetResult(&ConnConfig{}).
+			//SetError(&SimpleMsg{}).
 			Get(url)
 
-		fmt.Println(string(resp.Body()))
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfig{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
+
+		fmt.Println(string(resp.Body())) // for debug
 
 		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
@@ -306,12 +322,8 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 			return content, err
 		}
 
-		temp := ConnConfig{}
-		err2 := json.Unmarshal(resp.Body(), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*ConnConfig)
+		return *temp, nil
 
 	} else {
 
@@ -383,14 +395,30 @@ func GetConnConfigList() (ConnConfigList, error) {
 				content := ConnConfigList{}
 				return content, err
 			}
+
+			temp := ConnConfigList{}
+			err2 := json.Unmarshal(resp.Body(), &temp)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+			return temp, nil
 		*/
 
 		client := resty.New()
 
-		resp, _ := client.R().
+		resp, err := client.R().
+			SetResult(&ConnConfigList{}).
+			//SetError(&SimpleMsg{}).
 			Get(url)
 
-		fmt.Println(string(resp.Body()))
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfigList{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
+
+		fmt.Println(string(resp.Body())) // for debug
 
 		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
@@ -401,12 +429,8 @@ func GetConnConfigList() (ConnConfigList, error) {
 			return content, err
 		}
 
-		temp := ConnConfigList{}
-		err2 := json.Unmarshal(resp.Body(), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*ConnConfigList)
+		return *temp, nil
 
 	} else {
 
@@ -481,14 +505,30 @@ func GetRegion(RegionName string) (Region, error) {
 				content := Region{}
 				return content, err
 			}
+
+			temp := Region{}
+			err2 := json.Unmarshal(resp.Body(), &temp)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+			return temp, nil
 		*/
 
 		client := resty.New()
 
-		resp, _ := client.R().
+		resp, err := client.R().
+			SetResult(&Region{}).
+			//SetError(&SimpleMsg{}).
 			Get(url)
 
-		fmt.Println(string(resp.Body()))
+		if err != nil {
+			CBLog.Error(err)
+			content := Region{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
+
+		fmt.Println(string(resp.Body())) // for debug
 
 		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
@@ -499,12 +539,8 @@ func GetRegion(RegionName string) (Region, error) {
 			return content, err
 		}
 
-		temp := Region{}
-		err2 := json.Unmarshal(resp.Body(), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*Region)
+		return *temp, nil
 
 	} else {
 
@@ -577,14 +613,30 @@ func GetRegionList() (RegionList, error) {
 				content := RegionList{}
 				return content, err
 			}
+
+			temp := RegionList{}
+			err2 := json.Unmarshal(resp.Body(), &temp)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+			return temp, nil
 		*/
 
 		client := resty.New()
 
-		resp, _ := client.R().
+		resp, err := client.R().
+			SetResult(&RegionList{}).
+			//SetError(&SimpleMsg{}).
 			Get(url)
 
-		fmt.Println(string(resp.Body()))
+		if err != nil {
+			CBLog.Error(err)
+			content := RegionList{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
+
+		fmt.Println(string(resp.Body())) // for debug
 
 		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
@@ -595,12 +647,8 @@ func GetRegionList() (RegionList, error) {
 			return content, err
 		}
 
-		temp := RegionList{}
-		err2 := json.Unmarshal(resp.Body(), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*RegionList)
+		return *temp, nil
 
 	} else {
 

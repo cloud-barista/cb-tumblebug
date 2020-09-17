@@ -126,11 +126,19 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 		client := resty.New()
 
-		resp, _ := client.R().
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			SetResult(&SpiderKeyPairInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Post(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbSshKeyInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
 
 		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {

@@ -143,11 +143,19 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 		client := resty.New()
 
-		resp, _ := client.R().
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			SetResult(&SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Post(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbVNetInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
 
 		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {

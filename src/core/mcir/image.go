@@ -3,12 +3,10 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/xwb1989/sqlparser"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
@@ -415,59 +413,88 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 
 		url := common.SPIDER_REST_URL + "/vmimage"
 
-		method := "GET"
+		/*
+			method := "GET"
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			// Create Req body
+			type JsonTemplate struct {
+				ConnectionName string
+			}
+			tempReq := JsonTemplate{}
+			tempReq.ConnectionName = connConfig
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+			if err != nil {
+				fmt.Println(err)
+			}
+			req.Header.Add("Content-Type", "application/json")
+
+			res, err := client.Do(req)
+			if err != nil {
+				common.CBLog.Error(err)
+				content := SpiderImageList{}
+				return content, err
+			}
+			defer res.Body.Close()
+
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				common.CBLog.Error(err)
+				content := SpiderImageList{}
+				return content, err
+			}
+
+			temp := SpiderImageList{}
+			err2 := json.Unmarshal(body, &temp)
+			if err2 != nil {
+				fmt.Println("whoops:", err2)
+			}
+			return temp, nil
+		*/
+
 		// Create Req body
 		type JsonTemplate struct {
-			ConnectionName string
+			ConnectionName string `json:"ConnectionName"`
 		}
 		tempReq := JsonTemplate{}
 		tempReq.ConnectionName = connConfig
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
+		client := resty.New()
+		client.SetAllowGetMethodPayload(true)
 
-		res, err := client.Do(req)
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderImageList{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Get(url)
+
 		if err != nil {
 			common.CBLog.Error(err)
 			content := SpiderImageList{}
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			common.CBLog.Error(err)
-			content := SpiderImageList{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println(string(body))
+		fmt.Println(string(resp.Body()))
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			content := SpiderImageList{}
 			return content, err
 		}
 
-		temp := SpiderImageList{}
-		err2 := json.Unmarshal(body, &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp := resp.Result().(*SpiderImageList)
+		return *temp, nil
 
 	} else {
 
@@ -507,62 +534,91 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
 		url := common.SPIDER_REST_URL + "/vmimage/" + imageId
 
-		method := "GET"
+		/*
+			method := "GET"
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+
+			// Create Req body
+			type JsonTemplate struct {
+				ConnectionName string
+			}
+			tempReq := JsonTemplate{}
+			tempReq.ConnectionName = connConfig
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+			if err != nil {
+				fmt.Println(err)
+			}
+			req.Header.Add("Content-Type", "application/json")
+
+			res, err := client.Do(req)
+			if err != nil {
+				common.CBLog.Error(err)
+				content := SpiderImageInfo{}
+				//err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+				return content, err
+			}
+			defer res.Body.Close()
+
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				common.CBLog.Error(err)
+				content := SpiderImageInfo{}
+				//err := fmt.Errorf("an error occurred while reading CB-Spider's response")
+				return content, err
+			}
+
+			temp := SpiderImageInfo{}
+			err2 := json.Unmarshal(body, &temp)
+			if err2 != nil {
+				fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
+			}
+			return temp, nil
+		*/
 
 		// Create Req body
 		type JsonTemplate struct {
-			ConnectionName string
+			ConnectionName string `json:"ConnectionName"`
 		}
 		tempReq := JsonTemplate{}
 		tempReq.ConnectionName = connConfig
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
+		client := resty.New()
+		client.SetAllowGetMethodPayload(true)
 
-		res, err := client.Do(req)
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderImageInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Get(url)
+
 		if err != nil {
 			common.CBLog.Error(err)
 			content := SpiderImageInfo{}
-			//err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			common.CBLog.Error(err)
-			content := SpiderImageInfo{}
-			//err := fmt.Errorf("an error occurred while reading CB-Spider's response")
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println(string(body))
+		fmt.Println(string(resp.Body()))
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			content := SpiderImageInfo{}
 			return content, err
 		}
 
-		temp := SpiderImageInfo{}
-		err2 := json.Unmarshal(body, &temp)
-		if err2 != nil {
-			fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
-		}
-		return temp, nil
+		temp := resp.Result().(*SpiderImageInfo)
+		return *temp, nil
 
 	} else {
 

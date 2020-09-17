@@ -3,8 +3,6 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -12,6 +10,7 @@ import (
 	//uuid "github.com/google/uuid"
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/go-resty/resty/v2"
 	"github.com/xwb1989/sqlparser"
 	// CB-Store
 )
@@ -208,35 +207,52 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		fmt.Println("url: " + url)
 
-		method := "DELETE"
+		/*
+			method := "DELETE"
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		//req, err := http.NewRequest(method, url, nil)
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		//fmt.Println("payload: " + string(payload))
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			//req, err := http.NewRequest(method, url, nil)
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+			//fmt.Println("payload: " + string(payload))
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+
+			req.Header.Add("Content-Type", "application/json")
+			res, err := client.Do(req)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			defer res.Body.Close()
+
+			body, err := ioutil.ReadAll(res.Body)
+			fmt.Println(string(body))
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+		*/
+
+		client := resty.New()
+
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Delete(url)
 
 		if err != nil {
 			common.CBLog.Error(err)
-			return err
-		}
-
-		req.Header.Add("Content-Type", "application/json")
-		res, err := client.Do(req)
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		fmt.Println(string(body))
-		if err != nil {
-			common.CBLog.Error(err)
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return err
 		}
 
@@ -258,28 +274,44 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return res, nil
 		*/
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case forceFlag == "true":
 			url += "?force=true"
 			fmt.Println("forceFlag == true; url: " + url)
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+			/*
+				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+				if err != nil {
+					common.CBLog.Error(err)
+					//return err
+				}
+				req.Header.Add("Content-Type", "application/json")
+				res, err := client.Do(req)
+				if err != nil {
+					common.CBLog.Error(err)
+					//return err
+				}
+				defer res.Body.Close()
+				body, err := ioutil.ReadAll(res.Body)
+				fmt.Println(string(body))
+				if err != nil {
+					common.CBLog.Error(err)
+					//return err
+				}
+			*/
+
+			_, err := client.R().
+				SetHeader("Content-Type", "application/json").
+				SetBody(tempReq).
+				//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
+				//SetError(&AuthError{}).       // or SetError(AuthError{}).
+				Delete(url)
+
 			if err != nil {
 				common.CBLog.Error(err)
-				//return err
-			}
-			req.Header.Add("Content-Type", "application/json")
-			res, err := client.Do(req)
-			if err != nil {
-				common.CBLog.Error(err)
-				//return err
-			}
-			defer res.Body.Close()
-			body, err := ioutil.ReadAll(res.Body)
-			fmt.Println(string(body))
-			if err != nil {
-				common.CBLog.Error(err)
-				//return err
+				err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+				return err
 			}
 
 			err = common.CBStore.Delete(key)
@@ -290,8 +322,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 			//return res.StatusCode, body, nil
 			return nil
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			//return res.StatusCode, body, err
 			return err
