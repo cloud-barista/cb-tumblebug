@@ -259,44 +259,6 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 		url := SPIDER_REST_URL + "/connectionconfig/" + ConnConfigName
 
-		/*
-			method := "GET"
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			req, err := http.NewRequest(method, url, nil)
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			//req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				CBLog.Error(err)
-				content := ConnConfig{}
-				return content, err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				CBLog.Error(err)
-				content := ConnConfig{}
-				return content, err
-			}
-
-			temp := ConnConfig{}
-			err2 := json.Unmarshal(resp.Body(), &temp)
-			if err2 != nil {
-				fmt.Println("whoops:", err2)
-			}
-			return temp, nil
-		*/
-
 		client := resty.New()
 
 		resp, err := client.R().
@@ -365,44 +327,6 @@ func GetConnConfigList() (ConnConfigList, error) {
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		url := SPIDER_REST_URL + "/connectionconfig"
-
-		/*
-			method := "GET"
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			req, err := http.NewRequest(method, url, nil)
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			//req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				CBLog.Error(err)
-				content := ConnConfigList{}
-				return content, err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				CBLog.Error(err)
-				content := ConnConfigList{}
-				return content, err
-			}
-
-			temp := ConnConfigList{}
-			err2 := json.Unmarshal(resp.Body(), &temp)
-			if err2 != nil {
-				fmt.Println("whoops:", err2)
-			}
-			return temp, nil
-		*/
 
 		client := resty.New()
 
@@ -476,44 +400,6 @@ func GetRegion(RegionName string) (Region, error) {
 
 		url := SPIDER_REST_URL + "/region/" + RegionName
 
-		/*
-			method := "GET"
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			req, err := http.NewRequest(method, url, nil)
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			//req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				CBLog.Error(err)
-				content := Region{}
-				return content, err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				CBLog.Error(err)
-				content := Region{}
-				return content, err
-			}
-
-			temp := Region{}
-			err2 := json.Unmarshal(resp.Body(), &temp)
-			if err2 != nil {
-				fmt.Println("whoops:", err2)
-			}
-			return temp, nil
-		*/
-
 		client := resty.New()
 
 		resp, err := client.R().
@@ -583,44 +469,6 @@ func GetRegionList() (RegionList, error) {
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		url := SPIDER_REST_URL + "/region"
-
-		/*
-			method := "GET"
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			req, err := http.NewRequest(method, url, nil)
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			//req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				CBLog.Error(err)
-				content := RegionList{}
-				return content, err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				CBLog.Error(err)
-				content := RegionList{}
-				return content, err
-			}
-
-			temp := RegionList{}
-			err2 := json.Unmarshal(resp.Body(), &temp)
-			if err2 != nil {
-				fmt.Println("whoops:", err2)
-			}
-			return temp, nil
-		*/
 
 		client := resty.New()
 

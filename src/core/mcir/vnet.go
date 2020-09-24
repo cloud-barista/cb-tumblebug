@@ -91,56 +91,6 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		//url := common.SPIDER_REST_URL + "/vpc?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/vpc"
 
-		/*
-			method := "POST"
-
-			tempReq := SpiderVPCReqInfoWrapper{}
-			tempReq.ConnectionName = u.ConnectionName
-			tempReq.ReqInfo.Name = u.Name
-			tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
-			tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-			fmt.Println("payload: " + string(payload)) // for debug
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbVNetInfo{}
-				//return content, res.StatusCode, nil, err
-				return content, err
-			}
-			defer res.Body.Close()
-
-			//fmt.Println("res.Body: " + string(res.Body)) // for debug
-
-			body, err := ioutil.ReadAll(res.Body)
-			fmt.Println(string(body))
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbVNetInfo{}
-				//return content, res.StatusCode, body, err
-				return content, err
-			}
-
-			tempSpiderVPCInfo = SpiderVPCInfo{} // Spider
-			err2 := json.Unmarshal(body, &tempSpiderVPCInfo)
-			if err2 != nil {
-				fmt.Println("whoops:", err2)
-			}
-		*/
-
 		client := resty.New()
 
 		resp, err := client.R().

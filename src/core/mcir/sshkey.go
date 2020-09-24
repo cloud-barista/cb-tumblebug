@@ -77,53 +77,6 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 		//url := common.SPIDER_REST_URL + "/keypair?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/keypair"
 
-		/*
-			method := "POST"
-
-			//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
-			tempReq := SpiderKeyPairReqInfoWrapper{}
-			tempReq.ConnectionName = u.ConnectionName
-			tempReq.ReqInfo.Name = u.Name
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-			//fmt.Println("payload: " + string(payload)) // for debug
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbSshKeyInfo{}
-				//return content, res.StatusCode, nil, err
-				return content, err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			fmt.Println(string(body))
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbSshKeyInfo{}
-				//return content, res.StatusCode, body, err
-				return content, err
-			}
-
-			tempSpiderKeyPairInfo = SpiderKeyPairInfo{}
-			err2 := json.Unmarshal(body, &tempSpiderKeyPairInfo)
-			if err2 != nil {
-				fmt.Println("whoops:", err2)
-			}
-		*/
-
 		client := resty.New()
 
 		resp, err := client.R().

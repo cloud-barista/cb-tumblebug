@@ -95,56 +95,6 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		//url := common.SPIDER_REST_URL + "/securitygroup?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/securitygroup"
 
-		/*
-			method := "POST"
-
-			//payload := strings.NewReader("{ \"Name\": \"" + u.CspSecurityGroupName + "\"}")
-			tempReq := SpiderSecurityReqInfoWrapper{}
-			tempReq.ConnectionName = u.ConnectionName
-			tempReq.ReqInfo.Name = u.Name
-			tempReq.ReqInfo.VPCName = u.VNetId
-			tempReq.ReqInfo.SecurityRules = u.FirewallRules
-
-			payload, _ := json.Marshal(tempReq)
-			fmt.Println("payload: " + string(payload)) // for debug
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbSecurityGroupInfo{}
-				//return content, res.StatusCode, nil, err
-				return content, err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			fmt.Println(string(body))
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbSecurityGroupInfo{}
-				//return content, res.StatusCode, body, err
-				return content, err
-			}
-
-			tempSpiderSecurityInfo = SpiderSecurityInfo{}
-			err2 := json.Unmarshal(body, &tempSpiderSecurityInfo)
-			if err2 != nil {
-				fmt.Println("whoops:", err2)
-			}
-		*/
-
 		client := resty.New()
 
 		resp, err := client.R().

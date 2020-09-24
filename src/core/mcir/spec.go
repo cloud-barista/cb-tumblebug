@@ -102,51 +102,6 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 
 		url := common.SPIDER_REST_URL + "/vmspec"
 
-		/*
-		   method := "GET"
-
-		   client := &http.Client{
-		       CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		           return http.ErrUseLastResponse
-		       },
-		   }
-		   // Create Req body
-		   type JsonTemplate struct {
-		       ConnectionName string
-		   }
-		   tempReq := JsonTemplate{}
-		   tempReq.ConnectionName = connConfig
-		   payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		   req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-		   if err != nil {
-		       fmt.Println(err)
-		   }
-		   req.Header.Add("Content-Type", "application/json")
-
-		   res, err := client.Do(req)
-		   if err != nil {
-		       common.CBLog.Error(err)
-		       content := SpiderSpecList{}
-		       return content, err
-		   }
-		   defer res.Body.Close()
-
-		   body, err := ioutil.ReadAll(res.Body)
-		   if err != nil {
-		       common.CBLog.Error(err)
-		       content := SpiderSpecList{}
-		       return content, err
-		   }
-
-		   temp := SpiderSpecList{}
-		   err2 := json.Unmarshal(body, &temp)
-		   if err2 != nil {
-		       fmt.Println("whoops:", err2)
-		   }
-		   return temp, nil
-		*/
-
 		// Create Req body
 		type JsonTemplate struct {
 			ConnectionName string `json:"ConnectionName"`
@@ -224,54 +179,6 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
 		//url := common.SPIDER_REST_URL + "/vmspec/" + u.CspSpecName
 		url := common.SPIDER_REST_URL + "/vmspec/" + specName
-
-		/*
-			method := "GET"
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-
-			// Create Req body
-			type JsonTemplate struct {
-				ConnectionName string
-			}
-			tempReq := JsonTemplate{}
-			tempReq.ConnectionName = connConfig
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-			if err != nil {
-				fmt.Println(err)
-			}
-			req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
-			if err != nil {
-				common.CBLog.Error(err)
-				content := SpiderSpecInfo{}
-				//err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-				return content, err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				common.CBLog.Error(err)
-				content := SpiderSpecInfo{}
-				//err := fmt.Errorf("an error occurred while reading CB-Spider's response")
-				return content, err
-			}
-
-			temp := SpiderSpecInfo{}
-			err2 := json.Unmarshal(body, &temp)
-			if err2 != nil {
-				fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
-			}
-			return temp, nil
-		*/
 
 		// Create Req body
 		type JsonTemplate struct {

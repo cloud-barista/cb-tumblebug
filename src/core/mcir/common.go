@@ -207,40 +207,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		fmt.Println("url: " + url)
 
-		/*
-			method := "DELETE"
-
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-			}
-			//req, err := http.NewRequest(method, url, nil)
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-			//fmt.Println("payload: " + string(payload))
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			req.Header.Add("Content-Type", "application/json")
-			res, err := client.Do(req)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			defer res.Body.Close()
-
-			body, err := ioutil.ReadAll(res.Body)
-			fmt.Println(string(body))
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-		*/
-
 		client := resty.New()
 
 		resp, err := client.R().
@@ -279,27 +245,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		case forceFlag == "true":
 			url += "?force=true"
 			fmt.Println("forceFlag == true; url: " + url)
-
-			/*
-				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-				if err != nil {
-					common.CBLog.Error(err)
-					//return err
-				}
-				req.Header.Add("Content-Type", "application/json")
-				res, err := client.Do(req)
-				if err != nil {
-					common.CBLog.Error(err)
-					//return err
-				}
-				defer res.Body.Close()
-				body, err := ioutil.ReadAll(res.Body)
-				fmt.Println(string(body))
-				if err != nil {
-					common.CBLog.Error(err)
-					//return err
-				}
-			*/
 
 			_, err := client.R().
 				SetHeader("Content-Type", "application/json").
