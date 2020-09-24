@@ -1,8 +1,6 @@
 package common
 
 import (
-	"io/ioutil"
-	"net/http"
 	"os"
 	"runtime"
 	"strconv"
@@ -22,9 +20,11 @@ import (
 
 	"encoding/json"
 	"fmt"
+
 	//"net/http"
 	//"io/ioutil"
 	//"strconv"
+	"github.com/go-resty/resty/v2"
 )
 
 // MCIS utilities
@@ -259,52 +259,33 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 		url := SPIDER_REST_URL + "/connectionconfig/" + ConnConfigName
 
-		method := "GET"
+		client := resty.New()
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+		resp, err := client.R().
+			SetResult(&ConnConfig{}).
+			//SetError(&SimpleMsg{}).
+			Get(url)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
 		if err != nil {
 			CBLog.Error(err)
 			content := ConnConfig{}
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfig{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println(string(body))
+		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := ConnConfig{}
 			return content, err
 		}
 
-		temp := ConnConfig{}
-		err2 := json.Unmarshal(body, &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*ConnConfig)
+		return *temp, nil
 
 	} else {
 
@@ -347,52 +328,33 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 		url := SPIDER_REST_URL + "/connectionconfig"
 
-		method := "GET"
+		client := resty.New()
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+		resp, err := client.R().
+			SetResult(&ConnConfigList{}).
+			//SetError(&SimpleMsg{}).
+			Get(url)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
 		if err != nil {
 			CBLog.Error(err)
 			content := ConnConfigList{}
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfigList{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println(string(body))
+		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := ConnConfigList{}
 			return content, err
 		}
 
-		temp := ConnConfigList{}
-		err2 := json.Unmarshal(body, &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*ConnConfigList)
+		return *temp, nil
 
 	} else {
 
@@ -438,52 +400,33 @@ func GetRegion(RegionName string) (Region, error) {
 
 		url := SPIDER_REST_URL + "/region/" + RegionName
 
-		method := "GET"
+		client := resty.New()
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+		resp, err := client.R().
+			SetResult(&Region{}).
+			//SetError(&SimpleMsg{}).
+			Get(url)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
 		if err != nil {
 			CBLog.Error(err)
 			content := Region{}
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := Region{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println(string(body))
+		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := Region{}
 			return content, err
 		}
 
-		temp := Region{}
-		err2 := json.Unmarshal(body, &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*Region)
+		return *temp, nil
 
 	} else {
 
@@ -527,52 +470,33 @@ func GetRegionList() (RegionList, error) {
 
 		url := SPIDER_REST_URL + "/region"
 
-		method := "GET"
+		client := resty.New()
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, nil)
+		resp, err := client.R().
+			SetResult(&RegionList{}).
+			//SetError(&SimpleMsg{}).
+			Get(url)
 
-		if err != nil {
-			fmt.Println(err)
-		}
-		//req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
 		if err != nil {
 			CBLog.Error(err)
 			content := RegionList{}
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			CBLog.Error(err)
-			content := RegionList{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println(string(body))
+		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := RegionList{}
 			return content, err
 		}
 
-		temp := RegionList{}
-		err2 := json.Unmarshal(body, &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		return temp, nil
+		temp, _ := resp.Result().(*RegionList)
+		return *temp, nil
 
 	} else {
 

@@ -3,14 +3,12 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/go-resty/resty/v2"
 )
 
 // 2020-04-03 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/KeyPairHandler.go
@@ -68,68 +66,45 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 		return temp, err
 	}
 
-	var tempSpiderKeyPairInfo SpiderKeyPairInfo
+	tempReq := SpiderKeyPairReqInfoWrapper{}
+	tempReq.ConnectionName = u.ConnectionName
+	tempReq.ReqInfo.Name = u.Name
+
+	var tempSpiderKeyPairInfo *SpiderKeyPairInfo
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		//url := common.SPIDER_REST_URL + "/keypair?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/keypair"
 
-		method := "POST"
+		client := resty.New()
 
-		//payload := strings.NewReader("{ \"Name\": \"" + u.CspSshKeyName + "\"}")
-		tempReq := SpiderKeyPairReqInfoWrapper{}
-		tempReq.ConnectionName = u.ConnectionName
-		tempReq.ReqInfo.Name = u.Name
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		//fmt.Println("payload: " + string(payload)) // for debug
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderKeyPairInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Post(url)
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
 		if err != nil {
 			common.CBLog.Error(err)
 			content := TbSshKeyInfo{}
-			//return content, res.StatusCode, nil, err
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		fmt.Println(string(body))
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbSshKeyInfo{}
-			//return content, res.StatusCode, body, err
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
-			fmt.Println("body: ", string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			fmt.Println("body: ", string(resp.Body()))
 			common.CBLog.Error(err)
 			content := TbSshKeyInfo{}
 			//return content, res.StatusCode, body, err
 			return content, err
 		}
 
-		tempSpiderKeyPairInfo = SpiderKeyPairInfo{}
-		err2 := json.Unmarshal(body, &tempSpiderKeyPairInfo)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
+		tempSpiderKeyPairInfo = resp.Result().(*SpiderKeyPairInfo)
 
 	} else {
 
@@ -147,9 +122,6 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 		}
 		defer ccm.Close()
 
-		tempReq := SpiderKeyPairReqInfoWrapper{}
-		tempReq.ConnectionName = u.ConnectionName
-		tempReq.ReqInfo.Name = u.Name
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
 		//fmt.Println("payload: " + string(payload)) // for debug
 
@@ -159,7 +131,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 			return TbSshKeyInfo{}, err
 		}
 
-		tempSpiderKeyPairInfo = SpiderKeyPairInfo{}
+		tempSpiderKeyPairInfo = &SpiderKeyPairInfo{}
 		err2 := json.Unmarshal([]byte(result), &tempSpiderKeyPairInfo)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)

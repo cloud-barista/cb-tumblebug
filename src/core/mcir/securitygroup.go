@@ -3,14 +3,12 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/go-resty/resty/v2"
 )
 
 // 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/SecurityHandler.go
@@ -84,70 +82,46 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		return temp, err
 	}
 
-	var tempSpiderSecurityInfo SpiderSecurityInfo
+	tempReq := SpiderSecurityReqInfoWrapper{}
+	tempReq.ConnectionName = u.ConnectionName
+	tempReq.ReqInfo.Name = u.Name
+	tempReq.ReqInfo.VPCName = u.VNetId
+	tempReq.ReqInfo.SecurityRules = u.FirewallRules
+
+	var tempSpiderSecurityInfo *SpiderSecurityInfo
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		//url := common.SPIDER_REST_URL + "/securitygroup?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/securitygroup"
 
-		method := "POST"
+		client := resty.New()
 
-		//payload := strings.NewReader("{ \"Name\": \"" + u.CspSecurityGroupName + "\"}")
-		tempReq := SpiderSecurityReqInfoWrapper{}
-		tempReq.ConnectionName = u.ConnectionName
-		tempReq.ReqInfo.Name = u.Name
-		tempReq.ReqInfo.VPCName = u.VNetId
-		tempReq.ReqInfo.SecurityRules = u.FirewallRules
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Post(url)
 
-		payload, _ := json.Marshal(tempReq)
-		fmt.Println("payload: " + string(payload)) // for debug
-
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
 		if err != nil {
 			common.CBLog.Error(err)
 			content := TbSecurityGroupInfo{}
-			//return content, res.StatusCode, nil, err
-			return content, err
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		fmt.Println(string(body))
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			//return content, res.StatusCode, body, err
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
 		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			content := TbSecurityGroupInfo{}
 			//return content, res.StatusCode, body, err
 			return content, err
 		}
 
-		tempSpiderSecurityInfo = SpiderSecurityInfo{}
-		err2 := json.Unmarshal(body, &tempSpiderSecurityInfo)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
+		tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
 
 	} else {
 
@@ -165,12 +139,6 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		}
 		defer ccm.Close()
 
-		tempReq := SpiderSecurityReqInfoWrapper{}
-		tempReq.ConnectionName = u.ConnectionName
-		tempReq.ReqInfo.Name = u.Name
-		tempReq.ReqInfo.VPCName = u.VNetId
-		tempReq.ReqInfo.SecurityRules = u.FirewallRules
-
 		payload, _ := json.Marshal(tempReq)
 		fmt.Println("payload: " + string(payload)) // for debug
 
@@ -180,7 +148,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 			return TbSecurityGroupInfo{}, err
 		}
 
-		tempSpiderSecurityInfo = SpiderSecurityInfo{}
+		tempSpiderSecurityInfo = &SpiderSecurityInfo{}
 		err2 := json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
 		if err2 != nil {
 			fmt.Println("whoops:", err2)
