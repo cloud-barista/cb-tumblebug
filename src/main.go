@@ -36,12 +36,12 @@ import (
 // @securityDefinitions.basic BasicAuth
 
 func main() {
-	common.SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
-	common.DRAGONFLY_REST_URL = os.Getenv("DRAGONFLY_REST_URL")
-	common.DB_URL = os.Getenv("DB_URL")
-	common.DB_DATABASE = os.Getenv("DB_DATABASE")
-	common.DB_USER = os.Getenv("DB_USER")
-	common.DB_PASSWORD = os.Getenv("DB_PASSWORD")
+	common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
+	common.DRAGONFLY_REST_URL = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+	common.DB_URL = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
+	common.DB_DATABASE = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
+	common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
+	common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()

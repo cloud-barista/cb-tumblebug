@@ -12,7 +12,9 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/go-resty/resty/v2"
 	"github.com/xwb1989/sqlparser"
+
 	// CB-Store
+	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
 // CB-Store
@@ -435,6 +437,8 @@ func ListResourceId(nsId string, resourceType string) []string {
 	fmt.Println(key)
 
 	keyValue, _ := common.CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+
 	var resourceList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
@@ -470,6 +474,7 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 	fmt.Println(key)
 
 	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
 		common.CBLog.Error(err)

@@ -645,3 +645,11 @@ func NewGrpcStatusErr(msg string, tag string, method string) error {
 	//logger.Error(tag, " error while calling ", method, " method: [", fn, ":", line, "] ", msg)
 	return status.Errorf(codes.Internal, "%s error while calling %s method: %s ", tag, method, msg)
 }
+
+// NVL is null value logic
+func NVL(str string, def string) string {
+	if len(str) == 0 {
+		return def
+	}
+	return str
+}

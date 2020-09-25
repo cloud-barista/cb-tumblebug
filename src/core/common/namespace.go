@@ -9,6 +9,8 @@ import (
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
+
+	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
 type NsReq struct {
@@ -110,6 +112,7 @@ func ListNs() ([]NsInfo, error) {
 	fmt.Println(key)
 
 	keyValue, err := CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
 		CBLog.Error(err)
@@ -135,6 +138,8 @@ func ListNsId() []string {
 	fmt.Println(key)
 
 	keyValue, _ := CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+
 	var nsList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {

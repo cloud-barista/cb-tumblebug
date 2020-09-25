@@ -310,6 +310,8 @@ func getSubnetList(nsId string) []string {
 	fmt.Println(key)
 
 	keyValue, _ := common.CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+
 	var subnetList []string
 	for _, v := range keyValue {
 		//if !strings.Contains(v.Key, "vm") {
