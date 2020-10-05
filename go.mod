@@ -4,13 +4,16 @@ go 1.13
 
 replace github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
 
+replace github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.3
+
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/astaxie/beego v1.12.2
 	github.com/bramvdbogaerde/go-scp v0.0.0-20200518191442-5c8efdd1d925
-	github.com/cloud-barista/cb-log v0.1.1
-	github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200825062504-21e018aacb9f
-	github.com/cloud-barista/cb-store v0.1.1
+	github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20200913031717-ff545833c178
+	github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200925011107-da45e41dfece
+	github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20200924125209-c313bd2a3987
 	github.com/coreos/etcd v3.3.21+incompatible // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -31,7 +34,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/client_golang v1.7.0
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.0.0
@@ -51,5 +54,4 @@ require (
 	golang.org/x/tools v0.0.0-20200626171337-aa94e735be7f // indirect
 	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.3.0
-	gopkg.in/yaml.v3 v3.0.0-20200506231410-2ff61e1afc86 // indirect
 )

@@ -28,6 +28,8 @@ import (
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+
+	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
 const ActionCreate string = "Create"
@@ -906,6 +908,8 @@ func ListMcisId(nsId string) []string {
 	//fmt.Println(key)
 
 	keyValue, _ := common.CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+
 	var mcisList []string
 	for _, v := range keyValue {
 		if !strings.Contains(v.Key, "vm") {
@@ -929,6 +933,8 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
@@ -1028,6 +1034,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
 	fmt.Println(key)
 	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
 	if err != nil {
 		common.CBLog.Error(err)
 		return []TbVmPriority{}, err
@@ -1576,7 +1583,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 
 	//CreateMcis(nsId, req)
 	//err := AddVmToMcis(nsId, mcisId, vmInfoData)
-	
+
 	go AddVmToMcis(&wg, nsId, mcisId, vmInfoData)
 
 	wg.Wait()

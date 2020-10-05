@@ -11,24 +11,39 @@ import (
 
 func RestCheckNs(c echo.Context) error {
 
-	nsId := c.Param("nsId")
+	/*
+		nsId := c.Param("nsId")
 
-	exists, err := common.CheckNs(nsId)
+		exists, err := common.CheckNs(nsId)
 
-	type JsonTemplate struct {
-		Exists bool `json:exists`
+		type JsonTemplate struct {
+			Exists bool `json:exists`
+		}
+		content := JsonTemplate{}
+		content.Exists = exists
+
+		if err != nil {
+			common.CBLog.Error(err)
+			//mapA := common.SimpleMsg{err.Error()}
+			//return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusNotFound, &content)
+		}
+
+		return c.JSON(http.StatusOK, &content)
+	*/
+
+	if err := Validate(c, []string{"nsId"}); err != nil {
+		common.CBLog.Error(err)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
-	content := JsonTemplate{}
-	content.Exists = exists
 
+	exists, err := common.CheckNs(c.Param("nsId"))
 	if err != nil {
 		common.CBLog.Error(err)
-		//mapA := common.SimpleMsg{err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
-		return c.JSON(http.StatusNotFound, &content)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, &content)
+	return SendExistence(c, http.StatusOK, exists)
 }
 
 // RestDelAllNs godoc
@@ -42,15 +57,25 @@ func RestCheckNs(c echo.Context) error {
 // @Router /ns [delete]
 func RestDelAllNs(c echo.Context) error {
 
+	/*
+		err := common.DelAllNs()
+		if err != nil {
+			common.CBLog.Error(err)
+			mapA := common.SimpleMsg{err.Error()}
+			return c.JSON(http.StatusConflict, &mapA)
+		}
+
+		mapA := common.SimpleMsg{"All namespaces has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
+	*/
+
 	err := common.DelAllNs()
 	if err != nil {
 		common.CBLog.Error(err)
-		mapA := common.SimpleMsg{err.Error()}
-		return c.JSON(http.StatusConflict, &mapA)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
-	mapA := common.SimpleMsg{"All namespaces has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
+	return SendMessage(c, http.StatusOK, "All namespaces has been deleted")
 }
 
 // RestDelNs godoc
@@ -65,17 +90,32 @@ func RestDelAllNs(c echo.Context) error {
 // @Router /ns/{nsId} [delete]
 func RestDelNs(c echo.Context) error {
 
-	id := c.Param("nsId")
+	/*
+		id := c.Param("nsId")
 
-	err := common.DelNs(id)
-	if err != nil {
+		err := common.DelNs(id)
+		if err != nil {
+			common.CBLog.Error(err)
+			mapA := common.SimpleMsg{err.Error()}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		}
+
+		mapA := common.SimpleMsg{"The ns has been deleted"}
+		return c.JSON(http.StatusOK, &mapA)
+	*/
+
+	if err := Validate(c, []string{"nsId"}); err != nil {
 		common.CBLog.Error(err)
-		mapA := common.SimpleMsg{err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
-	mapA := common.SimpleMsg{"The ns has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
+	err := common.DelNs(c.Param("nsId"))
+	if err != nil {
+		common.CBLog.Error(err)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
+	}
+
+	return SendMessage(c, http.StatusOK, "The ns has been deleted")
 }
 
 // Response structure for RestGetAllNs
@@ -100,17 +140,20 @@ func RestGetAllNs(c echo.Context) error {
 
 	nsList, err := common.ListNs()
 	if err != nil {
-		mapA := common.SimpleMsg{"Failed to list namespaces."}
-		return c.JSON(http.StatusNotFound, &mapA)
+		//mapA := common.SimpleMsg{"Failed to list namespaces."}
+		//return c.JSON(http.StatusNotFound, &mapA)
+		return SendMessage(c, http.StatusOK, "Failed to list namespaces.")
 	}
 
 	if nsList == nil {
-		return c.JSON(http.StatusOK, &content)
+		//return c.JSON(http.StatusOK, &content)
+		return Send(c, http.StatusOK, content)
 	}
 
 	// When err == nil && resourceList != nil
 	content.Ns = nsList
-	return c.JSON(http.StatusOK, &content)
+	//return c.JSON(http.StatusOK, &content)
+	return Send(c, http.StatusOK, content)
 
 }
 
@@ -126,14 +169,20 @@ func RestGetAllNs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId} [get]
 func RestGetNs(c echo.Context) error {
-	id := c.Param("nsId")
+	//id := c.Param("nsId")
+	if err := Validate(c, []string{"nsId"}); err != nil {
+		common.CBLog.Error(err)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
+	}
 
-	res, err := common.GetNs(id)
+	res, err := common.GetNs(c.Param("nsId"))
 	if err != nil {
-		mapA := common.SimpleMsg{"Failed to find the namespace " + id}
-		return c.JSON(http.StatusNotFound, &mapA)
+		//mapA := common.SimpleMsg{"Failed to find the namespace " + id}
+		//return c.JSON(http.StatusNotFound, &mapA)
+		return SendMessage(c, http.StatusOK, "Failed to find the namespace "+c.Param("nsId"))
 	} else {
-		return c.JSON(http.StatusOK, &res)
+		//return c.JSON(http.StatusOK, &res)
+		return Send(c, http.StatusOK, res)
 	}
 }
 
@@ -152,18 +201,21 @@ func RestPostNs(c echo.Context) error {
 
 	u := &common.NsReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		//return err
+		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
 	fmt.Println("[Creating Ns]")
 	content, err := common.CreateNs(u)
 	if err != nil {
-		common.CBLog.Error(err)
-		//mapA := common.SimpleMsg{"Failed to create the ns " + u.Name}
-		mapA := common.SimpleMsg{err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		//common.CBLog.Error(err)
+		////mapA := common.SimpleMsg{"Failed to create the ns " + u.Name}
+		//mapA := common.SimpleMsg{err.Error()}
+		//return c.JSON(http.StatusFailedDependency, &mapA)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
-	return c.JSON(http.StatusCreated, content)
+	//return c.JSON(http.StatusCreated, content)
+	return Send(c, http.StatusOK, content)
 
 }
 

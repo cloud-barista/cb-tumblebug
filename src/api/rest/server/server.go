@@ -65,11 +65,10 @@ func ApiServer() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World! This is cloud-barista cb-tumblebug")
-	})
+	e.GET("/tumblebug/health", rest_common.RestGetHealth)
+
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
 
