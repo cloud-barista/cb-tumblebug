@@ -36,7 +36,7 @@
 	fi
 
 
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm specs get-csp --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --cc ${CONN_CONFIG[$INDEX,$REGION]} --spec ${SPEC_NAME[$INDEX,$REGION]}
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec get-csp --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --cc ${CONN_CONFIG[$INDEX,$REGION]} --spec ${SPEC_NAME[$INDEX,$REGION]}
 
 #}
 

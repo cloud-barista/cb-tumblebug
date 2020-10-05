@@ -43,7 +43,7 @@
     fi
 
     # for Cloud Connection Config Info
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-infos get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json -n ${CONN_CONFIG[$INDEX,$REGION]}
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-info get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json -n ${CONN_CONFIG[$INDEX,$REGION]}
 
     # for Cloud Region Info
     $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm region get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json -n ${RegionName[$INDEX,$REGION]} 

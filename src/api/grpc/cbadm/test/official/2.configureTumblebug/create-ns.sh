@@ -16,7 +16,7 @@
 
 	INDEX=${1}
 
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespaces create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespace create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 		'{
 			"name": "'$NS_ID'",
 			"description": "NameSpace for General Testing"

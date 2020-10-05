@@ -58,7 +58,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	if cmd.Parent().Name() == "driver" || cmd.Parent().Name() == "credential" || cmd.Parent().Name() == "region" || cmd.Parent().Name() == "connect-infos" {
+	if cmd.Parent().Name() == "driver" || cmd.Parent().Name() == "credential" || cmd.Parent().Name() == "region" || cmd.Parent().Name() == "connect-info" {
 		// CIM API 설정
 		cim = sp_api.NewCloudInfoManager()
 		err = cim.SetConfigPath(configFile)
@@ -74,7 +74,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		defer cim.Close()
 	}
 
-	if cmd.Parent().Name() == "namespaces" {
+	if cmd.Parent().Name() == "namespace" {
 		// NS API 설정
 		ns = tb_api.NewNSManager()
 		err = ns.SetConfigPath(configFile)
@@ -90,7 +90,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		defer ns.Close()
 	}
 
-	if cmd.Parent().Name() == "images" || cmd.Parent().Name() == "networks" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypairs" || cmd.Parent().Name() == "specs" {
+	if cmd.Parent().Name() == "image" || cmd.Parent().Name() == "network" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypair" || cmd.Parent().Name() == "spec" {
 		// MCIR API 설정
 		mcir = tb_api.NewMCIRManager()
 		err = mcir.SetConfigPath(configFile)
@@ -132,15 +132,15 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if cmd.Parent().Name() == "driver" || cmd.Parent().Name() == "credential" || cmd.Parent().Name() == "region" || cmd.Parent().Name() == "connect-infos" {
+	if cmd.Parent().Name() == "driver" || cmd.Parent().Name() == "credential" || cmd.Parent().Name() == "region" || cmd.Parent().Name() == "connect-info" {
 		cim.SetInType(inType)
 		cim.SetOutType(outType)
 	}
-	if cmd.Parent().Name() == "namespaces" {
+	if cmd.Parent().Name() == "namespace" {
 		ns.SetInType(inType)
 		ns.SetOutType(outType)
 	}
-	if cmd.Parent().Name() == "images" || cmd.Parent().Name() == "networks" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypairs" || cmd.Parent().Name() == "specs" {
+	if cmd.Parent().Name() == "image" || cmd.Parent().Name() == "network" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypair" || cmd.Parent().Name() == "spec" {
 		mcir.SetInType(inType)
 		mcir.SetOutType(outType)
 	}
@@ -200,7 +200,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete":
 			result, err = cim.DeleteRegionByParam(regionName)
 		}
-	case "connect-infos":
+	case "connect-info":
 		switch cmd.Name() {
 		case "create":
 			result, err = cim.CreateConnectionConfig(inData)
@@ -211,7 +211,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete":
 			result, err = cim.DeleteConnectionConfigByParam(configName)
 		}
-	case "namespaces":
+	case "namespace":
 		switch cmd.Name() {
 		case "create":
 			result, err = ns.CreateNS(inData)
@@ -222,7 +222,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete":
 			result, err = ns.DeleteNSByParam(nameSpaceID)
 		}
-	case "images":
+	case "image":
 		switch cmd.Name() {
 		case "create":
 			result, err = mcir.CreateImageWithInfo(inData)
@@ -239,7 +239,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "fetch":
 			result, err = mcir.FetchImageByParam(nameSpaceID)
 		}
-	case "networks":
+	case "network":
 		switch cmd.Name() {
 		case "create":
 			result, err = mcir.CreateVNet(inData)
@@ -261,7 +261,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete":
 			result, err = mcir.DeleteSecurityGroupByParam(nameSpaceID, resourceID, force)
 		}
-	case "keypairs":
+	case "keypair":
 		switch cmd.Name() {
 		case "create":
 			result, err = mcir.CreateSshKey(inData)
@@ -274,7 +274,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete":
 			result, err = mcir.DeleteSshKeyByParam(nameSpaceID, resourceID, force)
 		}
-	case "specs":
+	case "spec":
 		switch cmd.Name() {
 		case "create":
 			result, err = mcir.CreateSpecWithInfo(inData)

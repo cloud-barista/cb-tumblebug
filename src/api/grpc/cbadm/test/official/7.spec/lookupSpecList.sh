@@ -35,7 +35,7 @@
 		INDEX=1
 	fi
 
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm specs list-csp --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --cc ${CONN_CONFIG[$INDEX,$REGION]}
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec list-csp --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --cc ${CONN_CONFIG[$INDEX,$REGION]}
 
 #}
 

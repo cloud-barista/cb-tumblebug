@@ -20,7 +20,7 @@ import (
 func NewKeypairCmd() *cobra.Command {
 
 	keypairCmd := &cobra.Command{
-		Use:   "keypairs",
+		Use:   "keypair",
 		Short: "This is a manageable command for keypair",
 		Long:  "This is a manageable command for keypair",
 	}

@@ -35,7 +35,7 @@
 		INDEX=1
 	fi
 
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm networks create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm network create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	'{
 		"nsId":  "'${NS_ID}'",
 		"vNet": {

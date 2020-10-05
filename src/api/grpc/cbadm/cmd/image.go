@@ -20,7 +20,7 @@ import (
 func NewImageCmd() *cobra.Command {
 
 	imageCmd := &cobra.Command{
-		Use:   "images",
+		Use:   "image",
 		Short: "This is a manageable command for image",
 		Long:  "This is a manageable command for image",
 	}

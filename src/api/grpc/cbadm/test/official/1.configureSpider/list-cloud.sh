@@ -19,7 +19,7 @@
     #INDEX=${1}
 
     # for Cloud Connection Config Info
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-infos list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-info list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json
 
 
     # for Cloud Region Info

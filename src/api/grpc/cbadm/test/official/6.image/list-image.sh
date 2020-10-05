@@ -14,7 +14,7 @@
     echo "## 6. image: List"
     echo "####################################################################"
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm images list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm image list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
 
 #}
 

@@ -14,7 +14,7 @@
     echo "## 1. VPC: Get"
     echo "####################################################################"
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm networks list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm network list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
 #}
 
 #list_vNet

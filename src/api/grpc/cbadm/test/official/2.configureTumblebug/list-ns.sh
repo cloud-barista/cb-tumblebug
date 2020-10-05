@@ -16,7 +16,7 @@
 
     INDEX=${1}
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespaces list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespace list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json
 #}
 
 #list_ns

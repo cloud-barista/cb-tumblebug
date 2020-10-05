@@ -20,7 +20,7 @@ import (
 func NewNetworkCmd() *cobra.Command {
 
 	networkCmd := &cobra.Command{
-		Use:   "networks",
+		Use:   "network",
 		Short: "This is a manageable command for network",
 		Long:  "This is a manageable command for network",
 	}
