@@ -16,7 +16,7 @@
 
     INDEX=${1}
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespaces delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespace delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
 #}
 
 #delete_ns

@@ -20,7 +20,7 @@ import (
 func NewSpecCmd() *cobra.Command {
 
 	specCmd := &cobra.Command{
-		Use:   "specs",
+		Use:   "spec",
 		Short: "This is a manageable command for spec",
 		Long:  "This is a manageable command for spec",
 	}

@@ -45,7 +45,7 @@
 	OPTION=${4:-none}
 
 	# for Cloud Connection Config Info
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-infos delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json -n ${CONN_CONFIG[$INDEX,$REGION]}
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-info delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json -n ${CONN_CONFIG[$INDEX,$REGION]}
 
 	# for Cloud Region Info
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm region delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json -n ${RegionName[$INDEX,$REGION]}

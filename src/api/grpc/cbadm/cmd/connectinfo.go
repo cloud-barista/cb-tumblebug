@@ -20,7 +20,7 @@ import (
 func NewConnectInfosCmd() *cobra.Command {
 
 	connectionCmd := &cobra.Command{
-		Use:   "connect-infos",
+		Use:   "connect-info",
 		Short: "This is a manageable command for connection config",
 		Long:  "This is a manageable command for connection config",
 	}

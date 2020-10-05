@@ -20,7 +20,7 @@ import (
 func NewNameSpaceCmd() *cobra.Command {
 
 	nameSpaceCmd := &cobra.Command{
-		Use:   "namespaces",
+		Use:   "namespace",
 		Short: "This is a manageable command for namespace",
 		Long:  "This is a manageable command for namespace",
 	}

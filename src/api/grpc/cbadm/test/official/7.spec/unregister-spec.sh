@@ -35,7 +35,7 @@
 		INDEX=1
 	fi
 
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm specs delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml --ns $NS_ID --id ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} --force false
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml --ns $NS_ID --id ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} --force false
 
 #}
 

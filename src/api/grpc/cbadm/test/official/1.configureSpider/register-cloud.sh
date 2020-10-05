@@ -114,7 +114,7 @@
 
 
     # for Cloud Connection Config Info
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-infos create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm connect-info create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
         '{
             "CredentialName" : "'${CredentialName[INDEX]}'",
             "ConfigName" : "'${CONN_CONFIG[$INDEX,$REGION]}'",
