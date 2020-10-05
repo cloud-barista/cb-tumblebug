@@ -4,10 +4,12 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 
 	//"encoding/json"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
+	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	uuid "github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -652,4 +654,22 @@ func NVL(str string, def string) string {
 		return def
 	}
 	return str
+}
+
+func GetChildIdList(key string) []string {
+
+	keyValue, _ := CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+
+	var childIdList []string
+	for _, v := range keyValue {
+		childIdList = append(childIdList, strings.TrimPrefix(v.Key, key+"/"))
+
+	}
+	for _, v := range childIdList {
+		fmt.Println("<" + v + "> \n")
+	}
+	fmt.Println("===============================================")
+	return childIdList
+
 }
