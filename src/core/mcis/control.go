@@ -908,7 +908,6 @@ func ListMcisId(nsId string) []string {
 	//fmt.Println(key)
 
 	keyValue, _ := common.CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	var mcisList []string
 	for _, v := range keyValue {
@@ -933,7 +932,6 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
 		common.CBLog.Error(err)

@@ -437,7 +437,6 @@ func ListResourceId(nsId string, resourceType string) []string {
 	fmt.Println(key)
 
 	keyValue, _ := common.CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	var resourceList []string
 	for _, v := range keyValue {

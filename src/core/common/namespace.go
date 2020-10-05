@@ -139,7 +139,6 @@ func ListNsId() []string {
 	fmt.Println(key)
 
 	keyValue, _ := CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	var nsList []string
 	for _, v := range keyValue {
