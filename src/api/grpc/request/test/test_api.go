@@ -157,7 +157,7 @@ func DocTypeNSApiTest() {
 	}
 
 	doc := `{
-		"name":"NS-TEST",
+		"name":"ns-test",
 		"description": "NameSpace for General Testing"
 	}`
 	result, err := ns.CreateNS(doc)
@@ -166,7 +166,7 @@ func DocTypeNSApiTest() {
 	}
 
 	doc = `{
-		"nsId":"NS-TEST"
+		"nsId":"ns-test"
 	}`
 	result, err = ns.GetNS(doc)
 	if err != nil {
@@ -195,7 +195,7 @@ func DocTypeNSApiTest() {
 	}
 
 	doc = `
-nsId: NS-TEST
+nsId: ns-test
 `
 	result, err = ns.GetNS(doc)
 	if err != nil {
@@ -210,7 +210,7 @@ nsId: NS-TEST
 		logger.Fatal(err)
 	}
 
-	result, err = ns.GetNSByParam("NS-TEST")
+	result, err = ns.GetNSByParam("ns-test")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -218,7 +218,7 @@ nsId: NS-TEST
 	fmt.Printf("\njson result :\n%s\n", result)
 
 	doc = `
-nsId: NS-TEST
+nsId: ns-test
 `
 	result, err = ns.DeleteNS(doc)
 	if err != nil {
@@ -249,7 +249,7 @@ func ConfigMCIRApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err := mcir.ListVNetByParam("NS-TEST")
+	result, err := mcir.ListVNetByParam("ns-test")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -278,7 +278,7 @@ func ConfigMCISApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err := mcis.GetMcisStatusByParam("NS-TEST", "MCIS-01")
+	result, err := mcis.GetMcisStatusByParam("ns-test", "mcis-01")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -388,7 +388,7 @@ func CreateNSApiTest() {
 	}
 
 	reqNs := &tb_api.NsReq{
-		Name:        "NS-TEST",
+		Name:        "ns-test",
 		Description: "NameSpace for General Testing",
 	}
 	result, err := ns.CreateNSByParam(reqNs)
@@ -421,7 +421,7 @@ func CreateMCIRApiTest() {
 	}
 
 	reqTbVNet := &tb_api.TbVNetCreateRequest{
-		NsId: "NS-TEST",
+		NsId: "ns-test",
 		Item: tb_api.TbVNetReq{
 			Name:           "openstack-config01-test",
 			ConnectionName: "openstack-config01",
@@ -444,7 +444,7 @@ func CreateMCIRApiTest() {
 	fmt.Printf("\nresult :\n%s\n", result)
 
 	reqTbImage := &tb_api.TbImageInfoRequest{
-		NsId: "NS-TEST",
+		NsId: "ns-test",
 		Item: tb_api.TbImageInfo{
 			Id:             "",
 			Name:           "openstack-config01-test",
@@ -466,7 +466,7 @@ func CreateMCIRApiTest() {
 	fmt.Printf("\nresult :\n%s\n", result)
 
 	reqTbSecurityGroup := &tb_api.TbSecurityGroupCreateRequest{
-		NsId: "NS-TEST",
+		NsId: "ns-test",
 		Item: tb_api.TbSecurityGroupReq{
 			Name:           "openstack-config01-test",
 			ConnectionName: "openstack-config01",
@@ -490,7 +490,7 @@ func CreateMCIRApiTest() {
 	fmt.Printf("\nresult :\n%s\n", result)
 
 	reqTbSpecInfo := &tb_api.TbSpecInfoRequest{
-		NsId: "NS-TEST",
+		NsId: "ns-test",
 		Item: tb_api.TbSpecInfo{
 			Id:                    "",
 			Name:                  "openstack-config01-test",
@@ -523,7 +523,7 @@ func CreateMCIRApiTest() {
 	fmt.Printf("\nresult :\n%s\n", result)
 
 	reqTbSshKey := &tb_api.TbSshKeyCreateRequest{
-		NsId: "NS-TEST",
+		NsId: "ns-test",
 		Item: tb_api.TbSshKeyReq{
 			Name:           "openstack-config01-test",
 			ConnectionName: "openstack-config01",
@@ -560,9 +560,9 @@ func CreateMCISApiTest() {
 	}
 
 	reqTbMcis := &tb_api.TbMcisCreateRequest{
-		NsId: "NS-TEST",
+		NsId: "ns-test",
 		Item: tb_api.TbMcisReq{
-			Name:           "MCIS-01",
+			Name:           "mcis-01",
 			Placement_algo: "",
 			Description:    "",
 			Vm: []tb_api.TbVmReq{
@@ -629,7 +629,7 @@ func DeleteMCISApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err := mcis.DeleteMcisByParam("NS-TEST", "MCIS-01")
+	result, err := mcis.DeleteMcisByParam("ns-test", "mcis-01")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -658,35 +658,35 @@ func DeleteMCIRApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err := mcir.DeleteSpecByParam("NS-TEST", "openstack-config01-test", "false")
+	result, err := mcir.DeleteSpecByParam("ns-test", "openstack-config01-test", "false")
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	fmt.Printf("\nresult :\n%s\n", result)
 
-	result, err = mcir.DeleteImageByParam("NS-TEST", "openstack-config01-test", "false")
+	result, err = mcir.DeleteImageByParam("ns-test", "openstack-config01-test", "false")
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	fmt.Printf("\nresult :\n%s\n", result)
 
-	result, err = mcir.DeleteSshKeyByParam("NS-TEST", "openstack-config01-test", "false")
+	result, err = mcir.DeleteSshKeyByParam("ns-test", "openstack-config01-test", "false")
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	fmt.Printf("\nresult :\n%s\n", result)
 
-	result, err = mcir.DeleteSecurityGroupByParam("NS-TEST", "openstack-config01-test", "false")
+	result, err = mcir.DeleteSecurityGroupByParam("ns-test", "openstack-config01-test", "false")
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	fmt.Printf("\nresult :\n%s\n", result)
 
-	result, err = mcir.DeleteVNetByParam("NS-TEST", "openstack-config01-test", "false")
+	result, err = mcir.DeleteVNetByParam("ns-test", "openstack-config01-test", "false")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -715,7 +715,7 @@ func DeleteNSApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err := ns.DeleteNSByParam("NS-TEST")
+	result, err := ns.DeleteNSByParam("ns-test")
 	if err != nil {
 		logger.Fatal(err)
 	}

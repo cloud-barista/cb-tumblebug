@@ -188,7 +188,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	content := TbImageInfo{}
 	content.Id = common.GenId(u.Name)
-	content.Name = u.Name
+	content.Name = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspImageId = tempSpiderImageInfo.Name   // = u.CspImageId
 	content.CspImageName = tempSpiderImageInfo.Name // = u.CspImageName
@@ -348,6 +348,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(content.Name)
+	content.Name = common.GenId(content.Name)
 
 	sql := "INSERT INTO `image`(" +
 		"`id`, " +

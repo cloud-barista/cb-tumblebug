@@ -56,7 +56,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	content := NsInfo{}
 	//content.Id = GenUuid()
 	content.Id = GenId(u.Name)
-	content.Name = u.Name
+	content.Name = GenId(u.Name)
 	content.Description = u.Description
 
 	// TODO here: implement the logic

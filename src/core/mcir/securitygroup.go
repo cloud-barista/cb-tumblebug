@@ -158,7 +158,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	content := TbSecurityGroupInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
-	content.Name = u.Name
+	content.Name = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.VNetId = tempSpiderSecurityInfo.VpcIID.NameId
 	content.CspSecurityGroupId = tempSpiderSecurityInfo.IId.SystemId

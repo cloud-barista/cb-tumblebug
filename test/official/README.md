@@ -102,7 +102,7 @@
 ## 0. Namespace: Create
 ####################################################################
 {
-   "message" : "The namespace NS-01 already exists."
+   "message" : "The namespace ns-01 already exists."
 }
 ####################################################################
 ## 3. vNet: Create

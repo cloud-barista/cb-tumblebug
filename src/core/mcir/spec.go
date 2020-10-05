@@ -318,7 +318,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	content := TbSpecInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
-	content.Name = u.Name
+	content.Name = common.GenId(u.Name)
 	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
 
@@ -424,6 +424,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(content.Name)
+	content.Name = common.GenId(content.Name)
 
 	sql := "INSERT INTO `spec`(" +
 		"`id`, " +
