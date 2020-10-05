@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -169,47 +170,41 @@ func DelNs(Id string) error {
 		return err
 	}
 
-	/*
-		// Forbid deleting NS when there is at least one MCIS or one of resources.
-		mcisList := mcis.ListMcisId(Id)
-		imageList := mcir.ListResourceId(Id, "image")
-		vNetList := mcir.ListResourceId(Id, "vNet")
-		publicIpList := mcir.ListResourceId(Id, "publicIp")
-		securityGroupList := mcir.ListResourceId(Id, "securityGroup")
-		specList := mcir.ListResourceId(Id, "spec")
-		sshKeyList := mcir.ListResourceId(Id, "sshKey")
-		subnetList := mcir.ListResourceId(Id, "subnet")
-		vNicList := mcir.ListResourceId(Id, "vNic")
-
-		if len(mcisList)+len(imageList)+len(vNetList)+len(securityGroupList)+len(specList)+len(sshKeyList)+len(subnetList) > 0 {
-			errString := "Cannot delete NS " + Id + ", which is not empty. There exists at least one MCIS or one of resources."
-			errString += " \n len(mcisList): " + len(mcisList)
-			errString += " \n len(imageList): " + len(imageList)
-			errString += " \n len(vNetList): " + len(vNetList)
-			errString += " \n len(publicIpList): " + len(publicIpList)
-			errString += " \n len(securityGroupList): " + len(securityGroupList)
-			errString += " \n len(specList): " + len(specList)
-			errString += " \n len(sshKeyList): " + len(sshKeyList)
-			errString += " \n len(subnetList): " + len(subnetList)
-			errString += " \n len(vNicList): " + len(vNicList)
-
-			err := fmt.Errorf(errString)
-			CBLog.Error(err)
-			return err
-		}
-	*/
-
-	/*
-			import cycle not allowed
-			package github.com/cloud-barista/cb-tumblebug/src
-		        imports github.com/cloud-barista/cb-tumblebug/src/restapiserver
-		        imports github.com/cloud-barista/cb-tumblebug/src/core/common
-		        imports github.com/cloud-barista/cb-tumblebug/src/core/mcir
-				imports github.com/cloud-barista/cb-tumblebug/src/core/common
-	*/
-
 	key := "/ns/" + Id
 	fmt.Println(key)
+
+	mcisList := GetChildIdList(key + "/mcis")
+	imageList := GetChildIdList(key + "/resources/image")
+	vNetList := GetChildIdList(key + "/resources/vNet")
+	//subnetList := GetChildIdList(key + "/resources/subnet")
+	//publicIpList := GetChildIdList(key + "/resources/publicIp")
+	securityGroupList := GetChildIdList(key + "/resources/securityGroup")
+	specList := GetChildIdList(key + "/resources/spec")
+	sshKeyList := GetChildIdList(key + "/resources/sshKey")
+	//vNicList := GetChildIdList(key + "/resources/vNic")
+
+	if len(mcisList)+
+		len(imageList)+
+		len(vNetList)+
+		//len(subnetList)
+		len(securityGroupList)+
+		len(specList)+
+		len(sshKeyList) > 0 {
+		errString := "Cannot delete NS " + Id + ", which is not empty. There exists at least one MCIS or one of resources."
+		errString += " \n len(mcisList): " + strconv.Itoa(len(mcisList))
+		errString += " \n len(imageList): " + strconv.Itoa(len(imageList))
+		errString += " \n len(vNetList): " + strconv.Itoa(len(vNetList))
+		//errString += " \n len(publicIpList): " + strconv.Itoa(len(publicIpList))
+		errString += " \n len(securityGroupList): " + strconv.Itoa(len(securityGroupList))
+		errString += " \n len(specList): " + strconv.Itoa(len(specList))
+		errString += " \n len(sshKeyList): " + strconv.Itoa(len(sshKeyList))
+		//errString += " \n len(subnetList): " + strconv.Itoa(len(subnetList))
+		//errString += " \n len(vNicList): " + strconv.Itoa(len(vNicList))
+
+		err := fmt.Errorf(errString)
+		CBLog.Error(err)
+		return err
+	}
 
 	// delete ns info
 	err := CBStore.Delete(key)
