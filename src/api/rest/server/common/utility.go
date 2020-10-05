@@ -46,8 +46,8 @@ func Validate(c echo.Context, params []string) error {
 	return nil
 }
 
-func Healthy(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World! This is Cloud-Barista CB-Tumblebug")
+func RestGetHealth(c echo.Context) error {
+	return c.String(http.StatusOK, "The API server of CB-Tumblebug is alive.")
 }
 
 func RestGetConnConfig(c echo.Context) error {

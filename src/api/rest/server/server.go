@@ -65,12 +65,9 @@ func ApiServer() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
 
-	e.GET("/", rest_common.Healthy)
-	e.GET("/healthy", rest_common.Healthy)
-	e.GET("/tumblebug", rest_common.Healthy)
-	e.GET("/tumblebug/healthy", rest_common.Healthy)
+	e.GET("/tumblebug/health", rest_common.RestGetHealth)
 
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
