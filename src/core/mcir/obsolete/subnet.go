@@ -220,7 +220,7 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 
 	content := subnetInfo{}
 	content.Id = common.GenId(u.Name)
-	content.Name = u.Name
+	content.Name = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspSubnetId = u.CspSubnetId
 	content.CspSubnetName = u.CspSubnetName

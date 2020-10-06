@@ -35,11 +35,10 @@
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | json_pp #-H 'Content-Type: application/json' -d \
-#		'{ 
-#			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-#		}' | json_pp #|| return 1
-
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec -H 'Content-Type: application/json' -d \
+		'{ 
+			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
+		}' | json_pp #|| return 1
 #}
 
 #unregister_spec

@@ -56,7 +56,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	content := NsInfo{}
 	//content.Id = GenUuid()
 	content.Id = GenId(u.Name)
-	content.Name = u.Name
+	content.Name = GenId(u.Name)
 	content.Description = u.Description
 
 	// TODO here: implement the logic
@@ -139,7 +139,6 @@ func ListNsId() []string {
 	fmt.Println(key)
 
 	keyValue, _ := CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	var nsList []string
 	for _, v := range keyValue {

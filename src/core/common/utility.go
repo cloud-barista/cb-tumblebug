@@ -2,6 +2,7 @@ package common
 
 import (
 	"os"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -41,7 +42,10 @@ func GenUuid() string {
 }
 
 func GenId(name string) string {
-	return name
+	r, _ := regexp.Compile("_")
+	out := r.ReplaceAllString(name, "-")
+	out = strings.ToLower(out)
+	return out
 }
 
 func GenMcisKey(nsId string, mcisId string, vmId string) string {

@@ -142,7 +142,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 	content := TbSshKeyInfo{}
 	//content.Id = common.GenUuid()
 	content.Id = common.GenId(u.Name)
-	content.Name = u.Name
+	content.Name = common.GenId(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspSshKeyName = tempSpiderKeyPairInfo.IId.NameId
 	content.Fingerprint = tempSpiderKeyPairInfo.Fingerprint
