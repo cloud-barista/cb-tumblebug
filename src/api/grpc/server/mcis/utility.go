@@ -21,7 +21,7 @@ func (s *MCISService) CheckMcis(ctx context.Context, req *pb.TbMcisQryRequest) (
 
 	logger.Debug("calling MCISService.CheckMcis()")
 
-	exists, err := mcis.CheckMcis(req.NsId, req.McisId)
+	exists, _, err := mcis.LowerizeAndCheckMcis(req.NsId, req.McisId)
 	if err != nil {
 		logger.Debug(err)
 	}
@@ -36,7 +36,7 @@ func (s *MCISService) CheckVm(ctx context.Context, req *pb.TbVmQryRequest) (*pb.
 
 	logger.Debug("calling MCISService.CheckVm()")
 
-	exists, err := mcis.CheckVm(req.NsId, req.McisId, req.VmId)
+	exists, _, err := mcis.LowerizeAndCheckVm(req.NsId, req.McisId, req.VmId)
 	if err != nil {
 		logger.Debug(err)
 	}

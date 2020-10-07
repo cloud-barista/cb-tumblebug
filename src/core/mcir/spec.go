@@ -276,9 +276,12 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 			tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
 			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
 
-			check, _ := CheckResource(nsId, "spec", tumblebugSpecId)
-			if check {
+			check, _, err := LowerizeAndCheckResource(nsId, "spec", tumblebugSpecId)
+			if check == true {
 				common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
+				continue
+			} else if err != nil {
+				common.CBLog.Infoln("Cannot check the existence of " + tumblebugSpecId + " in TB; continue")
 				continue
 			} else {
 				tumblebugSpec.Id = tumblebugSpecId
@@ -299,11 +302,22 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 }
 
 func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
-	check, _ := CheckResource(nsId, "spec", u.Name)
 
-	if check {
+	_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	nsId = lowerizedNsId
+
+	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", u.Name)
+	u.Name = lowerizedName
+
+	if check == true {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + u.Name + " already exists.")
+		return temp, err
+	}
+
+	if err != nil {
+		temp := TbSpecInfo{}
+		err := fmt.Errorf("Failed to check the existence of the spec " + lowerizedName + ".")
 		return temp, err
 	}
 
@@ -414,17 +428,22 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 }
 
 func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) {
-	check, _ := CheckResource(nsId, "spec", content.Name)
 
-	if check {
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.GenId(nsId)
+
+	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", content.Name)
+	content.Name = lowerizedName
+
+	if check == true {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + content.Name + " already exists.")
 		return temp, err
 	}
 
-	//content.Id = common.GenUuid()
-	content.Id = common.GenId(content.Name)
-	content.Name = common.GenId(content.Name)
+	content.Id = content.Name
+	//content.Name = content.Name
 
 	sql := "INSERT INTO `spec`(" +
 		"`id`, " +
@@ -473,7 +492,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	fmt.Println("sql: " + sql)
 	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-	_, err := sqlparser.Parse(sql)
+	_, err = sqlparser.Parse(sql)
 	if err != nil {
 		return *content, err
 	}

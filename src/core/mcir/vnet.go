@@ -70,13 +70,28 @@ type TbVNetInfo struct { // Tumblebug
 }
 
 func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
-	check, _ := CheckResource(nsId, "vNet", u.Name)
 
-	if check {
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.GenId(nsId)
+
+	check, lowerizedName, _ := LowerizeAndCheckResource(nsId, "vNet", u.Name)
+	//fmt.Println("CreateVNet() called; nsId: " + nsId + ", u.Name: " + u.Name + ", lowerizedName: " + lowerizedName) // for debug
+	u.Name = lowerizedName
+
+	if check == true {
 		temp := TbVNetInfo{}
 		err := fmt.Errorf("The vNet " + u.Name + " already exists.")
 		return temp, err
 	}
+
+	/*
+		if err != nil {
+			temp := TbVNetInfo{}
+			err := fmt.Errorf("Failed to check the existence of the vNet " + lowerizedName + ".")
+			return temp, err
+		}
+	*/
 
 	tempReq := SpiderVPCReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
@@ -154,8 +169,8 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	content := TbVNetInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = common.GenId(u.Name)
-	content.Name = common.GenId(u.Name)
+	content.Id = u.Name
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspVNetId = tempSpiderVPCInfo.IId.SystemId
 	content.CspVNetName = tempSpiderVPCInfo.IId.NameId

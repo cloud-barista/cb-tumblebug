@@ -57,12 +57,24 @@ type TbSshKeyInfo struct {
 }
 
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
-	check, _ := CheckResource(nsId, "sshKey", u.Name)
 
-	if check {
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.GenId(nsId)
+
+	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "sshKey", u.Name)
+	u.Name = lowerizedName
+
+	if check == true {
 		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey " + u.Name + " already exists.")
 		//return temp, http.StatusConflict, nil, err
+		return temp, err
+	}
+
+	if err != nil {
+		temp := TbSshKeyInfo{}
+		err := fmt.Errorf("Failed to check the existence of the sshKey " + lowerizedName + ".")
 		return temp, err
 	}
 
@@ -141,8 +153,8 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	content := TbSshKeyInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = common.GenId(u.Name)
-	content.Name = common.GenId(u.Name)
+	content.Id = u.Name
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.CspSshKeyName = tempSpiderKeyPairInfo.IId.NameId
 	content.Fingerprint = tempSpiderKeyPairInfo.Fingerprint
@@ -156,7 +168,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 	fmt.Println("=========================== PUT CreateSshKey")
 	Key := common.GenResourceKey(nsId, "sshKey", content.Id)
 	Val, _ := json.Marshal(content)
-	err := common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		//return content, res.StatusCode, body, err

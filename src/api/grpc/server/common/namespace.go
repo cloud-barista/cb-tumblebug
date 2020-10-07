@@ -125,7 +125,7 @@ func (s *NSService) CheckNS(ctx context.Context, req *pb.NSQryRequest) (*pb.Exis
 
 	logger.Debug("calling NSService.CheckNS()")
 
-	exists, err := common.CheckNs(req.NsId)
+	exists, _, err := common.LowerizeAndCheckNs(req.NsId)
 	if err != nil {
 		logger.Debug(err)
 	}

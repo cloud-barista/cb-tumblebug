@@ -56,16 +56,22 @@ type mcirIds struct {
 }
 */
 
-func CheckMcis(nsId string, mcisId string) (bool, error) {
+func LowerizeAndCheckMcis(nsId string, mcisId string) (bool, string, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
 		err := fmt.Errorf("CheckMcis failed; nsId given is null.")
-		return false, err
+		return false, "", err
 	} else if mcisId == "" {
 		err := fmt.Errorf("CheckMcis failed; mcisId given is null.")
-		return false, err
+		return false, "", err
 	}
+
+	lowerizedNsId := common.GenId(nsId)
+	nsId = lowerizedNsId
+
+	lowerizedMcisId := common.GenId(mcisId)
+	mcisId = lowerizedMcisId
 
 	fmt.Println("[Check mcis] " + mcisId)
 
@@ -73,46 +79,59 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//fmt.Println(key)
 
-	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		return false, err
-	}
+	keyValue, _ := common.CBStore.Get(key)
+	/*
+		if err != nil {
+			common.CBLog.Error(err)
+			return false, mcisId, err
+		}
+	*/
 	if keyValue != nil {
-		return true, nil
+		return true, mcisId, nil
 	}
-	return false, nil
+	return false, mcisId, nil
 
 }
 
-func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
+func LowerizeAndCheckVm(nsId string, mcisId string, vmId string) (bool, string, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
 		err := fmt.Errorf("CheckVm failed; nsId given is null.")
-		return false, err
+		return false, "", err
 	} else if mcisId == "" {
 		err := fmt.Errorf("CheckVm failed; mcisId given is null.")
-		return false, err
+		return false, "", err
 	} else if vmId == "" {
 		err := fmt.Errorf("CheckVm failed; vmId given is null.")
-		return false, err
+		return false, "", err
 	}
+
+	lowerizedNsId := common.GenId(nsId)
+	nsId = lowerizedNsId
+
+	lowerizedMcisId := common.GenId(mcisId)
+	mcisId = lowerizedMcisId
+
+	lowerizedVmId := common.GenId(vmId)
+	vmId = lowerizedVmId
 
 	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
-	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		return false, err
-	}
+	keyValue, _ := common.CBStore.Get(key)
+	/*
+		if err != nil {
+			common.CBLog.Error(err)
+			return false, lowerizedVmId, err
+		}
+	*/
 	if keyValue != nil {
-		return true, nil
+		return true, lowerizedVmId, nil
 	}
-	return false, nil
+	return false, lowerizedVmId, nil
 
 }
 
