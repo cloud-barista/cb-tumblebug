@@ -115,6 +115,8 @@ github.com/cloud-barista/cb-store v0.1.1 h1:n10JMjMqRVLSqZDU8HaLf1SE62go9tu8wvh5
 github.com/cloud-barista/cb-store v0.1.1/go.mod h1:IZkIEZokowBnF7X6DIZt3fANO1qUu0UUAngD4yejURY=
 github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20200924125209-c313bd2a3987 h1:DjBd/177X40PjmaLeBm5tl2LhxIueN4pRQVvbQQK6Wo=
 github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20200924125209-c313bd2a3987/go.mod h1:61kKVkx71mD1P1i7IwQUGjj6ZNceBJEZVgC3NTddAVo=
+github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20201008065513-203477209eb7 h1:BDEmdVFkFdpWkrmjlfNfheaRny1PsEdAId9OC73ljTw=
+github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20201008065513-203477209eb7/go.mod h1:tX9B/zrBrGBA80uHhFniDmFok3WwXsndZNkA1PoHk9s=
 github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58/go.mod h1:EOBUe0h4xcZ5GoxqC5SDxFQ8gwyZPKQoEzownBlhI80=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cncf/udpa/go v0.0.0-20200313221541-5f7e5dd04533/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
