@@ -363,6 +363,16 @@ type AgentInstallContent struct {
 
 func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := AgentInstallContentWrapper{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
+
 	content := AgentInstallContentWrapper{}
 
 	//install script
@@ -557,6 +567,16 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 
 func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
 
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := &BenchmarkInfoArray{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
+
 	target := host
 
 	action := "all"
@@ -693,6 +713,16 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 }
 
 func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*BenchmarkInfoArray, error) {
+
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := &BenchmarkInfoArray{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
 
 	target := host
 
@@ -955,6 +985,15 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 func DelMcis(nsId string, mcisId string) error {
 
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return err
+	}
+
 	fmt.Println("[Delete MCIS] " + mcisId)
 
 	// ControlMcis first
@@ -995,6 +1034,16 @@ func DelMcis(nsId string, mcisId string) error {
 }
 
 func DelMcisVm(nsId string, mcisId string, vmId string) error {
+
+	nsId = common.GenId(nsId)
+	mcisId = common.GenId(mcisId)
+	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	vmId = lowerizedName
+
+	if check == false {
+		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		return err
+	}
 
 	fmt.Println("[Delete VM] " + vmId)
 
@@ -1076,6 +1125,16 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, req.Name)
+	req.Name = lowerizedName
+
+	if check == true {
+		temp := &TbMcisInfo{}
+		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
+		return temp, err
+	}
+
 	key := CreateMcis(nsId, req)
 	mcisId := common.GenId(req.Name)
 
@@ -1127,6 +1186,15 @@ func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 }
 
 func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
+
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return err.Error(), err
+	}
 
 	fmt.Println("[Get MCIS requested action: " + action)
 	if action == "suspend" {
@@ -1209,6 +1277,16 @@ func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error
 
 func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := &McisStatusInfo{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
+
 	fmt.Println("[status MCIS]")
 
 	vmList, err := ListVmId(nsId, mcisId)
@@ -1232,6 +1310,16 @@ func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 }
 
 func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
+
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := &TbMcisInfo{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
 
 	/*
 		var content struct {
@@ -1307,6 +1395,8 @@ func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 }
 
 func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
+
+	nsId = common.GenId(nsId)
 
 	/*
 		var content struct {
@@ -1394,6 +1484,8 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 func CoreDelAllMcis(nsId string) (string, error) {
 
+	nsId = common.GenId(nsId)
+
 	mcisList := ListMcisId(nsId)
 
 	if len(mcisList) == 0 {
@@ -1416,6 +1508,8 @@ func CoreDelAllMcis(nsId string) (string, error) {
 }
 
 func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
+
+	nsId = common.GenId(nsId)
 
 	/*
 		var content struct {
@@ -1459,6 +1553,16 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
 
+	nsId = common.GenId(nsId)
+	mcisId = common.GenId(mcisId)
+	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	vmId = lowerizedName
+
+	if check == false {
+		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		return err.Error(), err
+	}
+
 	vmIp := GetVmIp(nsId, mcisId, vmId)
 
 	//fmt.Printf("[vmIp] " +vmIp)
@@ -1500,6 +1604,16 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 }
 
 func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
+
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := []SshCmdResult{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
 
 	/*
 		type contentSub struct {
@@ -1565,6 +1679,17 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
+	nsId = common.GenId(nsId)
+	mcisId = common.GenId(mcisId)
+	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmInfoData.Name)
+	vmInfoData.Name = lowerizedName
+
+	if check == true {
+		temp := &TbVmInfo{}
+		err := fmt.Errorf("The vm " + vmInfoData.Name + " already exists.")
+		return temp, err
+	}
+
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
 
@@ -1601,6 +1726,16 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 }
 
 func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string) (string, error) {
+
+	nsId = common.GenId(nsId)
+	mcisId = common.GenId(mcisId)
+	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	vmId = lowerizedName
+
+	if check == false {
+		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		return err.Error(), err
+	}
 
 	fmt.Println("[Get VM requested action: " + action)
 	if action == "suspend" {
@@ -1642,6 +1777,17 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 
 func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
 
+	nsId = common.GenId(nsId)
+	mcisId = common.GenId(mcisId)
+	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	vmId = lowerizedName
+
+	if check == false {
+		temp := &TbVmStatusInfo{}
+		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		return temp, err
+	}
+
 	fmt.Println("[status VM]")
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
@@ -1664,6 +1810,17 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 }
 
 func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
+
+	nsId = common.GenId(nsId)
+	mcisId = common.GenId(mcisId)
+	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	vmId = lowerizedName
+
+	if check == false {
+		temp := &TbVmInfo{}
+		err := fmt.Errorf("The vm " + vmId + " does not exist.")
+		return temp, err
+	}
 
 	fmt.Println("[Get MCIS-VM info for id]" + vmId)
 

@@ -257,11 +257,21 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 */
 
 func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
-	check, _ := CheckResource(nsId, "image", u.Name)
 
-	if check {
+	_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	nsId = lowerizedNsId
+
+	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", u.Name)
+
+	if check == true {
 		temp := TbImageInfo{}
-		err := fmt.Errorf("The image " + u.Name + " already exists.")
+		err := fmt.Errorf("The image " + lowerizedName + " already exists.")
+		return temp, err
+	}
+
+	if err != nil {
+		temp := TbImageInfo{}
+		err := fmt.Errorf("Failed to check the existence of the image " + lowerizedName + ".")
 		return temp, err
 	}
 
@@ -338,17 +348,28 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 }
 
 func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, error) {
-	check, _ := CheckResource(nsId, "image", content.Name)
 
-	if check {
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.GenId(nsId)
+
+	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", content.Name)
+
+	if check == true {
 		temp := TbImageInfo{}
 		err := fmt.Errorf("The image " + content.Name + " already exists.")
 		return temp, err
 	}
 
+	if err != nil {
+		temp := TbImageInfo{}
+		err := fmt.Errorf("Failed to check the existence of the image " + lowerizedName + ".")
+		return temp, err
+	}
+
 	//content.Id = common.GenUuid()
-	content.Id = common.GenId(content.Name)
-	content.Name = common.GenId(content.Name)
+	content.Id = lowerizedName
+	content.Name = lowerizedName
 
 	sql := "INSERT INTO `image`(" +
 		"`id`, " +
@@ -373,7 +394,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	fmt.Println("sql: " + sql)
 	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-	_, err := sqlparser.Parse(sql)
+	_, err = sqlparser.Parse(sql)
 	if err != nil {
 		return *content, err
 	}
@@ -586,9 +607,12 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 			tumblebugImageId := connConfig.ConfigName + "-" + tumblebugImage.Name
 			//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
 
-			check, _ := CheckResource(nsId, "image", tumblebugImageId)
-			if check {
+			check, _, err := LowerizeAndCheckResource(nsId, "image", tumblebugImageId)
+			if check == true {
 				common.CBLog.Infoln("The image " + tumblebugImageId + " already exists in TB; continue")
+				continue
+			} else if err != nil {
+				common.CBLog.Infoln("Cannot check the existence of " + tumblebugImageId + " in TB; continue")
 				continue
 			} else {
 				tumblebugImage.Id = tumblebugImageId

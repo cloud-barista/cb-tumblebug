@@ -51,14 +51,24 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
 	fmt.Printf("DelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
-	check, _ := CheckResource(nsId, resourceType, resourceId)
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.GenId(nsId)
 
-	if !check {
+	check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
+	resourceId = lowerizedResourceId
+
+	if check == false {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
 		//mapA := map[string]string{"message": errString}
 		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
 		//return http.StatusNotFound, mapB, err
+		return err
+	}
+
+	if err != nil {
+		common.CBLog.Error(err)
 		return err
 	}
 
@@ -542,13 +552,23 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 
 func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
 
-	check, _ := CheckResource(nsId, resourceType, resourceId)
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.GenId(nsId)
 
-	if !check {
+	check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
+	resourceId = lowerizedResourceId
+
+	if check == false {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
 		//mapA := map[string]string{"message": errString}
 		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
+		return nil, err
+	}
+
+	if err != nil {
+		common.CBLog.Error(err)
 		return nil, err
 	}
 	fmt.Println("[Get resource] " + resourceType + ", " + resourceId)
@@ -592,18 +612,18 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	return nil, err
 }
 
-func CheckResource(nsId string, resourceType string, resourceId string) (bool, error) {
+func LowerizeAndCheckResource(nsId string, resourceType string, resourceId string) (bool, string, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
 		err := fmt.Errorf("CheckResource failed; nsId given is null.")
-		return false, err
+		return false, "", err
 	} else if resourceType == "" {
 		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
-		return false, err
+		return false, "", err
 	} else if resourceId == "" {
 		err := fmt.Errorf("CheckResource failed; resourceId given is null.")
-		return false, err
+		return false, "", err
 	}
 
 	// Check resourceType's validity
@@ -618,23 +638,28 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		// continue
 	} else {
 		err := fmt.Errorf("invalid resource type")
-		return false, err
+		return false, "", err
 	}
 
-	fmt.Println("[Check resource] " + resourceType + ", " + resourceId)
+	lowerizedNsId := common.GenId(nsId)
+	lowerizedResourceId := common.GenId(resourceId)
 
-	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	fmt.Println("[Check resource] " + resourceType + ", " + lowerizedResourceId)
+
+	key := common.GenResourceKey(lowerizedNsId, resourceType, lowerizedResourceId)
 	//fmt.Println(key)
 
-	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		return false, err
-	}
+	keyValue, _ := common.CBStore.Get(key)
+	/*
+		if err != nil {
+			common.CBLog.Error(err)
+			return false, lowerizedResourceId, err
+		}
+	*/
 	if keyValue != nil {
-		return true, nil
+		return true, lowerizedResourceId, nil
 	}
-	return false, nil
+	return false, lowerizedResourceId, nil
 
 }
 

@@ -20,18 +20,15 @@ import (
 	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-
 )
 
-
 type MonAgentInstallReq struct {
-	Mcis_id string `json:"mcis_id"`
-	Vm_id   string `json:"vm_id"`
-	Public_ip   string `json:"public_ip"`
-	User_name  string `json:"user_name"`
-	Ssh_key  string `json:"ssh_key"`
+	Mcis_id   string `json:"mcis_id"`
+	Vm_id     string `json:"vm_id"`
+	Public_ip string `json:"public_ip"`
+	User_name string `json:"user_name"`
+	Ssh_key   string `json:"ssh_key"`
 }
-
 
 func CallMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, vmIP string, userName string, privateKey string, method string, cmd string, returnResult *[]SshCmdResult) {
 
@@ -42,11 +39,11 @@ func CallMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, vmIP st
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
-		Mcis_id: mcisID,
-		Vm_id: vmID,
+		Mcis_id:   mcisID,
+		Vm_id:     vmID,
 		Public_ip: vmIP,
 		User_name: userName,
-		Ssh_key: privateKey,
+		Ssh_key:   privateKey,
 	}
 	fmt.Printf("\n[Request body to CB-DRAGONFLY for installing monitoring agent in VM]\n")
 	common.PrintJsonPretty(tempReq)
@@ -62,8 +59,8 @@ func CallMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, vmIP st
 
 	errStr := ""
 	if err != nil {
-	  common.CBLog.Error(err)
-	  errStr = err.Error()
+		common.CBLog.Error(err)
+		errStr = err.Error()
 	}
 
 	client := &http.Client{
@@ -114,8 +111,17 @@ func CallMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, vmIP st
 
 }
 
-
 func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
+
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := AgentInstallContentWrapper{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
 
 	content := AgentInstallContentWrapper{}
 
@@ -182,9 +188,17 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 
 }
 
-
-
 func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallContentWrapper, error) {
+
+	nsId = common.GenId(nsId)
+	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
+	if check == false {
+		temp := AgentInstallContentWrapper{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
 
 	content := AgentInstallContentWrapper{}
 
@@ -206,7 +220,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallC
 
 		vmId := v
 
-		cmd := "/mcis/"+mcisId+"/vm/"+vmId+"/metric/"+metric+"/rt-info?statisticsCriteria=avg"
+		cmd := "/mcis/" + mcisId + "/vm/" + vmId + "/metric/" + metric + "/rt-info?statisticsCriteria=avg"
 		fmt.Println("[CMD] " + cmd)
 
 		go CallGetMonitoringAsync(&wg, mcisId, vmId, method, cmd, &resultArray)
@@ -232,8 +246,6 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallC
 
 }
 
-
-
 func CallGetMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
@@ -244,7 +256,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, meth
 
 	tempReq := MonAgentInstallReq{
 		Mcis_id: mcisID,
-		Vm_id: vmID,
+		Vm_id:   vmID,
 	}
 	fmt.Printf("\n[Request body to CB-DRAGONFLY for installing monitoring agent in VM]\n")
 	common.PrintJsonPretty(tempReq)
@@ -268,7 +280,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, meth
 		common.CBLog.Error(err)
 		errStr = err.Error()
 	}
-	
+
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
