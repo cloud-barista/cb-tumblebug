@@ -98,6 +98,8 @@ github.com/cloud-barista/cb-log v0.1.1 h1:b+26uJa9ieojcLooVqdQYAdZd6saPAkAtpSIl/
 github.com/cloud-barista/cb-log v0.1.1/go.mod h1:/kfh19vJJ2hNcnhHfgDM2CeZSSGtuc2J7xj5R4QU/Oc=
 github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20200913031717-ff545833c178 h1:t7F7O2Dcys9uvGDX8eplWYqHux6X+J7uO4GL0khGzAI=
 github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20200913031717-ff545833c178/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
+github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20201008023843-31002c0a088d h1:bBjxqjGTvf63aZKpLQpvxMETYlAUIKk38UVI47JXPCk=
+github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20201008023843-31002c0a088d/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-spider v0.1.9 h1:4mqHCf3WRtxJo2jlqEpnRa5ACcuuz1f61YH2zVMzTv0=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200723093826-b9576df33790 h1:yI3FH62XEefxjB2yVIZxYx0gGH9j9UPqO062QdijaFc=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200723093826-b9576df33790/go.mod h1:IgFj6vZdpMY+YWoQPlSiHklcDPlja5OEGvw49jSMlic=
@@ -107,6 +109,8 @@ github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200825062504-21e018aacb
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200825062504-21e018aacb9f/go.mod h1:JJO2zAhvB/jJvBLDeT5AqUJ86xF6Onr9TCEv5E+5J3o=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200925011107-da45e41dfece h1:f5B7C9xcuLGUM5RK3YJqlsY4YwA7bp73y1PxGJMtRSk=
 github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200925011107-da45e41dfece/go.mod h1:Wr8iXIryDNjQ/5QcPr8FBGQLL9bOgawYxtrrRKSCoMI=
+github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20201008054946-3b9a0b25c68a h1:bhT2J+uvYQuVLTXi3s9Ax9GCY4jrbL4yR3yN78YLPjc=
+github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20201008054946-3b9a0b25c68a/go.mod h1:xdbckYCFSuLRogy7kU/167P39tXCo1rWdHsiPmEleF8=
 github.com/cloud-barista/cb-store v0.1.1 h1:n10JMjMqRVLSqZDU8HaLf1SE62go9tu8wvh5/AqcUHs=
 github.com/cloud-barista/cb-store v0.1.1/go.mod h1:IZkIEZokowBnF7X6DIZt3fANO1qUu0UUAngD4yejURY=
 github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20200924125209-c313bd2a3987 h1:DjBd/177X40PjmaLeBm5tl2LhxIueN4pRQVvbQQK6Wo=
