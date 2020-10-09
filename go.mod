@@ -11,9 +11,9 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/astaxie/beego v1.12.2
 	github.com/bramvdbogaerde/go-scp v0.0.0-20200518191442-5c8efdd1d925
-	github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20200913031717-ff545833c178
-	github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20200925011107-da45e41dfece
-	github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20200924125209-c313bd2a3987
+	github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20201008023843-31002c0a088d
+	github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20201008054946-3b9a0b25c68a
+	github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20201008065513-203477209eb7
 	github.com/coreos/etcd v3.3.21+incompatible // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
