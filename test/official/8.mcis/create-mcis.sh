@@ -53,37 +53,8 @@
 				"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"description": "description",
 				"vmUserPassword": ""
-			},
-			{
-				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-02",
-				"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"vmUserAccount": "cb-user",
-				"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-				"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"securityGroupIds": [
-					"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
-				],
-				"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"description": "description",
-				"vmUserPassword": ""
-			},
-			{
-				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-03",
-				"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"vmUserAccount": "cb-user",
-				"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-				"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"securityGroupIds": [
-					"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
-				],
-				"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"description": "description",
-				"vmUserPassword": ""
-			} ]
+			}
+			]
 		}' | json_pp || return 1
 #}
 
