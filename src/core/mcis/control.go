@@ -933,7 +933,7 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 func ListMcisId(nsId string) []string {
 
-	fmt.Println("[Get MCISs")
+	fmt.Println("[Get MCIS ID list]")
 	key := "/ns/" + nsId + "/mcis"
 	//fmt.Println(key)
 
@@ -3430,8 +3430,14 @@ func ValidateStatus() {
 
 	nsList := common.ListNsId()
 
+	fmt.Println("")
 	for _, v := range nsList {
-		fmt.Println("validateStatus: NS[" + v + "]")
+		fmt.Println("NS[" + v + "]")
+		mcisList := ListMcisId(v)
+
+		for _, m := range mcisList {
+			fmt.Println("validateStatus: MCIS[" + m + "]")
+		}
 	}
 
 }

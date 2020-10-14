@@ -51,6 +51,13 @@
 		'{
 			"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setcbdf.sh -O ~/setcbdf.sh; chmod +x ~/setcbdf.sh; ~/setcbdf.sh"
 		}' | json_pp #|| return 1
+
+	echo "[You can update Tumblebug Environment for Dragonfly with following command]"
+	echo " ../2.configureTumblebug/update-config.sh DRAGONFLY_REST_URL http://{{IPAddress}}:9090/dragonfly"
+	echo ""
+	echo "[You can test Dragonfly with following command]"
+	echo " ../9.monitoring/install-agent.sh ${CSP} ${REGION} ${POSTFIX}"
+	echo " ../9.monitoring/get-monitoring-data.sh ${CSP} ${REGION} ${POSTFIX}"
 #}
 
 #deploy_cb-df_to_mcis

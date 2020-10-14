@@ -33,6 +33,255 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/config": {
+            "get": {
+                "description": "List all configs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Config"
+                ],
+                "summary": "List all configs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.RestGetAllConfigResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Config"
+                ],
+                "summary": "Create or Update config",
+                "parameters": [
+                    {
+                        "description": "Key and Value for configuration",
+                        "name": "config",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/common.ConfigInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConfigInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all configs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Config"
+                ],
+                "summary": "Delete all configs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/config/{configId}": {
+            "get": {
+                "description": "Get config",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Config"
+                ],
+                "summary": "Get config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Config ID",
+                        "name": "configId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConfigInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/lookupImage": {
+            "get": {
+                "description": "Lookup image list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Lookup image list",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName",
+                        "name": "connectionName",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestLookupImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.SpiderImageList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/lookupImage/{imageId}": {
+            "get": {
+                "description": "Lookup image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Lookup image",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName",
+                        "name": "connectionName",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestLookupImageRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Image ID",
+                        "name": "imageId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.SpiderImageInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/lookupSpec": {
             "get": {
                 "description": "Lookup spec list",
@@ -1165,6 +1414,50 @@ var doc = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/fetchImages": {
+            "post": {
+                "description": "Fetch images",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Fetch images",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
                         }
                     },
                     "404": {
@@ -2381,6 +2674,23 @@ var doc = `{
         }
     },
     "definitions": {
+        "common.ConfigInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "configid01"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "spider"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "http://localhost:1024/spider"
+                }
+            }
+        },
         "common.IID": {
             "type": "object",
             "properties": {
@@ -2430,6 +2740,18 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "common.RestGetAllConfigResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "description": "Name string     ` + "`" + `json:\"name\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.ConfigInfo"
+                    }
                 }
             }
         },
@@ -2509,6 +2831,14 @@ var doc = `{
                 }
             }
         },
+        "mcir.RestLookupImageRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                }
+            }
+        },
         "mcir.RestLookupSpecRequest": {
             "type": "object",
             "properties": {
@@ -2531,6 +2861,45 @@ var doc = `{
                 },
                 "model": {
                     "type": "string"
+                }
+            }
+        },
+        "mcir.SpiderImageInfo": {
+            "type": "object",
+            "properties": {
+                "guestOS": {
+                    "description": "Windows7, Ubuntu etc.",
+                    "type": "string"
+                },
+                "iid": {
+                    "description": "Fields for response",
+                    "type": "object",
+                    "$ref": "#/definitions/common.IID"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "description": "Fields for request",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "available, unavailable",
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.SpiderImageList": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.SpiderImageInfo"
+                    }
                 }
             }
         },
@@ -2576,6 +2945,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vcpu": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -2596,6 +2966,7 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -3189,15 +3560,18 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "Fields for response",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -3231,6 +3605,7 @@ var doc = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -3252,6 +3627,7 @@ var doc = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -3277,6 +3653,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vpcIID": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -3343,6 +3720,7 @@ var doc = `{
                     "type": "string"
                 },
                 "cspViewVmDetail": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -3355,6 +3733,7 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "name": {
@@ -3374,6 +3753,7 @@ var doc = `{
                 },
                 "region": {
                     "description": "2. Provided by CB-Spider",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -3426,6 +3806,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vm_spec": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
@@ -3449,6 +3830,7 @@ var doc = `{
                     }
                 },
                 "vm_req": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
             }

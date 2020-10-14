@@ -29,6 +29,13 @@ var DB_PASSWORD string
 var MYDB *sql.DB
 var err error
 
+const StrSPIDER_REST_URL string = "SPIDER_REST_URL"
+const StrDRAGONFLY_REST_URL string = "DRAGONFLY_REST_URL"
+const StrDB_URL string = "DB_URL"
+const StrDB_DATABASE string = "DB_DATABASE"
+const StrDB_USER string = "DB_USER"
+const StrDB_PASSWORD string = "DB_PASSWORD"
+
 var StartTime string
 
 func init() {
