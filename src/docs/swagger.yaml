@@ -1,5 +1,17 @@
 basePath: /tumblebug
 definitions:
+  common.ConfigInfo:
+    properties:
+      id:
+        example: configid01
+        type: string
+      name:
+        example: spider
+        type: string
+      value:
+        example: http://localhost:1024/spider
+        type: string
+    type: object
   common.IID:
     properties:
       nameId:
@@ -34,6 +46,14 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  common.RestGetAllConfigResponse:
+    properties:
+      config:
+        description: Name string     `json:"name"`
+        items:
+          $ref: '#/definitions/common.ConfigInfo'
+        type: array
     type: object
   common.RestGetAllNsResponse:
     properties:
@@ -84,6 +104,11 @@ definitions:
           $ref: '#/definitions/mcir.TbVNetInfo'
         type: array
     type: object
+  mcir.RestLookupImageRequest:
+    properties:
+      connectionName:
+        type: string
+    type: object
   mcir.RestLookupSpecRequest:
     properties:
       connectionName:
@@ -99,6 +124,33 @@ definitions:
         type: string
       model:
         type: string
+    type: object
+  mcir.SpiderImageInfo:
+    properties:
+      guestOS:
+        description: Windows7, Ubuntu etc.
+        type: string
+      iid:
+        $ref: '#/definitions/common.IID'
+        description: Fields for response
+        type: object
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        description: Fields for request
+        type: string
+      status:
+        description: available, unavailable
+        type: string
+    type: object
+  mcir.SpiderImageList:
+    properties:
+      image:
+        items:
+          $ref: '#/definitions/mcir.SpiderImageInfo'
+        type: array
     type: object
   mcir.SpiderSecurityRuleInfo:
     properties:
@@ -129,6 +181,7 @@ definitions:
         type: string
       vcpu:
         $ref: '#/definitions/mcir.SpiderVCpuInfo'
+        type: object
     type: object
   mcir.SpiderSpecList:
     properties:
@@ -142,6 +195,7 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: '{NameId, SystemId}'
+        type: object
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -530,12 +584,15 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
+        type: object
       imageIId:
         $ref: '#/definitions/common.IID'
+        type: object
       imageName:
         type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
+        type: object
       keyPairName:
         type: string
       keyValueList:
@@ -559,6 +616,7 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
+        type: object
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -574,6 +632,7 @@ definitions:
       subnetIID:
         $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
+        type: object
       subnetName:
         type: string
       vmblockDisk:
@@ -592,6 +651,7 @@ definitions:
         type: string
       vpcIID:
         $ref: '#/definitions/common.IID'
+        type: object
       vpcname:
         type: string
     type: object
@@ -635,6 +695,7 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
+        type: object
       description:
         type: string
       id:
@@ -643,6 +704,7 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
+        type: object
       name:
         type: string
       privateDNS:
@@ -656,6 +718,7 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: 2. Provided by CB-Spider
+        type: object
       securityGroupIds:
         items:
           type: string
@@ -691,6 +754,7 @@ definitions:
         type: string
       vm_spec:
         $ref: '#/definitions/mcir.TbSpecInfo'
+        type: object
     type: object
   mcis.TbVmRecommendInfo:
     properties:
@@ -706,6 +770,7 @@ definitions:
         type: array
       vm_req:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
+        type: object
     type: object
   mcis.TbVmRecommendReq:
     properties:
@@ -767,6 +832,170 @@ info:
   title: CB-Tumblebug REST API
   version: 0.2.0
 paths:
+  /config:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all configs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all configs
+      tags:
+      - Config
+    get:
+      consumes:
+      - application/json
+      description: List all configs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.RestGetAllConfigResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all configs
+      tags:
+      - Config
+    post:
+      consumes:
+      - application/json
+      description: Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)
+      parameters:
+      - description: Key and Value for configuration
+        in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/common.ConfigInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ConfigInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create or Update config
+      tags:
+      - Config
+  /config/{configId}:
+    get:
+      consumes:
+      - application/json
+      description: Get config
+      parameters:
+      - description: Config ID
+        in: path
+        name: configId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ConfigInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get config
+      tags:
+      - Config
+  /lookupImage:
+    get:
+      consumes:
+      - application/json
+      description: Lookup image list
+      parameters:
+      - description: Specify connectionName
+        in: body
+        name: connectionName
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestLookupImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.SpiderImageList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Lookup image list
+      tags:
+      - Image
+  /lookupImage/{imageId}:
+    get:
+      consumes:
+      - application/json
+      description: Lookup image
+      parameters:
+      - description: Specify connectionName
+        in: body
+        name: connectionName
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestLookupImageRequest'
+      - description: Image ID
+        in: path
+        name: imageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.SpiderImageInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Lookup image
+      tags:
+      - Image
   /lookupSpec:
     get:
       consumes:
@@ -1532,6 +1761,35 @@ paths:
       summary: GetMonitorData MCIS
       tags:
       - Monitor
+  /ns/{nsId}/resources/fetchImages:
+    post:
+      consumes:
+      - application/json
+      description: Fetch images
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Fetch images
+      tags:
+      - Image
   /ns/{nsId}/resources/fetchSpecs:
     post:
       consumes:

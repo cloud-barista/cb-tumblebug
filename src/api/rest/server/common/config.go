@@ -79,19 +79,18 @@ func RestGetAllConfig(c echo.Context) error {
 
 }
 
-/* function RestPostConfig not yet implemented
+
 // RestPostConfig godoc
-// @Summary Update config
-// @Description Update config
+// @Summary Create or Update config
+// @Description Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)
 // @Tags Config
 // @Accept  json
 // @Produce  json
-// @Param config body common.ConfigInfo true "Details to update existing config"
+// @Param config body common.ConfigInfo true "Key and Value for configuration"
 // @Success 200 {object} common.ConfigInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /config/{configId} [put]
-*/
+// @Router /config [post]
 func RestPostConfig(c echo.Context) error {
 
 	u := &common.ConfigReq{}
@@ -117,7 +116,7 @@ func RestPostConfig(c echo.Context) error {
 // RestDelAllConfig godoc
 // @Summary Delete all configs
 // @Description Delete all configs
-// @Tags Namespace
+// @Tags Config
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
