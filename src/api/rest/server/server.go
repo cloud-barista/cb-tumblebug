@@ -103,6 +103,9 @@ func ApiServer() {
 
 	// Route
 
+	//common.UpdateEnv()
+	//common.SPIDER_REST_URL = "TEST"
+
 	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
 
 	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
@@ -120,6 +123,12 @@ func ApiServer() {
 	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
 	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
 	e.GET("/tumblebug/webadmin/spec", webadmin.Spec)
+
+	e.POST("/tumblebug/config", rest_common.RestPostConfig)
+	e.GET("/tumblebug/config/:configId", rest_common.RestGetConfig)
+	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
+	e.DELETE("/tumblebug/config", rest_common.RestDelAllConfig)
+
 
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 

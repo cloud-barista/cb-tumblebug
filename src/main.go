@@ -47,7 +47,7 @@ func main() {
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	//Ticker for MCIS status validation
-	validationDuration := 60000 //ms
+	validationDuration := 600000 //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(validationDuration))
 	go func() {
 		for t := range ticker.C {
