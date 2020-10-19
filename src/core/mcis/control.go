@@ -933,6 +933,8 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 func ListMcisId(nsId string) []string {
 
+	nsId = common.GenId(nsId)
+
 	fmt.Println("[Get MCIS ID list]")
 	key := "/ns/" + nsId + "/mcis"
 	//fmt.Println(key)
@@ -956,6 +958,9 @@ func ListMcisId(nsId string) []string {
 }
 
 func ListVmId(nsId string, mcisId string) ([]string, error) {
+
+	nsId = common.GenId(nsId)
+	mcisId = common.GenId(mcisId)
 
 	fmt.Println("[ListVmId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
