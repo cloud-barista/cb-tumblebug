@@ -30,6 +30,9 @@ func init() {
 }
 
 func DelAllResources(nsId string, resourceType string, forceFlag string) error {
+
+	nsId = common.GenId(nsId)
+
 	resourceIdList := ListResourceId(nsId, resourceType)
 
 	if len(resourceIdList) == 0 {
@@ -429,6 +432,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 func ListResourceId(nsId string, resourceType string) []string {
 
+	nsId = common.GenId(nsId)
+
 	if resourceType == "image" ||
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
@@ -463,6 +468,9 @@ func ListResourceId(nsId string, resourceType string) []string {
 }
 
 func ListResource(nsId string, resourceType string) (interface{}, error) {
+
+	nsId = common.GenId(nsId)
+
 	if resourceType == "image" ||
 		resourceType == "sshKey" ||
 		resourceType == "spec" ||
