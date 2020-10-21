@@ -41,7 +41,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 				"message": "Failed to create a SecurityGroup"}
 		*/
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }

@@ -44,7 +44,7 @@ func RestPostSshKey(c echo.Context) error {
 		//return c.JSON(res.StatusCode, res)
 		//body, _ := ioutil.ReadAll(res.Body)
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }

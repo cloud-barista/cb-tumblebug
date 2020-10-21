@@ -46,7 +46,7 @@ func RestPostImage(c echo.Context) error {
 		if err != nil {
 			common.CBLog.Error(err)
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 		return c.JSON(http.StatusCreated, content)
 	} else if action == "registerWithId" {
@@ -62,12 +62,12 @@ func RestPostImage(c echo.Context) error {
 			//fmt.Println("body: ", string(body))
 			//return c.JSONBlob(responseCode, body)
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 		return c.JSON(http.StatusCreated, content)
 	} else {
 		mapA := map[string]string{"message": "You must specify: action=registerWithInfo or action=registerWithId"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 }
@@ -120,7 +120,7 @@ func RestLookupImage(c echo.Context) error {
 	content, err := mcir.LookupImage(u.ConnectionName, imageId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
 	return c.JSON(http.StatusOK, &content)
@@ -153,7 +153,7 @@ func RestLookupImageList(c echo.Context) error {
 	content, err := mcir.LookupImageList(u.ConnectionName)
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
 	return c.JSON(http.StatusOK, &content)
@@ -180,7 +180,7 @@ func RestFetchImages(c echo.Context) error {
 		common.CBLog.Error(err)
 		mapA := map[string]string{
 			"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	mapA := map[string]string{
