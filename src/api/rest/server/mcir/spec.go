@@ -41,7 +41,7 @@ func RestPostSpec(c echo.Context) error {
 			common.CBLog.Error(err)
 			mapA := map[string]string{
 				"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 		return c.JSON(http.StatusCreated, content)
 
@@ -56,7 +56,7 @@ func RestPostSpec(c echo.Context) error {
 			common.CBLog.Error(err)
 			mapA := map[string]string{
 				"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 		return c.JSON(http.StatusCreated, content)
 
@@ -115,7 +115,7 @@ func RestLookupSpec(c echo.Context) error {
 	content, err := mcir.LookupSpec(u.ConnectionName, specName)
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
 	return c.JSON(http.StatusOK, &content)
@@ -148,7 +148,7 @@ func RestLookupSpecList(c echo.Context) error {
 	content, err := mcir.LookupSpecList(u.ConnectionName)
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
 	return c.JSON(http.StatusOK, &content)
@@ -175,7 +175,7 @@ func RestFetchSpecs(c echo.Context) error {
 		common.CBLog.Error(err)
 		mapA := map[string]string{
 			"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	mapA := map[string]string{

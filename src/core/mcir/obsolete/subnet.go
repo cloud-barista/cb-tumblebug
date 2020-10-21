@@ -75,7 +75,7 @@ func RestPostSubnet(c echo.Context) error {
 		common.CBLog.Error(err)
 		mapA := map[string]string{
 			"message": "Failed to create a Subnet"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
 }

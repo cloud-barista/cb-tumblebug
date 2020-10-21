@@ -33,7 +33,7 @@ func RestPostMcis(c echo.Context) error {
 	result, err := mcis.CorePostMcis(nsId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	//fmt.Printf("%+v\n", *result)
@@ -67,7 +67,7 @@ func RestGetMcis(c echo.Context) error {
 		result, err := mcis.CoreGetMcisAction(nsId, mcisId, action)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 
 		mapA := map[string]string{"message": result}
@@ -78,7 +78,7 @@ func RestGetMcis(c echo.Context) error {
 		result, err := mcis.CoreGetMcisStatus(nsId, mcisId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 
 		var content struct {
@@ -96,7 +96,7 @@ func RestGetMcis(c echo.Context) error {
 		result, err := mcis.CoreGetMcisInfo(nsId, mcisId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusNotFound, &mapA)
 		}
 
 		//fmt.Printf("%+v\n", *result)
@@ -133,7 +133,7 @@ func RestGetAllMcis(c echo.Context) error {
 	result, err := mcis.CoreGetAllMcis(nsId, option)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusNotFound, &mapA)
 	}
 
 	content := RestGetAllMcisResponse{}
@@ -183,7 +183,7 @@ func RestDelMcis(c echo.Context) error {
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the MCIS"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	mapA := map[string]string{"message": "Deleting the MCIS info"}
@@ -206,7 +206,7 @@ func RestDelAllMcis(c echo.Context) error {
 	result, err := mcis.CoreDelAllMcis(nsId)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	mapA := map[string]string{"message": result}
@@ -244,7 +244,7 @@ func RestPostMcisRecommand(c echo.Context) error {
 	result, err := mcis.CorePostMcisRecommand(nsId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	content := RestPostMcisRecommandResponse{}
@@ -290,7 +290,7 @@ func RestPostCmdMcisVm(c echo.Context) error {
 	result, err := mcis.CorePostCmdMcisVm(nsId, mcisId, vmId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	response := RestPostCmdMcisVmResponse{Result: result}
@@ -334,7 +334,7 @@ func RestPostCmdMcis(c echo.Context) error {
 	resultArray, err := mcis.CorePostCmdMcis(nsId, mcisId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	content := RestPostCmdMcisResponseWrapper{}
@@ -469,7 +469,7 @@ func RestPostMcisVm(c echo.Context) error {
 	result, err := mcis.CorePostMcisVm(nsId, mcisId, vmInfoData)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 	common.PrintJsonPretty(*result)
 
@@ -503,7 +503,7 @@ func RestGetMcisVm(c echo.Context) error {
 		result, err := mcis.CoreGetMcisVmAction(nsId, mcisId, vmId, action)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 
 		mapA := map[string]string{"message": result}
@@ -515,7 +515,7 @@ func RestGetMcisVm(c echo.Context) error {
 		if err != nil {
 			common.CBLog.Error(err)
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 
 		//fmt.Printf("%+v\n", *result)
@@ -528,7 +528,7 @@ func RestGetMcisVm(c echo.Context) error {
 		result, err := mcis.CoreGetMcisVmInfo(nsId, mcisId, vmId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusFailedDependency, &mapA)
+			return c.JSON(http.StatusNotFound, &mapA)
 		}
 
 		//fmt.Printf("%+v\n", *result)
@@ -583,7 +583,7 @@ func RestDelMcisVm(c echo.Context) error {
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the VM info"}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	mapA := map[string]string{"message": "Deleting the VM info"}
@@ -628,7 +628,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 	result, err := mcis.CoreGetAllBenchmark(nsId, mcisId, req.Host)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	common.PrintJsonPretty(*result)
@@ -674,7 +674,7 @@ func RestGetBenchmark(c echo.Context) error {
 	result, err := mcis.CoreGetBenchmark(nsId, mcisId, action, req.Host)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusFailedDependency, &mapA)
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
 	common.PrintJsonPretty(*result)

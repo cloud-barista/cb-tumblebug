@@ -58,7 +58,7 @@ func RestGetConnConfig(c echo.Context) error {
 	content, err := common.GetConnConfig(connConfigName)
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 	return c.JSON(http.StatusOK, &content)
 
@@ -70,7 +70,7 @@ func RestGetConnConfigList(c echo.Context) error {
 	content, err := common.GetConnConfigList()
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
 	return c.JSON(http.StatusOK, &content)
@@ -85,7 +85,7 @@ func RestGetRegion(c echo.Context) error {
 	content, err := common.GetRegion(regionName)
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
 	return c.JSON(http.StatusOK, &content)
@@ -98,7 +98,7 @@ func RestGetRegionList(c echo.Context) error {
 	content, err := common.GetRegionList()
 	if err != nil {
 		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusFailedDependency, []byte(err.Error()))
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
 	return c.JSON(http.StatusOK, &content)
