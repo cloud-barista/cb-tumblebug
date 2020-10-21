@@ -3,8 +3,8 @@ module github.com/cloud-barista/cb-tumblebug
 go 1.13
 
 replace (
-	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.3
+	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 )
 
@@ -50,7 +50,6 @@ require (
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 	go.etcd.io/etcd v3.3.21+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee
-	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200626171337-aa94e735be7f // indirect
 	google.golang.org/grpc v1.33.0
 	gopkg.in/yaml.v2 v2.3.0

@@ -23,14 +23,16 @@ import (
 )
 
 type MonAgentInstallReq struct {
+	Ns_id   string `json:"ns_id"`
 	Mcis_id   string `json:"mcis_id"`
 	Vm_id     string `json:"vm_id"`
 	Public_ip string `json:"public_ip"`
 	User_name string `json:"user_name"`
 	Ssh_key   string `json:"ssh_key"`
+	Csp_type   string `json:"cspType"`
 }
 
-func CallMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, vmIP string, userName string, privateKey string, method string, cmd string, returnResult *[]SshCmdResult) {
+func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string, userName string, privateKey string, method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
@@ -39,6 +41,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, vmIP st
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
+		Ns_id:   nsID,
 		Mcis_id:   mcisID,
 		Vm_id:     vmID,
 		Public_ip: vmIP,
@@ -50,11 +53,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, vmIP st
 
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
+	_ = writer.WriteField("ns_id", nsID)
 	_ = writer.WriteField("mcis_id", mcisID)
 	_ = writer.WriteField("vm_id", vmID)
 	_ = writer.WriteField("public_ip", vmIP)
 	_ = writer.WriteField("user_name", userName)
 	_ = writer.WriteField("ssh_key", privateKey)
+	_ = writer.WriteField("cspType", "test")
 	err := writer.Close()
 
 	errStr := ""
@@ -165,7 +170,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
 
-		go CallMonitoringAsync(&wg, mcisId, vmId, vmIp, userName, sshKey, method, cmd, &resultArray)
+		go CallMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, userName, sshKey, method, cmd, &resultArray)
 
 	}
 	wg.Wait() //goroutin sync wg
@@ -219,11 +224,14 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallC
 		wg.Add(1)
 
 		vmId := v
+		vmIp := GetVmIp(nsId, mcisId, vmId)
 
-		cmd := "/mcis/" + mcisId + "/vm/" + vmId + "/metric/" + metric + "/rt-info?statisticsCriteria=avg"
+		// DF: Get vm on-demand monitoring metric info
+		// Path Para: /ns/:ns_id/mcis/:mcis_id/vm/:vm_id/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
+		cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
 		fmt.Println("[CMD] " + cmd)
 
-		go CallGetMonitoringAsync(&wg, mcisId, vmId, method, cmd, &resultArray)
+		go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, cmd, &resultArray)
 
 	}
 	wg.Wait() //goroutin sync wg
@@ -246,7 +254,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallC
 
 }
 
-func CallGetMonitoringAsync(wg *sync.WaitGroup, mcisID string, vmID string, method string, cmd string, returnResult *[]SshCmdResult) {
+func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string,method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
