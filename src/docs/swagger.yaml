@@ -657,6 +657,9 @@ definitions:
     type: object
   mcis.TbMcisInfo:
     properties:
+      agentEnabled:
+        description: yes or no
+        type: string
       description:
         type: string
       id:
@@ -678,6 +681,13 @@ definitions:
     type: object
   mcis.TbMcisReq:
     properties:
+      agentEnabled:
+        description: |-
+          AgentEnabled Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+
+          in: body
+          required: false
+        type: string
       description:
         type: string
       name:

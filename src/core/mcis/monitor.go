@@ -139,6 +139,8 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		return content, err
 	}
 
+	fmt.Println("[Install agent for each VM]")
+
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
