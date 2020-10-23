@@ -46,16 +46,17 @@
 
 	RESTSERVER=localhost
 
-	# for Cloud Connection Config Info
-	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]}
-
-	# for Cloud Region Info
-	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]}
 
 	if [ "${OPTION}" == "leave" ]; then
 		echo "[Leave Cloud Credential and Cloud Driver for other Regions]"
 		exit
 	fi
+	
+	# for Cloud Connection Config Info
+	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]}
+
+	# for Cloud Region Info
+	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]}
 
 	# for Cloud Credential Info
 	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/credential/${CredentialName[INDEX]}

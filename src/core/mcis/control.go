@@ -150,6 +150,13 @@ type TbMcisReq struct {
 	Name           string    `json:"name"`
 	Vm             []TbVmReq `json:"vm"`
 	Placement_algo string    `json:"placement_algo"`
+
+	// AgentEnabled Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+    //
+    // in: body
+    // required: false
+	AgentEnabled   string    `json:"agentEnabled"` // yes or no
+
 	Description    string    `json:"description"`
 }
 
@@ -162,6 +169,7 @@ type TbMcisInfo struct {
 	Status         string     `json:"status"`
 	TargetStatus   string     `json:"targetStatus"`
 	TargetAction   string     `json:"targetAction"`
+	AgentEnabled   string     `json:"agentEnabled"` // yes or no
 
 	// Disabled for now
 	//Vm             []vmOverview `json:"vm"`
@@ -1989,6 +1997,30 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 		mcisTmp.TargetAction = ActionComplete
 	}
 	UpdateMcisInfo(nsId, mcisTmp)
+
+	// Install CB-Dragonfly monitoring agent
+
+	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.AgentEnabled: %+v\n\n", mcisTmp.Id, req.AgentEnabled)
+
+	mcisTmp.AgentEnabled = "no"
+
+	if req.AgentEnabled != "no" {
+		
+		reqToMon := &McisCmdReq{}
+		reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+		
+		fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
+		content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+		if err != nil {
+			common.CBLog.Error(err)
+			mcisTmp.AgentEnabled = "no"
+		}
+		common.PrintJsonPretty(content)
+	
+		mcisTmp.AgentEnabled = "yes"
+	}
+	UpdateMcisInfo(nsId, mcisTmp)
+	
 
 	return key
 }

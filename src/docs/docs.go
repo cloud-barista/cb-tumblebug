@@ -3664,6 +3664,10 @@ var doc = `{
         "mcis.TbMcisInfo": {
             "type": "object",
             "properties": {
+                "agentEnabled": {
+                    "description": "yes or no",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3696,6 +3700,10 @@ var doc = `{
         "mcis.TbMcisReq": {
             "type": "object",
             "properties": {
+                "agentEnabled": {
+                    "description": "AgentEnabled Option for CB-Dragonfly agent installation ([yes/no] default:yes)\n\nin: body\nrequired: false",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
