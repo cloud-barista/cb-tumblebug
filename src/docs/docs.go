@@ -3664,14 +3664,14 @@ var doc = `{
         "mcis.TbMcisInfo": {
             "type": "object",
             "properties": {
-                "agentEnabled": {
-                    "description": "yes or no",
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "description": "yes or no",
                     "type": "string"
                 },
                 "name": {
@@ -3700,11 +3700,11 @@ var doc = `{
         "mcis.TbMcisReq": {
             "type": "object",
             "properties": {
-                "agentEnabled": {
-                    "description": "AgentEnabled Option for CB-Dragonfly agent installation ([yes/no] default:yes)\n\nin: body\nrequired: false",
+                "description": {
                     "type": "string"
                 },
-                "description": {
+                "installMonAgent": {
+                    "description": "EnableAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)\n\nin: body\nrequired: false",
                     "type": "string"
                 },
                 "name": {
@@ -3743,6 +3743,10 @@ var doc = `{
                 "location": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
