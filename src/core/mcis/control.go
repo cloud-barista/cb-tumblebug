@@ -432,7 +432,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 
 		// find vaild username
 		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		userNames := []string{SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04, userName, req.User_name}
+		userNames := []string{userName, req.User_name, SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04}
 		userName = VerifySshUserName(vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
@@ -1603,12 +1603,12 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	// find vaild username
 	userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 	userNames := []string{
+		userName,
+		req.User_name,
 		SshDefaultUserName01,
 		SshDefaultUserName02,
 		SshDefaultUserName03,
 		SshDefaultUserName04,
-		userName,
-		req.User_name,
 	}
 	userName = VerifySshUserName(vmIp, userNames, sshKey)
 	if userName == "" {
@@ -1687,12 +1687,12 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		// find vaild username
 		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		userNames := []string{
+			userName,
+			req.User_name,
 			SshDefaultUserName01,
 			SshDefaultUserName02,
 			SshDefaultUserName03,
 			SshDefaultUserName04,
-			userName,
-			req.User_name,
 		}
 		userName = VerifySshUserName(vmIp, userNames, sshKey)
 
@@ -1752,33 +1752,31 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	vmInfoData.TargetStatus = vmStatus.TargetStatus
 	vmInfoData.TargetAction = vmStatus.TargetAction
 
-		// Install CB-Dragonfly monitoring agent
+	// Install CB-Dragonfly monitoring agent
 
-		mcisTmp, _ := GetMcisObject(nsId, mcisId)
+	mcisTmp, _ := GetMcisObject(nsId, mcisId)
 
-		fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
+	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
 	
-		if mcisTmp.InstallMonAgent != "no" {
+	if mcisTmp.InstallMonAgent != "no" {
 			
-			check := CheckDragonflyEndpoint()
-			if (check != nil){
-				fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
-			}
+		check := CheckDragonflyEndpoint()
+		if (check != nil){
+			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
+		} else {
+			reqToMon := &McisCmdReq{}
+			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 			
-			if (check == nil){
-				reqToMon := &McisCmdReq{}
-				reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
-				
-				fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-				content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
-				if err != nil {
-					common.CBLog.Error(err)
-					//mcisTmp.InstallMonAgent = "no"
-				}
-				common.PrintJsonPretty(content)
-				//mcisTmp.InstallMonAgent = "yes"
+			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+			if err != nil {
+				common.CBLog.Error(err)
+				//mcisTmp.InstallMonAgent = "no"
 			}
+			common.PrintJsonPretty(content)
+			//mcisTmp.InstallMonAgent = "yes"
 		}
+	}
 
 
 	return vmInfoData, nil
@@ -2056,9 +2054,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 		check := CheckDragonflyEndpoint()
 		if (check != nil){
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
-		}
-		
-		if (check == nil){
+		} else {
 			reqToMon := &McisCmdReq{}
 			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 			
@@ -2073,8 +2069,6 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 		}
 	}
 	
-	
-
 	return key
 }
 
