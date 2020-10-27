@@ -32,6 +32,29 @@ type MonAgentInstallReq struct {
 	Csp_type   string `json:"cspType"`
 }
 
+// Module for checking CB-Dragonfly endpoint (call get config)
+func CheckDragonflyEndpoint() error {
+	cmd := "/config"
+
+	url := common.DRAGONFLY_REST_URL + cmd
+	method := "GET"
+  
+	client := &http.Client {
+	}
+	req, err := http.NewRequest(method, url, nil)
+  
+	if err != nil {
+	  fmt.Println(err)
+	  return err
+	}
+	res, err := client.Do(req)
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+  
+	fmt.Println(string(body))
+	return nil
+}
+
 func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string, userName string, privateKey string, method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
@@ -98,6 +121,8 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 	//wg.Done() //goroutin sync done
 
+	vmInfoTmp, _ := GetVmObject(nsID, mcisID, vmID)
+
 	sshResultTmp := SshCmdResult{}
 	sshResultTmp.Mcis_id = mcisID
 	sshResultTmp.Vm_id = vmID
@@ -107,12 +132,16 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		sshResultTmp.Result = errStr
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
+		vmInfoTmp.MonAgentStatus = "failed"
 	} else {
 		fmt.Println("result " + result)
 		sshResultTmp.Result = result
 		sshResultTmp.Err = nil
 		*returnResult = append(*returnResult, sshResultTmp)
+		vmInfoTmp.MonAgentStatus = "installed"
 	}
+	
+	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
 
 }
 
@@ -149,31 +178,24 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 	method := "POST"
 
 	for _, v := range vmList {
-		wg.Add(1)
+		vmObjTmp, _ := GetVmObject(nsId, mcisId, v)
+		fmt.Println("MonAgentStatus : " + vmObjTmp.MonAgentStatus)
+		
+		if(vmObjTmp.MonAgentStatus != "installed"){
 
-		vmId := v
-		vmIp := GetVmIp(nsId, mcisId, vmId)
+			vmId := v
+			vmIp := GetVmIp(nsId, mcisId, vmId)
+	
+			// find vaild username
+			userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
+			userNames := []string{SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04, userName, req.User_name}
+			userName = VerifySshUserName(vmIp, userNames, sshKey)
+	
+			fmt.Println("[CallMonitoringAsync] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 
-		//cmd := req.Command
-
-		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		// if (userName == "") {
-		// 	userName = req.User_name
-		// }
-		// if (userName == "") {
-		// 	userName = sshDefaultUserName
-		// }
-
-		// find vaild username
-		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		userNames := []string{SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04, userName, req.User_name}
-		userName = VerifySshUserName(vmIp, userNames, sshKey)
-
-		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
-		fmt.Println("[CMD] " + cmd)
-
-		go CallMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, userName, sshKey, method, cmd, &resultArray)
-
+			wg.Add(1)
+			go CallMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, userName, sshKey, method, cmd, &resultArray)
+		}
 	}
 	wg.Wait() //goroutin sync wg
 

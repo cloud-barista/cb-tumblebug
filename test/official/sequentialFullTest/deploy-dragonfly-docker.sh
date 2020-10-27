@@ -57,7 +57,7 @@
 	echo ""
 	echo "[You can test Dragonfly with following command]"
 	echo " ../9.monitoring/install-agent.sh ${CSP} ${REGION} ${POSTFIX}"
-	echo " ../9.monitoring/get-monitoring-data.sh ${CSP} ${REGION} ${POSTFIX}"
+	echo " ../9.monitoring/get-monitoring-data.sh ${CSP} ${REGION} ${POSTFIX} cpu"
 #}
 
 #deploy_cb-df_to_mcis

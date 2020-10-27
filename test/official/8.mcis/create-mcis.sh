@@ -39,7 +39,7 @@
 		'{
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "Tumblebug Demo",
-			"agentEnabled": "yes",
+			"installMonAgent": "yes",
 			"vm": [ {
 				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-01",
 				"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",

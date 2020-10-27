@@ -657,12 +657,12 @@ definitions:
     type: object
   mcis.TbMcisInfo:
     properties:
-      agentEnabled:
-        description: yes or no
-        type: string
       description:
         type: string
       id:
+        type: string
+      installMonAgent:
+        description: yes or no
         type: string
       name:
         type: string
@@ -681,14 +681,14 @@ definitions:
     type: object
   mcis.TbMcisReq:
     properties:
-      agentEnabled:
+      description:
+        type: string
+      installMonAgent:
         description: |-
-          AgentEnabled Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+          EnableAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 
           in: body
           required: false
-        type: string
-      description:
         type: string
       name:
         type: string
@@ -715,6 +715,9 @@ definitions:
       location:
         $ref: '#/definitions/mcis.GeoLocation'
         type: object
+      monAgentStatus:
+        description: Montoring agent status
+        type: string
       name:
         type: string
       privateDNS:

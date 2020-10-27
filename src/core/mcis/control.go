@@ -54,7 +54,7 @@ const milkywayPort string = ":1324/milkyway/"
 
 const SshDefaultUserName01 string = "cb-user"
 const SshDefaultUserName02 string = "ubuntu"
-const SshDefaultUserName03 string = "root"
+const SshDefaultUserName03 string = "others"
 const SshDefaultUserName04 string = "ec2-user"
 
 // Structs for REST API
@@ -151,11 +151,11 @@ type TbMcisReq struct {
 	Vm             []TbVmReq `json:"vm"`
 	Placement_algo string    `json:"placement_algo"`
 
-	// AgentEnabled Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	// EnableAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
     //
     // in: body
     // required: false
-	AgentEnabled   string    `json:"agentEnabled"` // yes or no
+	InstallMonAgent   string    `json:"installMonAgent"` // yes or no
 
 	Description    string    `json:"description"`
 }
@@ -169,7 +169,7 @@ type TbMcisInfo struct {
 	Status         string     `json:"status"`
 	TargetStatus   string     `json:"targetStatus"`
 	TargetAction   string     `json:"targetAction"`
-	AgentEnabled   string     `json:"agentEnabled"` // yes or no
+	InstallMonAgent   string  `json:"installMonAgent"` // yes or no
 
 	// Disabled for now
 	//Vm             []vmOverview `json:"vm"`
@@ -262,6 +262,9 @@ type TbVmInfo struct {
 	TargetStatus string `json:"targetStatus"`
 	TargetAction string `json:"targetAction"`
 
+	// Montoring agent status
+	MonAgentStatus   string  `json:"monAgentStatus"` // installed, notInstalled, failed
+
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
 
@@ -337,17 +340,31 @@ type TbVmRecommendInfo struct {
 func VerifySshUserName(vmIp string, userNames []string, privateKey string) string {
 	theUserName := ""
 	cmd := "ls"
-	for _, v := range userNames {
-		fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
-		fmt.Println("[CMD] " + cmd)
-		if v != "" {
-			if result, err := RunSSH(vmIp, v, privateKey, cmd); err == nil {
-				theUserName = v
-				fmt.Println("[RST] " + *result + "[Username] " + v)
-				break
+
+	for i := 0; i < 100; i++ {
+		for _, v := range userNames {
+			fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
+			fmt.Println("[CMD] " + cmd)
+			if v != "" {
+				result, err := RunSSH(vmIp, v, privateKey, cmd)
+				if err != nil {
+					fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error() )
+				}
+				if err == nil {
+					theUserName = v
+					fmt.Println("[RST] " + *result + "[Username] " + v)
+					break
+				}
 			}
+			time.Sleep(2 * time.Second)
+		}					
+		if theUserName != ""{
+			break
 		}
+		fmt.Println("[Trying a SSH] trial:"+ strconv.Itoa(i))
+		time.Sleep(1 * time.Second)
 	}
+
 	return theUserName
 }
 
@@ -415,7 +432,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 
 		// find vaild username
 		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		userNames := []string{SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04, userName, req.User_name}
+		userNames := []string{userName, req.User_name, SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04}
 		userName = VerifySshUserName(vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
@@ -1586,12 +1603,12 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	// find vaild username
 	userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 	userNames := []string{
+		userName,
+		req.User_name,
 		SshDefaultUserName01,
 		SshDefaultUserName02,
 		SshDefaultUserName03,
 		SshDefaultUserName04,
-		userName,
-		req.User_name,
 	}
 	userName = VerifySshUserName(vmIp, userNames, sshKey)
 	if userName == "" {
@@ -1670,12 +1687,12 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		// find vaild username
 		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		userNames := []string{
+			userName,
+			req.User_name,
 			SshDefaultUserName01,
 			SshDefaultUserName02,
 			SshDefaultUserName03,
 			SshDefaultUserName04,
-			userName,
-			req.User_name,
 		}
 		userName = VerifySshUserName(vmIp, userNames, sshKey)
 
@@ -1734,6 +1751,33 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	vmInfoData.Status = vmStatus.Status
 	vmInfoData.TargetStatus = vmStatus.TargetStatus
 	vmInfoData.TargetAction = vmStatus.TargetAction
+
+	// Install CB-Dragonfly monitoring agent
+
+	mcisTmp, _ := GetMcisObject(nsId, mcisId)
+
+	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
+	
+	if mcisTmp.InstallMonAgent != "no" {
+			
+		check := CheckDragonflyEndpoint()
+		if (check != nil){
+			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
+		} else {
+			reqToMon := &McisCmdReq{}
+			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			
+			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+			if err != nil {
+				common.CBLog.Error(err)
+				//mcisTmp.InstallMonAgent = "no"
+			}
+			common.PrintJsonPretty(content)
+			//mcisTmp.InstallMonAgent = "yes"
+		}
+	}
+
 
 	return vmInfoData, nil
 }
@@ -2000,28 +2044,31 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 
 	// Install CB-Dragonfly monitoring agent
 
-	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.AgentEnabled: %+v\n\n", mcisTmp.Id, req.AgentEnabled)
+	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisTmp.Id, req.InstallMonAgent)
 
-	mcisTmp.AgentEnabled = "no"
-
-	if req.AgentEnabled != "no" {
-		
-		reqToMon := &McisCmdReq{}
-		reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
-		
-		fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-		content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
-		if err != nil {
-			common.CBLog.Error(err)
-			mcisTmp.AgentEnabled = "no"
-		}
-		common.PrintJsonPretty(content)
-	
-		mcisTmp.AgentEnabled = "yes"
-	}
+	mcisTmp.InstallMonAgent = req.InstallMonAgent
 	UpdateMcisInfo(nsId, mcisTmp)
-	
 
+	if req.InstallMonAgent != "no" {
+		
+		check := CheckDragonflyEndpoint()
+		if (check != nil){
+			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
+		} else {
+			reqToMon := &McisCmdReq{}
+			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			
+			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+			if err != nil {
+				common.CBLog.Error(err)
+				//mcisTmp.InstallMonAgent = "no"
+			}
+			common.PrintJsonPretty(content)
+			//mcisTmp.InstallMonAgent = "yes"
+		}
+	}
+	
 	return key
 }
 
@@ -2058,7 +2105,10 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	//vmInfoData.CspVmId = string(*instanceIds[0])
 	vmInfoData.Status = StatusRunning
 	vmInfoData.TargetAction = ActionComplete
-	vmInfoData.TargetStatus = StatusComplete
+	vmInfoData.TargetStatus = StatusComplete		
+	// Monitoring Agent Installation Status (init: notInstalled)
+	vmInfoData.MonAgentStatus = "notInstalled"
+	
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 
 	return nil
@@ -2361,6 +2411,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
+
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.
@@ -2995,6 +3046,21 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	}
 }
 
+
+func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
+	fmt.Println("[GetMcisObject]" + mcisId)
+	key := common.GenMcisKey(nsId, mcisId, "")
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbMcisInfo{}, err
+	}
+	mcisTmp := TbMcisInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	return mcisTmp, nil
+}
+
+
 func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
 	fmt.Println("[GetMcisStatus]" + mcisId)
@@ -3110,6 +3176,19 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
 	//need to change status
 
+}
+
+func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
+	fmt.Println("[GetVmObject]" + mcisId + "VM:" + vmId)
+	key := common.GenMcisKey(nsId, mcisId, vmId)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+	vmTmp := TbVmInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
+	return vmTmp, nil
 }
 
 func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
@@ -3332,6 +3411,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	return vmStatusTmp, nil
 
 }
+
 
 func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 
