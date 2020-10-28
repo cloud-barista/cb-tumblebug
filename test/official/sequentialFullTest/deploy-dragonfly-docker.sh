@@ -56,10 +56,17 @@
 			"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setcbdf.sh -O ~/setcbdf.sh; chmod +x ~/setcbdf.sh; ~/setcbdf.sh"
 		}' | json_pp #|| return 1
 
+	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status`
+	MASTERIP=$(jq -r '.status.masterIp' <<< "$MCISINFO")
+	MASTERVM=$(jq -r '.status.masterVmId' <<< "$MCISINFO")
 	
+	echo "MASTERIP: $MASTERIP"
+	echo "MASTERVM: $MASTERVM"
 
-	echo "[You can update Tumblebug Environment for Dragonfly with following command]"
-	echo " ../2.configureTumblebug/update-config.sh DRAGONFLY_REST_URL http://{{IPAddress}}:9090/dragonfly"
+	echo "[Update Tumblebug Environment for Dragonfly with following command]"
+	PARAM="DRAGONFLY_REST_URL http://${MASTERIP}:9090/dragonfly"
+	echo $PARAM
+	../2.configureTumblebug/update-config.sh $PARAM
 	echo ""
 	echo "[You can test Dragonfly with following command]"
 	echo " ../9.monitoring/install-agent.sh ${CSP} ${REGION} ${POSTFIX}"

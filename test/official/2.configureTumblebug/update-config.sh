@@ -11,7 +11,7 @@
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
-	echo "## 2. Config: Create or Update (Param1: Key, Param2, Value)"
+	echo "## 2. Config: Create or Update (Param1: Key, Param2: Value)"
 	echo "####################################################################"
 
 	KEY=${1}

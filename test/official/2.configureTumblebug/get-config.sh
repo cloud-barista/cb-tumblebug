@@ -11,7 +11,7 @@
     AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
     echo "####################################################################"
-    echo "## 0. Config: Get (option: spider, dragonfly, ...)"
+    echo "## 0. Config: Get (option: spider-rest-url, dragonfly-rest-url, ...)"
     echo "####################################################################"
 
     VAR=${1}
