@@ -7,6 +7,10 @@
         exit
     fi
 
+	echo "[Check jq package (if not, install)]"
+	if ! dpkg-query -W -f='${Status}' jq  | grep "ok installed"; then sudo apt install -y jq; fi
+	
+
 	source ../conf.env
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
@@ -51,6 +55,8 @@
 		'{
 			"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setcbdf.sh -O ~/setcbdf.sh; chmod +x ~/setcbdf.sh; ~/setcbdf.sh"
 		}' | json_pp #|| return 1
+
+	
 
 	echo "[You can update Tumblebug Environment for Dragonfly with following command]"
 	echo " ../2.configureTumblebug/update-config.sh DRAGONFLY_REST_URL http://{{IPAddress}}:9090/dragonfly"
