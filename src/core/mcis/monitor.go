@@ -48,8 +48,17 @@ func CheckDragonflyEndpoint() error {
 	  return err
 	}
 	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 	defer res.Body.Close()
+
 	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
   
 	fmt.Println(string(body))
 	return nil
