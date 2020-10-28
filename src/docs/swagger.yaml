@@ -662,7 +662,8 @@ definitions:
       id:
         type: string
       installMonAgent:
-        description: yes or no
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+        example: '[yes, no]'
         type: string
       name:
         type: string
@@ -684,11 +685,8 @@ definitions:
       description:
         type: string
       installMonAgent:
-        description: |-
-          EnableAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-
-          in: body
-          required: false
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+        example: '[yes, no]'
         type: string
       name:
         type: string
@@ -717,6 +715,7 @@ definitions:
         type: object
       monAgentStatus:
         description: Montoring agent status
+        example: '[installed, notInstalled, failed]'
         type: string
       name:
         type: string

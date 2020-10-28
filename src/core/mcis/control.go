@@ -151,11 +151,8 @@ type TbMcisReq struct {
 	Vm             []TbVmReq `json:"vm"`
 	Placement_algo string    `json:"placement_algo"`
 
-	// EnableAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-    //
-    // in: body
-    // required: false
-	InstallMonAgent   string    `json:"installMonAgent"` // yes or no
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent   string    `json:"installMonAgent" example:"[yes, no]"` // yes or no
 
 	Description    string    `json:"description"`
 }
@@ -169,8 +166,8 @@ type TbMcisInfo struct {
 	Status         string     `json:"status"`
 	TargetStatus   string     `json:"targetStatus"`
 	TargetAction   string     `json:"targetAction"`
-	InstallMonAgent   string  `json:"installMonAgent"` // yes or no
-
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent   string  `json:"installMonAgent" example:"[yes, no]"` // yes or no
 	// Disabled for now
 	//Vm             []vmOverview `json:"vm"`
 }
@@ -263,7 +260,7 @@ type TbVmInfo struct {
 	TargetAction string `json:"targetAction"`
 
 	// Montoring agent status
-	MonAgentStatus   string  `json:"monAgentStatus"` // installed, notInstalled, failed
+	MonAgentStatus   string  `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
