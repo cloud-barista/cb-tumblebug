@@ -283,6 +283,8 @@ type McisStatusInfo struct {
 	Vm           []TbVmStatusInfo `json:"vm"`
 	MasterVmId     string         `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
 	MasterIp       string         `json:"masterIp" example:"32.201.134.113"`
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent   string  `json:"installMonAgent" example:"[yes, no]"` // yes or no
 }
 
 type TbVmStatusInfo struct {
@@ -294,6 +296,8 @@ type TbVmStatusInfo struct {
 	TargetAction  string `json:"targetAction"`
 	Native_status string `json:"native_status"`
 	Public_ip     string `json:"public_ip"`
+	// Montoring agent status
+	MonAgentStatus   string  `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 }
 
 type McisRecommendReq struct {
@@ -3343,6 +3347,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 
 	vmStatusTmp.TargetAction = temp.TargetAction
 	vmStatusTmp.TargetStatus = temp.TargetStatus
+
+	vmStatusTmp.MonAgentStatus = temp.MonAgentStatus
 
 	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
 	if statusResponseTmp.Status == "Creating" {
