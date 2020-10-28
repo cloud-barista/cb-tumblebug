@@ -151,11 +151,8 @@ type TbMcisReq struct {
 	Vm             []TbVmReq `json:"vm"`
 	Placement_algo string    `json:"placement_algo"`
 
-	// EnableAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-    //
-    // in: body
-    // required: false
-	InstallMonAgent   string    `json:"installMonAgent"` // yes or no
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent   string    `json:"installMonAgent" example:"[yes, no]"` // yes or no
 
 	Description    string    `json:"description"`
 }
@@ -169,8 +166,8 @@ type TbMcisInfo struct {
 	Status         string     `json:"status"`
 	TargetStatus   string     `json:"targetStatus"`
 	TargetAction   string     `json:"targetAction"`
-	InstallMonAgent   string  `json:"installMonAgent"` // yes or no
-
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent   string  `json:"installMonAgent" example:"[yes, no]"` // yes or no
 	// Disabled for now
 	//Vm             []vmOverview `json:"vm"`
 }
@@ -263,7 +260,7 @@ type TbVmInfo struct {
 	TargetAction string `json:"targetAction"`
 
 	// Montoring agent status
-	MonAgentStatus   string  `json:"monAgentStatus"` // installed, notInstalled, failed
+	MonAgentStatus   string  `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
@@ -284,6 +281,8 @@ type McisStatusInfo struct {
 	TargetStatus string           `json:"targetStatus"`
 	TargetAction string           `json:"targetAction"`
 	Vm           []TbVmStatusInfo `json:"vm"`
+	MasterVmId     string         `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
+	MasterIp       string         `json:"masterIp" example:"32.201.134.113"`
 }
 
 type TbVmStatusInfo struct {
@@ -3091,7 +3090,7 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 		return McisStatusInfo{}, nil
 	}
 
-	for _, v := range vmList {
+	for num, v := range vmList {
 		vmStatusTmp, err := GetVmStatus(nsId, mcisId, v)
 		if err != nil {
 			common.CBLog.Error(err)
@@ -3100,6 +3099,12 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 		}
 
 		mcisStatus.Vm = append(mcisStatus.Vm, vmStatusTmp)
+
+		// set master IP of MCIS (Default rule: select 1st VM as master)
+		if num == 0 {
+			mcisStatus.MasterVmId = vmStatusTmp.Id
+			mcisStatus.MasterIp = vmStatusTmp.Public_ip
+		}
 	}
 
 	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}

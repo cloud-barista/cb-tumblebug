@@ -3671,8 +3671,9 @@ var doc = `{
                     "type": "string"
                 },
                 "installMonAgent": {
-                    "description": "yes or no",
-                    "type": "string"
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "example": "[yes, no]"
                 },
                 "name": {
                     "type": "string"
@@ -3704,8 +3705,9 @@ var doc = `{
                     "type": "string"
                 },
                 "installMonAgent": {
-                    "description": "EnableAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)\n\nin: body\nrequired: false",
-                    "type": "string"
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "example": "[yes, no]"
                 },
                 "name": {
                     "type": "string"
@@ -3746,7 +3748,8 @@ var doc = `{
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",
-                    "type": "string"
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
                 },
                 "name": {
                     "type": "string"
