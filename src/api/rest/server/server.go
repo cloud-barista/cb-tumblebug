@@ -184,7 +184,7 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/spec", rest_mcir.RestDelAllResources)
 
 	g.POST("/:nsId/resources/fetchSpecs", rest_mcir.RestFetchSpecs)
-	g.POST("/:nsId/resources/filterSpecs", rest_mcir.RestFilterSpecs)
+	g.GET("/:nsId/resources/filterSpecs", rest_mcir.RestFilterSpecs)
 	g.POST("/:nsId/resources/fetchImages", rest_mcir.RestFetchImages)
 
 	g.POST("/:nsId/resources/securityGroup", rest_mcir.RestPostSecurityGroup)
