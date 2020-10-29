@@ -33,6 +33,7 @@ func NewSpecCmd() *cobra.Command {
 	specCmd.AddCommand(NewSpecGetCspCmd())
 	specCmd.AddCommand(NewSpecDeleteCmd())
 	specCmd.AddCommand(NewSpecFetchCmd())
+	specCmd.AddCommand(NewSpecFilterCmd())
 
 	return specCmd
 }
@@ -230,4 +231,39 @@ func NewSpecFetchCmd() *cobra.Command {
 	fetchCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return fetchCmd
+}
+
+// NewSpecFilterCmd
+func NewSpecFilterCmd() *cobra.Command {
+
+	filterCmd := &cobra.Command{
+		Use:   "filter",
+		Short: "This is filter command for spec",
+		Long:  "This is filter command for spec",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			/*
+				if nameSpaceID == "" {
+					logger.Error("failed to validate --ns parameter")
+					return
+				}
+				logger.Debug("--ns parameter value : ", nameSpaceID)
+			*/
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	//filterCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	filterCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	filterCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return filterCmd
 }

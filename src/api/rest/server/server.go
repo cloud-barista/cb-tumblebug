@@ -129,7 +129,6 @@ func ApiServer() {
 	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
 	e.DELETE("/tumblebug/config", rest_common.RestDelAllConfig)
 
-
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
 	g.POST("", rest_common.RestPostNs)
@@ -185,6 +184,7 @@ func ApiServer() {
 	g.DELETE("/:nsId/resources/spec", rest_mcir.RestDelAllResources)
 
 	g.POST("/:nsId/resources/fetchSpecs", rest_mcir.RestFetchSpecs)
+	g.GET("/:nsId/resources/filterSpecs", rest_mcir.RestFilterSpecs)
 	g.POST("/:nsId/resources/fetchImages", rest_mcir.RestFetchImages)
 
 	g.POST("/:nsId/resources/securityGroup", rest_mcir.RestPostSecurityGroup)

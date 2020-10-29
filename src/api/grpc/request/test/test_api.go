@@ -500,7 +500,6 @@ func CreateMCIRApiTest() {
 			Num_vCPU:              "",
 			Num_core:              "",
 			Mem_GiB:               "",
-			Mem_MiB:               "",
 			Storage_GiB:           "",
 			Description:           "",
 			Cost_per_hour:         "",
