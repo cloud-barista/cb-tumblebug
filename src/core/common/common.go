@@ -85,28 +85,40 @@ func SelectDatabase(database string) error {
 
 func CreateSpecTable() error {
 	stmt, err := MYDB.Prepare("CREATE Table IF NOT EXISTS spec(" +
+		"namespace varchar(50) NOT NULL," +
 		"id varchar(50) NOT NULL," +
 		"connectionName varchar(50) NOT NULL," +
 		"cspSpecName varchar(50) NOT NULL," +
 		"name varchar(50)," +
 		"os_type varchar(50)," +
-		"num_vCPU varchar(50)," +
-		"num_core varchar(50)," +
-		"mem_GiB varchar(50)," +
-		"mem_MiB varchar(50)," +
-		"storage_GiB varchar(50)," +
+		"num_vCPU SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"num_core SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"mem_GiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"storage_GiB MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
 		"description varchar(50)," +
-		"cost_per_hour varchar(50)," +
-		"num_storage varchar(50)," +
-		"max_num_storage varchar(50)," +
-		"max_total_storage_TiB varchar(50)," +
-		"net_bw_Gbps varchar(50)," +
-		"ebs_bw_Mbps varchar(50)," +
+		"cost_per_hour FLOAT," +
+		"num_storage SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"max_num_storage SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"max_total_storage_TiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"net_bw_Gbps SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"ebs_bw_Mbps MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
 		"gpu_model varchar(50)," +
-		"num_gpu varchar(50)," +
-		"gpumem_GiB varchar(50)," +
+		"num_gpu SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"gpumem_GiB SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"gpu_p2p varchar(50)," +
-		"PRIMARY KEY (id));")
+		"orderInFilteredResult SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"evaluationStatus varchar(50)," +
+		"evaluationScore_01 FLOAT," +
+		"evaluationScore_02 FLOAT," +
+		"evaluationScore_03 FLOAT," +
+		"evaluationScore_04 FLOAT," +
+		"evaluationScore_05 FLOAT," +
+		"evaluationScore_06 FLOAT," +
+		"evaluationScore_07 FLOAT," +
+		"evaluationScore_08 FLOAT," +
+		"evaluationScore_09 FLOAT," +
+		"evaluationScore_10 FLOAT," +
+		"CONSTRAINT PK_Spec PRIMARY KEY (namespace, id));")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -122,6 +134,7 @@ func CreateSpecTable() error {
 
 func CreateImageTable() error {
 	stmt, err := MYDB.Prepare("CREATE Table IF NOT EXISTS image(" +
+		"namespace varchar(50) NOT NULL," +
 		"id varchar(50) NOT NULL," +
 		"name varchar(50)," +
 		"connectionName varchar(50) NOT NULL," +
@@ -131,7 +144,7 @@ func CreateImageTable() error {
 		"description varchar(400) NOT NULL," +
 		"guestOS varchar(50) NOT NULL," +
 		"status varchar(50) NOT NULL," +
-		"PRIMARY KEY (id));")
+		"CONSTRAINT PK_Image PRIMARY KEY (namespace, id));")
 	if err != nil {
 		fmt.Println(err.Error())
 	}

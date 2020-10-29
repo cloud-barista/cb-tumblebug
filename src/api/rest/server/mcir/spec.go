@@ -183,6 +183,44 @@ func RestFetchSpecs(c echo.Context) error {
 	return c.JSON(http.StatusCreated, &mapA) //content)
 }
 
+// Response structure for RestFilterSpecs
+type RestFilterSpecsResponse struct {
+	Spec []mcir.TbSpecInfo `json:"spec"`
+}
+
+// RestFilterSpecs godoc
+// @Summary Filter specs
+// @Description Filter specs
+// @Tags Spec
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Success 200 {object} RestFilterSpecsResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/filterSpecs [post]
+func RestFilterSpecs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	u := &mcir.TbSpecInfo{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[Filter specs]")
+	content, err := mcir.FilterSpecs(nsId, *u)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
+	}
+
+	result := RestFilterSpecsResponse{}
+	result.Spec = content
+	return c.JSON(http.StatusOK, &result)
+}
+
 // RestGetSpec godoc
 // @Summary Get spec
 // @Description Get spec

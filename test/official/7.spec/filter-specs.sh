@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#function filter_specs() {
+    FILE=../conf.env
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+
+    source ../conf.env
+    AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+
+    echo "####################################################################"
+    echo "## 7. spec: filter"
+    echo "####################################################################"
+
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/filterSpecs -H 'Content-Type: application/json' -d \
+	    '{ 
+		    "num_vCPU": '1', 
+		    "mem_GiB": '2'
+	    }' | json_pp #|| return 1
+
+#}
+
+#filter_specs

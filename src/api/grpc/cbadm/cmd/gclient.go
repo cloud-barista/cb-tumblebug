@@ -290,6 +290,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.DeleteSpecByParam(nameSpaceID, resourceID, force)
 		case "fetch":
 			result, err = mcir.FetchSpecByParam(nameSpaceID)
+		case "filter":
+			result, err = mcir.FilterSpec(inData)
 		}
 	case "mcis":
 		switch cmd.Name() {

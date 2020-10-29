@@ -121,27 +121,38 @@ type TbSpecInfoRequest struct {
 
 // TbSpecInfo - Spec 정보를 이용한 생성 요청 구조 정의
 type TbSpecInfo struct { // Tumblebug
-	Id                    string `yaml:"id" json:"id"`
-	Name                  string `yaml:"name" json:"name"`
-	ConnectionName        string `yaml:"connectionName" json:"connectionName"`
-	CspSpecName           string `yaml:"cspSpecName" json:"cspSpecName"`
-	Os_type               string `yaml:"os_type" json:"os_type"`
-	Num_vCPU              string `yaml:"num_vCPU" json:"num_vCPU"`
-	Num_core              string `yaml:"num_core" json:"num_core"`
-	Mem_GiB               string `yaml:"mem_GiB" json:"mem_GiB"`
-	Mem_MiB               string `yaml:"mem_MiB" json:"mem_MiB"`
-	Storage_GiB           string `yaml:"storage_GiB" json:"storage_GiB"`
-	Description           string `yaml:"description" json:"description"`
-	Cost_per_hour         string `yaml:"cost_per_hour" json:"cost_per_hour"`
-	Num_storage           string `yaml:"num_storage" json:"num_storage"`
-	Max_num_storage       string `yaml:"max_num_storage" json:"max_num_storage"`
-	Max_total_storage_TiB string `yaml:"max_total_storage_TiB" json:"max_total_storage_TiB"`
-	Net_bw_Gbps           string `yaml:"net_bw_Gbps" json:"net_bw_Gbps"`
-	Ebs_bw_Mbps           string `yaml:"ebs_bw_Mbps" json:"ebs_bw_Mbps"`
-	Gpu_model             string `yaml:"gpu_model" json:"gpu_model"`
-	Num_gpu               string `yaml:"num_gpu" json:"num_gpu"`
-	Gpumem_GiB            string `yaml:"gpumem_GiB" json:"gpumem_GiB"`
-	Gpu_p2p               string `yaml:"gpu_p2p" json:"gpu_p2p"`
+	Id                    string  `yaml:"id" json:"id"`
+	Name                  string  `yaml:"name" json:"name"`
+	ConnectionName        string  `yaml:"connectionName" json:"connectionName"`
+	CspSpecName           string  `yaml:"cspSpecName" json:"cspSpecName"`
+	Os_type               string  `yaml:"os_type" json:"os_type"`
+	Num_vCPU              uint16  `yaml:"num_vCPU" json:"num_vCPU"`
+	Num_core              uint16  `yaml:"num_core" json:"num_core"`
+	Mem_GiB               uint16  `yaml:"mem_GiB" json:"mem_GiB"`
+	Storage_GiB           uint32  `yaml:"storage_GiB" json:"storage_GiB"`
+	Description           string  `yaml:"description" json:"description"`
+	Cost_per_hour         float32 `yaml:"cost_per_hour" json:"cost_per_hour"`
+	Num_storage           uint8   `yaml:"num_storage" json:"num_storage"`
+	Max_num_storage       uint8   `yaml:"max_num_storage" json:"max_num_storage"`
+	Max_total_storage_TiB uint16  `yaml:"max_total_storage_TiB" json:"max_total_storage_TiB"`
+	Net_bw_Gbps           uint16  `yaml:"net_bw_Gbps" json:"net_bw_Gbps"`
+	Ebs_bw_Mbps           uint32  `yaml:"ebs_bw_Mbps" json:"ebs_bw_Mbps"`
+	Gpu_model             string  `yaml:"gpu_model" json:"gpu_model"`
+	Num_gpu               uint8   `yaml:"num_gpu" json:"num_gpu"`
+	Gpumem_GiB            uint16  `yaml:"gpumem_GiB" json:"gpumem_GiB"`
+	Gpu_p2p               string  `yaml:"gpu_p2p" json:"gpu_p2p"`
+	OrderInFilteredResult uint16  `yaml:"orderInFilteredResult" json:"orderInFilteredResult"`
+	EvaluationStatus      string  `yaml:"evaluationStatus" json:"evaluationStatus"`
+	EvaluationScore_01    float32 `yaml:"evaluationScore_01" json:"evaluationScore_01"`
+	EvaluationScore_02    float32 `yaml:"evaluationScore_02" json:"evaluationScore_02"`
+	EvaluationScore_03    float32 `yaml:"evaluationScore_03" json:"evaluationScore_03"`
+	EvaluationScore_04    float32 `yaml:"evaluationScore_04" json:"evaluationScore_04"`
+	EvaluationScore_05    float32 `yaml:"evaluationScore_05" json:"evaluationScore_05"`
+	EvaluationScore_06    float32 `yaml:"evaluationScore_06" json:"evaluationScore_06"`
+	EvaluationScore_07    float32 `yaml:"evaluationScore_07" json:"evaluationScore_07"`
+	EvaluationScore_08    float32 `yaml:"evaluationScore_08" json:"evaluationScore_08"`
+	EvaluationScore_09    float32 `yaml:"evaluationScore_09" json:"evaluationScore_09"`
+	EvaluationScore_10    float32 `yaml:"evaluationScore_10" json:"evaluationScore_10"`
 }
 
 // TbSshKeyCreateRequest - Keypair 생성 요청 구조 Wrapper 정의
@@ -951,6 +962,16 @@ func (m *MCIRApi) FetchSpecByParam(nameSpaceID string) (string, error) {
 	m.SetInType(holdType)
 
 	return result, err
+}
+
+// FilterSpec
+func (m *MCIRApi) FilterSpec(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.FilterSpec()
 }
 
 // ListLookupSpec - Spec 목록

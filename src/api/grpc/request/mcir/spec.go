@@ -203,6 +203,33 @@ func (r *MCIRRequest) FetchSpec() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// FilterSpec
+func (r *MCIRRequest) FilterSpec() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.TbSpecInfoRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.FilterSpec(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // ===== [ Private Functions ] =====
 
 // ===== [ Public Functions ] =====

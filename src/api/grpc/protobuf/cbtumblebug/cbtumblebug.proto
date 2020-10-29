@@ -106,8 +106,8 @@ service MCIR {
 	rpc CreateImageWithID (TbImageCreateRequest) returns (TbImageInfoResponse) {}
 	rpc ListImage (ResourceAllQryRequest) returns (ListTbImageInfoResponse) {}
 	rpc GetImage (ResourceQryRequest) returns (TbImageInfoResponse) {}
-  rpc DeleteImage (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllImage (ResourceAllQryRequest) returns (MessageResponse) {}
+    rpc DeleteImage (ResourceQryRequest) returns (MessageResponse) {}
+    rpc DeleteAllImage (ResourceAllQryRequest) returns (MessageResponse) {}
   	rpc GetLookupImage (LookupImageQryRequest) returns (SpiderImageInfoResponse) {}
 	rpc ListLookupImage (LookupImageListQryRequest) returns (ListSpiderImageInfoResponse) {}
 	rpc FetchImage (FetchImageQryRequest) returns (MessageResponse) {}
@@ -115,30 +115,31 @@ service MCIR {
 	rpc CreateSshKey (TbSshKeyCreateRequest) returns (TbSshKeyInfoResponse) {}
 	rpc ListSshKey (ResourceAllQryRequest) returns (ListTbSshKeyInfoResponse) {}
 	rpc GetSshKey (ResourceQryRequest) returns (TbSshKeyInfoResponse) {}
-  rpc DeleteSshKey (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllSshKey (ResourceAllQryRequest) returns (MessageResponse) {}  
+    rpc DeleteSshKey (ResourceQryRequest) returns (MessageResponse) {}
+    rpc DeleteAllSshKey (ResourceAllQryRequest) returns (MessageResponse) {}  
 
 	rpc CreateSpecWithInfo (TbSpecInfoRequest) returns (TbSpecInfoResponse) {}
 	rpc CreateSpecWithSpecName (TbSpecCreateRequest) returns (TbSpecInfoResponse) {}
 	rpc ListSpec (ResourceAllQryRequest) returns (ListTbSpecInfoResponse) {}
 	rpc GetSpec (ResourceQryRequest) returns (TbSpecInfoResponse) {}
-  rpc DeleteSpec (ResourceQryRequest) returns (MessageResponse) {}
+    rpc DeleteSpec (ResourceQryRequest) returns (MessageResponse) {}
 	rpc DeleteAllSpec (ResourceAllQryRequest) returns (MessageResponse) {}    
 	rpc GetLookupSpec (LookupSpecQryRequest) returns (SpiderSpecInfoResponse) {}
 	rpc ListLookupSpec (LookupSpecListQryRequest) returns (ListSpiderSpecInfoResponse) {}
 	rpc FetchSpec (FetchSpecQryRequest) returns (MessageResponse) {}
+    rpc FilterSpec (TbSpecInfoRequest) returns (ListTbSpecInfoResponse) {}
 
 	rpc CreateSecurityGroup (TbSecurityGroupCreateRequest) returns (TbSecurityGroupInfoResponse) {}
 	rpc ListSecurityGroup (ResourceAllQryRequest) returns (ListTbSecurityGroupInfoResponse) {}
 	rpc GetSecurityGroup (ResourceQryRequest) returns (TbSecurityGroupInfoResponse) {}
-  rpc DeleteSecurityGroup (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllSecurityGroup (ResourceAllQryRequest) returns (MessageResponse) {}   
+    rpc DeleteSecurityGroup (ResourceQryRequest) returns (MessageResponse) {}
+    rpc DeleteAllSecurityGroup (ResourceAllQryRequest) returns (MessageResponse) {}   
 
 	rpc CreateVNet (TbVNetCreateRequest) returns (TbVNetInfoResponse) {}
 	rpc ListVNet (ResourceAllQryRequest) returns (ListTbVNetInfoResponse) {}
 	rpc GetVNet (ResourceQryRequest) returns (TbVNetInfoResponse) {}
-  rpc DeleteVNet (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllVNet (ResourceAllQryRequest) returns (MessageResponse) {}     
+    rpc DeleteVNet (ResourceQryRequest) returns (MessageResponse) {}
+    rpc DeleteAllVNet (ResourceAllQryRequest) returns (MessageResponse) {}     
 
        
 	
@@ -293,22 +294,34 @@ message TbSpecInfo {
 	string connection_name = 3 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""]; 
 	string csp_spec_name = 4 [json_name="cspSpecName", (gogoproto.jsontag) = "cspSpecName", (gogoproto.moretags) = "yaml:\"cspSpecName\""]; 
 	string os_type = 5 [json_name="os_type", (gogoproto.jsontag) = "os_type", (gogoproto.moretags) = "yaml:\"os_type\""]; 
-	string num_vcpu = 6 [json_name="num_vCPU", (gogoproto.jsontag) = "num_vCPU", (gogoproto.moretags) = "yaml:\"num_vCPU\""]; 
-	string num_core = 7 [json_name="num_core", (gogoproto.jsontag) = "num_core", (gogoproto.moretags) = "yaml:\"num_core\""]; 
-	string mem_gib = 8 [json_name="mem_GiB", (gogoproto.jsontag) = "mem_GiB", (gogoproto.moretags) = "yaml:\"mem_GiB\""]; 
-	string mem_mib = 9 [json_name="mem_MiB", (gogoproto.jsontag) = "mem_MiB", (gogoproto.moretags) = "yaml:\"mem_MiB\""]; 
-	string storage_gib = 10 [json_name="storage_GiB", (gogoproto.jsontag) = "storage_GiB", (gogoproto.moretags) = "yaml:\"storage_GiB\""]; 
+	uint32 num_vcpu = 6 [json_name="num_vCPU", (gogoproto.jsontag) = "num_vCPU", (gogoproto.moretags) = "yaml:\"num_vCPU\""]; 
+	uint32 num_core = 7 [json_name="num_core", (gogoproto.jsontag) = "num_core", (gogoproto.moretags) = "yaml:\"num_core\""]; 
+	uint32 mem_gib = 8 [json_name="mem_GiB", (gogoproto.jsontag) = "mem_GiB", (gogoproto.moretags) = "yaml:\"mem_GiB\""]; 
+	uint32 storage_gib = 10 [json_name="storage_GiB", (gogoproto.jsontag) = "storage_GiB", (gogoproto.moretags) = "yaml:\"storage_GiB\""]; 
 	string description = 11 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""]; 
-	string cost_per_hour = 12 [json_name="cost_per_hour", (gogoproto.jsontag) = "cost_per_hour", (gogoproto.moretags) = "yaml:\"cost_per_hour\""]; 
-	string num_storage = 13 [json_name="num_storage", (gogoproto.jsontag) = "num_storage", (gogoproto.moretags) = "yaml:\"num_storage\""]; 
-	string max_num_storage = 14 [json_name="max_num_storage", (gogoproto.jsontag) = "max_num_storage", (gogoproto.moretags) = "yaml:\"max_num_storage\""]; 
-	string max_total_storage_tib = 15 [json_name="max_total_storage_TiB", (gogoproto.jsontag) = "max_total_storage_TiB", (gogoproto.moretags) = "yaml:\"max_total_storage_TiB\""]; 
-	string net_bw_gbps = 16 [json_name="net_bw_Gbps", (gogoproto.jsontag) = "net_bw_Gbps", (gogoproto.moretags) = "yaml:\"net_bw_Gbps\""]; 
-	string ebs_bw_mbps = 17 [json_name="ebs_bw_Mbps", (gogoproto.jsontag) = "ebs_bw_Mbps", (gogoproto.moretags) = "yaml:\"ebs_bw_Mbps\""]; 
+	float cost_per_hour = 12 [json_name="cost_per_hour", (gogoproto.jsontag) = "cost_per_hour", (gogoproto.moretags) = "yaml:\"cost_per_hour\""]; 
+	uint32 num_storage = 13 [json_name="num_storage", (gogoproto.jsontag) = "num_storage", (gogoproto.moretags) = "yaml:\"num_storage\""]; 
+	uint32 max_num_storage = 14 [json_name="max_num_storage", (gogoproto.jsontag) = "max_num_storage", (gogoproto.moretags) = "yaml:\"max_num_storage\""]; 
+	uint32 max_total_storage_tib = 15 [json_name="max_total_storage_TiB", (gogoproto.jsontag) = "max_total_storage_TiB", (gogoproto.moretags) = "yaml:\"max_total_storage_TiB\""]; 
+	uint32 net_bw_gbps = 16 [json_name="net_bw_Gbps", (gogoproto.jsontag) = "net_bw_Gbps", (gogoproto.moretags) = "yaml:\"net_bw_Gbps\""]; 
+	uint32 ebs_bw_mbps = 17 [json_name="ebs_bw_Mbps", (gogoproto.jsontag) = "ebs_bw_Mbps", (gogoproto.moretags) = "yaml:\"ebs_bw_Mbps\""]; 
 	string gpu_model = 18 [json_name="gpu_model", (gogoproto.jsontag) = "gpu_model", (gogoproto.moretags) = "yaml:\"gpu_model\""]; 
-	string num_gpu = 19 [json_name="num_gpu", (gogoproto.jsontag) = "num_gpu", (gogoproto.moretags) = "yaml:\"num_gpu\""]; 
-	string gpumem_gib = 20 [json_name="gpumem_GiB", (gogoproto.jsontag) = "gpumem_GiB", (gogoproto.moretags) = "yaml:\"gpumem_GiB\""]; 
-	string gpu_p2p = 21 [json_name="gpu_p2p", (gogoproto.jsontag) = "gpu_p2p", (gogoproto.moretags) = "yaml:\"gpu_p2p\""]; 
+	uint32 num_gpu = 19 [json_name="num_gpu", (gogoproto.jsontag) = "num_gpu", (gogoproto.moretags) = "yaml:\"num_gpu\""]; 
+	uint32 gpumem_gib = 20 [json_name="gpumem_GiB", (gogoproto.jsontag) = "gpumem_GiB", (gogoproto.moretags) = "yaml:\"gpumem_GiB\""]; 
+	string gpu_p2p = 21 [json_name="gpu_p2p", (gogoproto.jsontag) = "gpu_p2p", (gogoproto.moretags) = "yaml:\"gpu_p2p\""];
+    uint32 order_in_filtered_result = 22 [json_name="orderInFilteredResult", (gogoproto.jsontag) = "orderInFilteredResult", (gogoproto.moretags) = "yaml:\"orderInFilteredResult\""];
+    string evaluation_status = 23 [json_name="evaluationStatus", (gogoproto.jsontag) = "evaluationStatus", (gogoproto.moretags) = "yaml:\"evaluationStatus\""];
+    float evaluation_score_01 = 31 [json_name="evaluationScore_01", (gogoproto.jsontag) = "evaluationScore_01", (gogoproto.moretags) = "yaml:\"evaluationScore_01\""];
+    float evaluation_score_02 = 32 [json_name="evaluationScore_02", (gogoproto.jsontag) = "evaluationScore_02", (gogoproto.moretags) = "yaml:\"evaluationScore_02\""];
+    float evaluation_score_03 = 33 [json_name="evaluationScore_03", (gogoproto.jsontag) = "evaluationScore_03", (gogoproto.moretags) = "yaml:\"evaluationScore_03\""];
+    float evaluation_score_04 = 34 [json_name="evaluationScore_04", (gogoproto.jsontag) = "evaluationScore_04", (gogoproto.moretags) = "yaml:\"evaluationScore_04\""];
+    float evaluation_score_05 = 35 [json_name="evaluationScore_05", (gogoproto.jsontag) = "evaluationScore_05", (gogoproto.moretags) = "yaml:\"evaluationScore_05\""];
+    float evaluation_score_06 = 36 [json_name="evaluationScore_06", (gogoproto.jsontag) = "evaluationScore_06", (gogoproto.moretags) = "yaml:\"evaluationScore_06\""];
+    float evaluation_score_07 = 37 [json_name="evaluationScore_07", (gogoproto.jsontag) = "evaluationScore_07", (gogoproto.moretags) = "yaml:\"evaluationScore_07\""];
+    float evaluation_score_08 = 38 [json_name="evaluationScore_08", (gogoproto.jsontag) = "evaluationScore_08", (gogoproto.moretags) = "yaml:\"evaluationScore_08\""];
+    float evaluation_score_09 = 39 [json_name="evaluationScore_09", (gogoproto.jsontag) = "evaluationScore_09", (gogoproto.moretags) = "yaml:\"evaluationScore_09\""];
+    float evaluation_score_10 = 40 [json_name="evaluationScore_10", (gogoproto.jsontag) = "evaluationScore_10", (gogoproto.moretags) = "yaml:\"evaluationScore_10\""];
+    
 }
 
 message TbSpecCreateRequest {

@@ -1519,6 +1519,50 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/filterSpecs": {
+            "post": {
+                "description": "Filter specs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Filter specs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestFilterSpecsResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/image": {
             "get": {
                 "description": "List all images",
@@ -2776,6 +2820,17 @@ var doc = `{
                 }
             }
         },
+        "mcir.RestFilterSpecsResponse": {
+            "type": "object",
+            "properties": {
+                "spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbSpecInfo"
+                    }
+                }
+            }
+        },
         "mcir.RestGetAllImageResponse": {
             "type": "object",
             "properties": {
@@ -2873,7 +2928,6 @@ var doc = `{
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
@@ -2945,7 +2999,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vcpu": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -2966,7 +3019,6 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -3134,7 +3186,7 @@ var doc = `{
                     "type": "string"
                 },
                 "cost_per_hour": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "cspSpecName": {
                     "type": "string"
@@ -3143,6 +3195,39 @@ var doc = `{
                     "type": "string"
                 },
                 "ebs_bw_Mbps": {
+                    "type": "integer"
+                },
+                "evaluationScore_01": {
+                    "type": "number"
+                },
+                "evaluationScore_02": {
+                    "type": "number"
+                },
+                "evaluationScore_03": {
+                    "type": "number"
+                },
+                "evaluationScore_04": {
+                    "type": "number"
+                },
+                "evaluationScore_05": {
+                    "type": "number"
+                },
+                "evaluationScore_06": {
+                    "type": "number"
+                },
+                "evaluationScore_07": {
+                    "type": "number"
+                },
+                "evaluationScore_08": {
+                    "type": "number"
+                },
+                "evaluationScore_09": {
+                    "type": "number"
+                },
+                "evaluationScore_10": {
+                    "type": "number"
+                },
+                "evaluationStatus": {
                     "type": "string"
                 },
                 "gpu_model": {
@@ -3152,46 +3237,46 @@ var doc = `{
                     "type": "string"
                 },
                 "gpumem_GiB": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
                 "max_num_storage": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "max_total_storage_TiB": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "mem_GiB": {
-                    "type": "string"
-                },
-                "mem_MiB": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
                 },
                 "net_bw_Gbps": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "num_core": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "num_gpu": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "num_storage": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "num_vCPU": {
-                    "type": "string"
+                    "type": "integer"
+                },
+                "orderInFilteredResult": {
+                    "type": "integer"
                 },
                 "os_type": {
                     "type": "string"
                 },
                 "storage_GiB": {
-                    "type": "string"
+                    "type": "integer"
                 }
             }
         },
@@ -3560,18 +3645,15 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "Fields for response",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -3605,7 +3687,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -3627,7 +3708,6 @@ var doc = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -3653,7 +3733,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vpcIID": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -3730,7 +3809,6 @@ var doc = `{
                     "type": "string"
                 },
                 "cspViewVmDetail": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -3743,7 +3821,6 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "monAgentStatus": {
@@ -3768,7 +3845,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "2. Provided by CB-Spider",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -3821,7 +3897,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vm_spec": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
@@ -3845,7 +3920,6 @@ var doc = `{
                     }
                 },
                 "vm_req": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
             }
