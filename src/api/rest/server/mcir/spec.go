@@ -221,6 +221,34 @@ func RestFilterSpecs(c echo.Context) error {
 	return c.JSON(http.StatusOK, &result)
 }
 
+func RestTestSortSpecs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	u := &mcir.TbSpecInfo{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[Filter specs]")
+	content, err := mcir.FilterSpecs(nsId, *u)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
+	}
+
+	content, err = mcir.SortSpecs(content, "mem_GiB", "descending")
+	if err != nil {
+		common.CBLog.Error(err)
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
+	}
+
+	result := RestFilterSpecsResponse{}
+	result.Spec = content
+	return c.JSON(http.StatusOK, &result)
+}
+
 // RestGetSpec godoc
 // @Summary Get spec
 // @Description Get spec

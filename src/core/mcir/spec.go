@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 
 	//"strings"
@@ -727,4 +728,48 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		tempList = append(tempList, temp)
 	}
 	return tempList, nil
+}
+
+func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpecInfo, error) {
+	var err error = nil
+
+	sort.Slice(specList, func(i, j int) bool {
+		if orderBy == "num_vCPU" {
+			if direction == "descending" {
+				return specList[i].Num_vCPU > specList[j].Num_vCPU
+			} else if direction == "ascending" {
+				return specList[i].Num_vCPU < specList[j].Num_vCPU
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "mem_GiB" {
+			if direction == "descending" {
+				return specList[i].Mem_GiB > specList[j].Mem_GiB
+			} else if direction == "ascending" {
+				return specList[i].Mem_GiB < specList[j].Mem_GiB
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "storage_GiB" {
+			if direction == "descending" {
+				return specList[i].Storage_GiB > specList[j].Storage_GiB
+			} else if direction == "ascending" {
+				return specList[i].Storage_GiB < specList[j].Storage_GiB
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else {
+			err = fmt.Errorf("'orderBy' should one of these: num_vCPU, mem_GiB, storage_GiB")
+			return true
+		}
+	})
+
+	for i, _ := range specList {
+		specList[i].OrderInFilteredResult = uint16(i + 1)
+	}
+
+	return specList, err
 }
