@@ -730,6 +730,184 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	return tempList, nil
 }
 
+type Range struct {
+	Min float32 `json:"min"`
+	Max float32 `json:"max"`
+}
+
+type FilterSpecsByRangeRequest struct {
+	Num_vCPU           Range `json:"num_vCPU"`
+	Mem_GiB            Range `json:"mem_GiB"`
+	Storage_GiB        Range `json:"storage_GiB"`
+	EvaluationScore_01 Range `json:"evaluationScore_01"`
+	EvaluationScore_02 Range `json:"evaluationScore_02"`
+	EvaluationScore_03 Range `json:"evaluationScore_03"`
+	EvaluationScore_04 Range `json:"evaluationScore_04"`
+	EvaluationScore_05 Range `json:"evaluationScore_05"`
+	EvaluationScore_06 Range `json:"evaluationScore_06"`
+	EvaluationScore_07 Range `json:"evaluationScore_07"`
+	EvaluationScore_08 Range `json:"evaluationScore_08"`
+	EvaluationScore_09 Range `json:"evaluationScore_09"`
+	EvaluationScore_10 Range `json:"evaluationScore_10"`
+}
+
+func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpecInfo, error) {
+	nsId = common.GenId(nsId)
+
+	tempList := []TbSpecInfo{}
+
+	sqlQuery := "SELECT * FROM `spec` WHERE `namespace`='" + nsId + "'"
+
+	if filter.Num_vCPU.Min > 0 {
+		sqlQuery += " AND `num_vCPU`>=" + fmt.Sprintf("%.6f", filter.Num_vCPU.Min)
+	}
+	if filter.Num_vCPU.Max > 0 {
+		sqlQuery += " AND `num_vCPU`<=" + fmt.Sprintf("%.6f", filter.Num_vCPU.Max)
+	}
+
+	if filter.Mem_GiB.Min > 0 {
+		sqlQuery += " AND `mem_GiB`>=" + fmt.Sprintf("%.6f", filter.Mem_GiB.Min)
+	}
+	if filter.Mem_GiB.Max > 0 {
+		sqlQuery += " AND `mem_GiB`<=" + fmt.Sprintf("%.6f", filter.Mem_GiB.Max)
+	}
+
+	if filter.Storage_GiB.Min > 0 {
+		sqlQuery += " AND `storage_GiB`>=" + fmt.Sprintf("%.6f", filter.Storage_GiB.Min)
+	}
+	if filter.Storage_GiB.Max > 0 {
+		sqlQuery += " AND `storage_GiB`<=" + fmt.Sprintf("%.6f", filter.Storage_GiB.Max)
+	}
+
+	if filter.EvaluationScore_01.Min > 0 {
+		sqlQuery += " AND `evaluationScore_01`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_01.Min)
+	}
+	if filter.EvaluationScore_01.Max > 0 {
+		sqlQuery += " AND `evaluationScore_01`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_01.Max)
+	}
+
+	if filter.EvaluationScore_02.Min > 0 {
+		sqlQuery += " AND `evaluationScore_02`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_02.Min)
+	}
+	if filter.EvaluationScore_02.Max > 0 {
+		sqlQuery += " AND `evaluationScore_02`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_02.Max)
+	}
+
+	if filter.EvaluationScore_03.Min > 0 {
+		sqlQuery += " AND `evaluationScore_03`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_03.Min)
+	}
+	if filter.EvaluationScore_03.Max > 0 {
+		sqlQuery += " AND `evaluationScore_03`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_03.Max)
+	}
+
+	if filter.EvaluationScore_04.Min > 0 {
+		sqlQuery += " AND `evaluationScore_04`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_04.Min)
+	}
+	if filter.EvaluationScore_04.Max > 0 {
+		sqlQuery += " AND `evaluationScore_04`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_04.Max)
+	}
+
+	if filter.EvaluationScore_05.Min > 0 {
+		sqlQuery += " AND `evaluationScore_05`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_05.Min)
+	}
+	if filter.EvaluationScore_05.Max > 0 {
+		sqlQuery += " AND `evaluationScore_05`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_05.Max)
+	}
+
+	if filter.EvaluationScore_06.Min > 0 {
+		sqlQuery += " AND `evaluationScore_06`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_06.Min)
+	}
+	if filter.EvaluationScore_06.Max > 0 {
+		sqlQuery += " AND `evaluationScore_06`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_06.Max)
+	}
+
+	if filter.EvaluationScore_07.Min > 0 {
+		sqlQuery += " AND `evaluationScore_07`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_07.Min)
+	}
+	if filter.EvaluationScore_07.Max > 0 {
+		sqlQuery += " AND `evaluationScore_07`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_07.Max)
+	}
+
+	if filter.EvaluationScore_08.Min > 0 {
+		sqlQuery += " AND `evaluationScore_08`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_08.Min)
+	}
+	if filter.EvaluationScore_08.Max > 0 {
+		sqlQuery += " AND `evaluationScore_08`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_08.Max)
+	}
+
+	if filter.EvaluationScore_09.Min > 0 {
+		sqlQuery += " AND `evaluationScore_09`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_09.Min)
+	}
+	if filter.EvaluationScore_09.Max > 0 {
+		sqlQuery += " AND `evaluationScore_09`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_09.Max)
+	}
+
+	if filter.EvaluationScore_10.Min > 0 {
+		sqlQuery += " AND `evaluationScore_10`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_10.Min)
+	}
+	if filter.EvaluationScore_10.Max > 0 {
+		sqlQuery += " AND `evaluationScore_10`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_10.Max)
+	}
+
+	sqlQuery += ";"
+	_, err := sqlparser.Parse(sqlQuery)
+	if err != nil {
+		return tempList, err
+	}
+
+	rows, err := common.MYDB.Query(sqlQuery)
+	if err != nil {
+		common.CBLog.Error(err)
+		return tempList, err
+	}
+
+	for rows.Next() {
+		temp := TbSpecInfo{}
+		var tempString string
+		err := rows.Scan(
+			&tempString,
+			&temp.Id,
+			&temp.Name,
+			&temp.ConnectionName,
+			&temp.CspSpecName,
+			&temp.Os_type,
+			&temp.Num_vCPU,
+			&temp.Num_core,
+			&temp.Mem_GiB,
+			&temp.Storage_GiB,
+			&temp.Description,
+			&temp.Cost_per_hour,
+			&temp.Num_storage,
+			&temp.Max_num_storage,
+			&temp.Max_total_storage_TiB,
+			&temp.Net_bw_Gbps,
+			&temp.Ebs_bw_Mbps,
+			&temp.Gpu_model,
+			&temp.Num_gpu,
+			&temp.Gpumem_GiB,
+			&temp.Gpu_p2p,
+			&temp.OrderInFilteredResult,
+			&temp.EvaluationStatus,
+			&temp.EvaluationScore_01,
+			&temp.EvaluationScore_02,
+			&temp.EvaluationScore_03,
+			&temp.EvaluationScore_04,
+			&temp.EvaluationScore_05,
+			&temp.EvaluationScore_06,
+			&temp.EvaluationScore_07,
+			&temp.EvaluationScore_08,
+			&temp.EvaluationScore_09,
+			&temp.EvaluationScore_10,
+		)
+		if err != nil {
+			common.CBLog.Error(err)
+			return tempList, err
+		}
+		tempList = append(tempList, temp)
+	}
+	return tempList, nil
+}
+
 func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpecInfo, error) {
 	var err error = nil
 
@@ -757,6 +935,96 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				return specList[i].Storage_GiB > specList[j].Storage_GiB
 			} else if direction == "ascending" {
 				return specList[i].Storage_GiB < specList[j].Storage_GiB
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_01" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_01 > specList[j].EvaluationScore_01
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_01 < specList[j].EvaluationScore_01
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_02" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_02 > specList[j].EvaluationScore_02
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_02 < specList[j].EvaluationScore_02
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_03" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_03 > specList[j].EvaluationScore_03
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_03 < specList[j].EvaluationScore_03
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_04" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_04 > specList[j].EvaluationScore_04
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_04 < specList[j].EvaluationScore_04
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_05" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_05 > specList[j].EvaluationScore_05
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_05 < specList[j].EvaluationScore_05
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_06" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_06 > specList[j].EvaluationScore_06
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_06 < specList[j].EvaluationScore_06
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_07" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_07 > specList[j].EvaluationScore_07
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_07 < specList[j].EvaluationScore_07
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_08" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_08 > specList[j].EvaluationScore_08
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_08 < specList[j].EvaluationScore_08
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_09" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_09 > specList[j].EvaluationScore_09
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_09 < specList[j].EvaluationScore_09
+			} else {
+				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+				return true
+			}
+		} else if orderBy == "evaluationScore_10" {
+			if direction == "descending" {
+				return specList[i].EvaluationScore_10 > specList[j].EvaluationScore_10
+			} else if direction == "ascending" {
+				return specList[i].EvaluationScore_10 < specList[j].EvaluationScore_10
 			} else {
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true

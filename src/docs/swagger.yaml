@@ -69,6 +69,42 @@ definitions:
         example: Any message
         type: string
     type: object
+  mcir.FilterSpecsByRangeRequest:
+    properties:
+      evaluationScore_01:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_02:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_03:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_04:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_05:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_06:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_07:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_08:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_09:
+        $ref: '#/definitions/mcir.Range'
+      evaluationScore_10:
+        $ref: '#/definitions/mcir.Range'
+      mem_GiB:
+        $ref: '#/definitions/mcir.Range'
+      num_vCPU:
+        $ref: '#/definitions/mcir.Range'
+      storage_GiB:
+        $ref: '#/definitions/mcir.Range'
+    type: object
+  mcir.Range:
+    properties:
+      max:
+        type: number
+      min:
+        type: number
+    type: object
   mcir.RestFilterSpecsResponse:
     properties:
       spec:
@@ -1857,6 +1893,11 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Filter for filtering specs
+        in: body
+        name: specFilter
+        schema:
+          $ref: '#/definitions/mcir.TbSpecInfo'
       produces:
       - application/json
       responses:
@@ -1873,6 +1914,40 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs
+      tags:
+      - Spec
+  /ns/{nsId}/resources/filterSpecsByRange:
+    post:
+      consumes:
+      - application/json
+      description: Filter specs by range
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Filter for range-filtering specs
+        in: body
+        name: specRangeFilter
+        schema:
+          $ref: '#/definitions/mcir.FilterSpecsByRangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestFilterSpecsResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Filter specs by range
       tags:
       - Spec
   /ns/{nsId}/resources/image:
