@@ -185,6 +185,7 @@ func ApiServer() {
 
 	g.POST("/:nsId/resources/fetchSpecs", rest_mcir.RestFetchSpecs)
 	g.GET("/:nsId/resources/filterSpecs", rest_mcir.RestFilterSpecs)
+	g.GET("/:nsId/resources/filterSpecsByRange", rest_mcir.RestFilterSpecsByRange)
 	g.GET("/:nsId/resources/testSortSpecs", rest_mcir.RestTestSortSpecs)
 	g.POST("/:nsId/resources/fetchImages", rest_mcir.RestFetchImages)
 

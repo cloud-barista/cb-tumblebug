@@ -37,7 +37,7 @@ func NsValidation() echo.MiddlewareFunc {
 			check, _, err := LowerizeAndCheckNs(nsId)
 
 			if check == false || err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Not valid namespace")
+				return echo.NewHTTPError(http.StatusNotFound, "Not valid namespace")
 			}
 			return next(c)
 		}

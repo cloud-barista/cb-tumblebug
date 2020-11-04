@@ -67,7 +67,6 @@ func RestPostSpec(c echo.Context) error {
 
 }
 
-/* function RestPutSpec not yet implemented
 // RestPutSpec godoc
 // @Summary Update spec
 // @Description Update spec
@@ -79,11 +78,33 @@ func RestPostSpec(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [put]
-*/
 func RestPutSpec(c echo.Context) error {
-	//nsId := c.Param("nsId")
+	nsId := c.Param("nsId")
+	//specId := c.Param("specId")
 
-	return nil
+	u := &mcir.TbSpecInfo{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	/*
+		if specId != u.Id {
+			err := fmt.Errorf("URL param " + specId + " and JSON param " + u.Id + " does not match.")
+			common.CBLog.Error(err)
+			mapA := map[string]string{
+				"message": err.Error()}
+			return c.JSON(http.StatusBadRequest, &mapA)
+		}
+	*/
+
+	updatedSpec, err := mcir.UpdateSpec(nsId, *u)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{
+			"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	return c.JSON(http.StatusOK, updatedSpec)
 }
 
 // Request structure for RestLookupSpec
@@ -195,6 +216,7 @@ type RestFilterSpecsResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
+// @Param specFilter body mcir.TbSpecInfo false "Filter for filtering specs"
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -210,6 +232,40 @@ func RestFilterSpecs(c echo.Context) error {
 
 	fmt.Println("[Filter specs]")
 	content, err := mcir.FilterSpecs(nsId, *u)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
+	}
+
+	result := RestFilterSpecsResponse{}
+	result.Spec = content
+	return c.JSON(http.StatusOK, &result)
+}
+
+// RestFilterSpecsByRange godoc
+// @Summary Filter specs by range
+// @Description Filter specs by range
+// @Tags Spec
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param specRangeFilter body mcir.FilterSpecsByRangeRequest false "Filter for range-filtering specs"
+// @Success 200 {object} RestFilterSpecsResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/filterSpecsByRange [post]
+func RestFilterSpecsByRange(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	u := &mcir.FilterSpecsByRangeRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[Filter specs]")
+	content, err := mcir.FilterSpecsByRange(nsId, *u)
 
 	if err != nil {
 		common.CBLog.Error(err)

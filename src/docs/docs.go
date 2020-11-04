@@ -1539,6 +1539,66 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Filter for filtering specs",
+                        "name": "specFilter",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestFilterSpecsResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/filterSpecsByRange": {
+            "post": {
+                "description": "Filter specs by range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Filter specs by range",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Filter for range-filtering specs",
+                        "name": "specRangeFilter",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.FilterSpecsByRangeRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2817,6 +2877,61 @@ var doc = `{
                 "message": {
                     "type": "string",
                     "example": "Any message"
+                }
+            }
+        },
+        "mcir.FilterSpecsByRangeRequest": {
+            "type": "object",
+            "properties": {
+                "evaluationScore_01": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_02": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_03": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_04": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_05": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_06": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_07": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_08": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_09": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "evaluationScore_10": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "mem_GiB": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "num_vCPU": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "storage_GiB": {
+                    "$ref": "#/definitions/mcir.Range"
+                }
+            }
+        },
+        "mcir.Range": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "number"
+                },
+                "min": {
+                    "type": "number"
                 }
             }
         },
