@@ -67,7 +67,6 @@ func RestPostSpec(c echo.Context) error {
 
 }
 
-/* function RestPutSpec not yet implemented
 // RestPutSpec godoc
 // @Summary Update spec
 // @Description Update spec
@@ -79,11 +78,33 @@ func RestPostSpec(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [put]
-*/
 func RestPutSpec(c echo.Context) error {
-	//nsId := c.Param("nsId")
+	nsId := c.Param("nsId")
+	//specId := c.Param("specId")
 
-	return nil
+	u := &mcir.TbSpecInfo{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	/*
+		if specId != u.Id {
+			err := fmt.Errorf("URL param " + specId + " and JSON param " + u.Id + " does not match.")
+			common.CBLog.Error(err)
+			mapA := map[string]string{
+				"message": err.Error()}
+			return c.JSON(http.StatusBadRequest, &mapA)
+		}
+	*/
+
+	updatedSpec, err := mcir.UpdateSpec(nsId, *u)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{
+			"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	return c.JSON(http.StatusOK, updatedSpec)
 }
 
 // Request structure for RestLookupSpec
