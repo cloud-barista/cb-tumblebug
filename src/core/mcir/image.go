@@ -293,6 +293,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	content.ConnectionName = u.ConnectionName
 
 	sql := "INSERT INTO `image`(" +
+		"`namespace`, " +
 		"`id`, " +
 		"`name`, " +
 		"`connectionName`, " +
@@ -303,6 +304,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 		"`guestOS`, " +
 		"`status`) " +
 		"VALUES ('" +
+		nsId + "', '" +
 		content.Id + "', '" +
 		content.Name + "', '" +
 		content.ConnectionName + "', '" +
@@ -372,6 +374,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	content.Name = lowerizedName
 
 	sql := "INSERT INTO `image`(" +
+		"`namespace`, " +
 		"`id`, " +
 		"`name`, " +
 		"`connectionName`, " +
@@ -382,6 +385,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 		"`guestOS`, " +
 		"`status`) " +
 		"VALUES ('" +
+		nsId + "', '" +
 		content.Id + "', '" +
 		content.Name + "', '" +
 		content.ConnectionName + "', '" +

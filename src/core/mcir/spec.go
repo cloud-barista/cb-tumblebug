@@ -768,49 +768,31 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		return tempList, err
 	}
 
+	cols, err := rows.Columns()
+	if err != nil {
+		common.CBLog.Error(err)
+		return tempList, err
+	}
+
 	for rows.Next() {
-		temp := TbSpecInfo{}
-		var tempString string
-		err := rows.Scan(
-			&tempString,
-			&temp.Id,
-			&temp.Name,
-			&temp.ConnectionName,
-			&temp.CspSpecName,
-			&temp.Os_type,
-			&temp.Num_vCPU,
-			&temp.Num_core,
-			&temp.Mem_GiB,
-			&temp.Storage_GiB,
-			&temp.Description,
-			&temp.Cost_per_hour,
-			&temp.Num_storage,
-			&temp.Max_num_storage,
-			&temp.Max_total_storage_TiB,
-			&temp.Net_bw_Gbps,
-			&temp.Ebs_bw_Mbps,
-			&temp.Gpu_model,
-			&temp.Num_gpu,
-			&temp.Gpumem_GiB,
-			&temp.Gpu_p2p,
-			&temp.OrderInFilteredResult,
-			&temp.EvaluationStatus,
-			&temp.EvaluationScore_01,
-			&temp.EvaluationScore_02,
-			&temp.EvaluationScore_03,
-			&temp.EvaluationScore_04,
-			&temp.EvaluationScore_05,
-			&temp.EvaluationScore_06,
-			&temp.EvaluationScore_07,
-			&temp.EvaluationScore_08,
-			&temp.EvaluationScore_09,
-			&temp.EvaluationScore_10,
-		)
-		if err != nil {
-			common.CBLog.Error(err)
+		columns := make([]interface{}, len(cols))
+		columnPointers := make([]interface{}, len(cols))
+		for i, _ := range columns {
+			columnPointers[i] = &columns[i]
+		}
+
+		if err := rows.Scan(columnPointers...); err != nil {
 			return tempList, err
 		}
-		tempList = append(tempList, temp)
+		m := make(map[string]interface{})
+		for i, colName := range cols {
+			val := columnPointers[i].(*interface{})
+			m[colName] = *val
+		}
+		js, _ := json.Marshal(m)
+		tempSpec := TbSpecInfo{}
+		json.Unmarshal(js, &tempSpec)
+		tempList = append(tempList, tempSpec)
 	}
 	return tempList, nil
 }
@@ -1018,49 +1000,31 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		return tempList, err
 	}
 
+	cols, err := rows.Columns()
+	if err != nil {
+		common.CBLog.Error(err)
+		return tempList, err
+	}
+
 	for rows.Next() {
-		temp := TbSpecInfo{}
-		var tempString string
-		err := rows.Scan(
-			&tempString,
-			&temp.Id,
-			&temp.Name,
-			&temp.ConnectionName,
-			&temp.CspSpecName,
-			&temp.Os_type,
-			&temp.Num_vCPU,
-			&temp.Num_core,
-			&temp.Mem_GiB,
-			&temp.Storage_GiB,
-			&temp.Description,
-			&temp.Cost_per_hour,
-			&temp.Num_storage,
-			&temp.Max_num_storage,
-			&temp.Max_total_storage_TiB,
-			&temp.Net_bw_Gbps,
-			&temp.Ebs_bw_Mbps,
-			&temp.Gpu_model,
-			&temp.Num_gpu,
-			&temp.Gpumem_GiB,
-			&temp.Gpu_p2p,
-			&temp.OrderInFilteredResult,
-			&temp.EvaluationStatus,
-			&temp.EvaluationScore_01,
-			&temp.EvaluationScore_02,
-			&temp.EvaluationScore_03,
-			&temp.EvaluationScore_04,
-			&temp.EvaluationScore_05,
-			&temp.EvaluationScore_06,
-			&temp.EvaluationScore_07,
-			&temp.EvaluationScore_08,
-			&temp.EvaluationScore_09,
-			&temp.EvaluationScore_10,
-		)
-		if err != nil {
-			common.CBLog.Error(err)
+		columns := make([]interface{}, len(cols))
+		columnPointers := make([]interface{}, len(cols))
+		for i, _ := range columns {
+			columnPointers[i] = &columns[i]
+		}
+
+		if err := rows.Scan(columnPointers...); err != nil {
 			return tempList, err
 		}
-		tempList = append(tempList, temp)
+		m := make(map[string]interface{})
+		for i, colName := range cols {
+			val := columnPointers[i].(*interface{})
+			m[colName] = *val
+		}
+		js, _ := json.Marshal(m)
+		tempSpec := TbSpecInfo{}
+		json.Unmarshal(js, &tempSpec)
+		tempList = append(tempList, tempSpec)
 	}
 	return tempList, nil
 }
