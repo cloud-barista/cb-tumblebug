@@ -1,14 +1,24 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
 
-A Framework for Cloud-Barista Platform to Manage Multi-Cloud Infra Service (i.e., MCIS)
+Framework for Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure 
 
 ```
-[NOTE]
-CB-Tumblebug is currently under development. (the latest version is 0.2 cappuccino)
+[NOTE] Development stage of CB-Tumblebug (CB-Tumblebug 개발 단계)
+CB-Tumblebug is currently under development. (the latest release is 0.2.0 cappuccino)
 So, we do not recommend using the current release in production.
 Please note that the functionalities of CB-Tumblebug are not stable and secure yet.
 If you have any difficulties in using CB-Tumblebug, please let us know.
 (Open an issue or Join the cloud-barista Slack)
+```
+
+```
+[NOTE] Localization and Globalization of CB-Tumblebug (CB-Tumblebug의 현지화 및 세계화)
+As an opensource project initiated by Korean members, we would like to promote participation of Korean contributors during initial stage of this project. So, CB-Tumblebug Repo will accept use of Korean language in its early stages.
+On the other hand, we hope this project flourishes regardless of contributor's country eventually.
+So, the maintainers recommend using English at least for the title of Issues, Pull Requests, and Commits, while CB-Tumblebug Repo accommodates local languages in the contents of them.
+한국인이 시작한 오픈 소스 프로젝트로서이 프로젝트의 초기 단계에 한국 기여자들의 참여를 촉진하고자합니다. 따라서 초기 단계의 CB-Tumblebug 저장소는 한국어 사용을 받아 들일 것입니다.
+다른 한편으로, 우리는이 프로젝트가 기여자의 국가에 관계없이 번성하기를 희망합니다.
+따라서 최소한 이슈, 풀 요청, 커밋에 대해서는 제목을 영어로 사용하는 것을 추천하며, 내용에는 한국 현지 언어 사용을 수용할 것입니다.
 ```
 
 ***
