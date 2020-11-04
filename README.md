@@ -13,12 +13,19 @@ If you have any difficulties in using CB-Tumblebug, please let us know.
 
 ```
 [NOTE] Localization and Globalization of CB-Tumblebug (CB-Tumblebug의 현지화 및 세계화)
-As an opensource project initiated by Korean members, we would like to promote participation of Korean contributors during initial stage of this project. So, CB-Tumblebug Repo will accept use of Korean language in its early stages.
+As an opensource project initiated by Korean members, 
+we would like to promote participation of Korean contributors during initial stage of this project. 
+So, CB-Tumblebug Repo will accept use of Korean language in its early stages.
 On the other hand, we hope this project flourishes regardless of contributor's country eventually.
-So, the maintainers recommend using English at least for the title of Issues, Pull Requests, and Commits, while CB-Tumblebug Repo accommodates local languages in the contents of them.
-한국인이 시작한 오픈 소스 프로젝트로서이 프로젝트의 초기 단계에 한국 기여자들의 참여를 촉진하고자합니다. 따라서 초기 단계의 CB-Tumblebug 저장소는 한국어 사용을 받아 들일 것입니다.
-다른 한편으로, 우리는이 프로젝트가 기여자의 국가에 관계없이 번성하기를 희망합니다.
-따라서 최소한 이슈, 풀 요청, 커밋에 대해서는 제목을 영어로 사용하는 것을 추천하며, 내용에는 한국 현지 언어 사용을 수용할 것입니다.
+So, the maintainers recommend using English at least for the title of Issues, Pull Requests, and Commits, 
+while CB-Tumblebug Repo accommodates local languages in the contents of them.
+
+CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서 
+프로젝트의 초기 단계에는 한국 기여자들의 참여를 촉진하고자 합니다. 
+따라서 초기 단계의 CB-Tumblebug는 한국어 사용을 받아 들일 것입니다.
+다른 한편으로, 이 프로젝트가 국가에 관계없이 번성하기를 희망합니다.
+따라서 개발 히스토리 관리를 위해 이슈, 풀 요청, 커밋 등의 
+제목에 대해서는 영어 사용을 권장하며, 내용에 대한 한국어 사용은 수용할 것입니다.
 ```
 
 ***
