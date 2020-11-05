@@ -1862,6 +1862,52 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/searchImage": {
+            "get": {
+                "description": "Search image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Search image",
+                "parameters": [
+                    {
+                        "description": "Keywords",
+                        "name": "keywords",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestSearchImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestGetAllImageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/securityGroup": {
             "get": {
                 "description": "List all Security Groups",
@@ -2259,6 +2305,50 @@ var doc = `{
                         "name": "specId",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update spec",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spec"
+                ],
+                "summary": "Update spec",
+                "parameters": [
+                    {
+                        "description": "Details for an spec object",
+                        "name": "specInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSpecInfo"
+                        }
                     }
                 ],
                 "responses": {
@@ -2883,6 +2973,12 @@ var doc = `{
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
             "properties": {
+                "cost_per_hour": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "ebs_bw_Mbps": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
                 "evaluationScore_01": {
                     "$ref": "#/definitions/mcir.Range"
                 },
@@ -2913,7 +3009,28 @@ var doc = `{
                 "evaluationScore_10": {
                     "$ref": "#/definitions/mcir.Range"
                 },
+                "gpumem_GiB": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "max_num_storage": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "max_total_storage_TiB": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
                 "mem_GiB": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "net_bw_Gbps": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "num_core": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "num_gpu": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "num_storage": {
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_vCPU": {
@@ -3014,6 +3131,17 @@ var doc = `{
             "properties": {
                 "connectionName": {
                     "type": "string"
+                }
+            }
+        },
+        "mcir.RestSearchImageRequest": {
+            "type": "object",
+            "properties": {
+                "keywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
