@@ -71,6 +71,10 @@ definitions:
     type: object
   mcir.FilterSpecsByRangeRequest:
     properties:
+      cost_per_hour:
+        $ref: '#/definitions/mcir.Range'
+      ebs_bw_Mbps:
+        $ref: '#/definitions/mcir.Range'
       evaluationScore_01:
         $ref: '#/definitions/mcir.Range'
       evaluationScore_02:
@@ -91,7 +95,21 @@ definitions:
         $ref: '#/definitions/mcir.Range'
       evaluationScore_10:
         $ref: '#/definitions/mcir.Range'
+      gpumem_GiB:
+        $ref: '#/definitions/mcir.Range'
+      max_num_storage:
+        $ref: '#/definitions/mcir.Range'
+      max_total_storage_TiB:
+        $ref: '#/definitions/mcir.Range'
       mem_GiB:
+        $ref: '#/definitions/mcir.Range'
+      net_bw_Gbps:
+        $ref: '#/definitions/mcir.Range'
+      num_core:
+        $ref: '#/definitions/mcir.Range'
+      num_gpu:
+        $ref: '#/definitions/mcir.Range'
+      num_storage:
         $ref: '#/definitions/mcir.Range'
       num_vCPU:
         $ref: '#/definitions/mcir.Range'
@@ -156,6 +174,13 @@ definitions:
     properties:
       connectionName:
         type: string
+    type: object
+  mcir.RestSearchImageRequest:
+    properties:
+      keywords:
+        items:
+          type: string
+        type: array
     type: object
   mcir.SpiderGpuInfo:
     properties:
@@ -2109,6 +2134,36 @@ paths:
       summary: Get image
       tags:
       - Image
+  /ns/{nsId}/resources/searchImage:
+    get:
+      consumes:
+      - application/json
+      description: Search image
+      parameters:
+      - description: Keywords
+        in: body
+        name: keywords
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestSearchImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestGetAllImageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Search image
+      tags:
+      - Image
   /ns/{nsId}/resources/securityGroup:
     delete:
       consumes:
@@ -2416,6 +2471,35 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get spec
+      tags:
+      - Spec
+    put:
+      consumes:
+      - application/json
+      description: Update spec
+      parameters:
+      - description: Details for an spec object
+        in: body
+        name: specInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSpecInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSpecInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Update spec
       tags:
       - Spec
   /ns/{nsId}/resources/sshKey:

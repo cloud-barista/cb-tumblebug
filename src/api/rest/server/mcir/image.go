@@ -256,3 +256,43 @@ func RestDelAllImage(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
 	return nil
 }
+
+// Response structure for RestSearchImage
+type RestSearchImageRequest struct {
+	Keywords []string `json:"keywords"`
+}
+
+// RestSearchImage godoc
+// @Summary Search image
+// @Description Search image
+// @Tags Image
+// @Accept  json
+// @Produce  json
+// @Param keywords body RestSearchImageRequest true "Keywords"
+// @Success 200 {object} RestGetAllImageResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/searchImage [get]
+func RestSearchImage(c echo.Context) error {
+	nsId := c.Param("nsId")
+
+	u := &RestSearchImageRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	//fmt.Println("RestSearchImage called; keywords: ") // for debug
+	//fmt.Println(u.Keywords) // for debug
+
+	content, err := mcir.SearchImage(nsId, u.Keywords...)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{
+			"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	result := RestGetAllImageResponse{}
+	result.Image = content
+	return c.JSON(http.StatusOK, &result)
+}

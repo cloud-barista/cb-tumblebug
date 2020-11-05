@@ -648,16 +648,16 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery += " AND `id`='" + filter.Id + "'"
 	}
 	if filter.Name != "" {
-		sqlQuery += " AND `name` LIKE '" + filter.Name + "'"
+		sqlQuery += " AND `name` LIKE '%" + filter.Name + "%'"
 	}
 	if filter.ConnectionName != "" {
 		sqlQuery += " AND `connectionName`='" + filter.ConnectionName + "'"
 	}
 	if filter.CspSpecName != "" {
-		sqlQuery += " AND `cspSpecName` LIKE '" + filter.CspSpecName + "'"
+		sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
 	}
 	if filter.Os_type != "" {
-		sqlQuery += " AND `os_type` LIKE '" + filter.Os_type + "'"
+		sqlQuery += " AND `os_type` LIKE '%" + filter.Os_type + "%'"
 	}
 
 	if filter.Num_vCPU > 0 {
@@ -673,7 +673,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery += " AND `storage_GiB`=" + strconv.Itoa(int(filter.Storage_GiB))
 	}
 	if filter.Description != "" {
-		sqlQuery += " AND `description` LIKE '" + filter.Description + "'"
+		sqlQuery += " AND `description` LIKE '%" + filter.Description + "%'"
 	}
 	if filter.Cost_per_hour > 0 {
 		sqlQuery += " AND `cost_per_hour`=" + fmt.Sprintf("%.6f", filter.Cost_per_hour)
@@ -694,7 +694,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery += " AND `ebs_bw_Mbps`=" + strconv.Itoa(int(filter.Ebs_bw_Mbps))
 	}
 	if filter.Gpu_model != "" {
-		sqlQuery += " AND `gpu_model` LIKE '" + filter.Gpu_model + "'"
+		sqlQuery += " AND `gpu_model` LIKE '%" + filter.Gpu_model + "%'"
 	}
 	if filter.Num_gpu > 0 {
 		sqlQuery += " AND `num_gpu`=" + strconv.Itoa(int(filter.Num_gpu))
@@ -703,7 +703,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery += " AND `gpumem_GiB`=" + strconv.Itoa(int(filter.Gpumem_GiB))
 	}
 	if filter.Gpu_p2p != "" {
-		sqlQuery += " AND `gpu_p2p` LIKE '" + filter.Gpu_p2p + "'"
+		sqlQuery += " AND `gpu_p2p` LIKE '%" + filter.Gpu_p2p + "%'"
 	}
 	if filter.EvaluationStatus != "" {
 		sqlQuery += " AND `evaluationStatus`='" + filter.EvaluationStatus + "'"

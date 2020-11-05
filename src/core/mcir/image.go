@@ -635,3 +635,56 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 	}
 	return connConfigCount, imageCount, nil
 }
+
+func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
+	nsId = common.GenId(nsId)
+
+	tempList := []TbImageInfo{}
+
+	sqlQuery := "SELECT * FROM `image` WHERE `namespace`='" + nsId + "'"
+
+	for _, keyword := range keywords {
+		//fmt.Println("in SearchImage(); keyword: " + keyword) // for debug
+		keyword = common.GenId(keyword)
+		sqlQuery += " AND `name` LIKE '%" + keyword + "%'"
+	}
+	sqlQuery += ";"
+	_, err := sqlparser.Parse(sqlQuery)
+	if err != nil {
+		return tempList, err
+	}
+
+	rows, err := common.MYDB.Query(sqlQuery)
+	if err != nil {
+		common.CBLog.Error(err)
+		return tempList, err
+	}
+
+	cols, err := rows.Columns()
+	if err != nil {
+		common.CBLog.Error(err)
+		return tempList, err
+	}
+
+	for rows.Next() {
+		columns := make([]interface{}, len(cols))
+		columnPointers := make([]interface{}, len(cols))
+		for i, _ := range columns {
+			columnPointers[i] = &columns[i]
+		}
+
+		if err := rows.Scan(columnPointers...); err != nil {
+			return tempList, err
+		}
+		m := make(map[string]interface{})
+		for i, colName := range cols {
+			val := columnPointers[i].(*interface{})
+			m[colName] = *val
+		}
+		js, _ := json.Marshal(m)
+		tempImage := TbImageInfo{}
+		json.Unmarshal(js, &tempImage)
+		tempList = append(tempList, tempImage)
+	}
+	return tempList, nil
+}
