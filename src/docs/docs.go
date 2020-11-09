@@ -3206,17 +3206,11 @@ var doc = `{
             "type": "object",
             "properties": {
                 "cost_per_hour": {
-<<<<<<< HEAD
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "ebs_bw_Mbps": {
-=======
                     "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "ebs_bw_Mbps": {
                     "type": "object",
->>>>>>> Add codebase for mcis auto policy
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_01": {
@@ -3271,15 +3265,6 @@ var doc = `{
                     "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
-                "gpumem_GiB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "max_num_storage": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "max_total_storage_TiB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
                 "mem_GiB": {
                     "type": "object",
                     "$ref": "#/definitions/mcir.Range"
@@ -3298,18 +3283,6 @@ var doc = `{
                 },
                 "num_storage": {
                     "type": "object",
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "net_bw_Gbps": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "num_core": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "num_gpu": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "num_storage": {
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_vCPU": {
