@@ -3561,10 +3561,10 @@ func ValidateStatus() {
 	fmt.Println("")
 	for _, v := range nsList {
 		fmt.Println("NS[" + v + "]")
-		mcisList := ListMcisId(v)
+		mcisPolicyList := ListMcisPolicyId(v)
 
-		for _, m := range mcisList {
-			fmt.Println("validateStatus: MCIS[" + m + "]")
+		for _, m := range mcisPolicyList {
+			fmt.Println("validateStatus: MCIS-Policy[" + m + "]")
 		}
 	}
 

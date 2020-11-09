@@ -73,48 +73,70 @@ definitions:
     properties:
       cost_per_hour:
         $ref: '#/definitions/mcir.Range'
+        type: object
       ebs_bw_Mbps:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_01:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_02:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_03:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_04:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_05:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_06:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_07:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_08:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_09:
         $ref: '#/definitions/mcir.Range'
+        type: object
       evaluationScore_10:
         $ref: '#/definitions/mcir.Range'
+        type: object
       gpumem_GiB:
         $ref: '#/definitions/mcir.Range'
+        type: object
       max_num_storage:
         $ref: '#/definitions/mcir.Range'
+        type: object
       max_total_storage_TiB:
         $ref: '#/definitions/mcir.Range'
+        type: object
       mem_GiB:
         $ref: '#/definitions/mcir.Range'
+        type: object
       net_bw_Gbps:
         $ref: '#/definitions/mcir.Range'
+        type: object
       num_core:
         $ref: '#/definitions/mcir.Range'
+        type: object
       num_gpu:
         $ref: '#/definitions/mcir.Range'
+        type: object
       num_storage:
         $ref: '#/definitions/mcir.Range'
+        type: object
       num_vCPU:
         $ref: '#/definitions/mcir.Range'
+        type: object
       storage_GiB:
         $ref: '#/definitions/mcir.Range'
+        type: object
     type: object
   mcir.Range:
     properties:
@@ -201,6 +223,7 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
+        type: object
       keyValueList:
         items:
           $ref: '#/definitions/common.KeyValue'
@@ -248,6 +271,7 @@ definitions:
         type: string
       vcpu:
         $ref: '#/definitions/mcir.SpiderVCpuInfo'
+        type: object
     type: object
   mcir.SpiderSpecList:
     properties:
@@ -261,6 +285,7 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: '{NameId, SystemId}'
+        type: object
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -537,6 +562,27 @@ definitions:
           $ref: '#/definitions/mcis.AgentInstallContent'
         type: array
     type: object
+  mcis.AutoAction:
+    properties:
+      actionType:
+        type: string
+      placement_algo:
+        type: string
+      vm:
+        $ref: '#/definitions/mcis.TbVmInfo'
+        type: object
+    type: object
+  mcis.AutoCondition:
+    properties:
+      metric:
+        type: string
+      operand:
+        description: 10, 70, 80, 98, ...
+        type: string
+      operator:
+        description: <, <=, >, >=, ...
+        type: string
+    type: object
   mcis.BenchmarkInfo:
     properties:
       desc:
@@ -590,6 +636,25 @@ definitions:
       vm_id:
         type: string
     type: object
+  mcis.McisPolicyInfo:
+    properties:
+      Id:
+        description: MCIS Id (generated ID by the Name)
+        type: string
+      Name:
+        description: MCIS Name (for request)
+        type: string
+      actionLog:
+        type: string
+      description:
+        type: string
+      policy:
+        items:
+          $ref: '#/definitions/mcis.Policy'
+        type: array
+      status:
+        type: string
+    type: object
   mcis.McisRecommendReq:
     properties:
       max_result_num:
@@ -605,6 +670,15 @@ definitions:
           $ref: '#/definitions/mcis.TbVmRecommendReq'
         type: array
     type: object
+  mcis.Policy:
+    properties:
+      autoAction:
+        $ref: '#/definitions/mcis.AutoAction'
+        type: object
+      autoCondition:
+        $ref: '#/definitions/mcis.AutoCondition'
+        type: object
+    type: object
   mcis.RegionInfo:
     properties:
       region:
@@ -616,6 +690,13 @@ definitions:
     properties:
       host:
         type: string
+    type: object
+  mcis.RestGetAllMcisPolicyResponse:
+    properties:
+      mcis:
+        items:
+          $ref: '#/definitions/mcis.McisPolicyInfo'
+        type: array
     type: object
   mcis.RestGetAllMcisResponse:
     properties:
@@ -671,12 +752,15 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
+        type: object
       imageIId:
         $ref: '#/definitions/common.IID'
+        type: object
       imageName:
         type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
+        type: object
       keyPairName:
         type: string
       keyValueList:
@@ -700,6 +784,7 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
+        type: object
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -715,6 +800,7 @@ definitions:
       subnetIID:
         $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
+        type: object
       subnetName:
         type: string
       vmblockDisk:
@@ -733,6 +819,7 @@ definitions:
         type: string
       vpcIID:
         $ref: '#/definitions/common.IID'
+        type: object
       vpcname:
         type: string
     type: object
@@ -784,6 +871,7 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
+        type: object
       description:
         type: string
       id:
@@ -792,6 +880,7 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
+        type: object
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -809,6 +898,7 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: 2. Provided by CB-Spider
+        type: object
       securityGroupIds:
         items:
           type: string
@@ -844,6 +934,7 @@ definitions:
         type: string
       vm_spec:
         $ref: '#/definitions/mcir.TbSpecInfo'
+        type: object
     type: object
   mcis.TbVmRecommendInfo:
     properties:
@@ -859,6 +950,7 @@ definitions:
         type: array
       vm_req:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
+        type: object
     type: object
   mcis.TbVmRecommendReq:
     properties:
@@ -1849,6 +1941,161 @@ paths:
       summary: GetMonitorData MCIS
       tags:
       - Monitor
+  /ns/{nsId}/policy/mcis:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all MCIS Policys
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all MCIS Policys
+      tags:
+      - MCIS Policy
+    get:
+      consumes:
+      - application/json
+      description: List all MCIS Policys
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.RestGetAllMcisPolicyResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all MCIS Policys
+      tags:
+      - MCIS Policy
+  /ns/{nsId}/policy/mcis/{mcisId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete MCIS Policy
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete MCIS Policy
+      tags:
+      - MCIS Policy
+    get:
+      consumes:
+      - application/json
+      description: Get MCIS Policy
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.McisPolicyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get MCIS Policy
+      tags:
+      - MCIS Policy
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS Automation policy
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.McisPolicyInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.McisPolicyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS Automation policy
+      tags:
+      - MCIS Policy
   /ns/{nsId}/resources/fetchImages:
     post:
       consumes:

@@ -158,6 +158,15 @@ func ApiServer() {
 	g.POST("/:nsId/install/mcis/:mcisId", rest_mcis.RestPostInstallAgentToMcis)
 	g.GET("/:nsId/benchmark/mcis/:mcisId", rest_mcis.RestGetBenchmark)
 	g.GET("/:nsId/benchmarkall/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
+	
+	//MCIS AUTO Policy
+	g.POST("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPostMcisPolicy)
+	g.GET("/:nsId/policy/mcis/:mcisId", rest_mcis.RestGetMcisPolicy)
+	g.GET("/:nsId/policy/mcis", rest_mcis.RestGetAllMcisPolicy)
+	g.PUT("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPutMcisPolicy)
+	g.DELETE("/:nsId/policy/mcis/:mcisId", rest_mcis.RestDelMcisPolicy)
+	g.DELETE("/:nsId/policy/mcis", rest_mcis.RestDelAllMcisPolicy)
+
 
 	g.POST("/:nsId/monitoring/install/mcis/:mcisId", rest_mcis.RestPostInstallMonitorAgentToMcis)
 	g.GET("/:nsId/monitoring/mcis/:mcisId/metric/:metric", rest_mcis.RestGetMonitorData)

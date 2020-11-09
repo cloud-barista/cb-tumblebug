@@ -135,6 +135,39 @@ func LowerizeAndCheckVm(nsId string, mcisId string, vmId string) (bool, string, 
 
 }
 
+// Lowerize id chars and check the same McisPolicy obj
+func LowerizeAndCheckMcisPolicy(nsId string, mcisId string) (bool, string, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("CheckMcis failed; nsId given is null.")
+		return false, "", err
+	} else if mcisId == "" {
+		err := fmt.Errorf("CheckMcis failed; mcisId given is null.")
+		return false, "", err
+	}
+
+	lowerizedNsId := common.GenId(nsId)
+	nsId = lowerizedNsId
+
+	lowerizedMcisId := common.GenId(mcisId)
+	mcisId = lowerizedMcisId
+
+	fmt.Println("[Check McisPolicy] " + mcisId)
+
+	//key := "/ns/" + nsId + "/mcis/" + mcisId
+	key := common.GenMcisPolicyKey(nsId, mcisId, "")
+	//fmt.Println(key)
+
+	keyValue, _ := common.CBStore.Get(key)
+
+	if keyValue != nil {
+		return true, mcisId, nil
+	}
+	return false, mcisId, nil
+
+}
+
 func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*string, error) {
 
 	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)

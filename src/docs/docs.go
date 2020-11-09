@@ -1431,6 +1431,238 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/policy/mcis": {
+            "get": {
+                "description": "List all MCIS Policys",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS Policy"
+                ],
+                "summary": "List all MCIS Policys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.RestGetAllMcisPolicyResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all MCIS Policys",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS Policy"
+                ],
+                "summary": "Delete all MCIS Policys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/policy/mcis/{mcisId}": {
+            "get": {
+                "description": "Get MCIS Policy",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS Policy"
+                ],
+                "summary": "Get MCIS Policy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.McisPolicyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create MCIS Automation policy",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS Policy"
+                ],
+                "summary": "Create MCIS Automation policy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object",
+                        "name": "mcisInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.McisPolicyInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.McisPolicyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete MCIS Policy",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MCIS Policy"
+                ],
+                "summary": "Delete MCIS Policy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/fetchImages": {
             "post": {
                 "description": "Fetch images",
@@ -2974,69 +3206,91 @@ var doc = `{
             "type": "object",
             "properties": {
                 "cost_per_hour": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "ebs_bw_Mbps": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_01": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_02": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_03": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_04": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_05": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_06": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_07": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_08": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_09": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_10": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "gpumem_GiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "max_num_storage": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "max_total_storage_TiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "mem_GiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "net_bw_Gbps": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_core": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_gpu": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_storage": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_vCPU": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "storage_GiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 }
             }
@@ -3171,6 +3425,7 @@ var doc = `{
                 },
                 "iid": {
                     "description": "Fields for response",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
@@ -3242,6 +3497,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vcpu": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -3262,6 +3518,7 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -3684,6 +3941,37 @@ var doc = `{
                 }
             }
         },
+        "mcis.AutoAction": {
+            "type": "object",
+            "properties": {
+                "actionType": {
+                    "type": "string"
+                },
+                "placement_algo": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "object",
+                    "$ref": "#/definitions/mcis.TbVmInfo"
+                }
+            }
+        },
+        "mcis.AutoCondition": {
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "type": "string"
+                },
+                "operand": {
+                    "description": "10, 70, 80, 98, ...",
+                    "type": "string"
+                },
+                "operator": {
+                    "description": "\u003c, \u003c=, \u003e, \u003e=, ...",
+                    "type": "string"
+                }
+            }
+        },
         "mcis.BenchmarkInfo": {
             "type": "object",
             "properties": {
@@ -3765,6 +4053,34 @@ var doc = `{
                 }
             }
         },
+        "mcis.McisPolicyInfo": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "description": "MCIS Id (generated ID by the Name)",
+                    "type": "string"
+                },
+                "Name": {
+                    "description": "MCIS Name (for request)",
+                    "type": "string"
+                },
+                "actionLog": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.Policy"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "mcis.McisRecommendReq": {
             "type": "object",
             "properties": {
@@ -3788,6 +4104,19 @@ var doc = `{
                 }
             }
         },
+        "mcis.Policy": {
+            "type": "object",
+            "properties": {
+                "autoAction": {
+                    "type": "object",
+                    "$ref": "#/definitions/mcis.AutoAction"
+                },
+                "autoCondition": {
+                    "type": "object",
+                    "$ref": "#/definitions/mcis.AutoCondition"
+                }
+            }
+        },
         "mcis.RegionInfo": {
             "type": "object",
             "properties": {
@@ -3804,6 +4133,17 @@ var doc = `{
             "properties": {
                 "host": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.RestGetAllMcisPolicyResponse": {
+            "type": "object",
+            "properties": {
+                "mcis": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.McisPolicyInfo"
+                    }
                 }
             }
         },
@@ -3888,15 +4228,18 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "Fields for response",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -3930,6 +4273,7 @@ var doc = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -3951,6 +4295,7 @@ var doc = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -3976,6 +4321,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vpcIID": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -4052,6 +4398,7 @@ var doc = `{
                     "type": "string"
                 },
                 "cspViewVmDetail": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -4064,6 +4411,7 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "monAgentStatus": {
@@ -4088,6 +4436,7 @@ var doc = `{
                 },
                 "region": {
                     "description": "2. Provided by CB-Spider",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -4140,6 +4489,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vm_spec": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
@@ -4163,6 +4513,7 @@ var doc = `{
                     }
                 },
                 "vm_req": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
             }
