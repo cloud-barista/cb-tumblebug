@@ -62,6 +62,19 @@ func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 }
 
+// Generate Mcis policy key
+func GenMcisPolicyKey(nsId string, mcisId string, vmId string) string {
+	if vmId != "" {
+		return "/ns/" + nsId + "/policy/mcis/" + mcisId + "/vm/" + vmId
+	} else if mcisId != "" {
+		return "/ns/" + nsId + "/policy/mcis/" + mcisId
+	} else if nsId != "" {
+		return "/ns/" + nsId
+	} else {
+		return ""
+	}
+}
+
 func LookupKeyValueList(kvl []KeyValue, key string) string {
 	for _, v := range kvl {
 		if v.Key == key {
