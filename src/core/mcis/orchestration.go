@@ -14,11 +14,11 @@ import (
 // Status for mcis automation
 const AutoStatusReady string = "Ready"
 const AutoStatusChecking string = "Checking"
-const AutoStatusHappened string = "Happened"
+const AutoStatusDetected string = "Detected"
 const AutoStatusOperating string = "Operating"
 const AutoStatusTimeout string = "Timeout"
 const AutoStatusError string = "Error"
-const AutoStatusSuspend string = "Suspend"
+const AutoStatusSuspended string = "Suspended"
 
 // Action for mcis automation
 const AutoActionScaleOut string = "ScaleOut"
@@ -94,14 +94,16 @@ func ValidateStatus() {
 				case mcisPolicyTmp.Status == AutoStatusReady:
 					fmt.Println("MCIS-Policy-Status[" + AutoStatusReady + "],["+ v + "]")
 					mcisPolicyTmp.Status = AutoStatusChecking
+					UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
  					
-					fmt.Println("[Check mcis] " + mcisPolicyTmp.Id)
+					fmt.Println("[Check MCIS Policy] " + mcisPolicyTmp.Id)
 					keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
 					if keyValueMcis == nil {
 						mcisPolicyTmp.Status = AutoStatusError
+						UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 						break	
-					} else {
-						content, err := GetMonitoringData(nsId, mcisPolicyTmp.Id, "cpu")
+					} else { // need to enhance : loop for each policies and realize metric
+						content, err := GetMonitoringData(nsId, mcisPolicyTmp.Id, mcisPolicyTmp.Policy[0].AutoCondition.Metric)
 						if err != nil {
 							common.CBLog.Error(err)
 							mcisPolicyTmp.Status = AutoStatusError
@@ -114,10 +116,10 @@ func ValidateStatus() {
 
 				case mcisPolicyTmp.Status == AutoStatusChecking:
 					fmt.Println("MCIS-Policy-Status[" + AutoStatusChecking + "],["+ v + "]")
-					mcisPolicyTmp.Status = AutoStatusHappened
+					mcisPolicyTmp.Status = AutoStatusDetected
 
-				case mcisPolicyTmp.Status == AutoStatusHappened:
-					fmt.Println("MCIS-Policy-Status[" + AutoStatusHappened + "],["+ v + "]")
+				case mcisPolicyTmp.Status == AutoStatusDetected:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusDetected + "],["+ v + "]")
 					mcisPolicyTmp.Status = AutoStatusOperating
 
 				case mcisPolicyTmp.Status == AutoStatusOperating:
@@ -131,8 +133,8 @@ func ValidateStatus() {
 					fmt.Println("MCIS-Policy-Status[" + AutoStatusError + "],["+ v + "]")
 					mcisPolicyTmp.Status = AutoStatusReady
 
-				case mcisPolicyTmp.Status == AutoStatusSuspend:
-					fmt.Println("MCIS-Policy-Status[" + AutoStatusSuspend + "],["+ v + "]")
+				case mcisPolicyTmp.Status == AutoStatusSuspended:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusSuspended + "],["+ v + "]")
 
 				default:
 			}
