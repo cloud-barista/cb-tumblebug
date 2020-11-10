@@ -3,6 +3,8 @@ package mcis
 import (
 
 	//"encoding/json"
+	"github.com/tidwall/gjson"
+
 	"fmt"
 	"io/ioutil"
 
@@ -16,6 +18,7 @@ import (
 
 	// REST API (echo)
 	"net/http"
+	
 
 	"sync"
 
@@ -30,6 +33,14 @@ type MonAgentInstallReq struct {
 	User_name string `json:"user_name"`
 	Ssh_key   string `json:"ssh_key"`
 	Csp_type   string `json:"cspType"`
+}
+
+type DfTelegrafMetric struct {
+	Name      string                 `json:"name"`
+	Tags      map[string]interface{} `json:"tags"`
+	Fields    map[string]interface{} `json:"fields"`
+	Timestamp int64                  `json:"timestamp"`
+	TagInfo   map[string]interface{} `json:"tagInfo"`
 }
 
 // Module for checking CB-Dragonfly endpoint (call get config)
@@ -80,7 +91,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		User_name: userName,
 		Ssh_key:   privateKey,
 	}
-	fmt.Printf("\n[Request body to CB-DRAGONFLY for installing monitoring agent in VM]\n")
+	fmt.Printf("\n[Request body to CB-DRAGONFLY]\n")
 	common.PrintJsonPretty(tempReq)
 
 	payload := &bytes.Buffer{}
@@ -126,7 +137,23 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		errStr = err.Error()
 	}
 
+
+
+	
 	result := string(body)
+	
+	/*
+	var data map[string]interface{}
+	err2 := json.Unmarshal([]byte(result), &data)
+	if err2 != nil {
+		common.CBLog.Error(err2)
+		fmt.Println("ERROR: "+ err2.Error())
+	}
+	fmt.Printf("%+v\n", data)
+	*/
+	fmt.Println("cpu.fields.usage_utilization :")
+	value := gjson.Get(string(body), "cpu.fields.usage_utilization")
+	fmt.Println("value :" + value.String())
 
 	//wg.Done() //goroutin sync done
 
@@ -299,7 +326,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		Mcis_id: mcisID,
 		Vm_id:   vmID,
 	}
-	fmt.Printf("\n[Request body to CB-DRAGONFLY for installing monitoring agent in VM]\n")
+	fmt.Printf("\n[Request body to CB-DRAGONFLY]\n")
 	common.PrintJsonPretty(tempReq)
 
 	client := &http.Client{
@@ -338,6 +365,10 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	}
 
 	result := string(body)
+
+	value := gjson.Get(string(body), "cpu.fields.usage_utilization")
+	fmt.Println("value :" + value.String())
+
 
 	//wg.Done() //goroutin sync done
 

@@ -81,7 +81,7 @@ func RestGetMcisPolicy(c echo.Context) error {
 
 // Response structure for RestGetAllMcisPolicy
 type RestGetAllMcisPolicyResponse struct {
-	Mcis []mcis.McisPolicyInfo `json:"mcis"`
+	McisPolicy []mcis.McisPolicyInfo `json:"mcisPolicy"`
 }
 
 // RestGetAllMcisPolicy godoc
@@ -107,7 +107,7 @@ func RestGetAllMcisPolicy(c echo.Context) error {
 	}
 
 	content := RestGetAllMcisPolicyResponse{}
-	content.Mcis = result
+	content.McisPolicy = result
 
 	//fmt.Printf("content %+v\n", content)
 	common.PrintJsonPretty(content)

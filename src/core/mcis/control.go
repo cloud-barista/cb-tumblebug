@@ -3554,21 +3554,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 }
 
-func ValidateStatus() {
-
-	nsList := common.ListNsId()
-
-	fmt.Println("")
-	for _, v := range nsList {
-		fmt.Println("NS[" + v + "]")
-		mcisPolicyList := ListMcisPolicyId(v)
-
-		for _, m := range mcisPolicyList {
-			fmt.Println("validateStatus: MCIS-Policy[" + m + "]")
-		}
-	}
-
-}
 
 func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string) {
 

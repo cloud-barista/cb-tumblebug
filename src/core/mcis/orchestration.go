@@ -53,6 +53,113 @@ type McisPolicyInfo struct {
 	Description    string     `json:"description"`
 }
 
+func ValidateStatus() {
+
+	nsList := common.ListNsId()
+
+	fmt.Println("")
+	for _, nsId := range nsList {
+		fmt.Println("NS[" + nsId + "]")
+		mcisPolicyList := ListMcisPolicyId(nsId)
+
+		for _, m := range mcisPolicyList {
+			fmt.Println("validateStatus: MCIS-Policy[" + m + "]")
+		}
+
+		for _, v := range mcisPolicyList {
+
+			key := common.GenMcisPolicyKey(nsId, v, "")
+			//fmt.Println(key)
+			keyValue, _ := common.CBStore.Get(key)
+			if keyValue == nil {
+				//mapA := map[string]string{"message": "Cannot find " + key}
+				//return c.JSON(http.StatusOK, &mapA)
+				fmt.Println("keyValue is nil")
+			}
+			//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			mcisPolicyTmp := McisPolicyInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &mcisPolicyTmp)
+
+			/* FYI
+			const AutoStatusReady string = "Ready"
+			const AutoStatusChecking string = "Checking"
+			const AutoStatusHappened string = "Happened"
+			const AutoStatusOperating string = "Operating"
+			const AutoStatusTimeout string = "Timeout"
+			const AutoStatusError string = "Error"
+			const AutoStatusSuspend string = "Suspend"
+			*/
+			fmt.Println("[MCIS-Policy-StateMachine]")
+			switch {
+				case mcisPolicyTmp.Status == AutoStatusReady:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusReady + "],["+ v + "]")
+					mcisPolicyTmp.Status = AutoStatusChecking
+ 					
+					fmt.Println("[Check mcis] " + mcisPolicyTmp.Id)
+					keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
+					if keyValueMcis == nil {
+						mcisPolicyTmp.Status = AutoStatusError
+						break	
+					} else {
+						content, err := GetMonitoringData(nsId, mcisPolicyTmp.Id, "cpu")
+						if err != nil {
+							common.CBLog.Error(err)
+							mcisPolicyTmp.Status = AutoStatusError
+							break
+						}
+						common.PrintJsonPretty(content)
+					}
+
+					mcisPolicyTmp.Status = AutoStatusReady
+
+				case mcisPolicyTmp.Status == AutoStatusChecking:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusChecking + "],["+ v + "]")
+					mcisPolicyTmp.Status = AutoStatusHappened
+
+				case mcisPolicyTmp.Status == AutoStatusHappened:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusHappened + "],["+ v + "]")
+					mcisPolicyTmp.Status = AutoStatusOperating
+
+				case mcisPolicyTmp.Status == AutoStatusOperating:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusOperating + "],["+ v + "]")
+					mcisPolicyTmp.Status = AutoStatusReady
+
+				case mcisPolicyTmp.Status == AutoStatusTimeout:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusTimeout + "],["+ v + "]")
+
+				case mcisPolicyTmp.Status == AutoStatusError:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusError + "],["+ v + "]")
+					mcisPolicyTmp.Status = AutoStatusReady
+
+				case mcisPolicyTmp.Status == AutoStatusSuspend:
+					fmt.Println("MCIS-Policy-Status[" + AutoStatusSuspend + "],["+ v + "]")
+
+				default:
+			}
+			UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+	
+		}
+
+	}
+	
+
+}
+
+
+func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
+	key := common.GenMcisPolicyKey(nsId, mcisPolicyInfoData.Id, "")
+	val, _ := json.Marshal(mcisPolicyInfoData)
+	err := common.CBStore.Put(string(key), string(val))
+	if err != nil {
+		common.CBLog.Error(err)
+	}
+	//fmt.Println("===========================")
+	//vmkeyValue, _ := common.CBStore.Get(string(key))
+	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
+	//fmt.Println("===========================")
+}
+
+
 func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicyInfo, error) {
 
 	nsId = common.GenId(nsId)
@@ -60,6 +167,7 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 	//fmt.Println("CreateVNet() called; nsId: " + nsId + ", u.Name: " + u.Name + ", lowerizedName: " + lowerizedName) // for debug
 	u.Name = lowerizedName
 	u.Id = lowerizedName
+	u.Status = AutoStatusReady
 
 	if check == true {
 		temp := McisPolicyInfo{}
