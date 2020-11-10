@@ -25,6 +25,16 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
+const MonMetricAll string = "all"
+const MonMetricCpu string = "cpu"
+const MonMetricCpufreq string = "cpufreq"
+const MonMetricMem string = "mem"
+const MonMetricNet string = "net"
+const MonMetricSwap string = "swap"
+const MonMetricDisk string = "disk"
+const MonMetricDiskio string = "diskio"
+
+
 type MonAgentInstallReq struct {
 	Ns_id   string `json:"ns_id"`
 	Mcis_id   string `json:"mcis_id"`
@@ -34,13 +44,27 @@ type MonAgentInstallReq struct {
 	Ssh_key   string `json:"ssh_key"`
 	Csp_type   string `json:"cspType"`
 }
-
+/*
 type DfTelegrafMetric struct {
 	Name      string                 `json:"name"`
 	Tags      map[string]interface{} `json:"tags"`
 	Fields    map[string]interface{} `json:"fields"`
 	Timestamp int64                  `json:"timestamp"`
 	TagInfo   map[string]interface{} `json:"tagInfo"`
+}
+*/
+
+type MonResultSimple struct {
+	Metric   string `json:"metric"`
+	VmId   string `json:"vmId"`
+	Value   string `json:"value"`
+	Err   string `json:"err"`
+}
+
+type MonResultSimpleResponse struct {
+	NsId   string `json:"nsId"`
+	McisId   string `json:"mcisId"`
+	McisMonitoring []MonResultSimple `json:"mcisMonitoring"`
 }
 
 // Module for checking CB-Dragonfly endpoint (call get config)
@@ -137,23 +161,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		errStr = err.Error()
 	}
 
-
-
-	
 	result := string(body)
-	
-	/*
-	var data map[string]interface{}
-	err2 := json.Unmarshal([]byte(result), &data)
-	if err2 != nil {
-		common.CBLog.Error(err2)
-		fmt.Println("ERROR: "+ err2.Error())
-	}
-	fmt.Printf("%+v\n", data)
-	*/
-	fmt.Println("cpu.fields.usage_utilization :")
-	value := gjson.Get(string(body), "cpu.fields.usage_utilization")
-	fmt.Println("value :" + value.String())
 
 	//wg.Done() //goroutin sync done
 
@@ -253,19 +261,19 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 
 }
 
-func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallContentWrapper, error) {
+func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimpleResponse, error) {
 
 	nsId = common.GenId(nsId)
 	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
 	mcisId = lowerizedName
 
 	if check == false {
-		temp := AgentInstallContentWrapper{}
+		temp := MonResultSimpleResponse{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
 	}
 
-	content := AgentInstallContentWrapper{}
+	content := MonResultSimpleResponse{}
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
@@ -276,7 +284,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallC
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
-	var resultArray []SshCmdResult
+	var resultArray []MonResultSimple
 
 	method := "GET"
 
@@ -291,19 +299,15 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallC
 		cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
 		fmt.Println("[CMD] " + cmd)
 
-		go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, cmd, &resultArray)
+		go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, metric, cmd, &resultArray)
 
 	}
 	wg.Wait() //goroutin sync wg
 
+	content.NsId = nsId
+	content.McisId = mcisId
 	for _, v := range resultArray {
-
-		resultTmp := AgentInstallContent{}
-		resultTmp.Mcis_id = mcisId
-		resultTmp.Vm_id = v.Vm_id
-		resultTmp.Vm_ip = v.Vm_ip
-		resultTmp.Result = v.Result
-		content.Result_array = append(content.Result_array, resultTmp)
+		content.McisMonitoring = append(content.McisMonitoring, v)
 		//fmt.Println("result from goroutin " + v)
 	}
 
@@ -314,7 +318,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (AgentInstallC
 
 }
 
-func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string,method string, cmd string, returnResult *[]SshCmdResult) {
+func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string, method string, metric string, cmd string, returnResult *[]MonResultSimple) {
 
 	defer wg.Done() //goroutin sync done
 
@@ -366,25 +370,36 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 
 	result := string(body)
 
-	value := gjson.Get(string(body), "cpu.fields.usage_utilization")
-	fmt.Println("value :" + value.String())
-
+	switch {
+		case metric == MonMetricCpu:
+			value := gjson.Get(string(body), "cpu.fields.usage_utilization")
+			result = value.String()
+		case metric == MonMetricMem:
+			value := gjson.Get(string(body), "mem.fields.used_percent")
+			result = value.String()
+		case metric == MonMetricDisk:
+			value := gjson.Get(string(body), "disk.fields.used_percent")
+			result = value.String()
+		case metric == MonMetricNet:
+			value := gjson.Get(string(body), "net.fields.bytes_recv")
+			result = value.String()
+		default:
+	}
 
 	//wg.Done() //goroutin sync done
 
-	sshResultTmp := SshCmdResult{}
-	sshResultTmp.Mcis_id = mcisID
-	sshResultTmp.Vm_id = vmID
+	ResultTmp := MonResultSimple{}
+	ResultTmp.VmId = vmID
+	ResultTmp.Metric = metric
 
 	if err != nil {
-		sshResultTmp.Result = errStr
-		sshResultTmp.Err = err
-		*returnResult = append(*returnResult, sshResultTmp)
+		ResultTmp.Value = errStr
+		ResultTmp.Err = err.Error()
+		*returnResult = append(*returnResult, ResultTmp)
 	} else {
 		fmt.Println("result " + result)
-		sshResultTmp.Result = result
-		sshResultTmp.Err = nil
-		*returnResult = append(*returnResult, sshResultTmp)
+		ResultTmp.Value = result
+		*returnResult = append(*returnResult, ResultTmp)
 	}
 
 }
