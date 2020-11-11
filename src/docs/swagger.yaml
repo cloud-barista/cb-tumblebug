@@ -693,7 +693,7 @@ definitions:
     type: object
   mcis.RestGetAllMcisPolicyResponse:
     properties:
-      mcis:
+      mcisPolicy:
         items:
           $ref: '#/definitions/mcis.McisPolicyInfo'
         type: array

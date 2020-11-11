@@ -72,23 +72,25 @@ func UpdateEnv(id string) error {
 		CBLog.Error(err)
 		return err
 	}
-	json.Unmarshal([]byte(keyValue.Value), &content)
+	if keyValue != nil {
+		json.Unmarshal([]byte(keyValue.Value), &content)
 
-	switch id {
-	case lowStrSPIDER_REST_URL:
-		SPIDER_REST_URL = content.Value	
-	case lowStrDRAGONFLY_REST_URL:
-		DRAGONFLY_REST_URL = content.Value	
-	case lowStrDB_URL:
-		DB_URL = content.Value	
-	case lowStrDB_DATABASE:
-		DB_DATABASE = content.Value	
-	case lowStrDB_USER:
-		DB_USER = content.Value			
-	case lowStrDB_PASSWORD:
-		DB_PASSWORD = content.Value	
-	default:
-
+		switch id {
+		case lowStrSPIDER_REST_URL:
+			SPIDER_REST_URL = content.Value	
+		case lowStrDRAGONFLY_REST_URL:
+			DRAGONFLY_REST_URL = content.Value	
+		case lowStrDB_URL:
+			DB_URL = content.Value	
+		case lowStrDB_DATABASE:
+			DB_DATABASE = content.Value	
+		case lowStrDB_USER:
+			DB_USER = content.Value			
+		case lowStrDB_PASSWORD:
+			DB_PASSWORD = content.Value	
+		default:
+	
+		}
 	}
 
 	fmt.Println("\n<SPIDER_REST_URL> " + SPIDER_REST_URL)

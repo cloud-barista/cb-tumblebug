@@ -43,11 +43,17 @@ func main() {
 	common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
 	common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 
+	// load the latest configuration from DB (if exist)
+	_, lowerizedName, _ := common.LowerizeAndCheckConfig("DRAGONFLY_REST_URL")
+	common.UpdateEnv(lowerizedName)
+	_, lowerizedName, _ = common.LowerizeAndCheckConfig("SPIDER_REST_URL")
+	common.UpdateEnv(lowerizedName)	
+
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	//Ticker for MCIS status validation
-	validationDuration := 60000 //ms
+	validationDuration := 10000 //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(validationDuration))
 	go func() {
 		for t := range ticker.C {

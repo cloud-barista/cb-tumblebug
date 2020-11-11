@@ -45,7 +45,7 @@
 					"operand": "55"
 				},
 				"autoAction": {
-					"actionType": "cpu",
+					"actionType": "ScaleOut",
 					"placement_algo": "tbd",
 					"vm": {
 						"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-Autogen",

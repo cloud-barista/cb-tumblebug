@@ -4139,7 +4139,7 @@ var doc = `{
         "mcis.RestGetAllMcisPolicyResponse": {
             "type": "object",
             "properties": {
-                "mcis": {
+                "mcisPolicy": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.McisPolicyInfo"
