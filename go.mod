@@ -15,7 +15,7 @@ require (
 	github.com/bramvdbogaerde/go-scp v0.0.0-20200518191442-5c8efdd1d925
 	github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20201008023843-31002c0a088d
 	github.com/cloud-barista/cb-spider v0.2.0-cappuccino.0.20201014061129-f3ef2afbb1b0
-	github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20201014054737-e2310432d256
+	github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20201111072717-b0bb715e2694
 	github.com/coreos/etcd v3.3.21+incompatible // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
