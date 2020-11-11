@@ -97,15 +97,21 @@ func ValidateStatus() {
 					UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
  					
 					fmt.Println("[Check MCIS Policy] " + mcisPolicyTmp.Id)
-					keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
-					if keyValueMcis == nil {
+					check, _, _ := LowerizeAndCheckMcis(nsId, mcisPolicyTmp.Id ) 
+					fmt.Println("[Check existance of MCIS] " + mcisPolicyTmp.Id)
+					//keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
+					
+
+					if !check {
 						mcisPolicyTmp.Status = AutoStatusError
 						UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+						fmt.Println("[MCIS is not exist] " + mcisPolicyTmp.Id)
 						break	
 					} else { // need to enhance : loop for each policies and realize metric
+						fmt.Println("[MCIS is exist] " + mcisPolicyTmp.Id)
 						content, err := GetMonitoringData(nsId, mcisPolicyTmp.Id, mcisPolicyTmp.Policy[0].AutoCondition.Metric)
 						if err != nil {
-							common.CBLog.Error(err)
+							//common.CBLog.Error(err)
 							mcisPolicyTmp.Status = AutoStatusError
 							break
 						}
@@ -152,7 +158,7 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 	key := common.GenMcisPolicyKey(nsId, mcisPolicyInfoData.Id, "")
 	val, _ := json.Marshal(mcisPolicyInfoData)
 	err := common.CBStore.Put(string(key), string(val))
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), common.CbStoreKeyNotFoundErrorString) {
 		common.CBLog.Error(err)
 	}
 	//fmt.Println("===========================")
