@@ -3959,6 +3959,16 @@ var doc = `{
         "mcis.AutoCondition": {
             "type": "object",
             "properties": {
+                "evaluationPeriod": {
+                    "description": "evaluationPeriod",
+                    "type": "string"
+                },
+                "evaluationValue": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "metric": {
                     "type": "string"
                 },

@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"strconv"
 
 	//_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
@@ -42,23 +43,26 @@ func main() {
 	common.DB_DATABASE = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
 	common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
 	common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
+	common.AUTOCONTROL_DURATION = common.NVL(os.Getenv("AUTOCONTROL_DURATION"), "10000")
 
 	// load the latest configuration from DB (if exist)
 	_, lowerizedName, _ := common.LowerizeAndCheckConfig("DRAGONFLY_REST_URL")
 	common.UpdateEnv(lowerizedName)
 	_, lowerizedName, _ = common.LowerizeAndCheckConfig("SPIDER_REST_URL")
 	common.UpdateEnv(lowerizedName)	
+	_, lowerizedName, _ = common.LowerizeAndCheckConfig("AUTOCONTROL_DURATION")
+	common.UpdateEnv(lowerizedName)	
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
-	//Ticker for MCIS status validation
-	validationDuration := 10000 //ms
-	ticker := time.NewTicker(time.Millisecond * time.Duration(validationDuration))
+	//Ticker for MCIS Orchestration Policy
+	autoControlDuration, _ := strconv.Atoi(common.AUTOCONTROL_DURATION) //ms
+	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
 	go func() {
 		for t := range ticker.C {
 			fmt.Println("Tick at", t)
-			mcis.ValidateStatus()
+			mcis.OrchestrationController()
 		}
 	}()
 	defer ticker.Stop()
