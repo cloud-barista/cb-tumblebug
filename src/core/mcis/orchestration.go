@@ -243,7 +243,7 @@ func OrchestrationController() {
 
 					switch {
 						case autoAction.ActionType == AutoActionScaleOut:
-							autoAction.Vm.Label = "AUTOGEN"
+							autoAction.Vm.Label = LabelAutoGen
 							common.PrintJsonPretty(autoAction.Vm)
 							fmt.Println("[Action] "+ autoAction.ActionType)
 
@@ -261,7 +261,7 @@ func OrchestrationController() {
 
 							// ScaleIn MCIS.
 							fmt.Println("[Removing VM]")
-							vmList, vmListErr := GetVmListByLabel(nsId, mcisPolicyTmp.Id, "AUTOGEN")
+							vmList, vmListErr := GetVmListByLabel(nsId, mcisPolicyTmp.Id, LabelAutoGen)
 							if vmListErr != nil {
 								mcisPolicyTmp.Status = AutoStatusError
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
