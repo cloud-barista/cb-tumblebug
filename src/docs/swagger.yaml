@@ -574,6 +574,13 @@ definitions:
     type: object
   mcis.AutoCondition:
     properties:
+      evaluationPeriod:
+        description: evaluationPeriod
+        type: string
+      evaluationValue:
+        items:
+          type: string
+        type: array
       metric:
         type: string
       operand:

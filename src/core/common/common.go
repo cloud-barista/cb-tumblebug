@@ -27,6 +27,7 @@ var DB_URL string
 var DB_DATABASE string
 var DB_USER string
 var DB_PASSWORD string
+var AUTOCONTROL_DURATION_MS string
 var MYDB *sql.DB
 var err error
 
@@ -36,6 +37,7 @@ const StrDB_URL string = "DB_URL"
 const StrDB_DATABASE string = "DB_DATABASE"
 const StrDB_USER string = "DB_USER"
 const StrDB_PASSWORD string = "DB_PASSWORD"
+const StrAUTOCONTROL_DURATION_MS string = "AUTOCONTROL_DURATION_MS"
 
 var StartTime string
 

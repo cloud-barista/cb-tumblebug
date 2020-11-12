@@ -36,13 +36,13 @@ const MonMetricDiskio string = "diskio"
 
 
 type MonAgentInstallReq struct {
-	Ns_id   string `json:"ns_id"`
-	Mcis_id   string `json:"mcis_id"`
-	Vm_id     string `json:"vm_id"`
-	Public_ip string `json:"public_ip"`
-	User_name string `json:"user_name"`
-	Ssh_key   string `json:"ssh_key"`
-	Csp_type   string `json:"cspType"`
+	Ns_id   string `json:"ns_id,omitempty"`
+	Mcis_id   string `json:"mcis_id,omitempty"`
+	Vm_id     string `json:"vm_id,omitempty"`
+	Public_ip string `json:"public_ip,omitempty"`
+	User_name string `json:"user_name,omitempty"`
+	Ssh_key   string `json:"ssh_key,omitempty"`
+	Csp_type   string `json:"cspType,omitempty"`
 }
 /*
 type DfTelegrafMetric struct {
