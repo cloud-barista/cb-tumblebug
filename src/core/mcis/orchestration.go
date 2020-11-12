@@ -243,8 +243,18 @@ func OrchestrationController() {
 
 					switch {
 						case autoAction.ActionType == AutoActionScaleOut:
+							autoAction.Vm.Label = "AUTOGEN"
 							common.PrintJsonPretty(autoAction.Vm)
 							fmt.Println("[Action] "+ autoAction.ActionType)
+
+							// Expand MCIS according to the VM requirement.
+							result, vmCreateErr := CorePostMcisVm(nsId, mcisPolicyTmp.Id, &autoAction.Vm)
+							if vmCreateErr != nil {
+								mcisPolicyTmp.Status = AutoStatusError
+								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+							}
+							common.PrintJsonPretty(*result)
+
 						case autoAction.ActionType == AutoActionScaleIn:
 							fmt.Println("[Action] "+ autoAction.ActionType)
 						default:

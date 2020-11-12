@@ -4353,6 +4353,9 @@ var doc = `{
                     "type": "string",
                     "example": "[yes, no]"
                 },
+                "label": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -4387,6 +4390,9 @@ var doc = `{
                     "type": "string",
                     "example": "[yes, no]"
                 },
+                "label": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -4418,6 +4424,9 @@ var doc = `{
                     "type": "string"
                 },
                 "imageId": {
+                    "type": "string"
+                },
+                "label": {
                     "type": "string"
                 },
                 "location": {
@@ -4567,6 +4576,9 @@ var doc = `{
                     "type": "string"
                 },
                 "imageId": {
+                    "type": "string"
+                },
+                "label": {
                     "type": "string"
                 },
                 "name": {
