@@ -155,6 +155,7 @@ type TbMcisReq struct {
 	InstallMonAgent   string    `json:"installMonAgent" example:"[yes, no]"` // yes or no
 
 	Description    string    `json:"description"`
+	Label		     string   `json:"label"`
 }
 
 type TbMcisInfo struct {
@@ -163,6 +164,7 @@ type TbMcisInfo struct {
 	Vm             []TbVmInfo `json:"vm"`
 	Placement_algo string     `json:"placement_algo"`
 	Description    string     `json:"description"`
+	Label		     string   `json:"label"`
 	Status         string     `json:"status"`
 	TargetStatus   string     `json:"targetStatus"`
 	TargetAction   string     `json:"targetAction"`
@@ -184,6 +186,7 @@ type TbVmReq struct {
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
+	Label		     string   `json:"label"`
 
 	/*
 		//Id             string `json:"id"`
@@ -240,6 +243,7 @@ type TbVmInfo struct {
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
+	Label		     string   `json:"label"`
 	//Vnic_id            string   `json:"vnic_id"`
 	//Public_ip_id       string   `json:"public_ip_id"`
 
