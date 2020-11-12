@@ -37,13 +37,9 @@
 	fi
 	
 
-	if [ -z "$MCISPREFIX" ]
-	then
-		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | json_pp || return 1
-	else
-		MCISID=${MCISPREFIX}-${POSTFIX}
-		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${MCISID} | json_pp || return 1
-	fi
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | json_pp || return 1
+
+
 #}
 
 #terminate_and_delete_mcis

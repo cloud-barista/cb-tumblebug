@@ -277,7 +277,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		//common.CBLog.Error(err)
 		return content, err
 	}
 
