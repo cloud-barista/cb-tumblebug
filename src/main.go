@@ -43,21 +43,21 @@ func main() {
 	common.DB_DATABASE = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
 	common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
 	common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-	common.AUTOCONTROL_DURATION = common.NVL(os.Getenv("AUTOCONTROL_DURATION"), "10000")
+	common.AUTOCONTROL_DURATION_MS = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
 
 	// load the latest configuration from DB (if exist)
 	_, lowerizedName, _ := common.LowerizeAndCheckConfig("DRAGONFLY_REST_URL")
 	common.UpdateEnv(lowerizedName)
 	_, lowerizedName, _ = common.LowerizeAndCheckConfig("SPIDER_REST_URL")
 	common.UpdateEnv(lowerizedName)	
-	_, lowerizedName, _ = common.LowerizeAndCheckConfig("AUTOCONTROL_DURATION")
+	_, lowerizedName, _ = common.LowerizeAndCheckConfig("AUTOCONTROL_DURATION_MS")
 	common.UpdateEnv(lowerizedName)	
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	//Ticker for MCIS Orchestration Policy
-	autoControlDuration, _ := strconv.Atoi(common.AUTOCONTROL_DURATION) //ms
+	autoControlDuration, _ := strconv.Atoi(common.AUTOCONTROL_DURATION_MS) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
 	go func() {
 		for t := range ticker.C {

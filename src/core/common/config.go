@@ -65,7 +65,7 @@ func UpdateEnv(id string) error {
 	_, lowStrDB_DATABASE, _ := LowerizeAndCheckConfig(StrDB_DATABASE)
 	_, lowStrDB_USER, _ := LowerizeAndCheckConfig(StrDB_USER)
 	_, lowStrDB_PASSWORD, _ := LowerizeAndCheckConfig(StrDB_PASSWORD)
-	_, lowStrAUTOCONTROL_DURATION, _ := LowerizeAndCheckConfig(StrAUTOCONTROL_DURATION)
+	_, lowStrAUTOCONTROL_DURATION_MS, _ := LowerizeAndCheckConfig(StrAUTOCONTROL_DURATION_MS)
 
 	Key := "/config/" + id
 	keyValue, err := CBStore.Get(Key)
@@ -89,8 +89,8 @@ func UpdateEnv(id string) error {
 			DB_USER = content.Value			
 		case lowStrDB_PASSWORD:
 			DB_PASSWORD = content.Value	
-		case lowStrAUTOCONTROL_DURATION:
-			AUTOCONTROL_DURATION = content.Value	
+		case lowStrAUTOCONTROL_DURATION_MS:
+			AUTOCONTROL_DURATION_MS = content.Value	
 		default:
 	
 		}
@@ -102,7 +102,7 @@ func UpdateEnv(id string) error {
 	fmt.Println("<DB_DATABASE> " + DB_DATABASE)
 	fmt.Println("<DB_USER> " + DB_USER)
 	fmt.Println("<DB_PASSWORD> " + DB_PASSWORD)
-	fmt.Println("<AUTOCONTROL_DURATION> " + AUTOCONTROL_DURATION)
+	fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
 
 	return nil
 }
