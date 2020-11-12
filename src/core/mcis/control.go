@@ -57,6 +57,8 @@ const SshDefaultUserName02 string = "ubuntu"
 const SshDefaultUserName03 string = "others"
 const SshDefaultUserName04 string = "ec2-user"
 
+const LabelAutoGen string = "AutoGen"
+
 // Structs for REST API
 
 // 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
@@ -3192,7 +3194,7 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 }
 
 func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
-	fmt.Println("[GetVmObject]" + mcisId + "VM:" + vmId)
+	fmt.Println("[GetVmObject]" + mcisId + ", VM:" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -3626,6 +3628,41 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 
 	return content.SpecId
 }
+
+func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error) {
+
+	fmt.Println("[GetVmListByLabel]" + mcisId + " by " + label)
+
+	var vmListByLabel []string
+
+	vmList, err := ListVmId(nsId, mcisId)
+	fmt.Println(vmList)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	if len(vmList) == 0 {
+		return nil, nil
+	}
+
+	// delete vms info
+	for _, v := range vmList {
+		vmObj, vmErr:= GetVmObject(nsId, mcisId, v)
+		if vmErr != nil {
+			common.CBLog.Error(err)
+			return nil, vmErr
+		}
+		//fmt.Println("vmObj.Label: "+ vmObj.Label)
+		if vmObj.Label == label {
+			fmt.Println("Found VM with " + vmObj.Label +", VM ID: " +vmObj.Id)
+			vmListByLabel = append(vmListByLabel, vmObj.Id)
+		}
+	}
+	return vmListByLabel, nil
+
+
+}
+
 
 func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 

@@ -128,7 +128,7 @@ func OrchestrationController() {
 						//Statistic
 						sumMcis := 0.0
 						for _, monData := range content.McisMonitoring {
-							fmt.Println("[monData.Value: ] " + monData.Value)
+							//fmt.Println("[monData.Value: ] " + monData.Value)
 							monDataValue, _ := strconv.ParseFloat(monData.Value, 64)
 							sumMcis += monDataValue
 						}
@@ -247,7 +247,8 @@ func OrchestrationController() {
 							common.PrintJsonPretty(autoAction.Vm)
 							fmt.Println("[Action] "+ autoAction.ActionType)
 
-							// Expand MCIS according to the VM requirement.
+							// ScaleOut MCIS according to the VM requirement.
+							fmt.Println("[Generating VM]")
 							result, vmCreateErr := CorePostMcisVm(nsId, mcisPolicyTmp.Id, &autoAction.Vm)
 							if vmCreateErr != nil {
 								mcisPolicyTmp.Status = AutoStatusError
@@ -257,6 +258,25 @@ func OrchestrationController() {
 
 						case autoAction.ActionType == AutoActionScaleIn:
 							fmt.Println("[Action] "+ autoAction.ActionType)
+
+							// ScaleIn MCIS.
+							fmt.Println("[Removing VM]")
+							vmList, vmListErr := GetVmListByLabel(nsId, mcisPolicyTmp.Id, "AUTOGEN")
+							if vmListErr != nil {
+								mcisPolicyTmp.Status = AutoStatusError
+								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+							}
+							if len(vmList) != 0 {
+								removeTargetVm := vmList[len(vmList)-1]
+								fmt.Println("[Removing VM ID] "+ removeTargetVm)
+								delVmErr := DelMcisVm(nsId, mcisPolicyTmp.Id, removeTargetVm)
+								if delVmErr != nil {
+									mcisPolicyTmp.Status = AutoStatusError
+									UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+								}
+							}
+							
+
 						default:
 					}
 

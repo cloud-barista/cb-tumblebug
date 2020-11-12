@@ -37,36 +37,35 @@
 
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
 		'{
-			"description": "Tumblebug Demo",
+			"description": "Tumblebug Auto Control Demo",
 			"policy": [{
-				"autoCondition": {
-					"metric": "cpu",
-					"operator": ">=",
-					"operand": "7",
-					"evaluationPeriod": "5"
-				},
-				"autoAction": {
-					"actionType": "ScaleOut",
-					"placement_algo": "tbd",
-					"vm": {
-						"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-Autogen",
-						"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-						"vmUserAccount": "cb-user",
-						"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-						"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-						"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-						"securityGroupIds": [
-							"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
-						],
-						"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-						"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-						"description": "description",
-						"vmUserPassword": ""
+					"autoCondition": {
+						"metric": "cpu",
+						"operator": ">=",
+						"operand": "7",
+						"evaluationPeriod": "5"
+					},
+					"autoAction": {
+						"actionType": "ScaleOut",
+						"placement_algo": "tbd",
+						"vm": {
+							"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-Autogen",
+							"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+							"vmUserAccount": "cb-user",
+							"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+							"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+							"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+							"securityGroupIds": [
+								"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
+							],
+							"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+							"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+							"description": "description",
+							"vmUserPassword": ""
+						}
 					}
 				}
-			}]
-			
-
+			]
 		}' | json_pp || return 1
 #}
 
