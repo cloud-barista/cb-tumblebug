@@ -197,8 +197,8 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	*/
 	Val, _ := json.Marshal(content)
 
-	fmt.Println("Key: ", Key)
-	fmt.Println("Val: ", Val)
+	//fmt.Println("Key: ", Key)
+	//fmt.Println("Val: ", Val)
 	err3 := common.CBStore.Put(string(Key), string(Val))
 	if err3 != nil {
 		common.CBLog.Error(err3)

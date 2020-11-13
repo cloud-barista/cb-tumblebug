@@ -840,6 +840,8 @@ definitions:
         description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
         example: '[yes, no]'
         type: string
+      label:
+        type: string
       name:
         type: string
       placement_algo:
@@ -863,6 +865,8 @@ definitions:
         description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
         example: '[yes, no]'
         type: string
+      label:
+        type: string
       name:
         type: string
       placement_algo:
@@ -884,6 +888,8 @@ definitions:
       id:
         type: string
       imageId:
+        type: string
+      label:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
@@ -985,6 +991,8 @@ definitions:
       description:
         type: string
       imageId:
+        type: string
+      label:
         type: string
       name:
         type: string

@@ -245,8 +245,8 @@ func createSubnet(nsId string, u *subnetReq) (subnetInfo, error) {
 		"resourceGroupName":  content.ResourceGroupName,
 		"description":        content.Description}
 	Val, _ := json.Marshal(mapA)
-	fmt.Println("Key: ", Key)
-	fmt.Println("Val: ", Val)
+	//fmt.Println("Key: ", Key)
+	//fmt.Println("Val: ", Val)
 	err := common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
 		common.CBLog.Error(err)

@@ -339,9 +339,9 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 	fmt.Println("=========================== PUT createPublicIp")
 	Key := common.GenResourceKey(nsId, "publicIp", content.Id)
 	Val, _ := json.Marshal(content)
-	fmt.Println("Key: ", Key)
-	fmt.Println("Val: ", Val)
-	err := common.CBStore.Put(string(Key), string(Val))
+	//fmt.Println("Key: ", Key)
+	//fmt.Println("Val: ", Val)
+	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return content, res.StatusCode, body, err
