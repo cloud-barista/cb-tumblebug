@@ -46,11 +46,11 @@ func main() {
 	common.AUTOCONTROL_DURATION_MS = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
 
 	// load the latest configuration from DB (if exist)
-	_, lowerizedName, _ := common.LowerizeAndCheckConfig("DRAGONFLY_REST_URL")
+	lowerizedName := common.GenId("DRAGONFLY_REST_URL")
 	common.UpdateEnv(lowerizedName)
-	_, lowerizedName, _ = common.LowerizeAndCheckConfig("SPIDER_REST_URL")
+	lowerizedName = common.GenId("SPIDER_REST_URL")
 	common.UpdateEnv(lowerizedName)	
-	_, lowerizedName, _ = common.LowerizeAndCheckConfig("AUTOCONTROL_DURATION_MS")
+	lowerizedName = common.GenId("AUTOCONTROL_DURATION_MS")
 	common.UpdateEnv(lowerizedName)	
 
 	// load config
