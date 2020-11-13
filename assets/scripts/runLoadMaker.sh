@@ -10,4 +10,4 @@ sudo docker run -d -p 8888:80 -p 4433:443 jihoons/docker-nginx-systemcall:latest
 
 # Print a message (IP address)
 str=$(curl https://api.ipify.org)
-printf "LoadMaker is ready. Access to http://%s:8080/ ." $str
+printf "LoadMaker is ready. Access to http://%s:8888/ ." $str
