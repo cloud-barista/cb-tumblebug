@@ -47,7 +47,7 @@
 						"evaluationPeriod": "5"
 					},
 					"autoAction": {
-						"actionType": "ScaleIn",
+						"actionType": "ScaleIn"
 					}
 				},
 				{

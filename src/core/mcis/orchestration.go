@@ -17,8 +17,9 @@ const AutoStatusReady string = "Ready"
 const AutoStatusChecking string = "Checking"
 const AutoStatusDetected string = "Detected"
 const AutoStatusOperating string = "Operating"
+const AutoStatusStabilizing string = "Stabilizing"
 const AutoStatusTimeout string = "Timeout"
-const AutoStatusError string = "Error"
+const AutoStatusError string = "Failed"
 const AutoStatusSuspended string = "Suspended"
 
 // Action for mcis automation
@@ -280,9 +281,20 @@ func OrchestrationController() {
 						default:
 					}
 
-					mcisPolicyTmp.Status = AutoStatusReady
+					mcisPolicyTmp.Status = AutoStatusStabilizing
 					UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 					fmt.Println("- PolicyStatus[" + mcisPolicyTmp.Status + "],["+ v + "]")
+
+				case mcisPolicyTmp.Status == AutoStatusStabilizing:
+					fmt.Println("- PolicyStatus[" + mcisPolicyTmp.Status + "],["+ v + "]")
+
+					//initialize Evaluation history so that controller does not act too early.
+					//with this we can stablize MCIS by init previously measures.
+					//Will invoke [Checking] Not enough evaluationPeriod
+					mcisPolicyTmp.Policy[0].AutoCondition.EvaluationValue = nil
+
+					mcisPolicyTmp.Status = AutoStatusReady
+					UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 
 				case mcisPolicyTmp.Status == AutoStatusOperating:
 					fmt.Println("- PolicyStatus[" + mcisPolicyTmp.Status + "],["+ v + "]")
