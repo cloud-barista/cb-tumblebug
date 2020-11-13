@@ -59,13 +59,13 @@ func UpdateEnv(id string) error {
 
 	content := ConfigInfo{}
 
-	_, lowStrSPIDER_REST_URL, _ := LowerizeAndCheckConfig(StrSPIDER_REST_URL)
-	_, lowStrDRAGONFLY_REST_URL, _ := LowerizeAndCheckConfig(StrDRAGONFLY_REST_URL)
-	_, lowStrDB_URL, _ := LowerizeAndCheckConfig(StrDB_URL)
-	_, lowStrDB_DATABASE, _ := LowerizeAndCheckConfig(StrDB_DATABASE)
-	_, lowStrDB_USER, _ := LowerizeAndCheckConfig(StrDB_USER)
-	_, lowStrDB_PASSWORD, _ := LowerizeAndCheckConfig(StrDB_PASSWORD)
-	_, lowStrAUTOCONTROL_DURATION_MS, _ := LowerizeAndCheckConfig(StrAUTOCONTROL_DURATION_MS)
+	lowStrSPIDER_REST_URL := GenId(StrSPIDER_REST_URL)
+	lowStrDRAGONFLY_REST_URL := GenId(StrDRAGONFLY_REST_URL)
+	lowStrDB_URL := GenId(StrDB_URL)
+	lowStrDB_DATABASE := GenId(StrDB_DATABASE)
+	lowStrDB_USER := GenId(StrDB_USER)
+	lowStrDB_PASSWORD := GenId(StrDB_PASSWORD)
+	lowStrAUTOCONTROL_DURATION_MS := GenId(StrAUTOCONTROL_DURATION_MS)
 
 	Key := "/config/" + id
 	keyValue, err := CBStore.Get(Key)

@@ -38,7 +38,19 @@
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
 		'{
 			"description": "Tumblebug Auto Control Demo",
-			"policy": [{
+			"policy": [
+				{
+					"autoCondition": {
+						"metric": "cpu",
+						"operator": "<=",
+						"operand": "7",
+						"evaluationPeriod": "5"
+					},
+					"autoAction": {
+						"actionType": "ScaleIn",
+					}
+				},
+				{
 					"autoCondition": {
 						"metric": "cpu",
 						"operator": ">=",
