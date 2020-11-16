@@ -42,19 +42,8 @@
 				{
 					"autoCondition": {
 						"metric": "cpu",
-						"operator": "<=",
-						"operand": "7",
-						"evaluationPeriod": "5"
-					},
-					"autoAction": {
-						"actionType": "ScaleIn"
-					}
-				},
-				{
-					"autoCondition": {
-						"metric": "cpu",
 						"operator": ">=",
-						"operand": "7",
+						"operand": "20",
 						"evaluationPeriod": "5"
 					},
 					"autoAction": {
@@ -76,7 +65,19 @@
 							"vmUserPassword": ""
 						}
 					}
+				},				
+				{
+					"autoCondition": {
+						"metric": "cpu",
+						"operator": "<=",
+						"operand": "15",
+						"evaluationPeriod": "5"
+					},
+					"autoAction": {
+						"actionType": "ScaleIn"
+					}
 				}
+
 			]
 		}' | json_pp || return 1
 #}
