@@ -302,6 +302,7 @@ type TbVmStatusInfo struct {
 	TargetAction  string `json:"targetAction"`
 	Native_status string `json:"native_status"`
 	Public_ip     string `json:"public_ip"`
+	Location GeoLocation `json:"location"`
 	// Montoring agent status
 	MonAgentStatus   string  `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 }
@@ -978,6 +979,7 @@ func ListMcisId(nsId string) []string {
 	var mcisList []string
 	for _, v := range keyValue {
 		if !strings.Contains(v.Key, "vm") {
+			//fmt.Println(v.Key)
 			mcisList = append(mcisList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/mcis/"))
 		}
 	}
@@ -3193,6 +3195,25 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
 }
 
+
+func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
+
+	mcisList := ListMcisId(nsId)
+	mcisStatuslist := []McisStatusInfo{}
+	for _, mcisId := range mcisList {
+		mcisStatus, err := GetMcisStatus(nsId, mcisId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return mcisStatuslist, err
+		}
+		mcisStatuslist = append(mcisStatuslist, mcisStatus)
+	}
+	return mcisStatuslist, nil
+
+	//need to change status
+
+}
+
 func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	fmt.Println("[GetVmObject]" + mcisId + ", VM:" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
@@ -3207,16 +3228,6 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 }
 
 func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
-
-	/*
-		var content struct {
-			Cloud_id  string `json:"cloud_id"`
-			Csp_vm_id string `json:"csp_vm_id"`
-			CspVmId   string
-			CspVmName string // will be deprecated
-			PublicIP  string
-		}
-	*/
 
 	fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
@@ -3353,6 +3364,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 
 	vmStatusTmp.TargetAction = temp.TargetAction
 	vmStatusTmp.TargetStatus = temp.TargetStatus
+
+	vmStatusTmp.Location = temp.Location
 
 	vmStatusTmp.MonAgentStatus = temp.MonAgentStatus
 

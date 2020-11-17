@@ -112,6 +112,11 @@ func RestGetMcis(c echo.Context) error {
 type RestGetAllMcisResponse struct {
 	Mcis []mcis.TbMcisInfo `json:"mcis"`
 }
+// Response structure for RestGetAllMcisStatus
+type RestGetAllMcisStatusResponse struct {
+	Mcis []mcis.McisStatusInfo `json:"mcis"`
+}
+
 
 // RestGetAllMcis godoc
 // @Summary List all MCISs
@@ -130,20 +135,27 @@ func RestGetAllMcis(c echo.Context) error {
 	option := c.QueryParam("option")
 	fmt.Println("[Get MCIS List requested with option: " + option)
 
-	result, err := mcis.CoreGetAllMcis(nsId, option)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
+	if option == "status" {
+		result, err := mcis.GetMcisStatusAll(nsId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+		content := RestGetAllMcisStatusResponse{}
+		content.Mcis = result
+		common.PrintJsonPretty(content)
+		return c.JSON(http.StatusOK, &content)
+	} else {
+		result, err := mcis.CoreGetAllMcis(nsId, option)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+		content := RestGetAllMcisResponse{}
+		content.Mcis = result
+		common.PrintJsonPretty(content)
+		return c.JSON(http.StatusOK, &content)
 	}
-
-	content := RestGetAllMcisResponse{}
-	content.Mcis = result
-
-	//fmt.Printf("content %+v\n", content)
-	common.PrintJsonPretty(content)
-
-	return c.JSON(http.StatusOK, &content)
-
 }
 
 /* function RestPutMcis not yet implemented
