@@ -244,7 +244,23 @@ func OrchestrationController() {
 
 					switch {
 						case autoAction.ActionType == AutoActionScaleOut:
+							
 							autoAction.Vm.Label = LabelAutoGen
+							// append UUID to given vm name to avoid duplicated vm ID.
+							autoAction.Vm.Name = autoAction.Vm.Name +"-"+ common.GenUuid()
+							//vmReqTmp := autoAction.Vm
+
+							if autoAction.Placement_algo == "random" {
+								fmt.Println("[autoAction.Placement_algo] " + autoAction.Placement_algo)
+								var vmTmpErr error
+								autoAction.Vm, vmTmpErr = GetVmTemplate(nsId, mcisPolicyTmp.Id, autoAction.Placement_algo)
+								if vmTmpErr != nil {
+									mcisPolicyTmp.Status = AutoStatusError
+									UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+								}
+								autoAction.Vm.Name = autoAction.Vm.Name +"-Random"
+							}
+							
 							common.PrintJsonPretty(autoAction.Vm)
 							fmt.Println("[Action] "+ autoAction.ActionType)
 

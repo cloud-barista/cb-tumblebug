@@ -18,6 +18,7 @@
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
 	EXPAND=${4:-1}
+	MCISNAME=${5:-noname}
 	
 	if [ "${CSP}" == "aws" ]; then
 		echo "[Test for AWS]"
@@ -38,6 +39,13 @@
 	fi
 
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+
+	if [ "${MCISNAME}" != "noname" ]; then
+		echo "[MCIS name is given]"
+		MCISID=${MCISNAME}
+	else
+		MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	fi
 
 	#echo $i
 	INDEXY=${EXPAND}

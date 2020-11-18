@@ -20,6 +20,8 @@ import (
 	"encoding/csv"
 	"os"
 
+	"math/rand"
+
 	// REST API (echo)
 	"net/http"
 
@@ -3673,6 +3675,46 @@ func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error
 	}
 	return vmListByLabel, nil
 
+
+}
+
+func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
+
+	fmt.Println("[GetVmTemplate]" + mcisId + " by algo: " + algo)
+
+	vmList, err := ListVmId(nsId, mcisId)
+	//fmt.Println(vmList)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+	if len(vmList) == 0 {
+		return TbVmInfo{}, nil
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	index := rand.Intn(len(vmList))
+	vmObj, vmErr:= GetVmObject(nsId, mcisId, vmList[index])
+	var vmTemplate TbVmInfo
+
+	// only take template required to create VM 
+	vmTemplate.Name = vmObj.Name
+	vmTemplate.ConnectionName = vmObj.ConnectionName
+	vmTemplate.ImageId = vmObj.ImageId
+	vmTemplate.SpecId = vmObj.SpecId
+	vmTemplate.VNetId = vmObj.VNetId
+	vmTemplate.SubnetId = vmObj.SubnetId
+	vmTemplate.SecurityGroupIds = vmObj.SecurityGroupIds
+	vmTemplate.SshKeyId = vmObj.SshKeyId
+	vmTemplate.VmUserAccount = vmObj.VmUserAccount
+	vmTemplate.VmUserPassword = vmObj.VmUserPassword
+
+	if vmErr != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, vmErr
+	}
+
+	return vmTemplate, nil
 
 }
 

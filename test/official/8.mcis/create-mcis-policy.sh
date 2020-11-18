@@ -48,9 +48,9 @@
 					},
 					"autoAction": {
 						"actionType": "ScaleOut",
-						"placement_algo": "tbd",
+						"placement_algo": "random",
 						"vm": {
-							"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-Autogen",
+							"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-AutoGen",
 							"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 							"vmUserAccount": "cb-user",
 							"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
