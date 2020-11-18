@@ -204,6 +204,10 @@ function test_sequence_allcsp_mcis_vm()
 
 	fi
 
+	echo "[Deploy CB-Dragonfly Docker]"
+	dozing 30
+	./deploy-dragonfly-docker.sh $CSP $REGION $POSTFIX
+
 #}
 
 #testAll
