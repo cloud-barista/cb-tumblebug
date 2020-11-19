@@ -41,6 +41,7 @@
 		'{
 			"name": "'${MCISID}'",
 			"description": "Tumblebug Demo",
+			"installMonAgent": "yes",
 			"vm": [ {
 				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-master",
 				"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
