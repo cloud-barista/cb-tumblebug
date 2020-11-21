@@ -4089,9 +4089,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcis.Policy"
                     }
-                },
-                "status": {
-                    "type": "string"
                 }
             }
         },
@@ -4128,6 +4125,9 @@ var doc = `{
                 "autoCondition": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.AutoCondition"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },

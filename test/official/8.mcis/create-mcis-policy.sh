@@ -57,8 +57,8 @@
 					"autoCondition": {
 						"metric": "cpu",
 						"operator": ">=",
-						"operand": "20",
-						"evaluationPeriod": "5"
+						"operand": "30",
+						"evaluationPeriod": "10"
 					},
 					"autoAction": {
 						"actionType": "ScaleOut",
@@ -87,8 +87,8 @@
 					"autoCondition": {
 						"metric": "cpu",
 						"operator": "<=",
-						"operand": "15",
-						"evaluationPeriod": "5"
+						"operand": "10",
+						"evaluationPeriod": "10"
 					},
 					"autoAction": {
 						"actionType": "ScaleIn"

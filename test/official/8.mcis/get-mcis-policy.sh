@@ -17,25 +17,39 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	if [ "${CSP}" == "aws" ]; then
-		echo "[Test for AWS]"
+	MCISNAME=${4:-noname}
+	if [ "${CSP}" == "all" ]; then
+		echo "[Test for all CSP regions (AWS, Azure, GCP, Alibaba, ...)]"
+		CSP="aws"
+		INDEX=0
+	elif [ "${CSP}" == "aws" ]; then
 		INDEX=1
 	elif [ "${CSP}" == "azure" ]; then
-		echo "[Test for Azure]"
 		INDEX=2
 	elif [ "${CSP}" == "gcp" ]; then
-		echo "[Test for GCP]"
 		INDEX=3
 	elif [ "${CSP}" == "alibaba" ]; then
-		echo "[Test for Alibaba]"
 		INDEX=4
 	else
-		echo "[No acceptable argument was provided (aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
+		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
 		CSP="aws"
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | json_pp
+
+	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+
+	if [ "${INDEX}" == "0" ]; then
+		MCISPREFIX=avengers
+		MCISID=${MCISPREFIX}-${POSTFIX}
+	fi
+
+	if [ "${MCISNAME}" != "noname" ]; then
+		echo "[MCIS name is given]"
+		MCISID=${MCISNAME}
+	fi
+
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${MCISID} | json_pp
 #}
 
 #get_mcis
