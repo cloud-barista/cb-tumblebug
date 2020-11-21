@@ -568,6 +568,9 @@ definitions:
         type: string
       placement_algo:
         type: string
+      postCommand:
+        $ref: '#/definitions/mcis.McisCmdReq'
+        type: object
       vm:
         $ref: '#/definitions/mcis.TbVmInfo'
         type: object
@@ -659,8 +662,6 @@ definitions:
         items:
           $ref: '#/definitions/mcis.Policy'
         type: array
-      status:
-        type: string
     type: object
   mcis.McisRecommendReq:
     properties:
@@ -685,6 +686,8 @@ definitions:
       autoCondition:
         $ref: '#/definitions/mcis.AutoCondition'
         type: object
+      status:
+        type: string
     type: object
   mcis.RegionInfo:
     properties:

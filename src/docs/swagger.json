@@ -3935,6 +3935,10 @@
                 "placement_algo": {
                     "type": "string"
                 },
+                "postCommand": {
+                    "type": "object",
+                    "$ref": "#/definitions/mcis.McisCmdReq"
+                },
                 "vm": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.TbVmInfo"
@@ -4070,9 +4074,6 @@
                     "items": {
                         "$ref": "#/definitions/mcis.Policy"
                     }
-                },
-                "status": {
-                    "type": "string"
                 }
             }
         },
@@ -4109,6 +4110,9 @@
                 "autoCondition": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.AutoCondition"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },

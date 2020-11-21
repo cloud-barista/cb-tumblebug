@@ -18,8 +18,11 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	MCISPREFIX=${4}
-	if [ "${CSP}" == "aws" ]; then
+	if [ "${CSP}" == "all" ]; then
+		echo "[Test for all CSP regions (AWS, Azure, GCP, Alibaba, ...)]"
+		CSP="aws"
+		INDEX=0
+	elif [ "${CSP}" == "aws" ]; then
 		echo "[Test for AWS]"
 		INDEX=1
 	elif [ "${CSP}" == "azure" ]; then
@@ -32,21 +35,25 @@
 		echo "[Test for Alibaba]"
 		INDEX=4
 	else
-		echo "[No acceptable argument was provided (aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
+		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
 		CSP="aws"
 		INDEX=1
 	fi
 
-
+	MCISPREFIX=${4}
 	if [ -z "$MCISPREFIX" ]
 	then
-		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=status | json_pp
+		MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+		if [ "${INDEX}" == "0" ]; then
+			MCISPREFIX=avengers
+			MCISID=${MCISPREFIX}-${POSTFIX}
+		fi
 	else
 		MCISID=${MCISPREFIX}-${POSTFIX}
-		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status | json_pp
 	fi
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status | json_pp
 
-	
+
 #}
 
 #status_mcis

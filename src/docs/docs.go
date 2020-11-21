@@ -3950,6 +3950,10 @@ var doc = `{
                 "placement_algo": {
                     "type": "string"
                 },
+                "postCommand": {
+                    "type": "object",
+                    "$ref": "#/definitions/mcis.McisCmdReq"
+                },
                 "vm": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.TbVmInfo"
@@ -4085,9 +4089,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcis.Policy"
                     }
-                },
-                "status": {
-                    "type": "string"
                 }
             }
         },
@@ -4124,6 +4125,9 @@ var doc = `{
                 "autoCondition": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.AutoCondition"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
