@@ -12,7 +12,7 @@ sudo sed -i "s/Commercial support is available at/<h2>Check CB-Tumblebug MCIS VM
 
 sudo sed -i "s/Thank you for using nginx/Thank you for using Cloud-Barista and CB-Tumblebug/g" /var/www/html/index.nginx-debian.html
 
-sudo sed -i "s/<a href=\"http:\/\/nginx.com\/\">nginx.com<\/a>.<\/p>/<a href=\"https:\/\/tools.keycdn.com\/geo?host=`curl https://api.ipify.org`\">Check the Location of NGINX HOST<\/a>.<\/p>/g" /var/www/html/index.nginx-debian.html
+sudo sed -i "s/<a href=\"http:\/\/nginx.com\/\">nginx.com<\/a>.<\/p>/<a href=\"https:\/\/tools.keycdn.com\/geo?host=`curl https://api.ipify.org`\">Check the Location of NGINX HOST<\/a>. <a href=\"http:\/\/`curl https://api.ipify.org`:8888">Call to generate CPU load<\/a>.<\/p>/g" /var/www/html/index.nginx-debian.html
 
 sudo sed -i "s/:\/\/nginx.org\/\">nginx.org/s:\/\/cloud-barista.github.io\/\">Cloud-Barista/g" /var/www/html/index.nginx-debian.html
 
