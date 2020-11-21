@@ -568,6 +568,9 @@ definitions:
         type: string
       placement_algo:
         type: string
+      postCommand:
+        $ref: '#/definitions/mcis.McisCmdReq'
+        type: object
       vm:
         $ref: '#/definitions/mcis.TbVmInfo'
         type: object

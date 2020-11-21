@@ -3950,6 +3950,10 @@ var doc = `{
                 "placement_algo": {
                     "type": "string"
                 },
+                "postCommand": {
+                    "type": "object",
+                    "$ref": "#/definitions/mcis.McisCmdReq"
+                },
                 "vm": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.TbVmInfo"

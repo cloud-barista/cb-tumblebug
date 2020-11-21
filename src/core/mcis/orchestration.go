@@ -39,6 +39,7 @@ type AutoCondition struct {
 type AutoAction struct {
 	ActionType     string     `json:"actionType"`
 	Vm             TbVmInfo   `json:"vm"`
+	PostCommand    McisCmdReq       `json:"postCommand"`
 	Placement_algo string     `json:"placement_algo"`
 }
 
@@ -272,6 +273,17 @@ func OrchestrationController() {
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 							}
 							common.PrintJsonPretty(*result)
+
+							nullMcisCmdReq := McisCmdReq{}
+							if autoAction.PostCommand != nullMcisCmdReq {
+								fmt.Println("[Post Command to VM] " + autoAction.PostCommand.Command)
+								_, cmdErr := CorePostCmdMcisVm(nsId, mcisPolicyTmp.Id, autoAction.Vm.Name, &autoAction.PostCommand)
+								if cmdErr != nil {
+									mcisPolicyTmp.Status = AutoStatusError
+									UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+								}
+							}
+
 
 						case autoAction.ActionType == AutoActionScaleIn:
 							fmt.Println("[Action] "+ autoAction.ActionType)

@@ -1773,9 +1773,9 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	
 	if mcisTmp.InstallMonAgent != "no" {
 			
-		// Sleep for 60 seconds for a safe DF agent installation.
-		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
-		time.Sleep(60 * time.Second)
+		// Sleep for 20 seconds for a safe DF agent installation.
+		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe CB-Dragonfly Agent installation.\n\n")
+		time.Sleep(20 * time.Second)
 
 		check := CheckDragonflyEndpoint()
 		if (check != nil){

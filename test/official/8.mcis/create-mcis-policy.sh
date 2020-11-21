@@ -77,6 +77,9 @@
 							"description": "description",
 							"vmUserAccount": "cb-user",							
 							"vmUserPassword": ""
+						},
+						"postCommand": {
+							"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
 						}
 					}
 				},				
