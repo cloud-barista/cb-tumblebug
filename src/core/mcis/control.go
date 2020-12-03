@@ -1046,6 +1046,9 @@ func DelMcis(nsId string, mcisId string) error {
 		return err
 	}
 	// for deletion, need to wait untill termination is finished
+	// Sleep for 5 seconds
+	fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe MCIS-VMs termination.\n\n")
+	time.Sleep(5 * time.Second)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
@@ -1098,6 +1101,9 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 		return err
 	}
 	// for deletion, need to wait untill termination is finished
+	// Sleep for 5 seconds
+	fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe VM termination.\n\n")
+	time.Sleep(5 * time.Second)
 
 	// delete vms info
 	key := common.GenMcisKey(nsId, mcisId, vmId)
@@ -2939,24 +2945,46 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		method := ""
 		switch action {
 		case ActionTerminate:
+
+			temp.TargetAction = ActionTerminate
+			temp.TargetStatus = StatusTerminated
+			temp.Status = StatusTerminating
+
 			//url = common.SPIDER_REST_URL + "/vm/" + cspVmId + "?connection_name=" + temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/vm/" + cspVmId
 			method = "DELETE"
 		case ActionReboot:
+
+			temp.TargetAction = ActionReboot
+			temp.TargetStatus = StatusRunning
+			temp.Status = StatusRebooting
+
 			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=reboot"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=reboot"
 			method = "GET"
 		case ActionSuspend:
+
+			temp.TargetAction = ActionSuspend
+			temp.TargetStatus = StatusSuspended
+			temp.Status = StatusSuspending
+
 			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=suspend"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=suspend"
 			method = "GET"
 		case ActionResume:
+
+			temp.TargetAction = ActionResume
+			temp.TargetStatus = StatusRunning
+			temp.Status = StatusResuming
+
 			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=resume"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=resume"
 			method = "GET"
 		default:
 			return errors.New(action + "is invalid actionType")
 		}
+
+		UpdateVmInfo(nsId, mcisId, temp)
 		//fmt.Println("url: " + url + " method: " + method)
 
 		type ControlVMReqInfo struct {
