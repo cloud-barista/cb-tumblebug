@@ -4633,7 +4633,7 @@ type swaggerInfo struct {
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
-	Version:     "0.2.0",
+	Version:     "latest",
 	Host:        "localhost:1323",
 	BasePath:    "/tumblebug",
 	Schemes:     []string{},

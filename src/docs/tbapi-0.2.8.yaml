@@ -1028,7 +1028,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
   title: CB-Tumblebug REST API
-  version: latest
+  version: 0.2.8
 paths:
   /config:
     delete:

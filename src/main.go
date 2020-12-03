@@ -20,7 +20,7 @@ import (
 // Main Body
 
 // @title CB-Tumblebug REST API
-// @version 0.2.0
+// @version latest
 // @description CB-Tumblebug REST API
 // @termsOfService http://swagger.io/terms/
 
