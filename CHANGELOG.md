@@ -1,4 +1,24 @@
 
+# v0.3.0-espresso (Staging 2020.12.03.)
+
+### API Change
+- MCIS 자동 제어 기능 API 추가
+- 동적 시스템 환경 설정 변경 기능 API 추가
+- MCIS 생성 API의 모니터링 에이전트 자동 배치 옵션 제공
+
+### Feature
+- MCIS 생성시 모니터링 에이전트 자동 배치 기능 추가
+- MCIS 자동 제어 기능 추가
+- MCIS 시나리오 테스트 스크립트 추가
+- MCIS 마스터 VM 및 VM IP 정보 제공 기능 추가
+- MCIR VM 사양 패치 및 등록 기능 추가
+- 동적 시스템 환경 설정 변경 기능 추가
+
+### Bug Fix
+- MCIS 종료시 런타임 오류 수정
+
+
+
 # v0.2.0-cappuccino (2020.06.02.)
 
 ### API Change
