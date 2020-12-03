@@ -60,9 +60,9 @@ func RunServer() {
 		}
 	}
 
-	fmt.Printf("\n[CB-Tumblebug: Multi-Cloud Infra Service Management]")
-	fmt.Printf("\n   Initiating GRPC API Server....__^..^__....")
-	fmt.Printf("\n\n => grpc server started on %s\n\n", tumblebugsrv.Addr)
+	//fmt.Printf("\n[CB-Tumblebug: Multi-Cloud Infra Service Management]")
+	//fmt.Printf("\n   Initiating GRPC API Server....__^..^__....")
+	fmt.Printf("⇨ grpc server started on [::]%s\n", tumblebugsrv.Addr)
 
 	if err := gs.Serve(conn); err != nil {
 		logger.Error("failed to serve: ", err)

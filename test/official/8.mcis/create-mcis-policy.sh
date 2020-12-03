@@ -57,29 +57,17 @@
 					"autoCondition": {
 						"metric": "cpu",
 						"operator": ">=",
-						"operand": "30",
+						"operand": "80",
 						"evaluationPeriod": "10"
 					},
 					"autoAction": {
 						"actionType": "ScaleOut",
 						"placement_algo": "random",
 						"vm": {
-							"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-AutoGen",
-							"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-							"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-							"sshKeyId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-							"specId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-							"securityGroupIds": [
-								"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
-							],
-							"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-							"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-							"description": "description",
-							"vmUserAccount": "cb-user",							
-							"vmUserPassword": ""
+							"name": "AutoGen"
 						},
 						"postCommand": {
-							"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
+							"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh; wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/runLoadMaker.sh -O ~/runLoadMaker.sh; chmod +x ~/runLoadMaker.sh; sudo ~/runLoadMaker.sh"
 						}
 					}
 				},				
@@ -87,14 +75,13 @@
 					"autoCondition": {
 						"metric": "cpu",
 						"operator": "<=",
-						"operand": "10",
+						"operand": "60",
 						"evaluationPeriod": "10"
 					},
 					"autoAction": {
 						"actionType": "ScaleIn"
 					}
 				}
-
 			]
 		}' | json_pp || return 1
 #}
