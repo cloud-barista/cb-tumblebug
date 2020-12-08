@@ -372,16 +372,16 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 
 	switch {
 		case metric == MonMetricCpu:
-			value := gjson.Get(string(body), "cpu.fields.usage_utilization")
+			value := gjson.Get(string(body), "values.cpu_utilization")
 			result = value.String()
 		case metric == MonMetricMem:
-			value := gjson.Get(string(body), "mem.fields.used_percent")
+			value := gjson.Get(string(body), "values.mem_utilization")
 			result = value.String()
 		case metric == MonMetricDisk:
-			value := gjson.Get(string(body), "disk.fields.used_percent")
+			value := gjson.Get(string(body), "values.disk_utilization")
 			result = value.String()
 		case metric == MonMetricNet:
-			value := gjson.Get(string(body), "net.fields.bytes_recv")
+			value := gjson.Get(string(body), "values.bytes_out")
 			result = value.String()
 		default:
 	}
