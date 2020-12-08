@@ -1,10 +1,10 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
 
-Framework for Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure 
+A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
 
 ```
 [NOTE] Development stage of CB-Tumblebug (CB-Tumblebug 개발 단계)
-CB-Tumblebug is currently under development. (the latest release is 0.2.0 cappuccino)
+CB-Tumblebug is currently under development. (the latest release is v0.3.0)
 So, we do not recommend using the current release in production.
 Please note that the functionalities of CB-Tumblebug are not stable and secure yet.
 If you have any difficulties in using CB-Tumblebug, please let us know.
@@ -51,7 +51,7 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 # docker run -p 1323:1323 \
 -v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
 --name cb-tumblebug \
-cloudbaristaorg/cb-tumblebug:v0.2.x-yyyymmdd
+cloudbaristaorg/cb-tumblebug:v0.3.x-yyyymmdd
 ```
 
 ### (2) 소스 기반 실행
@@ -62,8 +62,12 @@ cloudbaristaorg/cb-tumblebug:v0.2.x-yyyymmdd
 - 의존 라이브러리 다운로드
   - Cloud-Barista alliance 설치 (CB-Store, CB-Log, CB-Spider)
   - 기타 라이브러리
-- CB-Tumblebug 빌드 (make)
-- CB-Tumblebug 실행 (make run)
+- CB-Tumblebug 빌드 (make) 및 실행 (make run)
+  - `cb-tumblebug/src/` 에서 수행
+
+- Swagger API 문서 업데이트 필요시 `~/go/bin/swag init` 실행
+  - API 문서 파일은 `cb-tumblebug/src/docs/swagger.yaml` 에 생성됨
+  - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (cb-tumblebug 구동 시 자동으로 제공)
 
 ### (3) Cloud-Barista 시스템 통합 실행 참고 (cb-operator)
 ```
@@ -82,7 +86,7 @@ cb-operator/src$ ./operator
   - `# apt install git`
 
 - Go 설치
-  - https://golang.org/doc/install (2019년 11월 현재 `apt install golang` 으로 설치하면 1.10 설치됨. 이 링크에서 1.12 이상 버전으로 설치할 것)
+  - https://golang.org/doc/install (아래 링크를 통해 1.12 이상 버전으로 설치 필요)
   - `wget https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz`
   - `tar -C /usr/local -xzf go1.13.4.linux-amd64.tar.gz`
   - `.bashrc` 파일 하단에 다음을 추가: 
@@ -141,7 +145,7 @@ This may involve a vendored copy of golang.org/x/net/trace.”
 
 ### CB-Tumblebug 및 CB-Spider의 REST API를 사용하여 테스트
 - CB-Spider API를 통해 클라우드 인프라 연동 정보 등록
-   - cloud-barista.github.io/rest-api/v0.2.0/spider/ccim/
+   - https://cloud-barista.github.io/rest-api/v0.3.0/spider/ccim/
 - CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
    - https://cloud-barista.github.io/cb-tumblebug-api-web/#/Namespace/post_ns
 - CB-Tumblebug 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
@@ -213,6 +217,9 @@ This may involve a vendored copy of golang.org/x/net/trace.”
     - ./cleanAll-mcis-mcir-ns-cloud.sh gcp 2 shson       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 테스트 수행
     - ./cleanAll-mcis-mcir-ns-cloud.sh azure 1 shson     # azure의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
     - ./cleanAll-mcis-mcir-ns-cloud.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+
+<details>
+<summary>입출력 예시 보기</summary>
 
 ```
 ~/go/src/github.com/cloud-barista/cb-tumblebug/test/official/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson
@@ -474,6 +481,8 @@ Dozing for 1 : 1 (Back to work)
 
 마지막의 [Executed Command List] 에는 수행한 커맨드의 히스토리가 포함됨. 
 (cat ./executionStatus 를 통해 다시 확인 가능)
+      
+</details>
 
 #### 3) MCIS 응용 기반 최종 검증
 
@@ -515,6 +524,10 @@ Dozing for 1 : 1 (Back to work)
 
 
 #### [테스트 코드 파일 트리 설명]
+
+<details>
+<summary>테스트 스크립트 디렉토리 전체 Tree 보기</summary>
+
 ```
 ~/go/src/github.com/cloud-barista/cb-tumblebug/test/official$ tree
 .
@@ -564,27 +577,38 @@ Dozing for 1 : 1 (Back to work)
 │   ├── registerImageWithInfo.sh
 │   ├── spider-get-imagelist.sh
 │   ├── spider-get-image.sh
+│   ├── test-search-image.sh
 │   ├── unregister-all-images.sh
 │   └── unregister-image.sh
 ├── 7.spec
 │   ├── fetch-specs.sh
+│   ├── filter-specs.sh
 │   ├── get-spec.sh
 │   ├── list-spec.sh
 │   ├── lookupSpecList.sh
 │   ├── lookupSpec.sh
+│   ├── range-filter-specs.sh
 │   ├── register-spec.sh
 │   ├── spider-get-speclist.sh
 │   ├── spider-get-spec.sh
+│   ├── test-sort-specs.sh
+│   ├── test-update-spec.sh
 │   ├── unregister-all-specs.sh
 │   └── unregister-spec.sh
 ├── 8.mcis
 │   ├── add-vm-to-mcis.sh
 │   ├── create-mcis-no-agent.sh
+│   ├── create-mcis-policy.sh
 │   ├── create-mcis.sh
 │   ├── create-single-vm-mcis.sh
+│   ├── delete-mcis-policy-all.sh
+│   ├── delete-mcis-policy.sh
+│   ├── get-mcis-policy.sh
 │   ├── get-mcis.sh
 │   ├── just-terminate-mcis.sh
+│   ├── list-mcis-policy.sh
 │   ├── list-mcis.sh
+│   ├── list-mcis-status.sh
 │   ├── reboot-mcis.sh
 │   ├── resume-mcis.sh
 │   ├── spider-create-vm.sh
@@ -607,21 +631,78 @@ Dozing for 1 : 1 (Back to work)
 │   └── list-region.sh
 ├── README.md
 └── sequentialFullTest
+    ├── cb-demo-support
     ├── cleanAll-mcis-mcir-ns-cloud.sh
     ├── command-mcis-custom.sh
     ├── command-mcis.sh
     ├── create-mcis-for-df.sh
     ├── deploy-dragonfly-docker.sh
+    ├── deploy-loadMaker-to-mcis.sh
     ├── deploy-nginx-mcis.sh
+    ├── deploy-nginx-mcis-vm-withGivenName.sh
+    ├── deploy-nginx-mcis-with-loadmaker.sh
     ├── deploy-spider-docker.sh
     ├── deploy-tumblebug.sh
     ├── executionStatus
     ├── expand-mcis.sh
     ├── gen-sshKey.sh
+    ├── gen-sshKey-withGivenMcisName.sh
     ├── sshkey-tmp
+    │   ├── -3.pem
+    │   ├── avengers-shson6.pem
+    │   ├── avengers-shson9.pem
     │   ├── aws-ap-northeast-2-df-auto.pem
-    │   ├── ... (# gen-sshKey.sh에 의해서 자동 생성)
-    │   └── gcp-asia-east1-shson1.ppk
+    │   ├── aws-ap-northeast-2-df-auto.ppk
+    │   ├── aws-ap-southeast-1-shson2.pem
+    │   ├── aws-ap-southeast-1-shson2.ppk
+    │   ├── aws-ap-southeast-1-shson.pem
+    │   ├── aws-ap-southeast-1-shson.ppk
+    │   ├── aws-ap-southeast-2-shson1.pem
+    │   ├── aws-ap-southeast-2-shson1.ppk
+    │   ├── aws-us-east-1-df1.pem
+    │   ├── aws-us-east-1-df1.ppk
+    │   ├── aws-us-east-1-df2.pem
+    │   ├── aws-us-east-1-df2.ppk
+    │   ├── aws-us-east-1-df3.pem
+    │   ├── aws-us-east-1-df3.ppk
+    │   ├── aws-us-east-1-df4.pem
+    │   ├── aws-us-east-1-df4.ppk
+    │   ├── aws-us-east-1-df-auto.pem
+    │   ├── aws-us-east-1-df-auto.ppk
+    │   ├── aws-us-east-1-df.pem
+    │   ├── aws-us-east-1-df.ppk
+    │   ├── aws-us-east-1-df-test.pem
+    │   ├── aws-us-east-1-df-test.ppk
+    │   ├── aws-us-east-1-shson12.pem
+    │   ├── aws-us-east-1-shson12.ppk
+    │   ├── aws-us-east-1-shson1.pem
+    │   ├── aws-us-east-1-shson1.ppk
+    │   ├── aws-us-east-1-shson2.pem
+    │   ├── aws-us-east-1-shson2.ppk
+    │   ├── aws-us-east-1-shson.pem
+    │   ├── aws-us-east-1-shson.ppk
+    │   ├── aws-us-west-1-df1.pem
+    │   ├── aws-us-west-1-df1.ppk
+    │   ├── aws-us-west-1-df.pem
+    │   ├── aws-us-west-1-df.ppk
+    │   ├── aws-us-west-1-shon.pem
+    │   ├── aws-us-west-1-shson2.pem
+    │   ├── aws-us-west-1-shson2.ppk
+    │   ├── aws-us-west-1-shson3.pem
+    │   ├── aws-us-west-1-shson4.pem
+    │   ├── aws-us-west-1-shson4.ppk
+    │   ├── aws-us-west-1-shson5.pem
+    │   ├── aws-us-west-1-shson5.ppk
+    │   ├── aws-us-west-1-shson6.pem
+    │   ├── aws-us-west-1-shson6.ppk
+    │   ├── aws-us-west-1-shson.pem
+    │   ├── aws-us-west-1-shson.ppk
+    │   ├── gcp-asia-east1-shson01.pem
+    │   ├── gcp-asia-east1-shson01.ppk
+    │   ├── gcp-asia-east1-shson1.pem
+    │   ├── gcp-asia-east1-shson1.ppk
+    │   ├── gcp-asia-east1-shson6.pem
+    │   └── gcp-asia-east1-shson6.ppk
     ├── testAll-mcis-mcir-ns-cloud.sh
     ├── test-cloud.sh
     ├── test-mcir-ns-cloud.sh
@@ -629,3 +710,4 @@ Dozing for 1 : 1 (Back to work)
 
 ```
 
+</details>
