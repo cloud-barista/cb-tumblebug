@@ -146,7 +146,10 @@ func RestGetAllMcis(c echo.Context) error {
 		common.PrintJsonPretty(content)
 		return c.JSON(http.StatusOK, &content)
 	} else {
-		result, err := mcis.CoreGetAllMcis(nsId, option)
+		// mcis in detail (with status information)
+		detail := "status"
+
+		result, err := mcis.CoreGetAllMcis(nsId, detail)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
