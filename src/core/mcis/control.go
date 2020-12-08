@@ -3112,6 +3112,10 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 
 func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
+	nsId = common.GenId(nsId)
+	_, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	mcisId = lowerizedName
+
 	fmt.Println("[GetMcisStatus]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//fmt.Println(key)
