@@ -648,59 +648,6 @@ Dozing for 1 : 1 (Back to work)
     ├── gen-sshKey.sh
     ├── gen-sshKey-withGivenMcisName.sh
     ├── sshkey-tmp
-    │   ├── -3.pem
-    │   ├── avengers-shson6.pem
-    │   ├── avengers-shson9.pem
-    │   ├── aws-ap-northeast-2-df-auto.pem
-    │   ├── aws-ap-northeast-2-df-auto.ppk
-    │   ├── aws-ap-southeast-1-shson2.pem
-    │   ├── aws-ap-southeast-1-shson2.ppk
-    │   ├── aws-ap-southeast-1-shson.pem
-    │   ├── aws-ap-southeast-1-shson.ppk
-    │   ├── aws-ap-southeast-2-shson1.pem
-    │   ├── aws-ap-southeast-2-shson1.ppk
-    │   ├── aws-us-east-1-df1.pem
-    │   ├── aws-us-east-1-df1.ppk
-    │   ├── aws-us-east-1-df2.pem
-    │   ├── aws-us-east-1-df2.ppk
-    │   ├── aws-us-east-1-df3.pem
-    │   ├── aws-us-east-1-df3.ppk
-    │   ├── aws-us-east-1-df4.pem
-    │   ├── aws-us-east-1-df4.ppk
-    │   ├── aws-us-east-1-df-auto.pem
-    │   ├── aws-us-east-1-df-auto.ppk
-    │   ├── aws-us-east-1-df.pem
-    │   ├── aws-us-east-1-df.ppk
-    │   ├── aws-us-east-1-df-test.pem
-    │   ├── aws-us-east-1-df-test.ppk
-    │   ├── aws-us-east-1-shson12.pem
-    │   ├── aws-us-east-1-shson12.ppk
-    │   ├── aws-us-east-1-shson1.pem
-    │   ├── aws-us-east-1-shson1.ppk
-    │   ├── aws-us-east-1-shson2.pem
-    │   ├── aws-us-east-1-shson2.ppk
-    │   ├── aws-us-east-1-shson.pem
-    │   ├── aws-us-east-1-shson.ppk
-    │   ├── aws-us-west-1-df1.pem
-    │   ├── aws-us-west-1-df1.ppk
-    │   ├── aws-us-west-1-df.pem
-    │   ├── aws-us-west-1-df.ppk
-    │   ├── aws-us-west-1-shon.pem
-    │   ├── aws-us-west-1-shson2.pem
-    │   ├── aws-us-west-1-shson2.ppk
-    │   ├── aws-us-west-1-shson3.pem
-    │   ├── aws-us-west-1-shson4.pem
-    │   ├── aws-us-west-1-shson4.ppk
-    │   ├── aws-us-west-1-shson5.pem
-    │   ├── aws-us-west-1-shson5.ppk
-    │   ├── aws-us-west-1-shson6.pem
-    │   ├── aws-us-west-1-shson6.ppk
-    │   ├── aws-us-west-1-shson.pem
-    │   ├── aws-us-west-1-shson.ppk
-    │   ├── gcp-asia-east1-shson01.pem
-    │   ├── gcp-asia-east1-shson01.ppk
-    │   ├── gcp-asia-east1-shson1.pem
-    │   ├── gcp-asia-east1-shson1.ppk
     │   ├── gcp-asia-east1-shson6.pem
     │   └── gcp-asia-east1-shson6.ppk
     ├── testAll-mcis-mcir-ns-cloud.sh
