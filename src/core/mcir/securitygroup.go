@@ -76,7 +76,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
 	//nsId = lowerizedNsId
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "securityGroup", u.Name)
 	u.Name = lowerizedName

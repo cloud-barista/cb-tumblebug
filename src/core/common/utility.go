@@ -48,6 +48,13 @@ func GenId(name string) string {
 	return out
 }
 
+func ToLower(name string) string {
+	r, _ := regexp.Compile("_")
+	out := r.ReplaceAllString(name, "-")
+	out = strings.ToLower(out)
+	return out
+}
+
 func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 	if vmId != "" {

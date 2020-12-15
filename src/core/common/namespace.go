@@ -34,7 +34,9 @@ func NsValidation() echo.MiddlewareFunc {
 			if nsId == "" {
 				return next(c)
 			}
-			check, _, err := LowerizeAndCheckNs(nsId)
+			//check, _, err := LowerizeAndCheckNs(nsId)
+			nsId = ToLower(nsId)
+			check, err := CheckNs(nsId)
 
 			if check == false || err != nil {
 				return echo.NewHTTPError(http.StatusNotFound, "Not valid namespace")
@@ -45,7 +47,9 @@ func NsValidation() echo.MiddlewareFunc {
 }
 
 func CreateNs(u *NsReq) (NsInfo, error) {
-	check, lowerizedName, err := LowerizeAndCheckNs(u.Name)
+	//check, lowerizedName, err := LowerizeAndCheckNs(u.Name)
+	lowerizedName := ToLower(u.Name)
+	check, err := CheckNs(lowerizedName)
 
 	if check {
 		temp := NsInfo{}
@@ -87,7 +91,9 @@ func GetNs(id string) (NsInfo, error) {
 
 	res := NsInfo{}
 
-	check, lowerizedId, err := LowerizeAndCheckNs(id)
+	//check, lowerizedId, err := LowerizeAndCheckNs(id)
+	lowerizedId := ToLower(id)
+	check, err := CheckNs(lowerizedId)
 
 	if check == false {
 		errString := "The namespace " + lowerizedId + " does not exist."
@@ -173,7 +179,9 @@ func ListNsId() []string {
 
 func DelNs(Id string) error {
 
-	check, lowerizedId, err := LowerizeAndCheckNs(Id)
+	//check, lowerizedId, err := LowerizeAndCheckNs(Id)
+	lowerizedId := ToLower(Id)
+	check, err := CheckNs(lowerizedId)
 
 	if check == false {
 		errString := "The namespace " + lowerizedId + " does not exist."
@@ -251,6 +259,7 @@ func DelAllNs() error {
 	return nil
 }
 
+/*
 func LowerizeAndCheckNs(Id string) (bool, string, error) {
 
 	if Id == "" {
@@ -266,14 +275,30 @@ func LowerizeAndCheckNs(Id string) (bool, string, error) {
 	//fmt.Println(key)
 
 	keyValue, _ := CBStore.Get(key)
-	/*
-		if err != nil {
-			CBLog.Error(err)
-			return false, err
-		}
-	*/
 	if keyValue != nil {
 		return true, lowerizedId, nil
 	}
 	return false, lowerizedId, nil
+}
+*/
+
+func CheckNs(Id string) (bool, error) {
+
+	if Id == "" {
+		err := fmt.Errorf("CheckNs failed; nsId given is null.")
+		return false, err
+	}
+
+	lowerizedId := ToLower(Id)
+
+	fmt.Println("[Check ns] " + lowerizedId)
+
+	key := "/ns/" + lowerizedId
+	//fmt.Println(key)
+
+	keyValue, _ := CBStore.Get(key)
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
 }

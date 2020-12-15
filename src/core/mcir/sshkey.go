@@ -60,7 +60,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
 	//nsId = lowerizedNsId
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "sshKey", u.Name)
 	u.Name = lowerizedName

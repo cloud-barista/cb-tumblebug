@@ -37,7 +37,9 @@ func RestCheckNs(c echo.Context) error {
 		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
-	exists, _, err := common.LowerizeAndCheckNs(c.Param("nsId"))
+	//exists, _, err := common.LowerizeAndCheckNs(c.Param("nsId"))
+	lowerizedNsId := common.ToLower(c.Param("nsId"))
+	exists, err := common.CheckNs(lowerizedNsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return SendMessage(c, http.StatusBadRequest, err.Error())

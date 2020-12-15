@@ -73,7 +73,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
 	//nsId = lowerizedNsId
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedName, _ := LowerizeAndCheckResource(nsId, "vNet", u.Name)
 	//fmt.Println("CreateVNet() called; nsId: " + nsId + ", u.Name: " + u.Name + ", lowerizedName: " + lowerizedName) // for debug
