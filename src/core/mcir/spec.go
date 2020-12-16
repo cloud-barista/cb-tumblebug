@@ -320,8 +320,9 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	nsId = common.GenId(nsId)
 
-	_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	nsId = lowerizedNsId
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", u.Name)
 	u.Name = lowerizedName
@@ -476,7 +477,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
 	//nsId = lowerizedNsId
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", content.Name)
 	content.Name = lowerizedName

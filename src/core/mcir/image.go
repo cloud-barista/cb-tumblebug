@@ -258,8 +258,9 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
-	_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	nsId = lowerizedNsId
+	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
+	//nsId = lowerizedNsId
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", u.Name)
 
@@ -353,7 +354,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
 	//nsId = lowerizedNsId
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", content.Name)
 

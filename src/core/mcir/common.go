@@ -56,7 +56,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
 	//nsId = lowerizedNsId
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
 	resourceId = lowerizedResourceId
@@ -562,7 +562,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
 	//nsId = lowerizedNsId
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
 	resourceId = lowerizedResourceId
