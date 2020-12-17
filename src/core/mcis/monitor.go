@@ -18,7 +18,6 @@ import (
 
 	// REST API (echo)
 	"net/http"
-	
 
 	"sync"
 
@@ -34,16 +33,16 @@ const MonMetricSwap string = "swap"
 const MonMetricDisk string = "disk"
 const MonMetricDiskio string = "diskio"
 
-
 type MonAgentInstallReq struct {
-	Ns_id   string `json:"ns_id,omitempty"`
+	Ns_id     string `json:"ns_id,omitempty"`
 	Mcis_id   string `json:"mcis_id,omitempty"`
 	Vm_id     string `json:"vm_id,omitempty"`
 	Public_ip string `json:"public_ip,omitempty"`
 	User_name string `json:"user_name,omitempty"`
 	Ssh_key   string `json:"ssh_key,omitempty"`
-	Csp_type   string `json:"cspType,omitempty"`
+	Csp_type  string `json:"cspType,omitempty"`
 }
+
 /*
 type DfTelegrafMetric struct {
 	Name      string                 `json:"name"`
@@ -55,15 +54,15 @@ type DfTelegrafMetric struct {
 */
 
 type MonResultSimple struct {
-	Metric   string `json:"metric"`
+	Metric string `json:"metric"`
 	VmId   string `json:"vmId"`
-	Value   string `json:"value"`
-	Err   string `json:"err"`
+	Value  string `json:"value"`
+	Err    string `json:"err"`
 }
 
 type MonResultSimpleResponse struct {
-	NsId   string `json:"nsId"`
-	McisId   string `json:"mcisId"`
+	NsId           string            `json:"nsId"`
+	McisId         string            `json:"mcisId"`
 	McisMonitoring []MonResultSimple `json:"mcisMonitoring"`
 }
 
@@ -73,14 +72,13 @@ func CheckDragonflyEndpoint() error {
 
 	url := common.DRAGONFLY_REST_URL + cmd
 	method := "GET"
-  
-	client := &http.Client {
-	}
+
+	client := &http.Client{}
 	req, err := http.NewRequest(method, url, nil)
-  
+
 	if err != nil {
-	  fmt.Println(err)
-	  return err
+		fmt.Println(err)
+		return err
 	}
 	res, err := client.Do(req)
 	if err != nil {
@@ -94,7 +92,7 @@ func CheckDragonflyEndpoint() error {
 		fmt.Println(err)
 		return err
 	}
-  
+
 	fmt.Println(string(body))
 	return nil
 }
@@ -108,7 +106,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
-		Ns_id:   nsID,
+		Ns_id:     nsID,
 		Mcis_id:   mcisID,
 		Vm_id:     vmID,
 		Public_ip: vmIP,
@@ -184,16 +182,18 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		*returnResult = append(*returnResult, sshResultTmp)
 		vmInfoTmp.MonAgentStatus = "installed"
 	}
-	
+
 	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
 
 }
 
 func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := AgentInstallContentWrapper{}
@@ -224,17 +224,17 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 	for _, v := range vmList {
 		vmObjTmp, _ := GetVmObject(nsId, mcisId, v)
 		fmt.Println("MonAgentStatus : " + vmObjTmp.MonAgentStatus)
-		
-		if(vmObjTmp.MonAgentStatus != "installed"){
+
+		if vmObjTmp.MonAgentStatus != "installed" {
 
 			vmId := v
 			vmIp := GetVmIp(nsId, mcisId, vmId)
-	
+
 			// find vaild username
 			userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 			userNames := []string{SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04, userName, req.User_name}
 			userName = VerifySshUserName(vmIp, userNames, sshKey)
-	
+
 			fmt.Println("[CallMonitoringAsync] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 
 			wg.Add(1)
@@ -263,9 +263,11 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 
 func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimpleResponse, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := MonResultSimpleResponse{}
@@ -371,19 +373,19 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	result := string(body)
 
 	switch {
-		case metric == MonMetricCpu:
-			value := gjson.Get(string(body), "values.cpu_utilization")
-			result = value.String()
-		case metric == MonMetricMem:
-			value := gjson.Get(string(body), "values.mem_utilization")
-			result = value.String()
-		case metric == MonMetricDisk:
-			value := gjson.Get(string(body), "values.disk_utilization")
-			result = value.String()
-		case metric == MonMetricNet:
-			value := gjson.Get(string(body), "values.bytes_out")
-			result = value.String()
-		default:
+	case metric == MonMetricCpu:
+		value := gjson.Get(string(body), "values.cpu_utilization")
+		result = value.String()
+	case metric == MonMetricMem:
+		value := gjson.Get(string(body), "values.mem_utilization")
+		result = value.String()
+	case metric == MonMetricDisk:
+		value := gjson.Get(string(body), "values.disk_utilization")
+		result = value.String()
+	case metric == MonMetricNet:
+		value := gjson.Get(string(body), "values.bytes_out")
+		result = value.String()
+	default:
 	}
 
 	//wg.Done() //goroutin sync done

@@ -56,6 +56,7 @@ type mcirIds struct {
 }
 */
 
+/*
 func LowerizeAndCheckMcis(nsId string, mcisId string) (bool, string, error) {
 
 	// Check parameters' emptiness
@@ -80,19 +81,46 @@ func LowerizeAndCheckMcis(nsId string, mcisId string) (bool, string, error) {
 	//fmt.Println(key)
 
 	keyValue, _ := common.CBStore.Get(key)
-	/*
-		if err != nil {
-			common.CBLog.Error(err)
-			return false, mcisId, err
-		}
-	*/
 	if keyValue != nil {
 		return true, mcisId, nil
 	}
 	return false, mcisId, nil
 
 }
+*/
 
+func CheckMcis(nsId string, mcisId string) (bool, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("CheckMcis failed; nsId given is null.")
+		return false, err
+	} else if mcisId == "" {
+		err := fmt.Errorf("CheckMcis failed; mcisId given is null.")
+		return false, err
+	}
+
+	lowerizedNsId := common.ToLower(nsId)
+	nsId = lowerizedNsId
+
+	lowerizedMcisId := common.ToLower(mcisId)
+	mcisId = lowerizedMcisId
+
+	fmt.Println("[Check mcis] " + mcisId)
+
+	//key := "/ns/" + nsId + "/mcis/" + mcisId
+	key := common.GenMcisKey(nsId, mcisId, "")
+	//fmt.Println(key)
+
+	keyValue, _ := common.CBStore.Get(key)
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
+
+}
+
+/*
 func LowerizeAndCheckVm(nsId string, mcisId string, vmId string) (bool, string, error) {
 
 	// Check parameters' emptiness
@@ -122,20 +150,51 @@ func LowerizeAndCheckVm(nsId string, mcisId string, vmId string) (bool, string, 
 	//fmt.Println(key)
 
 	keyValue, _ := common.CBStore.Get(key)
-	/*
-		if err != nil {
-			common.CBLog.Error(err)
-			return false, lowerizedVmId, err
-		}
-	*/
 	if keyValue != nil {
 		return true, lowerizedVmId, nil
 	}
 	return false, lowerizedVmId, nil
 
 }
+*/
 
-// Lowerize id chars and check the same McisPolicy obj
+func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("CheckVm failed; nsId given is null.")
+		return false, err
+	} else if mcisId == "" {
+		err := fmt.Errorf("CheckVm failed; mcisId given is null.")
+		return false, err
+	} else if vmId == "" {
+		err := fmt.Errorf("CheckVm failed; vmId given is null.")
+		return false, err
+	}
+
+	lowerizedNsId := common.ToLower(nsId)
+	nsId = lowerizedNsId
+
+	lowerizedMcisId := common.ToLower(mcisId)
+	mcisId = lowerizedMcisId
+
+	lowerizedVmId := common.ToLower(vmId)
+	vmId = lowerizedVmId
+
+	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
+
+	key := common.GenMcisKey(nsId, mcisId, vmId)
+	//fmt.Println(key)
+
+	keyValue, _ := common.CBStore.Get(key)
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
+
+}
+
+/*
 func LowerizeAndCheckMcisPolicy(nsId string, mcisId string) (bool, string, error) {
 
 	// Check parameters' emptiness
@@ -165,6 +224,39 @@ func LowerizeAndCheckMcisPolicy(nsId string, mcisId string) (bool, string, error
 		return true, mcisId, nil
 	}
 	return false, mcisId, nil
+
+}
+*/
+
+func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("CheckMcis failed; nsId given is null.")
+		return false, err
+	} else if mcisId == "" {
+		err := fmt.Errorf("CheckMcis failed; mcisId given is null.")
+		return false, err
+	}
+
+	lowerizedNsId := common.ToLower(nsId)
+	nsId = lowerizedNsId
+
+	lowerizedMcisId := common.ToLower(mcisId)
+	mcisId = lowerizedMcisId
+
+	fmt.Println("[Check McisPolicy] " + mcisId)
+
+	//key := "/ns/" + nsId + "/mcis/" + mcisId
+	key := common.GenMcisPolicyKey(nsId, mcisId, "")
+	//fmt.Println(key)
+
+	keyValue, _ := common.CBStore.Get(key)
+
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
 
 }
 

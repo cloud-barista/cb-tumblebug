@@ -74,12 +74,14 @@ type TbSecurityGroupInfo struct { // Tumblebug
 
 func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, error) {
 
-	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	//nsId = lowerizedNsId
-	nsId = common.ToLower(nsId)
+	resourceType := "securityGroup"
 
-	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "securityGroup", u.Name)
+	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "securityGroup", u.Name)
+	//u.Name = lowerizedName
+	nsId = common.ToLower(nsId)
+	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check {
 		temp := TbSecurityGroupInfo{}
@@ -175,7 +177,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateSecurityGroup")
-	Key := common.GenResourceKey(nsId, "securityGroup", content.Id)
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {

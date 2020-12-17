@@ -1,27 +1,28 @@
 package common
 
 import (
-	"strings"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
 type ConfigReq struct {
-	Name        string `json:"name" example:"spider"`
-	Value		string `json:"value" example:"http://localhost:1024/spider"`
+	Name  string `json:"name" example:"spider"`
+	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
 // swagger:response ConfigInfo
 type ConfigInfo struct {
-	Id          string `json:"id" example:"configid01"`
-	Name        string `json:"name" example:"spider"`
-	Value 		string `json:"value" example:"http://localhost:1024/spider"`
+	Id    string `json:"id" example:"configid01"`
+	Name  string `json:"name" example:"spider"`
+	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
 func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
-	_, lowerizedName, _ := LowerizeAndCheckConfig(u.Name)
+	//_, lowerizedName, _ := LowerizeAndCheckConfig(u.Name)
+	lowerizedName := ToLower(u.Name)
 
 	content := ConfigInfo{}
 	content.Id = lowerizedName
@@ -49,12 +50,12 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 func UpdateEnv(id string) error {
 
 	/*
-	common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-	common.DRAGONFLY_REST_URL = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-	common.DB_URL = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
-	common.DB_DATABASE = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-	common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-	common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
+		common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
+		common.DRAGONFLY_REST_URL = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+		common.DB_URL = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
+		common.DB_DATABASE = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
+		common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
+		common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 	*/
 
 	content := ConfigInfo{}
@@ -78,21 +79,21 @@ func UpdateEnv(id string) error {
 
 		switch id {
 		case lowStrSPIDER_REST_URL:
-			SPIDER_REST_URL = content.Value	
+			SPIDER_REST_URL = content.Value
 		case lowStrDRAGONFLY_REST_URL:
-			DRAGONFLY_REST_URL = content.Value	
+			DRAGONFLY_REST_URL = content.Value
 		case lowStrDB_URL:
-			DB_URL = content.Value	
+			DB_URL = content.Value
 		case lowStrDB_DATABASE:
-			DB_DATABASE = content.Value	
+			DB_DATABASE = content.Value
 		case lowStrDB_USER:
-			DB_USER = content.Value			
+			DB_USER = content.Value
 		case lowStrDB_PASSWORD:
-			DB_PASSWORD = content.Value	
+			DB_PASSWORD = content.Value
 		case lowStrAUTOCONTROL_DURATION_MS:
-			AUTOCONTROL_DURATION_MS = content.Value	
+			AUTOCONTROL_DURATION_MS = content.Value
 		default:
-	
+
 		}
 	}
 
@@ -111,7 +112,9 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	res := ConfigInfo{}
 
-	check, lowerizedId, err := LowerizeAndCheckConfig(id)
+	//check, lowerizedId, err := LowerizeAndCheckConfig(id)
+	lowerizedId := ToLower(id)
+	check, err := CheckConfig(lowerizedId)
 
 	if check == false {
 		errString := "The config " + lowerizedId + " does not exist."
@@ -207,6 +210,7 @@ func DelAllConfig() error {
 	return nil
 }
 
+/*
 func LowerizeAndCheckConfig(Id string) (bool, string, error) {
 
 	if Id == "" {
@@ -222,14 +226,30 @@ func LowerizeAndCheckConfig(Id string) (bool, string, error) {
 	//fmt.Println(key)
 
 	keyValue, _ := CBStore.Get(key)
-	/*
-		if err != nil {
-			CBLog.Error(err)
-			return false, err
-		}
-	*/
 	if keyValue != nil {
 		return true, lowerizedId, nil
 	}
 	return false, lowerizedId, nil
+}
+*/
+
+func CheckConfig(Id string) (bool, error) {
+
+	if Id == "" {
+		err := fmt.Errorf("CheckConfig failed; configId given is null.")
+		return false, err
+	}
+
+	lowerizedId := ToLower(Id)
+
+	fmt.Println("[Check config] " + lowerizedId)
+
+	key := "/config/" + lowerizedId
+	//fmt.Println(key)
+
+	keyValue, _ := CBStore.Get(key)
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
 }

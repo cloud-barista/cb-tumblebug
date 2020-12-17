@@ -58,12 +58,14 @@ type TbSshKeyInfo struct {
 
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
-	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	//nsId = lowerizedNsId
-	nsId = common.ToLower(nsId)
+	resourceType := "sshKey"
 
-	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "sshKey", u.Name)
+	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "sshKey", u.Name)
+	//u.Name = lowerizedName
+	nsId = common.ToLower(nsId)
+	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check == true {
 		temp := TbSshKeyInfo{}
@@ -166,7 +168,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateSshKey")
-	Key := common.GenResourceKey(nsId, "sshKey", content.Id)
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {

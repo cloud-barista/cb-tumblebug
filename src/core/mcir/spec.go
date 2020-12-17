@@ -291,7 +291,8 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 			tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
 			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
 
-			check, _, err := LowerizeAndCheckResource(nsId, "spec", tumblebugSpecId)
+			//check, _, err := LowerizeAndCheckResource(nsId, "spec", tumblebugSpecId)
+			check, err := CheckResource(nsId, "spec", tumblebugSpecId)
 			if check == true {
 				common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
 				continue
@@ -318,14 +319,14 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
 func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
 
-	nsId = common.GenId(nsId)
+	resourceType := "spec"
 
-	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	//nsId = lowerizedNsId
+	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", u.Name)
+	//u.Name = lowerizedName
 	nsId = common.ToLower(nsId)
-
-	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", u.Name)
+	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check == true {
 		temp := TbSpecInfo{}
@@ -443,7 +444,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
-	Key := common.GenResourceKey(nsId, "spec", content.Id)
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
@@ -473,14 +474,14 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) {
 
-	nsId = common.GenId(nsId)
+	resourceType := "spec"
 
-	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	//nsId = lowerizedNsId
+	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", content.Name)
+	//content.Name = lowerizedName
 	nsId = common.ToLower(nsId)
-
-	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", content.Name)
+	lowerizedName := common.ToLower(content.Name)
 	content.Name = lowerizedName
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check == true {
 		temp := TbSpecInfo{}
@@ -569,7 +570,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
-	Key := common.GenResourceKey(nsId, "spec", content.Id)
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
@@ -1165,10 +1166,14 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 }
 
 func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
-	nsId = common.GenId(nsId)
+	resourceType := "spec"
 
-	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", newSpec.Id)
+	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", newSpec.Id)
+	//newSpec.Id = lowerizedName
+	nsId = common.ToLower(nsId)
+	lowerizedName := common.ToLower(newSpec.Name)
 	newSpec.Id = lowerizedName
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check == false {
 		temp := TbSpecInfo{}
@@ -1182,7 +1187,7 @@ func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 		return temp, err
 	}
 
-	tempInterface, err := GetResource(nsId, "spec", newSpec.Id)
+	tempInterface, err := GetResource(nsId, resourceType, newSpec.Id)
 	if err != nil {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("Failed to get the spec " + lowerizedName + ".")
@@ -1327,7 +1332,7 @@ func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerSpec")
-	Key := common.GenResourceKey(nsId, "spec", tempSpec.Id)
+	Key := common.GenResourceKey(nsId, resourceType, tempSpec.Id)
 	Val, _ := json.Marshal(tempSpec)
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
