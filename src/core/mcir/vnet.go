@@ -71,13 +71,14 @@ type TbVNetInfo struct { // Tumblebug
 
 func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
-	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	//nsId = lowerizedNsId
-	nsId = common.ToLower(nsId)
+	resourceType := "vNet"
 
-	check, lowerizedName, _ := LowerizeAndCheckResource(nsId, "vNet", u.Name)
-	//fmt.Println("CreateVNet() called; nsId: " + nsId + ", u.Name: " + u.Name + ", lowerizedName: " + lowerizedName) // for debug
+	//check, lowerizedName, _ := LowerizeAndCheckResource(nsId, "vNet", u.Name)
+	//u.Name = lowerizedName
+	nsId = common.ToLower(nsId)
+	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check == true {
 		temp := TbVNetInfo{}
@@ -85,13 +86,11 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		return temp, err
 	}
 
-	/*
-		if err != nil {
-			temp := TbVNetInfo{}
-			err := fmt.Errorf("Failed to check the existence of the vNet " + lowerizedName + ".")
-			return temp, err
-		}
-	*/
+	if err != nil {
+		temp := TbVNetInfo{}
+		err := fmt.Errorf("Failed to check the existence of the vNet " + lowerizedName + ".")
+		return temp, err
+	}
 
 	tempReq := SpiderVPCReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName

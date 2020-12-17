@@ -34,7 +34,6 @@ func NsValidation() echo.MiddlewareFunc {
 			if nsId == "" {
 				return next(c)
 			}
-			//check, _, err := LowerizeAndCheckNs(nsId)
 			nsId = ToLower(nsId)
 			check, err := CheckNs(nsId)
 
@@ -47,7 +46,6 @@ func NsValidation() echo.MiddlewareFunc {
 }
 
 func CreateNs(u *NsReq) (NsInfo, error) {
-	//check, lowerizedName, err := LowerizeAndCheckNs(u.Name)
 	lowerizedName := ToLower(u.Name)
 	check, err := CheckNs(lowerizedName)
 
@@ -91,7 +89,6 @@ func GetNs(id string) (NsInfo, error) {
 
 	res := NsInfo{}
 
-	//check, lowerizedId, err := LowerizeAndCheckNs(id)
 	lowerizedId := ToLower(id)
 	check, err := CheckNs(lowerizedId)
 
@@ -179,7 +176,6 @@ func ListNsId() []string {
 
 func DelNs(Id string) error {
 
-	//check, lowerizedId, err := LowerizeAndCheckNs(Id)
 	lowerizedId := ToLower(Id)
 	check, err := CheckNs(lowerizedId)
 

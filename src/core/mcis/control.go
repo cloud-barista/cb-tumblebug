@@ -156,10 +156,10 @@ type TbMcisReq struct {
 	Placement_algo string    `json:"placement_algo"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent   string    `json:"installMonAgent" example:"[yes, no]"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
 
-	Description    string    `json:"description"`
-	Label		     string   `json:"label"`
+	Description string `json:"description"`
+	Label       string `json:"label"`
 }
 
 type TbMcisInfo struct {
@@ -168,12 +168,12 @@ type TbMcisInfo struct {
 	Vm             []TbVmInfo `json:"vm"`
 	Placement_algo string     `json:"placement_algo"`
 	Description    string     `json:"description"`
-	Label		     string   `json:"label"`
+	Label          string     `json:"label"`
 	Status         string     `json:"status"`
 	TargetStatus   string     `json:"targetStatus"`
 	TargetAction   string     `json:"targetAction"`
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent   string  `json:"installMonAgent" example:"[yes, no]"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
 	// Disabled for now
 	//Vm             []vmOverview `json:"vm"`
 }
@@ -190,7 +190,7 @@ type TbVmReq struct {
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
-	Label		     string   `json:"label"`
+	Label            string   `json:"label"`
 
 	/*
 		//Id             string `json:"id"`
@@ -247,7 +247,7 @@ type TbVmInfo struct {
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
-	Label		     string   `json:"label"`
+	Label            string   `json:"label"`
 	//Vnic_id            string   `json:"vnic_id"`
 	//Public_ip_id       string   `json:"public_ip_id"`
 
@@ -268,7 +268,7 @@ type TbVmInfo struct {
 	TargetAction string `json:"targetAction"`
 
 	// Montoring agent status
-	MonAgentStatus   string  `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
@@ -289,24 +289,24 @@ type McisStatusInfo struct {
 	TargetStatus string           `json:"targetStatus"`
 	TargetAction string           `json:"targetAction"`
 	Vm           []TbVmStatusInfo `json:"vm"`
-	MasterVmId     string         `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
-	MasterIp       string         `json:"masterIp" example:"32.201.134.113"`
+	MasterVmId   string           `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
+	MasterIp     string           `json:"masterIp" example:"32.201.134.113"`
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent   string  `json:"installMonAgent" example:"[yes, no]"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
 }
 
 type TbVmStatusInfo struct {
-	Id            string `json:"id"`
-	Csp_vm_id     string `json:"csp_vm_id"`
-	Name          string `json:"name"`
-	Status        string `json:"status"`
-	TargetStatus  string `json:"targetStatus"`
-	TargetAction  string `json:"targetAction"`
-	Native_status string `json:"native_status"`
-	Public_ip     string `json:"public_ip"`
-	Location GeoLocation `json:"location"`
+	Id            string      `json:"id"`
+	Csp_vm_id     string      `json:"csp_vm_id"`
+	Name          string      `json:"name"`
+	Status        string      `json:"status"`
+	TargetStatus  string      `json:"targetStatus"`
+	TargetAction  string      `json:"targetAction"`
+	Native_status string      `json:"native_status"`
+	Public_ip     string      `json:"public_ip"`
+	Location      GeoLocation `json:"location"`
 	// Montoring agent status
-	MonAgentStatus   string  `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 }
 
 type McisRecommendReq struct {
@@ -360,7 +360,7 @@ func VerifySshUserName(vmIp string, userNames []string, privateKey string) strin
 			if v != "" {
 				result, err := RunSSH(vmIp, v, privateKey, cmd)
 				if err != nil {
-					fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error() )
+					fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
 				}
 				if err == nil {
 					theUserName = v
@@ -369,11 +369,11 @@ func VerifySshUserName(vmIp string, userNames []string, privateKey string) strin
 				}
 			}
 			time.Sleep(2 * time.Second)
-		}					
-		if theUserName != ""{
+		}
+		if theUserName != "" {
 			break
 		}
-		fmt.Println("[Trying a SSH] trial:"+ strconv.Itoa(i))
+		fmt.Println("[Trying a SSH] trial:" + strconv.Itoa(i))
 		time.Sleep(1 * time.Second)
 	}
 
@@ -400,9 +400,11 @@ type AgentInstallContent struct {
 
 func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := AgentInstallContentWrapper{}
@@ -604,9 +606,11 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 
 func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := &BenchmarkInfoArray{}
@@ -751,9 +755,11 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 
 func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*BenchmarkInfoArray, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := &BenchmarkInfoArray{}
@@ -1028,9 +1034,11 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 func DelMcis(nsId string, mcisId string) error {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
@@ -1081,10 +1089,12 @@ func DelMcis(nsId string, mcisId string) error {
 
 func DelMcisVm(nsId string, mcisId string, vmId string) error {
 
-	nsId = common.GenId(nsId)
-	mcisId = common.GenId(mcisId)
-	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	vmId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	//vmId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	vmId = common.ToLower(vmId)
+	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if check == false {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
@@ -1174,9 +1184,11 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, req.Name)
-	req.Name = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, req.Name)
+	//req.Name = lowerizedName
+	nsId = common.ToLower(nsId)
+	req.Name = common.ToLower(req.Name)
+	check, _ := CheckMcis(nsId, req.Name)
 
 	if check == true {
 		temp := &TbMcisInfo{}
@@ -1236,9 +1248,11 @@ func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
 func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
@@ -1326,9 +1340,11 @@ func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error
 
 func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := &McisStatusInfo{}
@@ -1360,9 +1376,11 @@ func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := &TbMcisInfo{}
@@ -1602,10 +1620,12 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
 
-	nsId = common.GenId(nsId)
-	mcisId = common.GenId(mcisId)
-	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	vmId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	//vmId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	vmId = common.ToLower(vmId)
+	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if check == false {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
@@ -1654,9 +1674,11 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 
 func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
-	nsId = common.GenId(nsId)
-	check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	check, _ := CheckMcis(nsId, mcisId)
 
 	if check == false {
 		temp := []SshCmdResult{}
@@ -1728,10 +1750,12 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
-	nsId = common.GenId(nsId)
-	mcisId = common.GenId(mcisId)
-	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmInfoData.Name)
-	vmInfoData.Name = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmInfoData.Name)
+	//vmInfoData.Name = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	vmInfoData.Name = common.ToLower(vmInfoData.Name)
+	check, _ := CheckVm(nsId, mcisId, vmInfoData.Name)
 
 	if check == true {
 		temp := &TbVmInfo{}
@@ -1776,20 +1800,20 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	mcisTmp, _ := GetMcisObject(nsId, mcisId)
 
 	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
-	
+
 	if mcisTmp.InstallMonAgent != "no" {
-			
+
 		// Sleep for 20 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe CB-Dragonfly Agent installation.\n\n")
 		time.Sleep(20 * time.Second)
 
 		check := CheckDragonflyEndpoint()
-		if (check != nil){
+		if check != nil {
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
 			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
-			
+
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
 			if err != nil {
@@ -1801,16 +1825,17 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 		}
 	}
 
-
 	return vmInfoData, nil
 }
 
 func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string) (string, error) {
 
-	nsId = common.GenId(nsId)
-	mcisId = common.GenId(mcisId)
-	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	vmId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	//vmId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	vmId = common.ToLower(vmId)
+	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if check == false {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
@@ -1857,10 +1882,12 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 
 func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
 
-	nsId = common.GenId(nsId)
-	mcisId = common.GenId(mcisId)
-	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	vmId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	//vmId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	vmId = common.ToLower(vmId)
+	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if check == false {
 		temp := &TbVmStatusInfo{}
@@ -1891,10 +1918,12 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 
 func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 
-	nsId = common.GenId(nsId)
-	mcisId = common.GenId(mcisId)
-	check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	vmId = lowerizedName
+	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
+	//vmId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	vmId = common.ToLower(vmId)
+	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if check == false {
 		temp := &TbVmInfo{}
@@ -2073,18 +2102,18 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 	UpdateMcisInfo(nsId, mcisTmp)
 
 	if req.InstallMonAgent != "no" {
-		
+
 		// Sleep for 60 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
 		time.Sleep(60 * time.Second)
 
 		check := CheckDragonflyEndpoint()
-		if (check != nil){
+		if check != nil {
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
 			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
-			
+
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
 			if err != nil {
@@ -2095,7 +2124,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			//mcisTmp.InstallMonAgent = "yes"
 		}
 	}
-	
+
 	return key
 }
 
@@ -2132,10 +2161,10 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	//vmInfoData.CspVmId = string(*instanceIds[0])
 	vmInfoData.Status = StatusRunning
 	vmInfoData.TargetAction = ActionComplete
-	vmInfoData.TargetStatus = StatusComplete		
+	vmInfoData.TargetStatus = StatusComplete
 	// Monitoring Agent Installation Status (init: notInstalled)
 	vmInfoData.MonAgentStatus = "notInstalled"
-	
+
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 
 	return nil
@@ -2438,7 +2467,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
-
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.
@@ -3095,7 +3123,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	}
 }
 
-
 func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	fmt.Println("[GetMcisObject]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -3109,12 +3136,12 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	return mcisTmp, nil
 }
 
-
 func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
-	nsId = common.GenId(nsId)
-	_, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	mcisId = lowerizedName
+	//_, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
+	//mcisId = lowerizedName
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
 
 	fmt.Println("[GetMcisStatus]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -3236,7 +3263,6 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 	//need to change status
 
 }
-
 
 func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
@@ -3484,7 +3510,6 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 
 }
 
-
 func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 
 	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mcisId, vmInfoData.Id)
@@ -3615,7 +3640,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 }
 
-
 func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string) {
 
 	var content struct {
@@ -3702,19 +3726,18 @@ func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error
 
 	// delete vms info
 	for _, v := range vmList {
-		vmObj, vmErr:= GetVmObject(nsId, mcisId, v)
+		vmObj, vmErr := GetVmObject(nsId, mcisId, v)
 		if vmErr != nil {
 			common.CBLog.Error(err)
 			return nil, vmErr
 		}
 		//fmt.Println("vmObj.Label: "+ vmObj.Label)
 		if vmObj.Label == label {
-			fmt.Println("Found VM with " + vmObj.Label +", VM ID: " +vmObj.Id)
+			fmt.Println("Found VM with " + vmObj.Label + ", VM ID: " + vmObj.Id)
 			vmListByLabel = append(vmListByLabel, vmObj.Id)
 		}
 	}
 	return vmListByLabel, nil
-
 
 }
 
@@ -3734,10 +3757,10 @@ func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 
 	rand.Seed(time.Now().UnixNano())
 	index := rand.Intn(len(vmList))
-	vmObj, vmErr:= GetVmObject(nsId, mcisId, vmList[index])
+	vmObj, vmErr := GetVmObject(nsId, mcisId, vmList[index])
 	var vmTemplate TbVmInfo
 
-	// only take template required to create VM 
+	// only take template required to create VM
 	vmTemplate.Name = vmObj.Name
 	vmTemplate.ConnectionName = vmObj.ConnectionName
 	vmTemplate.ImageId = vmObj.ImageId
@@ -3757,7 +3780,6 @@ func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 	return vmTemplate, nil
 
 }
-
 
 func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 

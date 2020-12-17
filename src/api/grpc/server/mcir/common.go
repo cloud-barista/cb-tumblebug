@@ -22,7 +22,9 @@ func (s *MCIRService) CheckResource(ctx context.Context, req *pb.ResourceQryRequ
 
 	logger.Debug("calling MCIRService.CheckResource()")
 
-	exists, _, err := mcir.LowerizeAndCheckResource(req.NsId, req.ResourceType, req.ResourceId)
+	//exists, _, err := mcir.LowerizeAndCheckResource(req.NsId, req.ResourceType, req.ResourceId)
+	exists, err := mcir.CheckResource(req.NsId, req.ResourceType, req.ResourceId)
+
 	if err != nil {
 		logger.Debug(err)
 	}

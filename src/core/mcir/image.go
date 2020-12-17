@@ -258,11 +258,12 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
-	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	//nsId = lowerizedNsId
-	nsId = common.ToLower(nsId)
+	resourceType := "image"
 
-	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", u.Name)
+	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", u.Name)
+	nsId = common.ToLower(nsId)
+	lowerizedName := common.ToLower(u.Name)
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check == true {
 		temp := TbImageInfo{}
@@ -325,7 +326,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT registerImage")
-	Key := common.GenResourceKey(nsId, "image", content.Id)
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
@@ -352,15 +353,16 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, error) {
 
-	//_, lowerizedNsId, _ := common.LowerizeAndCheckNs(nsId)
-	//nsId = lowerizedNsId
-	nsId = common.ToLower(nsId)
+	resourceType := "image"
 
-	check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", content.Name)
+	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "image", content.Name)
+	nsId = common.ToLower(nsId)
+	lowerizedName := common.ToLower(content.Name)
+	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check == true {
 		temp := TbImageInfo{}
-		err := fmt.Errorf("The image " + content.Name + " already exists.")
+		err := fmt.Errorf("The image " + lowerizedName + " already exists.")
 		return temp, err
 	}
 
@@ -405,7 +407,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	}
 
 	fmt.Println("=========================== PUT registerImage")
-	Key := common.GenResourceKey(nsId, "image", content.Id)
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
@@ -612,7 +614,8 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 			tumblebugImageId := connConfig.ConfigName + "-" + tumblebugImage.Name
 			//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
 
-			check, _, err := LowerizeAndCheckResource(nsId, "image", tumblebugImageId)
+			//check, _, err := LowerizeAndCheckResource(nsId, "image", tumblebugImageId)
+			check, err := CheckResource(nsId, "image", tumblebugImageId)
 			if check == true {
 				common.CBLog.Infoln("The image " + tumblebugImageId + " already exists in TB; continue")
 				continue
