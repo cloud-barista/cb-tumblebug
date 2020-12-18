@@ -1171,7 +1171,7 @@ func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", newSpec.Id)
 	//newSpec.Id = lowerizedName
 	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(newSpec.Name)
+	lowerizedName := common.ToLower(newSpec.Id)
 	newSpec.Id = lowerizedName
 	check, err := CheckResource(nsId, resourceType, lowerizedName)
 

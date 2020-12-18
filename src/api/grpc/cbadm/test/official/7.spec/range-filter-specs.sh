@@ -11,15 +11,23 @@
     AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
     echo "####################################################################"
-    echo "## 7. spec: filter"
+    echo "## 7. spec: filter-by-range"
     echo "####################################################################"
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec filter --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec filter-by-range --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	    '{
             "nsId":  "'${NS_ID}'",
 		    "spec": {
-			    "num_vCPU": '1', 
-			    "mem_GiB": '2'
+			    "num_vCPU": {
+                    "min": 2,
+                    "max": 4
+                }, 
+                "mem_GiB": {
+                    "min": 4
+                },
+                "storage_GiB": {
+                    "max": 400
+                }
 		    }
 	    }'
 

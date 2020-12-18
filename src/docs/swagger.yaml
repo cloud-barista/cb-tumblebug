@@ -73,70 +73,48 @@ definitions:
     properties:
       cost_per_hour:
         $ref: '#/definitions/mcir.Range'
-        type: object
       ebs_bw_Mbps:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_01:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_02:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_03:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_04:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_05:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_06:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_07:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_08:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_09:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_10:
         $ref: '#/definitions/mcir.Range'
-        type: object
       gpumem_GiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
       max_num_storage:
         $ref: '#/definitions/mcir.Range'
-        type: object
       max_total_storage_TiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
       mem_GiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
       net_bw_Gbps:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_core:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_gpu:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_storage:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_vCPU:
         $ref: '#/definitions/mcir.Range'
-        type: object
       storage_GiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
     type: object
   mcir.Range:
     properties:
@@ -223,7 +201,6 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
-        type: object
       keyValueList:
         items:
           $ref: '#/definitions/common.KeyValue'
@@ -271,7 +248,6 @@ definitions:
         type: string
       vcpu:
         $ref: '#/definitions/mcir.SpiderVCpuInfo'
-        type: object
     type: object
   mcir.SpiderSpecList:
     properties:
@@ -285,7 +261,6 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: '{NameId, SystemId}'
-        type: object
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -570,10 +545,8 @@ definitions:
         type: string
       postCommand:
         $ref: '#/definitions/mcis.McisCmdReq'
-        type: object
       vm:
         $ref: '#/definitions/mcis.TbVmInfo'
-        type: object
     type: object
   mcis.AutoCondition:
     properties:
@@ -682,10 +655,8 @@ definitions:
     properties:
       autoAction:
         $ref: '#/definitions/mcis.AutoAction'
-        type: object
       autoCondition:
         $ref: '#/definitions/mcis.AutoCondition'
-        type: object
       status:
         type: string
     type: object
@@ -762,15 +733,12 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
-        type: object
       imageIId:
         $ref: '#/definitions/common.IID'
-        type: object
       imageName:
         type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
-        type: object
       keyPairName:
         type: string
       keyValueList:
@@ -794,7 +762,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
-        type: object
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -810,7 +777,6 @@ definitions:
       subnetIID:
         $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
-        type: object
       subnetName:
         type: string
       vmblockDisk:
@@ -829,7 +795,6 @@ definitions:
         type: string
       vpcIID:
         $ref: '#/definitions/common.IID'
-        type: object
       vpcname:
         type: string
     type: object
@@ -885,7 +850,6 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
-        type: object
       description:
         type: string
       id:
@@ -896,7 +860,6 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
-        type: object
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -914,7 +877,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: 2. Provided by CB-Spider
-        type: object
       securityGroupIds:
         items:
           type: string
@@ -950,7 +912,6 @@ definitions:
         type: string
       vm_spec:
         $ref: '#/definitions/mcir.TbSpecInfo'
-        type: object
     type: object
   mcis.TbVmRecommendInfo:
     properties:
@@ -966,7 +927,6 @@ definitions:
         type: array
       vm_req:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
-        type: object
     type: object
   mcis.TbVmRecommendReq:
     properties:

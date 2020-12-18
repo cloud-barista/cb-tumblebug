@@ -111,6 +111,7 @@ service MCIR {
   	rpc GetLookupImage (LookupImageQryRequest) returns (SpiderImageInfoResponse) {}
 	rpc ListLookupImage (LookupImageListQryRequest) returns (ListSpiderImageInfoResponse) {}
 	rpc FetchImage (FetchImageQryRequest) returns (MessageResponse) {}
+    //rpc SearchImage (SearchImageRequest) returns (ListTbImageInfoResponse) {}
 
 	rpc CreateSshKey (TbSshKeyCreateRequest) returns (TbSshKeyInfoResponse) {}
 	rpc ListSshKey (ResourceAllQryRequest) returns (ListTbSshKeyInfoResponse) {}
@@ -128,6 +129,9 @@ service MCIR {
 	rpc ListLookupSpec (LookupSpecListQryRequest) returns (ListSpiderSpecInfoResponse) {}
 	rpc FetchSpec (FetchSpecQryRequest) returns (MessageResponse) {}
     rpc FilterSpec (TbSpecInfoRequest) returns (ListTbSpecInfoResponse) {}
+    rpc FilterSpecsByRange (FilterSpecsByRangeRequest) returns (ListTbSpecInfoResponse) {}
+    rpc SortSpecs (SortSpecsRequest) returns (ListTbSpecInfoResponse) {}
+    rpc UpdateSpec (TbSpecInfoRequest) returns (TbSpecInfoResponse) {}
 
 	rpc CreateSecurityGroup (TbSecurityGroupCreateRequest) returns (TbSecurityGroupInfoResponse) {}
 	rpc ListSecurityGroup (ResourceAllQryRequest) returns (ListTbSecurityGroupInfoResponse) {}
@@ -378,6 +382,55 @@ message LookupSpecQryRequest {
 	string connection_name = 1 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];     
 	string spec_name = 2 [json_name="specName", (gogoproto.jsontag) = "specName", (gogoproto.moretags) = "yaml:\"specName\""];      
 }
+
+message FilterSpecsByRangeRequest {
+    string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+    SpecRangeFilter filter = 2 [json_name="filter", (gogoproto.jsontag) = "filter", (gogoproto.moretags) = "yaml:\"filter\""];
+}
+
+message SpecRangeFilter {
+    Range num_vCPU = 1 [json_name="num_vCPU", (gogoproto.jsontag) = "num_vCPU", (gogoproto.moretags) = "yaml:\"num_vCPU\""];
+    Range num_core = 2 [json_name="num_core", (gogoproto.jsontag) = "num_core", (gogoproto.moretags) = "yaml:\"num_core\""];
+    Range mem_GiB = 3 [json_name="mem_GiB", (gogoproto.jsontag) = "mem_GiB", (gogoproto.moretags) = "yaml:\"mem_GiB\""];
+    Range storage_GiB = 4 [json_name="mem_GiB", (gogoproto.jsontag) = "mem_GiB", (gogoproto.moretags) = "yaml:\"mem_GiB\""];
+    Range cost_per_hour = 5 [json_name="cost_per_hour", (gogoproto.jsontag) = "cost_per_hour", (gogoproto.moretags) = "yaml:\"cost_per_hour\""];
+    Range num_storage = 6 [json_name="num_storage", (gogoproto.jsontag) = "num_storage", (gogoproto.moretags) = "yaml:\"num_storage\""];
+    Range max_num_storage = 7 [json_name="max_num_storage", (gogoproto.jsontag) = "max_num_storage", (gogoproto.moretags) = "yaml:\"max_num_storage\""];
+    Range max_total_storage_TiB = 8 [json_name="max_total_storage_TiB", (gogoproto.jsontag) = "max_total_storage_TiB", (gogoproto.moretags) = "yaml:\"max_total_storage_TiB\""];
+    Range net_bw_Gbps = 9 [json_name="net_bw_Gbps", (gogoproto.jsontag) = "net_bw_Gbps", (gogoproto.moretags) = "yaml:\"net_bw_Gbps\""];
+    Range ebs_bw_Mbps = 10 [json_name="ebs_bw_Mbps", (gogoproto.jsontag) = "ebs_bw_Mbps", (gogoproto.moretags) = "yaml:\"ebs_bw_Mbps\""];
+    Range num_gpu = 11 [json_name="num_gpu", (gogoproto.jsontag) = "num_gpu", (gogoproto.moretags) = "yaml:\"num_gpu\""];
+    Range gpumem_GiB = 12 [json_name="gpumem_GiB", (gogoproto.jsontag) = "gpumem_GiB", (gogoproto.moretags) = "yaml:\"gpumem_GiB\""];
+    
+    Range evaluationScore_01 = 21 [json_name="evaluationScore_01", (gogoproto.jsontag) = "evaluationScore_01", (gogoproto.moretags) = "yaml:\"evaluationScore_01\""];
+    Range evaluationScore_02 = 22 [json_name="evaluationScore_02", (gogoproto.jsontag) = "evaluationScore_02", (gogoproto.moretags) = "yaml:\"evaluationScore_02\""];
+    Range evaluationScore_03 = 23 [json_name="evaluationScore_03", (gogoproto.jsontag) = "evaluationScore_03", (gogoproto.moretags) = "yaml:\"evaluationScore_03\""];
+    Range evaluationScore_04 = 24 [json_name="evaluationScore_04", (gogoproto.jsontag) = "evaluationScore_04", (gogoproto.moretags) = "yaml:\"evaluationScore_04\""];
+    Range evaluationScore_05 = 25 [json_name="evaluationScore_05", (gogoproto.jsontag) = "evaluationScore_05", (gogoproto.moretags) = "yaml:\"evaluationScore_05\""];
+    Range evaluationScore_06 = 26 [json_name="evaluationScore_06", (gogoproto.jsontag) = "evaluationScore_06", (gogoproto.moretags) = "yaml:\"evaluationScore_06\""];
+    Range evaluationScore_07 = 27 [json_name="evaluationScore_07", (gogoproto.jsontag) = "evaluationScore_07", (gogoproto.moretags) = "yaml:\"evaluationScore_07\""];
+    Range evaluationScore_08 = 28 [json_name="evaluationScore_08", (gogoproto.jsontag) = "evaluationScore_08", (gogoproto.moretags) = "yaml:\"evaluationScore_08\""];
+    Range evaluationScore_09 = 29 [json_name="evaluationScore_09", (gogoproto.jsontag) = "evaluationScore_09", (gogoproto.moretags) = "yaml:\"evaluationScore_09\""];
+    Range evaluationScore_10 = 30 [json_name="evaluationScore_10", (gogoproto.jsontag) = "evaluationScore_10", (gogoproto.moretags) = "yaml:\"evaluationScore_10\""];
+}
+
+message Range {
+    float min = 1 [json_name="min", (gogoproto.jsontag) = "min", (gogoproto.moretags) = "yaml:\"min\""];
+    float max = 2 [json_name="max", (gogoproto.jsontag) = "max", (gogoproto.moretags) = "yaml:\"max\""];
+}
+
+message SortSpecsRequest {
+    repeated TbSpecInfo items = 1 [json_name="spec", (gogoproto.jsontag) = "spec", (gogoproto.moretags) = "yaml:\"spec\""];
+    string order_by = 2 [json_name="orderBy", (gogoproto.jsontag) = "orderBy", (gogoproto.moretags) = "yaml:\"orderBy\""];
+    string direction = 3 [json_name="direction", (gogoproto.jsontag) = "direction", (gogoproto.moretags) = "yaml:\"direction\""];
+}
+
+/*
+message UpdateSpecRequest {
+    string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+    TbSpecInfo spec = 2 [json_name="spec", (gogoproto.jsontag) = "spec", (gogoproto.moretags) = "yaml:\"spec\""];
+}
+*/
 
 //////////////////////////////////
 // Security Group 메시지 정의

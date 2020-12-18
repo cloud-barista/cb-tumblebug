@@ -974,6 +974,36 @@ func (m *MCIRApi) FilterSpec(doc string) (string, error) {
 	return m.requestMCIR.FilterSpec()
 }
 
+// FilterSpecsByRange
+func (m *MCIRApi) FilterSpecsByRange(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.FilterSpecsByRange()
+}
+
+// SortSpecs
+func (m *MCIRApi) SortSpecs(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.SortSpecs()
+}
+
+// UpdateSpec
+func (m *MCIRApi) UpdateSpec(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.UpdateSpec()
+}
+
 // ListLookupSpec - Spec 목록
 func (m *MCIRApi) ListLookupSpec(doc string) (string, error) {
 	if m.requestMCIR == nil {
