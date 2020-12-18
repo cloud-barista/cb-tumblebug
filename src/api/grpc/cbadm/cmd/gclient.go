@@ -292,6 +292,12 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.FetchSpecByParam(nameSpaceID)
 		case "filter":
 			result, err = mcir.FilterSpec(inData)
+		case "filter-by-range":
+			result, err = mcir.FilterSpecsByRange(inData)
+		case "sort":
+			result, err = mcir.SortSpecs(inData)
+		case "update":
+			result, err = mcir.UpdateSpec(inData)
 		}
 	case "mcis":
 		switch cmd.Name() {
