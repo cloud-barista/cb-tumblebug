@@ -575,33 +575,18 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		errStr = err.Error()
 	}
 
-	if action == "mrtt" {
-		//benchInfoTmp := BenchmarkInfo{}
-		resultTmp := BenchmarkInfo{}
-		err2 := json.Unmarshal(body, &resultTmp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		//benchInfoTmp.ResultArray =  resultTmp.ResultArray
-		if errStr != "" {
-			resultTmp.Result = errStr
-		}
-		resultTmp.SpecId = GetVmSpecId(nsId, mcisId, vmId)
-		results.ResultArray = append(results.ResultArray, resultTmp)
-
-	} else {
-		resultTmp := BenchmarkInfo{}
-		err2 := json.Unmarshal(body, &resultTmp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
-		}
-		if errStr != "" {
-			resultTmp.Result = errStr
-		}
-		resultTmp.SpecId = GetVmSpecId(nsId, mcisId, vmId)
-		results.ResultArray = append(results.ResultArray, resultTmp)
+	//benchInfoTmp := BenchmarkInfo{}
+	resultTmp := BenchmarkInfo{}
+	err2 := json.Unmarshal(body, &resultTmp)
+	if err2 != nil {
+		fmt.Println("whoops:", err2)
 	}
-
+	//benchInfoTmp.ResultArray =  resultTmp.ResultArray
+	if errStr != "" {
+		resultTmp.Result = errStr
+	}
+	resultTmp.SpecId = GetVmSpecId(nsId, mcisId, vmId)
+	results.ResultArray = append(results.ResultArray, resultTmp)
 }
 
 func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
