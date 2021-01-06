@@ -24,7 +24,7 @@ RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumble
 ## Stage 2 - Application Setup
 ##############################################################
 
-FROM ubuntu:latest
+FROM ubuntu:latest as prod
 
 # use bash
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh

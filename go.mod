@@ -16,10 +16,7 @@ require (
 	github.com/cloud-barista/cb-log v0.3.0-espresso
 	github.com/cloud-barista/cb-spider v0.3.0-espresso
 	github.com/cloud-barista/cb-store v0.3.0-espresso
-	github.com/coreos/etcd v3.3.25+incompatible // indirect
-	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/etcd-io/etcd v3.3.25+incompatible // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/go-sql-driver/mysql v1.5.0
@@ -28,7 +25,6 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/go-homedir v1.1.0
@@ -44,11 +40,7 @@ require (
 	github.com/tidwall/gjson v1.6.4
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
-	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20201217014255-9d1352758620
-	golang.org/x/net v0.0.0-20201216054612-986b41b23924 // indirect
-	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d // indirect
-	google.golang.org/grpc v1.34.0
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/grpc v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
 )
