@@ -41,6 +41,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "powerkimhub",
+      "name": "ByoungSeob Kim",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/46367962?v=4",
+      "profile": "http://www.powerkim.co.kr",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
