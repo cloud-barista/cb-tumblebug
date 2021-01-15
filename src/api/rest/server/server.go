@@ -35,7 +35,6 @@ const (
 )
 
 const (
-//	Version = " Version: Cappuccino"
 	website = " Repository: https://github.com/cloud-barista/cb-tumblebug"
 	banner  = `
 
@@ -95,7 +94,7 @@ func ApiServer() {
 	fmt.Println("")
 	fmt.Printf(banner)
 	fmt.Println("")
-//	fmt.Printf(ErrorColor, Version)
+	//	fmt.Printf(ErrorColor, Version)
 	fmt.Println("")
 	fmt.Printf(InfoColor, website)
 	fmt.Println("")
@@ -158,7 +157,7 @@ func ApiServer() {
 	g.POST("/:nsId/install/mcis/:mcisId", rest_mcis.RestPostInstallAgentToMcis)
 	g.GET("/:nsId/benchmark/mcis/:mcisId", rest_mcis.RestGetBenchmark)
 	g.GET("/:nsId/benchmarkall/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
-	
+
 	//MCIS AUTO Policy
 	g.POST("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPostMcisPolicy)
 	g.GET("/:nsId/policy/mcis/:mcisId", rest_mcis.RestGetMcisPolicy)
@@ -166,7 +165,6 @@ func ApiServer() {
 	g.PUT("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPutMcisPolicy)
 	g.DELETE("/:nsId/policy/mcis/:mcisId", rest_mcis.RestDelMcisPolicy)
 	g.DELETE("/:nsId/policy/mcis", rest_mcis.RestDelAllMcisPolicy)
-
 
 	g.POST("/:nsId/monitoring/install/mcis/:mcisId", rest_mcis.RestPostInstallMonitorAgentToMcis)
 	g.GET("/:nsId/monitoring/mcis/:mcisId/metric/:metric", rest_mcis.RestGetMonitorData)
@@ -184,6 +182,8 @@ func ApiServer() {
 	g.PUT("/:nsId/resources/sshKey/:sshKeyId", rest_mcir.RestPutSshKey)
 	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/sshKey", rest_mcir.RestDelAllResources)
+	// Temporal test API for development of SetSshKeyInUseCount
+	g.PUT("/:nsId/resources/testSetSshKeyInUseCount/:sshKeyId", rest_mcir.RestTestSetSshKeyInUseCount)
 
 	g.POST("/:nsId/resources/spec", rest_mcir.RestPostSpec)
 	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetResource)

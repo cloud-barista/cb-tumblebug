@@ -54,6 +54,7 @@ type TbSshKeyInfo struct {
 	PublicKey      string            `json:"publicKey"`
 	PrivateKey     string            `json:"privateKey"`
 	KeyValueList   []common.KeyValue `json:"keyValueList"`
+	InUseCount     int8              `json:"inUseCount"`
 }
 
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {

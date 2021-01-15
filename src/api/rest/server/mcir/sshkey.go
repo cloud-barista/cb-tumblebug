@@ -136,3 +136,26 @@ func RestDelAllSshKey(c echo.Context) error {
 	// Obsolete function. This is just for Swagger.
 	return nil
 }
+
+func RestTestSetSshKeyInUseCount(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	sshKeyId := c.Param("sshKeyId")
+
+	inUseCount, err := mcir.SetInUseCount(nsId, "sshKey", sshKeyId, "+1")
+
+	if err != nil {
+		common.CBLog.Error(err)
+		/*
+			mapA := map[string]string{
+				"message": "Failed to create a SshKey"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		*/
+		//return c.JSON(res.StatusCode, res)
+		//body, _ := ioutil.ReadAll(res.Body)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	mapA := map[string]int8{"inUseCount": inUseCount}
+	return c.JSON(http.StatusOK, &mapA)
+}

@@ -15,6 +15,8 @@ import (
 
 	// CB-Store
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 // CB-Store
@@ -557,9 +559,133 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 	return nil, nil // When err == nil && keyValue == nil
 }
 
-func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
+func GetInUseCount(nsId string, resourceType string, resourceId string) (int8, error) {
+
+	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
+	//resourceId = lowerizedResourceId
+	nsId = common.ToLower(nsId)
+	resourceId = common.ToLower(resourceId)
+	check, err := CheckResource(nsId, resourceType, resourceId)
+
+	if check == false {
+		errString := "The " + resourceType + " " + resourceId + " does not exist."
+		//mapA := map[string]string{"message": errString}
+		//mapB, _ := json.Marshal(mapA)
+		err := fmt.Errorf(errString)
+		return -1, err
+	}
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return -1, err
+	}
+	fmt.Println("[Get count] " + resourceType + ", " + resourceId)
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	//fmt.Println(key)
+
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return -1, err
+	}
+	if keyValue != nil {
+		inUseCount := int8(gjson.Get(keyValue.Value, "inUseCount").Uint())
+		return inUseCount, nil
+	}
+	errString := "Cannot get " + resourceType + " " + resourceId + "."
+	err = fmt.Errorf(errString)
+	return -1, err
+}
+
+func SetInUseCount(nsId string, resourceType string, resourceId string, cmd string) (int8, error) {
+
+	var to_be int8
+	as_is, err := GetInUseCount(nsId, resourceType, resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return -1, err
+	}
+
+	switch cmd {
+	case "-1":
+		switch {
+		case as_is <= 0:
+			errString := "inUseCount was " + strconv.Itoa(int(as_is)) + ". Cannot decrease."
+			err = fmt.Errorf(errString)
+			return -1, err
+		default:
+			to_be = as_is - 1
+		}
+	case "+1":
+		switch {
+		case as_is <= -1:
+			errString := "inUseCount was " + strconv.Itoa(int(as_is)) + ". Cannot increase."
+			err = fmt.Errorf(errString)
+			return -1, err
+		default:
+			to_be = as_is + 1
+		}
+	default:
+		errString := "cmd should be either -1 or +1."
+		to_be = -1
+		err = fmt.Errorf(errString)
+		return to_be, err
+	}
 
 	nsId = common.ToLower(nsId)
+	resourceId = common.ToLower(resourceId)
+	/*
+		check, err := CheckResource(nsId, resourceType, resourceId)
+
+		if check == false {
+			errString := "The " + resourceType + " " + resourceId + " does not exist."
+			//mapA := map[string]string{"message": errString}
+			//mapB, _ := json.Marshal(mapA)
+			err := fmt.Errorf(errString)
+			return -1, err
+		}
+
+		if err != nil {
+			common.CBLog.Error(err)
+			return -1, err
+		}
+	*/
+	fmt.Println("[Set count] " + resourceType + ", " + resourceId)
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	//fmt.Println(key)
+
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return -1, err
+	}
+	if keyValue != nil {
+		keyValue.Value, err = sjson.Set(keyValue.Value, "inUseCount", to_be)
+		if err != nil {
+			common.CBLog.Error(err)
+			//return content, res.StatusCode, body, err
+			return -1, err
+		}
+		err = common.CBStore.Put(key, keyValue.Value)
+		if err != nil {
+			common.CBLog.Error(err)
+			//return content, res.StatusCode, body, err
+			return -1, err
+		}
+		keyValue, _ := common.CBStore.Get(key)
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===========================")
+		to_be = int8(gjson.Get(keyValue.Value, "inUseCount").Uint())
+		return to_be, nil
+	}
+	errString := "Cannot get " + resourceType + " " + resourceId + "."
+	err = fmt.Errorf(errString)
+	return -1, err
+}
+
+func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
 
 	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
 	//resourceId = lowerizedResourceId

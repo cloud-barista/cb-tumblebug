@@ -1056,11 +1056,17 @@ func DelMcis(nsId string, mcisId string) error {
 	for _, v := range vmList {
 		vmKey := common.GenMcisKey(nsId, mcisId, v)
 		fmt.Println(vmKey)
+
+		// get vm info
+		vmInfo, _ := GetVmObject(nsId, mcisId, v)
+
 		err := common.CBStore.Delete(vmKey)
 		if err != nil {
 			common.CBLog.Error(err)
 			return err
 		}
+
+		mcir.SetInUseCount(nsId, "sshKey", vmInfo.SshKeyId, "-1")
 	}
 	// delete mcis info
 	err = common.CBStore.Delete(key)
@@ -1100,6 +1106,9 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 	fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe VM termination.\n\n")
 	time.Sleep(5 * time.Second)
 
+	// get vm info
+	vmInfo, _ := GetVmObject(nsId, mcisId, vmId)
+
 	// delete vms info
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	err = common.CBStore.Delete(key)
@@ -1107,6 +1116,8 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 		common.CBLog.Error(err)
 		return err
 	}
+
+	mcir.SetInUseCount(nsId, "sshKey", vmInfo.SshKeyId, "-1")
 
 	return nil
 }
@@ -2452,6 +2463,8 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
+
+	mcir.SetInUseCount(nsId, "sshKey", vmInfoData.SshKeyId, "+1")
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.
