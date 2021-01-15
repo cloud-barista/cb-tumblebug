@@ -23,6 +23,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "seokho-son",
+      "name": "Seokho Son",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/5966944?v=4",
+      "profile": "https://seokho-son.github.io/",
+      "contributions": [
+        "maintenance"
+      ]
     }
   ],
   "contributorsPerLine": 7,
