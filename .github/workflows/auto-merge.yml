@@ -1,0 +1,42 @@
+# Check auto merge contiditons of PR and proceed merging
+name: "check auto merge contiditons and proceed merging"
+
+# Event on a comment (in PR)
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  # Check auto merge contiditons of PR and proceed merging
+  automerge:
+    # Apply this job if it is a PR and by OWNER with '/approve' comment
+    if: ${{ github.event.issue.pull_request && github.event.comment.author_association == 'OWNER' && startsWith(github.event.comment.body, '/approve') }}
+    runs-on: ubuntu-latest
+    steps:
+      # Check author_association is OWNER
+      - name: Check author_association
+        run: |
+          echo author_association is ${{ github.event.comment.author_association }}
+          echo Hello, this workflow is allowed to OWNERS.
+      
+      # Apply 'approved' label when OWNER left '/approve' comment
+      - uses: actions/checkout@v2
+      - uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          labels: |
+            approved
+      
+      # AutoMerging if this PR has MERGE_LABELS: approved, lgtm (not wip, hold)
+      - name: automerge-lgtm-approved
+        uses: "pascalgn/automerge-action@v0.13.0"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_LABELS: "approved,lgtm,!wip,!hold"
+          MERGE_REMOVE_LABELS: "automerge"
+          MERGE_METHOD: "merge"
+          MERGE_COMMIT_MESSAGE: "pull-request-description"
+          MERGE_FORKS: "false"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"
+          UPDATE_LABELS: "merged"
+          UPDATE_METHOD: "rebase"
