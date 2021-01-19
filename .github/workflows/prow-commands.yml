@@ -1,0 +1,34 @@
+# Action by command-style comments (inspired by Kubernetes Prow)
+name: "action by command-style comments"
+
+# Event on a comment (in issue and PR)
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  execute:
+    # Execute when author_association of the comment is OWNER or MEMBER
+    if: ${{ github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' }}
+    runs-on: ubuntu-latest
+    # Execute action according to commands
+    steps:
+      - uses: jpmcb/prow-github-actions@v1.1.2
+        with:
+          prow-commands: '/assign 
+            /unassign
+            /approve 
+            /retitle 
+            /area 
+            /kind 
+            /priority 
+            /remove 
+            /lgtm 
+            /close 
+            /reopen 
+            /lock 
+            /milestone 
+            /hold 
+            /cc 
+            /uncc'
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
