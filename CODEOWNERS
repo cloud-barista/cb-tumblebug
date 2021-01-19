@@ -6,4 +6,4 @@
 
 # These subderectory owners own any files in the .github/
 # directory which includes github workflows.
-/.github/workflows/**  @jihoon-seo @hermitkim1
+/.github/workflows/**  @jihoon-seo @hermitkim1 @seokho-son
