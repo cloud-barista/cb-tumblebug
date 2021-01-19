@@ -14,6 +14,7 @@ on:
       - '.all-contributorsrc'
       - '.gitignore'
       - 'LICENSE'
+      - 'CODEOWNERS'
       - 'assets/**'
       - 'test/**'
 
@@ -28,6 +29,7 @@ on:
       - '.all-contributorsrc'
       - '.gitignore'
       - 'LICENSE'
+      - 'CODEOWNERS'
       - 'assets/**'
       - 'test/**'
 
