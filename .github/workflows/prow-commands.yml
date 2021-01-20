@@ -21,7 +21,9 @@ jobs:
           echo Hello, this workflow is allowed to OWNER and MEMBER.     
 
       # Action according to command (by jpmcb/prow-github-actions)  
-      - uses: jpmcb/prow-github-actions@v1.1.2
+      - name: Action according to command
+        if: ${{ startsWith(github.event.comment.body, '/') }}
+        uses: jpmcb/prow-github-actions@v1.1.2
         with:
           prow-commands: '/assign 
             /unassign
