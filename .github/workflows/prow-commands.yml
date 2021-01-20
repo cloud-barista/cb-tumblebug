@@ -16,6 +16,8 @@ jobs:
       # Check author_association
       - name: Check author_association
         run: |
+          echo github.actor is ${{ github.actor }}
+          echo github.event.comment.user.login is ${{ github.event.comment.user.login }}
           echo author_association is ${{ github.event.comment.author_association }}
           echo Hello, this workflow is allowed to OWNER and MEMBER.     
 
