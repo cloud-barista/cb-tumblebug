@@ -559,10 +559,7 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 	return nil, nil // When err == nil && keyValue == nil
 }
 
-func GetInUseCount(nsId string, resourceType string, resourceId string) (int8, error) {
-
-	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
-	//resourceId = lowerizedResourceId
+func GetAssoObjCount(nsId string, resourceType string, resourceId string) (int, error) {
 	nsId = common.ToLower(nsId)
 	resourceId = common.ToLower(resourceId)
 	check, err := CheckResource(nsId, resourceType, resourceId)
@@ -590,7 +587,7 @@ func GetInUseCount(nsId string, resourceType string, resourceId string) (int8, e
 		return -1, err
 	}
 	if keyValue != nil {
-		inUseCount := int8(gjson.Get(keyValue.Value, "inUseCount").Uint())
+		inUseCount := int(gjson.Get(keyValue.Value, "associatedObjectList.#").Int())
 		return inUseCount, nil
 	}
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
@@ -598,40 +595,89 @@ func GetInUseCount(nsId string, resourceType string, resourceId string) (int8, e
 	return -1, err
 }
 
-func SetInUseCount(nsId string, resourceType string, resourceId string, cmd string) (int8, error) {
+//func GetInUseCount(nsId string, resourceType string, resourceId string) (int8, error) {
+func GetAssoObjList(nsId string, resourceType string, resourceId string) ([]string, error) {
 
-	var to_be int8
-	as_is, err := GetInUseCount(nsId, resourceType, resourceId)
+	var result []string
+
+	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
+	//resourceId = lowerizedResourceId
+	nsId = common.ToLower(nsId)
+	resourceId = common.ToLower(resourceId)
+	check, err := CheckResource(nsId, resourceType, resourceId)
+
+	if check == false {
+		errString := "The " + resourceType + " " + resourceId + " does not exist."
+		//mapA := map[string]string{"message": errString}
+		//mapB, _ := json.Marshal(mapA)
+		err := fmt.Errorf(errString)
+		return nil, err
+	}
+
 	if err != nil {
 		common.CBLog.Error(err)
-		return -1, err
+		return nil, err
 	}
+	fmt.Println("[Get count] " + resourceType + ", " + resourceId)
 
-	switch cmd {
-	case "-1":
-		switch {
-		case as_is <= 0:
-			errString := "inUseCount was " + strconv.Itoa(int(as_is)) + ". Cannot decrease."
-			err = fmt.Errorf(errString)
-			return -1, err
-		default:
-			to_be = as_is - 1
-		}
-	case "+1":
-		switch {
-		case as_is <= -1:
-			errString := "inUseCount was " + strconv.Itoa(int(as_is)) + ". Cannot increase."
-			err = fmt.Errorf(errString)
-			return -1, err
-		default:
-			to_be = as_is + 1
-		}
-	default:
-		errString := "cmd should be either -1 or +1."
-		to_be = -1
-		err = fmt.Errorf(errString)
-		return to_be, err
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	//fmt.Println(key)
+
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
 	}
+	if keyValue != nil {
+		/*
+			objList := gjson.Get(keyValue.Value, "associatedObjectList")
+			objList.ForEach(func(key, value gjson.Result) bool {
+				result = append(result, value.String())
+				return true
+			})
+		*/
+
+		/*
+			switch resourceType {
+			case "image":
+				res := TbImageInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &res)
+				//result = res.
+			case "securityGroup":
+				res := TbSecurityGroupInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &res)
+
+			case "spec":
+				res := TbSpecInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &res)
+
+			case "sshKey":
+				res := TbSshKeyInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &res)
+				result = res.AssociatedObjectList
+			case "vNet":
+				res := TbVNetInfo{}
+				json.Unmarshal([]byte(keyValue.Value), &res)
+
+			}
+		*/
+
+		type stringList struct {
+			AssociatedObjectList []string `json:"associatedObjectList"`
+		}
+		res := stringList{}
+		json.Unmarshal([]byte(keyValue.Value), &res)
+		result = res.AssociatedObjectList
+
+		return result, nil
+	}
+	errString := "Cannot get " + resourceType + " " + resourceId + "."
+	err = fmt.Errorf(errString)
+	return nil, err
+}
+
+//func SetInUseCount(nsId string, resourceType string, resourceId string, cmd string) (int8, error) {
+func UpdateAssoObjList(nsId string, resourceType string, resourceId string, cmd string, objectKey string) ([]string, error) {
 
 	nsId = common.ToLower(nsId)
 	resourceId = common.ToLower(resourceId)
@@ -659,30 +705,91 @@ func SetInUseCount(nsId string, resourceType string, resourceId string, cmd stri
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
-		return -1, err
+		return nil, err
+	}
+
+	type stringList struct {
+		AssociatedObjectList []string `json:"associatedObjectList"`
 	}
 	if keyValue != nil {
-		keyValue.Value, err = sjson.Set(keyValue.Value, "inUseCount", to_be)
+		objList, _ := GetAssoObjList(nsId, resourceType, resourceId)
+		switch cmd {
+		case "add":
+			fallthrough
+		case "append":
+			for _, v := range objList {
+				if v == objectKey {
+					errString := objectKey + " is already associated with " + resourceType + " " + resourceId + "."
+					err = fmt.Errorf(errString)
+					return nil, err
+				}
+			}
+			fmt.Println("keyValue.Value before sjson.Set: " + keyValue.Value) // for debug
+			fmt.Println("len(objList): " + strconv.Itoa(len(objList)))        // for debug
+			fmt.Print("objList: ")                                            // for debug
+			fmt.Println(objList)                                              // for debug
+			if len(objList) == 0 {
+				keyValue.Value, err = sjson.Set(keyValue.Value, "associatedObjectList.0", objectKey) // Create a new array by using the 0 key in a path
+			} else {
+				keyValue.Value, err = sjson.Set(keyValue.Value, "associatedObjectList.-1", objectKey) // Append an array value by using the -1 key in a path
+			}
+
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
+			fmt.Println("keyValue.Value after sjson.Set: " + keyValue.Value) // for debug
+			//objList = append(objList, objectKey)
+		case "remove":
+			fallthrough
+		case "delete":
+			var foundKey int
+			var foundVal string
+			for k, v := range objList {
+				if v == objectKey {
+					foundKey = k
+					foundVal = v
+					break
+				}
+			}
+			if foundVal == "" {
+				errString := "Cannot find the associated object " + objectKey + "."
+				err = fmt.Errorf(errString)
+				return nil, err
+			} else {
+				keyValue.Value, err = sjson.Delete(keyValue.Value, "associatedObjectList."+strconv.Itoa(foundKey))
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
+			}
+		}
+
 		if err != nil {
 			common.CBLog.Error(err)
 			//return content, res.StatusCode, body, err
-			return -1, err
+			return nil, err
 		}
 		err = common.CBStore.Put(key, keyValue.Value)
 		if err != nil {
 			common.CBLog.Error(err)
 			//return content, res.StatusCode, body, err
-			return -1, err
+			return nil, err
 		}
-		keyValue, _ := common.CBStore.Get(key)
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===========================")
-		to_be = int8(gjson.Get(keyValue.Value, "inUseCount").Uint())
-		return to_be, nil
+		/*
+			keyValue, _ := common.CBStore.Get(key)
+			//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			fmt.Println("===========================")
+			to_be = int8(gjson.Get(keyValue.Value, "inUseCount").Uint())
+			return to_be, nil
+		*/
+
+		result, _ := GetAssoObjList(nsId, resourceType, resourceId)
+		return result, nil
 	}
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
 	err = fmt.Errorf(errString)
-	return -1, err
+	return nil, err
 }
 
 func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {

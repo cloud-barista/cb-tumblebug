@@ -1066,7 +1066,7 @@ func DelMcis(nsId string, mcisId string) error {
 			return err
 		}
 
-		mcir.SetInUseCount(nsId, "sshKey", vmInfo.SshKeyId, "-1")
+		mcir.UpdateAssoObjList(nsId, "sshKey", vmInfo.SshKeyId, "delete", vmKey)
 	}
 	// delete mcis info
 	err = common.CBStore.Delete(key)
@@ -1117,7 +1117,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 		return err
 	}
 
-	mcir.SetInUseCount(nsId, "sshKey", vmInfo.SshKeyId, "-1")
+	mcir.UpdateAssoObjList(nsId, "sshKey", vmInfo.SshKeyId, "delete", key)
 
 	return nil
 }
@@ -2464,7 +2464,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
 
-	mcir.SetInUseCount(nsId, "sshKey", vmInfoData.SshKeyId, "+1")
+	//mcir.SetInUseCount(nsId, "sshKey", vmInfoData.SshKeyId, "+1")
+	vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+	mcir.UpdateAssoObjList(nsId, "sshKey", vmInfoData.SshKeyId, "add", vmKey)
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.

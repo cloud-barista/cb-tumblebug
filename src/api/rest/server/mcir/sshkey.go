@@ -137,12 +137,13 @@ func RestDelAllSshKey(c echo.Context) error {
 	return nil
 }
 
-func RestTestSetSshKeyInUseCount(c echo.Context) error {
+func RestTestAddSshKeyAsso(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("sshKeyId")
 
-	inUseCount, err := mcir.SetInUseCount(nsId, "sshKey", sshKeyId, "+1")
+	//inUseCount, err := mcir.SetInUseCount(nsId, "sshKey", sshKeyId, "+1")
+	vmKeyList, err := mcir.UpdateAssoObjList(nsId, "sshKey", sshKeyId, "add", "/test/vm/key")
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -156,6 +157,30 @@ func RestTestSetSshKeyInUseCount(c echo.Context) error {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
-	mapA := map[string]int8{"inUseCount": inUseCount}
-	return c.JSON(http.StatusOK, &mapA)
+	//mapA := map[string]int8{"inUseCount": inUseCount}
+	return c.JSON(http.StatusOK, vmKeyList)
+}
+
+func RestTestDeleteSshKeyAsso(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	sshKeyId := c.Param("sshKeyId")
+
+	//inUseCount, err := mcir.SetInUseCount(nsId, "sshKey", sshKeyId, "+1")
+	vmKeyList, err := mcir.UpdateAssoObjList(nsId, "sshKey", sshKeyId, "delete", "/test/vm/key")
+
+	if err != nil {
+		common.CBLog.Error(err)
+		/*
+			mapA := map[string]string{
+				"message": "Failed to create a SshKey"}
+			return c.JSON(http.StatusFailedDependency, &mapA)
+		*/
+		//return c.JSON(res.StatusCode, res)
+		//body, _ := ioutil.ReadAll(res.Body)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	//mapA := map[string]int8{"inUseCount": inUseCount}
+	return c.JSON(http.StatusOK, vmKeyList)
 }

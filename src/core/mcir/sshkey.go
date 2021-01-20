@@ -44,17 +44,17 @@ type TbSshKeyReq struct {
 }
 
 type TbSshKeyInfo struct {
-	Id             string            `json:"id"`
-	Name           string            `json:"name"`
-	ConnectionName string            `json:"connectionName"`
-	Description    string            `json:"description"`
-	CspSshKeyName  string            `json:"cspSshKeyName"`
-	Fingerprint    string            `json:"fingerprint"`
-	Username       string            `json:"username"`
-	PublicKey      string            `json:"publicKey"`
-	PrivateKey     string            `json:"privateKey"`
-	KeyValueList   []common.KeyValue `json:"keyValueList"`
-	InUseCount     int8              `json:"inUseCount"`
+	Id                   string            `json:"id"`
+	Name                 string            `json:"name"`
+	ConnectionName       string            `json:"connectionName"`
+	Description          string            `json:"description"`
+	CspSshKeyName        string            `json:"cspSshKeyName"`
+	Fingerprint          string            `json:"fingerprint"`
+	Username             string            `json:"username"`
+	PublicKey            string            `json:"publicKey"`
+	PrivateKey           string            `json:"privateKey"`
+	KeyValueList         []common.KeyValue `json:"keyValueList"`
+	AssociatedObjectList []string          `json:"associatedObjectList"`
 }
 
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {

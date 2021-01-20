@@ -35,10 +35,10 @@
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/testSetSshKeyInUseCount/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/testDeleteSshKeyAsso/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
 		'{ 
 			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-		}' | json_pp #|| return 1
+		}' #| json_pp #|| return 1
 #}
 
 #get_sshKey
