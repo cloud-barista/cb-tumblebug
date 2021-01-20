@@ -51,6 +51,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "sykim-etri",
+      "name": "Sooyoung Kim",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/25163268?v=4",
+      "profile": "https://github.com/sykim-etri",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
