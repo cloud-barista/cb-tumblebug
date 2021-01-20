@@ -9,14 +9,16 @@ jobs:
   # Check auto merge contiditons of PR and proceed merging
   automerge:
     # Apply this job if it is a PR and by OWNER with '/approve' comment
-    if: ${{ github.event.issue.pull_request && github.event.comment.author_association == 'OWNER' && startsWith(github.event.comment.body, '/approve') }}
+    # TODO: the section contains('seokho-son jihoon-seo hermitkim1') needs to be updated or automated
+    if: ${{ github.event.issue.pull_request && (contains('seokho-son jihoon-seo hermitkim1'), github.event.comment.user.login) || github.event.comment.author_association == 'OWNER') && startsWith(github.event.comment.body, '/approve') }}
     runs-on: ubuntu-latest
     steps:
       # Check author_association is OWNER
       - name: Check author_association
         run: |
-          echo author_association is ${{ github.event.comment.author_association }}
-          echo Hello, this workflow is allowed to OWNERS.
+          echo event.comment.user.login is ${{ github.event.comment.user.login }}
+          echo event.comment.author_association is ${{ github.event.comment.author_association }}
+          echo Hello, this workflow is allowed to specific OWNERS.
       
       # Apply 'approved' label when OWNER left '/approve' comment
       - uses: actions/checkout@v2
