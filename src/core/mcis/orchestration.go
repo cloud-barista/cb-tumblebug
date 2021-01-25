@@ -10,19 +10,34 @@ import (
 )
 
 // Status for mcis automation
-const AutoStatusReady string = "Ready"
-const AutoStatusChecking string = "Checking"
-const AutoStatusDetected string = "Detected"
-const AutoStatusOperating string = "Operating"
-const AutoStatusStabilizing string = "Stabilizing"
-const AutoStatusTimeout string = "Timeout"
-const AutoStatusError string = "Failed"
-const AutoStatusSuspended string = "Suspended"
+const (
+	// AutoStatusReady is const for "Ready" status.
+	AutoStatusReady string = "Ready"
+	// AutoStatusChecking is const for "Checking" status.
+	AutoStatusChecking string = "Checking"
+	// AutoStatusDetected is const for "Detected" status.
+	AutoStatusDetected string = "Detected"
+	// AutoStatusOperating is const for "Operating" status.
+	AutoStatusOperating string = "Operating"
+	// AutoStatusStabilizing is const for "Stabilizing" status.
+	AutoStatusStabilizing string = "Stabilizing"
+	// AutoStatusTimeout is const for "Timeout" status.
+	AutoStatusTimeout string = "Timeout"
+	// AutoStatusError is const for "Failed" status.
+	AutoStatusError string = "Failed"
+	// AutoStatusSuspended is const for "Suspended" status.
+	AutoStatusSuspended string = "Suspended"
+)
 
 // Action for mcis automation
-const AutoActionScaleOut string = "ScaleOut"
-const AutoActionScaleIn string = "ScaleIn"
+const (
+	// AutoActionScaleOut is const for "ScaleOut" action.
+	AutoActionScaleOut string = "ScaleOut"
+	// AutoActionScaleIn is const for "ScaleIn" action.
+	AutoActionScaleIn  string = "ScaleIn"
+)
 
+// AutoCondition is struct for MCIS auto-control condition.
 type AutoCondition struct {
 	Metric           string   `json:"metric"`
 	Operator         string   `json:"operator"`         // <, <=, >, >=, ...
@@ -33,6 +48,7 @@ type AutoCondition struct {
 	//Duration	   string 	  `json:"duration"`  // duration for checking
 }
 
+// AutoAction is struct for MCIS auto-control action.
 type AutoAction struct {
 	ActionType     string     `json:"actionType"`
 	Vm             TbVmInfo   `json:"vm"`
@@ -40,12 +56,14 @@ type AutoAction struct {
 	Placement_algo string     `json:"placement_algo"`
 }
 
+// Policy is struct for MCIS auto-control Policy request that includes AutoCondition, AutoAction, Status.
 type Policy struct {
 	AutoCondition AutoCondition `json:"autoCondition"`
 	AutoAction    AutoAction    `json:"autoAction"`
 	Status        string        `json:"status"`
 }
 
+// McisPolicyInfo is struct for MCIS auto-control Policy object.
 type McisPolicyInfo struct {
 	Name   string   `json:"Name"` //MCIS Name (for request)
 	Id     string   `json:"Id"`   //MCIS Id (generated ID by the Name)
@@ -55,6 +73,8 @@ type McisPolicyInfo struct {
 	Description string `json:"description"`
 }
 
+// OrchestrationController is responsible for executing MCIS automation policy.
+// OrchestrationController will be periodically involked by a time.NewTicker in main.go.
 func OrchestrationController() {
 
 	nsList := common.ListNsId()
@@ -93,7 +113,7 @@ func OrchestrationController() {
 			const AutoStatusSuspend string = "Suspend"
 			*/
 
-			for policyIndex, _ := range mcisPolicyTmp.Policy {
+			for policyIndex := range mcisPolicyTmp.Policy {
 				fmt.Println("\n[MCIS-Policy-StateMachine]")
 				common.PrintJsonPretty(mcisPolicyTmp.Policy[policyIndex])
 
@@ -351,6 +371,7 @@ func OrchestrationController() {
 
 }
 
+// UpdateMcisPolicyInfo updates McisPolicyInfo object in DB.
 func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 	key := common.GenMcisPolicyKey(nsId, mcisPolicyInfoData.Id, "")
 	val, _ := json.Marshal(mcisPolicyInfoData)
@@ -364,6 +385,7 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 	//fmt.Println("===========================")
 }
 
+// CreateMcisPolicy create McisPolicyInfo object in DB according to user's requirements.
 func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicyInfo, error) {
 
 	//nsId = common.GenId(nsId)
@@ -382,7 +404,7 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 		return temp, err
 	}
 
-	for policyIndex, _ := range u.Policy {
+	for policyIndex := range u.Policy {
 		u.Policy[policyIndex].Status = AutoStatusReady
 	}
 
@@ -407,6 +429,7 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 	return content, nil
 }
 
+// GetMcisPolicyObject returns McisPolicyInfo object.
 func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 	fmt.Println("[GetMcisPolicyObject]" + mcisId)
 	nsId = common.GenId(nsId)
@@ -428,6 +451,7 @@ func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 	return mcisPolicyTmp, nil
 }
 
+// GetAllMcisPolicyObject returns all McisPolicyInfo objects.
 func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 
 	nsId = common.GenId(nsId)
@@ -449,6 +473,7 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 	return Mcis, nil
 }
 
+// ListMcisPolicyId returns a list of Ids for all McisPolicyInfo objects .
 func ListMcisPolicyId(nsId string) []string {
 
 	nsId = common.GenId(nsId)
@@ -465,6 +490,7 @@ func ListMcisPolicyId(nsId string) []string {
 	return mcisList
 }
 
+// DelMcisPolicy deletes McisPolicyInfo object by mcisId.
 func DelMcisPolicy(nsId string, mcisId string) error {
 
 	//nsId = common.GenId(nsId)
@@ -494,6 +520,7 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 	return nil
 }
 
+// DelAllMcisPolicy deletes all McisPolicyInfo objects.
 func DelAllMcisPolicy(nsId string) (string, error) {
 
 	nsId = common.GenId(nsId)
