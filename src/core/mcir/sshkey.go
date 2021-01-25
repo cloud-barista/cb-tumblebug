@@ -59,16 +59,14 @@ type TbSshKeyInfo struct {
 
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
-	resourceType := "sshKey"
+	resourceType := common.StrSSHKey
 
-	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "sshKey", u.Name)
-	//u.Name = lowerizedName
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
 	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
-	if check == true {
+	if check {
 		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey " + u.Name + " already exists.")
 		//return temp, http.StatusConflict, nil, err

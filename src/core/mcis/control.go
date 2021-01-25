@@ -406,7 +406,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := AgentInstallContentWrapper{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
@@ -597,7 +597,7 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := &BenchmarkInfoArray{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
@@ -746,7 +746,7 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := &BenchmarkInfoArray{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
@@ -1025,7 +1025,7 @@ func DelMcis(nsId string, mcisId string) error {
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return err
 	}
@@ -1066,7 +1066,7 @@ func DelMcis(nsId string, mcisId string) error {
 			return err
 		}
 
-		mcir.UpdateAssoObjList(nsId, "sshKey", vmInfo.SshKeyId, "delete", vmKey)
+		mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, vmKey)
 	}
 	// delete mcis info
 	err = common.CBStore.Delete(key)
@@ -1087,7 +1087,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 	vmId = common.ToLower(vmId)
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
-	if check == false {
+	if !check {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return err
 	}
@@ -1117,7 +1117,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 		return err
 	}
 
-	mcir.UpdateAssoObjList(nsId, "sshKey", vmInfo.SshKeyId, "delete", key)
+	mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, key)
 
 	return nil
 }
@@ -1153,7 +1153,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 		}
 
 		content2 := mcir.TbSpecInfo{}
-		key2 := common.GenResourceKey(nsId, "spec", content.Id)
+		key2 := common.GenResourceKey(nsId, common.StrSpec, content.Id)
 
 		keyValue2, err := common.CBStore.Get(key2)
 		if err != nil {
@@ -1186,7 +1186,7 @@ func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 	req.Name = common.ToLower(req.Name)
 	check, _ := CheckMcis(nsId, req.Name)
 
-	if check == true {
+	if check {
 		temp := &TbMcisInfo{}
 		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
 		return temp, err
@@ -1250,7 +1250,7 @@ func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return err.Error(), err
 	}
@@ -1342,7 +1342,7 @@ func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := &McisStatusInfo{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
@@ -1378,7 +1378,7 @@ func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := &TbMcisInfo{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
@@ -1623,7 +1623,7 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	vmId = common.ToLower(vmId)
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
-	if check == false {
+	if !check {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return err.Error(), err
 	}
@@ -1676,7 +1676,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := []SshCmdResult{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
@@ -1753,7 +1753,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	vmInfoData.Name = common.ToLower(vmInfoData.Name)
 	check, _ := CheckVm(nsId, mcisId, vmInfoData.Name)
 
-	if check == true {
+	if check {
 		temp := &TbVmInfo{}
 		err := fmt.Errorf("The vm " + vmInfoData.Name + " already exists.")
 		return temp, err
@@ -1833,7 +1833,7 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 	vmId = common.ToLower(vmId)
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
-	if check == false {
+	if !check {
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return err.Error(), err
 	}
@@ -1885,7 +1885,7 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 	vmId = common.ToLower(vmId)
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
-	if check == false {
+	if !check {
 		temp := &TbVmStatusInfo{}
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return temp, err
@@ -1921,7 +1921,7 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 	vmId = common.ToLower(vmId)
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
-	if check == false {
+	if !check {
 		temp := &TbVmInfo{}
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return temp, err
@@ -2236,25 +2236,25 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		err := fmt.Errorf("")
 
-		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, "image", vmInfoData.ImageId)
+		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
 		if tempReq.ReqInfo.ImageName == "" || err != nil {
 			common.CBLog.Error(err)
 			return err
 		}
 
-		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, "spec", vmInfoData.SpecId)
+		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
 		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
 			common.CBLog.Error(err)
 			return err
 		}
 
-		tempReq.ReqInfo.VPCName = vmInfoData.VNetId //common.GetCspResourceId(nsId, "vNet", vmInfoData.VNetId)
+		tempReq.ReqInfo.VPCName = vmInfoData.VNetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
 		if tempReq.ReqInfo.VPCName == "" {
 			common.CBLog.Error(err)
 			return err
 		}
 
-		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, "vNet", vmInfoData.SubnetId)
+		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
 		if tempReq.ReqInfo.SubnetName == "" {
 			common.CBLog.Error(err)
 			return err
@@ -2262,7 +2262,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		var SecurityGroupIdsTmp []string
 		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId := v //common.GetCspResourceId(nsId, "securityGroup", v)
+			CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 			if CspSgId == "" {
 				common.CBLog.Error(err)
 				return err
@@ -2272,7 +2272,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		}
 		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
-		tempReq.ReqInfo.KeyPairName = vmInfoData.SshKeyId //common.GetCspResourceId(nsId, "sshKey", vmInfoData.SshKeyId)
+		tempReq.ReqInfo.KeyPairName = vmInfoData.SshKeyId //common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
 		if tempReq.ReqInfo.KeyPairName == "" {
 			common.CBLog.Error(err)
 			return err
@@ -2366,25 +2366,25 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		err = fmt.Errorf("")
 
-		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, "image", vmInfoData.ImageId)
+		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
 		if tempReq.ReqInfo.ImageName == "" || err != nil {
 			common.CBLog.Error(err)
 			return err
 		}
 
-		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, "spec", vmInfoData.SpecId)
+		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
 		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
 			common.CBLog.Error(err)
 			return err
 		}
 
-		tempReq.ReqInfo.VPCName = vmInfoData.VNetId //common.GetCspResourceId(nsId, "vNet", vmInfoData.VNetId)
+		tempReq.ReqInfo.VPCName = vmInfoData.VNetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
 		if tempReq.ReqInfo.VPCName == "" {
 			common.CBLog.Error(err)
 			return err
 		}
 
-		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, "vNet", vmInfoData.SubnetId)
+		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, "subnet", vmInfoData.SubnetId)
 		if tempReq.ReqInfo.SubnetName == "" {
 			common.CBLog.Error(err)
 			return err
@@ -2392,7 +2392,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		var SecurityGroupIdsTmp []string
 		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId := v //common.GetCspResourceId(nsId, "securityGroup", v)
+			CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 			if CspSgId == "" {
 				common.CBLog.Error(err)
 				return err
@@ -2402,7 +2402,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		}
 		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
-		tempReq.ReqInfo.KeyPairName = vmInfoData.SshKeyId //common.GetCspResourceId(nsId, "sshKey", vmInfoData.SshKeyId)
+		tempReq.ReqInfo.KeyPairName = vmInfoData.SshKeyId //common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
 		if tempReq.ReqInfo.KeyPairName == "" {
 			common.CBLog.Error(err)
 			return err
@@ -2464,9 +2464,8 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
 
-	//mcir.SetInUseCount(nsId, "sshKey", vmInfoData.SshKeyId, "+1")
 	vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-	mcir.UpdateAssoObjList(nsId, "sshKey", vmInfoData.SshKeyId, "add", vmKey)
+	mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.
@@ -3658,7 +3657,7 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string) {
 
 	fmt.Printf("%+v\n", content.SshKeyId)
 
-	sshKey := common.GenResourceKey(nsId, "sshKey", content.SshKeyId)
+	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
 	keyValue, _ = common.CBStore.Get(sshKey)
 	var keyContent struct {
 		Username   string `json:"username"`

@@ -376,7 +376,7 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 	u.Id = lowerizedName
 	//u.Status = AutoStatusReady
 
-	if check == true {
+	if check {
 		temp := McisPolicyInfo{}
 		err := fmt.Errorf("The MCIS Policy Obj " + u.Name + " already exists.")
 		return temp, err
@@ -474,7 +474,7 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcisPolicy(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		err := fmt.Errorf("The mcis Policy" + mcisId + " does not exist.")
 		return err
 	}

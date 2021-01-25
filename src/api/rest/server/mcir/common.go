@@ -66,7 +66,7 @@ func RestGetAllResources(c echo.Context) error {
 	}
 
 	switch resourceType {
-	case "image":
+	case common.StrImage:
 		var content struct {
 			Image []mcir.TbImageInfo `json:"image"`
 		}
@@ -78,7 +78,7 @@ func RestGetAllResources(c echo.Context) error {
 		// When err == nil && resourceList != nil
 		content.Image = resourceList.([]mcir.TbImageInfo) // type assertion (interface{} -> array)
 		return c.JSON(http.StatusOK, &content)
-	case "securityGroup":
+	case common.StrSecurityGroup:
 		var content struct {
 			SecurityGroup []mcir.TbSecurityGroupInfo `json:"securityGroup"`
 		}
@@ -90,7 +90,7 @@ func RestGetAllResources(c echo.Context) error {
 		// When err == nil && resourceList != nil
 		content.SecurityGroup = resourceList.([]mcir.TbSecurityGroupInfo) // type assertion (interface{} -> array)
 		return c.JSON(http.StatusOK, &content)
-	case "spec":
+	case common.StrSpec:
 		var content struct {
 			Spec []mcir.TbSpecInfo `json:"spec"`
 		}
@@ -102,7 +102,7 @@ func RestGetAllResources(c echo.Context) error {
 		// When err == nil && resourceList != nil
 		content.Spec = resourceList.([]mcir.TbSpecInfo) // type assertion (interface{} -> array)
 		return c.JSON(http.StatusOK, &content)
-	case "sshKey":
+	case common.StrSSHKey:
 		var content struct {
 			SshKey []mcir.TbSshKeyInfo `json:"sshKey"`
 		}
@@ -114,7 +114,7 @@ func RestGetAllResources(c echo.Context) error {
 		// When err == nil && resourceList != nil
 		content.SshKey = resourceList.([]mcir.TbSshKeyInfo) // type assertion (interface{} -> array)
 		return c.JSON(http.StatusOK, &content)
-	case "vNet":
+	case common.StrVNet:
 		var content struct {
 			VNet []mcir.TbVNetInfo `json:"vNet"`
 		}

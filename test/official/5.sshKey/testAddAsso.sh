@@ -35,7 +35,7 @@
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/testAddSshKeyAsso/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/testAddSshKeyAssociation/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
 		'{ 
 			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
 		}' #| json_pp #|| return 1

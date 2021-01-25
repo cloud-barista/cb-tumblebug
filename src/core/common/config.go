@@ -75,7 +75,11 @@ func UpdateEnv(id string) error {
 		return err
 	}
 	if keyValue != nil {
-		json.Unmarshal([]byte(keyValue.Value), &content)
+		err := json.Unmarshal([]byte(keyValue.Value), &content)
+		if err != nil {
+			CBLog.Error(err)
+			return err
+		}
 
 		switch id {
 		case lowStrSPIDER_REST_URL:
@@ -116,7 +120,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 	lowerizedId := ToLower(id)
 	check, err := CheckConfig(lowerizedId)
 
-	if check == false {
+	if !check {
 		errString := "The config " + lowerizedId + " does not exist."
 		err := fmt.Errorf(errString)
 		return res, err
@@ -141,7 +145,11 @@ func GetConfig(id string) (ConfigInfo, error) {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &res)
+	err = json.Unmarshal([]byte(keyValue.Value), &res)
+	if err != nil {
+		CBLog.Error(err)
+		return res, err
+	}
 	return res, nil
 }
 
@@ -161,7 +169,11 @@ func ListConfig() ([]ConfigInfo, error) {
 		res := []ConfigInfo{}
 		for _, v := range keyValue {
 			tempObj := ConfigInfo{}
-			json.Unmarshal([]byte(v.Value), &tempObj)
+			err = json.Unmarshal([]byte(v.Value), &tempObj)
+			if err != nil {
+				CBLog.Error(err)
+				return nil, err
+			}
 			res = append(res, tempObj)
 		}
 		return res, nil

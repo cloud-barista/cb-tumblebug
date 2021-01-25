@@ -74,10 +74,8 @@ type TbSecurityGroupInfo struct { // Tumblebug
 
 func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, error) {
 
-	resourceType := "securityGroup"
+	resourceType := common.StrSecurityGroup
 
-	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "securityGroup", u.Name)
-	//u.Name = lowerizedName
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName

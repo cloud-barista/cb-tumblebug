@@ -291,9 +291,8 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 			tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
 			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
 
-			//check, _, err := LowerizeAndCheckResource(nsId, "spec", tumblebugSpecId)
-			check, err := CheckResource(nsId, "spec", tumblebugSpecId)
-			if check == true {
+			check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
+			if check {
 				common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
 				continue
 			} else if err != nil {
@@ -319,16 +318,14 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
 func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
 
-	resourceType := "spec"
+	resourceType := common.StrSpec
 
-	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", u.Name)
-	//u.Name = lowerizedName
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
 	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
-	if check == true {
+	if check {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + u.Name + " already exists.")
 		return temp, err
@@ -474,16 +471,14 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) {
 
-	resourceType := "spec"
+	resourceType := common.StrSpec
 
-	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", content.Name)
-	//content.Name = lowerizedName
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(content.Name)
 	content.Name = lowerizedName
 	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
-	if check == true {
+	if check {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + content.Name + " already exists.")
 		return temp, err
@@ -1166,16 +1161,14 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 }
 
 func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
-	resourceType := "spec"
+	resourceType := common.StrSpec
 
-	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "spec", newSpec.Id)
-	//newSpec.Id = lowerizedName
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(newSpec.Id)
 	newSpec.Id = lowerizedName
 	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
-	if check == false {
+	if !check {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + newSpec.Id + " does not exist.")
 		return temp, err

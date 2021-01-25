@@ -137,13 +137,14 @@ func RestDelAllSshKey(c echo.Context) error {
 	return nil
 }
 
-func RestTestAddSshKeyAsso(c echo.Context) error {
+// RestTestAddSshKeyAssociation is a REST API call handling function
+// to test "mcir.UpdateAssociatedObjList" function with "add" argument.
+func RestTestAddSshKeyAssociation(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("sshKeyId")
 
-	//inUseCount, err := mcir.SetInUseCount(nsId, "sshKey", sshKeyId, "+1")
-	vmKeyList, err := mcir.UpdateAssoObjList(nsId, "sshKey", sshKeyId, "add", "/test/vm/key")
+	vmKeyList, err := mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, sshKeyId, common.StrAdd, "/test/vm/key")
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -161,13 +162,14 @@ func RestTestAddSshKeyAsso(c echo.Context) error {
 	return c.JSON(http.StatusOK, vmKeyList)
 }
 
-func RestTestDeleteSshKeyAsso(c echo.Context) error {
+// RestTestDeleteSshKeyAssociation is a REST API call handling function
+// to test "mcir.UpdateAssociatedObjList" function with "delete" argument.
+func RestTestDeleteSshKeyAssociation(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("sshKeyId")
 
-	//inUseCount, err := mcir.SetInUseCount(nsId, "sshKey", sshKeyId, "+1")
-	vmKeyList, err := mcir.UpdateAssoObjList(nsId, "sshKey", sshKeyId, "delete", "/test/vm/key")
+	vmKeyList, err := mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, sshKeyId, common.StrDelete, "/test/vm/key")
 
 	if err != nil {
 		common.CBLog.Error(err)

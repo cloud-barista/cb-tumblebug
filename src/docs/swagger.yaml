@@ -445,6 +445,10 @@ definitions:
     type: object
   mcir.TbSshKeyInfo:
     properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
       connectionName:
         type: string
       cspSshKeyName:
