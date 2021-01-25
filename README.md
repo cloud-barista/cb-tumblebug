@@ -1,7 +1,11 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END --> 
+[logo]: https://img.shields.io/badge/all_contributors-7-orange.svg 'Number of contributors on CB-Tumblebug'
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
+[![All Contributors][logo]](#contributors-)
 
 A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
 
