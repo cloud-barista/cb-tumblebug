@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
-	"strconv"
 
 	//_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
@@ -49,9 +49,9 @@ func main() {
 	lowerizedName := common.GenId("DRAGONFLY_REST_URL")
 	common.UpdateEnv(lowerizedName)
 	lowerizedName = common.GenId("SPIDER_REST_URL")
-	common.UpdateEnv(lowerizedName)	
+	common.UpdateEnv(lowerizedName)
 	lowerizedName = common.GenId("AUTOCONTROL_DURATION_MS")
-	common.UpdateEnv(lowerizedName)	
+	common.UpdateEnv(lowerizedName)
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()

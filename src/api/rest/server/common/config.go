@@ -9,13 +9,11 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
-
 // Response structure for RestGetAllConfig
 type RestGetAllConfigResponse struct {
 	//Name string     `json:"name"`
 	Config []common.ConfigInfo `json:"config"`
 }
-
 
 // RestGetConfig godoc
 // @Summary Get config
@@ -78,7 +76,6 @@ func RestGetAllConfig(c echo.Context) error {
 	return Send(c, http.StatusOK, content)
 
 }
-
 
 // RestPostConfig godoc
 // @Summary Create or Update config

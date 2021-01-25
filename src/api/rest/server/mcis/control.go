@@ -112,11 +112,11 @@ func RestGetMcis(c echo.Context) error {
 type RestGetAllMcisResponse struct {
 	Mcis []mcis.TbMcisInfo `json:"mcis"`
 }
+
 // Response structure for RestGetAllMcisStatus
 type RestGetAllMcisStatusResponse struct {
 	Mcis []mcis.McisStatusInfo `json:"mcis"`
 }
-
 
 // RestGetAllMcis godoc
 // @Summary List all MCISs

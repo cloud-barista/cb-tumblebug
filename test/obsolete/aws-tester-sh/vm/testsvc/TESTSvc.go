@@ -15,10 +15,9 @@ import (
 	"net/http"
 )
 
-
 type TESTSvcReqInfo struct {
-        Date        	string  // ex) "Fri Nov  1 20:15:54 KST 2019"
-        HostName        string  // ex) "localhost"
+	Date     string // ex) "Fri Nov  1 20:15:54 KST 2019"
+	HostName string // ex) "localhost"
 }
 
 //================ Call Service for test
@@ -28,14 +27,13 @@ func callService(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	
-	date := strings.ReplaceAll(req.Date, "%20", " ")	
+
+	date := strings.ReplaceAll(req.Date, "%20", " ")
 	common.CBLog.Infof("DATE: %#v, HOSTNAME: %#v", date, req.HostName)
 
-        resultInfo := BooleanInfo{
-                Result: "OK",
-        }
+	resultInfo := BooleanInfo{
+		Result: "OK",
+	}
 
 	return c.JSON(http.StatusOK, &resultInfo)
 }
-
