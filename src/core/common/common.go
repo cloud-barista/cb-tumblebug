@@ -19,6 +19,7 @@ type KeyValue struct {
 // CB-Store
 var CBLog *logrus.Logger
 var CBStore icbs.Store
+
 const CbStoreKeyNotFoundErrorString string = "key not found"
 
 var SPIDER_REST_URL string

@@ -9,56 +9,56 @@
 package main
 
 import (
-	"strings"
 	"fmt"
+	"github.com/labstack/echo/v4"
+	"github.com/shirou/gopsutil/cpu"
+	"net/http"
 	"runtime"
 	"strconv"
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/labstack/echo/v4"
-	"net/http"
+	"strings"
 )
 
 func dealwithErr(err error) {
 	if err != nil {
-			fmt.Println(err)
-			//os.Exit(-1)
+		fmt.Println(err)
+		//os.Exit(-1)
 	}
 }
 
 // the number of total cores(logical CPUs)
 func GetLogicalCPUNumber() int {
-return runtime.NumCPU()
+	return runtime.NumCPU()
 }
 
 func GetCPUModelName() string {
-cpuStat, err := cpu.Info()
-dealwithErr(err)
+	cpuStat, err := cpu.Info()
+	dealwithErr(err)
 
-return cpuStat[0].ModelName;
+	return cpuStat[0].ModelName
 }
 
 // percentages of each logical CPUs
 func GetAllUtilPercentages() []string {
-percentage, err := cpu.Percent(0, true)
-dealwithErr(err)
+	percentage, err := cpu.Percent(0, true)
+	dealwithErr(err)
 
-strPercentageArr := make([]string,0)
-cpuNum := runtime.NumCPU()
-for idx := 0; idx < cpuNum; idx++ {
-   //strPercentageArr[idx] = strconv.FormatFloat(cpupercent, 'f', 2, 64)
-   strPercentageArr = append(strPercentageArr, strconv.FormatFloat(percentage[idx], 'f', 2, 64))
-}
+	strPercentageArr := make([]string, 0)
+	cpuNum := runtime.NumCPU()
+	for idx := 0; idx < cpuNum; idx++ {
+		//strPercentageArr[idx] = strconv.FormatFloat(cpupercent, 'f', 2, 64)
+		strPercentageArr = append(strPercentageArr, strconv.FormatFloat(percentage[idx], 'f', 2, 64))
+	}
 
-return strPercentageArr
+	return strPercentageArr
 }
 
 var cnt uint64 = 0
 
 type TESTSvcReqInfo struct {
-        Date        	string  // ex) "Fri Nov  1 20:15:54 KST 2019"
-		HostName        string  // ex) "localhost"
-		IP				string
-		Country			string
+	Date     string // ex) "Fri Nov  1 20:15:54 KST 2019"
+	HostName string // ex) "localhost"
+	IP       string
+	Country  string
 }
 
 //================ Call Service for test
@@ -73,7 +73,7 @@ func callService(c echo.Context) error {
 
 	strCPUUtilizationArr := GetAllUtilPercentages()
 	for i, cpupercent := range strCPUUtilizationArr {
-		println("CPU" + strconv.Itoa(i) +":   " + cpupercent + " %")
+		println("CPU" + strconv.Itoa(i) + ":   " + cpupercent + " %")
 	}
 
 	//common.CBLog.Infof("[%#v][Request From] DATE: %#v, HOSTNAME: %#v", cnt, date, req.HostName)
@@ -81,16 +81,15 @@ func callService(c echo.Context) error {
 	fmt.Printf("[%#v] IP: %#v, Location: %#v \n", cnt, req.IP, req.Country)
 	fmt.Printf("Processing ............ \n")
 	for i := 1; i <= 65535; i++ {
-			for j := 1; j <= 65535; j++ {
-					_ = 159 * 753 * 654
-			}
+		for j := 1; j <= 65535; j++ {
+			_ = 159 * 753 * 654
+		}
 	}
 	fmt.Printf("Finished the Processing for HOST: %#v \n", req.HostName)
 
 	resultInfo := BooleanInfo{
-			Result: "OK",
+		Result: "OK",
 	}
 
 	return c.JSON(http.StatusOK, &resultInfo)
 }
-

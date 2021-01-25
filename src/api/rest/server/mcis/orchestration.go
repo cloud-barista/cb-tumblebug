@@ -1,16 +1,13 @@
 package mcis
 
 import (
-
-	"net/http"
 	"fmt"
+	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
-
-
 
 // RestPostMcisPolicy godoc
 // @Summary Create MCIS Automation policy
@@ -43,7 +40,6 @@ func RestPostMcisPolicy(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, content)
 }
-
 
 // RestGetMcisPolicy godoc
 // @Summary Get MCIS Policy
@@ -85,7 +81,7 @@ type RestGetAllMcisPolicyResponse struct {
 }
 
 // RestGetAllMcisPolicy godoc
-// @Summary List all MCIS Policys 
+// @Summary List all MCIS Policys
 // @Description List all MCIS Policys
 // @Tags MCIS Policy
 // @Accept  json
