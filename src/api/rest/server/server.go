@@ -182,8 +182,9 @@ func ApiServer() {
 	g.PUT("/:nsId/resources/sshKey/:sshKeyId", rest_mcir.RestPutSshKey)
 	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/sshKey", rest_mcir.RestDelAllResources)
-	// Temporal test API for development of SetSshKeyInUseCount
-	g.PUT("/:nsId/resources/testSetSshKeyInUseCount/:sshKeyId", rest_mcir.RestTestSetSshKeyInUseCount)
+	// Temporal test API for development of UpdateAssociatedObjList
+	g.PUT("/:nsId/resources/testAddSshKeyAssociation/:sshKeyId", rest_mcir.RestTestAddSshKeyAssociation)
+	g.PUT("/:nsId/resources/testDeleteSshKeyAssociation/:sshKeyId", rest_mcir.RestTestDeleteSshKeyAssociation)
 
 	g.POST("/:nsId/resources/spec", rest_mcir.RestPostSpec)
 	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetResource)

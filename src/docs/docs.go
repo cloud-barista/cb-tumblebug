@@ -3775,6 +3775,12 @@ var doc = `{
         "mcir.TbSshKeyInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },

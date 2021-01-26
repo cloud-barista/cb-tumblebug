@@ -103,11 +103,11 @@ func PrintJsonPretty(v interface{}) {
 func GenResourceKey(nsId string, resourceType string, resourceId string) string {
 	//resourceType = strings.ToLower(resourceType)
 
-	if resourceType == "image" ||
-		resourceType == "sshKey" ||
-		resourceType == "spec" ||
-		resourceType == "vNet" ||
-		resourceType == "securityGroup" {
+	if resourceType == StrImage ||
+		resourceType == StrSSHKey ||
+		resourceType == StrSpec ||
+		resourceType == StrVNet ||
+		resourceType == StrSecurityGroup {
 		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" {
@@ -226,19 +226,19 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	}
 
 	switch resourceType {
-	case "image":
+	case StrImage:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspImageId, nil
-	case "sshKey":
+	case StrSSHKey:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspSshKeyName, nil
-	case "spec":
+	case StrSpec:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspSpecName, nil
-	case "vNet":
+	case StrVNet:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspVNetName, nil // contains CspSubnetId
@@ -246,7 +246,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	// 	content := subnetInfo{}
 	// 	json.Unmarshal([]byte(keyValue.Value), &content)
 	// 	return content.CspSubnetId
-	case "securityGroup":
+	case StrSecurityGroup:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspSecurityGroupName, nil

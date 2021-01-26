@@ -195,7 +195,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := AgentInstallContentWrapper{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
@@ -269,7 +269,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 	mcisId = common.ToLower(mcisId)
 	check, _ := CheckMcis(nsId, mcisId)
 
-	if check == false {
+	if !check {
 		temp := MonResultSimpleResponse{}
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err

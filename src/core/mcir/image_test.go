@@ -55,7 +55,7 @@ func TestImage(t *testing.T) {
 	fmt.Println("result: " + string(resultJSON))
 	assert.Equal(t, imageName, result.Name, "CreateImage 기대값과 결과값이 다릅니다.")
 
-	resultInterface, _ := GetResource(nsName, "image", imageName)
+	resultInterface, _ := GetResource(nsName, common.StrImage, imageName)
 	result = resultInterface.(TbImageInfo) // type assertion
 	assert.Equal(t, imageName, result.Name, "GetImage 기대값과 결과값이 다릅니다.")
 
@@ -63,7 +63,7 @@ func TestImage(t *testing.T) {
 
 	//result, _ := ListImageId()
 
-	resultErr := DelResource(nsName, "image", imageName, "false")
+	resultErr := DelResource(nsName, common.StrImage, imageName, "false")
 	assert.Nil(t, resultErr)
 
 	common.DelNs(nsName)

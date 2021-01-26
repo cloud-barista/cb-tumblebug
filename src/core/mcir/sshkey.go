@@ -44,31 +44,29 @@ type TbSshKeyReq struct {
 }
 
 type TbSshKeyInfo struct {
-	Id             string            `json:"id"`
-	Name           string            `json:"name"`
-	ConnectionName string            `json:"connectionName"`
-	Description    string            `json:"description"`
-	CspSshKeyName  string            `json:"cspSshKeyName"`
-	Fingerprint    string            `json:"fingerprint"`
-	Username       string            `json:"username"`
-	PublicKey      string            `json:"publicKey"`
-	PrivateKey     string            `json:"privateKey"`
-	KeyValueList   []common.KeyValue `json:"keyValueList"`
-	InUseCount     int8              `json:"inUseCount"`
+	Id                   string            `json:"id"`
+	Name                 string            `json:"name"`
+	ConnectionName       string            `json:"connectionName"`
+	Description          string            `json:"description"`
+	CspSshKeyName        string            `json:"cspSshKeyName"`
+	Fingerprint          string            `json:"fingerprint"`
+	Username             string            `json:"username"`
+	PublicKey            string            `json:"publicKey"`
+	PrivateKey           string            `json:"privateKey"`
+	KeyValueList         []common.KeyValue `json:"keyValueList"`
+	AssociatedObjectList []string          `json:"associatedObjectList"`
 }
 
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
-	resourceType := "sshKey"
+	resourceType := common.StrSSHKey
 
-	//check, lowerizedName, err := LowerizeAndCheckResource(nsId, "sshKey", u.Name)
-	//u.Name = lowerizedName
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
 	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
-	if check == true {
+	if check {
 		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey " + u.Name + " already exists.")
 		//return temp, http.StatusConflict, nil, err

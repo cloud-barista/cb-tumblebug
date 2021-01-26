@@ -37,7 +37,7 @@ func NsValidation() echo.MiddlewareFunc {
 			nsId = ToLower(nsId)
 			check, err := CheckNs(nsId)
 
-			if check == false || err != nil {
+			if !check || err != nil {
 				return echo.NewHTTPError(http.StatusNotFound, "Not valid namespace")
 			}
 			return next(c)
@@ -92,7 +92,7 @@ func GetNs(id string) (NsInfo, error) {
 	lowerizedId := ToLower(id)
 	check, err := CheckNs(lowerizedId)
 
-	if check == false {
+	if !check {
 		errString := "The namespace " + lowerizedId + " does not exist."
 		//mapA := map[string]string{"message": errString}
 		//mapB, _ := json.Marshal(mapA)
@@ -119,7 +119,11 @@ func GetNs(id string) (NsInfo, error) {
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
 
-	json.Unmarshal([]byte(keyValue.Value), &res)
+	err = json.Unmarshal([]byte(keyValue.Value), &res)
+	if err != nil {
+		CBLog.Error(err)
+		return res, err
+	}
 	return res, nil
 }
 
@@ -139,7 +143,11 @@ func ListNs() ([]NsInfo, error) {
 		res := []NsInfo{}
 		for _, v := range keyValue {
 			tempObj := NsInfo{}
-			json.Unmarshal([]byte(v.Value), &tempObj)
+			err = json.Unmarshal([]byte(v.Value), &tempObj)
+			if err != nil {
+				CBLog.Error(err)
+				return nil, err
+			}
 			res = append(res, tempObj)
 		}
 		return res, nil
@@ -179,7 +187,7 @@ func DelNs(Id string) error {
 	lowerizedId := ToLower(Id)
 	check, err := CheckNs(lowerizedId)
 
-	if check == false {
+	if !check {
 		errString := "The namespace " + lowerizedId + " does not exist."
 		err := fmt.Errorf(errString)
 		return err

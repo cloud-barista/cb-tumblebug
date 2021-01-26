@@ -55,7 +55,7 @@ func TestSpec(t *testing.T) {
 	fmt.Println("result: " + string(resultJSON))
 	assert.Equal(t, specName, result.Name, "CreateSpec 기대값과 결과값이 다릅니다.")
 
-	resultInterface, _ := GetResource(nsName, "spec", specName)
+	resultInterface, _ := GetResource(nsName, common.StrSpec, specName)
 	result = resultInterface.(TbSpecInfo) // type assertion
 	assert.Equal(t, specName, result.Name, "GetSpec 기대값과 결과값이 다릅니다.")
 
@@ -63,7 +63,7 @@ func TestSpec(t *testing.T) {
 
 	//result, _ := ListSpecId()
 
-	resultErr := DelResource(nsName, "spec", specName, "false")
+	resultErr := DelResource(nsName, common.StrSpec, specName, "false")
 	assert.Nil(t, resultErr)
 
 	common.DelNs(nsName)

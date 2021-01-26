@@ -71,16 +71,14 @@ type TbVNetInfo struct { // Tumblebug
 
 func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
-	resourceType := "vNet"
+	resourceType := common.StrVNet
 
-	//check, lowerizedName, _ := LowerizeAndCheckResource(nsId, "vNet", u.Name)
-	//u.Name = lowerizedName
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
 	check, err := CheckResource(nsId, resourceType, lowerizedName)
 
-	if check == true {
+	if check {
 		temp := TbVNetInfo{}
 		err := fmt.Errorf("The vNet " + u.Name + " already exists.")
 		return temp, err
@@ -180,20 +178,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateVNet")
-	Key := common.GenResourceKey(nsId, "vNet", content.Id)
-	/*
-		mapA := map[string]string{
-			"connectionName": content.ConnectionName,
-			"cspVNetId":   content.CspVNetId,
-			"cspVNetName": content.CspVNetName,
-			"cidrBlock":      content.CidrBlock,
-			//"region":            content.Region,
-			//"resourceGroupName": content.ResourceGroupName,
-			"description":  content.Description,
-			"status":       content.Status,
-			"keyValueList": content.KeyValueList}
-		Val, _ := json.Marshal(mapA)
-	*/
+	Key := common.GenResourceKey(nsId, common.StrVNet, content.Id)
 	Val, _ := json.Marshal(content)
 
 	//fmt.Println("Key: ", Key)

@@ -105,17 +105,11 @@ github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5P
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
 github.com/clbanning/x2j v0.0.0-20191024224557-825249438eec/go.mod h1:jMjuTZXRI4dUb/I5gc9Hdhagfvm9+RyrPryS/auMzxE=
 github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20201008023843-31002c0a088d/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
-github.com/cloud-barista/cb-log v0.2.9 h1:Yq05XPOKREpwBlI6uddZsq8L6wauZU9kuaHMKkP6F9Y=
-github.com/cloud-barista/cb-log v0.2.9/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-log v0.3.0-espresso h1:q+bw/quMV2LldEgHYqbANajb330GNIfpAIIMsqYGuK0=
 github.com/cloud-barista/cb-log v0.3.0-espresso/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
-github.com/cloud-barista/cb-spider v0.2.9 h1:+8rTjhGKluSYXnxPOjR41BA8T7H8sqF/RhlVvcNmm/o=
-github.com/cloud-barista/cb-spider v0.2.9/go.mod h1:KUQDfzTMP/ghzTFqs0twUiCaNcR6v9KWDLP2veIaExE=
 github.com/cloud-barista/cb-spider v0.3.0-espresso h1:CJzdL0wbJt24jPby5+k6oZ5iOKCIdpaVLQ/ijBFJOfw=
 github.com/cloud-barista/cb-spider v0.3.0-espresso/go.mod h1:KUQDfzTMP/ghzTFqs0twUiCaNcR6v9KWDLP2veIaExE=
 github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20201111072717-b0bb715e2694/go.mod h1:tcMkva0951xAwoMcTqn9nXttnzk3ytHlJLs4MyH7p84=
-github.com/cloud-barista/cb-store v0.2.9 h1:/a6VDvFv9VgYyHbXYBL3fFtMqi9iG8ckFIqccHBnegY=
-github.com/cloud-barista/cb-store v0.2.9/go.mod h1:tcMkva0951xAwoMcTqn9nXttnzk3ytHlJLs4MyH7p84=
 github.com/cloud-barista/cb-store v0.3.0-espresso h1:yduf2JeyIhxPWZIevn7RMrZUUTXJzi5okJgWWqSg1x8=
 github.com/cloud-barista/cb-store v0.3.0-espresso/go.mod h1:tcMkva0951xAwoMcTqn9nXttnzk3ytHlJLs4MyH7p84=
 github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58/go.mod h1:EOBUe0h4xcZ5GoxqC5SDxFQ8gwyZPKQoEzownBlhI80=
@@ -156,6 +150,7 @@ github.com/docker/distribution v2.7.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4Kfc
 github.com/docker/docker v0.0.0-20200309214505-aa6a9891b09c/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
 github.com/docker/go-units v0.4.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
+github.com/dustin/go-humanize v0.0.0-20171111073723-bb3d318650d4 h1:qk/FSDDxo05wdJH28W+p5yivv7LuLYLRXPPD8KQCtZs=
 github.com/dustin/go-humanize v0.0.0-20171111073723-bb3d318650d4/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
@@ -303,6 +298,7 @@ github.com/hashicorp/go-version v1.2.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09
 github.com/hashicorp/go.net v0.0.1/go.mod h1:hjKkEWcCURg++eb33jQU7oqQcI9XDCnUzHA0oac0k90=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
+github.com/hashicorp/golang-lru v0.5.4 h1:YDjusn29QI/Das2iO9M0BHnIbxPeyuCHsjMW+lJfyTc=
 github.com/hashicorp/golang-lru v0.5.4/go.mod h1:iADmTwqILo4mZ8BN3D2Q6+9jd8WM5uGBxy+E8yxSoD4=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
@@ -443,6 +439,7 @@ github.com/pelletier/go-toml v1.0.1/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/9
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/performancecopilot/speed v3.0.0+incompatible/go.mod h1:/CLtqpZ5gBg1M9iaPbIdPPGyKcA8hKdoy6hAWba7Yac=
+github.com/peterh/liner v1.0.1-0.20171122030339-3681c2a91233 h1:jmJndGFBPjNWW+MAYarU/Nl8QrQVzbw4B/AYE0LzETo=
 github.com/peterh/liner v1.0.1-0.20171122030339-3681c2a91233/go.mod h1:xIteQHvHuaLYG9IFj6mSxM0fCKrs34IrEQUhOYuGPHc=
 github.com/pierrec/lz4 v1.0.2-0.20190131084431-473cd7ce01a1/go.mod h1:3/3N9NVKO0jef7pBehbT1qWhCMrIgbYNnFAZCqQ5LRc=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
