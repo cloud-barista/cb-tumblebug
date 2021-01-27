@@ -17,7 +17,7 @@ func RestCheckNs(c echo.Context) error {
 		exists, err := common.CheckNs(nsId)
 
 		type JsonTemplate struct {
-			Exists bool `json:exists`
+			Exists bool `json:"exists"`
 		}
 		content := JsonTemplate{}
 		content.Exists = exists

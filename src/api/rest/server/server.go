@@ -182,9 +182,10 @@ func ApiServer() {
 	g.PUT("/:nsId/resources/sshKey/:sshKeyId", rest_mcir.RestPutSshKey)
 	g.DELETE("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/sshKey", rest_mcir.RestDelAllResources)
-	// Temporal test API for development of UpdateAssociatedObjList
-	g.PUT("/:nsId/resources/testAddSshKeyAssociation/:sshKeyId", rest_mcir.RestTestAddSshKeyAssociation)
-	g.PUT("/:nsId/resources/testDeleteSshKeyAssociation/:sshKeyId", rest_mcir.RestTestDeleteSshKeyAssociation)
+	// Temporal test API for development of UpdateAssociatedObjectList
+	//g.PUT("/:nsId/resources/testAddSshKeyAssociation/:sshKeyId", rest_mcir.RestTestAddSshKeyAssociation)
+	//g.PUT("/:nsId/resources/testDeleteSshKeyAssociation/:sshKeyId", rest_mcir.RestTestDeleteSshKeyAssociation)
+	//g.GET("/:nsId/resources/testGetSshKeyAssociatedObjectCount/:sshKeyId", rest_mcir.RestTestGetAssociatedObjectCount)
 
 	g.POST("/:nsId/resources/spec", rest_mcir.RestPostSpec)
 	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetResource)
@@ -246,6 +247,10 @@ func ApiServer() {
 	g.GET("/:nsId/checkResource/:resourceType/:resourceId", rest_mcir.RestCheckResource)
 	g.GET("/:nsId/checkMcis/:mcisId", rest_mcis.RestCheckMcis)
 	g.GET("/:nsId/mcis/:mcisId/checkVm/:vmId", rest_mcis.RestCheckVm)
+	// Temporal test API for development of UpdateAssociatedObjectList
+	g.PUT("/:nsId/testAddObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestAddObjectAssociation)
+	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestDeleteObjectAssociation)
+	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
 	e.Logger.Fatal(e.Start(":1323"))
 

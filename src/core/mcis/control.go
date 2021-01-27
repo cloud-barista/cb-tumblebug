@@ -1066,7 +1066,14 @@ func DelMcis(nsId string, mcisId string) error {
 			return err
 		}
 
-		mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfo.VNetId, common.StrDelete, vmKey)
+
+		for _, v2 := range vmInfo.SecurityGroupIds {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrDelete, vmKey)
+		}
 	}
 	// delete mcis info
 	err = common.CBStore.Delete(key)
@@ -1117,7 +1124,14 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 		return err
 	}
 
-	mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, key)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, key)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, key)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, key)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfo.VNetId, common.StrDelete, key)
+
+	for _, v2 := range vmInfo.SecurityGroupIds {
+		mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrDelete, key)
+	}
 
 	return nil
 }
@@ -2465,7 +2479,15 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-	mcir.UpdateAssociatedObjList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
+	//mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
+	mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfoData.VNetId, common.StrAdd, vmKey)
+
+	for _, v2 := range vmInfoData.SecurityGroupIds {
+		mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrAdd, vmKey)
+	}
 
 	//content.Status = temp.
 	//content.Cloud_id = temp.

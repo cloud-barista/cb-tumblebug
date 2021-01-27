@@ -31,6 +31,7 @@ func init() {
 	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
 }
 
+// DelAllResources deletes all TB MCIR object of given resourceType
 func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 
 	nsId = common.GenId(nsId)
@@ -50,7 +51,7 @@ func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 	return nil
 }
 
-//func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) (int, []byte, error) {
+// DelResource deletes the TB MCIR object
 func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) error {
 
 	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
@@ -117,7 +118,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
 			_, err = sqlparser.Parse(sql)
 			if err != nil {
-				//return
+				common.CBLog.Error(err)
 			}
 
 			stmt, err := common.MYDB.Prepare(sql)
@@ -163,7 +164,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
 			_, err = sqlparser.Parse(sql)
 			if err != nil {
-				//return
+				common.CBLog.Error(err)
 			}
 
 			stmt, err := common.MYDB.Prepare(sql)
@@ -181,17 +182,29 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return nil
 		case common.StrSSHKey:
 			temp := TbSshKeyInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &temp)
+			err = json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 			tempReq.ConnectionName = temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 		case common.StrVNet:
 			temp := TbVNetInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &temp)
+			err = json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 			tempReq.ConnectionName = temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &temp)
+			err = json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 			tempReq.ConnectionName = temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
 		/*
@@ -325,7 +338,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
 			_, err = sqlparser.Parse(sql)
 			if err != nil {
-				//return
+				common.CBLog.Error(err)
 			}
 
 			stmt, err := common.MYDB.Prepare(sql)
@@ -346,9 +359,13 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 			//get related recommend spec
 			content := TbSpecInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &content)
+			err := json.Unmarshal([]byte(keyValue.Value), &content)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 
-			err := common.CBStore.Delete(key)
+			err = common.CBStore.Delete(key)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -366,7 +383,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
 			_, err = sqlparser.Parse(sql)
 			if err != nil {
-				//return
+				common.CBLog.Error(err)
 			}
 
 			stmt, err := common.MYDB.Prepare(sql)
@@ -383,9 +400,13 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		case common.StrSSHKey:
 			temp := TbSshKeyInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &temp)
+			err := json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 
-			_, err := ccm.DeleteKeyByParam(temp.ConnectionName, temp.Name, forceFlag)
+			_, err = ccm.DeleteKeyByParam(temp.ConnectionName, temp.Name, forceFlag)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -393,9 +414,13 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		case common.StrVNet:
 			temp := TbVNetInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &temp)
+			err := json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 
-			_, err := ccm.DeleteVPCByParam(temp.ConnectionName, temp.Name, forceFlag)
+			_, err = ccm.DeleteVPCByParam(temp.ConnectionName, temp.Name, forceFlag)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -403,9 +428,13 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &temp)
+			err := json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 
-			_, err := ccm.DeleteSecurityByParam(temp.ConnectionName, temp.Name, forceFlag)
+			_, err = ccm.DeleteSecurityByParam(temp.ConnectionName, temp.Name, forceFlag)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -426,6 +455,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 }
 
+// ListResourceId returns the list of TB MCIR object IDs of given resourceType
 func ListResourceId(nsId string, resourceType string) []string {
 
 	nsId = common.GenId(nsId)
@@ -463,6 +493,7 @@ func ListResourceId(nsId string, resourceType string) []string {
 
 }
 
+// ListResource returns the list of TB MCIR objects of given resourceType
 func ListResource(nsId string, resourceType string) (interface{}, error) {
 
 	nsId = common.GenId(nsId)
@@ -510,7 +541,11 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 			res := []TbImageInfo{}
 			for _, v := range keyValue {
 				tempObj := TbImageInfo{}
-				json.Unmarshal([]byte(v.Value), &tempObj)
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
 				res = append(res, tempObj)
 			}
 			return res, nil
@@ -518,7 +553,11 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 			res := []TbSecurityGroupInfo{}
 			for _, v := range keyValue {
 				tempObj := TbSecurityGroupInfo{}
-				json.Unmarshal([]byte(v.Value), &tempObj)
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
 				res = append(res, tempObj)
 			}
 			return res, nil
@@ -526,7 +565,11 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 			res := []TbSpecInfo{}
 			for _, v := range keyValue {
 				tempObj := TbSpecInfo{}
-				json.Unmarshal([]byte(v.Value), &tempObj)
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
 				res = append(res, tempObj)
 			}
 			return res, nil
@@ -534,7 +577,11 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 			res := []TbSshKeyInfo{}
 			for _, v := range keyValue {
 				tempObj := TbSshKeyInfo{}
-				json.Unmarshal([]byte(v.Value), &tempObj)
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
 				res = append(res, tempObj)
 			}
 			return res, nil
@@ -542,7 +589,11 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 			res := []TbVNetInfo{}
 			for _, v := range keyValue {
 				tempObj := TbVNetInfo{}
-				json.Unmarshal([]byte(v.Value), &tempObj)
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
 				res = append(res, tempObj)
 			}
 			return res, nil
@@ -554,7 +605,8 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 	return nil, nil // When err == nil && keyValue == nil
 }
 
-func GetAssoObjCount(nsId string, resourceType string, resourceId string) (int, error) {
+// GetAssociatedObjectCount returns the number of MCIR's associated Tumblebug objects
+func GetAssociatedObjectCount(nsId string, resourceType string, resourceId string) (int, error) {
 	nsId = common.ToLower(nsId)
 	resourceId = common.ToLower(resourceId)
 	check, err := CheckResource(nsId, resourceType, resourceId)
@@ -590,8 +642,8 @@ func GetAssoObjCount(nsId string, resourceType string, resourceId string) (int, 
 	return -1, err
 }
 
-//func GetInUseCount(nsId string, resourceType string, resourceId string) (int8, error) {
-func GetAssoObjList(nsId string, resourceType string, resourceId string) ([]string, error) {
+// GetAssociatedObjectList returns the list of MCIR's associated Tumblebug objects
+func GetAssociatedObjectList(nsId string, resourceType string, resourceId string) ([]string, error) {
 
 	var result []string
 
@@ -661,7 +713,11 @@ func GetAssoObjList(nsId string, resourceType string, resourceId string) ([]stri
 			AssociatedObjectList []string `json:"associatedObjectList"`
 		}
 		res := stringList{}
-		json.Unmarshal([]byte(keyValue.Value), &res)
+		err = json.Unmarshal([]byte(keyValue.Value), &res)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
 		result = res.AssociatedObjectList
 
 		return result, nil
@@ -671,7 +727,8 @@ func GetAssoObjList(nsId string, resourceType string, resourceId string) ([]stri
 	return nil, err
 }
 
-func UpdateAssociatedObjList(nsId string, resourceType string, resourceId string, cmd string, objectKey string) ([]string, error) {
+// UpdateAssociatedObjectList adds or deletes the objectKey (currently, vmKey) to/from TB object's associatedObjectList
+func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId string, cmd string, objectKey string) ([]string, error) {
 
 	nsId = common.ToLower(nsId)
 	resourceId = common.ToLower(resourceId)
@@ -702,11 +759,8 @@ func UpdateAssociatedObjList(nsId string, resourceType string, resourceId string
 		return nil, err
 	}
 
-	type stringList struct {
-		AssociatedObjectList []string `json:"associatedObjectList"`
-	}
 	if keyValue != nil {
-		objList, _ := GetAssoObjList(nsId, resourceType, resourceId)
+		objList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
 		switch cmd {
 		case common.StrAdd:
 			for _, v := range objList {
@@ -774,7 +828,7 @@ func UpdateAssociatedObjList(nsId string, resourceType string, resourceId string
 			return to_be, nil
 		*/
 
-		result, _ := GetAssoObjList(nsId, resourceType, resourceId)
+		result, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
 		return result, nil
 	}
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
@@ -782,6 +836,7 @@ func UpdateAssociatedObjList(nsId string, resourceType string, resourceId string
 	return nil, err
 }
 
+// GetResource returns the requested TB MCIR object
 func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
 
 	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
@@ -816,23 +871,43 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		switch resourceType {
 		case common.StrImage:
 			res := TbImageInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &res)
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
 			return res, nil
 		case common.StrSecurityGroup:
 			res := TbSecurityGroupInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &res)
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
 			return res, nil
 		case common.StrSpec:
 			res := TbSpecInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &res)
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
 			return res, nil
 		case common.StrSSHKey:
 			res := TbSshKeyInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &res)
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
 			return res, nil
 		case common.StrVNet:
 			res := TbVNetInfo{}
-			json.Unmarshal([]byte(keyValue.Value), &res)
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
 			return res, nil
 		}
 
@@ -843,6 +918,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	return nil, err
 }
 
+// CheckResource returns the existence of the TB MCIR resource in bool form.
 func CheckResource(nsId string, resourceType string, resourceId string) (bool, error) {
 
 	// Check parameters' emptiness
@@ -923,6 +999,7 @@ type NameOnly struct {
 	Name string
 }
 
+// GetNameFromStruct accepts any struct for argument, and returns
 func GetNameFromStruct(u interface{}) string {
 	var result = ReturnValue{CustomStruct: u}
 

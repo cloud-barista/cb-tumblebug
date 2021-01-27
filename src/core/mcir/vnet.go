@@ -53,22 +53,24 @@ type TbVNetReq struct { // Tumblebug
 }
 
 type TbVNetInfo struct { // Tumblebug
-	Id             string             `json:"id"`
-	Name           string             `json:"name"`
-	ConnectionName string             `json:"connectionName"`
-	CidrBlock      string             `json:"cidrBlock"`
-	SubnetInfoList []SpiderSubnetInfo `json:"subnetInfoList"`
-	Description    string             `json:"description"`
-	CspVNetId      string             `json:"cspVNetId"`
-	CspVNetName    string             `json:"cspVNetName"`
-	Status         string             `json:"status"`
-	KeyValueList   []common.KeyValue  `json:"keyValueList"`
+	Id                   string             `json:"id"`
+	Name                 string             `json:"name"`
+	ConnectionName       string             `json:"connectionName"`
+	CidrBlock            string             `json:"cidrBlock"`
+	SubnetInfoList       []SpiderSubnetInfo `json:"subnetInfoList"`
+	Description          string             `json:"description"`
+	CspVNetId            string             `json:"cspVNetId"`
+	CspVNetName          string             `json:"cspVNetName"`
+	Status               string             `json:"status"`
+	KeyValueList         []common.KeyValue  `json:"keyValueList"`
+	AssociatedObjectList []string           `json:"associatedObjectList"`
 
 	// Disabled for now
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
 }
 
+// CreateVNet accepts vNet creation request, creates and returns an TB vNet object
 func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	resourceType := common.StrVNet

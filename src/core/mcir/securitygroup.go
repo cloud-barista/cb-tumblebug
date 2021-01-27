@@ -67,11 +67,13 @@ type TbSecurityGroupInfo struct { // Tumblebug
 	CspSecurityGroupId   string                    `json:"cspSecurityGroupId"`
 	CspSecurityGroupName string                    `json:"cspSecurityGroupName"`
 	KeyValueList         []common.KeyValue         `json:"keyValueList"`
+	AssociatedObjectList []string                  `json:"associatedObjectList"`
 
 	// Disabled for now
 	//ResourceGroupName  string `json:"resourceGroupName"`
 }
 
+// CreateSecurityGroup accepts SG creation request, creates and returns an TB SG object
 func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, error) {
 
 	resourceType := common.StrSecurityGroup
@@ -86,6 +88,12 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		err := fmt.Errorf("The securityGroup " + u.Name + " already exists.")
 		//return temp, http.StatusConflict, nil, err
 		return temp, err
+	}
+	if err != nil {
+		common.CBLog.Error(err)
+		content := TbSecurityGroupInfo{}
+		err := fmt.Errorf("Cannot create securityGroup")
+		return content, err
 	}
 
 	tempReq := SpiderSecurityReqInfoWrapper{}

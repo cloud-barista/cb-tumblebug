@@ -3539,6 +3539,12 @@ var doc = `{
         "mcir.TbImageInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -3596,6 +3602,12 @@ var doc = `{
         "mcir.TbSecurityGroupInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -3657,6 +3669,12 @@ var doc = `{
         "mcir.TbSpecInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -3833,6 +3851,12 @@ var doc = `{
         "mcir.TbVNetInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "cidrBlock": {
                     "type": "string"
                 },
