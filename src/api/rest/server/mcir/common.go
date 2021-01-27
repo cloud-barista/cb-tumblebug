@@ -162,7 +162,7 @@ func RestCheckResource(c echo.Context) error {
 	exists, err := mcir.CheckResource(nsId, resourceType, resourceId)
 
 	type JsonTemplate struct {
-		Exists bool `json:exists`
+		Exists bool `json:"exists"`
 	}
 	content := JsonTemplate{}
 	content.Exists = exists
@@ -175,4 +175,67 @@ func RestCheckResource(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, &content)
+}
+
+// RestTestAddObjectAssociation is a REST API call handling function
+// to test "mcir.UpdateAssociatedObjectList" function with "add" argument.
+func RestTestAddObjectAssociation(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	//resourceType := strings.Split(c.Path(), "/")[5]
+	// c.Path(): /tumblebug/ns/:nsId/testAddObjectAssociation/:resourceType/:resourceId
+	resourceType := c.Param("resourceType")
+	resourceId := c.Param("resourceId")
+
+	vmKeyList, err := mcir.UpdateAssociatedObjectList(nsId, resourceType, resourceId, common.StrAdd, "/test/vm/key")
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	//mapA := map[string]int8{"inUseCount": inUseCount}
+	return c.JSON(http.StatusOK, vmKeyList)
+}
+
+// RestTestDeleteObjectAssociation is a REST API call handling function
+// to test "mcir.UpdateAssociatedObjectList" function with "delete" argument.
+func RestTestDeleteObjectAssociation(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	//resourceType := strings.Split(c.Path(), "/")[5]
+	// c.Path(): /tumblebug/ns/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId
+	resourceType := c.Param("resourceType")
+	resourceId := c.Param("resourceId")
+
+	vmKeyList, err := mcir.UpdateAssociatedObjectList(nsId, resourceType, resourceId, common.StrDelete, "/test/vm/key")
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	//mapA := map[string]int8{"inUseCount": inUseCount}
+	return c.JSON(http.StatusOK, vmKeyList)
+}
+
+// RestTestGetAssociatedObjectCount is a REST API call handling function
+// to test "mcir.GetAssociatedObjectCount" function.
+func RestTestGetAssociatedObjectCount(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	//resourceType := strings.Split(c.Path(), "/")[5]
+	// c.Path(): /tumblebug/ns/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId
+	resourceType := c.Param("resourceType")
+	resourceId := c.Param("resourceId")
+
+	associatedObjectCount, err := mcir.GetAssociatedObjectCount(nsId, resourceType, resourceId)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	mapA := map[string]int{"associatedObjectCount": associatedObjectCount}
+	return c.JSON(http.StatusOK, &mapA)
 }

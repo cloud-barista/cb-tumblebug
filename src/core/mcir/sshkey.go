@@ -57,6 +57,7 @@ type TbSshKeyInfo struct {
 	AssociatedObjectList []string          `json:"associatedObjectList"`
 }
 
+// CreateSshKey accepts SSH key creation request, creates and returns an TB sshKey object
 func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	resourceType := common.StrSSHKey

@@ -3524,6 +3524,12 @@
         "mcir.TbImageInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -3581,6 +3587,12 @@
         "mcir.TbSecurityGroupInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -3642,6 +3654,12 @@
         "mcir.TbSpecInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -3818,6 +3836,12 @@
         "mcir.TbVNetInfo": {
             "type": "object",
             "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "cidrBlock": {
                     "type": "string"
                 },

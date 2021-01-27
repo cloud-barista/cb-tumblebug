@@ -47,18 +47,20 @@ type TbImageReq struct {
 }
 
 type TbImageInfo struct {
-	Id             string            `json:"id"`
-	Name           string            `json:"name"`
-	ConnectionName string            `json:"connectionName"`
-	CspImageId     string            `json:"cspImageId"`
-	CspImageName   string            `json:"cspImageName"`
-	Description    string            `json:"description, omitempty"`
-	CreationDate   string            `json:"creationDate, omitempty"`
-	GuestOS        string            `json:"guestOS, omitempty"` // Windows7, Ubuntu etc.
-	Status         string            `json:"status, omitempty"`  // available, unavailable
-	KeyValueList   []common.KeyValue `json:"keyValueList, omitempty"`
+	Id                   string            `json:"id"`
+	Name                 string            `json:"name"`
+	ConnectionName       string            `json:"connectionName"`
+	CspImageId           string            `json:"cspImageId"`
+	CspImageName         string            `json:"cspImageName"`
+	Description          string            `json:"description,omitempty"`
+	CreationDate         string            `json:"creationDate,omitempty"`
+	GuestOS              string            `json:"guestOS,omitempty"` // Windows7, Ubuntu etc.
+	Status               string            `json:"status,omitempty"`  // available, unavailable
+	KeyValueList         []common.KeyValue `json:"keyValueList,omitempty"`
+	AssociatedObjectList []string          `json:"associatedObjectList"`
 }
 
+// ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object
 func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInfo, error) {
 	if spiderImage.IId.NameId == "" {
 		err := fmt.Errorf("ConvertSpiderImageToTumblebugImage failed; spiderImage.IId.NameId == \"\" ")
@@ -80,6 +82,7 @@ func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInf
 	return tumblebugImage, nil
 }
 
+// RegisterImageWithId accepts image creation request, creates and returns an TB image object
 func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	resourceType := common.StrImage
@@ -174,6 +177,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	return content, nil
 }
 
+// RegisterImageWithInfo accepts image creation request, creates and returns an TB image object
 func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, error) {
 
 	resourceType := common.StrImage
@@ -258,6 +262,9 @@ type SpiderImageList struct {
 	Image []SpiderImageInfo `json:"image"`
 }
 
+// LookupImageList accepts Spider conn config,
+// lookups and returns the list of all images in the region of conn config
+// in the form of the list of Spider image objects
 func LookupImageList(connConfig string) (SpiderImageList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
@@ -334,6 +341,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 	}
 }
 
+// LookupImage accepts Spider conn config and CSP image ID, lookups and returns the Spider image object
 func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
@@ -403,13 +411,15 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		temp := SpiderImageInfo{}
 		err2 := json.Unmarshal([]byte(result), &temp)
 		if err2 != nil {
-			fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
+			//fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
+			common.CBLog.Error(err2)
 		}
 		return temp, nil
 
 	}
 }
 
+// FetchImages gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
 func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error) {
 	connConfigs, err := common.GetConnConfigList()
 	if err != nil {
@@ -461,6 +471,7 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 	return connConfigCount, imageCount, nil
 }
 
+// SearchImage accepts arbitrary number of keywords, and returns the list of matched TB image objects
 func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 	nsId = common.GenId(nsId)
 
@@ -494,7 +505,7 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 	for rows.Next() {
 		columns := make([]interface{}, len(cols))
 		columnPointers := make([]interface{}, len(cols))
-		for i, _ := range columns {
+		for i := range columns {
 			columnPointers[i] = &columns[i]
 		}
 
@@ -508,7 +519,11 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 		}
 		js, _ := json.Marshal(m)
 		tempImage := TbImageInfo{}
-		json.Unmarshal(js, &tempImage)
+		err = json.Unmarshal(js, &tempImage)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
 		tempList = append(tempList, tempImage)
 	}
 	return tempList, nil

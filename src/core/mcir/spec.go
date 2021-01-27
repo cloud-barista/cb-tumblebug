@@ -51,40 +51,42 @@ type TbSpecReq struct { // Tumblebug
 }
 
 type TbSpecInfo struct { // Tumblebug
-	Id                    string  `json:"id"`
-	Name                  string  `json:"name"`
-	ConnectionName        string  `json:"connectionName"`
-	CspSpecName           string  `json:"cspSpecName"`
-	Os_type               string  `json:"os_type"`
-	Num_vCPU              uint16  `json:"num_vCPU"`
-	Num_core              uint16  `json:"num_core"`
-	Mem_GiB               uint16  `json:"mem_GiB"`
-	Storage_GiB           uint32  `json:"storage_GiB"`
-	Description           string  `json:"description"`
-	Cost_per_hour         float32 `json:"cost_per_hour"`
-	Num_storage           uint8   `json:"num_storage"`
-	Max_num_storage       uint8   `json:"max_num_storage"`
-	Max_total_storage_TiB uint16  `json:"max_total_storage_TiB"`
-	Net_bw_Gbps           uint16  `json:"net_bw_Gbps"`
-	Ebs_bw_Mbps           uint32  `json:"ebs_bw_Mbps"`
-	Gpu_model             string  `json:"gpu_model"`
-	Num_gpu               uint8   `json:"num_gpu"`
-	Gpumem_GiB            uint16  `json:"gpumem_GiB"`
-	Gpu_p2p               string  `json:"gpu_p2p"`
-	OrderInFilteredResult uint16  `json:"orderInFilteredResult"`
-	EvaluationStatus      string  `json:"evaluationStatus"`
-	EvaluationScore_01    float32 `json:"evaluationScore_01"`
-	EvaluationScore_02    float32 `json:"evaluationScore_02"`
-	EvaluationScore_03    float32 `json:"evaluationScore_03"`
-	EvaluationScore_04    float32 `json:"evaluationScore_04"`
-	EvaluationScore_05    float32 `json:"evaluationScore_05"`
-	EvaluationScore_06    float32 `json:"evaluationScore_06"`
-	EvaluationScore_07    float32 `json:"evaluationScore_07"`
-	EvaluationScore_08    float32 `json:"evaluationScore_08"`
-	EvaluationScore_09    float32 `json:"evaluationScore_09"`
-	EvaluationScore_10    float32 `json:"evaluationScore_10"`
+	Id                    string   `json:"id"`
+	Name                  string   `json:"name"`
+	ConnectionName        string   `json:"connectionName"`
+	CspSpecName           string   `json:"cspSpecName"`
+	Os_type               string   `json:"os_type"`
+	Num_vCPU              uint16   `json:"num_vCPU"`
+	Num_core              uint16   `json:"num_core"`
+	Mem_GiB               uint16   `json:"mem_GiB"`
+	Storage_GiB           uint32   `json:"storage_GiB"`
+	Description           string   `json:"description"`
+	Cost_per_hour         float32  `json:"cost_per_hour"`
+	Num_storage           uint8    `json:"num_storage"`
+	Max_num_storage       uint8    `json:"max_num_storage"`
+	Max_total_storage_TiB uint16   `json:"max_total_storage_TiB"`
+	Net_bw_Gbps           uint16   `json:"net_bw_Gbps"`
+	Ebs_bw_Mbps           uint32   `json:"ebs_bw_Mbps"`
+	Gpu_model             string   `json:"gpu_model"`
+	Num_gpu               uint8    `json:"num_gpu"`
+	Gpumem_GiB            uint16   `json:"gpumem_GiB"`
+	Gpu_p2p               string   `json:"gpu_p2p"`
+	OrderInFilteredResult uint16   `json:"orderInFilteredResult"`
+	EvaluationStatus      string   `json:"evaluationStatus"`
+	EvaluationScore_01    float32  `json:"evaluationScore_01"`
+	EvaluationScore_02    float32  `json:"evaluationScore_02"`
+	EvaluationScore_03    float32  `json:"evaluationScore_03"`
+	EvaluationScore_04    float32  `json:"evaluationScore_04"`
+	EvaluationScore_05    float32  `json:"evaluationScore_05"`
+	EvaluationScore_06    float32  `json:"evaluationScore_06"`
+	EvaluationScore_07    float32  `json:"evaluationScore_07"`
+	EvaluationScore_08    float32  `json:"evaluationScore_08"`
+	EvaluationScore_09    float32  `json:"evaluationScore_09"`
+	EvaluationScore_10    float32  `json:"evaluationScore_10"`
+	AssociatedObjectList  []string `json:"associatedObjectList"`
 }
 
+// ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
 func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, error) {
 	if spiderSpec.Name == "" {
 		err := fmt.Errorf("ConvertSpiderSpecToTumblebugSpec failed; spiderSpec.Name == \"\" ")
@@ -108,6 +110,9 @@ type SpiderSpecList struct {
 	Vmspec []SpiderSpecInfo `json:"vmspec"`
 }
 
+// LookupSpecList accepts Spider conn config,
+// lookups and returns the list of all specs in the region of conn config
+// in the form of the list of Spider spec objects
 func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
@@ -184,7 +189,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 	}
 }
 
-//func LookupSpec(u *TbSpecInfo) (SpiderSpecInfo, error) {
+// LookupSpec accepts Spider conn config and CSP spec name, lookups and returns the Spider spec object
 func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
@@ -262,6 +267,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 	}
 }
 
+// FetchSpecs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
 func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
 	nsId = common.GenId(nsId)
@@ -316,6 +322,7 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 	return connConfigCount, specCount, nil
 }
 
+// RegisterSpecWithCspSpecName accepts spec creation request, creates and returns an TB spec object
 func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
 
 	resourceType := common.StrSpec
@@ -323,17 +330,11 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(u.Name)
 	u.Name = lowerizedName
-	check, err := CheckResource(nsId, resourceType, lowerizedName)
+	check, _ := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + u.Name + " already exists.")
-		return temp, err
-	}
-
-	if err != nil {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("Failed to check the existence of the spec " + lowerizedName + ".")
 		return temp, err
 	}
 
@@ -453,7 +454,11 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	RegisterRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	err = RegisterRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	if err != nil {
+		common.CBLog.Error(err)
+		return content, err
+	}
 
 	stmt, err := common.MYDB.Prepare(sql)
 	if err != nil {
@@ -469,6 +474,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	return content, nil
 }
 
+// RegisterSpecWithInfo accepts spec creation request, creates and returns an TB spec object
 func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) {
 
 	resourceType := common.StrSpec
@@ -476,7 +482,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(content.Name)
 	content.Name = lowerizedName
-	check, err := CheckResource(nsId, resourceType, lowerizedName)
+	check, _ := CheckResource(nsId, resourceType, lowerizedName)
 
 	if check {
 		temp := TbSpecInfo{}
@@ -558,7 +564,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	fmt.Println("sql: " + sql)
 	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-	_, err = sqlparser.Parse(sql)
+	_, err := sqlparser.Parse(sql)
 	if err != nil {
 		return *content, err
 	}
@@ -577,7 +583,11 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	RegisterRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	err = RegisterRecommendList(nsId, content.ConnectionName, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB, content.Id, content.Cost_per_hour)
+	if err != nil {
+		common.CBLog.Error(err)
+		return *content, err
+	}
 
 	stmt, err := common.MYDB.Prepare(sql)
 	if err != nil {
@@ -593,6 +603,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	return *content, nil
 }
 
+// RegisterRecommendList creates the spec recommendation info
 func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize uint16, diskSize uint32, specId string, price float32) error {
 
 	nsId = common.GenId(nsId)
@@ -615,6 +626,7 @@ func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, m
 
 }
 
+// DelRecommendSpec deletes the spec recommendation info
 func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16, diskSize uint32) error {
 
 	nsId = common.GenId(nsId)
@@ -633,6 +645,7 @@ func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16
 
 }
 
+// FilterSpecs accepts criteria for filtering, and returns the list of filtered TB spec objects
 func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 
 	nsId = common.GenId(nsId)
@@ -774,7 +787,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	for rows.Next() {
 		columns := make([]interface{}, len(cols))
 		columnPointers := make([]interface{}, len(cols))
-		for i, _ := range columns {
+		for i := range columns {
 			columnPointers[i] = &columns[i]
 		}
 
@@ -788,7 +801,11 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		}
 		js, _ := json.Marshal(m)
 		tempSpec := TbSpecInfo{}
-		json.Unmarshal(js, &tempSpec)
+		err = json.Unmarshal(js, &tempSpec)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
 		tempList = append(tempList, tempSpec)
 	}
 	return tempList, nil
@@ -824,6 +841,7 @@ type FilterSpecsByRangeRequest struct {
 	EvaluationScore_10    Range `json:"evaluationScore_10"`
 }
 
+// FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
 func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpecInfo, error) {
 	nsId = common.GenId(nsId)
 
@@ -1006,7 +1024,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	for rows.Next() {
 		columns := make([]interface{}, len(cols))
 		columnPointers := make([]interface{}, len(cols))
-		for i, _ := range columns {
+		for i := range columns {
 			columnPointers[i] = &columns[i]
 		}
 
@@ -1020,12 +1038,18 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		}
 		js, _ := json.Marshal(m)
 		tempSpec := TbSpecInfo{}
-		json.Unmarshal(js, &tempSpec)
+		err = json.Unmarshal(js, &tempSpec)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
 		tempList = append(tempList, tempSpec)
 	}
 	return tempList, nil
 }
 
+// SortSpecs accepts the list of TB spec objects, criteria and sorting direction,
+// sorts and returns the sorted list of TB spec objects
 func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpecInfo, error) {
 	var err error = nil
 
@@ -1153,30 +1177,26 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 		}
 	})
 
-	for i, _ := range specList {
+	for i := range specList {
 		specList[i].OrderInFilteredResult = uint16(i + 1)
 	}
 
 	return specList, err
 }
 
+// UpdateSpec accepts to-be TB spec objects,
+// updates and returns the updated TB spec objects
 func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 	resourceType := common.StrSpec
 
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(newSpec.Id)
 	newSpec.Id = lowerizedName
-	check, err := CheckResource(nsId, resourceType, lowerizedName)
+	check, _ := CheckResource(nsId, resourceType, lowerizedName)
 
 	if !check {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + newSpec.Id + " does not exist.")
-		return temp, err
-	}
-
-	if err != nil {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("Failed to check the existence of the spec " + lowerizedName + ".")
 		return temp, err
 	}
 
@@ -1338,7 +1358,11 @@ func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 	fmt.Println("===========================")
 
 	// register information related with MCIS recommendation
-	RegisterRecommendList(nsId, tempSpec.ConnectionName, tempSpec.Num_vCPU, tempSpec.Mem_GiB, tempSpec.Storage_GiB, tempSpec.Id, tempSpec.Cost_per_hour)
+	err = RegisterRecommendList(nsId, tempSpec.ConnectionName, tempSpec.Num_vCPU, tempSpec.Mem_GiB, tempSpec.Storage_GiB, tempSpec.Id, tempSpec.Cost_per_hour)
+	if err != nil {
+		common.CBLog.Error(err)
+		return tempSpec, err
+	}
 
 	stmt, err := common.MYDB.Prepare(sqlQuery)
 	if err != nil {

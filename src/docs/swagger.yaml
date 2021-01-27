@@ -289,6 +289,10 @@ definitions:
     type: object
   mcir.TbImageInfo:
     properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
       connectionName:
         type: string
       creationDate:
@@ -327,6 +331,10 @@ definitions:
     type: object
   mcir.TbSecurityGroupInfo:
     properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
       connectionName:
         type: string
       cspSecurityGroupId:
@@ -367,6 +375,10 @@ definitions:
     type: object
   mcir.TbSpecInfo:
     properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
       connectionName:
         type: string
       cost_per_hour:
@@ -483,6 +495,10 @@ definitions:
     type: object
   mcir.TbVNetInfo:
     properties:
+      associatedObjectList:
+        items:
+          type: string
+        type: array
       cidrBlock:
         type: string
       connectionName:

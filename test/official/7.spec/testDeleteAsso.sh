@@ -11,7 +11,7 @@
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
-	echo "## 5. sshKey: Delete test association"
+	echo "## 7. spec : Delete test association"
 	echo "####################################################################"
 
 	CSP=${1}
@@ -35,7 +35,7 @@
 		INDEX=1
 	fi
 
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/testDeleteObjectAssociation/sshKey/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/testDeleteObjectAssociation/spec/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
 		'{ 
 			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
 		}' #| json_pp #|| return 1

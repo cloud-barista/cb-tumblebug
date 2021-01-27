@@ -17,7 +17,7 @@ func RestCheckMcis(c echo.Context) error {
 	exists, err := mcis.CheckMcis(nsId, mcisId)
 
 	type JsonTemplate struct {
-		Exists bool `json:exists`
+		Exists bool `json:"exists"`
 	}
 	content := JsonTemplate{}
 	content.Exists = exists
@@ -42,7 +42,7 @@ func RestCheckVm(c echo.Context) error {
 	exists, err := mcis.CheckVm(nsId, mcisId, vmId)
 
 	type JsonTemplate struct {
-		Exists bool `json:exists`
+		Exists bool `json:"exists"`
 	}
 	content := JsonTemplate{}
 	content.Exists = exists
