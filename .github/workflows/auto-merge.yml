@@ -31,13 +31,15 @@ jobs:
       # AutoMerging if this PR has MERGE_LABELS: approved, lgtm (not wip, hold)
       - name: automerge-lgtm-approved
         uses: "pascalgn/automerge-action@v0.13.0"
+        with:
+          args: "--trace"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MERGE_LABELS: "approved,lgtm,!wip,!hold"
-          MERGE_REMOVE_LABELS: "automerge"
+          MERGE_REMOVE_LABELS: ""
           MERGE_METHOD: "merge"
-          MERGE_COMMIT_MESSAGE: "pull-request-description"
-          MERGE_FORKS: "false"
+          MERGE_COMMIT_MESSAGE: "pull-request-title"
+          MERGE_FORKS: "true"
           MERGE_RETRIES: "6"
           MERGE_RETRY_SLEEP: "10000"
           UPDATE_LABELS: "automerge"
