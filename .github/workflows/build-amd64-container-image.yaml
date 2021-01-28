@@ -1,0 +1,41 @@
+# This workflow will build the container image and publish it to container registries.
+name: Build a container image
+
+# When its time to do a release do a full cross platform build for all supported
+# architectures and push all of them to Docker Hub and GitHub Container Registry (GHCR).
+# Only trigger on semver shaped tags.
+on:
+  # "Build and publish" on merged
+  # Actually, there's no "merged" event type.
+  # The "merged" event will be detected by the "closed" event and condition below.
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+      - '.all-contributorsrc'
+      - '.gitignore'
+      - 'LICENSE'
+      - 'CODEOWNERS'
+      - 'assets/**'
+      - 'test/**'
+
+jobs:
+  # The job key is build-amd64-conatiner-image"
+  build-amd64-conatiner-image:
+    # Job name is "Build amd64 container image"
+    name: Build amd64 container image
+
+    # This job runs on Ubuntu-latest
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Build image
+        env:
+          # TODO: Change variable to your repository name and image name.
+          IMAGE_NAME: cb-tumblebug
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME
