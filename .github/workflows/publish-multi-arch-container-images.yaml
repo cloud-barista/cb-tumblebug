@@ -1,5 +1,5 @@
 # This workflow will build the container image and publish it to container registries.
-name: Publish container images
+name: Publish multi-arch container images
 
 # When its time to do a release do a full cross platform build for all supported
 # architectures and push all of them to Docker Hub and GitHub Container Registry (GHCR).
@@ -22,10 +22,10 @@ on:
       - 'test/**'
 
 jobs:
-  # The job key is publish-multi-arch-conatiner-image"
-  publish-multi-arch-conatiner-image:
-    # Job name is "Publish multi-arch container images"
-    name: Publish multi-arch container images
+  # The job key is "publishing"
+  publishing:
+    # Job name is "Publishing"
+    name: Publishing
 
     # This job runs on Ubuntu-latest
     runs-on: ubuntu-latest

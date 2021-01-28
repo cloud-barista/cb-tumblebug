@@ -1,5 +1,5 @@
 # This workflow will build the container image and publish it to container registries.
-name: Build a container image
+name: Build amd64 container image
 
 # When its time to do a release do a full cross platform build for all supported
 # architectures and push all of them to Docker Hub and GitHub Container Registry (GHCR).
@@ -21,10 +21,10 @@ on:
       - 'test/**'
 
 jobs:
-  # The job key is build-amd64-conatiner-image"
-  build-amd64-conatiner-image:
-    # Job name is "Build amd64 container image"
-    name: Build amd64 container image
+  # The job key is "building"
+  building:
+    # Job name is "Building"
+    name: Building
 
     # This job runs on Ubuntu-latest
     runs-on: ubuntu-latest
