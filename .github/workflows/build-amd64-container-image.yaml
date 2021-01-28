@@ -1,13 +1,8 @@
-# This workflow will build the container image and publish it to container registries.
+# This workflow will build the container image for amd64 arch. (as a basic build test)
 name: Build amd64 container image
 
-# When its time to do a release do a full cross platform build for all supported
-# architectures and push all of them to Docker Hub and GitHub Container Registry (GHCR).
-# Only trigger on semver shaped tags.
 on:
-  # "Build and publish" on merged
-  # Actually, there's no "merged" event type.
-  # The "merged" event will be detected by the "closed" event and condition below.
+  # On pull-request event with detailed condition below.
   pull_request:
     branches:
       - master
