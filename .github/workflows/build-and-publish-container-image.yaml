@@ -5,25 +5,13 @@ name: Build and publish container image
 # architectures and push all of them to Docker Hub and GitHub Container Registry (GHCR).
 # Only trigger on semver shaped tags.
 on:
-  # "Build" on pull request event
+  # "Build and publish" on merged
+  # Actually, there's no "merged" event type.
+  # The "merged" event will be detected by the "closed" event and condition below.
   pull_request:
+    types: [ closed ]
     branches:
       - master
-    paths-ignore:
-      - '**.md'
-      - '.all-contributorsrc'
-      - '.gitignore'
-      - 'LICENSE'
-      - 'CODEOWNERS'
-      - 'assets/**'
-      - 'test/**'
-
-  # "Build and publish" on push event (It considers on merge PR event)
-  push:
-    branches: master
-    # [To be tested]
-    tags:
-      - "v*.*.*"
     paths-ignore:
       - '**.md'
       - '.all-contributorsrc'
@@ -41,7 +29,7 @@ jobs:
 
     # This job runs on Ubuntu-latest
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && github.event.pull_request.merged == true }}
 
     steps:
       - name: Checkout source code
@@ -102,7 +90,6 @@ jobs:
 
       # TODO: Create a PAT with `read:packages` and `write:packages` scopes and save it as an Actions secret `CR_PAT`
       - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
@@ -118,7 +105,7 @@ jobs:
           file: ./Dockerfile
           target: prod
           platforms: linux/amd64,linux/arm/v7,linux/arm64 # linux/386,linux/ppc64le,linux/s390x,linux/arm/v6
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: |
             ${{ steps.prep.outputs.docker-tags }}
             ${{ steps.prep.outputs.ghcr-tags }}
