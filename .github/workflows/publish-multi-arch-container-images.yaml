@@ -28,7 +28,7 @@ jobs:
     name: Publishing
 
     # This job runs on Ubuntu-latest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
       - name: Checkout source code
