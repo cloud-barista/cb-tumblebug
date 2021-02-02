@@ -4,6 +4,8 @@
 ![Top Language](https://img.shields.io/github/languages/top/cloud-barista/cb-tumblebug) 
 ![Repo Size](https://img.shields.io/github/repo-size/cloud-barista/cb-tumblebug)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cloud-barista/cb-tumblebug?label=go.mod)
+[![GoDoc](https://godoc.org/github.com/cloud-barista/cb-tumblebug?status.svg)](https://pkg.go.dev/github.com/cloud-barista/cb-tumblebug)
+
 ![Release Version](https://img.shields.io/github/v/release/cloud-barista/cb-tumblebug)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/cloud-barista/cb-tumblebug/blob/master/LICENSE)
 
