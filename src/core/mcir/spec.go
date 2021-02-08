@@ -84,6 +84,8 @@ type TbSpecInfo struct { // Tumblebug
 	EvaluationScore_09    float32  `json:"evaluationScore_09"`
 	EvaluationScore_10    float32  `json:"evaluationScore_10"`
 	AssociatedObjectList  []string `json:"associatedObjectList"`
+	IsTumblebugGenerated  bool     `json:"isTumblebugGenerated"`
+	GeneratedFor          []string `json:"generatedFor"`
 }
 
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object

@@ -55,6 +55,8 @@ type TbSshKeyInfo struct {
 	PrivateKey           string            `json:"privateKey"`
 	KeyValueList         []common.KeyValue `json:"keyValueList"`
 	AssociatedObjectList []string          `json:"associatedObjectList"`
+	IsTumblebugGenerated bool              `json:"isTumblebugGenerated"`
+	GeneratedFor         []string          `json:"generatedFor"`
 }
 
 // CreateSshKey accepts SSH key creation request, creates and returns an TB sshKey object

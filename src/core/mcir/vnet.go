@@ -64,6 +64,8 @@ type TbVNetInfo struct { // Tumblebug
 	Status               string             `json:"status"`
 	KeyValueList         []common.KeyValue  `json:"keyValueList"`
 	AssociatedObjectList []string           `json:"associatedObjectList"`
+	IsTumblebugGenerated bool               `json:"isTumblebugGenerated"`
+	GeneratedFor         []string           `json:"generatedFor"`
 
 	// Disabled for now
 	//Region         string `json:"region"`

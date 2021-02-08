@@ -58,6 +58,8 @@ type TbImageInfo struct {
 	Status               string            `json:"status,omitempty"`  // available, unavailable
 	KeyValueList         []common.KeyValue `json:"keyValueList,omitempty"`
 	AssociatedObjectList []string          `json:"associatedObjectList"`
+	IsTumblebugGenerated bool              `json:"isTumblebugGenerated"`
+	GeneratedFor         []string          `json:"generatedFor"`
 }
 
 // ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object

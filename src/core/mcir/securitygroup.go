@@ -68,6 +68,8 @@ type TbSecurityGroupInfo struct { // Tumblebug
 	CspSecurityGroupName string                    `json:"cspSecurityGroupName"`
 	KeyValueList         []common.KeyValue         `json:"keyValueList"`
 	AssociatedObjectList []string                  `json:"associatedObjectList"`
+	IsTumblebugGenerated bool                      `json:"isTumblebugGenerated"`
+	GeneratedFor         []string                  `json:"generatedFor"`
 
 	// Disabled for now
 	//ResourceGroupName  string `json:"resourceGroupName"`
