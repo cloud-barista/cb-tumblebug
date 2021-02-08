@@ -1,6 +1,6 @@
 module github.com/cloud-barista/cb-tumblebug
 
-go 1.13
+go 1.14
 
 replace (
 	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.3
