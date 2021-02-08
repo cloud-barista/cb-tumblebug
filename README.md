@@ -52,8 +52,9 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 
 ***
 
-## [실행 환경]
-- Linux (검증시험: Ubuntu 18.04)
+## [실행 및 개발 환경]
+- Linux (추천: Ubuntu v18.04)
+- Go (추천: v1.14)
 
 ## [실행 방법]
 
@@ -100,26 +101,24 @@ cb-operator/src$ ./operator
   - `# apt install git`
 
 - Go 설치
-  - https://golang.org/doc/install (아래 링크를 통해 1.12 이상 버전으로 설치 필요)
-  - `wget https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz`
-  - `tar -C /usr/local -xzf go1.13.4.linux-amd64.tar.gz`
-  - `.bashrc` 파일 하단에 다음을 추가: 
-  ```
-  export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-  export GOPATH=$HOME/go
-  ```
-
-
-- `.bashrc` 에 기재한 내용을 적용하기 위해, 다음 중 하나를 수행
-  - bash 재기동
-  - `source ~/.bashrc`
-  - `. ~/.bashrc`
+  - https://golang.org/dl/ 를 참고하여 Go v1.14 (Tumblebug 추천 개발 환경) 이상 설치 
+  - 설치 예시
+    - `wget https://golang.org/dl/go1.14.15.linux-amd64.tar.gz`
+    - `tar -C /usr/local -xzf go1.14.15.linux-amd64.tar.gz`
+    - `.bashrc` 파일 하단에 다음을 추가 
+    ```
+    export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+    export GOPATH=$HOME/go
+    ```
+    - `.bashrc` 에 기재한 내용을 적용하기 위해, 다음 중 하나를 수행
+      - `source ~/.bashrc`, `. ~/.bashrc`
 
 - CB-Tumblebug 소스 다운로드
   - `# go get -v github.com/cloud-barista/cb-tumblebug`
 
 - CB-Tumblebug 실행에 필요한 환경변수 설정
-  - `source setup.env` (cb-tumblebug/conf 에 setup.env)
+  - cb-tumblebug/conf/setup.env 내용 확인 및 설정 (CB-Tumblebug 기본 설정)
+    - `source setup.env` 실행으로 시스템에 반영
   - cb-tumblebug/conf 에 store_conf.yaml 내용 확인 및 설정 (CB-Store 설정)
     - storetype 지정 (NUTSDB 또는 ETCD 지정)
     - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 cb-tumblebug/meta_db/dat 에 파일로 추가됨)
