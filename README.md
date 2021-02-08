@@ -1,12 +1,13 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
-![Top Language](https://img.shields.io/github/languages/top/cloud-barista/cb-tumblebug) 
-![Repo Size](https://img.shields.io/github/repo-size/cloud-barista/cb-tumblebug)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cloud-barista/cb-tumblebug?label=go.mod)
-[![GoDoc](https://godoc.org/github.com/cloud-barista/cb-tumblebug?status.svg)](https://pkg.go.dev/github.com/cloud-barista/cb-tumblebug)
+[![Top Language](https://img.shields.io/github/languages/top/cloud-barista/cb-tumblebug)](https://github.com/cloud-barista/cb-tumblebug/search?l=go)
+[![Repo Size](https://img.shields.io/github/repo-size/cloud-barista/cb-tumblebug)](#)
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cloud-barista/cb-tumblebug?label=go.mod)](https://github.com/cloud-barista/cb-tumblebug/blob/master/go.mod)
+[![GoDoc](https://godoc.org/github.com/cloud-barista/cb-tumblebug?status.svg)](https://pkg.go.dev/github.com/cloud-barista/cb-tumblebug@master)
+[![Swagger API Doc](https://img.shields.io/badge/Swagger-API%20Doc-brightgreen)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/src/docs/swagger.yaml)
 
-![Release Version](https://img.shields.io/github/v/release/cloud-barista/cb-tumblebug)
+[![Release Version](https://img.shields.io/github/v/release/cloud-barista/cb-tumblebug)](https://github.com/cloud-barista/cb-tumblebug/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/cloud-barista/cb-tumblebug/blob/master/LICENSE)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
