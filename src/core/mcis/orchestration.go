@@ -34,7 +34,7 @@ const (
 	// AutoActionScaleOut is const for "ScaleOut" action.
 	AutoActionScaleOut string = "ScaleOut"
 	// AutoActionScaleIn is const for "ScaleIn" action.
-	AutoActionScaleIn  string = "ScaleIn"
+	AutoActionScaleIn string = "ScaleIn"
 )
 
 // AutoCondition is struct for MCIS auto-control condition.
