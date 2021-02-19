@@ -4,7 +4,9 @@ name: "action by command-style comments"
 # Event on a comment (in issue and PR)
 on:
   issue_comment:
-    types: [created]
+    types: [ created, edited ]
+  pull_request_review_comment:
+    types: [ created, edited ]
 
 jobs:
   execute:
