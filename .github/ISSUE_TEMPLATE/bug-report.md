@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-<!-- Please only use this template for submitting bug report -->
+<!-- Thanks for filing an issue! Before submitting, please fill in the following information. -->
 **This is a Bug Report**
 
 **What happened**
