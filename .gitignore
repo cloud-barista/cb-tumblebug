@@ -16,6 +16,9 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# vendor dir
+vendor/
+
 # Binaries
 src/src
 src/mcism

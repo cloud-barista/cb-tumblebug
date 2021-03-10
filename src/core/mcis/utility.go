@@ -68,10 +68,10 @@ func LowerizeAndCheckMcis(nsId string, mcisId string) (bool, string, error) {
 		return false, "", err
 	}
 
-	lowerizedNsId := common.GenId(nsId)
+	lowerizedNsId := common.ToLower(nsId)
 	nsId = lowerizedNsId
 
-	lowerizedMcisId := common.GenId(mcisId)
+	lowerizedMcisId := common.ToLower(mcisId)
 	mcisId = lowerizedMcisId
 
 	fmt.Println("[Check mcis] " + mcisId)
@@ -135,13 +135,13 @@ func LowerizeAndCheckVm(nsId string, mcisId string, vmId string) (bool, string, 
 		return false, "", err
 	}
 
-	lowerizedNsId := common.GenId(nsId)
+	lowerizedNsId := common.ToLower(nsId)
 	nsId = lowerizedNsId
 
-	lowerizedMcisId := common.GenId(mcisId)
+	lowerizedMcisId := common.ToLower(mcisId)
 	mcisId = lowerizedMcisId
 
-	lowerizedVmId := common.GenId(vmId)
+	lowerizedVmId := common.ToLower(vmId)
 	vmId = lowerizedVmId
 
 	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
@@ -206,10 +206,10 @@ func LowerizeAndCheckMcisPolicy(nsId string, mcisId string) (bool, string, error
 		return false, "", err
 	}
 
-	lowerizedNsId := common.GenId(nsId)
+	lowerizedNsId := common.ToLower(nsId)
 	nsId = lowerizedNsId
 
-	lowerizedMcisId := common.GenId(mcisId)
+	lowerizedMcisId := common.ToLower(mcisId)
 	mcisId = lowerizedMcisId
 
 	fmt.Println("[Check McisPolicy] " + mcisId)
