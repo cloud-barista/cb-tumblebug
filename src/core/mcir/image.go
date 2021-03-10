@@ -120,6 +120,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 		return emptyImageInfoObj, err
 	}
 	content.ConnectionName = u.ConnectionName
+	content.Id = common.ToLower(u.Name)
 
 	sql := "INSERT INTO `image`(" +
 		"`namespace`, " +
@@ -474,7 +475,7 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 
 // SearchImage accepts arbitrary number of keywords, and returns the list of matched TB image objects
 func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	tempList := []TbImageInfo{}
 
@@ -482,7 +483,7 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 
 	for _, keyword := range keywords {
 		//fmt.Println("in SearchImage(); keyword: " + keyword) // for debug
-		keyword = common.GenId(keyword)
+		keyword = common.ToLower(keyword)
 		sqlQuery += " AND `name` LIKE '%" + keyword + "%'"
 	}
 	sqlQuery += ";"

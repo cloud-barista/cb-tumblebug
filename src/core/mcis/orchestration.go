@@ -388,7 +388,7 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 // CreateMcisPolicy create McisPolicyInfo object in DB according to user's requirements.
 func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicyInfo, error) {
 
-	//nsId = common.GenId(nsId)
+	//nsId = common.ToLower(nsId)
 	//check, lowerizedName, _ := LowerizeAndCheckMcisPolicy(nsId, mcisId)
 	nsId = common.ToLower(nsId)
 	lowerizedName := common.ToLower(mcisId)
@@ -432,7 +432,7 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 // GetMcisPolicyObject returns McisPolicyInfo object.
 func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 	fmt.Println("[GetMcisPolicyObject]" + mcisId)
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 	fmt.Println("Key: ", key)
 	keyValue, err := common.CBStore.Get(key)
@@ -454,7 +454,7 @@ func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 // GetAllMcisPolicyObject returns all McisPolicyInfo objects.
 func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 	Mcis := []McisPolicyInfo{}
 	mcisList := ListMcisPolicyId(nsId)
 
@@ -476,7 +476,7 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 // ListMcisPolicyId returns a list of Ids for all McisPolicyInfo objects .
 func ListMcisPolicyId(nsId string) []string {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 	//fmt.Println("[Get MCIS Policy ID list]")
 	key := "/ns/" + nsId + "/policy/mcis"
 	keyValue, _ := common.CBStore.GetList(key, true)
@@ -493,7 +493,7 @@ func ListMcisPolicyId(nsId string) []string {
 // DelMcisPolicy deletes McisPolicyInfo object by mcisId.
 func DelMcisPolicy(nsId string, mcisId string) error {
 
-	//nsId = common.GenId(nsId)
+	//nsId = common.ToLower(nsId)
 	//check, lowerizedName, _ := LowerizeAndCheckMcisPolicy(nsId, mcisId)
 	//mcisId = lowerizedName
 	nsId = common.ToLower(nsId)
@@ -523,7 +523,7 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 // DelAllMcisPolicy deletes all McisPolicyInfo objects.
 func DelAllMcisPolicy(nsId string) (string, error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 	mcisList := ListMcisPolicyId(nsId)
 	if len(mcisList) == 0 {
 		return "No MCIS Policy to delete", nil

@@ -263,29 +263,6 @@ func DelAllNs() error {
 	return nil
 }
 
-/*
-func LowerizeAndCheckNs(Id string) (bool, string, error) {
-
-	if Id == "" {
-		err := fmt.Errorf("CheckNs failed; nsId given is null.")
-		return false, "", err
-	}
-
-	lowerizedId := GenId(Id)
-
-	fmt.Println("[Check ns] " + lowerizedId)
-
-	key := "/ns/" + lowerizedId
-	//fmt.Println(key)
-
-	keyValue, _ := CBStore.Get(key)
-	if keyValue != nil {
-		return true, lowerizedId, nil
-	}
-	return false, lowerizedId, nil
-}
-*/
-
 func CheckNs(Id string) (bool, error) {
 
 	if Id == "" {

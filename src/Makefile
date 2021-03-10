@@ -1,7 +1,7 @@
 default:
-	go build -o cb-tumblebug
+	go build -mod=mod -o cb-tumblebug
 cc:
-	GOOS=linux GOARCH=arm go build -o cb-tumblebug-arm
+	GOOS=linux GOARCH=arm go build -mod=mod -o cb-tumblebug-arm
 run:
 	./cb-tumblebug
 clean:

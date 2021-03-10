@@ -961,7 +961,7 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 func ListMcisId(nsId string) []string {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	fmt.Println("[Get MCIS ID list]")
 	key := "/ns/" + nsId + "/mcis"
@@ -988,8 +988,8 @@ func ListMcisId(nsId string) []string {
 
 func ListVmId(nsId string, mcisId string) ([]string, error) {
 
-	nsId = common.GenId(nsId)
-	mcisId = common.GenId(mcisId)
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
 
 	fmt.Println("[ListVmId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -1207,7 +1207,7 @@ func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 	}
 
 	key := CreateMcis(nsId, req)
-	mcisId := common.GenId(req.Name)
+	mcisId := common.ToLower(req.Name)
 
 	keyValue, _ := common.CBStore.Get(key)
 
@@ -1473,7 +1473,7 @@ func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
 func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	/*
 		var content struct {
@@ -1561,7 +1561,7 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 func CoreDelAllMcis(nsId string) (string, error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	mcisList := ListMcisId(nsId)
 
@@ -1586,7 +1586,7 @@ func CoreDelAllMcis(nsId string) (string, error) {
 
 func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	/*
 		var content struct {
@@ -1776,7 +1776,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
 
-	vmInfoData.Id = common.GenId(vmInfoData.Name)
+	vmInfoData.Id = common.ToLower(vmInfoData.Name)
 	vmInfoData.PublicIP = "Not assigned yet"
 	vmInfoData.PublicDNS = "Not assigned yet"
 	vmInfoData.TargetAction = targetAction
@@ -1987,8 +1987,8 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 	targetStatus := StatusRunning
 
 	//req.Id = common.GenUuid()
-	//req.Id = common.GenId(req.Name)
-	mcisId := common.GenId(req.Name)
+	//req.Id = common.ToLower(req.Name)
+	mcisId := common.ToLower(req.Name)
 	vmRequest := req.Vm
 
 	fmt.Println("=========================== Put createSvc")
@@ -2019,7 +2019,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 
 		vmInfoData := TbVmInfo{}
 		//vmInfoData.Id = common.GenUuid()
-		vmInfoData.Id = common.GenId(k.Name)
+		vmInfoData.Id = common.ToLower(k.Name)
 		//vmInfoData.CspVmName = k.CspVmName
 
 		//vmInfoData.Placement_algo = k.Placement_algo
@@ -3818,7 +3818,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 	}
 
 	if keyValue == nil {
-		file, fileErr := os.Open("./resource/cloudlocation.csv")
+		file, fileErr := os.Open("../assets/cloudlocation.csv")
 		defer file.Close()
 		if fileErr != nil {
 			common.CBLog.Error(fileErr)

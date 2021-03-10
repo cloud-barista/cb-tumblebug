@@ -271,7 +271,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 // FetchSpecs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
 func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	connConfigs, err := common.GetConnConfigList()
 	if err != nil {
@@ -349,8 +349,8 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	content := TbSpecInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = common.GenId(u.Name)
-	content.Name = common.GenId(u.Name)
+	content.Id = common.ToLower(u.Name)
+	content.Name = common.ToLower(u.Name)
 	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
 
@@ -607,7 +607,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 // RegisterRecommendList creates the spec recommendation info
 func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize uint16, diskSize uint32, specId string, price float32) error {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	//fmt.Println("[Get MCISs")
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + strconv.Itoa(int(cpuSize)) + "/memSize/" + strconv.Itoa(int(memSize)) + "/diskSize/" + strconv.Itoa(int(diskSize)) + "/specId/" + specId
@@ -630,7 +630,7 @@ func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, m
 // DelRecommendSpec deletes the spec recommendation info
 func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16, diskSize uint32) error {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	fmt.Println("DelRecommendSpec()")
 
@@ -649,7 +649,7 @@ func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16
 // FilterSpecs accepts criteria for filtering, and returns the list of filtered TB spec objects
 func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	tempList := []TbSpecInfo{}
 
@@ -844,7 +844,7 @@ type FilterSpecsByRangeRequest struct {
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
 func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpecInfo, error) {
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	tempList := []TbSpecInfo{}
 

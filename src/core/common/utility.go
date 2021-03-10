@@ -41,13 +41,6 @@ func GenUuid() string {
 	return uuid.New().String()
 }
 
-func GenId(name string) string {
-	r, _ := regexp.Compile("_")
-	out := r.ReplaceAllString(name, "-")
-	out = strings.ToLower(out)
-	return out
-}
-
 func ToLower(name string) string {
 	r, _ := regexp.Compile("_")
 	out := r.ReplaceAllString(name, "-")

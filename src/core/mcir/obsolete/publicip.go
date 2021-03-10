@@ -308,8 +308,8 @@ func createPublicIp(nsId string, u *publicIpReq) (publicIpInfo, int, []byte, err
 
 	content := publicIpInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = common.GenId(u.Name)
-	content.Name = common.GenId(u.Name)
+	content.Id = common.ToLower(u.Name)
+	content.Name = common.ToLower(u.Name)
 	content.ConnectionName = u.ConnectionName
 	content.CspPublicIpId = temp.Name
 	content.CspPublicIpName = temp.Name //common.LookupKeyValueList(temp.KeyValueList, "Name")

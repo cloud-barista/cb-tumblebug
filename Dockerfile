@@ -18,7 +18,7 @@ WORKDIR /go/src/github.com/cloud-barista/cb-tumblebug
 
 WORKDIR src
 
-RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumblebug -v
+RUN go build -mod=mod -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumblebug -v
 
 #############################################################
 ## Stage 2 - Application Setup
@@ -30,6 +30,8 @@ FROM ubuntu:latest as prod
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 WORKDIR /app/src
+
+COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/assets/* /app/assets/
 
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/conf/* /app/conf/
 

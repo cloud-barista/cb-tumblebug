@@ -60,13 +60,13 @@ func UpdateEnv(id string) error {
 
 	content := ConfigInfo{}
 
-	lowStrSPIDER_REST_URL := GenId(StrSPIDER_REST_URL)
-	lowStrDRAGONFLY_REST_URL := GenId(StrDRAGONFLY_REST_URL)
-	lowStrDB_URL := GenId(StrDB_URL)
-	lowStrDB_DATABASE := GenId(StrDB_DATABASE)
-	lowStrDB_USER := GenId(StrDB_USER)
-	lowStrDB_PASSWORD := GenId(StrDB_PASSWORD)
-	lowStrAUTOCONTROL_DURATION_MS := GenId(StrAUTOCONTROL_DURATION_MS)
+	lowStrSPIDER_REST_URL := ToLower(StrSPIDER_REST_URL)
+	lowStrDRAGONFLY_REST_URL := ToLower(StrDRAGONFLY_REST_URL)
+	lowStrDB_URL := ToLower(StrDB_URL)
+	lowStrDB_DATABASE := ToLower(StrDB_DATABASE)
+	lowStrDB_USER := ToLower(StrDB_USER)
+	lowStrDB_PASSWORD := ToLower(StrDB_PASSWORD)
+	lowStrAUTOCONTROL_DURATION_MS := ToLower(StrAUTOCONTROL_DURATION_MS)
 
 	Key := "/config/" + id
 	keyValue, err := CBStore.Get(Key)
@@ -230,7 +230,7 @@ func LowerizeAndCheckConfig(Id string) (bool, string, error) {
 		return false, "", err
 	}
 
-	lowerizedId := GenId(Id)
+	lowerizedId := ToLower(Id)
 
 	fmt.Println("[Check config] " + lowerizedId)
 

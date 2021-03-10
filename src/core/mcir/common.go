@@ -34,7 +34,7 @@ func init() {
 // DelAllResources deletes all TB MCIR object of given resourceType
 func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	resourceIdList := ListResourceId(nsId, resourceType)
 
@@ -458,7 +458,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 // ListResourceId returns the list of TB MCIR object IDs of given resourceType
 func ListResourceId(nsId string, resourceType string) []string {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	if resourceType == common.StrImage ||
 		resourceType == common.StrSSHKey ||
@@ -496,7 +496,7 @@ func ListResourceId(nsId string, resourceType string) []string {
 // ListResource returns the list of TB MCIR objects of given resourceType
 func ListResource(nsId string, resourceType string) (interface{}, error) {
 
-	nsId = common.GenId(nsId)
+	nsId = common.ToLower(nsId)
 
 	if resourceType == common.StrImage ||
 		resourceType == common.StrSSHKey ||
