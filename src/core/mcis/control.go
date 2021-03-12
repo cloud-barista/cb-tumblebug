@@ -69,21 +69,6 @@ type SpiderVMReqInfoWrapper struct { // Spider
 	ReqInfo        SpiderVMInfo
 }
 
-/*
-type SpiderVMReqInfo struct { // Spider
-	Name               string
-	ImageName          string
-	VPCName            string
-	SubnetName         string
-	SecurityGroupNames []string
-	KeyPairName        string
-	VMSpecName         string
-
-	VMUserId     string
-	VMUserPasswd string
-}
-*/
-
 type SpiderVMInfo struct { // Spider
 	// Fields for request
 	Name               string
@@ -116,34 +101,6 @@ type SpiderVMInfo struct { // Spider
 	VMBlockDisk       string // ex)
 	KeyValueList      []common.KeyValue
 }
-
-/* Not used yet
-type VMStatusInfo struct { // Spider
-	//IId      IID // {NameId, SystemId}
-	VmStatus VMStatus
-}
-*/
-
-// GO do not support Enum. So, define like this.
-type VMStatus string // Spider
-//type VMOperation string // Not used yet
-
-const ( // Spider
-	Creating VMStatus = "Creating" // from launch to running
-	Running  VMStatus = "Running"
-
-	Suspending VMStatus = "Suspending" // from running to suspended
-	Suspended  VMStatus = "Suspended"
-	Resuming   VMStatus = "Resuming" // from suspended to running
-
-	Rebooting VMStatus = "Rebooting" // from running to running
-
-	Terminating VMStatus = "Terminating" // from running, suspended to terminated
-	Terminated  VMStatus = "Terminated"
-	NotExist    VMStatus = "NotExist" // VM does not exist
-
-	Failed VMStatus = "Failed"
-)
 
 type RegionInfo struct { // Spider
 	Region string
@@ -191,47 +148,6 @@ type TbVmReq struct {
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
 	Label            string   `json:"label"`
-
-	/*
-		//Id             string `json:"id"`
-		//ConnectionName string `json:"connectionName"`
-
-		// 1. Required by CB-Spider
-		//CspVmName string `json:"cspVmName"` // will be deprecated
-
-		CspImageName        string `json:"cspImageName"`
-		CspVirtualNetworkId string `json:"cspVirtualNetworkId"`
-		//CspNetworkInterfaceId string   `json:"cspNetworkInterfaceId"`
-		//CspPublicIPId         string   `json:"cspPublicIPId"`
-		CspSecurityGroupIds []string `json:"cspSecurityGroupIds"`
-		CspSpecId           string   `json:"cspSpecId"`
-		CspKeyPairName      string   `json:"cspKeyPairName"`
-
-		CbImageId          string `json:"cbImageId"`
-		CbVirtualNetworkId string `json:"cbVirtualNetworkId"`
-		//CbNetworkInterfaceId string   `json:"cbNetworkInterfaceId"`
-		//CbPublicIPId         string   `json:"cbPublicIPId"`
-		CbSecurityGroupIds []string `json:"cbSecurityGroupIds"`
-		CbSpecId           string   `json:"cbSpecId"`
-		CbKeyPairId        string   `json:"cbKeyPairId"`
-
-		VMUserId     string `json:"vmUserId"`
-		VMUserPasswd string `json:"vmUserPasswd"`
-
-		Name           string `json:"name"`
-		ConnectionName string `json:"connectionName"`
-		SpecId         string `json:"specId"`
-		ImageId        string `json:"imageId"`
-		VNetId         string `json:"vNetId"`
-		SubnetId       string `json:"subnetId"`
-		//Vnic_id            string   `json:"vnic_id"`
-		//Public_ip_id       string   `json:"public_ip_id"`
-		SecurityGroupIds []string `json:"securityGroupIds"`
-		SshKeyId         string   `json:"sshKeyId"`
-		Description      string   `json:"description"`
-		VmUserAccount    string   `json:"vmUserAccount"`
-		VmUserPassword   string   `json:"vmUserPassword"`
-	*/
 }
 
 type TbVmInfo struct {
