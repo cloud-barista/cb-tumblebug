@@ -942,6 +942,28 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 }
 
+// func ListVmGroupId returns list of VmGroups in a given MCIS.
+func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
+
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+
+	fmt.Println("[ListVmGroupId]")
+	key := common.GenMcisKey(nsId, mcisId, "")
+	keyValue, err := common.CBStore.GetList(key, true)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	var vmGroupList []string
+	for _, v := range keyValue {
+		if strings.Contains(v.Key, "/vmgroup/") {
+			vmGroupList = append(vmGroupList, strings.TrimPrefix(v.Key, (key+"/vmgroup/")))
+		}
+	}
+	return vmGroupList, nil
+}
+
 func DelMcis(nsId string, mcisId string) error {
 
 	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
@@ -1000,6 +1022,23 @@ func DelMcis(nsId string, mcisId string) error {
 			mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrDelete, vmKey)
 		}
 	}
+
+	// delete vm group info
+	vmGroupList, err := ListVmGroupId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	for _, v := range vmGroupList {
+		vmGroupKey := common.GenMcisVmGroupKey(nsId, mcisId, v)
+		fmt.Println(vmGroupKey)
+		err := common.CBStore.Delete(vmGroupKey)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+	}
+
 	// delete mcis info
 	err = common.CBStore.Delete(key)
 	if err != nil {
