@@ -62,6 +62,12 @@ func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 }
 
+func GenMcisVmGroupKey(nsId string, mcisId string, groupId string) string {
+
+	return "/ns/" + nsId + "/mcis/" + mcisId + "/vmgroup/" + groupId
+
+}
+
 // Generate Mcis policy key
 func GenMcisPolicyKey(nsId string, mcisId string, vmId string) string {
 	if vmId != "" {

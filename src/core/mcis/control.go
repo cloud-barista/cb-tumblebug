@@ -3,9 +3,6 @@ package mcis
 import (
 	"errors"
 
-	//"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/scp"
-	//"github.com/cloud-barista/cb-tumblebug/mcism_server/serverhandler/sshrun"
-
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -135,6 +132,7 @@ type TbMcisInfo struct {
 	//Vm             []vmOverview `json:"vm"`
 }
 
+// struct TbVmReq is to get requirements to create a new server instance.
 type TbVmReq struct {
 	Name             string   `json:"name"`
 	ConnectionName   string   `json:"connectionName"`
@@ -148,8 +146,18 @@ type TbVmReq struct {
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
 	Label            string   `json:"label"`
+	VmGroupSize		 string   `json:"vmGroupSize"`	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
 }
 
+// struct TbVmGroupInfo is to define an object that includes homogeneous VMs.
+type TbVmGroupInfo struct {
+	Id               string   `json:"id"`
+	Name             string   `json:"name"`
+	VmId             []string `json:"vmId"`
+	VmGroupSize		 string   `json:"vmGroupSize"`
+}
+
+// struct TbVmGroupInfo is to define a server instance object
 type TbVmInfo struct {
 	Id               string   `json:"id"`
 	Name             string   `json:"name"`
@@ -164,6 +172,7 @@ type TbVmInfo struct {
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
 	Label            string   `json:"label"`
+	VmGroupId        string   `json:"vmGroupId"`	// defined if the VM is in a group
 	//Vnic_id            string   `json:"vnic_id"`
 	//Public_ip_id       string   `json:"public_ip_id"`
 
@@ -1907,9 +1916,8 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 	mcisId := common.ToLower(req.Name)
 	vmRequest := req.Vm
 
-	fmt.Println("=========================== Put createSvc")
+	fmt.Println("=========================== Create MCIS object")
 	key := common.GenMcisKey(nsId, mcisId, "")
-	//mapA := map[string]string{"name": req.Name, "description": req.Description, "status": "launching", "vm_num": req.Vm_num, "placement_algo": req.Placement_algo}
 	mapA := map[string]string{
 		"id":           mcisId,
 		"name":         req.Name,
@@ -1929,80 +1937,87 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 
 	//goroutin
 	var wg sync.WaitGroup
-	wg.Add(len(vmRequest))
+	//wg.Add(len(vmRequest))
 
 	for _, k := range vmRequest {
 
-		vmInfoData := TbVmInfo{}
-		//vmInfoData.Id = common.GenUuid()
-		vmInfoData.Id = common.ToLower(k.Name)
-		//vmInfoData.CspVmName = k.CspVmName
+		// VM Group handling
+		vmGroupSize, _ := strconv.Atoi(k.VmGroupSize)
+		fmt.Printf("vmGroupSize: %v\n", vmGroupSize)
 
-		//vmInfoData.Placement_algo = k.Placement_algo
+		if vmGroupSize > 0 {
 
-		//vmInfoData.Location = k.Location
-		//vmInfoData.Cloud_id = k.Csp
-		vmInfoData.Description = k.Description
+			fmt.Println("=========================== Create MCIS VM Group object")
+			key := common.GenMcisVmGroupKey(nsId, mcisId, k.Name)
 
-		//vmInfoData.CspSpecId = k.CspSpecId
+			vmGroupInfoData := TbVmGroupInfo{}
+			vmGroupInfoData.Id = common.ToLower(k.Name)
+			vmGroupInfoData.Name = common.ToLower(k.Name)
+			vmGroupInfoData.VmGroupSize = k.VmGroupSize
 
-		//vmInfoData.Vcpu_size = k.Vcpu_size
-		//vmInfoData.Memory_size = k.Memory_size
-		//vmInfoData.Disk_size = k.Disk_size
-		//vmInfoData.Disk_type = k.Disk_type
+			for i := 0; i < vmGroupSize; i++ {
+				vmGroupInfoData.VmId = append(vmGroupInfoData.VmId, vmGroupInfoData.Id + "-" + strconv.Itoa(i) )
+			}
 
-		//vmInfoData.CspImageName = k.CspImageName
+			val, _ := json.Marshal(vmGroupInfoData)
+			err := common.CBStore.Put(string(key), string(val))
+			if err != nil {
+				common.CBLog.Error(err)
+			}
+			keyValue, _ := common.CBStore.Get(string(key))
+			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+			fmt.Println("===========================")
 
-		//vmInfoData.CspSecurityGroupIds = ["TBD"]
-		//vmInfoData.CspVirtualNetworkId = "TBD"
-		//vmInfoData.Subnet = "TBD"
+		}
+		
+		for i := 0; i <= vmGroupSize; i++ {
+			vmInfoData := TbVmInfo{}
 
-		vmInfoData.PublicIP = "Not assigned yet"
-		//vmInfoData.CspVmId = "Not assigned yet"
-		vmInfoData.PublicDNS = "Not assigned yet"
+			if vmGroupSize == 0 { 			// for VM (not in a group)
+				vmInfoData.Name = common.ToLower(k.Name) 
+			} else { 						// for VM (in a group)
+				if i == vmGroupSize {
+					break	// if vmGroupSize != 0 && vmGroupSize == i, skip the final loop
+				}
+				vmInfoData.VmGroupId = common.ToLower(k.Name)
+				vmInfoData.Name = common.ToLower(k.Name) + "-" + strconv.Itoa(i)
+				fmt.Println("===========================")
+				fmt.Println("vmInfoData.Name: " + vmInfoData.Name)
+				fmt.Println("===========================")
 
-		vmInfoData.Status = StatusCreating
-		vmInfoData.TargetAction = targetAction
-		vmInfoData.TargetStatus = targetStatus
+			}
+			vmInfoData.Id = vmInfoData.Name	
 
-		///////////
-		/*
-			Name              string `json:"name"`
-			ConnectionName       string `json:"connectionName"`
-			SpecId           string `json:"specId"`
-			ImageId          string `json:"imageId"`
-			VNetId           string `json:"vNetId"`
-			Vnic_id           string `json:"vnic_id"`
-			Security_group_id string `json:"security_group_id"`
-			SshKeyId        string `json:"sshKeyId"`
-			Description       string `json:"description"`
-		*/
+			vmInfoData.Description = k.Description
+			vmInfoData.PublicIP = "Not assigned yet"
+			vmInfoData.PublicDNS = "Not assigned yet"
 
-		vmInfoData.Name = k.Name
-		vmInfoData.ConnectionName = k.ConnectionName
-		vmInfoData.SpecId = k.SpecId
-		vmInfoData.ImageId = k.ImageId
-		vmInfoData.VNetId = k.VNetId
-		vmInfoData.SubnetId = k.SubnetId
-		//vmInfoData.Vnic_id = k.Vnic_id
-		//vmInfoData.Public_ip_id = k.Public_ip_id
-		vmInfoData.SecurityGroupIds = k.SecurityGroupIds
-		vmInfoData.SshKeyId = k.SshKeyId
-		vmInfoData.Description = k.Description
+			vmInfoData.Status = StatusCreating
+			vmInfoData.TargetAction = targetAction
+			vmInfoData.TargetStatus = targetStatus
 
-		vmInfoData.ConnectionName = k.ConnectionName
+			vmInfoData.ConnectionName = k.ConnectionName
+			vmInfoData.SpecId = k.SpecId
+			vmInfoData.ImageId = k.ImageId
+			vmInfoData.VNetId = k.VNetId
+			vmInfoData.SubnetId = k.SubnetId
+			//vmInfoData.Vnic_id = k.Vnic_id
+			//vmInfoData.Public_ip_id = k.Public_ip_id
+			vmInfoData.SecurityGroupIds = k.SecurityGroupIds
+			vmInfoData.SshKeyId = k.SshKeyId
+			vmInfoData.Description = k.Description
 
-		vmInfoData.VmUserAccount = k.VmUserAccount
-		vmInfoData.VmUserPassword = k.VmUserPassword
+			vmInfoData.VmUserAccount = k.VmUserAccount
+			vmInfoData.VmUserPassword = k.VmUserPassword
 
-		/////////
+			wg.Add(1)
+			go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
+			//AddVmToMcis(nsId, req.Id, vmInfoData)
 
-		go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
-		//AddVmToMcis(nsId, req.Id, vmInfoData)
-
-		if err != nil {
-			errMsg := "Failed to add VM " + vmInfoData.Name + " to MCIS " + req.Name
-			return errMsg
+			if err != nil {
+				errMsg := "Failed to add VM " + vmInfoData.Name + " to MCIS " + req.Name
+				return errMsg
+			}
 		}
 	}
 	wg.Wait()
