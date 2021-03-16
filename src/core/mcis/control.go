@@ -110,7 +110,7 @@ type TbMcisReq struct {
 	Placement_algo string    `json:"placement_algo"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
 	Description string `json:"description"`
 	Label       string `json:"label"`
@@ -127,13 +127,14 @@ type TbMcisInfo struct {
 	TargetStatus   string     `json:"targetStatus"`
 	TargetAction   string     `json:"targetAction"`
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 	// Disabled for now
 	//Vm             []vmOverview `json:"vm"`
 }
 
 // struct TbVmReq is to get requirements to create a new server instance.
 type TbVmReq struct {
+	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
 	Name             string   `json:"name"`
 	ConnectionName   string   `json:"connectionName"`
 	SpecId           string   `json:"specId"`
@@ -146,7 +147,8 @@ type TbVmReq struct {
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
 	Label            string   `json:"label"`
-	VmGroupSize		 string   `json:"vmGroupSize"`	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
+	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
+	VmGroupSize		 string   `json:"vmGroupSize" example:"3" default:""`	
 }
 
 // struct TbVmGroupInfo is to define an object that includes homogeneous VMs.
@@ -172,7 +174,8 @@ type TbVmInfo struct {
 	VmUserPassword   string   `json:"vmUserPassword"`
 	Description      string   `json:"description"`
 	Label            string   `json:"label"`
-	VmGroupId        string   `json:"vmGroupId"`	// defined if the VM is in a group
+	// defined if the VM is in a group
+	VmGroupId        string   `json:"vmGroupId"`	
 	//Vnic_id            string   `json:"vnic_id"`
 	//Public_ip_id       string   `json:"public_ip_id"`
 
