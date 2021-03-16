@@ -128,6 +128,9 @@ func ApiServer() {
 	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
 	e.DELETE("/tumblebug/config", rest_common.RestDelAllConfig)
 
+	e.GET("/tumblebug/objectList", rest_common.RestGetObjectList)
+	e.GET("/tumblebug/objectValue", rest_common.RestGetObjectValue)
+
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
 	g.POST("", rest_common.RestPostNs)

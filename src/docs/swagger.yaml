@@ -3113,6 +3113,64 @@ paths:
       summary: Get VNet
       tags:
       - VNet
+  /objectList:
+    get:
+      consumes:
+      - application/json
+      description: List all objects for a given key
+      parameters:
+      - description: retrieve objects by key
+        in: query
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all objects for a given key
+      tags:
+      - Admin
+  /objectValue:
+    get:
+      consumes:
+      - application/json
+      description: Get value of an object
+      parameters:
+      - description: get object value by key
+        in: query
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get value of an object
+      tags:
+      - Admin
 securityDefinitions:
   BasicAuth:
     type: basic
