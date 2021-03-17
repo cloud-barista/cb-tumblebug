@@ -7,4 +7,4 @@ assignees: ''
 
 ---
 
-<!-- Thanks for filing an issue! You can make a general question with this issue template. -->
+<!-- Thanks for filing an issue! You can tell anything related with this project. -->
