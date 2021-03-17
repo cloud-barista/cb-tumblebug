@@ -696,3 +696,32 @@ func GetChildIdList(key string) []string {
 	return childIdList
 
 }
+
+// func GetObjectList returns IDs of each child objects that has the same key.
+func GetObjectList(key string) []string {
+
+	keyValue, _ := CBStore.GetList(key, true)
+
+	var childIdList []string
+	for _, v := range keyValue {
+		childIdList = append(childIdList, v.Key)
+	}
+
+	fmt.Println("===============================================")
+	return childIdList
+
+}
+
+// func GetObjectValue returns the object value.
+func GetObjectValue(key string) (string, error) {
+
+	keyValue, err := CBStore.Get(key)
+	if err != nil {
+		CBLog.Error(err)
+		return "", err
+	}
+	if keyValue == nil{
+		return "", nil
+	}
+	return keyValue.Value, nil
+}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"encoding/json"
 
 	"github.com/beego/beego/v2/core/validation"
 	"github.com/labstack/echo/v4"
@@ -103,4 +104,62 @@ func RestGetRegionList(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, &content)
 
+}
+
+// ObjectList struct consists of object IDs
+type ObjectList struct { 
+	Object []string `json:"object"`
+}
+
+// func RestGetObjectList is a rest api wrapper for GetObjectList.
+// RestGetObjectList godoc
+// @Summary List all objects for a given key
+// @Description List all objects for a given key
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param key query string true "retrieve objects by key"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /objectList [get]
+func RestGetObjectList(c echo.Context) error {
+	parentKey := c.QueryParam("key")
+	fmt.Printf("[Get Tumblebug Object List] with Key: %s \n", parentKey)
+
+	content := common.GetObjectList(parentKey)
+
+	objectList := ObjectList{}
+	for i, v := range content {
+		fmt.Printf("[Obj: %d] %s \n", i, v)
+		objectList.Object = append(objectList.Object, v)
+	}
+	return c.JSON(http.StatusOK, &objectList)
+}
+
+// func RestGetObjectValue is a rest api wrapper for GetObjectValue.
+// RestGetObjectValue godoc
+// @Summary Get value of an object
+// @Description Get value of an object
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param key query string true "get object value by key"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /objectValue [get]
+func RestGetObjectValue(c echo.Context) error {
+	parentKey := c.QueryParam("key")
+	fmt.Printf("[Get Tumblebug Object Value] with Key: %s \n", parentKey)
+
+	content, err := common.GetObjectValue(parentKey)
+	if err != nil || content == "" {
+		return SendMessage(c, http.StatusOK, "Cannot find [" + parentKey+ "] object")
+	}
+	
+	var contentJSON map[string]interface{}
+	json.Unmarshal([]byte(content), &contentJSON)
+
+	return c.JSON(http.StatusOK, &contentJSON)
 }
