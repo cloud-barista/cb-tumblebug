@@ -9,9 +9,9 @@
     AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
     echo "####################################################################"
-    echo "## 0. Object: Get value"
+    echo "## 0. Object: Delete Child Objects"
     echo "####################################################################"
 
     KEY=${1}
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/object?key=$KEY | json_pp 
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/objects?key=$KEY | json_pp 

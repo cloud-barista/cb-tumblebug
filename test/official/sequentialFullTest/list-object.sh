@@ -14,4 +14,4 @@
 
     KEY=${1}
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/objectList?key=$KEY | json_pp 
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/objects?key=$KEY | json_pp 

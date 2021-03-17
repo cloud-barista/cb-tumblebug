@@ -3113,13 +3113,13 @@ paths:
       summary: Get VNet
       tags:
       - VNet
-  /objectList:
-    get:
+  /object:
+    delete:
       consumes:
       - application/json
-      description: List all objects for a given key
+      description: Delete value of an object
       parameters:
-      - description: retrieve objects by key
+      - description: delete object value by key
         in: query
         name: key
         required: true
@@ -3139,10 +3139,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all objects for a given key
+      summary: Delete value of an object
       tags:
       - Admin
-  /objectValue:
     get:
       consumes:
       - application/json
@@ -3169,6 +3168,63 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get value of an object
+      tags:
+      - Admin
+  /objects:
+    delete:
+      consumes:
+      - application/json
+      description: Delete objects
+      parameters:
+      - description: Delete child objects based on the given key string
+        in: query
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete objects
+      tags:
+      - Admin
+    get:
+      consumes:
+      - application/json
+      description: List all objects for a given key
+      parameters:
+      - description: retrieve objects by key
+        in: query
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all objects for a given key
       tags:
       - Admin
 securityDefinitions:

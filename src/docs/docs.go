@@ -3098,7 +3098,93 @@ var doc = `{
                 }
             }
         },
-        "/objectList": {
+        "/object": {
+            "get": {
+                "description": "Get value of an object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get value of an object",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "get object value by key",
+                        "name": "key",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete value of an object",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Delete value of an object",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "delete object value by key",
+                        "name": "key",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/objects": {
             "get": {
                 "description": "List all objects for a given key",
                 "consumes": [
@@ -3140,11 +3226,9 @@ var doc = `{
                         }
                     }
                 }
-            }
-        },
-        "/objectValue": {
-            "get": {
-                "description": "Get value of an object",
+            },
+            "delete": {
+                "description": "Delete objects",
                 "consumes": [
                     "application/json"
                 ],
@@ -3154,11 +3238,11 @@ var doc = `{
                 "tags": [
                     "Admin"
                 ],
-                "summary": "Get value of an object",
+                "summary": "Delete objects",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "get object value by key",
+                        "description": "Delete child objects based on the given key string",
                         "name": "key",
                         "in": "query",
                         "required": true

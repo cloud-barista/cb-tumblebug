@@ -122,7 +122,7 @@ type ObjectList struct {
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /objectList [get]
+// @Router /objects [get]
 func RestGetObjectList(c echo.Context) error {
 	parentKey := c.QueryParam("key")
 	fmt.Printf("[Get Tumblebug Object List] with Key: %s \n", parentKey)
@@ -148,7 +148,7 @@ func RestGetObjectList(c echo.Context) error {
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /objectValue [get]
+// @Router /object [get]
 func RestGetObjectValue(c echo.Context) error {
 	parentKey := c.QueryParam("key")
 	fmt.Printf("[Get Tumblebug Object Value] with Key: %s \n", parentKey)
@@ -162,4 +162,57 @@ func RestGetObjectValue(c echo.Context) error {
 	json.Unmarshal([]byte(content), &contentJSON)
 
 	return c.JSON(http.StatusOK, &contentJSON)
+}
+
+// func RestDeleteObjectValue is a rest api wrapper for DeleteObject.
+// RestDeleteObjectValue godoc
+// @Summary Delete value of an object
+// @Description Delete value of an object
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param key query string true "delete object value by key"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /object [delete]
+func RestDeleteObject(c echo.Context) error {
+	parentKey := c.QueryParam("key")
+	fmt.Printf("[Delete Tumblebug Object] with Key: %s \n", parentKey)
+
+	content, err := common.GetObjectValue(parentKey)
+	if err != nil || content == "" {
+		return SendMessage(c, http.StatusOK, "Cannot find [" + parentKey+ "] object")
+	}
+
+	err = common.DeleteObject(parentKey)
+	if err != nil {
+		return SendMessage(c, http.StatusOK, "Cannot delete [" + parentKey+ "] object")
+	}
+
+	return SendMessage(c, http.StatusOK, "The object has been deleted")
+}
+
+// func RestDeleteObjects is a rest api wrapper for DeleteObjects.
+// RestDeleteObjects godoc
+// @Summary Delete objects
+// @Description Delete objects
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param key query string true "Delete child objects based on the given key string"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /objects [delete]
+func RestDeleteObjects(c echo.Context) error {
+	parentKey := c.QueryParam("key")
+	fmt.Printf("[Delete Tumblebug child Objects] with Key: %s \n", parentKey)
+
+	err := common.DeleteObjects(parentKey)
+	if err != nil {
+		return SendMessage(c, http.StatusOK, "Cannot delete  objects")
+	}
+
+	return SendMessage(c, http.StatusOK, "Objects have been deleted")
 }
