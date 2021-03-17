@@ -3117,7 +3117,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete value of an object
+      description: Delete an object
       parameters:
       - description: delete object value by key
         in: query
@@ -3139,7 +3139,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete value of an object
+      summary: Delete an object
       tags:
       - Admin
     get:
@@ -3174,7 +3174,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete objects
+      description: Delete child objects along with the given object
       parameters:
       - description: Delete child objects based on the given key string
         in: query
@@ -3196,7 +3196,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete objects
+      summary: Delete child objects along with the given object
       tags:
       - Admin
     get:

@@ -128,8 +128,8 @@ func ApiServer() {
 	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
 	e.DELETE("/tumblebug/config", rest_common.RestDelAllConfig)
 
-	e.GET("/tumblebug/objects", rest_common.RestGetObjectList)
-	e.GET("/tumblebug/object", rest_common.RestGetObjectValue)
+	e.GET("/tumblebug/object", rest_common.RestGetObject)
+	e.GET("/tumblebug/objects", rest_common.RestGetObjects)
 	e.DELETE("/tumblebug/object", rest_common.RestDeleteObject)
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 

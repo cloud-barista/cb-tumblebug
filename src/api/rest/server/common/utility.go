@@ -111,8 +111,8 @@ type ObjectList struct {
 	Object []string `json:"object"`
 }
 
-// func RestGetObjectList is a rest api wrapper for GetObjectList.
-// RestGetObjectList godoc
+// func RestGetObjects is a rest api wrapper for GetObjectList.
+// RestGetObjects godoc
 // @Summary List all objects for a given key
 // @Description List all objects for a given key
 // @Tags Admin
@@ -123,7 +123,7 @@ type ObjectList struct {
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /objects [get]
-func RestGetObjectList(c echo.Context) error {
+func RestGetObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
 	fmt.Printf("[Get Tumblebug Object List] with Key: %s \n", parentKey)
 
@@ -137,8 +137,8 @@ func RestGetObjectList(c echo.Context) error {
 	return c.JSON(http.StatusOK, &objectList)
 }
 
-// func RestGetObjectValue is a rest api wrapper for GetObjectValue.
-// RestGetObjectValue godoc
+// func RestGetObject is a rest api wrapper for GetObject.
+// RestGetObject godoc
 // @Summary Get value of an object
 // @Description Get value of an object
 // @Tags Admin
@@ -149,7 +149,7 @@ func RestGetObjectList(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /object [get]
-func RestGetObjectValue(c echo.Context) error {
+func RestGetObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
 	fmt.Printf("[Get Tumblebug Object Value] with Key: %s \n", parentKey)
 
@@ -164,10 +164,10 @@ func RestGetObjectValue(c echo.Context) error {
 	return c.JSON(http.StatusOK, &contentJSON)
 }
 
-// func RestDeleteObjectValue is a rest api wrapper for DeleteObject.
-// RestDeleteObjectValue godoc
-// @Summary Delete value of an object
-// @Description Delete value of an object
+// func RestDeleteObject is a rest api wrapper for DeleteObject.
+// RestDeleteObject godoc
+// @Summary Delete an object
+// @Description Delete an object
 // @Tags Admin
 // @Accept  json
 // @Produce  json
@@ -195,8 +195,8 @@ func RestDeleteObject(c echo.Context) error {
 
 // func RestDeleteObjects is a rest api wrapper for DeleteObjects.
 // RestDeleteObjects godoc
-// @Summary Delete objects
-// @Description Delete objects
+// @Summary Delete child objects along with the given object
+// @Description Delete child objects along with the given object
 // @Tags Admin
 // @Accept  json
 // @Produce  json

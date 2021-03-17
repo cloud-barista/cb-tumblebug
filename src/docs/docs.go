@@ -3142,7 +3142,7 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "Delete value of an object",
+                "description": "Delete an object",
                 "consumes": [
                     "application/json"
                 ],
@@ -3152,7 +3152,7 @@ var doc = `{
                 "tags": [
                     "Admin"
                 ],
-                "summary": "Delete value of an object",
+                "summary": "Delete an object",
                 "parameters": [
                     {
                         "type": "string",
@@ -3228,7 +3228,7 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "Delete objects",
+                "description": "Delete child objects along with the given object",
                 "consumes": [
                     "application/json"
                 ],
@@ -3238,7 +3238,7 @@ var doc = `{
                 "tags": [
                     "Admin"
                 ],
-                "summary": "Delete objects",
+                "summary": "Delete child objects along with the given object",
                 "parameters": [
                     {
                         "type": "string",
