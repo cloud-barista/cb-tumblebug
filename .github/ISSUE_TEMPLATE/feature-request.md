@@ -2,7 +2,7 @@
 name: Feature Request (기능 및 특징 추가 요청)
 about: Suggest an idea for this project
 title: ''
-labels: ''
+labels: feature request
 assignees: ''
 
 ---
