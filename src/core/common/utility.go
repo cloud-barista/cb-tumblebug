@@ -725,3 +725,27 @@ func GetObjectValue(key string) (string, error) {
 	}
 	return keyValue.Value, nil
 }
+
+// func DeleteObject delete the object.
+func DeleteObject(key string) error {
+
+	err := CBStore.Delete(key)
+	if err != nil {
+		CBLog.Error(err)
+		return err
+	}
+	return nil
+}
+
+// func DeleteObjects delete objects.
+func DeleteObjects(key string) error {
+	keyValue, _ := CBStore.GetList(key, true)
+	for _, v := range keyValue {
+		err := CBStore.Delete(v.Key)
+		if err != nil {
+			CBLog.Error(err)
+			return err
+		}
+	}
+	return nil
+}

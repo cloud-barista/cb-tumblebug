@@ -111,8 +111,8 @@ type ObjectList struct {
 	Object []string `json:"object"`
 }
 
-// func RestGetObjectList is a rest api wrapper for GetObjectList.
-// RestGetObjectList godoc
+// func RestGetObjects is a rest api wrapper for GetObjectList.
+// RestGetObjects godoc
 // @Summary List all objects for a given key
 // @Description List all objects for a given key
 // @Tags Admin
@@ -122,8 +122,8 @@ type ObjectList struct {
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /objectList [get]
-func RestGetObjectList(c echo.Context) error {
+// @Router /objects [get]
+func RestGetObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
 	fmt.Printf("[Get Tumblebug Object List] with Key: %s \n", parentKey)
 
@@ -137,8 +137,8 @@ func RestGetObjectList(c echo.Context) error {
 	return c.JSON(http.StatusOK, &objectList)
 }
 
-// func RestGetObjectValue is a rest api wrapper for GetObjectValue.
-// RestGetObjectValue godoc
+// func RestGetObject is a rest api wrapper for GetObject.
+// RestGetObject godoc
 // @Summary Get value of an object
 // @Description Get value of an object
 // @Tags Admin
@@ -148,8 +148,8 @@ func RestGetObjectList(c echo.Context) error {
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /objectValue [get]
-func RestGetObjectValue(c echo.Context) error {
+// @Router /object [get]
+func RestGetObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
 	fmt.Printf("[Get Tumblebug Object Value] with Key: %s \n", parentKey)
 
@@ -162,4 +162,57 @@ func RestGetObjectValue(c echo.Context) error {
 	json.Unmarshal([]byte(content), &contentJSON)
 
 	return c.JSON(http.StatusOK, &contentJSON)
+}
+
+// func RestDeleteObject is a rest api wrapper for DeleteObject.
+// RestDeleteObject godoc
+// @Summary Delete an object
+// @Description Delete an object
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param key query string true "delete object value by key"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /object [delete]
+func RestDeleteObject(c echo.Context) error {
+	parentKey := c.QueryParam("key")
+	fmt.Printf("[Delete Tumblebug Object] with Key: %s \n", parentKey)
+
+	content, err := common.GetObjectValue(parentKey)
+	if err != nil || content == "" {
+		return SendMessage(c, http.StatusOK, "Cannot find [" + parentKey+ "] object")
+	}
+
+	err = common.DeleteObject(parentKey)
+	if err != nil {
+		return SendMessage(c, http.StatusOK, "Cannot delete [" + parentKey+ "] object")
+	}
+
+	return SendMessage(c, http.StatusOK, "The object has been deleted")
+}
+
+// func RestDeleteObjects is a rest api wrapper for DeleteObjects.
+// RestDeleteObjects godoc
+// @Summary Delete child objects along with the given object
+// @Description Delete child objects along with the given object
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param key query string true "Delete child objects based on the given key string"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /objects [delete]
+func RestDeleteObjects(c echo.Context) error {
+	parentKey := c.QueryParam("key")
+	fmt.Printf("[Delete Tumblebug child Objects] with Key: %s \n", parentKey)
+
+	err := common.DeleteObjects(parentKey)
+	if err != nil {
+		return SendMessage(c, http.StatusOK, "Cannot delete  objects")
+	}
+
+	return SendMessage(c, http.StatusOK, "Objects have been deleted")
 }
