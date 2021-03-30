@@ -1085,13 +1085,44 @@ var doc = `{
                         "name": "mcisId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "status",
+                            "suspend",
+                            "resume",
+                            "reboot",
+                            "terminate"
+                        ],
+                        "type": "string",
+                        "description": "Action to MCIS",
+                        "name": "action",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given action param",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcis.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[CONTROL]": {
+                                            "$ref": "#/definitions/common.SimpleMsg"
+                                        },
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                                        },
+                                        "[STATUS]": {
+                                            "$ref": "#/definitions/mcis.McisStatusInfo"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -1246,13 +1277,44 @@ var doc = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "status",
+                            "suspend",
+                            "resume",
+                            "reboot",
+                            "terminate"
+                        ],
+                        "type": "string",
+                        "description": "Action to MCIS",
+                        "name": "action",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given action param",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmInfo"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcis.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[CONTROL]": {
+                                            "$ref": "#/definitions/common.SimpleMsg"
+                                        },
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcis.TbVmInfo"
+                                        },
+                                        "[STATUS]": {
+                                            "$ref": "#/definitions/mcis.TbVmStatusInfo"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -4261,6 +4323,9 @@ var doc = `{
                 }
             }
         },
+        "mcis.JSONResult": {
+            "type": "object"
+        },
         "mcis.McisCmdReq": {
             "type": "object",
             "properties": {
@@ -4328,6 +4393,46 @@ var doc = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmRecommendReq"
+                    }
+                }
+            }
+        },
+        "mcis.McisStatusInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "example": "[yes, no]"
+                },
+                "masterIp": {
+                    "type": "string",
+                    "example": "32.201.134.113"
+                },
+                "masterVmId": {
+                    "type": "string",
+                    "example": "vm-asiaeast1-cb-01"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Vm_num string         ` + "`" + `json:\"vm_num\"` + "`" + `",
+                    "type": "string"
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbVmStatusInfo"
                     }
                 }
             }
@@ -4847,6 +4952,47 @@ var doc = `{
                     "type": "string"
                 },
                 "vmUserPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.TbVmStatusInfo": {
+            "type": "object",
+            "properties": {
+                "csp_vm_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "object",
+                    "$ref": "#/definitions/mcis.GeoLocation"
+                },
+                "monAgentStatus": {
+                    "description": "Montoring agent status",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "native_status": {
+                    "type": "string"
+                },
+                "private_ip": {
+                    "type": "string"
+                },
+                "public_ip": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
                     "type": "string"
                 }
             }

@@ -42,6 +42,16 @@ func RestPostMcis(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
+// JSONResult's data field will be overridden by the specific type
+type JSONResult struct {
+    //Code    int          `json:"code" `
+    //Message string       `json:"message"`
+    //Data    interface{}  `json:"data"`
+}
+
+// TODO: swag does not support multiple response types (success 200) in an API. 
+// Annotation for API documention Need to be revised.
+
 // RestGetMcis godoc
 // @Summary Get MCIS
 // @Description Get MCIS
@@ -50,7 +60,8 @@ func RestPostMcis(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
-// @Success 200 {object} TbMcisInfo
+// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
+// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[STATUS]=mcis.McisStatusInfo,[CONTROL]=common.SimpleMsg} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [get]
@@ -438,6 +449,9 @@ func RestPostMcisVm(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
+// TODO: swag does not support multiple response types (success 200) in an API. 
+// Annotation for API documention Need to be revised.
+
 // RestGetMcisVm godoc
 // @Summary Get MCIS
 // @Description Get MCIS
@@ -447,7 +461,8 @@ func RestPostMcisVm(c echo.Context) error {
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
 // @Param vmId path string true "VM ID"
-// @Success 200 {object} mcis.TbVmInfo
+// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
+// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbVmInfo,[STATUS]=mcis.TbVmStatusInfo,[CONTROL]=common.SimpleMsg} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [get]

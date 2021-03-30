@@ -661,6 +661,8 @@ definitions:
       nativeRegion:
         type: string
     type: object
+  mcis.JSONResult:
+    type: object
   mcis.McisCmdReq:
     properties:
       command:
@@ -706,6 +708,34 @@ definitions:
       vm_req:
         items:
           $ref: '#/definitions/mcis.TbVmRecommendReq'
+        type: array
+    type: object
+  mcis.McisStatusInfo:
+    properties:
+      id:
+        type: string
+      installMonAgent:
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+        example: '[yes, no]'
+        type: string
+      masterIp:
+        example: 32.201.134.113
+        type: string
+      masterVmId:
+        example: vm-asiaeast1-cb-01
+        type: string
+      name:
+        type: string
+      status:
+        description: Vm_num string         `json:"vm_num"`
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mcis.TbVmStatusInfo'
         type: array
     type: object
   mcis.Policy:
@@ -1060,6 +1090,34 @@ definitions:
       vmUserAccount:
         type: string
       vmUserPassword:
+        type: string
+    type: object
+  mcis.TbVmStatusInfo:
+    properties:
+      csp_vm_id:
+        type: string
+      id:
+        type: string
+      location:
+        $ref: '#/definitions/mcis.GeoLocation'
+        type: object
+      monAgentStatus:
+        description: Montoring agent status
+        example: '[installed, notInstalled, failed]'
+        type: string
+      name:
+        type: string
+      native_status:
+        type: string
+      private_ip:
+        type: string
+      public_ip:
+        type: string
+      status:
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
         type: string
     type: object
 host: localhost:1323
@@ -1765,13 +1823,32 @@ paths:
         name: mcisId
         required: true
         type: string
+      - description: Action to MCIS
+        enum:
+        - status
+        - suspend
+        - resume
+        - reboot
+        - terminate
+        in: query
+        name: action
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given action param
           schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
+            allOf:
+            - $ref: '#/definitions/mcis.JSONResult'
+            - properties:
+                '[CONTROL]':
+                  $ref: '#/definitions/common.SimpleMsg'
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcis.TbMcisInfo'
+                '[STATUS]':
+                  $ref: '#/definitions/mcis.McisStatusInfo'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -1878,13 +1955,32 @@ paths:
         name: vmId
         required: true
         type: string
+      - description: Action to MCIS
+        enum:
+        - status
+        - suspend
+        - resume
+        - reboot
+        - terminate
+        in: query
+        name: action
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given action param
           schema:
-            $ref: '#/definitions/mcis.TbVmInfo'
+            allOf:
+            - $ref: '#/definitions/mcis.JSONResult'
+            - properties:
+                '[CONTROL]':
+                  $ref: '#/definitions/common.SimpleMsg'
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcis.TbVmInfo'
+                '[STATUS]':
+                  $ref: '#/definitions/mcis.TbVmStatusInfo'
+              type: object
         "404":
           description: Not Found
           schema:
