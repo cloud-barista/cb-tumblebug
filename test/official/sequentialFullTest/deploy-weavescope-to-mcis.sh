@@ -72,32 +72,56 @@
 
 	IPLIST=`echo ${IPLIST}`
 	echo "IPLIST: $IPLIST"
-	LAUNCHCMD="sudo scope launch $IPLIST"
+
+	PRIVIPLIST=""
+
+	for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
+		_jq() {
+		echo ${row} | base64 --decode | jq -r ${1}
+		}
+
+		PRIVIPLIST+=$(_jq '.private_ip')
+		PRIVIPLIST+=" "
+	done
+
+	PRIVIPLIST=`echo ${PRIVIPLIST}`
+	echo "PRIVIPLIST: $PRIVIPLIST"
+
+	LAUNCHCMD="sudo scope launch $IPLIST $PRIVIPLIST"
 	#echo $LAUNCHCMD
 
-	echo "[Install Weavescope]"	
+	echo ""
+	echo "Installing Weavescope to MCIS..."	
+	echo ""
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
 	'{
 	"command": "sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L git.io/scope -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
 	}' | json_pp 
 	echo ""
 
-	echo "[Start Weavescope] master"
+	echo "Launching Weavescope for master node..."
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
 EOF
-	echo ""
+	#LAUNCHCMD="sudo scope launch $MASTERIP"
 
-	echo "[Start Weavescope] the others"
+	echo ""
+	echo "[MCIS Weavescope: master node only]"
+	echo "Access to: $MASTERIP:4040/#!/state/{\"topologyId\":\"hosts\"}"
+	echo ""	
+	echo "Working on clustring..."	
+
+	echo "Launching Weavescope for the other nodes..."
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
 EOF
 
+	echo "Done!"	
 	echo ""
-	echo "[Access MCIS Weavescope]"
-	echo "URL: $MASTERIP:4040/#!/state/{\"topologyId\":\"hosts\"}"
+	echo "[MCIS Weavescope: complete cluster]"
+	echo "Access to: $MASTERIP:4040/#!/state/{\"topologyId\":\"hosts\"}"
 	echo ""	

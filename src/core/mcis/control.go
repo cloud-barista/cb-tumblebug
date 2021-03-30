@@ -53,7 +53,7 @@ const milkywayPort string = ":1324/milkyway/"
 
 const SshDefaultUserName01 string = "cb-user"
 const SshDefaultUserName02 string = "ubuntu"
-const SshDefaultUserName03 string = "others"
+const SshDefaultUserName03 string = "root"
 const SshDefaultUserName04 string = "ec2-user"
 
 const LabelAutoGen string = "AutoGen"
@@ -209,6 +209,7 @@ type GeoLocation struct {
 	NativeRegion string `json:"nativeRegion"`
 }
 
+// struct McisStatusInfo is to define simple information of MCIS with updated status of all VMs
 type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
@@ -223,6 +224,7 @@ type McisStatusInfo struct {
 	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
 }
 
+// struct TbVmStatusInfo is to define simple information of VM with updated status
 type TbVmStatusInfo struct {
 	Id            string      `json:"id"`
 	Csp_vm_id     string      `json:"csp_vm_id"`
@@ -232,6 +234,7 @@ type TbVmStatusInfo struct {
 	TargetAction  string      `json:"targetAction"`
 	Native_status string      `json:"native_status"`
 	Public_ip     string      `json:"public_ip"`
+	Private_ip     string      `json:"private_ip"`
 	Location      GeoLocation `json:"location"`
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
@@ -3422,6 +3425,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	vmStatusTmp.Name = temp.Name
 	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
 	vmStatusTmp.Public_ip = temp.PublicIP
+	vmStatusTmp.Private_ip = temp.PrivateIP
 	vmStatusTmp.Native_status = statusResponseTmp.Status
 
 	vmStatusTmp.TargetAction = temp.TargetAction
