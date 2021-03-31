@@ -516,6 +516,8 @@ definitions:
         type: string
       username:
         type: string
+      verifiedUsername:
+        type: string
     type: object
   mcir.TbSshKeyReq:
     properties:

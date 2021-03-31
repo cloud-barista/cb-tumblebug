@@ -4087,6 +4087,9 @@
                 },
                 "username": {
                     "type": "string"
+                },
+                "verifiedUsername": {
+                    "type": "string"
                 }
             }
         },

@@ -280,15 +280,31 @@ type TbVmRecommendInfo struct {
 	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
-func VerifySshUserName(vmIp string, userNames []string, privateKey string) string {
+func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, userNames []string, privateKey string) string {
 	theUserName := ""
 	cmd := "ls"
 
+	_, verifiedUserName, _ := GetVmSshKey(nsId, mcisId, vmId)
+
+	if verifiedUserName != "" {
+		fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + verifiedUserName)
+		fmt.Println("[CMD] " + cmd)
+		result, err := RunSSH(vmIp, verifiedUserName, privateKey, cmd)
+		if err != nil {
+			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
+		}
+		if err == nil {
+			theUserName = verifiedUserName
+			fmt.Println("[RST] " + *result + "[Username] " + verifiedUserName)
+			return theUserName
+		}
+	}
+
 	for i := 0; i < 100; i++ {
 		for _, v := range userNames {
-			fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
-			fmt.Println("[CMD] " + cmd)
 			if v != "" {
+				fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
+				fmt.Println("[CMD] " + cmd)
 				result, err := RunSSH(vmIp, v, privateKey, cmd)
 				if err != nil {
 					fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
@@ -298,10 +314,14 @@ func VerifySshUserName(vmIp string, userNames []string, privateKey string) strin
 					fmt.Println("[RST] " + *result + "[Username] " + v)
 					break
 				}
+				time.Sleep(2 * time.Second)
 			}
-			time.Sleep(2 * time.Second)
 		}
 		if theUserName != "" {
+			err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
+			if err != nil {
+				fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
+			}
 			break
 		}
 		fmt.Println("[Trying a SSH] trial:" + strconv.Itoa(i))
@@ -376,9 +396,16 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 		// }
 
 		// find vaild username
-		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		userNames := []string{userName, req.User_name, SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04}
-		userName = VerifySshUserName(vmIp, userNames, sshKey)
+		userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
+		userNames := []string{
+			userName,
+			req.User_name,
+			SshDefaultUserName01,
+			SshDefaultUserName02,
+			SshDefaultUserName03,
+			SshDefaultUserName04,
+		}
+		userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -1620,7 +1647,7 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	cmd := req.Command
 
 	// find vaild username
-	userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
+	userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 	userNames := []string{
 		userName,
 		req.User_name,
@@ -1629,7 +1656,7 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 		SshDefaultUserName03,
 		SshDefaultUserName04,
 	}
-	userName = VerifySshUserName(vmIp, userNames, sshKey)
+	userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 	if userName == "" {
 		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
 		return "", fmt.Errorf("No vaild username")
@@ -1706,7 +1733,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		// 	userName = sshDefaultUserName
 		// }
 		// find vaild username
-		userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
+		userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		userNames := []string{
 			userName,
 			req.User_name,
@@ -1715,7 +1742,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 			SshDefaultUserName03,
 			SshDefaultUserName04,
 		}
-		userName = VerifySshUserName(vmIp, userNames, sshKey)
+		userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -3638,13 +3665,13 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 }
 
-func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string) {
+func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, string) {
 
 	var content struct {
 		SshKeyId string `json:"sshKeyId"`
 	}
 
-	fmt.Println("[GetVmIp]" + vmId)
+	fmt.Println("[GetVmSshKey]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
@@ -3659,12 +3686,41 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string) {
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
 	keyValue, _ = common.CBStore.Get(sshKey)
 	var keyContent struct {
-		Username   string `json:"username"`
-		PrivateKey string `json:"privateKey"`
+		Username   			string `json:"username"`
+		VerifiedUsername	string `json:"verifiedUsername"`
+		PrivateKey 			string `json:"privateKey"`
 	}
 	json.Unmarshal([]byte(keyValue.Value), &keyContent)
 
-	return keyContent.Username, keyContent.PrivateKey
+	return keyContent.Username, keyContent.VerifiedUsername, keyContent.PrivateKey
+}
+
+// func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo)
+func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName string) error {
+
+	var content struct {
+		SshKeyId string `json:"sshKeyId"`
+	}
+	fmt.Println("[GetVmSshKey]" + vmId)
+	key := common.GenMcisKey(nsId, mcisId, vmId)
+	keyValue, _ := common.CBStore.Get(key)
+	json.Unmarshal([]byte(keyValue.Value), &content)
+
+	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
+	keyValue, _ = common.CBStore.Get(sshKey)
+
+	tmpSshKeyInfo := mcir.TbSshKeyInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &tmpSshKeyInfo)
+
+	tmpSshKeyInfo.VerifiedUsername = verifiedUserName
+
+	val, _ := json.Marshal(tmpSshKeyInfo)
+	err := common.CBStore.Put(string(keyValue.Key), string(val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	return nil
 }
 
 func GetVmIp(nsId string, mcisId string, vmId string) string {

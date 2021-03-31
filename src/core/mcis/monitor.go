@@ -231,9 +231,16 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 			vmIp := GetVmIp(nsId, mcisId, vmId)
 
 			// find vaild username
-			userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-			userNames := []string{SshDefaultUserName01, SshDefaultUserName02, SshDefaultUserName03, SshDefaultUserName04, userName, req.User_name}
-			userName = VerifySshUserName(vmIp, userNames, sshKey)
+			userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
+			userNames := []string{
+				userName,
+				req.User_name,
+				SshDefaultUserName01,
+				SshDefaultUserName02,
+				SshDefaultUserName03,
+				SshDefaultUserName04,
+			}
+			userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 
 			fmt.Println("[CallMonitoringAsync] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 
