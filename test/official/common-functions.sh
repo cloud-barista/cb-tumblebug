@@ -32,6 +32,9 @@ function getCloudIndex()
 	elif [ "${CSP}" == "alibaba" ]; then
 		echo "[Test for Alibaba]"
 		INDEX=4
+	elif [ "${CSP}" == "mock" ]; then
+		echo "[Test for Mock driver]"
+		INDEX=5
 	else
 		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, ...).]"
 		exit
