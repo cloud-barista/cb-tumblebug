@@ -4102,6 +4102,9 @@ var doc = `{
                 },
                 "username": {
                     "type": "string"
+                },
+                "verifiedUsername": {
+                    "type": "string"
                 }
             }
         },

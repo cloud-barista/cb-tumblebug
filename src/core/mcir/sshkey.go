@@ -51,6 +51,7 @@ type TbSshKeyInfo struct {
 	CspSshKeyName        string            `json:"cspSshKeyName"`
 	Fingerprint          string            `json:"fingerprint"`
 	Username             string            `json:"username"`
+	VerifiedUsername     string    		   `json:"verifiedUsername"`
 	PublicKey            string            `json:"publicKey"`
 	PrivateKey           string            `json:"privateKey"`
 	KeyValueList         []common.KeyValue `json:"keyValueList"`
