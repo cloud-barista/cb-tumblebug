@@ -107,7 +107,6 @@ function test_sequence_allcsp_mcis_vm()
 }
 
 
-#function testAll() {
     FILE=../conf.env
     if [ ! -f "$FILE" ]; then
         echo "$FILE does not exist."
@@ -120,9 +119,10 @@ function test_sequence_allcsp_mcis_vm()
         exit
     fi
 
+
 	source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 	source ../credentials.conf
+	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
 	echo "## Create MCIS from Zero Base"
@@ -132,27 +132,9 @@ function test_sequence_allcsp_mcis_vm()
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	if [ "${CSP}" == "all" ]; then
-		echo "[Test for all CSP regions (AWS, Azure, GCP, Alibaba, ...)]"
-		CSP="aws"
-		INDEX=0
-	elif [ "${CSP}" == "aws" ]; then
-		echo "[Test for AWS]"
-		INDEX=1
-	elif [ "${CSP}" == "azure" ]; then
-		echo "[Test for Azure]"
-		INDEX=2
-	elif [ "${CSP}" == "gcp" ]; then
-		echo "[Test for GCP]"
-		INDEX=3
-	elif [ "${CSP}" == "alibaba" ]; then
-		echo "[Test for Alibaba]"
-		INDEX=4
-	else
-		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
-		CSP="aws"
-		INDEX=1
-	fi
+
+	source ../common-functions.sh
+	getCloudIndex $CSP
 
 	if [ "${INDEX}" == "0" ]; then
 		echo "[Parallel excution for all CSP regions]"

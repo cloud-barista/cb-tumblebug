@@ -19,23 +19,9 @@
 	POSTFIX=${3:-developer}
 	MCISPREFIX=${4:-avengers}
 	MCISID=${MCISPREFIX}-${POSTFIX}
-	if [ "${CSP}" == "aws" ]; then
-		echo "[Test for AWS]"
-		INDEX=1
-	elif [ "${CSP}" == "azure" ]; then
-		echo "[Test for Azure]"
-		INDEX=2
-	elif [ "${CSP}" == "gcp" ]; then
-		echo "[Test for GCP]"
-		INDEX=3
-	elif [ "${CSP}" == "alibaba" ]; then
-		echo "[Test for Alibaba]"
-		INDEX=4
-	else
-		echo "[No acceptable argument was provided (aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
-		CSP="aws"
-		INDEX=1
-	fi
+
+	source ../common-functions.sh
+	getCloudIndex $CSP
 
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 		'{
