@@ -20,23 +20,9 @@
 	EXPAND=${4:-1}
 	MCISNAME=${5:-noname}
 	
-	if [ "${CSP}" == "aws" ]; then
-		echo "[Test for AWS]"
-		INDEX=1
-	elif [ "${CSP}" == "azure" ]; then
-		echo "[Test for Azure]"
-		INDEX=2
-	elif [ "${CSP}" == "gcp" ]; then
-		echo "[Test for GCP]"
-		INDEX=3
-	elif [ "${CSP}" == "alibaba" ]; then
-		echo "[Test for Alibaba]"
-		INDEX=4
-	else
-		echo "[No acceptable argument was provided (aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
-		CSP="aws"
-		INDEX=1
-	fi
+
+	source ../common-functions.sh
+	getCloudIndex $CSP
 
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 

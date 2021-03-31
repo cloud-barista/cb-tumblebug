@@ -21,23 +21,9 @@
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
 	MCISNAME=${4:-noname}
-	if [ "${CSP}" == "all" ]; then
-		echo "[Test for all CSP regions (AWS, Azure, GCP, Alibaba, ...)]"
-		CSP="aws"
-		INDEX=0
-	elif [ "${CSP}" == "aws" ]; then
-		INDEX=1
-	elif [ "${CSP}" == "azure" ]; then
-		INDEX=2
-	elif [ "${CSP}" == "gcp" ]; then
-		INDEX=3
-	elif [ "${CSP}" == "alibaba" ]; then
-		INDEX=4
-	else
-		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, ...). Default: Test for AWS]"
-		CSP="aws"
-		INDEX=1
-	fi
+
+	source ../common-functions.sh
+	getCloudIndex $CSP
 
 
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
