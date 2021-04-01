@@ -770,22 +770,30 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 					return nil, err
 				}
 			}
-			fmt.Println("keyValue.Value before sjson.Set: " + keyValue.Value) // for debug
-			fmt.Println("len(objList): " + strconv.Itoa(len(objList)))        // for debug
-			fmt.Print("objList: ")                                            // for debug
-			fmt.Println(objList)                                              // for debug
-			if len(objList) == 0 {
-				keyValue.Value, err = sjson.Set(keyValue.Value, "associatedObjectList.0", objectKey) // Create a new array by using the 0 key in a path
-			} else {
-				keyValue.Value, err = sjson.Set(keyValue.Value, "associatedObjectList.-1", objectKey) // Append an array value by using the -1 key in a path
-			}
+			// fmt.Println("len(objList): " + strconv.Itoa(len(objList))) // for debug
+			// fmt.Print("objList: ")                                     // for debug
+			// fmt.Println(objList)                                       // for debug
 
-			if err != nil {
-				common.CBLog.Error(err)
-				return nil, err
+			var anyJson map[string]interface{}
+			json.Unmarshal([]byte(keyValue.Value), &anyJson)
+			if anyJson["associatedObjectList"] == nil {
+				array_to_be := []string{objectKey}
+				// fmt.Println("array_to_be: ", array_to_be) // for debug
+
+				anyJson["associatedObjectList"] = array_to_be
+			} else { // anyJson["associatedObjectList"] != nil
+				array_as_is := anyJson["associatedObjectList"].([]interface{})
+				// fmt.Println("array_as_is: ", array_as_is) // for debug
+
+				array_to_be := append(array_as_is, objectKey)
+				// fmt.Println("array_to_be: ", array_to_be) // for debug
+
+				anyJson["associatedObjectList"] = array_to_be
 			}
-			fmt.Println("keyValue.Value after sjson.Set: " + keyValue.Value) // for debug
-			//objList = append(objList, objectKey)
+			updatedJson, _ := json.Marshal(anyJson)
+			// fmt.Println(string(updatedJson)) // for debug
+
+			keyValue.Value = string(updatedJson)
 		case common.StrDelete:
 			var foundKey int
 			var foundVal string
