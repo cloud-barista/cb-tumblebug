@@ -59,6 +59,10 @@
                 {
                     \"Key\" : \"${CredentialKey04[INDEX]:-NULL}\",
                     \"Value\" : \"${CredentialVal04[INDEX]:-NULL}\"
+                },
+                {
+                    \"Key\" : \"${CredentialKey05[INDEX]:-NULL}\",
+                    \"Value\" : \"${CredentialVal05[INDEX]:-NULL}\"
                 }
             ]
         }" #| json_pp
@@ -83,7 +87,7 @@
             "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
         }' | json_pp
     else
-    curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
+        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
         '{
             "ProviderName" : "'${ProviderName[INDEX]}'",
             "KeyValueInfoList" : [
