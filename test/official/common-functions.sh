@@ -17,7 +17,7 @@ function getCloudIndex()
 	local CSP=$1
 
 	if [ "${CSP}" == "all" ]; then
-		echo "[Test for all CSP regions (AWS, Azure, GCP, Alibaba, ...)]"
+		echo "[Test for all CSP regions (AWS, Azure, GCP, Alibaba,  ...)]"
 		CSP="aws"
 		INDEX=0
 	elif [ "${CSP}" == "aws" ]; then
@@ -35,8 +35,11 @@ function getCloudIndex()
 	elif [ "${CSP}" == "mock" ]; then
 		echo "[Test for Mock driver]"
 		INDEX=5
+	elif [ "${CSP}" == "openstack" ]; then
+		echo "[Test for OpenStack driver]"
+		INDEX=6
 	else
-		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, ...).]"
+		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, mock, openstack, ...).]"
 		exit
 	fi
 

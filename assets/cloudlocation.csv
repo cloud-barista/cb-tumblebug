@@ -108,6 +108,6 @@ alibaba,us-east-1,US (Virginia),39.1300,-78.0000
 alibaba,eu-central-1,Germany (Frankfurt),50.4000,8.7000
 alibaba,eu-west-1,UK (London),51.8000,-0.2000
 alibaba,me-east-1,UAE (Dubai),25.2770,55.2962
-cloudit,default,Seoul  South Korea,37.2665,126.7780
-mock,default,Seoul  South Korea,37.2665,126.7780
-
+cloudit,default,South Korea (Seoul),37.2665,126.7780
+mock,default,South Korea (Seoul),37.0000,126.0000
+openstack,RegionOne,South Korea (Daejeon),36.3804, 127.3650
