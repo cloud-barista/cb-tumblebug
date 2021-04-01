@@ -449,6 +449,42 @@ func RestPostMcisVm(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
+
+// RestPostMcisVmGroup godoc
+// @Summary Create multiple VMs by VM group in specified MCIS
+// @Description Create multiple VMs by VM group in specified MCIS
+// @Tags MCIS
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisId path string true "MCIS ID"
+// @Param vmReq body mcis.TbVmReq true "Details for VM Group"
+// @Success 200 {object} mcis.TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vmgroup [post]
+func RestPostMcisVmGroup(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+
+	vmInfoData := &mcis.TbVmReq{}
+	if err := c.Bind(vmInfoData); err != nil {
+		return err
+	}
+	common.PrintJsonPretty(*vmInfoData)
+
+	result, err := mcis.CorePostMcisGroupVm(nsId, mcisId, vmInfoData)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusCreated, result)
+}
+
+
 // TODO: swag does not support multiple response types (success 200) in an API. 
 // Annotation for API documention Need to be revised.
 

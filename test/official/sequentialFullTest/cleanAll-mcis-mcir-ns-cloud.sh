@@ -1,17 +1,5 @@
 #!/bin/bash
 
-function dozing()
-{
-	duration=$1
-	printf "Dozing for %s : " $duration
-	for (( i=1; i<=$duration; i++ ))
-	do
-		printf "%s " $i
-		sleep 1
-	done
-	echo "(Back to work)"
-}
-
 function clean_sequence()
 {
 	local CSP=$1
@@ -224,8 +212,9 @@ function clean_sequence()
 				echo $CSP
 				echo $REGION
 
-				clean_sequence $CSP $REGION $POSTFIX ${0##*/}
+				clean_sequence $CSP $REGION $POSTFIX ${0##*/} &
 			done
+			wait
 		done
 	else
 		echo "[Single excution for a CSP region]"
