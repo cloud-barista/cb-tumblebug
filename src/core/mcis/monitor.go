@@ -38,6 +38,7 @@ type MonAgentInstallReq struct {
 	Mcis_id   string `json:"mcis_id,omitempty"`
 	Vm_id     string `json:"vm_id,omitempty"`
 	Public_ip string `json:"public_ip,omitempty"`
+	Port      string `json:"port,omitempty"`
 	User_name string `json:"user_name,omitempty"`
 	Ssh_key   string `json:"ssh_key,omitempty"`
 	Csp_type  string `json:"cspType,omitempty"`
@@ -97,7 +98,7 @@ func CheckDragonflyEndpoint() error {
 	return nil
 }
 
-func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string, userName string, privateKey string, method string, cmd string, returnResult *[]SshCmdResult) {
+func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, vmIP string, sshPort string, userName string, privateKey string, method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
@@ -110,6 +111,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		Mcis_id:   mcisID,
 		Vm_id:     vmID,
 		Public_ip: vmIP,
+		Port:      sshPort,
 		User_name: userName,
 		Ssh_key:   privateKey,
 	}
@@ -122,6 +124,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	_ = writer.WriteField("mcis_id", mcisID)
 	_ = writer.WriteField("vm_id", vmID)
 	_ = writer.WriteField("public_ip", vmIP)
+	_ = writer.WriteField("port", sshPort)
 	_ = writer.WriteField("user_name", userName)
 	_ = writer.WriteField("ssh_key", privateKey)
 	_ = writer.WriteField("cspType", "test")
@@ -228,7 +231,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		if vmObjTmp.MonAgentStatus != "installed" {
 
 			vmId := v
-			vmIp := GetVmIp(nsId, mcisId, vmId)
+			vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
 
 			// find vaild username
 			userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
@@ -240,14 +243,14 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 				SshDefaultUserName03,
 				SshDefaultUserName04,
 			}
-			userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+			userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, userNames, sshKey)
 
 			fmt.Println("[CallMonitoringAsync] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 
 			// Avoid RunSSH to not ready VM
 			if err == nil {
 				wg.Add(1)
-				go CallMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, userName, sshKey, method, cmd, &resultArray)
+				go CallMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, sshPort, userName, sshKey, method, cmd, &resultArray)
 			} else {
 				common.CBLog.Error(err)
 			}
@@ -307,7 +310,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 		wg.Add(1)
 
 		vmId := v
-		vmIp := GetVmIp(nsId, mcisId, vmId)
+		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
 
 		// DF: Get vm on-demand monitoring metric info
 		// Path Para: /ns/:ns_id/mcis/:mcis_id/vm/:vm_id/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info

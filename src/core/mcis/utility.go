@@ -4,6 +4,8 @@ import (
 	//"encoding/json"
 	//uuid "github.com/google/uuid"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 
 	//"fmt"
@@ -260,10 +262,10 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 
 }
 
-func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*string, error) {
+func RunSSH(vmIP string, sshPort string, userName string, privateKey string, cmd string) (*string, error) {
 
 	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:22", vmIP)
+	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
 	sshInfo := SSHInfo{
 		ServerPort: serverEndpoint,
 		UserName:   userName,
@@ -278,12 +280,12 @@ func RunSSH(vmIP string, userName string, privateKey string, cmd string) (*strin
 	}
 }
 
-func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
+func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
 	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:22", vmIP)
+	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
 	sshInfo := SSHInfo{
 		ServerPort: serverEndpoint,
 		UserName:   userName,
@@ -311,4 +313,24 @@ func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, userName string, 
 		*returnResult = append(*returnResult, sshResultTmp)
 	}
 
+}
+
+func TrimIP(sshAccessPoint string) (string, error) {
+	splitted := strings.Split(sshAccessPoint, ":")
+	if len(splitted) != 2 {
+		err := fmt.Errorf("In TrimIP(), sshAccessPoint does not seem 8.8.8.8:22 form.")
+		return strconv.Itoa(0), err
+	}
+	port_string := splitted[1]
+	port, err := strconv.Atoi(port_string)
+	if err != nil {
+		err := fmt.Errorf("In TrimIP(), strconv.Atoi returned an error.")
+		return strconv.Itoa(0), err
+	}
+	if port >= 1 && port <= 65535 { // valid port number
+		return port_string, nil
+	} else {
+		err := fmt.Errorf("In TrimIP(), detected port number seems wrong: " + port_string)
+		return strconv.Itoa(0), err
+	}
 }
