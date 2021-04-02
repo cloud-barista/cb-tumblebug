@@ -26,7 +26,7 @@
 	
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/$MCISID/vmgroup -H 'Content-Type: application/json' -d \
 		'{
-			"vmGroupSize": "2",
+			"vmGroupSize": "3",
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vmUserAccount": "cb-user",

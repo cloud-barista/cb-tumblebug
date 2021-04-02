@@ -84,8 +84,8 @@ function clean_sequence()
 	echo "${OUTPUT}"
 	if [ "${OUTPUT}" != 0 ]; then
 
-		echo "Retry SecurityGroup: Delete 20 times"
-		for (( c=1; c<=20; c++ ))
+		echo "Retry SecurityGroup: Delete 30 times"
+		for (( c=1; c<=30; c++ ))
 		do
 			echo "Trial: ${c}. Sleep 5 before retry SecurityGroup: Delete"
 			dozing 5
@@ -100,7 +100,7 @@ function clean_sequence()
 				break
 			fi
 
-			if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]
+			if [ "${c}" == 30 ] && [ "${OUTPUT2}" == 1 ]
 			then
 				echo "Problem in SecurityGroup: Delete. Exit without unregister-cloud."
 				exit
@@ -198,6 +198,7 @@ function clean_sequence()
 
 		MCISPREFIX=avengers
 		../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
+		../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
 		../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
 
 		INDEXX=${NumCSP}
@@ -214,8 +215,8 @@ function clean_sequence()
 
 				clean_sequence $CSP $REGION $POSTFIX ${0##*/} &
 			done
-			wait
 		done
+		wait
 	else
 		echo "[Single excution for a CSP region]"
 

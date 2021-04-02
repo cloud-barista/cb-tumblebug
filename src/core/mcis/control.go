@@ -300,7 +300,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, use
 		}
 	}
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		for _, v := range userNames {
 			if v != "" {
 				fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
