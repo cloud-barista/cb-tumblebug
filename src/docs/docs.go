@@ -4835,7 +4835,7 @@ var doc = `{
                 "monAgentStatus": {
                     "description": "Montoring agent status",
                     "type": "string",
-                    "example": "[installed, notInstalled, failed]"
+                    "example": "Failed because ..."
                 },
                 "name": {
                     "type": "string"
@@ -4853,7 +4853,7 @@ var doc = `{
                     "type": "string"
                 },
                 "region": {
-                    "description": "2. Provided by CB-Spider",
+                    "description": "Provided by CB-Spider",
                     "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
@@ -4870,11 +4870,16 @@ var doc = `{
                     "type": "string"
                 },
                 "status": {
-                    "description": "3. Required by CB-Tumblebug",
+                    "description": "Required by CB-Tumblebug",
                     "type": "string"
                 },
                 "subnetId": {
                     "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "[installed, notInstalled, failed]"
                 },
                 "targetAction": {
                     "type": "string"
