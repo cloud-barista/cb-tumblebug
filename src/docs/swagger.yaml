@@ -969,7 +969,7 @@ definitions:
         type: object
       monAgentStatus:
         description: Montoring agent status
-        example: Failed because ...
+        example: '[installed, notInstalled, failed]'
         type: string
       name:
         type: string
@@ -1000,7 +1000,7 @@ definitions:
         type: string
       systemMessage:
         description: Latest system message such as error message
-        example: '[installed, notInstalled, failed]'
+        example: Failed because ...
         type: string
       targetAction:
         type: string

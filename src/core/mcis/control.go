@@ -196,10 +196,10 @@ type TbVmInfo struct {
 	TargetAction string `json:"targetAction"`
 
 	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
 
 	// Montoring agent status
-	MonAgentStatus string `json:"monAgentStatus" example:"Failed because ..." default:""` // systeam-given string message
+	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }

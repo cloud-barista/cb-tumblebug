@@ -4835,7 +4835,7 @@ var doc = `{
                 "monAgentStatus": {
                     "description": "Montoring agent status",
                     "type": "string",
-                    "example": "Failed because ..."
+                    "example": "[installed, notInstalled, failed]"
                 },
                 "name": {
                     "type": "string"
@@ -4879,7 +4879,7 @@ var doc = `{
                 "systemMessage": {
                     "description": "Latest system message such as error message",
                     "type": "string",
-                    "example": "[installed, notInstalled, failed]"
+                    "example": "Failed because ..."
                 },
                 "targetAction": {
                     "type": "string"
