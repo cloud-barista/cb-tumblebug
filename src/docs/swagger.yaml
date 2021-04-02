@@ -983,7 +983,7 @@ definitions:
         type: string
       region:
         $ref: '#/definitions/mcis.RegionInfo'
-        description: 2. Provided by CB-Spider
+        description: Provided by CB-Spider
         type: object
       securityGroupIds:
         items:
@@ -994,9 +994,13 @@ definitions:
       sshKeyId:
         type: string
       status:
-        description: 3. Required by CB-Tumblebug
+        description: Required by CB-Tumblebug
         type: string
       subnetId:
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
         type: string
       targetAction:
         type: string

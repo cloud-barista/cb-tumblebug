@@ -240,12 +240,18 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 				SshDefaultUserName03,
 				SshDefaultUserName04,
 			}
-			userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+			userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 
 			fmt.Println("[CallMonitoringAsync] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 
-			wg.Add(1)
-			go CallMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, userName, sshKey, method, cmd, &resultArray)
+			// Avoid RunSSH to not ready VM
+			if err == nil {
+				wg.Add(1)
+				go CallMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, userName, sshKey, method, cmd, &resultArray)
+			} else {
+				common.CBLog.Error(err)
+			}
+
 		}
 	}
 	wg.Wait() //goroutin sync wg

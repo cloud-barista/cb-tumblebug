@@ -181,7 +181,7 @@ type TbVmInfo struct {
 
 	Location GeoLocation `json:"location"`
 
-	// 2. Provided by CB-Spider
+	// Provided by CB-Spider
 	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
 	PublicIP    string     `json:"publicIP"`
 	PublicDNS   string     `json:"publicDNS"`
@@ -190,10 +190,13 @@ type TbVmInfo struct {
 	VMBootDisk  string     `json:"vmBootDisk"` // ex) /dev/sda1
 	VMBlockDisk string     `json:"vmBlockDisk"`
 
-	// 3. Required by CB-Tumblebug
+	// Required by CB-Tumblebug
 	Status       string `json:"status"`
 	TargetStatus string `json:"targetStatus"`
 	TargetAction string `json:"targetAction"`
+
+	// Latest system message such as error message
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
 
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
@@ -280,7 +283,21 @@ type TbVmRecommendInfo struct {
 	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
-func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, userNames []string, privateKey string) string {
+func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, userNames []string, privateKey string) (string, error) {
+
+	// verify if vm is running with a public ip.
+	if vmIp == "" {
+		return "", fmt.Errorf("Cannot do ssh, VM IP is null")
+	}
+	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+	if vmStatusInfoTmp.Status != StatusRunning || vmIp == "" {
+		return "", fmt.Errorf("Cannot do ssh, VM IP is not Running")
+	}
+
 	theUserName := ""
 	cmd := "ls"
 
@@ -296,7 +313,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, use
 		if err == nil {
 			theUserName = verifiedUserName
 			fmt.Println("[RST] " + *result + "[Username] " + verifiedUserName)
-			return theUserName
+			return theUserName, nil
 		}
 	}
 
@@ -328,7 +345,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, use
 		time.Sleep(1 * time.Second)
 	}
 
-	return theUserName
+	return theUserName, nil
 }
 
 type SshCmdResult struct { // Tumblebug
@@ -380,7 +397,6 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 	var resultArray []SshCmdResult
 
 	for _, v := range vmList {
-		wg.Add(1)
 
 		vmId := v
 		vmIp := GetVmIp(nsId, mcisId, vmId)
@@ -405,12 +421,24 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 			SshDefaultUserName03,
 			SshDefaultUserName04,
 		}
-		userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
 
-		go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray)
+		// Avoid RunSSH to not ready VM
+		if err != nil {
+			wg.Add(1)
+			go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray)
+		} else {
+			common.CBLog.Error(err)
+			sshResultTmp := SshCmdResult{}
+			sshResultTmp.Mcis_id = mcisId
+			sshResultTmp.Vm_id = vmId
+			sshResultTmp.Vm_ip = vmIp
+			sshResultTmp.Result = err.Error()
+			sshResultTmp.Err = err
+		}
 
 	}
 	wg.Wait() //goroutin sync wg
@@ -1643,13 +1671,15 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 		SshDefaultUserName03,
 		SshDefaultUserName04,
 	}
-	userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+	userName, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 	if userName == "" {
 		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
 		return "", fmt.Errorf("No vaild username")
 	}
-
-	//fmt.Printf("[userName] " +userName)
+	if err != nil {
+		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
+		return "", err
+	}
 
 	fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 	fmt.Println("[CMD] " + cmd)
@@ -1705,7 +1735,6 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 	var resultArray []SshCmdResult
 
 	for _, v := range vmList {
-		wg.Add(1)
 
 		vmId := v
 		vmIp := GetVmIp(nsId, mcisId, vmId)
@@ -1729,12 +1758,24 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 			SshDefaultUserName03,
 			SshDefaultUserName04,
 		}
-		userName = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
 
-		go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray)
+		// Avoid RunSSH to not ready VM
+		if err == nil {
+			wg.Add(1)
+			go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray)
+		} else {
+			common.CBLog.Error(err)
+			sshResultTmp := SshCmdResult{}
+			sshResultTmp.Mcis_id = mcisId
+			sshResultTmp.Vm_id = vmId
+			sshResultTmp.Vm_ip = vmIp
+			sshResultTmp.Result = err.Error()
+			sshResultTmp.Err = err
+		}
 
 	}
 	wg.Wait() //goroutine sync wg
@@ -2139,7 +2180,6 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 
 	//goroutin
 	var wg sync.WaitGroup
-	//wg.Add(len(vmRequest))
 
 	for _, k := range vmRequest {
 
@@ -2216,10 +2256,6 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
 			//AddVmToMcis(nsId, req.Id, vmInfoData)
 
-			if err != nil {
-				errMsg := "Failed to add VM " + vmInfoData.Name + " to MCIS " + req.Name
-				return errMsg
-			}
 		}
 	}
 	wg.Wait()
@@ -2295,16 +2331,24 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	err = CreateVm(nsId, mcisId, vmInfoData)
 	if err != nil {
 		vmInfoData.Status = StatusFailed
+		vmInfoData.SystemMessage = err.Error()
 		UpdateVmInfo(nsId, mcisId, *vmInfoData)
 		common.CBLog.Error(err)
 		return err
 	}
 
-	//vmInfoData.PublicIP = string(*publicIPs[0])
-	//vmInfoData.CspVmId = string(*instanceIds[0])
-	vmInfoData.Status = StatusRunning
+	// set initial TargetAction, TargetStatus
 	vmInfoData.TargetAction = ActionComplete
 	vmInfoData.TargetStatus = StatusComplete
+
+	// get and set current vm status
+	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	vmInfoData.Status = vmStatusInfoTmp.Status
+
 	// Monitoring Agent Installation Status (init: notInstalled)
 	vmInfoData.MonAgentStatus = "notInstalled"
 
@@ -2469,7 +2513,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		err2 := json.Unmarshal(body, &tempSpiderVMInfo)
 
 		if err2 != nil {
-			fmt.Println("whoops:", err2)
+			fmt.Println(err2)
 			fmt.Println(err)
 			common.CBLog.Error(err)
 			return err
@@ -2951,7 +2995,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		resultTmp := ControlVmResult{}
 		err2 := json.Unmarshal(body, &resultTmp)
 		if err2 != nil {
-			fmt.Println("whoops:", err2)
+			fmt.Println(err2)
 			common.CBLog.Error(err)
 			errTmp = err
 		}
@@ -2959,6 +3003,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			resultTmp.Error = errTmp
 
 			temp.Status = StatusFailed
+			temp.SystemMessage = errTmp.Error()
 			UpdateVmInfo(nsId, mcisId, temp)
 		}
 		results.ResultArray = append(results.ResultArray, resultTmp)
@@ -2968,21 +3013,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		fmt.Println("[Calling SPIDER]END vmControl\n\n")
 
 		UpdateVmPublicIp(nsId, mcisId, temp)
-
-		/*
-			if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
-				return nil
-			}
-			if strings.Compare(content.Cloud_id, "aws") == 0 {
-				controlVmAws(content.Csp_vm_id)
-			} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
-				controlVmGcp(content.Csp_vm_id)
-			} else if strings.Compare(content.Cloud_id, "azure") == 0 {
-				controlVmAzure(content.Csp_vm_id)
-			} else {
-				fmt.Println("==============ERROR=no matched provider_id=================")
-			}
-		*/
 
 		return nil
 
