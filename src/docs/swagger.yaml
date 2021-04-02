@@ -723,6 +723,8 @@ definitions:
       masterIp:
         example: 32.201.134.113
         type: string
+      masterSSHPort:
+        type: string
       masterVmId:
         example: vm-asiaeast1-cb-01
         type: string
@@ -866,6 +868,8 @@ definitions:
         items:
           type: string
         type: array
+      sshaccessPoint:
+        type: string
       startTime:
         description: 'Timezone: based on cloud-barista server location.'
         type: string
@@ -993,6 +997,8 @@ definitions:
         type: string
       sshKeyId:
         type: string
+      sshPort:
+        type: string
       status:
         description: Required by CB-Tumblebug
         type: string
@@ -1118,6 +1124,8 @@ definitions:
       private_ip:
         type: string
       public_ip:
+        type: string
+      sshPort:
         type: string
       status:
         type: string

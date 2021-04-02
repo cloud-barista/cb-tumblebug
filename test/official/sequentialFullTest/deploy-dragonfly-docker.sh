@@ -53,6 +53,10 @@
 	echo "[You can test Dragonfly with following command]"
 	echo " ../9.monitoring/install-agent.sh ${CSP} ${REGION} ${POSTFIX}"
 	echo " ../9.monitoring/get-monitoring-data.sh ${CSP} ${REGION} ${POSTFIX} cpu"
+	echo ""
+	echo "[You can check Dragonfly monitoring status with Chronograf]"
+	echo " http://${MASTERIP}:8888/sources/0/dashboards"
+	echo " (In Chronograf, you need to create a Dashboard view by selecting metrics)"
 #}
 
 #deploy_cb-df_to_mcis
