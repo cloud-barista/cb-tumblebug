@@ -146,23 +146,30 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 	res, err := client.Do(req)
 
+	result := ""
+
 	fmt.Println("Called CB-DRAGONFLY API")
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr = err.Error()
-	}
+	} else {
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err1 := fmt.Errorf("HTTP Status: not in 200-399")
+			common.CBLog.Error(err1)
+			errStr = err1.Error()
+		}
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		errStr = err.Error()
-	}
+		defer res.Body.Close()
+		body, err2 := ioutil.ReadAll(res.Body)
+		if err2 != nil {
+			common.CBLog.Error(err2)
+			errStr = err2.Error()
+		}
 
-	result := string(body)
+		result = string(body)
+	}
 
 	//wg.Done() //goroutin sync done
 
@@ -365,43 +372,45 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 
 	res, err := client.Do(req)
 
+	result := ""
+
 	fmt.Println("Called CB-DRAGONFLY API")
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr = err.Error()
-	}
+	} else {
+		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err1 := fmt.Errorf("HTTP Status: not in 200-399")
+			common.CBLog.Error(err1)
+			errStr = err1.Error()
+		}
 
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		common.CBLog.Error(err)
-		errStr = err.Error()
-	}
+		defer res.Body.Close()
+		body, err2 := ioutil.ReadAll(res.Body)
+		if err2 != nil {
+			common.CBLog.Error(err2)
+			errStr = err2.Error()
+		}
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		errStr = err.Error()
-	}
+		switch {
+		case metric == MonMetricCpu:
+			value := gjson.Get(string(body), "values.cpu_utilization")
+			result = value.String()
+		case metric == MonMetricMem:
+			value := gjson.Get(string(body), "values.mem_utilization")
+			result = value.String()
+		case metric == MonMetricDisk:
+			value := gjson.Get(string(body), "values.disk_utilization")
+			result = value.String()
+		case metric == MonMetricNet:
+			value := gjson.Get(string(body), "values.bytes_out")
+			result = value.String()
+		default:
+			result = string(body)
+		}
 
-	result := string(body)
-
-	switch {
-	case metric == MonMetricCpu:
-		value := gjson.Get(string(body), "values.cpu_utilization")
-		result = value.String()
-	case metric == MonMetricMem:
-		value := gjson.Get(string(body), "values.mem_utilization")
-		result = value.String()
-	case metric == MonMetricDisk:
-		value := gjson.Get(string(body), "values.disk_utilization")
-		result = value.String()
-	case metric == MonMetricNet:
-		value := gjson.Get(string(body), "values.bytes_out")
-		result = value.String()
-	default:
 	}
 
 	//wg.Done() //goroutin sync done

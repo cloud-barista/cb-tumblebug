@@ -4475,6 +4475,9 @@ var doc = `{
                     "type": "string",
                     "example": "32.201.134.113"
                 },
+                "masterSSHPort": {
+                    "type": "string"
+                },
                 "masterVmId": {
                     "type": "string",
                     "example": "vm-asiaeast1-cb-01"
@@ -4688,6 +4691,9 @@ var doc = `{
                         "type": "string"
                     }
                 },
+                "sshaccessPoint": {
+                    "type": "string"
+                },
                 "startTime": {
                     "description": "Timezone: based on cloud-barista server location.",
                     "type": "string"
@@ -4867,6 +4873,9 @@ var doc = `{
                     "type": "string"
                 },
                 "sshKeyId": {
+                    "type": "string"
+                },
+                "sshPort": {
                     "type": "string"
                 },
                 "status": {
@@ -5052,6 +5061,9 @@ var doc = `{
                     "type": "string"
                 },
                 "public_ip": {
+                    "type": "string"
+                },
+                "sshPort": {
                     "type": "string"
                 },
                 "status": {

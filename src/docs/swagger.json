@@ -4460,6 +4460,9 @@
                     "type": "string",
                     "example": "32.201.134.113"
                 },
+                "masterSSHPort": {
+                    "type": "string"
+                },
                 "masterVmId": {
                     "type": "string",
                     "example": "vm-asiaeast1-cb-01"
@@ -4673,6 +4676,9 @@
                         "type": "string"
                     }
                 },
+                "sshaccessPoint": {
+                    "type": "string"
+                },
                 "startTime": {
                     "description": "Timezone: based on cloud-barista server location.",
                     "type": "string"
@@ -4852,6 +4858,9 @@
                     "type": "string"
                 },
                 "sshKeyId": {
+                    "type": "string"
+                },
+                "sshPort": {
                     "type": "string"
                 },
                 "status": {
@@ -5037,6 +5046,9 @@
                     "type": "string"
                 },
                 "public_ip": {
+                    "type": "string"
+                },
+                "sshPort": {
                     "type": "string"
                 },
                 "status": {
