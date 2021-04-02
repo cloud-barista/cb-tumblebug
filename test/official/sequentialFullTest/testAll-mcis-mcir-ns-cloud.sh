@@ -102,7 +102,7 @@ function test_sequence_allcsp_mcis_vm()
 	local POSTFIX=$3
 	local MCISPREFIX=$4
 
-	../8.mcis/add-vm-to-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
+	../8.mcis/add-vmgroup-to-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
 
 }
 
@@ -151,10 +151,12 @@ function test_sequence_allcsp_mcis_vm()
 				echo $CSP
 				echo $REGION
 
-				test_sequence_allcsp_mcir $CSP $REGION $POSTFIX ${0##*/}
+				test_sequence_allcsp_mcir $CSP $REGION $POSTFIX ${0##*/} &
 
 			done
+			
 		done
+		wait
 
 		MCISPREFIX=avengers
 
@@ -172,10 +174,12 @@ function test_sequence_allcsp_mcis_vm()
 				echo $REGION
 				echo "[Create and Add a VM to MCIS]"
 
-				test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $MCISPREFIX
+				test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $MCISPREFIX &
 
 			done
+			
 		done
+		wait
 
 		../8.mcis/status-mcis.sh ${CSPType[1]} 1 $POSTFIX $MCISPREFIX
 		

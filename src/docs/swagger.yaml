@@ -1994,6 +1994,46 @@ paths:
       summary: Get MCIS
       tags:
       - MCIS
+  /ns/{nsId}/mcis/{mcisId}/vmgroup:
+    post:
+      consumes:
+      - application/json
+      description: Create multiple VMs by VM group in specified MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Details for VM Group
+        in: body
+        name: vmReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbVmReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create multiple VMs by VM group in specified MCIS
+      tags:
+      - MCIS
   /ns/{nsId}/mcis/recommend:
     post:
       consumes:

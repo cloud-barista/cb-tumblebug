@@ -148,15 +148,15 @@ type TbVmReq struct {
 	Description      string   `json:"description"`
 	Label            string   `json:"label"`
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
-	VmGroupSize		 string   `json:"vmGroupSize" example:"3" default:""`	
+	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
 }
 
 // struct TbVmGroupInfo is to define an object that includes homogeneous VMs.
 type TbVmGroupInfo struct {
-	Id               string   `json:"id"`
-	Name             string   `json:"name"`
-	VmId             []string `json:"vmId"`
-	VmGroupSize		 string   `json:"vmGroupSize"`
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	VmId        []string `json:"vmId"`
+	VmGroupSize string   `json:"vmGroupSize"`
 }
 
 // struct TbVmGroupInfo is to define a server instance object
@@ -175,7 +175,7 @@ type TbVmInfo struct {
 	Description      string   `json:"description"`
 	Label            string   `json:"label"`
 	// defined if the VM is in a group
-	VmGroupId        string   `json:"vmGroupId"`	
+	VmGroupId string `json:"vmGroupId"`
 	//Vnic_id            string   `json:"vnic_id"`
 	//Public_ip_id       string   `json:"public_ip_id"`
 
@@ -234,7 +234,7 @@ type TbVmStatusInfo struct {
 	TargetAction  string      `json:"targetAction"`
 	Native_status string      `json:"native_status"`
 	Public_ip     string      `json:"public_ip"`
-	Private_ip     string      `json:"private_ip"`
+	Private_ip    string      `json:"private_ip"`
 	Location      GeoLocation `json:"location"`
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
@@ -300,7 +300,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, use
 		}
 	}
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		for _, v := range userNames {
 			if v != "" {
 				fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
@@ -1013,7 +1013,7 @@ func DelMcis(nsId string, mcisId string) error {
 	fmt.Println("[Delete MCIS] " + mcisId)
 
 	// ControlMcis first
-	err := ControlMcis(nsId, mcisId, ActionTerminate)
+	err := ControlMcisAsync(nsId, mcisId, ActionTerminate)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -1208,19 +1208,6 @@ func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
 	keyValue, _ := common.CBStore.Get(key)
 
-	/*
-		var content struct {
-			Id   string `json:"id"`
-			Name string `json:"name"`
-			//Vm_num         string   `json:"vm_num"`
-			Status         string   `json:"status"`
-			TargetStatus   string   `json:"targetStatus"`
-			TargetAction   string   `json:"targetAction"`
-			Vm             []TbVmInfo `json:"vm"`
-			Placement_algo string   `json:"placement_algo"`
-			Description    string   `json:"description"`
-		}
-	*/
 	content := TbMcisInfo{}
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
@@ -1835,6 +1822,158 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	return vmInfoData, nil
 }
 
+// CorePostMcisGroupVm function is a wrapper for CreateMcisGroupVm
+func CorePostMcisGroupVm(nsId string, mcisId string, vmReq *TbVmReq) (*TbMcisInfo, error) {
+
+	content, err := CreateMcisGroupVm(nsId, mcisId, vmReq)
+	if err != nil {
+		common.CBLog.Error(err)
+		return content, err
+	}
+	return content, nil
+}
+
+func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, error) {
+
+	nsId = common.ToLower(nsId)
+	mcisId = common.ToLower(mcisId)
+	req.Name = common.ToLower(req.Name)
+
+	mcisTmp, err := GetMcisObject(nsId, mcisId)
+
+	if err != nil {
+		temp := &TbMcisInfo{}
+		return temp, err
+	}
+
+	vmRequest := req
+
+	targetAction := ActionCreate
+	targetStatus := StatusRunning
+
+	//goroutin
+	var wg sync.WaitGroup
+
+	// VM Group handling
+	vmGroupSize, _ := strconv.Atoi(vmRequest.VmGroupSize)
+	fmt.Printf("vmGroupSize: %v\n", vmGroupSize)
+
+	if vmGroupSize > 0 {
+
+		fmt.Println("=========================== Create MCIS VM Group object")
+		key := common.GenMcisVmGroupKey(nsId, mcisId, vmRequest.Name)
+
+		// TODO: Enhancement Required. Need to check existing VM Group. Need to update it if exist.
+		vmGroupInfoData := TbVmGroupInfo{}
+		vmGroupInfoData.Id = common.ToLower(vmRequest.Name)
+		vmGroupInfoData.Name = common.ToLower(vmRequest.Name)
+		vmGroupInfoData.VmGroupSize = vmRequest.VmGroupSize
+
+		for i := 0; i < vmGroupSize; i++ {
+			vmGroupInfoData.VmId = append(vmGroupInfoData.VmId, vmGroupInfoData.Id+"-"+strconv.Itoa(i))
+		}
+
+		val, _ := json.Marshal(vmGroupInfoData)
+		err := common.CBStore.Put(string(key), string(val))
+		if err != nil {
+			common.CBLog.Error(err)
+		}
+		keyValue, _ := common.CBStore.Get(string(key))
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===========================")
+
+	}
+
+	for i := 0; i <= vmGroupSize; i++ {
+		vmInfoData := TbVmInfo{}
+
+		if vmGroupSize == 0 { // for VM (not in a group)
+			vmInfoData.Name = common.ToLower(vmRequest.Name)
+		} else { // for VM (in a group)
+			if i == vmGroupSize {
+				break // if vmGroupSize != 0 && vmGroupSize == i, skip the final loop
+			}
+			vmInfoData.VmGroupId = common.ToLower(vmRequest.Name)
+			// TODO: Enhancement Required. Need to check existing VM Group. Need to update it if exist.
+			vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+			fmt.Println("===========================")
+			fmt.Println("vmInfoData.Name: " + vmInfoData.Name)
+			fmt.Println("===========================")
+
+		}
+		vmInfoData.Id = vmInfoData.Name
+
+		vmInfoData.Description = vmRequest.Description
+		vmInfoData.PublicIP = "Not assigned yet"
+		vmInfoData.PublicDNS = "Not assigned yet"
+
+		vmInfoData.Status = StatusCreating
+		vmInfoData.TargetAction = targetAction
+		vmInfoData.TargetStatus = targetStatus
+
+		vmInfoData.ConnectionName = vmRequest.ConnectionName
+		vmInfoData.SpecId = vmRequest.SpecId
+		vmInfoData.ImageId = vmRequest.ImageId
+		vmInfoData.VNetId = vmRequest.VNetId
+		vmInfoData.SubnetId = vmRequest.SubnetId
+		//vmInfoData.Vnic_id = vmRequest.Vnic_id
+		//vmInfoData.Public_ip_id = vmRequest.Public_ip_id
+		vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
+		vmInfoData.SshKeyId = vmRequest.SshKeyId
+		vmInfoData.Description = vmRequest.Description
+
+		vmInfoData.VmUserAccount = vmRequest.VmUserAccount
+		vmInfoData.VmUserPassword = vmRequest.VmUserPassword
+
+		wg.Add(1)
+		go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
+
+	}
+
+	wg.Wait()
+
+	//Update MCIS status
+
+	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
+
+	mcisTmp.Status = mcisStatusTmp.Status
+
+	if mcisTmp.TargetStatus == mcisTmp.Status {
+		mcisTmp.TargetStatus = StatusComplete
+		mcisTmp.TargetAction = ActionComplete
+	}
+	UpdateMcisInfo(nsId, mcisTmp)
+
+	// Install CB-Dragonfly monitoring agent
+
+	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
+	if mcisTmp.InstallMonAgent != "no" {
+
+		// Sleep for 60 seconds for a safe DF agent installation.
+		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
+		time.Sleep(60 * time.Second)
+
+		check := CheckDragonflyEndpoint()
+		if check != nil {
+			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
+		} else {
+			reqToMon := &McisCmdReq{}
+			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+
+			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+			if err != nil {
+				common.CBLog.Error(err)
+				//mcisTmp.InstallMonAgent = "no"
+			}
+			common.PrintJsonPretty(content)
+			//mcisTmp.InstallMonAgent = "yes"
+		}
+	}
+	return &mcisTmp, nil
+
+}
+
 func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string) (string, error) {
 
 	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
@@ -1970,15 +2109,6 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 }
 
 func CreateMcis(nsId string, req *TbMcisReq) string {
-	/*
-		check, _ := CheckMcis(nsId, req.Name)
-
-		if check {
-			//temp := TbMcisInfo{}
-			//err := fmt.Errorf("The mcis " + req.Name + " already exists.")
-			return ""
-		}
-	*/
 
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
@@ -2028,7 +2158,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			vmGroupInfoData.VmGroupSize = k.VmGroupSize
 
 			for i := 0; i < vmGroupSize; i++ {
-				vmGroupInfoData.VmId = append(vmGroupInfoData.VmId, vmGroupInfoData.Id + "-" + strconv.Itoa(i) )
+				vmGroupInfoData.VmId = append(vmGroupInfoData.VmId, vmGroupInfoData.Id+"-"+strconv.Itoa(i))
 			}
 
 			val, _ := json.Marshal(vmGroupInfoData)
@@ -2041,15 +2171,15 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			fmt.Println("===========================")
 
 		}
-		
+
 		for i := 0; i <= vmGroupSize; i++ {
 			vmInfoData := TbVmInfo{}
 
-			if vmGroupSize == 0 { 			// for VM (not in a group)
-				vmInfoData.Name = common.ToLower(k.Name) 
-			} else { 						// for VM (in a group)
+			if vmGroupSize == 0 { // for VM (not in a group)
+				vmInfoData.Name = common.ToLower(k.Name)
+			} else { // for VM (in a group)
 				if i == vmGroupSize {
-					break	// if vmGroupSize != 0 && vmGroupSize == i, skip the final loop
+					break // if vmGroupSize != 0 && vmGroupSize == i, skip the final loop
 				}
 				vmInfoData.VmGroupId = common.ToLower(k.Name)
 				vmInfoData.Name = common.ToLower(k.Name) + "-" + strconv.Itoa(i)
@@ -2058,7 +2188,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 				fmt.Println("===========================")
 
 			}
-			vmInfoData.Id = vmInfoData.Name	
+			vmInfoData.Id = vmInfoData.Name
 
 			vmInfoData.Description = k.Description
 			vmInfoData.PublicIP = "Not assigned yet"
@@ -3686,9 +3816,9 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
 	keyValue, _ = common.CBStore.Get(sshKey)
 	var keyContent struct {
-		Username   			string `json:"username"`
-		VerifiedUsername	string `json:"verifiedUsername"`
-		PrivateKey 			string `json:"privateKey"`
+		Username         string `json:"username"`
+		VerifiedUsername string `json:"verifiedUsername"`
+		PrivateKey       string `json:"privateKey"`
 	}
 	json.Unmarshal([]byte(keyValue.Value), &keyContent)
 
