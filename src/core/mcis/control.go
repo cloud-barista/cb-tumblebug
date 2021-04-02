@@ -96,6 +96,7 @@ type SpiderVMInfo struct { // Spider
 	PrivateDNS        string
 	VMBootDisk        string // ex) /dev/sda1
 	VMBlockDisk       string // ex)
+	SSHAccessPoint    string
 	KeyValueList      []common.KeyValue
 }
 
@@ -184,6 +185,7 @@ type TbVmInfo struct {
 	// Provided by CB-Spider
 	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
 	PublicIP    string     `json:"publicIP"`
+	SSHPort     string     `json:"sshPort"`
 	PublicDNS   string     `json:"publicDNS"`
 	PrivateIP   string     `json:"privateIP"`
 	PrivateDNS  string     `json:"privateDNS"`
@@ -217,12 +219,13 @@ type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 	//Vm_num string         `json:"vm_num"`
-	Status       string           `json:"status"`
-	TargetStatus string           `json:"targetStatus"`
-	TargetAction string           `json:"targetAction"`
-	Vm           []TbVmStatusInfo `json:"vm"`
-	MasterVmId   string           `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
-	MasterIp     string           `json:"masterIp" example:"32.201.134.113"`
+	Status        string           `json:"status"`
+	TargetStatus  string           `json:"targetStatus"`
+	TargetAction  string           `json:"targetAction"`
+	Vm            []TbVmStatusInfo `json:"vm"`
+	MasterVmId    string           `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
+	MasterIp      string           `json:"masterIp" example:"32.201.134.113"`
+	MasterSSHPort string           `json:"masterSSHPort"`
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
 }
@@ -237,6 +240,7 @@ type TbVmStatusInfo struct {
 	TargetAction  string      `json:"targetAction"`
 	Native_status string      `json:"native_status"`
 	Public_ip     string      `json:"public_ip"`
+	SSHPort       string      `json:"sshPort"`
 	Private_ip    string      `json:"private_ip"`
 	Location      GeoLocation `json:"location"`
 	// Montoring agent status
@@ -283,7 +287,7 @@ type TbVmRecommendInfo struct {
 	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
-func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, userNames []string, privateKey string) (string, error) {
+func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, userNames []string, privateKey string) (string, error) {
 
 	// verify if vm is running with a public ip.
 	if vmIp == "" {
@@ -306,7 +310,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, use
 	if verifiedUserName != "" {
 		fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + verifiedUserName)
 		fmt.Println("[CMD] " + cmd)
-		result, err := RunSSH(vmIp, verifiedUserName, privateKey, cmd)
+		result, err := RunSSH(vmIp, sshPort, verifiedUserName, privateKey, cmd)
 		if err != nil {
 			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
 		}
@@ -322,7 +326,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, use
 			if v != "" {
 				fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
 				fmt.Println("[CMD] " + cmd)
-				result, err := RunSSH(vmIp, v, privateKey, cmd)
+				result, err := RunSSH(vmIp, sshPort, v, privateKey, cmd)
 				if err != nil {
 					fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
 				}
@@ -399,7 +403,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 	for _, v := range vmList {
 
 		vmId := v
-		vmIp := GetVmIp(nsId, mcisId, vmId)
+		vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
 
 		//cmd := req.Command
 
@@ -421,7 +425,8 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 			SshDefaultUserName03,
 			SshDefaultUserName04,
 		}
-		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+
+		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -429,7 +434,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 		// Avoid RunSSH to not ready VM
 		if err != nil {
 			wg.Add(1)
-			go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray)
+			go RunSSHAsync(&wg, vmId, vmIp, sshPort, userName, sshKey, cmd, &resultArray)
 		} else {
 			common.CBLog.Error(err)
 			sshResultTmp := SshCmdResult{}
@@ -521,7 +526,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		reqTmp := MultihostBenchmarkReq{}
 		for _, vm := range vmList {
 			vmIdTmp := vm
-			vmIpTmp := GetVmIp(nsId, mcisId, vmIdTmp)
+			vmIpTmp, _ := GetVmIp(nsId, mcisId, vmIdTmp)
 			fmt.Println("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
 
 			hostTmp := BenchmarkReq{}
@@ -785,7 +790,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		wg.Add(1)
 
 		vmId := v
-		vmIp := GetVmIp(nsId, mcisId, vmId)
+		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
 
 		go CallMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
 	}
@@ -1654,7 +1659,7 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 		return err.Error(), err
 	}
 
-	vmIp := GetVmIp(nsId, mcisId, vmId)
+	vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
 
 	//fmt.Printf("[vmIp] " +vmIp)
 
@@ -1671,7 +1676,7 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 		SshDefaultUserName03,
 		SshDefaultUserName04,
 	}
-	userName, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+	userName, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, userNames, sshKey)
 	if userName == "" {
 		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
 		return "", fmt.Errorf("No vaild username")
@@ -1684,7 +1689,7 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 	fmt.Println("[CMD] " + cmd)
 
-	if result, err := RunSSH(vmIp, userName, sshKey, cmd); err != nil {
+	if result, err := RunSSH(vmIp, sshPort, userName, sshKey, cmd); err != nil {
 		//return c.JSON(http.StatusInternalServerError, err)
 		return "", err
 	} else {
@@ -1737,7 +1742,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 	for _, v := range vmList {
 
 		vmId := v
-		vmIp := GetVmIp(nsId, mcisId, vmId)
+		vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
 
 		cmd := req.Command
 
@@ -1758,7 +1763,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 			SshDefaultUserName03,
 			SshDefaultUserName04,
 		}
-		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, userNames, sshKey)
+		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, userNames, sshKey)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -1766,7 +1771,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		// Avoid RunSSH to not ready VM
 		if err == nil {
 			wg.Add(1)
-			go RunSSHAsync(&wg, vmId, vmIp, userName, sshKey, cmd, &resultArray)
+			go RunSSHAsync(&wg, vmId, vmIp, sshPort, userName, sshKey, cmd, &resultArray)
 		} else {
 			common.CBLog.Error(err)
 			sshResultTmp := SshCmdResult{}
@@ -2645,6 +2650,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	//vmInfoData.StartTime = temp.StartTime
 	vmInfoData.Region = tempSpiderVMInfo.Region
 	vmInfoData.PublicIP = tempSpiderVMInfo.PublicIP
+	vmInfoData.SSHPort, _ = TrimIP(tempSpiderVMInfo.SSHAccessPoint)
 	vmInfoData.PublicDNS = tempSpiderVMInfo.PublicDNS
 	vmInfoData.PrivateIP = tempSpiderVMInfo.PrivateIP
 	vmInfoData.PrivateDNS = tempSpiderVMInfo.PrivateDNS
@@ -3369,6 +3375,7 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 		if num == 0 {
 			mcisStatus.MasterVmId = vmStatusTmp.Id
 			mcisStatus.MasterIp = vmStatusTmp.Public_ip
+			mcisStatus.MasterSSHPort = vmStatusTmp.SSHPort
 		}
 	}
 
@@ -3612,6 +3619,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	vmStatusTmp.Name = temp.Name
 	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
 	vmStatusTmp.Public_ip = temp.PublicIP
+	vmStatusTmp.SSHPort = temp.SSHPort
 	vmStatusTmp.Private_ip = temp.PrivateIP
 	vmStatusTmp.Native_status = statusResponseTmp.Status
 
@@ -3705,6 +3713,7 @@ func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 	}
 
 	vmInfoData.PublicIP = vmInfoTmp.Public_ip
+	vmInfoData.SSHPort = vmInfoTmp.SSHPort
 
 	UpdateVmInfo(nsId, mcisId, vmInfoData)
 
@@ -3731,8 +3740,9 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	cspVmId := temp.CspViewVmDetail.IId.NameId
 
 	type statusResponse struct {
-		Status   string
-		PublicIP string
+		Status         string
+		PublicIP       string
+		SSHAccessPoint string
 	}
 	var statusResponseTmp statusResponse
 
@@ -3820,6 +3830,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Public_ip = statusResponseTmp.PublicIP
+	vmStatusTmp.SSHPort, _ = TrimIP(statusResponseTmp.SSHAccessPoint)
 
 	return vmStatusTmp, nil
 
@@ -3883,10 +3894,11 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	return nil
 }
 
-func GetVmIp(nsId string, mcisId string, vmId string) string {
+func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 
 	var content struct {
 		PublicIP string `json:"publicIP"`
+		SSHPort  string `json:"sshPort"`
 	}
 
 	fmt.Println("[GetVmIp]" + vmId)
@@ -3901,7 +3913,7 @@ func GetVmIp(nsId string, mcisId string, vmId string) string {
 
 	fmt.Printf("%+v\n", content.PublicIP)
 
-	return content.PublicIP
+	return content.PublicIP, content.SSHPort
 }
 
 func GetVmSpecId(nsId string, mcisId string, vmId string) string {
