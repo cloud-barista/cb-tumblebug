@@ -79,14 +79,13 @@ func OrchestrationController() {
 
 	nsList := common.ListNsId()
 
-	fmt.Println("")
+	//fmt.Println("")
 	for _, nsId := range nsList {
-		fmt.Println("NS[" + nsId + "]")
+
 		mcisPolicyList := ListMcisPolicyId(nsId)
 
-		fmt.Println("\n[MCIS Policy List]")
 		for _, m := range mcisPolicyList {
-			fmt.Println("McisPolicy[" + m + "]")
+			fmt.Println("NS[" + nsId + "]" + "McisPolicy[" + m + "]")
 		}
 
 		for _, v := range mcisPolicyList {

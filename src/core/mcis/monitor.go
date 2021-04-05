@@ -103,7 +103,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	defer wg.Done() //goroutin sync done
 
 	url := common.DRAGONFLY_REST_URL + cmd
-	fmt.Println("\n\n[Calling DRAGONFLY] START")
+	fmt.Println("\n[Calling DRAGONFLY] START")
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
@@ -348,7 +348,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	defer wg.Done() //goroutin sync done
 
 	url := common.DRAGONFLY_REST_URL + cmd
-	fmt.Println("\n\n[Calling DRAGONFLY] START")
+	fmt.Println("\n[Calling DRAGONFLY] START")
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{

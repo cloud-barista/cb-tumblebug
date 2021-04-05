@@ -57,11 +57,14 @@ func main() {
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	//Ticker for MCIS Orchestration Policy
+	fmt.Println("")
+	fmt.Println("Initiate Multi-Cloud Orchestration")
+
 	autoControlDuration, _ := strconv.Atoi(common.AUTOCONTROL_DURATION_MS) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
 	go func() {
 		for t := range ticker.C {
-			fmt.Println("Tick at", t)
+			fmt.Println("- Orchestration Controller ", t.Format("2006-01-02 15:04:05"))
 			mcis.OrchestrationController()
 		}
 	}()
