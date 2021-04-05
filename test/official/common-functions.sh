@@ -38,6 +38,9 @@ function getCloudIndex()
 	elif [ "${CSP}" == "openstack" ]; then
 		echo "[For OpenStack driver]"
 		INDEX=6
+	elif [ "${CSP}" == "ncp" ]; then
+		echo "[For NCP driver]"
+		INDEX=7
 	else
 		echo "[No acceptable argument was provided (all, aws, azure, gcp, alibaba, mock, openstack, ...).]"
 		exit
