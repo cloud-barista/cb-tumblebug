@@ -94,6 +94,7 @@ func RestPutImage(c echo.Context) error {
 // Request structure for RestLookupImage
 type RestLookupImageRequest struct {
 	ConnectionName string `json:"connectionName"`
+	CspImageId     string `json:"cspImageId"`
 }
 
 // RestLookupImage godoc
@@ -107,7 +108,7 @@ type RestLookupImageRequest struct {
 // @Success 200 {object} mcir.SpiderImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupImage/{imageId} [get]
+// @Router /lookupImage [get]
 func RestLookupImage(c echo.Context) error {
 
 	u := &RestLookupImageRequest{}
@@ -115,9 +116,8 @@ func RestLookupImage(c echo.Context) error {
 		return err
 	}
 
-	imageId := c.Param("imageId")
-	fmt.Println("[Lookup image]" + imageId)
-	content, err := mcir.LookupImage(u.ConnectionName, imageId)
+	fmt.Println("[Lookup image]" + u.CspImageId)
+	content, err := mcir.LookupImage(u.ConnectionName, u.CspImageId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
@@ -137,7 +137,7 @@ func RestLookupImage(c echo.Context) error {
 // @Success 200 {object} mcir.SpiderImageList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupImage [get]
+// @Router /lookupImages [get]
 func RestLookupImageList(c echo.Context) error {
 
 	//type JsonTemplate struct {

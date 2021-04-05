@@ -22,9 +22,10 @@
 	getCloudIndex $CSP
 
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupSpec/${SPEC_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d \
 		'{ 
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
+			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+            "cspSpecName": "'${SPEC_NAME[$INDEX,$REGION]}'"
 		}' | json_pp #|| return 1
 #}
 

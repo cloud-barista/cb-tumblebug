@@ -111,6 +111,7 @@ func RestPutSpec(c echo.Context) error {
 // Request structure for RestLookupSpec
 type RestLookupSpecRequest struct {
 	ConnectionName string `json:"connectionName"`
+	CspSpecName    string `json:"cspSpecName"`
 }
 
 // RestLookupSpec godoc
@@ -124,7 +125,7 @@ type RestLookupSpecRequest struct {
 // @Success 200 {object} mcir.SpiderSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupSpec/{specName} [get]
+// @Router /lookupSpec [get]
 func RestLookupSpec(c echo.Context) error {
 
 	u := &RestLookupSpecRequest{}
@@ -132,9 +133,8 @@ func RestLookupSpec(c echo.Context) error {
 		return err
 	}
 
-	specName := c.Param("specName")
-	fmt.Println("[Lookup spec]" + specName)
-	content, err := mcir.LookupSpec(u.ConnectionName, specName)
+	fmt.Println("[Lookup spec]" + u.CspSpecName)
+	content, err := mcir.LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
 		common.CBLog.Error(err)
 		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
@@ -154,7 +154,7 @@ func RestLookupSpec(c echo.Context) error {
 // @Success 200 {object} mcir.SpiderSpecList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupSpec [get]
+// @Router /lookupSpecs [get]
 func RestLookupSpecList(c echo.Context) error {
 
 	//type JsonTemplate struct {
