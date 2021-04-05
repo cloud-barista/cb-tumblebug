@@ -18,7 +18,8 @@ function test_sequence()
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
-	local CMDPATH=$4
+	local NUMVM=$4
+	local CMDPATH=$5
 
 	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
 	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX
@@ -33,7 +34,7 @@ function test_sequence()
 	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
 	../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX
 	../7.spec/register-spec.sh $CSP $REGION $POSTFIX
-	../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX
+	../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX $NUMVM
 	dozing 1
 	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX
 
@@ -41,7 +42,7 @@ function test_sequence()
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX}" >> ./executionStatus
+	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >> ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus
@@ -100,9 +101,10 @@ function test_sequence_allcsp_mcis_vm()
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
-	local MCISPREFIX=$4
+	local NUMVM=$4
+	local MCISPREFIX=$5
 
-	../8.mcis/add-vmgroup-to-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX
+	../8.mcis/add-vmgroup-to-mcis.sh $CSP $REGION $POSTFIX $NUMVM $MCISPREFIX
 
 }
 
@@ -132,6 +134,7 @@ function test_sequence_allcsp_mcis_vm()
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
+	NUMVM=${4:-3}
 
 	source ../common-functions.sh
 	getCloudIndex $CSP
@@ -174,7 +177,7 @@ function test_sequence_allcsp_mcis_vm()
 				echo $REGION
 				echo "[Create and Add a VM to MCIS]"
 
-				test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $MCISPREFIX &
+				test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $NUMVM $MCISPREFIX &
 
 			done
 			
@@ -186,7 +189,7 @@ function test_sequence_allcsp_mcis_vm()
 	else
 		echo "[Single excution for a CSP region]"
 
-		test_sequence $CSP $REGION $POSTFIX ${0##*/}
+		test_sequence $CSP $REGION $POSTFIX $NUMVM ${0##*/}
 
 	fi
 

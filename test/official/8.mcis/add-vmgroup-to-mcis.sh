@@ -17,7 +17,8 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	MCISPREFIX=${4:-avengers}
+	NUMVM=${4:-3}
+	MCISPREFIX=${5:-avengers}
 	MCISID=${MCISPREFIX}-${POSTFIX}
 
 	source ../common-functions.sh
@@ -26,7 +27,7 @@
 	
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/$MCISID/vmgroup -H 'Content-Type: application/json' -d \
 		'{
-			"vmGroupSize": "3",
+			"vmGroupSize": "'${NUMVM}'",
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vmUserAccount": "cb-user",
