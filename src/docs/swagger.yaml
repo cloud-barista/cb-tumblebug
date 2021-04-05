@@ -926,6 +926,10 @@ definitions:
     properties:
       connectionName:
         type: string
+      createdTime:
+        description: Created time
+        example: "2022-11-10 23:00:00"
+        type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
       description:

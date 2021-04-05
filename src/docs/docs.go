@@ -4789,6 +4789,11 @@ var doc = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
                 "cspViewVmDetail": {
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
