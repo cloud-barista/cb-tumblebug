@@ -54,15 +54,15 @@
     └── test-ns-cloud.sh
 ```
 - 사용 예시
-  - 생성 테스트
-    - ./testAll-mcis-mcir-ns-cloud.sh all 1 shson       # 등록된 CSP 및 리전들을 활용한 MCIS 생성 (conf.env의 NumCSP, NumRegion 에 따라 VM 생성) shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson       # aws의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh aws 2 shson       # aws의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh aws 3 shson       # aws의 3번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh gcp 1 shson       # gcp의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh gcp 2 shson       # gcp의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh azure 1 shson     # azure의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+  - 생성 테스트 (./testAll-mcis-mcir-ns-cloud.sh "CloudType" "Region" "DeveloperName" "NumOfVMs")
+    - ./testAll-mcis-mcir-ns-cloud.sh all 1 shson 3      # 등록된 CSP 및 리전들을 활용한 MCIS 생성 (conf.env의 NumCSP, NumRegion 에 따라 VM 생성) shson이라는 개발자명으로 테스트 수행
+    - ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson 3      # aws의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./testAll-mcis-mcir-ns-cloud.sh aws 2 shson 3      # aws의 2번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./testAll-mcis-mcir-ns-cloud.sh aws 3 shson 3      # aws의 3번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./testAll-mcis-mcir-ns-cloud.sh gcp 1 shson 3      # gcp의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./testAll-mcis-mcir-ns-cloud.sh gcp 2 shson 3      # gcp의 2번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./testAll-mcis-mcir-ns-cloud.sh azure 1 shson 3    # azure의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./testAll-mcis-mcir-ns-cloud.sh alibaba 1 shson 3  # alibaba의 1번 리전에 shson이라는 개발자명으로 테스트 수행
   - 제거 테스트 (이미 수행이 진행된 클라우드타입/리전/개발자명 으로만 삭제 진행이 필요)
     - ./cleanAll-mcis-mcir-ns-cloud.sh all 1 shson       # all로 수행된 shson이라는 개발자명으로 제거 수행
     - ./cleanAll-mcis-mcir-ns-cloud.sh aws 1 shson       # aws의 1번 리전에 shson이라는 개발자명으로 제거 수행
@@ -74,7 +74,7 @@
     - ./cleanAll-mcis-mcir-ns-cloud.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 수행
 
 ```
-~/go/src/github.com/cloud-barista/cb-tumblebug/test/official/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson
+~/go/src/github.com/cloud-barista/cb-tumblebug/test/official/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson 3
 ####################################################################
 ## Create MCIS from Zero Base
 ####################################################################
@@ -373,60 +373,104 @@ Dozing for 1 : 1 (Back to work)
 
 ## [테스트 코드 파일 트리 설명]
 ```
-~/go/src/github.com/cloud-barista/cb-tumblebug/test/official$ tree
+son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/test/official$ tree
 .
-├── 1.configureSpider  # 클라우드 정보 등록 관련 스크립트 모음
+├── 1.configureSpider                  # 클라우드 정보 등록 관련 스크립트 모음
 │   ├── get-cloud.sh
 │   ├── list-cloud.sh
 │   ├── register-cloud.sh
 │   └── unregister-cloud.sh
-├── 2.configureTumblebug  # 네임스페이스 관련 스크립트 모음
+├── 2.configureTumblebug               # 네임스페이스 및 TB 설정 관련 스크립트 모음
+│   ├── check-ns.sh
 │   ├── create-ns.sh
+│   ├── delete-all-config.sh
+│   ├── delete-all-ns.sh
 │   ├── delete-ns.sh
+│   ├── get-config.sh
 │   ├── get-ns.sh
-│   └── list-ns.sh
-├── 3.vNet  # MCIR vNet 생성 관련 스크립트 모음
+│   ├── list-config.sh
+│   ├── list-ns.sh
+│   └── update-config.sh
+├── 3.vNet                             # MCIR vNet 생성 관련 스크립트 모음
 │   ├── create-vNet.sh
 │   ├── delete-vNet.sh
 │   ├── get-vNet.sh
 │   ├── list-vNet.sh
-│   └── spider-get-vNet.sh
-├── 4.securityGroup  # MCIR securityGroup 생성 관련 스크립트 모음
+│   ├── spider-create-vNet.sh
+│   ├── spider-delete-vNet.sh
+│   ├── spider-get-vNet.sh
+│   ├── testAddAsso.sh
+│   ├── testDeleteAsso.sh
+│   └── testGetAssoCount.sh
+├── 4.securityGroup                    # MCIR securityGroup 생성 관련 스크립트 모음
 │   ├── create-securityGroup.sh
 │   ├── delete-securityGroup.sh
 │   ├── get-securityGroup.sh
 │   ├── list-securityGroup.sh
-│   └── spider-get-securityGroup.sh
-├── 5.sshKey  # MCIR sshKey 생성 관련 스크립트 모음
+│   ├── spider-get-securityGroup.sh
+│   ├── testAddAsso.sh
+│   ├── testDeleteAsso.sh
+│   └── testGetAssoCount.sh
+├── 5.sshKey                           # MCIR sshKey 생성 관련 스크립트 모음
 │   ├── create-sshKey.sh
 │   ├── delete-sshKey.sh
+│   ├── force-delete-sshKey.sh
 │   ├── get-sshKey.sh
 │   ├── list-sshKey.sh
 │   ├── spider-delete-sshKey.sh
-│   └── spider-get-sshKey.sh
-├── 6.image  # MCIR image 등록 관련 스크립트 모음
+│   ├── spider-get-sshKey.sh
+│   ├── testAddAsso.sh
+│   ├── testDeleteAsso.sh
+│   └── testGetAssoCount.sh
+├── 6.image                            # MCIR image 등록 관련 스크립트 모음
 │   ├── fetch-images.sh
 │   ├── get-image.sh
 │   ├── list-image.sh
 │   ├── lookupImageList.sh
 │   ├── lookupImage.sh
-│   ├── register-image.sh
+│   ├── obsolete_registerImageWithInfo.sh
+│   ├── registerImageWithId.sh
+│   ├── spider-get-imagelist.sh
+│   ├── spider-get-image.sh
+│   ├── testAddAsso.sh
+│   ├── testDeleteAsso.sh
+│   ├── testGetAssoCount.sh
+│   ├── test-search-image.sh
+│   ├── unregister-all-images.sh
 │   └── unregister-image.sh
-├── 7.spec  # MCIR spec 등록 관련 스크립트 모음
+├── 7.spec                             # MCIR spec 등록 관련 스크립트 모음
 │   ├── fetch-specs.sh
+│   ├── filter-specs.sh
 │   ├── get-spec.sh
 │   ├── list-spec.sh
 │   ├── lookupSpecList.sh
 │   ├── lookupSpec.sh
+│   ├── range-filter-specs.sh
 │   ├── register-spec.sh
 │   ├── spider-get-speclist.sh
 │   ├── spider-get-spec.sh
-│   └── unregister-spec.sh
-├── 8.mcis  # MCIS 생성 및 제어 관련 스크립트 모음
+│   ├── testAddAsso.sh
+│   ├── testDeleteAsso.sh
+│   ├── testGetAssoCount.sh
+│   ├── test-sort-specs.sh
+│   ├── unregister-all-specs.sh
+│   ├── unregister-spec.sh
+│   └── update-spec.sh
+├── 8.mcis                             # MCIS 생성 및 제어 관련 스크립트 모음
+│   ├── add-vmgroup-to-mcis.sh
+│   ├── add-vm-to-mcis.sh
+│   ├── create-mcis-no-agent.sh
+│   ├── create-mcis-policy.sh
 │   ├── create-mcis.sh
+│   ├── create-single-vm-mcis.sh
+│   ├── delete-mcis-policy-all.sh
+│   ├── delete-mcis-policy.sh
+│   ├── get-mcis-policy.sh
 │   ├── get-mcis.sh
 │   ├── just-terminate-mcis.sh
+│   ├── list-mcis-policy.sh
 │   ├── list-mcis.sh
+│   ├── list-mcis-status.sh
 │   ├── reboot-mcis.sh
 │   ├── resume-mcis.sh
 │   ├── spider-create-vm.sh
@@ -436,14 +480,43 @@ Dozing for 1 : 1 (Back to work)
 │   ├── status-mcis.sh
 │   ├── suspend-mcis.sh
 │   └── terminate-and-delete-mcis.sh
-├── conf.env  # CB-Spider 및 Tumblebug 서버 위치, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
-├── credentials.conf  # Cloud 정보 등록을 위한 CSP별 인증정보 (사용자에 맞게 수정 필요)
+├── 9.monitoring                       # 모니터링 에이전트 설치 및 테스트 관련 스크립트
+│   ├── get-monitoring-data.sh
+│   └── install-agent.sh
+├── common-functions.sh                # 스크립트 공통 함수
+├── conf.env   # 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
+├── credentials.conf # Cloud 정보 등록을 위한 CSP별 인증정보 (사용자에 맞게 수정 필요)
+├── credentials.conf.example
+├── misc
+│   ├── get-conn-config.sh
+│   ├── get-region.sh
+│   ├── list-conn-config.sh
+│   └── list-region.sh
 ├── README.md
 └── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
-    ├── cleanAll-mcis-mcir-ns-cloud.sh  # 모든 오브젝트 역으로 제어
-    ├── command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
-    ├── deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
+    ├── cb-demo-support
+    ├── cleanAll-mcis-mcir-ns-cloud.sh # 지정된 MCIS관련 모든 오브젝트 역으로 중지 및 삭제하여 정리
+    ├── command-mcis-custom.sh
+    ├── command-mcis.sh          # MCIS에 SSH 커맨드를 테스트
+    ├── create-mcis-for-df.sh    # MCIS를 생성하고, CB-Dragonfly를 자동 배포
+    ├── delete-objects-becareful.sh
+    ├── delete-object.sh
+    ├── deploy-dragonfly-docker.sh    # 지정된 MCIS에 CB-Dragonfly를 자동 배포
+    ├── deploy-loadMaker-to-mcis.sh
+    ├── deploy-nginx-mcis.sh     # 생성된 MCIS(다중VM)에 Nginx 자동 배포
+    ├── deploy-nginx-mcis-vm-withGivenName.sh
+    ├── deploy-nginx-mcis-with-loadmaker.sh
+    ├── deploy-spider-docker.sh
+    ├── deploy-tumblebug.sh
+    ├── deploy-weavescope-to-mcis.sh   # 생성된 MCIS(다중VM)에 WeaveScope 자동 배포
+    ├── deploy-weavescope-to-mcis-total.sh
     ├── executionStatus  # 수행이 진행된 테스트 로그 (testAll 수행시 정보가 추가되며, cleanAll 수행시 정보가 제거됨)
+    ├── expand-mcis.sh
+    ├── gen-sshKey.sh      # MCIS에 대한 sshKey 생성 (sshkey-tmp 에 *.PEM 으로 저장됨)
+    ├── gen-sshKey-withGivenMcisName.sh
+    ├── get-object.sh      # CB-TB 오브젝트 데이터를 직접 조회
+    ├── list-object.sh     # CB-TB 오브젝트 리스트 데이터를 직접 조회
+    ├── sshkey-tmp         # sshKey 가 임시로 저장되는 디렉토리 (gitignore)
     ├── testAll-mcis-mcir-ns-cloud.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
     ├── test-cloud.sh
     ├── test-mcir-ns-cloud.sh

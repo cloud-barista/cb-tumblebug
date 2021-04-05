@@ -68,7 +68,7 @@ function test_sequence_allcsp_mcir()
 	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
 	dozing 10
 	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
-	../6.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
+	../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX
 	../7.spec/register-spec.sh $CSP $REGION $POSTFIX
 
 	_self=$CMDPATH
