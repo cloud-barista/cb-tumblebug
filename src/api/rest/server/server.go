@@ -112,11 +112,11 @@ func ApiServer() {
 	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
 	e.GET("/tumblebug/region/:regionName", rest_common.RestGetRegion)
 
-	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpecList)
-	e.GET("/tumblebug/lookupSpec/:specName", rest_mcir.RestLookupSpec)
+	e.GET("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)
+	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpec)
 
-	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImageList)
-	e.GET("/tumblebug/lookupImage/:imageId", rest_mcir.RestLookupImage)
+	e.GET("/tumblebug/lookupImages", rest_mcir.RestLookupImageList)
+	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
 
 	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
 	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
@@ -148,7 +148,7 @@ func ApiServer() {
 	g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
 	g.DELETE("/:nsId/mcis/:mcisId", rest_mcis.RestDelMcis)
 	g.DELETE("/:nsId/mcis", rest_mcis.RestDelAllMcis)
-	
+
 	g.POST("/:nsId/mcis/:mcisId/vm", rest_mcis.RestPostMcisVm)
 	g.POST("/:nsId/mcis/:mcisId/vmgroup", rest_mcis.RestPostMcisVmGroup)
 	g.GET("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetMcisVm)

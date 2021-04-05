@@ -22,9 +22,10 @@
 	getCloudIndex $CSP
 
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupImage/${IMAGE_NAME[$INDEX,$REGION]} -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupImage -H 'Content-Type: application/json' -d \
 		'{ 
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
+			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
+            "cspImageId": "'${IMAGE_NAME[$INDEX,$REGION]}'"
 		}' | json_pp #|| return 1
 #}
 
