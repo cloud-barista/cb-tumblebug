@@ -17,6 +17,7 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
+	NUMVM=${4:-3}
 
 	source ../common-functions.sh
 	getCloudIndex $CSP
@@ -27,7 +28,7 @@
 			"description": "Tumblebug Demo",
 			"installMonAgent": "yes",
 			"vm": [ {
-				"vmGroupSize": "3",
+				"vmGroupSize": "'${NUMVM}'",
 				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"vmUserAccount": "cb-user",
