@@ -177,6 +177,8 @@ type TbVmInfo struct {
 	Label            string   `json:"label"`
 	// defined if the VM is in a group
 	VmGroupId string `json:"vmGroupId"`
+	// Created time
+	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
 	//Vnic_id            string   `json:"vnic_id"`
 	//Public_ip_id       string   `json:"public_ip_id"`
 
@@ -2257,6 +2259,9 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			vmInfoData.VmUserAccount = k.VmUserAccount
 			vmInfoData.VmUserPassword = k.VmUserPassword
 
+			// Avoid concurrent requests to CSP.
+			time.Sleep(time.Duration(i) * time.Second)
+
 			wg.Add(1)
 			go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
 			//AddVmToMcis(nsId, req.Id, vmInfoData)
@@ -2357,6 +2362,11 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	// Monitoring Agent Installation Status (init: notInstalled)
 	vmInfoData.MonAgentStatus = "notInstalled"
 
+	// set CreatedTime
+	t := time.Now()
+	vmInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
+	fmt.Println(vmInfoData.CreatedTime)
+
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 
 	return nil
@@ -2422,7 +2432,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		method := "POST"
 
-		fmt.Println("\n\n[Calling SPIDER]START")
+		fmt.Println("\n[Calling SPIDER]START")
 		fmt.Println("url: " + url + " method: " + method)
 
 		tempReq := SpiderVMReqInfoWrapper{}
@@ -2526,7 +2536,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		fmt.Println("[Response from SPIDER]")
 		common.PrintJsonPretty(tempSpiderVMInfo)
-		fmt.Println("[Calling SPIDER]END\n\n")
+		fmt.Println("[Calling SPIDER]END\n")
 
 		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
 		switch {
@@ -2553,7 +2563,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		}
 		defer ccm.Close()
 
-		fmt.Println("\n\n[Calling SPIDER]START")
+		fmt.Println("\n[Calling SPIDER]START")
 
 		tempReq := SpiderVMReqInfoWrapper{}
 		tempReq.ConnectionName = vmInfoData.ConnectionName
@@ -2889,9 +2899,9 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 
-	fmt.Println("\n\n[Calling SPIDER]START vmControl")
+	fmt.Println("\n[Calling SPIDER]START vmControl")
 
-	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.IId.NameId)
+	//fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 
 	/*
 		cspType := getVMsCspType(nsId, mcisId, vmId)
@@ -3016,7 +3026,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 		common.PrintJsonPretty(resultTmp)
 
-		fmt.Println("[Calling SPIDER]END vmControl\n\n")
+		fmt.Println("[Calling SPIDER]END vmControl\n")
 
 		UpdateVmPublicIp(nsId, mcisId, temp)
 
@@ -3108,7 +3118,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 		common.PrintJsonPretty(resultTmp)
 
-		fmt.Println("[Calling SPIDER]END vmControl\n\n")
+		fmt.Println("[Calling SPIDER]END vmControl\n")
 
 		UpdateVmPublicIp(nsId, mcisId, temp)
 
@@ -3143,9 +3153,9 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 
-	fmt.Println("\n\n[Calling SPIDER]START vmControl")
+	fmt.Println("\n[Calling SPIDER]START vmControl")
 
-	fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.IId.NameId)
+	//fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 
 	/*
 		cspType := getVMsCspType(nsId, mcisId, vmId)
@@ -3233,7 +3243,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 		fmt.Println(string(body))
 
-		fmt.Println("[Calling SPIDER]END vmControl\n\n")
+		fmt.Println("[Calling SPIDER]END vmControl\n")
 		/*
 			if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
 				return nil
@@ -3307,7 +3317,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		}
 
 		fmt.Println(result)
-		fmt.Println("[Calling SPIDER]END vmControl\n\n")
+		fmt.Println("[Calling SPIDER]END vmControl\n")
 
 		return nil
 	}
@@ -3515,7 +3525,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
 
-	fmt.Println("\n\n[Calling SPIDER]START")
+	fmt.Print("\n[Calling SPIDER] ")
 	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 	/*
 		var cspVmId string
@@ -3611,8 +3621,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		}
 	}
 
-	common.PrintJsonPretty(statusResponseTmp)
-	fmt.Println("[Calling SPIDER]END\n\n")
+	//common.PrintJsonPretty(statusResponseTmp)
+	fmt.Println(statusResponseTmp)
+	//fmt.Println("[Calling SPIDER]END\n")
 
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Id = vmId
@@ -3734,7 +3745,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
-	fmt.Println("\n\n[Calling SPIDER]START")
+	fmt.Println("\n[Calling SPIDER]START")
 	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 
 	cspVmId := temp.CspViewVmDetail.IId.NameId
@@ -3825,8 +3836,9 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 	}
 
-	common.PrintJsonPretty(statusResponseTmp)
-	fmt.Println("[Calling SPIDER]END\n\n")
+	//common.PrintJsonPretty(statusResponseTmp)
+	fmt.Println(statusResponseTmp)
+	//fmt.Println("[Calling SPIDER]END\n")
 
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Public_ip = statusResponseTmp.PublicIP

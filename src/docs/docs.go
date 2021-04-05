@@ -3500,69 +3500,91 @@ var doc = `{
             "type": "object",
             "properties": {
                 "cost_per_hour": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "ebs_bw_Mbps": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_01": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_02": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_03": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_04": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_05": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_06": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_07": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_08": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_09": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_10": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "gpumem_GiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "max_num_storage": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "max_total_storage_TiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "mem_GiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "net_bw_Gbps": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_core": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_gpu": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_storage": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_vCPU": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "storage_GiB": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 }
             }
@@ -3703,6 +3725,7 @@ var doc = `{
                 },
                 "iid": {
                     "description": "Fields for response",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
@@ -3774,6 +3797,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vcpu": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -3794,6 +3818,7 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -4274,9 +4299,11 @@ var doc = `{
                     "type": "string"
                 },
                 "postCommand": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.McisCmdReq"
                 },
                 "vm": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmInfo"
                 }
             }
@@ -4486,9 +4513,11 @@ var doc = `{
             "type": "object",
             "properties": {
                 "autoAction": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.AutoAction"
                 },
                 "autoCondition": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.AutoCondition"
                 },
                 "status": {
@@ -4607,15 +4636,18 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "Fields for response",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -4649,6 +4681,7 @@ var doc = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -4673,6 +4706,7 @@ var doc = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -4698,6 +4732,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vpcIID": {
+                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -4789,7 +4824,13 @@ var doc = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
                 "cspViewVmDetail": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -4805,6 +4846,7 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "monAgentStatus": {
@@ -4829,6 +4871,7 @@ var doc = `{
                 },
                 "region": {
                     "description": "Provided by CB-Spider",
+                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -4893,6 +4936,7 @@ var doc = `{
                     "type": "string"
                 },
                 "vm_spec": {
+                    "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
@@ -4916,6 +4960,7 @@ var doc = `{
                     }
                 },
                 "vm_req": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
             }
@@ -5009,6 +5054,7 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
+                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "monAgentStatus": {

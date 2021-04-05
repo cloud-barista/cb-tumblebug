@@ -158,9 +158,9 @@ func ListNs() ([]NsInfo, error) {
 
 func ListNsId() []string {
 
-	fmt.Println("[List ns]")
+	//fmt.Println("[List ns]")
 	key := "/ns"
-	fmt.Println(key)
+	//fmt.Println(key)
 
 	keyValue, _ := CBStore.GetList(key, true)
 
@@ -174,10 +174,10 @@ func ListNsId() []string {
 		}
 
 	}
-	for _, v := range nsList {
-		fmt.Println("<" + v + "> \n")
-	}
-	fmt.Println("===============================================")
+	//for _, v := range nsList {
+	//	fmt.Println("<" + v + "> \n")
+	//}
+	//fmt.Println("===============================================")
 	return nsList
 
 }

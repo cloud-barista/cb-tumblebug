@@ -65,7 +65,7 @@
                     \"Value\" : \"${CredentialVal05[INDEX]:-NULL}\"
                 }
             ]
-        }" #| json_pp
+        }" | json_pp | head -n2
 
     # for Cloud Region Info
 
@@ -85,7 +85,7 @@
                 }
             ],
             "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
-        }' | json_pp
+        }' | json_pp #| head -n1
     else
         curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
         '{
@@ -101,7 +101,7 @@
                 }
             ],
             "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
-        }' | json_pp
+        }' | json_pp #| head -n1
     fi
 
 
