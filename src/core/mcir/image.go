@@ -3,6 +3,7 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -348,7 +349,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vmimage/" + imageId
+		url := common.SPIDER_REST_URL + "/vmimage/" + url.QueryEscape(imageId)
 
 		// Create Req body
 		type JsonTemplate struct {
