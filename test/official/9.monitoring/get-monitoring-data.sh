@@ -22,6 +22,11 @@
 	getCloudIndex $CSP
 
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	if [ "${INDEX}" == "0" ]; then
+		MCISPREFIX=avengers
+		MCISID=${MCISPREFIX}-${POSTFIX}
+	fi
+
 	USERCMD=${4}
 
 	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/monitoring/mcis/$MCISID/metric/$USERCMD | json_pp #|| return 1

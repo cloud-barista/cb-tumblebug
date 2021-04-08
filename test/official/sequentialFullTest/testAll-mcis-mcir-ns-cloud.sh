@@ -107,7 +107,7 @@ function test_sequence_allcsp_mcis_vm()
 	../8.mcis/add-vmgroup-to-mcis.sh $CSP $REGION $POSTFIX $NUMVM $MCISPREFIX
 
 }
-
+	SECONDS=0
 
     FILE=../conf.env
     if [ ! -f "$FILE" ]; then
@@ -193,6 +193,8 @@ function test_sequence_allcsp_mcis_vm()
 
 	fi
 
+	duration=$SECONDS
+	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 #}
 
 #testAll

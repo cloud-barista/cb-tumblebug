@@ -64,7 +64,9 @@ func main() {
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
 	go func() {
 		for t := range ticker.C {
-			fmt.Println("- Orchestration Controller ", t.Format("2006-01-02 15:04:05"))
+			//display ticker if you need (remove '_ = t')
+			_ = t
+			//fmt.Println("- Orchestration Controller ", t.Format("2006-01-02 15:04:05"))
 			mcis.OrchestrationController()
 		}
 	}()

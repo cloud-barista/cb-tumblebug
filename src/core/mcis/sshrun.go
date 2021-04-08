@@ -13,9 +13,12 @@ import (
 
 	//"github.com/sirupsen/logrus"
 
+	"fmt"
 	"io"
+	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
@@ -179,4 +182,23 @@ func SSHCopyByKeyPath(sshInfo SSHKeyPathInfo, sourcePath string, remotePath stri
 	defer Close(sshCli)
 
 	return Copy(sshCli, sourcePath, remotePath)
+}
+
+// CheckConnectivity func checks if given port is open and ready.
+// For instance, ready for ssh port can be checkek.
+func CheckConnectivity(host string, port string) error {
+
+	deadline := 10
+	timeout := time.Second * time.Duration(deadline)
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+	if err != nil {
+		fmt.Println("[CheckConnectivity]", host, ":", port, ". ERR:", err)
+		return err
+	}
+	if conn != nil {
+		defer conn.Close()
+		fmt.Println("[CheckConnectivity]", host, ":", port, ". Opened")
+		return nil
+	}
+	return nil
 }
