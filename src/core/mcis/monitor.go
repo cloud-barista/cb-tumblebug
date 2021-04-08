@@ -3,6 +3,8 @@ package mcis
 import (
 
 	//"encoding/json"
+	"time"
+
 	"github.com/tidwall/gjson"
 
 	"fmt"
@@ -151,10 +153,12 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		errStr = err.Error()
 	}
 
+	responseLimit := 8
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
+		Timeout: time.Duration(responseLimit) * time.Minute,
 	}
 	req, err := http.NewRequest(method, url, payload)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -357,10 +361,12 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	fmt.Printf("\n[Request body to CB-DRAGONFLY]\n")
 	common.PrintJsonPretty(tempReq)
 
+	responseLimit := 8
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
+		Timeout: time.Duration(responseLimit) * time.Minute,
 	}
 	req, err := http.NewRequest(method, url, nil)
 	errStr := ""

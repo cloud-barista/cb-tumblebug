@@ -51,7 +51,7 @@ type TbSshKeyInfo struct {
 	CspSshKeyName        string            `json:"cspSshKeyName"`
 	Fingerprint          string            `json:"fingerprint"`
 	Username             string            `json:"username"`
-	VerifiedUsername     string    		   `json:"verifiedUsername"`
+	VerifiedUsername     string            `json:"verifiedUsername"`
 	PublicKey            string            `json:"publicKey"`
 	PrivateKey           string            `json:"privateKey"`
 	KeyValueList         []common.KeyValue `json:"keyValueList"`
@@ -178,8 +178,8 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 		//return content, res.StatusCode, body, err
 		return content, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	//keyValue, _ := common.CBStore.Get(string(Key))
+	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	//return content, res.StatusCode, body, nil
 	return content, nil

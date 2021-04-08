@@ -31,7 +31,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 	}
 
 	fmt.Println("[POST SecurityGroup")
-	fmt.Println("[Creating SecurityGroup]")
+	//fmt.Println("[Creating SecurityGroup]")
 	//content, responseCode, _, err := CreateSecurityGroup(nsId, u)
 	content, err := mcir.CreateSecurityGroup(nsId, u)
 	if err != nil {

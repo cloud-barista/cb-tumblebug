@@ -334,12 +334,13 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 			if i == retrycheck-1 {
 				return "", "", fmt.Errorf("Cannot do ssh, the port is not opened (10 trials)")
 			}
-			time.Sleep(11 * time.Second)
+			time.Sleep(2 * time.Second)
 		}
 
 		result, err := RunSSH(vmIp, sshPort, verifiedUserName, privateKey, cmd)
 		if err != nil {
 			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
+			return "", "", fmt.Errorf("Cannot do ssh, with verifiedUserName")
 		}
 		if err == nil {
 			theUserName = verifiedUserName
@@ -348,32 +349,42 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 		}
 	}
 
-	for i := 0; i < 10; i++ {
-		for _, v := range userNames {
-			if v != "" {
-				fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
-				fmt.Println("[CMD] " + cmd)
-				result, err := RunSSH(vmIp, sshPort, v, privateKey, cmd)
-				if err != nil {
-					fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
-				}
-				if err == nil {
-					theUserName = v
-					fmt.Println("[RST] " + *result + "[Username] " + v)
-					break
-				}
-				time.Sleep(2 * time.Second)
-			}
+	retrycheck := 10
+	for i := 0; i < retrycheck; i++ {
+		conerr := CheckConnectivity(vmIp, sshPort)
+		if conerr == nil {
+			//fmt.Println("[ERR: conerr] nil. break")
+			break
 		}
-		if theUserName != "" {
-			err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
+		if i == retrycheck-1 {
+			return "", "", fmt.Errorf("Cannot do ssh, the port is not opened (10 trials)")
+		}
+		time.Sleep(2 * time.Second)
+	}
+	fmt.Println("[Retrieve ssh username from the given list]")
+	for _, v := range userNames {
+		if v != "" {
+			fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
+			result, err := RunSSH(vmIp, sshPort, v, privateKey, cmd)
 			if err != nil {
 				fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
 			}
-			break
+			if err == nil {
+				theUserName = v
+				fmt.Println("[RST] " + *result + "[Username] " + v)
+				break
+			}
+			time.Sleep(2 * time.Second)
 		}
-		fmt.Println("[Trying a SSH] trial:" + strconv.Itoa(i))
-		time.Sleep(1 * time.Second)
+	}
+	if theUserName != "" {
+		err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
+		if err != nil {
+			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
+			return "", "", err
+		}
+	} else {
+		return "", "", fmt.Errorf("Could not find username")
 	}
 
 	return theUserName, privateKey, nil
@@ -1070,7 +1081,7 @@ func DelMcis(nsId string, mcisId string) error {
 	}
 	// for deletion, need to wait untill termination is finished
 	// Sleep for 5 seconds
-	fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe MCIS-VMs termination.\n\n")
+	fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCIS-VMs termination.\n\n")
 	time.Sleep(5 * time.Second)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -2849,8 +2860,11 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 	var wg sync.WaitGroup
 	var results ControlVmResultWrapper
 	// delete vms info
-	for _, v := range vmList {
+	for i, v := range vmList {
 		wg.Add(1)
+
+		// Avoid concurrent requests to CSP.
+		time.Sleep(time.Duration(i) * time.Second)
 
 		go ControlVmAsync(&wg, nsId, mcisId, v, action, &results)
 	}
@@ -3370,21 +3384,40 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 		return McisStatusInfo{}, nil
 	}
 
+	// for num, v := range vmList {
+	// 	vmStatusTmp, err := GetVmStatus(nsId, mcisId, v)
+	// 	if err != nil {
+	// 		common.CBLog.Error(err)
+	// 		vmStatusTmp.Status = StatusFailed
+	// 		return mcisStatus, err
+	// 	}
+
+	// 	mcisStatus.Vm = append(mcisStatus.Vm, vmStatusTmp)
+
+	// 	// set master IP of MCIS (Default rule: select 1st VM as master)
+	// 	if num == 0 {
+	// 		mcisStatus.MasterVmId = vmStatusTmp.Id
+	// 		mcisStatus.MasterIp = vmStatusTmp.Public_ip
+	// 		mcisStatus.MasterSSHPort = vmStatusTmp.SSHPort
+	// 	}
+	// }
+
+	//goroutin sync wg
+	var wg sync.WaitGroup
+	for _, v := range vmList {
+		wg.Add(1)
+		go GetVmStatusAsync(&wg, nsId, mcisId, v, &mcisStatus)
+	}
+	wg.Wait() //goroutine sync wg
+
 	for num, v := range vmList {
-		vmStatusTmp, err := GetVmStatus(nsId, mcisId, v)
-		if err != nil {
-			common.CBLog.Error(err)
-			vmStatusTmp.Status = StatusFailed
-			return mcisStatus, err
-		}
-
-		mcisStatus.Vm = append(mcisStatus.Vm, vmStatusTmp)
-
 		// set master IP of MCIS (Default rule: select 1st VM as master)
 		if num == 0 {
-			mcisStatus.MasterVmId = vmStatusTmp.Id
-			mcisStatus.MasterIp = vmStatusTmp.Public_ip
-			mcisStatus.MasterSSHPort = vmStatusTmp.SSHPort
+			vmtmp, _ := GetVmObject(nsId, mcisId, v)
+			mcisStatus.MasterVmId = vmtmp.Id
+			mcisStatus.MasterIp = vmtmp.PublicIP
+			mcisStatus.MasterSSHPort = vmtmp.SSHPort
+			break
 		}
 	}
 
@@ -3493,6 +3526,19 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	vmTmp := TbVmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
 	return vmTmp, nil
+}
+
+func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, results *McisStatusInfo) error {
+	defer wg.Done() //goroutine sync done
+
+	vmStatusTmp, err := GetVmStatus(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		vmStatusTmp.Status = StatusFailed
+	}
+
+	results.Vm = append(results.Vm, vmStatusTmp)
+	return nil
 }
 
 func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {

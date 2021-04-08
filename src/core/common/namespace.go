@@ -272,7 +272,7 @@ func CheckNs(Id string) (bool, error) {
 
 	lowerizedId := ToLower(Id)
 
-	fmt.Println("[Check ns] " + lowerizedId)
+	//fmt.Println("[Check ns] " + lowerizedId)
 
 	key := "/ns/" + lowerizedId
 	//fmt.Println(key)

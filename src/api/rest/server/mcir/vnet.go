@@ -30,8 +30,8 @@ func RestPostVNet(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[POST VNet")
-	fmt.Println("[Creating VNet]")
+	fmt.Println("[POST VNet]")
+	//fmt.Println("[Creating VNet]")
 	//content, responseCode, body, err := CreateVNet(nsId, u)
 	content, err := mcir.CreateVNet(nsId, u)
 	if err != nil {
