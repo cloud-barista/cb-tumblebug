@@ -165,7 +165,8 @@ function clean_sequence()
 }
 
 
-#function cleanAll() {
+	SECONDS=0
+	
     FILE=../conf.env
     if [ ! -f "$FILE" ]; then
         echo "$FILE does not exist."
@@ -224,8 +225,8 @@ function clean_sequence()
 
 	fi
 
-
-
+	duration=$SECONDS
+	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 #}
 
 #cleanAll

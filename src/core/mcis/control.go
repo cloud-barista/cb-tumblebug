@@ -289,19 +289,30 @@ type TbVmRecommendInfo struct {
 	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
-func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, userNames []string, privateKey string) (string, error) {
+func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
 
 	// verify if vm is running with a public ip.
 	if vmIp == "" {
-		return "", fmt.Errorf("Cannot do ssh, VM IP is null")
+		return "", "", fmt.Errorf("Cannot do ssh, VM IP is null")
 	}
 	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return "", err
+		return "", "", err
 	}
 	if vmStatusInfoTmp.Status != StatusRunning || vmIp == "" {
-		return "", fmt.Errorf("Cannot do ssh, VM IP is not Running")
+		return "", "", fmt.Errorf("Cannot do ssh, VM IP is not Running")
+	}
+
+	// find vaild username
+	userName, _, privateKey := GetVmSshKey(nsId, mcisId, vmId)
+	userNames := []string{
+		userName,
+		givenUserName,
+		SshDefaultUserName01,
+		SshDefaultUserName02,
+		SshDefaultUserName03,
+		SshDefaultUserName04,
 	}
 
 	theUserName := ""
@@ -312,6 +323,20 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	if verifiedUserName != "" {
 		fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + verifiedUserName)
 		fmt.Println("[CMD] " + cmd)
+
+		retrycheck := 10
+		for i := 0; i < retrycheck; i++ {
+			conerr := CheckConnectivity(vmIp, sshPort)
+			if conerr == nil {
+				fmt.Println("[ERR: conerr] nil. break")
+				break
+			}
+			if i == retrycheck-1 {
+				return "", "", fmt.Errorf("Cannot do ssh, the port is not opened (10 trials)")
+			}
+			time.Sleep(11 * time.Second)
+		}
+
 		result, err := RunSSH(vmIp, sshPort, verifiedUserName, privateKey, cmd)
 		if err != nil {
 			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
@@ -319,7 +344,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 		if err == nil {
 			theUserName = verifiedUserName
 			fmt.Println("[RST] " + *result + "[Username] " + verifiedUserName)
-			return theUserName, nil
+			return theUserName, privateKey, nil
 		}
 	}
 
@@ -351,7 +376,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 		time.Sleep(1 * time.Second)
 	}
 
-	return theUserName, nil
+	return theUserName, privateKey, nil
 }
 
 type SshCmdResult struct { // Tumblebug
@@ -418,17 +443,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 		// }
 
 		// find vaild username
-		userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		userNames := []string{
-			userName,
-			req.User_name,
-			SshDefaultUserName01,
-			SshDefaultUserName02,
-			SshDefaultUserName03,
-			SshDefaultUserName04,
-		}
-
-		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, userNames, sshKey)
+		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -1669,16 +1684,8 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	cmd := req.Command
 
 	// find vaild username
-	userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-	userNames := []string{
-		userName,
-		req.User_name,
-		SshDefaultUserName01,
-		SshDefaultUserName02,
-		SshDefaultUserName03,
-		SshDefaultUserName04,
-	}
-	userName, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, userNames, sshKey)
+	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
+
 	if userName == "" {
 		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
 		return "", fmt.Errorf("No vaild username")
@@ -1756,16 +1763,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		// 	userName = sshDefaultUserName
 		// }
 		// find vaild username
-		userName, _, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		userNames := []string{
-			userName,
-			req.User_name,
-			SshDefaultUserName01,
-			SshDefaultUserName02,
-			SshDefaultUserName03,
-			SshDefaultUserName04,
-		}
-		userName, err = VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, userNames, sshKey)
+		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -2303,6 +2301,7 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			reqToMon := &McisCmdReq{}
 			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
+			fmt.Printf("\n===========================\n")
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
 			if err != nil {
