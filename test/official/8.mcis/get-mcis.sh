@@ -21,7 +21,19 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | json_pp
+	MCISPREFIX=${4}
+	if [ -z "$MCISPREFIX" ]
+	then
+		MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+		if [ "${INDEX}" == "0" ]; then
+			MCISPREFIX=avengers
+			MCISID=${MCISPREFIX}-${POSTFIX}
+		fi
+	else
+		MCISID=${MCISPREFIX}-${POSTFIX}
+	fi
+
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID} | json_pp
 #}
 
 #get_mcis

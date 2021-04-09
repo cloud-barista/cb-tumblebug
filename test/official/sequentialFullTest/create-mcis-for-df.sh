@@ -81,7 +81,7 @@ function test_sequence()
 	test_sequence $CSP $REGION $POSTFIX ${0##*/}
 
 	echo "[Deploy CB-Dragonfly Docker]"
-	dozing 30
+	dozing 60
 	./deploy-dragonfly-docker.sh $CSP $REGION $POSTFIX
 
 #}

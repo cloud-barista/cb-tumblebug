@@ -31,7 +31,7 @@ func RestPostSshKey(c echo.Context) error {
 	}
 
 	fmt.Println("[POST SshKey")
-	fmt.Println("[Creating SshKey]")
+	//fmt.Println("[Creating SshKey]")
 	//content, responseCode, _, err := CreateSshKey(nsId, u)
 	content, err := mcir.CreateSshKey(nsId, u)
 	if err != nil {

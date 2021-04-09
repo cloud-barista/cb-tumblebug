@@ -1,6 +1,8 @@
 #!/bin/bash
 
-#function command_mcis() {
+
+	SECONDS=0
+
     FILE=../conf.env
     if [ ! -f "$FILE" ]; then
         echo "$FILE does not exist."
@@ -103,7 +105,11 @@ EOF
 EOF
 
 	echo "Done!"	
+	duration=$SECONDS
+	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 	echo ""
+	
 	echo "[MCIS Weavescope: complete cluster]"
 	echo "Access to: $MASTERIP:4040/#!/state/{\"topologyId\":\"hosts\"}"
 	echo ""	
+
