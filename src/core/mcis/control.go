@@ -2178,12 +2178,13 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 	fmt.Println("=========================== Create MCIS object")
 	key := common.GenMcisKey(nsId, mcisId, "")
 	mapA := map[string]string{
-		"id":           mcisId,
-		"name":         req.Name,
-		"description":  req.Description,
-		"status":       StatusCreating,
-		"targetAction": targetAction,
-		"targetStatus": targetStatus,
+		"id":              mcisId,
+		"name":            mcisId,
+		"description":     req.Description,
+		"status":          StatusCreating,
+		"targetAction":    targetAction,
+		"targetStatus":    targetStatus,
+		"InstallMonAgent": req.InstallMonAgent,
 	}
 	val, _ := json.Marshal(mapA)
 	err := common.CBStore.Put(string(key), string(val))
@@ -2860,11 +2861,11 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 	var wg sync.WaitGroup
 	var results ControlVmResultWrapper
 	// delete vms info
-	for i, v := range vmList {
+	for _, v := range vmList {
 		wg.Add(1)
 
 		// Avoid concurrent requests to CSP.
-		time.Sleep(time.Duration(i) * time.Second)
+		time.Sleep(time.Duration(2) * time.Second)
 
 		go ControlVmAsync(&wg, nsId, mcisId, v, action, &results)
 	}
@@ -3041,7 +3042,10 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 		fmt.Println("[Calling SPIDER]END vmControl\n")
 
-		UpdateVmPublicIp(nsId, mcisId, temp)
+		if action != ActionTerminate {
+			//When VM is restared, temporal PublicIP will be chanaged. Need update.
+			UpdateVmPublicIp(nsId, mcisId, temp)
+		}
 
 		return nil
 

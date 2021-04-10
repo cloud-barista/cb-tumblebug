@@ -7,7 +7,15 @@
         exit
     fi
 
-	source ../conf.env
+	TestSetFile=${6:-../testSet.env}
+    
+    FILE=$TestSetFile
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+	source $TestSetFile
+    source ../conf.env
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
@@ -17,19 +25,25 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	MCISPREFIX=${4:-avengers}
+	NUMVM=${4:-3}
+	MCISPREFIX=${5:-avengers}
 	MCISID=${MCISPREFIX}-${POSTFIX}
 
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
+	echo "####################"
+	echo " AgentInstallOn: $AgentInstallOn"
+	echo "####################"
+
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
 		'{
 			"name": "'${MCISID}'",
 			"description": "Tumblebug Demo",
-			"installMonAgent": "yes",
+			"installMonAgent": "'${AgentInstallOn}'",
 			"vm": [ {
-				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-master",
+				"vmGroupSize": "'${NUMVM}'",
+				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-lead",
 				"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"vmUserAccount": "cb-user",
 				"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
@@ -42,7 +56,8 @@
 				"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"description": "description",
 				"vmUserPassword": ""
-			} ]
+			}
+			]
 		}' | json_pp || return 1
 #}
 

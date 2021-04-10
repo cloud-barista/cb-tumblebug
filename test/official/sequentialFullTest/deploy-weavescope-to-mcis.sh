@@ -12,7 +12,15 @@
 	echo "[Check jq package (if not, install)]"
 	if ! dpkg-query -W -f='${Status}' jq  | grep "ok installed"; then sudo apt install -y jq; fi
 	
-	source ../conf.env
+	TestSetFile=${4:-../testSet.env}
+    
+    FILE=$TestSetFile
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+	source $TestSetFile
+    source ../conf.env
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
@@ -108,7 +116,7 @@ EOF
 	duration=$SECONDS
 	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 	echo ""
-	
+
 	echo "[MCIS Weavescope: complete cluster]"
 	echo "Access to: $MASTERIP:4040/#!/state/{\"topologyId\":\"hosts\"}"
 	echo ""	
