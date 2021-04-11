@@ -3550,10 +3550,17 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
+	errorInfo := TbVmStatusInfo{}
 
-	keyValue, _ := common.CBStore.Get(key)
-	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	//fmt.Println("===============================================")
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		fmt.Println(err)
+		return errorInfo, err
+	}
+	fmt.Println(keyValue.Value)
+	fmt.Println("<" + keyValue.Key + "> \n")
+
+	fmt.Println("===============================================")
 
 	//json.Unmarshal([]byte(keyValue.Value), &content)
 
@@ -3564,6 +3571,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
+		fmt.Println(err)
+		return errorInfo, err
 	}
 
 	//UpdateVmPublicIp. update temp TbVmInfo{} with changed IP
@@ -3612,7 +3621,6 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		}
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-		errorInfo := TbVmStatusInfo{}
 		errorInfo.Status = StatusFailed
 
 		if err != nil {

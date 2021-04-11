@@ -100,8 +100,8 @@ EOF
 	#LAUNCHCMD="sudo scope launch $MASTERIP"
 
 	echo ""
-	echo "[MCIS Weavescope: master node only]"
-	echo "Access to: $MASTERIP:4040/#!/state/{\"topologyId\":\"hosts\"}"
+	echo "[MCIS Weavescope: master node only] Access to"
+	echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 	echo ""	
 	echo "Working on clustring..."	
 
@@ -117,7 +117,7 @@ EOF
 	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 	echo ""
 
-	echo "[MCIS Weavescope: complete cluster]"
-	echo "Access to: $MASTERIP:4040/#!/state/{\"topologyId\":\"hosts\"}"
+	echo "[MCIS Weavescope: complete cluster] Access to"
+	echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 	echo ""	
 

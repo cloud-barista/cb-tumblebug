@@ -69,7 +69,7 @@
         done
 
         IPLIST=`echo ${IPLIST}`
-        echo "IPLIST: $IPLIST"
+        echo "PublicIPList: $IPLIST"
 
         PRIVIPLIST=""
 
@@ -83,7 +83,7 @@
         done
 
         PRIVIPLIST=`echo ${PRIVIPLIST}`
-        echo "PRIVIPLIST: $PRIVIPLIST"
+        echo "PrivateIPList: $PRIVIPLIST"
 
         WHOLE_IPLIST+=$IPLIST
         WHOLE_IPLIST+=" "
@@ -96,11 +96,10 @@
         LORDMCIS=$MCISID
     done
 
-    echo $WHOLE_IPLIST
-    echo $WHOLE_PRIVIPLIST
+    echo ""
+    echo "WHOLE_PublicIPList: $WHOLE_IPLIST"
+    echo "WHOLE_PrivateIPList: $WHOLE_PRIVIPLIST"
 
-	LAUNCHCMD="sudo scope launch $WHOLE_IPLIST $WHOLE_PRIVIPLIST"
-	#echo $LAUNCHCMD
 
     for MCISID in "$@" ; do
         echo ""
@@ -113,6 +112,18 @@
         echo ""
     done
 
+	LAUNCHCMD="sudo scope stop"
+    echo "Stopping Weavescope for master node if exist..."
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${LAUNCHCMD}"
+	}
+EOF
+
+	#LAUNCHCMD="sudo scope launch $WHOLE_IPLIST $WHOLE_PRIVIPLIST"
+    LAUNCHCMD="sudo scope launch $WHOLE_IPLIST"
+	#echo $LAUNCHCMD
+
     echo "Launching Weavescope for master node..."
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
@@ -120,11 +131,13 @@
 	}
 EOF
 
-
+    
 	echo ""
-	echo "[MCIS Weavescope: complete cluster] Access to"
-	echo " $LORDIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
+	echo "[MCIS Weavescope: master node only] Access to"
+    echo " $LORDIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
 	echo ""	
+
+    LAUNCHCMD="sudo scope launch $LORDIP $WHOLE_PRIVIPLIST"
 	echo "Working on clustring..."	
 
     for MCISID in "$@" ; do

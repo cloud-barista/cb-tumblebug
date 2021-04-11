@@ -13,15 +13,18 @@ function clean_sequence()
 	echo "${OUTPUT}"
 	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
+	OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
 	echo "${OUTPUT1}"
 	echo "${OUTPUT2}"
-	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ]
+	echo "${OUTPUT3}"
+	
+	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]
 	then
 		echo "============== sleep 30 before delete MCIS obj"
 		dozing 30
 	fi
 
-	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX
+	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 	../7.spec/unregister-spec.sh $CSP $REGION $POSTFIX $TestSetFile
 	../6.image/unregister-image.sh $CSP $REGION $POSTFIX $TestSetFile
@@ -79,7 +82,7 @@ function clean_sequence()
 	# fi
 
 	echo '## 4. SecurityGroup: Delete'
-	OUTPUT=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX)
+	OUTPUT=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 	echo "${OUTPUT}"
@@ -91,7 +94,7 @@ function clean_sequence()
 			echo "Trial: ${c}. Sleep 5 before retry SecurityGroup: Delete"
 			dozing 5
 			# retry SecurityGroup: Delete
-			OUTPUT2=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX)
+			OUTPUT2=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile)
 			echo "${OUTPUT2}"
 			OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 			echo "${OUTPUT2}"
@@ -112,7 +115,7 @@ function clean_sequence()
 
 
 	echo '## 3. vNet: Delete'
-	OUTPUT=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX)
+	OUTPUT=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 	echo "${OUTPUT}"
@@ -124,7 +127,7 @@ function clean_sequence()
 			echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
 			dozing 5
 			# retry delete-vNet
-			OUTPUT2=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX)
+			OUTPUT2=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX $TestSetFile)
 			echo "${OUTPUT2}"
 			OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 			echo "${OUTPUT2}"
@@ -147,17 +150,17 @@ function clean_sequence()
 
 	CNT=$(grep -c "${CSP}" ./executionStatus)
 	if [ "${CNT}" -ge 2 ]; then
-		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX leave
+		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX leave $TestSetFile
 	else
 		echo "[No dependancy, this CSP can be removed.]"
-		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX
+		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX doit $TestSetFile
 	fi
 
 	#_self="${0##*/}"
 
 	echo ""
 	echo "[Cleaning related commands in history file executionStatus]"
-	sed -i "/${CSP} ${REGION} ${POSTFIX}/d" ./executionStatus
+	sed -i "/${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus
@@ -207,9 +210,9 @@ function clean_sequence()
 		echo "[Parallel excution for all CSP regions]"
 
 		MCISPREFIX=avengers
-		../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX $TestSetFile
-		../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX $TestSetFile
-		../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $MCISPREFIX $TestSetFile
+		../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX 
+		../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
+		../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX 
 
 		INDEXX=${NumCSP}
 		for ((cspi=1;cspi<=INDEXX;cspi++)); do
@@ -228,6 +231,15 @@ function clean_sequence()
 			done
 		done
 		wait
+
+		echo ""
+		echo "[Cleaning related commands in history file executionStatus]"
+		sed -i "/all 1 ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
+		echo ""
+		echo "[Executed Command List]"
+		cat  ./executionStatus
+		echo ""
+
 	else
 		echo "[Single excution for a CSP region]"
 

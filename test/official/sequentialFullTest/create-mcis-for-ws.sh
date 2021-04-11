@@ -89,9 +89,9 @@ function test_sequence()
 	echo "[Single excution for a CSP region]"
 	test_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
 
-	echo "[Deploy CB-Dragonfly Docker]"
+	echo "[Deploy WeaveScope]"
 	dozing 60
-	./deploy-dragonfly-docker.sh $CSP $REGION $POSTFIX $TestSetFile
+	./deploy-weavescope-to-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 
 #}
 

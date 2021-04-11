@@ -7,7 +7,7 @@
         exit
     fi
 
-	TestSetFile=${5:-../testSet.env}
+	TestSetFile=${4:-../testSet.env}
     
     FILE=$TestSetFile
     if [ ! -f "$FILE" ]; then
@@ -25,7 +25,7 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	MCISPREFIX=${4}
+	MCISPREFIX=${5}
 
 	source ../common-functions.sh
 	getCloudIndex $CSP
