@@ -10,19 +10,19 @@ function test_sequence()
 	local TestSetFile=$5
 	local CMDPATH=$6
 
-	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
-	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX $TestSetFile
-	../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX $TestSetFile
-	dozing 10
-	if [ "${CSP}" == "gcp" ]; then
-		echo "[Test for GCP needs more preparation time]"
-		dozing 20
-	fi
-	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile
-	dozing 10
-	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile
-	../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX $TestSetFile
-	../7.spec/register-spec.sh $CSP $REGION $POSTFIX $TestSetFile
+	# ../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
+	# ../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX $TestSetFile
+	# ../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX $TestSetFile
+	# dozing 10
+	# if [ "${CSP}" == "gcp" ]; then
+	# 	echo "[Test for GCP needs more preparation time]"
+	# 	dozing 20
+	# fi
+	# ../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile
+	# dozing 10
+	# ../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile
+	# ../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX $TestSetFile
+	# ../7.spec/register-spec.sh $CSP $REGION $POSTFIX $TestSetFile
 	../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX $NUMVM $TestSetFile
 	dozing 1
 	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
@@ -39,39 +39,39 @@ function test_sequence()
 }
 
 # Functions for all CSP test
-function test_sequence_allcsp_mcir()
-{
-	local CSP=$1
-	local REGION=$2
-	local POSTFIX=$3
-	local TestSetFile=$4
-	local CMDPATH=$5
+# function test_sequence_allcsp_mcir()
+# {
+# 	local CSP=$1
+# 	local REGION=$2
+# 	local POSTFIX=$3
+# 	local TestSetFile=$4
+# 	local CMDPATH=$5
 
-	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
-	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX $TestSetFile
-	../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX $TestSetFile
-	dozing 10
-	if [ "${CSP}" == "gcp" ]; then
-		echo "[Test for GCP needs more preparation time]"
-		dozing 20
-	fi
-	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile
-	dozing 10
-	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile
-	../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX $TestSetFile
-	../7.spec/register-spec.sh $CSP $REGION $POSTFIX $TestSetFile
+# 	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
+# 	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX $TestSetFile
+# 	../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX $TestSetFile
+# 	dozing 10
+# 	if [ "${CSP}" == "gcp" ]; then
+# 		echo "[Test for GCP needs more preparation time]"
+# 		dozing 20
+# 	fi
+# 	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile
+# 	dozing 10
+# 	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile
+# 	../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX $TestSetFile
+# 	../7.spec/register-spec.sh $CSP $REGION $POSTFIX $TestSetFile
 
-	_self=$CMDPATH
+# 	_self=$CMDPATH
 
-	echo ""
-	echo "[Logging to notify latest command history]"
-	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >> ./executionStatus
-	echo ""
-	echo "[Executed Command List]"
-	cat  ./executionStatus
-	echo ""
+# 	echo ""
+# 	echo "[Logging to notify latest command history]"
+# 	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >> ./executionStatus
+# 	echo ""
+# 	echo "[Executed Command List]"
+# 	cat  ./executionStatus
+# 	echo ""
 
-}
+# }
 
 function test_sequence_allcsp_mcis()
 {
@@ -147,24 +147,25 @@ function test_sequence_allcsp_mcis_vm()
 		echo "[Parallel excution for all CSP regions]"
 
 		INDEXX=${NumCSP}
-		for ((cspi=1;cspi<=INDEXX;cspi++)); do
-			#echo $i
-			INDEXY=${NumRegion[$cspi]}
-			CSP=${CSPType[$cspi]}
-			for ((cspj=1;cspj<=INDEXY;cspj++)); do
-				#echo $j
-				REGION=$cspj
-				#echo $CSP
-				#echo $REGION
-				echo "- Create MCIR in ${CONN_CONFIG[$cspi,$REGION]}"
+		
+		# for ((cspi=1;cspi<=INDEXX;cspi++)); do
+		# 	#echo $i
+		# 	INDEXY=${NumRegion[$cspi]}
+		# 	CSP=${CSPType[$cspi]}
+		# 	for ((cspj=1;cspj<=INDEXY;cspj++)); do
+		# 		#echo $j
+		# 		REGION=$cspj
+		# 		#echo $CSP
+		# 		#echo $REGION
+		# 		echo "- Create MCIR in ${CONN_CONFIG[$cspi,$REGION]}"
 
-				test_sequence_allcsp_mcir $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
-				dozing 1
+		# 		test_sequence_allcsp_mcir $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
+		# 		dozing 1
 
-			done
+		# 	done
 			
-		done
-		wait
+		# done
+		# wait
 
 		MCISPREFIX=avengers
 		MCISID=${MCISPREFIX}-${POSTFIX}

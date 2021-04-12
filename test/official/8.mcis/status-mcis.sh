@@ -7,7 +7,15 @@
         exit
     fi
 
-	source ../conf.env
+	TestSetFile=${4:-../testSet.env}
+    
+    FILE=$TestSetFile
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+	source $TestSetFile
+    source ../conf.env
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
@@ -22,7 +30,7 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	MCISPREFIX=${4}
+	MCISPREFIX=${5}
 	if [ -z "$MCISPREFIX" ]
 	then
 		MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}

@@ -19,22 +19,22 @@ function test_sequence()
 	local POSTFIX=$3
 	local CMDPATH=$4
 
-		../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX
-		#../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX
-		# ../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX
+		../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
+		#../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX $TestSetFile
+		# ../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX $TestSetFile
 		# dozing 10
 		# if [ "${CSP}" == "gcp" ]; then
 		# 	echo "[Test for GCP needs more preparation time]"
 		# 	dozing 20
 		# fi
-		# ../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX
+		# ../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile
 		# dozing 10
-		# ../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX
-		# ../6.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX
-		# ../7.spec/register-spec.sh $CSP $REGION $POSTFIX
-		#../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX
+		# ../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile
+		# ../6.image/registerImageWithInfo.sh $CSP $REGION $POSTFIX $TestSetFile
+		# ../7.spec/register-spec.sh $CSP $REGION $POSTFIX $TestSetFile
+		#../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 		#dozing 1
-		#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX
+		#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 
 		_self=$CMDPATH
 
@@ -62,7 +62,15 @@ function test_sequence()
         exit
     fi
 
-	source ../conf.env
+	TestSetFile=${4:-../testSet.env}
+    
+    FILE=$TestSetFile
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+	source $TestSetFile
+    source ../conf.env
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 	source ../credentials.conf
 

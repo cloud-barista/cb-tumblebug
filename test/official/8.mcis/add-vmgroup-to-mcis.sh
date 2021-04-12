@@ -7,7 +7,15 @@
         exit
     fi
 
-	source ../conf.env
+	TestSetFile=${6:-../testSet.env}
+    
+    FILE=$TestSetFile
+    if [ ! -f "$FILE" ]; then
+        echo "$FILE does not exist."
+        exit
+    fi
+	source $TestSetFile
+    source ../conf.env
 	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 	echo "####################################################################"
