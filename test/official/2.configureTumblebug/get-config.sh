@@ -24,7 +24,8 @@
 
     VAR=${1}
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/config/$VAR | json_pp #|| return 1
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/config/$VAR | jq
+    echo ""
 #}
 
 #get_config

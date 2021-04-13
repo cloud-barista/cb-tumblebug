@@ -22,7 +22,7 @@
     echo "## 7. spec: Fetch"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/fetchSpecs | json_pp #|| return 1
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/fetchSpecs | jq #|| return 1
 #}
 
 #fetch_specs

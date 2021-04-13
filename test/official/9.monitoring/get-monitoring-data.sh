@@ -37,7 +37,7 @@
 
 	USERCMD=${4}
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/monitoring/mcis/$MCISID/metric/$USERCMD | json_pp #|| return 1
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/monitoring/mcis/$MCISID/metric/$USERCMD | jq #|| return 1
 #}
 
 #get_monitoring_data

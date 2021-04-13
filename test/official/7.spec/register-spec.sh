@@ -29,12 +29,16 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec -H 'Content-Type: application/json' -d \
-		'{ 
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
-			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"cspSpecName": "'${SPEC_NAME[$INDEX,$REGION]}'"
-		}' | json_pp #|| return 1
+	resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec -H 'Content-Type: application/json' -d @- <<EOF
+		{ 
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}", 
+			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"cspSpecName": "${SPEC_NAME[$INDEX,$REGION]}"
+		}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #register_spec

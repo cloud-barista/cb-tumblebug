@@ -23,7 +23,8 @@
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config | json_pp #|| return 1
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config | jq
+    echo ""
 #}
 
 #delete_ns

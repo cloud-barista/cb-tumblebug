@@ -32,10 +32,10 @@
 
 	if [ -z "$MCISPREFIX" ]
 	then
-		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=terminate | json_pp || return 1
+		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=terminate | jq || return 1
 	else
 		MCISID=${MCISPREFIX}-${POSTFIX}
-		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=terminate | json_pp || return 1
+		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=terminate | jq || return 1
 	fi
 #}
 

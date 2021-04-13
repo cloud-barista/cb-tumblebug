@@ -25,11 +25,14 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-
-	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/keypair/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
-		'{ 
-			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-		}' | json_pp
+    resp=$(
+        curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/keypair/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d @- <<EOF
+        { 
+			"ConnectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
+		}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #spider_get_sshKey

@@ -77,7 +77,7 @@
 					}
 				}
 			]
-		}' | json_pp || return 1
+		}' | jq || return 1
 #}
 
 #create_mcis

@@ -24,11 +24,15 @@
 
 	INDEX=${1}
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns -H 'Content-Type: application/json' -d \
-		'{
-			"name": "'$NS_ID'",
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns -H 'Content-Type: application/json' -d @- <<EOF
+        {
+			"name": "$NS_ID",
 			"description": "NameSpace for General Testing"
-		}' | json_pp #|| return 1
+		}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #create_ns

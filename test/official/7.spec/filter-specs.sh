@@ -22,12 +22,15 @@
     echo "## 7. spec: filter"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/filterSpecs -H 'Content-Type: application/json' -d \
-	    '{ 
-		    "num_vCPU": '1', 
-		    "mem_GiB": '2'
-	    }' | json_pp #|| return 1
-
+    resp=$(
+        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/filterSpecs -H 'Content-Type: application/json' -d @- <<EOF
+	    { 
+		    "num_vCPU": 1, 
+		    "mem_GiB": 2
+	    }
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #filter_specs

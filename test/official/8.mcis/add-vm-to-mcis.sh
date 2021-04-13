@@ -47,7 +47,7 @@
 			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
 			"vmUserPassword": ""
-		}' | json_pp || return 1
+		}' | jq || return 1
 #}
 
 #add-vm-to-mcis

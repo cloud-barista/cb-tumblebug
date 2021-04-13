@@ -29,20 +29,24 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/vpc -H 'Content-Type: application/json' -d \
-		'{
-			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-			"ReqInfo": {
-				"Name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-				"IPv4_CIDR": "192.168.0.0/16",
-				"SubnetInfoList": [ {
-					"Name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-					"IPv4_CIDR": "192.168.1.0/24"
+        resp=$(
+            curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/vpc -H 'Content-Type: application/json' -d @- <<EOF
+            {
+                "ConnectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+                "ReqInfo": {
+                    "Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+                    "IPv4_CIDR": "192.168.0.0/16",
+                    "SubnetInfoList": [ {
+                        "Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+                        "IPv4_CIDR": "192.168.1.0/24"
 
-				} ]
+                    } ]
 
-			}
-		}' #| json_pp #|| return 1
+                }
+            }
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #create_vNet

@@ -24,7 +24,8 @@
 
     INDEX=${1}
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns | json_pp #|| return 1
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns | jq
+    echo ""
 #}
 
 #list_ns

@@ -25,11 +25,15 @@
 	KEY=${1}
 	VALUE=${2}
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/config -H 'Content-Type: application/json' -d \
-		'{
-			"name": "'${KEY}'",
-			"value": "'${VALUE}'"
-		}' | json_pp #|| return 1
+	resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/config -H 'Content-Type: application/json' -d @- <<EOF
+		{
+			"name": "${KEY}",
+			"value": "${VALUE}"
+		}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #create_ns

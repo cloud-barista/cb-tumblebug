@@ -29,14 +29,18 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/image?action=registerWithInfo -H 'Content-Type: application/json' -d \
-		'{ 
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
-			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"cspImageId": "'${IMAGE_NAME[$INDEX,$REGION]}'",
+	resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/image?action=registerWithInfo -H 'Content-Type: application/json' -d @- <<EOF
+		{ 
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}", 
+			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"cspImageId": "${IMAGE_NAME[$INDEX,$REGION]}",
 			"description": "Canonical, Ubuntu, 18.04 LTS, amd64 bionic",
             "guestOS": "Ubuntu"
-		}' | json_pp #|| return 1
+		}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #registerImageWithId

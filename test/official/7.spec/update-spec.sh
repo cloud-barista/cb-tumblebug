@@ -22,11 +22,15 @@
 	echo "## 7. spec: Update"
 	echo "####################################################################"
 
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec/aws-us-east-1-m5ad.2xlarge -H 'Content-Type: application/json' -d \
-		'{ 
+	resp=$(
+        curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec/aws-us-east-1-m5ad.2xlarge -H 'Content-Type: application/json' -d @- <<EOF
+		{ 
 			"id": "aws-us-east-1-m5ad.2xlarge", 
 			"description": "UpdateSpec() test"
-		}' | json_pp #|| return 1
+		}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #register_spec

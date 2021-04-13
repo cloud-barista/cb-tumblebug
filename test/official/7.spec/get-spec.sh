@@ -29,10 +29,7 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
-		'{ 
-			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-		}' | json_pp #|| return 1
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq
 #}
 
 #get_spec
