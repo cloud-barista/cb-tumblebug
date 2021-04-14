@@ -35,7 +35,7 @@
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
 		'{
 			"command": "'${USERCMD}'"
-		}' | json_pp #|| return 1
+		}' | jq #|| return 1
 #}
 
 #command_mcis_custom

@@ -22,7 +22,8 @@
     echo "## 1. VPC: Get"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/vNet | json_pp #|| return 1
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/vNet | jq
+    echo ""
 #}
 
 #list_vNet

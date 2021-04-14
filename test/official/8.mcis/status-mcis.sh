@@ -41,7 +41,7 @@
 	else
 		MCISID=${MCISPREFIX}-${POSTFIX}
 	fi
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status | json_pp 
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status | jq 
 	
 	#HTTP_CODE=$(curl -o /dev/null -w "%{http_code}\n" -H "${AUTH}" "http://${TumblebugServer}/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status" --silent)
 	#echo "Status: $HTTP_CODE" 

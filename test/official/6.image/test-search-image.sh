@@ -22,13 +22,17 @@
     echo "## 6. image: Search"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/searchImage -H 'Content-Type: application/json' -d \
-        '{ 
+    resp=$(
+        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/searchImage -H 'Content-Type: application/json' -d @- <<EOF
+        { 
             "keywords": [
                     "ubuntu",
                     "18.04"
             ]
-        }' | json_pp #|| return 1
+        }
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #registerImageWithInfo

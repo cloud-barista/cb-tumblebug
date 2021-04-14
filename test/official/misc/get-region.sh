@@ -39,7 +39,7 @@
     RESTSERVER=localhost
 
     # for Cloud Region Info
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/region/${RegionName[$INDEX,$REGION]} | json_pp
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/region/${RegionName[$INDEX,$REGION]} | jq
 
 #}
 

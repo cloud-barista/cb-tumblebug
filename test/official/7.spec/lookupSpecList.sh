@@ -29,10 +29,14 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupSpecs -H 'Content-Type: application/json' -d \
-		'{ 
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-		}' | json_pp #|| return 1
+	resp=$(
+        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupSpecs -H 'Content-Type: application/json' -d @- <<EOF
+		{ 
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
+		}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #lookup_spec_list

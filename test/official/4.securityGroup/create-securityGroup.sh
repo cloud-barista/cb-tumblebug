@@ -29,11 +29,12 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d \
-		'{
-			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",
-			"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d @- <<EOF
+        {
+			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+			"vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"description": "test description",
 				"firewallRules": [
 					{
@@ -49,7 +50,10 @@
 						"Direction": "inbound"
 					}
 				]
-			}' | json_pp #|| return 1
+			}
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #create_securityGroup

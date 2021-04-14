@@ -39,89 +39,108 @@
     RESTSERVER=localhost
 
     # for Cloud Driver Info
-    curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d \
-        '{
-            "ProviderName" : "'${ProviderName[INDEX]}'",
-            "DriverLibFileName" : "'${DriverLibFileName[INDEX]}'",
-            "DriverName" : "'${DriverName[INDEX]}'"
-        }' | json_pp
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d @- <<EOF
+        {
+             "ProviderName" : "${ProviderName[INDEX]}",
+             "DriverLibFileName" : "${DriverLibFileName[INDEX]}",
+             "DriverName" : "${DriverName[INDEX]}"
+         }
+EOF
+    ); echo ${resp} | jq
+    echo ""
 
     # for Cloud Credential Info
-    curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d \
-        "{
-            \"ProviderName\" : \"${ProviderName[INDEX]}\",
-            \"CredentialName\" : \"${CredentialName[INDEX]}\",
-            \"KeyValueInfoList\" : [
-                {
-                    \"Key\" : \"${CredentialKey01[INDEX]:-NULL}\",
-                    \"Value\" : \"${CredentialVal01[INDEX]:-NULL}\"
-                },
-                {
-                    \"Key\" : \"${CredentialKey02[INDEX]:-NULL}\",
-                    \"Value\" : \"${CredentialVal02[INDEX]:-NULL}\"
-                },
-                {
-                    \"Key\" : \"${CredentialKey03[INDEX]:-NULL}\",
-                    \"Value\" : \"${CredentialVal03[INDEX]:-NULL}\"
-                },
-                {
-                    \"Key\" : \"${CredentialKey04[INDEX]:-NULL}\",
-                    \"Value\" : \"${CredentialVal04[INDEX]:-NULL}\"
-                },
-                {
-                    \"Key\" : \"${CredentialKey05[INDEX]:-NULL}\",
-                    \"Value\" : \"${CredentialVal05[INDEX]:-NULL}\"
-                }
-            ]
-        }" | json_pp | head -n2
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d @- <<EOF
+        {
+             "ProviderName" : "${ProviderName[INDEX]}",
+             "CredentialName" : "${CredentialName[INDEX]}",
+             "KeyValueInfoList" : [
+                 {
+                     "Key" : "${CredentialKey01[INDEX]:-NULL}",
+                     "Value" : "${CredentialVal01[INDEX]:-NULL}"
+                 },
+                 {
+                     "Key" : "${CredentialKey02[INDEX]:-NULL}",
+                     "Value" : "${CredentialVal02[INDEX]:-NULL}"
+                 },
+                 {
+                     "Key" : "${CredentialKey03[INDEX]:-NULL}",
+                     "Value" : "${CredentialVal03[INDEX]:-NULL}"
+                 },
+                 {
+                     "Key" : "${CredentialKey04[INDEX]:-NULL}",
+                     "Value" : "${CredentialVal04[INDEX]:-NULL}"
+                 },
+                 {
+                     "Key" : "${CredentialKey05[INDEX]:-NULL}",
+                     "Value" : "${CredentialVal05[INDEX]:-NULL}"
+                 }
+             ]
+         }
+EOF
+    ); echo ${resp} | jq
+    echo ""
 
     # for Cloud Region Info
-
+    # Differenciate Cloud Region Value for Resource Group Name
     if [ "${CSP}" == "azure" ]; then
-        # Differenciate Cloud Region Value for Resource Group Name
-        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
-        '{
-            "ProviderName" : "'${ProviderName[INDEX]}'",
+        resp=$(
+            curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
+            {
+            "ProviderName" : "${ProviderName[INDEX]}",
             "KeyValueInfoList" : [
                 {
-                    "Key" : "'${RegionKey01[$INDEX,$REGION]:-NULL}'",
-                    "Value" : "'${RegionVal01[$INDEX,$REGION]:-NULL}'"
+                    "Key" : "${RegionKey01[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal01[$INDEX,$REGION]:-NULL}"
                 },
                 {
-                    "Key" : "'${RegionKey02[$INDEX,$REGION]:-NULL}'",
-                    "Value" : "'${RegionVal02[$INDEX,$REGION]:-NULL}'-'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
+                    "Key" : "${RegionKey02[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal02[$INDEX,$REGION]:-NULL}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
                 }
             ],
-            "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
-        }' | json_pp #| head -n1
+            "RegionName" : "${RegionName[$INDEX,$REGION]}"
+        }
+EOF
+        ); echo ${resp} | jq
+        echo ""
     else
-        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d \
-        '{
-            "ProviderName" : "'${ProviderName[INDEX]}'",
+        resp=$(
+            curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
+            {
+            "ProviderName" : "${ProviderName[INDEX]}",
             "KeyValueInfoList" : [
                 {
-                    "Key" : "'${RegionKey01[$INDEX,$REGION]:-NULL}'",
-                    "Value" : "'${RegionVal01[$INDEX,$REGION]:-NULL}'"
+                    "Key" : "${RegionKey01[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal01[$INDEX,$REGION]:-NULL}"
                 },
                 {
-                    "Key" : "'${RegionKey02[$INDEX,$REGION]:-NULL}'",
-                    "Value" : "'${RegionVal02[$INDEX,$REGION]:-NULL}'"
+                    "Key" : "${RegionKey02[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal02[$INDEX,$REGION]:-NULL}"
                 }
             ],
-            "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
-        }' | json_pp #| head -n1
+            "RegionName" : "${RegionName[$INDEX,$REGION]}"
+        }
+EOF
+        ); echo ${resp} | jq
+        echo ""
     fi
 
 
     # for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d \
-        '{
-            "CredentialName" : "'${CredentialName[INDEX]}'",
-            "ConfigName" : "'${CONN_CONFIG[$INDEX,$REGION]}'",
-            "ProviderName" : "'${ProviderName[INDEX]}'",
-            "DriverName" : "'${DriverName[INDEX]}'",
-            "RegionName" : "'${RegionName[$INDEX,$REGION]}'"
-        }' | json_pp
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d @- <<EOF
+        {
+            "CredentialName" : "${CredentialName[INDEX]}",
+            "ConfigName" : "${CONN_CONFIG[$INDEX,$REGION]}",
+            "ProviderName" : "${ProviderName[INDEX]}",
+            "DriverName" : "${DriverName[INDEX]}",
+            "RegionName" : "${RegionName[$INDEX,$REGION]}"
+        }
+EOF
+    ); echo ${resp} | jq
+    echo ""
 #}
 
 #register_cloud

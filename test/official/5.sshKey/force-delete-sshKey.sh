@@ -29,10 +29,8 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/sshKey/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d \
-		'{ 
-			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-		}' | json_pp #|| return 1
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/sshKey/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true | jq
+    echo ""
 #}
 
 #force_delete_sshKey
