@@ -31,7 +31,7 @@ function test_sequence()
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >> ./executionStatus
+	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${NUMVM}" >> ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus
@@ -65,7 +65,7 @@ function test_sequence_allcsp_mcir()
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >> ./executionStatus
+	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${NUMVM}" >> ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus

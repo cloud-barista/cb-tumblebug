@@ -2247,7 +2247,6 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			}
 			vmInfoData.Id = vmInfoData.Name
 
-			vmInfoData.Description = k.Description
 			vmInfoData.PublicIP = "Not assigned yet"
 			vmInfoData.PublicDNS = "Not assigned yet"
 
@@ -2260,12 +2259,9 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			vmInfoData.ImageId = k.ImageId
 			vmInfoData.VNetId = k.VNetId
 			vmInfoData.SubnetId = k.SubnetId
-			//vmInfoData.Vnic_id = k.Vnic_id
-			//vmInfoData.Public_ip_id = k.Public_ip_id
 			vmInfoData.SecurityGroupIds = k.SecurityGroupIds
 			vmInfoData.SshKeyId = k.SshKeyId
 			vmInfoData.Description = k.Description
-
 			vmInfoData.VmUserAccount = k.VmUserAccount
 			vmInfoData.VmUserPassword = k.VmUserPassword
 
@@ -2302,10 +2298,6 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 
 	if req.InstallMonAgent != "no" {
 
-		// Sleep for 60 seconds for a safe DF agent installation.
-		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
-		time.Sleep(60 * time.Second)
-
 		check := CheckDragonflyEndpoint()
 		if check != nil {
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
@@ -2314,6 +2306,10 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n===========================\n")
+			// Sleep for 60 seconds for a safe DF agent installation.
+			fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n")
+			time.Sleep(60 * time.Second)
+
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
 			if err != nil {
@@ -2339,14 +2335,32 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 		return fmt.Errorf("Cannot find %s", key)
 	}
 
+	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
+	regionTmp, _ := common.GetRegionInfo(configTmp.RegionName)
+
+	nativeRegion := ""
+	for _, v := range regionTmp.KeyValueInfoList {
+		if strings.ToLower(v.Key) == "region" {
+			nativeRegion = v.Value
+			break
+		}
+	}
+
+	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
+
+	//fmt.Printf("\n[configTmp]\n %+v regionTmp %+v \n", configTmp, regionTmp)
+	//fmt.Printf("\n[vmInfoData.Location]\n %+v\n", vmInfoData.Location)
+
 	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
+	// Make VM object
 	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
 	err := common.CBStore.Put(string(key), string(val))
 	if err != nil {
 		common.CBLog.Error(err)
 	}
-	fmt.Printf("\n[vmInfoData]\n %+v\n", vmInfoData)
+
+	fmt.Printf("\n[vmInfoRequestData]\n %+v\n", vmInfoData)
 
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
 	err = CreateVm(nsId, mcisId, vmInfoData)
@@ -2679,8 +2693,8 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	vmInfoData.VMBlockDisk = tempSpiderVMInfo.VMBlockDisk
 	//vmInfoData.KeyValueList = temp.KeyValueList
 
-	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
-	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
+	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
+	//vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 	//mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)

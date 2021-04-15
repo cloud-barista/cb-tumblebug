@@ -47,7 +47,7 @@ function clean_sequence()
 	if [ "${OUTPUT}" != 0 ]; then
 
 		echo "Retry sshKey: Delete 20 times"
-		for (( c=1; c<=20; c++ ))
+		for (( c=1; c<=40; c++ ))
 		do
 			echo "Trial: ${c}. Sleep 5 before retry sshKey: Delete"
 			dozing 5
@@ -89,7 +89,7 @@ function clean_sequence()
 	if [ "${OUTPUT}" != 0 ]; then
 
 		echo "Retry SecurityGroup: Delete 30 times"
-		for (( c=1; c<=30; c++ ))
+		for (( c=1; c<=50; c++ ))
 		do
 			echo "Trial: ${c}. Sleep 5 before retry SecurityGroup: Delete"
 			dozing 5
@@ -122,7 +122,7 @@ function clean_sequence()
 	if [ "${OUTPUT}" != 0 ]; then
 
 		echo "Retry delete-vNet 40 times"
-		for (( c=1; c<=40; c++ ))
+		for (( c=1; c<=60; c++ ))
 		do
 			echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
 			dozing 5
