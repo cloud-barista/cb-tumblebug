@@ -91,7 +91,7 @@ func LookupKeyValueList(kvl []KeyValue, key string) string {
 }
 
 func PrintJsonPretty(v interface{}) {
-	prettyJSON, err := json.MarshalIndent(v, "", "    ")
+	prettyJSON, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		fmt.Printf("%+v\n", v)
 	} else {
@@ -340,6 +340,58 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 			fmt.Println("whoops:", err2)
 		}
 		return temp, nil
+	}
+}
+
+type RegionInfo struct { // Spider
+	RegionName       string     // ex) "region01"
+	ProviderName     string     // ex) "GCP"
+	KeyValueInfoList []KeyValue // ex) { {region, us-east1},
+	//	 {zone, us-east1-c},
+}
+
+func GetRegionInfo(RegionName string) (RegionInfo, error) {
+
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+		url := SPIDER_REST_URL + "/region/" + RegionName
+
+		client := resty.New()
+
+		resp, err := client.R().
+			SetResult(&RegionInfo{}).
+			//SetError(&SimpleMsg{}).
+			Get(url)
+
+		if err != nil {
+			CBLog.Error(err)
+			content := RegionInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
+
+		fmt.Println(string(resp.Body())) // for debug
+
+		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			CBLog.Error(err)
+			content := RegionInfo{}
+			return content, err
+		}
+
+		temp, _ := resp.Result().(*RegionInfo)
+		return *temp, nil
+
+	} else {
+		// needs GRPC code
+
+		CBLog.Error(err)
+		content := RegionInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider: needs GRPC code")
+		return content, err
+
 	}
 }
 
@@ -720,7 +772,7 @@ func GetObjectValue(key string) (string, error) {
 		CBLog.Error(err)
 		return "", err
 	}
-	if keyValue == nil{
+	if keyValue == nil {
 		return "", nil
 	}
 	return keyValue.Value, nil

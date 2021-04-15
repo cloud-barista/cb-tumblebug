@@ -28,7 +28,7 @@
 	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vm/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-01 -H 'Content-Type: application/json' -d \
 		'{ 
 			"ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"
-		}' | jq
+		}' | jq ''
 #}
 
 #spider_get_vm

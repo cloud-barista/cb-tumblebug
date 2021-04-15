@@ -34,7 +34,7 @@
 
 	if [ -z "$MCISPREFIX" ]
 	then
-		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq || return 1
+		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq '' 
 	else
 		if [ ! -z "$GIVENMCISID" ]
 		then
@@ -44,7 +44,7 @@
 		fi
 		echo ""
 		echo "Terminate and Delete [MCIS: $MCISID]"
-		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID} | jq 
+		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID} | jq '' 
 	fi
 
 

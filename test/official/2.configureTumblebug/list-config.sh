@@ -24,7 +24,7 @@
 
     INDEX=${1}
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/config | jq
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/config | jq ''
     echo ""
 #}
 

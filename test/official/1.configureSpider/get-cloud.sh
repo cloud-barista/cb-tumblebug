@@ -47,22 +47,22 @@
     RESTSERVER=localhost
 
     # for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | jq ''
     echo ""
 
 
     # for Cloud Region Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | jq ''
     echo ""
 
 
     # for Cloud Credential Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[INDEX]} | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[INDEX]} | jq ''
     echo ""
 
     
     # for Cloud Driver Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[INDEX]} | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[INDEX]} | jq ''
     echo ""
 #}
 

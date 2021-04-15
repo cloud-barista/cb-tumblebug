@@ -22,4 +22,4 @@
 
     KEY=${1}
 
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/objects?key=$KEY | jq 
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/objects?key=$KEY | jq '' 

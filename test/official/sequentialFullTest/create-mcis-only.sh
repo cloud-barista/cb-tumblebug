@@ -147,7 +147,7 @@ function test_sequence_allcsp_mcis_vm()
 		echo "[Parallel excution for all CSP regions]"
 
 		INDEXX=${NumCSP}
-		
+
 		# for ((cspi=1;cspi<=INDEXX;cspi++)); do
 		# 	#echo $i
 		# 	INDEXY=${NumRegion[$cspi]}
@@ -211,10 +211,11 @@ function test_sequence_allcsp_mcis_vm()
 						fi
 					done
 				else
+					dozing 6
 					echo ""
 					echo "[Create VM and add it into the MCIS in parallel]"
 					test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $NUMVM $MCISPREFIX $TestSetFile &
-					dozing 1
+
 				fi
 			done
 			

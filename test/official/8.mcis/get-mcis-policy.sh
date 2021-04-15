@@ -43,7 +43,7 @@
 		MCISID=${MCISNAME}
 	fi
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${MCISID} | jq
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${MCISID} | jq ''
 #}
 
 #get_mcis

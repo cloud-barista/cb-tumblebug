@@ -23,7 +23,7 @@
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config | jq
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config | jq ''
     echo ""
 #}
 

@@ -28,7 +28,7 @@
 		    "num_vCPU": 4
 	    }
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 #}
 
