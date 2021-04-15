@@ -29,7 +29,7 @@
 		    "mem_GiB": 2
 	    }
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 #}
 

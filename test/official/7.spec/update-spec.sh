@@ -29,7 +29,7 @@
 			"description": "UpdateSpec() test"
 		}
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 #}
 

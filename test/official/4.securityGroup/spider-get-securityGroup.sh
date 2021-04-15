@@ -26,7 +26,7 @@
 	getCloudIndex $CSP
 
 
-	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/securitygroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' | jq
+	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/securitygroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' | jq ''
 #}
 
 #spider_get_securityGroup

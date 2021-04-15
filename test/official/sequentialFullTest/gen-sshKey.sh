@@ -53,7 +53,7 @@
 	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status`
 	MCISINFO=$(jq '.status.vm' <<< "$MCISINFO")
 
-	echo "$MCISINFO" | jq
+	echo "$MCISINFO" | jq ''
 
 
 	echo ""

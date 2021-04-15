@@ -29,7 +29,7 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec | jq
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec | jq ''
 #}
 
 #unregister_spec

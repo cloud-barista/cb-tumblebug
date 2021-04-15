@@ -47,7 +47,7 @@
              "DriverName" : "${DriverName[INDEX]}"
          }
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 
     # for Cloud Credential Info
@@ -80,7 +80,7 @@ EOF
              ]
          }
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 
     # for Cloud Region Info
@@ -103,7 +103,7 @@ EOF
             "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
-        ); echo ${resp} | jq
+        ); echo ${resp} | jq ''
         echo ""
     else
         resp=$(
@@ -123,7 +123,7 @@ EOF
             "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
-        ); echo ${resp} | jq
+        ); echo ${resp} | jq ''
         echo ""
     fi
 
@@ -139,7 +139,7 @@ EOF
             "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 #}
 

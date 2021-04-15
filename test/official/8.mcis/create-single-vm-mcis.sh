@@ -58,7 +58,7 @@
 				"vmUserPassword": ""
 			}
 			]
-		}' | jq || return 1
+		}' | jq '' 
 #}
 
 #create_mcis

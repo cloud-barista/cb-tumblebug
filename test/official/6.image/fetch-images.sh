@@ -22,7 +22,7 @@
     echo "## 6. image: Fetch"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/fetchImages | jq
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/fetchImages | jq ''
     echo ""
 #}
 

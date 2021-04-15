@@ -34,7 +34,7 @@
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
 			"username": "ubuntu"
-		}' | json_pp | head -n2
+		}' | jq '' | head -n2
 #}
 
 #create_sshKey

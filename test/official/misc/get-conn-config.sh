@@ -39,7 +39,7 @@
     RESTSERVER=localhost
 
     # for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/connConfig/${CONN_CONFIG[$INDEX,$REGION]} | jq
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/connConfig/${CONN_CONFIG[$INDEX,$REGION]} | jq ''
 
 #}
 

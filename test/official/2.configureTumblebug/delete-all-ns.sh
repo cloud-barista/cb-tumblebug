@@ -24,7 +24,7 @@
 
     INDEX=${1}
 
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns | jq
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns | jq ''
     echo ""
 #}
 

@@ -35,7 +35,7 @@
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
 		}
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 #}
 

@@ -39,7 +39,7 @@
             "guestOS": "Ubuntu"
 		}
 EOF
-    ); echo ${resp} | jq
+    ); echo ${resp} | jq ''
     echo ""
 #}
 

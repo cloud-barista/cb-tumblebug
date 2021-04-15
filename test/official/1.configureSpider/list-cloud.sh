@@ -29,22 +29,22 @@
     RESTSERVER=localhost
 
     # for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig | jq ''
     echo ""
 
 
     # for Cloud Region Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region | jq ''
     echo ""
 
 
     # for Cloud Credential Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential | jq ''
     echo ""
     
     
     # for Cloud Driver Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver | jq
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver | jq ''
     echo ""
 #}
 
