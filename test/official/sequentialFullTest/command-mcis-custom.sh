@@ -7,7 +7,7 @@
         exit
     fi
 
-	TestSetFile=${5:-../testSet.env}
+	TestSetFile=${4:-../testSet.env}
     
     FILE=$TestSetFile
     if [ ! -f "$FILE" ]; then
@@ -29,13 +29,23 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	USERCMD=${4}
+	USERCMD=${5}
 
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
-		'{
-			"command": "'${USERCMD}'"
-		}' | jq '' #|| return 1
+
+	if [ "${INDEX}" == "0" ]; then
+		MCISPREFIX=avengers
+		MCISID=${MCISPREFIX}-${POSTFIX}
+	fi
+
+	VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${USERCMD}"
+	} 
+EOF
+	)
+	echo "${VAR1}" | jq ''
+
 #}
 
 #command_mcis_custom
