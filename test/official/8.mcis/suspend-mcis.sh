@@ -1,36 +1,42 @@
 #!/bin/bash
 
 #function suspend_mcis() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
 
-	TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+TestSetFile=${4:-../testSet.env}
 
-	echo "####################################################################"
-	echo "## 8. VM: Suspend MCIS"
-	echo "####################################################################"
+FILE=$TestSetFile
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
+source $TestSetFile
+source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+
+echo "####################################################################"
+echo "## 8. VM: Suspend MCIS"
+echo "####################################################################"
+
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
+
+source ../common-functions.sh
+getCloudIndex $CSP
 
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
+if [ -z "$MCISPREFIX" ]; then
+	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+	if [ "${INDEX}" == "0" ]; then
+		# MCISPREFIX=avengers
+		MCISID=${MCISPREFIX}-${POSTFIX}
+	fi
+else
+	MCISID=${MCISPREFIX}-${POSTFIX}
+fi
 
-	source ../common-functions.sh
-	getCloudIndex $CSP
+ControlCmd=suspend
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=${ControlCmd} | jq ''
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=suspend | jq ''
-#}
 
 #suspend_mcis

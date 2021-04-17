@@ -1,7 +1,6 @@
 #!/bin/bash
 
-function clean_sequence()
-{
+function clean_sequence() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
@@ -14,12 +13,8 @@ function clean_sequence()
 	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
 	OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
-	echo "${OUTPUT1}"
-	echo "${OUTPUT2}"
-	echo "${OUTPUT3}"
-	
-	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]
-	then
+
+	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]; then
 		echo "============== sleep 30 before delete MCIS obj"
 		dozing 30
 	fi
@@ -43,12 +38,11 @@ function clean_sequence()
 	OUTPUT=$(../5.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
-	echo "${OUTPUT}"
+
 	if [ "${OUTPUT}" != 0 ]; then
 
 		echo "Retry sshKey: Delete 20 times"
-		for (( c=1; c<=40; c++ ))
-		do
+		for ((c = 1; c <= 40; c++)); do
 			echo "Trial: ${c}. Sleep 5 before retry sshKey: Delete"
 			dozing 5
 			# retry sshKey: Delete
@@ -62,8 +56,7 @@ function clean_sequence()
 				break
 			fi
 
-			if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]
-			then
+			if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]; then
 				echo "Problem in sshKey: Delete. Exit without unregister-cloud."
 				exit
 			fi
@@ -89,8 +82,7 @@ function clean_sequence()
 	if [ "${OUTPUT}" != 0 ]; then
 
 		echo "Retry SecurityGroup: Delete 30 times"
-		for (( c=1; c<=50; c++ ))
-		do
+		for ((c = 1; c <= 50; c++)); do
 			echo "Trial: ${c}. Sleep 5 before retry SecurityGroup: Delete"
 			dozing 5
 			# retry SecurityGroup: Delete
@@ -104,15 +96,13 @@ function clean_sequence()
 				break
 			fi
 
-			if [ "${c}" == 30 ] && [ "${OUTPUT2}" == 1 ]
-			then
+			if [ "${c}" == 30 ] && [ "${OUTPUT2}" == 1 ]; then
 				echo "Problem in SecurityGroup: Delete. Exit without unregister-cloud."
 				exit
 			fi
 		done
 
 	fi
-
 
 	echo '## 3. vNet: Delete'
 	OUTPUT=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX $TestSetFile)
@@ -122,8 +112,7 @@ function clean_sequence()
 	if [ "${OUTPUT}" != 0 ]; then
 
 		echo "Retry delete-vNet 40 times"
-		for (( c=1; c<=60; c++ ))
-		do
+		for ((c = 1; c <= 60; c++)); do
 			echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
 			dozing 5
 			# retry delete-vNet
@@ -137,8 +126,7 @@ function clean_sequence()
 				break
 			fi
 
-			if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]
-			then
+			if [ "${c}" == 20 ] && [ "${OUTPUT2}" == 1 ]; then
 				echo "Problem in delete-vNet. Exit without unregister-cloud."
 				exit
 			fi
@@ -163,92 +151,85 @@ function clean_sequence()
 	sed -i "/${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
-	cat  ./executionStatus
+	cat ./executionStatus
 	echo ""
 
 }
 
+SECONDS=0
 
-	SECONDS=0
+FILE=../credentials.conf
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
 
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+TestSetFile=${4:-../testSet.env}
 
-	FILE=../credentials.conf
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+FILE=$TestSetFile
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
+source $TestSetFile
+source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+source ../credentials.conf
 
-	TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
-	source ../credentials.conf
+echo "####################################################################"
+echo "## Remove MCIS test to Zero Base"
+echo "####################################################################"
 
-	echo "####################################################################"
-	echo "## Remove MCIS test to Zero Base"
-	echo "####################################################################"
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
+source ../common-functions.sh
+getCloudIndex $CSP
 
-	source ../common-functions.sh
-	getCloudIndex $CSP
+if [ "${INDEX}" == "0" ]; then
+	echo "[Parallel excution for all CSP regions]"
 
-	if [ "${INDEX}" == "0" ]; then
-		echo "[Parallel excution for all CSP regions]"
+	# MCISPREFIX=avengers
+	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
+	../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
+	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
 
-		MCISPREFIX=avengers
-		../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX 
-		../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
-		../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX 
+	INDEXX=${NumCSP}
+	for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+		#echo $i
+		INDEXY=${NumRegion[$cspi]}
+		CSP=${CSPType[$cspi]}
+		for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+			#echo $j
+			REGION=$cspj
 
-		INDEXX=${NumCSP}
-		for ((cspi=1;cspi<=INDEXX;cspi++)); do
-			#echo $i
-			INDEXY=${NumRegion[$cspi]}
-			CSP=${CSPType[$cspi]}
-			for ((cspj=1;cspj<=INDEXY;cspj++)); do
-				#echo $j
-				REGION=$cspj
+			echo $CSP
+			echo $REGION
 
-				echo $CSP
-				echo $REGION
-
-				clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
-				dozing 2
-			done
+			clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
+			dozing 2
 		done
-		wait
+	done
+	wait
 
-		echo ""
-		echo "[Cleaning related commands in history file executionStatus]"
-		sed -i "/all 1 ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
-		echo ""
-		echo "[Executed Command List]"
-		cat  ./executionStatus
-		echo ""
+	echo ""
+	echo "[Cleaning related commands in history file executionStatus]"
+	sed -i "/all 1 ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
+	echo ""
+	echo "[Executed Command List]"
+	cat ./executionStatus
+	echo ""
 
-	else
-		echo "[Single excution for a CSP region]"
+else
+	echo "[Single excution for a CSP region]"
 
-		clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
+	clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
 
-	fi
+fi
 
-	duration=$SECONDS
-	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
+duration=$SECONDS
+echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 #}
 
 #cleanAll

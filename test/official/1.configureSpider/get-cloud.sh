@@ -1,11 +1,7 @@
 #!/bin/bash
 
 #function get_cloud() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
     FILE=../credentials.conf
     if [ ! -f "$FILE" ]; then
@@ -13,14 +9,7 @@
         exit
     fi
 
-    TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
+
     TestSetFile=${4:-../testSet.env}
     
     FILE=$TestSetFile

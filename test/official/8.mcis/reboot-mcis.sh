@@ -1,35 +1,43 @@
 #!/bin/bash
 
 #function reboot_mcis() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
 
-	TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+TestSetFile=${4:-../testSet.env}
 
-	echo "####################################################################"
-	echo "## 8. VM: Reboot MCIS"
-	echo "####################################################################"
+FILE=$TestSetFile
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
+source $TestSetFile
+source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
+echo "####################################################################"
+echo "## 8. VM: Reboot MCIS"
+echo "####################################################################"
 
-	source ../common-functions.sh
-	getCloudIndex $CSP
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=reboot | jq ''
+source ../common-functions.sh
+getCloudIndex $CSP
+
+
+if [ -z "$MCISPREFIX" ]; then
+	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+	if [ "${INDEX}" == "0" ]; then
+		# MCISPREFIX=avengers
+		MCISID=${MCISPREFIX}-${POSTFIX}
+	fi
+else
+	MCISID=${MCISPREFIX}-${POSTFIX}
+fi
+
+ControlCmd=reboot
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=${ControlCmd} | jq ''
+
 #}
 
 #reboot_mcis

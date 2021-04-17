@@ -1,11 +1,7 @@
 #!/bin/bash
 
 #function create_sshKey() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
 	TestSetFile=${4:-../testSet.env}
     
@@ -34,7 +30,7 @@
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
 			"username": "ubuntu"
-		}' | jq '' | head -n2
+		}' | jq '.message'
 #}
 
 #create_sshKey

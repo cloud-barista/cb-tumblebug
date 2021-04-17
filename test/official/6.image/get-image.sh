@@ -1,11 +1,7 @@
 #!/bin/bash
 
 #function get_image() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
 	TestSetFile=${4:-../testSet.env}
     

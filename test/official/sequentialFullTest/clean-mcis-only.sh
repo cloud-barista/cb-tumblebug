@@ -1,7 +1,6 @@
 #!/bin/bash
 
-function clean_sequence()
-{
+function clean_sequence() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
@@ -14,12 +13,8 @@ function clean_sequence()
 	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
 	OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
-	echo "${OUTPUT1}"
-	echo "${OUTPUT2}"
-	echo "${OUTPUT3}"
-	
-	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]
-	then
+
+	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]; then
 		echo "============== sleep 20 before delete MCIS obj"
 		dozing 20
 	fi
@@ -113,7 +108,6 @@ function clean_sequence()
 
 	# fi
 
-
 	# echo '## 3. vNet: Delete'
 	# OUTPUT=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX $TestSetFile)
 	# echo "${OUTPUT}"
@@ -163,104 +157,94 @@ function clean_sequence()
 	sed -i "/${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
-	cat  ./executionStatus
+	cat ./executionStatus
 	echo ""
 
 }
 
+SECONDS=0
 
-	SECONDS=0
+FILE=../credentials.conf
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
 
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+TestSetFile=${4:-../testSet.env}
 
-	FILE=../credentials.conf
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+FILE=$TestSetFile
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
+source $TestSetFile
+source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+source ../credentials.conf
 
-	TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
-	source ../credentials.conf
+echo "####################################################################"
+echo "## Remove MCIS"
+echo "####################################################################"
 
-	echo "####################################################################"
-	echo "## Remove MCIS"
-	echo "####################################################################"
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
+source ../common-functions.sh
+getCloudIndex $CSP
 
-	source ../common-functions.sh
-	getCloudIndex $CSP
+if [ "${INDEX}" == "0" ]; then
+	echo "[Parallel excution for all CSP regions]"
 
-	if [ "${INDEX}" == "0" ]; then
-		echo "[Parallel excution for all CSP regions]"
+	# MCISPREFIX=avengers
 
-		MCISPREFIX=avengers
+	OUTPUT=$(../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX)
+	echo "${OUTPUT}"
+	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
+	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
+	OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
 
-		OUTPUT=$(../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX)
-		echo "${OUTPUT}"
-		OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
-		OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
-		OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
-		echo "${OUTPUT1}"
-		echo "${OUTPUT2}"
-		echo "${OUTPUT3}"
-		if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]
-		then
-			echo "============== sleep 20 before delete MCIS obj"
-			dozing 20
-		fi
-		../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX 
-
-		# INDEXX=${NumCSP}
-		# for ((cspi=1;cspi<=INDEXX;cspi++)); do
-		# 	#echo $i
-		# 	INDEXY=${NumRegion[$cspi]}
-		# 	CSP=${CSPType[$cspi]}
-		# 	for ((cspj=1;cspj<=INDEXY;cspj++)); do
-		# 		#echo $j
-		# 		REGION=$cspj
-
-		# 		echo $CSP
-		# 		echo $REGION
-
-		# 		clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
-		# 		dozing 2
-		# 	done
-		# done
-		# wait
-
-		echo ""
-		echo "[Cleaning related commands in history file executionStatus]"
-		sed -i "/all 1 ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
-		echo ""
-		echo "[Executed Command List]"
-		cat  ./executionStatus
-		echo ""
-
-	else
-		echo "[Single excution for a CSP region]"
-
-		clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
-
+	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]; then
+		echo "============== sleep 20 before delete MCIS obj"
+		dozing 20
 	fi
+	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
 
-	duration=$SECONDS
-	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
+	# INDEXX=${NumCSP}
+	# for ((cspi=1;cspi<=INDEXX;cspi++)); do
+	# 	#echo $i
+	# 	INDEXY=${NumRegion[$cspi]}
+	# 	CSP=${CSPType[$cspi]}
+	# 	for ((cspj=1;cspj<=INDEXY;cspj++)); do
+	# 		#echo $j
+	# 		REGION=$cspj
+
+	# 		echo $CSP
+	# 		echo $REGION
+
+	# 		clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
+	# 		dozing 2
+	# 	done
+	# done
+	# wait
+
+	echo ""
+	echo "[Cleaning related commands in history file executionStatus]"
+	sed -i "/all 1 ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
+	echo ""
+	echo "[Executed Command List]"
+	cat ./executionStatus
+	echo ""
+
+else
+	echo "[Single excution for a CSP region]"
+
+	clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
+
+fi
+
+duration=$SECONDS
+echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 #}
 
 #cleanAll

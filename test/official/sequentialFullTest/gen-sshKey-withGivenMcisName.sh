@@ -4,11 +4,7 @@
 
 
 
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
 	TestSetFile=${5:-../testSet.env}
     
@@ -37,7 +33,7 @@
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 	if [ "${INDEX}" == "0" ]; then
-		MCISPREFIX=avengers
+		# MCISPREFIX=avengers
 		MCISID=${MCISPREFIX}-${POSTFIX}
 	fi
 

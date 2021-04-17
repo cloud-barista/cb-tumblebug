@@ -1,11 +1,7 @@
 #!/bin/bash
 
 #function force_delete_sshKey() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
 	TestSetFile=${4:-../testSet.env}
     
