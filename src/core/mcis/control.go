@@ -106,37 +106,48 @@ type RegionInfo struct { // Spider
 }
 
 type TbMcisReq struct {
-	Name           string    `json:"name"`
-	Vm             []TbVmReq `json:"vm"`
-	Placement_algo string    `json:"placement_algo"`
+	Name string `json:"name"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
-	Description string `json:"description"`
-	Label       string `json:"label"`
+	Label string `json:"label"`
+
+	Placement_algo string `json:"placement_algo"`
+	Description    string `json:"description"`
+
+	Vm []TbVmReq `json:"vm"`
 }
 
 type TbMcisInfo struct {
-	Id             string     `json:"id"`
-	Name           string     `json:"name"`
-	Vm             []TbVmInfo `json:"vm"`
-	Placement_algo string     `json:"placement_algo"`
-	Description    string     `json:"description"`
-	Label          string     `json:"label"`
-	Status         string     `json:"status"`
-	TargetStatus   string     `json:"targetStatus"`
-	TargetAction   string     `json:"targetAction"`
+	Id           string `json:"id"`
+	Name         string `json:"name"`
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
-	// Disabled for now
-	//Vm             []vmOverview `json:"vm"`
+
+	Label string `json:"label"`
+
+	Placement_algo string     `json:"placement_algo"`
+	Description    string     `json:"description"`
+	Vm             []TbVmInfo `json:"vm"`
 }
 
 // struct TbVmReq is to get requirements to create a new server instance.
 type TbVmReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name             string   `json:"name"`
+	Name string `json:"name"`
+
+	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
+	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
+
+	Label string `json:"label"`
+
+	Description string `json:"description"`
+
 	ConnectionName   string   `json:"connectionName"`
 	SpecId           string   `json:"specId"`
 	ImageId          string   `json:"imageId"`
@@ -146,10 +157,6 @@ type TbVmReq struct {
 	SshKeyId         string   `json:"sshKeyId"`
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
-	Description      string   `json:"description"`
-	Label            string   `json:"label"`
-	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
-	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
 }
 
 // struct TbVmGroupInfo is to define an object that includes homogeneous VMs.
@@ -162,29 +169,31 @@ type TbVmGroupInfo struct {
 
 // struct TbVmGroupInfo is to define a server instance object
 type TbVmInfo struct {
-	Id               string   `json:"id"`
-	Name             string   `json:"name"`
-	ConnectionName   string   `json:"connectionName"`
-	SpecId           string   `json:"specId"`
-	ImageId          string   `json:"imageId"`
-	VNetId           string   `json:"vNetId"`
-	SubnetId         string   `json:"subnetId"`
-	SecurityGroupIds []string `json:"securityGroupIds"`
-	SshKeyId         string   `json:"sshKeyId"`
-	VmUserAccount    string   `json:"vmUserAccount"`
-	VmUserPassword   string   `json:"vmUserPassword"`
-	Description      string   `json:"description"`
-	Label            string   `json:"label"`
+	Id   string `json:"id"`
+	Name string `json:"name"`
+
 	// defined if the VM is in a group
 	VmGroupId string `json:"vmGroupId"`
-	// Created time
-	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
-	//Vnic_id            string   `json:"vnic_id"`
-	//Public_ip_id       string   `json:"public_ip_id"`
 
 	Location GeoLocation `json:"location"`
 
-	// Provided by CB-Spider
+	// Required by CB-Tumblebug
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+
+	// Montoring agent status
+	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+
+	// Created time
+	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
+
+	// Latest system message such as error message
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+
+	Label       string `json:"label"`
+	Description string `json:"description"`
+
 	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
 	PublicIP    string     `json:"publicIP"`
 	SSHPort     string     `json:"sshPort"`
@@ -194,16 +203,15 @@ type TbVmInfo struct {
 	VMBootDisk  string     `json:"vmBootDisk"` // ex) /dev/sda1
 	VMBlockDisk string     `json:"vmBlockDisk"`
 
-	// Required by CB-Tumblebug
-	Status       string `json:"status"`
-	TargetStatus string `json:"targetStatus"`
-	TargetAction string `json:"targetAction"`
-
-	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
-
-	// Montoring agent status
-	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+	ConnectionName   string   `json:"connectionName"`
+	SpecId           string   `json:"specId"`
+	ImageId          string   `json:"imageId"`
+	VNetId           string   `json:"vNetId"`
+	SubnetId         string   `json:"subnetId"`
+	SecurityGroupIds []string `json:"securityGroupIds"`
+	SshKeyId         string   `json:"sshKeyId"`
+	VmUserAccount    string   `json:"vmUserAccount"`
+	VmUserPassword   string   `json:"vmUserPassword"`
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
@@ -220,33 +228,41 @@ type GeoLocation struct {
 type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
+
 	//Vm_num string         `json:"vm_num"`
-	Status        string           `json:"status"`
-	TargetStatus  string           `json:"targetStatus"`
-	TargetAction  string           `json:"targetAction"`
-	Vm            []TbVmStatusInfo `json:"vm"`
-	MasterVmId    string           `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
-	MasterIp      string           `json:"masterIp" example:"32.201.134.113"`
-	MasterSSHPort string           `json:"masterSSHPort"`
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
+
+	MasterVmId    string `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
+	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
+	MasterSSHPort string `json:"masterSSHPort"`
+
+	Vm []TbVmStatusInfo `json:"vm"`
 }
 
 // struct TbVmStatusInfo is to define simple information of VM with updated status
 type TbVmStatusInfo struct {
-	Id            string      `json:"id"`
-	Csp_vm_id     string      `json:"csp_vm_id"`
-	Name          string      `json:"name"`
-	Status        string      `json:"status"`
-	TargetStatus  string      `json:"targetStatus"`
-	TargetAction  string      `json:"targetAction"`
-	Native_status string      `json:"native_status"`
-	Public_ip     string      `json:"public_ip"`
-	SSHPort       string      `json:"sshPort"`
-	Private_ip    string      `json:"private_ip"`
-	Location      GeoLocation `json:"location"`
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Csp_vm_id string `json:"csp_vm_id"`
+
+	Status        string `json:"status"`
+	TargetStatus  string `json:"targetStatus"`
+	TargetAction  string `json:"targetAction"`
+	Native_status string `json:"native_status"`
+
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+
+	Public_ip  string `json:"public_ip"`
+	Private_ip string `json:"private_ip"`
+	SSHPort    string `json:"sshPort"`
+
+	Location GeoLocation `json:"location"`
 }
 
 type McisRecommendReq struct {

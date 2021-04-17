@@ -1,17 +1,5 @@
 #!/bin/bash
 
-function dozing()
-{
-	duration=$1
-	printf "Dozing for %s : " $duration
-	for (( i=1; i<=$duration; i++ ))
-	do
-		printf "%s " $i
-		sleep 1
-	done
-	echo "(Back to work)"
-}
-
 # Function for individual CSP test
 function test_sequence()
 {
@@ -42,7 +30,7 @@ function test_sequence()
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >> ./executionStatus
+	echo "[CMD] (MCIRS) ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >> ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus
@@ -50,11 +38,7 @@ function test_sequence()
 }
 
 
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
 	FILE=../credentials.conf
     if [ ! -f "$FILE" ]; then

@@ -12,6 +12,16 @@ function dozing()
 	echo "(Finish dozing. Back to work)"
 }
 
+function readParameters()
+{
+	CSP=${1}
+	REGION=${2:-1}
+	POSTFIX=${3:-developer}
+		
+	echo "[Input parameters]"
+	echo "CSP: $CSP, REGION: $REGION, POSTFIX: $POSTFIX,"
+}
+
 # function getCloudIndex()
 # {
 # 	local CSP=$1

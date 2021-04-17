@@ -1,11 +1,7 @@
 #!/bin/bash
 
 #function register_cloud() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
     FILE=../credentials.conf
     if [ ! -f "$FILE" ]; then
@@ -80,7 +76,7 @@ EOF
              ]
          }
 EOF
-    ); echo ${resp} | jq ''
+    ); echo ${resp} | jq '.message'
     echo ""
 
     # for Cloud Region Info

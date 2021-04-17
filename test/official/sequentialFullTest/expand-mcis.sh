@@ -1,11 +1,7 @@
 #!/bin/bash
 
 #function add-vm-to-mcis() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
 	TestSetFile=${6:-../testSet.env}
     

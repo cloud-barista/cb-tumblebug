@@ -3,11 +3,7 @@
 
 	SECONDS=0
 
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+
 
 	echo "[Check jq package (if not, install)]"
 	if ! dpkg-query -W -f='${Status}' jq  | grep "ok installed"; then sudo apt install -y jq; fi
@@ -38,7 +34,7 @@
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 	if [ "${INDEX}" == "0" ]; then
-		MCISPREFIX=avengers
+		# MCISPREFIX=avengers
 		MCISID=${MCISPREFIX}-${POSTFIX}
 	fi
 

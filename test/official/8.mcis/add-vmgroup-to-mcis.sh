@@ -1,13 +1,9 @@
 #!/bin/bash
 
 #function add-vm-to-mcis() {
-    FILE=../conf.env
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
 
-	TestSetFile=${6:-../testSet.env}
+
+	TestSetFile=${4:-../testSet.env}
     
     FILE=$TestSetFile
     if [ ! -f "$FILE" ]; then
@@ -25,8 +21,8 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	NUMVM=${4:-3}
-	MCISPREFIX=${5:-avengers}
+	NUMVM=${5:-3}
+
 	MCISID=${MCISPREFIX}-${POSTFIX}
 
 	source ../common-functions.sh
