@@ -115,7 +115,7 @@ EOF
 
 echo "Done!"
 duration=$SECONDS
-echo "[CMD] ${_self}"
+echo "[CMD] $0"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 echo ""
 
