@@ -1,119 +1,115 @@
 #!/bin/bash
 
+SECONDS=0
 
-	SECONDS=0
+echo "[Check jq package (if not, install)]"
+if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
 
+TestSetFile=${4:-../testSet.env}
 
+FILE=$TestSetFile
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
+source $TestSetFile
+source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
-	echo "[Check jq package (if not, install)]"
-	if ! dpkg-query -W -f='${Status}' jq  | grep "ok installed"; then sudo apt install -y jq; fi
-	
-	TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+echo "####################################################################"
+echo "## Command (SSH) to MCIS "
+echo "####################################################################"
 
-	echo "####################################################################"
-	echo "## Command (SSH) to MCIS "
-	echo "####################################################################"
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
+source ../common-functions.sh
+getCloudIndex $CSP
 
-	source ../common-functions.sh
-	getCloudIndex $CSP
+MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
 
+if [ "${INDEX}" == "0" ]; then
+	# MCISPREFIX=avengers
+	MCISID=${MCISPREFIX}-${POSTFIX}
+fi
 
-	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status)
+VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
+MASTERIP=$(jq -r '.status.masterIp' <<<"$MCISINFO")
+MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCISINFO")
 
-	if [ "${INDEX}" == "0" ]; then
-		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
-	fi
+echo "MASTERIP: $MASTERIP"
+echo "MASTERVM: $MASTERVM"
+echo "VMARRAY: $VMARRAY"
 
-	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status`
-	VMARRAY=$(jq -r '.status.vm' <<< "$MCISINFO")
-	MASTERIP=$(jq -r '.status.masterIp' <<< "$MCISINFO")
-	MASTERVM=$(jq -r '.status.masterVmId' <<< "$MCISINFO")
-	
-	echo "MASTERIP: $MASTERIP"
-	echo "MASTERVM: $MASTERVM"	
-	echo "VMARRAY: $VMARRAY"
+IPLIST=""
 
-	IPLIST=""
-
-	for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
-		_jq() {
+for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
+	_jq() {
 		echo ${row} | base64 --decode | jq -r ${1}
-		}
+	}
 
-		IPLIST+=$(_jq '.public_ip')
-		IPLIST+=" "
-	done
+	IPLIST+=$(_jq '.public_ip')
+	IPLIST+=" "
+done
 
-	IPLIST=`echo ${IPLIST}`
-	echo "IPLIST: $IPLIST"
+IPLIST=$(echo ${IPLIST})
+echo "IPLIST: $IPLIST"
 
-	PRIVIPLIST=""
+PRIVIPLIST=""
 
-	for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
-		_jq() {
+for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
+	_jq() {
 		echo ${row} | base64 --decode | jq -r ${1}
-		}
+	}
 
-		PRIVIPLIST+=$(_jq '.private_ip')
-		PRIVIPLIST+=" "
-	done
+	PRIVIPLIST+=$(_jq '.private_ip')
+	PRIVIPLIST+=" "
+done
 
-	PRIVIPLIST=`echo ${PRIVIPLIST}`
-	echo "PRIVIPLIST: $PRIVIPLIST"
+PRIVIPLIST=$(echo ${PRIVIPLIST})
+echo "PRIVIPLIST: $PRIVIPLIST"
 
-	LAUNCHCMD="sudo scope launch $IPLIST $PRIVIPLIST"
-	#echo $LAUNCHCMD
+LAUNCHCMD="sudo scope launch $IPLIST $PRIVIPLIST"
+#echo $LAUNCHCMD
 
-	echo ""
-	echo "Installing Weavescope to MCIS..."	
-	echo ""
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
+echo ""
+echo "Installing Weavescope to MCIS..."
+echo ""
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
 	'{
 	"command": "sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L git.io/scope -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
-	}' | jq '' 
-	echo ""
+	}' | jq ''
+echo ""
 
-	echo "Launching Weavescope for master node..."
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
+echo "Launching Weavescope for master node..."
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
 EOF
-	#LAUNCHCMD="sudo scope launch $MASTERIP"
+#LAUNCHCMD="sudo scope launch $MASTERIP"
 
-	echo ""
-	echo "[MCIS Weavescope: master node only] Access to"
-	echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
-	echo ""	
-	echo "Working on clustring..."	
+echo ""
+echo "[MCIS Weavescope: master node only] Access to"
+echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
+echo ""
+echo "Working on clustring..."
 
-	echo "Launching Weavescope for the other nodes..."
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+echo "Launching Weavescope for the other nodes..."
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
 EOF
 
-	echo "Done!"	
-	duration=$SECONDS
-	echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
-	echo ""
+echo "Done!"
+duration=$SECONDS
+echo "[CMD] ${_self}"
+echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
+echo ""
 
-	echo "[MCIS Weavescope: complete cluster] Access to"
-	echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
-	echo ""	
-
+echo "[MCIS Weavescope: complete cluster] Access to"
+echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
+echo ""

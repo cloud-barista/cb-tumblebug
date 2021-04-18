@@ -244,6 +244,7 @@ else
 fi
 
 duration=$SECONDS
+echo "[CMD] ${_self}"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 #}
 
