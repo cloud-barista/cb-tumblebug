@@ -95,11 +95,19 @@ echo "WHOLE_PrivateIPList: $WHOLE_PRIVIPLIST"
 for MCISID in "$@"; do
     echo ""
     echo "Installing Weavescope to MCIS..."
+    ScopeInstallFile="git.io/scope"
+    ScopeInstallFile="https://gist.githubusercontent.com/seokho-son/bb2703ca49555f9afe0d0097894c74fa/raw/9eb65b296b85bc53f53af3e8733603d807fb9287/scope"
+    INSTALLCMD="sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L $ScopeInstallFile -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
     echo ""
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
-        '{
-        "command": "sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L git.io/scope -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
-        }' | jq ''
+
+    VAR1=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${INSTALLCMD}"
+	}
+EOF
+    )
+    echo "${VAR1}" | jq ''
     echo ""
 done
 
