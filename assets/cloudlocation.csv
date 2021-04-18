@@ -112,7 +112,7 @@ alibaba,eu-west-1,UK (London),51.8000,-0.2000
 alibaba,me-east-1,UAE (Dubai),25.2770,55.2962
 cloudit,default,South Korea (Seoul),37.2665,126.7780
 mock,default,South Korea (Seoul),37.0000,126.0000
-openstack,RegionOne,South Korea (Daejeon),36.3804,127.3650
+openstack,regionone,South Korea (Daejeon),36.3804,127.3650
 ncp,kr-1,South Korea (Seoul),37.4767,126.8841
 ncp,kr-2,South Korea (Seoul),37.3881,126.9705
 ncp,hk-1,Hong Kong,22.3964,114.1095

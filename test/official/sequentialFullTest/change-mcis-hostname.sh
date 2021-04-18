@@ -46,11 +46,12 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	connectionName=$(_jq '.connectionName')
     publicIP=$(_jq '.publicIP')
     
+    echo "VMID: $VMID"
     echo "connectionName: $connectionName"
     echo "publicIP: $publicIP"
 
     ChangeHostCMD="sudo hostnamectl set-hostname ${connectionName}-${publicIP}; sudo hostname -f"
-    ./command-mcis-vm-custom.sh "$@" "${VMID}" "${ChangeHostCMD}"
+    ./command-mcis-vm-custom.sh "${1}" "${2}" "${3}" "${VMID}" "${ChangeHostCMD}"
 
 done
 

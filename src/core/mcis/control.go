@@ -2356,7 +2356,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 	nativeRegion := ""
 	for _, v := range regionTmp.KeyValueInfoList {
-		if strings.ToLower(v.Key) == "region" {
+		if strings.ToLower(v.Key) == "region" || strings.ToLower(v.Key) == "location" {
 			nativeRegion = v.Value
 			break
 		}
