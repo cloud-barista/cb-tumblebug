@@ -98,6 +98,8 @@ curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/
 EOF
 #LAUNCHCMD="sudo scope launch $MASTERIP"
 
+LAUNCHCMD="sudo scope launch $MASTERIP $PRIVIPLIST"
+
 echo ""
 echo "[MCIS Weavescope: master node only] Access to"
 echo " $MASTERIP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"

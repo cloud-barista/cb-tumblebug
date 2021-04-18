@@ -45,19 +45,22 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
     VMID=$(_jq '.id')
 	connectionName=$(_jq '.connectionName')
     publicIP=$(_jq '.publicIP')
+    cloudType=$(_jq '.location.cloudType')
     
     echo "VMID: $VMID"
     echo "connectionName: $connectionName"
     echo "publicIP: $publicIP"
 
-    ChangeHostCMD="sudo hostnamectl set-hostname ${connectionName}-${publicIP}; sudo hostname -f"
-    ./command-mcis-vm-custom.sh "${1}" "${2}" "${3}" "${VMID}" "${ChangeHostCMD}"
+    getCloudIndexGeneral $cloudType
 
+    ChangeHostCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${connectionName}-${publicIP}; sudo hostname -f"
+    ./command-mcis-vm-custom.sh "${1}" "${2}" "${3}" "${4}" "${VMID}" "${ChangeHostCMD}" &
 done
+wait
 
 echo "Done!"
 duration=$SECONDS
-echo "[CMD] ${_self}"
+echo "[CMD] $0"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 echo ""
 
