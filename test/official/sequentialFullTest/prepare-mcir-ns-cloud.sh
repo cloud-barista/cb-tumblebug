@@ -34,6 +34,7 @@ function test_sequence() {
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 }
 
@@ -67,6 +68,7 @@ function test_sequence_allcsp_mcir() {
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 }

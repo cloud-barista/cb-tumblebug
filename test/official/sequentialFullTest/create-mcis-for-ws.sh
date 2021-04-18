@@ -33,6 +33,7 @@ function test_sequence() {
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 }
 

@@ -21,6 +21,7 @@ function test_sequence() {
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 }
 
@@ -45,6 +46,7 @@ function test_sequence_allcsp_mcis() {
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 }

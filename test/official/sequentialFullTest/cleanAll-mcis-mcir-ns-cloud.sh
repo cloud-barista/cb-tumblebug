@@ -152,6 +152,7 @@ function clean_sequence() {
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 }
@@ -219,6 +220,7 @@ if [ "${INDEX}" == "0" ]; then
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 else
