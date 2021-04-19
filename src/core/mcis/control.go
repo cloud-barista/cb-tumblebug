@@ -47,6 +47,7 @@ const StatusSuspending string = "Suspending"
 const StatusResuming string = "Resuming"
 const StatusRebooting string = "Rebooting"
 const StatusTerminating string = "Terminating"
+const StatusUndefined string = "Undefined"
 const StatusComplete string = "None"
 
 const milkywayPort string = ":1324/milkyway/"
@@ -2563,13 +2564,16 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 
-		//fmt.Println(string(body))
+		if err != nil {
+			fmt.Println(err)
+			common.CBLog.Error(err)
+			return err
+		}
 
 		tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
-		err2 := json.Unmarshal(body, &tempSpiderVMInfo)
+		err = json.Unmarshal(body, &tempSpiderVMInfo)
 
-		if err2 != nil {
-			fmt.Println(err2)
+		if err != nil {
 			fmt.Println(err)
 			common.CBLog.Error(err)
 			return err
@@ -3746,17 +3750,17 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	} else if statusResponseTmp.Status == "Terminated" {
 		statusResponseTmp.Status = StatusTerminated
 	} else {
-		statusResponseTmp.Status = "statusUndefined"
+		statusResponseTmp.Status = StatusUndefined
 	}
 
 	//Correct undefined status using TargetAction
 	if vmStatusTmp.TargetAction == ActionCreate {
-		if statusResponseTmp.Status == "statusUndefined" {
+		if statusResponseTmp.Status == StatusUndefined {
 			statusResponseTmp.Status = StatusCreating
 		}
 	}
 	if vmStatusTmp.TargetAction == ActionTerminate {
-		if statusResponseTmp.Status == "statusUndefined" {
+		if statusResponseTmp.Status == StatusUndefined {
 			statusResponseTmp.Status = StatusTerminated
 		}
 		if statusResponseTmp.Status == StatusSuspending {
@@ -3764,7 +3768,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		}
 	}
 	if vmStatusTmp.TargetAction == ActionResume {
-		if statusResponseTmp.Status == "statusUndefined" {
+		if statusResponseTmp.Status == StatusUndefined {
 			statusResponseTmp.Status = StatusResuming
 		}
 		if statusResponseTmp.Status == StatusCreating {
@@ -3774,7 +3778,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	}
 	// for action reboot, some csp's native status are suspending, suspended, creating, resuming
 	if vmStatusTmp.TargetAction == ActionReboot {
-		if statusResponseTmp.Status == "statusUndefined" {
+		if statusResponseTmp.Status == StatusUndefined {
 			statusResponseTmp.Status = StatusRebooting
 		}
 		if statusResponseTmp.Status == StatusSuspending || statusResponseTmp.Status == StatusSuspended || statusResponseTmp.Status == StatusCreating || statusResponseTmp.Status == StatusResuming {
@@ -3783,6 +3787,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	}
 
 	// End of Temporal CODE.
+	if temp.Status == StatusFailed {
+		statusResponseTmp.Status = StatusFailed
+	}
 
 	vmStatusTmp.Status = statusResponseTmp.Status
 	/*
