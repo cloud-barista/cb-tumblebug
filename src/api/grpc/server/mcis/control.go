@@ -111,7 +111,7 @@ func (s *MCISService) GetMcisInfo(ctx context.Context, req *pb.TbMcisQryRequest)
 
 	logger.Debug("calling MCISService.GetMcisInfo()")
 
-	result, err := mcis.CoreGetMcisInfo(req.NsId, req.McisId)
+	result, err := mcis.GetMcisInfo(req.NsId, req.McisId)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.GetMcisInfo()")
 	}
