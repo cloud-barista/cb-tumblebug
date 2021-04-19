@@ -1461,60 +1461,37 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 		return temp, err
 	}
 
-	/*
-		var content struct {
-			Id   string `json:"id"`
-			Name string `json:"name"`
-			//Vm_num         string   `json:"vm_num"`
-			Status         string          `json:"status"`
-			TargetStatus   string          `json:"targetStatus"`
-			TargetAction   string          `json:"targetAction"`
-			Vm             []mcis.TbVmInfo `json:"vm"`
-			Placement_algo string          `json:"placement_algo"`
-			Description    string          `json:"description"`
-		}
-	*/
-	content, err := GetMcisObject(nsId, mcisId)
+	mcisObj, err := GetMcisObject(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
+
+	// common.PrintJsonPretty(mcisObj)
 
 	mcisStatus, err := GetMcisStatus(nsId, mcisId)
-	content.Status = mcisStatus.Status
-
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
+	// common.PrintJsonPretty(mcisStatus)
+
+	mcisObj.Status = mcisStatus.Status
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
+	for num := range vmList {
+		common.PrintJsonPretty(mcisObj.Vm[num])
 
-	for _, v := range vmList {
-
-		vmTmp, err := GetVmObject(nsId, mcisId, v)
-		if err != nil {
-			common.CBLog.Error(err)
-			return nil, err
-		}
-
-		//get current vm status
-		vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v)
-		if err != nil {
-			common.CBLog.Error(err)
-		}
-		vmTmp.Status = vmStatusInfoTmp.Status
-		vmTmp.TargetStatus = vmStatusInfoTmp.TargetStatus
-		vmTmp.TargetAction = vmStatusInfoTmp.TargetAction
-
-		content.Vm = append(content.Vm, vmTmp)
+		mcisObj.Vm[num].Status = mcisStatus.Vm[num].Status
+		mcisObj.Vm[num].TargetStatus = mcisStatus.Vm[num].TargetStatus
+		mcisObj.Vm[num].TargetAction = mcisStatus.Vm[num].TargetAction
 	}
 
-	return &content, nil
+	return &mcisObj, nil
 }
 
 func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
@@ -3368,6 +3345,22 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	}
 	mcisTmp := TbMcisInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+
+	vmList, err := ListVmId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbMcisInfo{}, err
+	}
+
+	for _, vmID := range vmList {
+		vmtmp, err := GetVmObject(nsId, mcisId, vmID)
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbMcisInfo{}, err
+		}
+		mcisTmp.Vm = append(mcisTmp.Vm, vmtmp)
+	}
+
 	return mcisTmp, nil
 }
 
