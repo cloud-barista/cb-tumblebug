@@ -44,12 +44,12 @@ func RestPostMcis(c echo.Context) error {
 
 // JSONResult's data field will be overridden by the specific type
 type JSONResult struct {
-    //Code    int          `json:"code" `
-    //Message string       `json:"message"`
-    //Data    interface{}  `json:"data"`
+	//Code    int          `json:"code" `
+	//Message string       `json:"message"`
+	//Data    interface{}  `json:"data"`
 }
 
-// TODO: swag does not support multiple response types (success 200) in an API. 
+// TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention Need to be revised.
 
 // RestGetMcis godoc
@@ -104,7 +104,7 @@ func RestGetMcis(c echo.Context) error {
 
 	} else {
 
-		result, err := mcis.CoreGetMcisInfo(nsId, mcisId)
+		result, err := mcis.GetMcisInfo(nsId, mcisId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -449,7 +449,6 @@ func RestPostMcisVm(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
-
 // RestPostMcisVmGroup godoc
 // @Summary Create multiple VMs by VM group in specified MCIS
 // @Description Create multiple VMs by VM group in specified MCIS
@@ -484,8 +483,7 @@ func RestPostMcisVmGroup(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
-
-// TODO: swag does not support multiple response types (success 200) in an API. 
+// TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention Need to be revised.
 
 // RestGetMcisVm godoc

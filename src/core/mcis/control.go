@@ -1446,7 +1446,8 @@ func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	return &mcisStatusResponse, nil
 }
 
-func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
+// GetMcisInfo func returns MCIS information with the current status update
+func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
 	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
 	//mcisId = lowerizedName
@@ -1473,22 +1474,11 @@ func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 			Description    string          `json:"description"`
 		}
 	*/
-	content := TbMcisInfo{}
-
-	fmt.Println("[Get MCIS for id]" + mcisId)
-	key := common.GenMcisKey(nsId, mcisId, "")
-	//fmt.Println(key)
-
-	keyValue, _ := common.CBStore.Get(key)
-	if keyValue == nil {
-		//mapA := map[string]string{"message": "Cannot find " + key}
-		//return c.JSON(http.StatusOK, &mapA)
-		return nil, fmt.Errorf("Cannot find " + key)
+	content, err := GetMcisObject(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
 	}
-	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	//fmt.Println("===============================================")
-
-	json.Unmarshal([]byte(keyValue.Value), &content)
 
 	mcisStatus, err := GetMcisStatus(nsId, mcisId)
 	content.Status = mcisStatus.Status
@@ -1505,18 +1495,12 @@ func CoreGetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 	}
 
 	for _, v := range vmList {
-		vmKey := common.GenMcisKey(nsId, mcisId, v)
-		//fmt.Println(vmKey)
-		vmKeyValue, _ := common.CBStore.Get(vmKey)
-		if vmKeyValue == nil {
-			//mapA := map[string]string{"message": "Cannot find " + key}
-			//return c.JSON(http.StatusOK, &mapA)
-			return nil, fmt.Errorf("Cannot find " + key)
+
+		vmTmp, err := GetVmObject(nsId, mcisId, v)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
 		}
-		//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-		vmTmp := TbVmInfo{}
-		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-		vmTmp.Id = v
 
 		//get current vm status
 		vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v)
