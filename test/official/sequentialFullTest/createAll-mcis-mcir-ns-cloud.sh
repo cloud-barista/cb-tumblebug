@@ -6,6 +6,7 @@ SECONDS=0
 ./create-mcis-only.sh "$@"
 
 duration=$SECONDS
+echo "[CMD] $0"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
 echo ""

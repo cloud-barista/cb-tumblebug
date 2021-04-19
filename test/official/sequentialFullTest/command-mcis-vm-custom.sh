@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#function command_mcis_custom() {
 
 TestSetFile=${4:-../testSet.env}
 
@@ -13,7 +14,7 @@ source ../conf.env
 AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
-echo "## 8. Get MCIS"
+echo "## Command (SSH) to MCIS "
 echo "####################################################################"
 
 CSP=${1}
@@ -23,18 +24,25 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
+VMID=${5}
+USERCMD=${6}
 
-if [ -z "$MCISPREFIX" ]; then
-	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
-	if [ "${INDEX}" == "0" ]; then
-		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
-	fi
-else
+MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+
+if [ "${INDEX}" == "0" ]; then
+	# MCISPREFIX=avengers
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID} | jq ''
+VAR1=$(
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${USERCMD}"
+	} 
+EOF
+)
+echo "${VAR1}" | jq ''
 
+#}
 
-#get_mcis
+#command_mcis_custom

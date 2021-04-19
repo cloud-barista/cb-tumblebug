@@ -25,6 +25,10 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
+	CIRDNum=$(($INDEX+1))
+	CIDRDiff=$(($CIRDNum*$REGION))
+	CIDRDiff=$(($CIDRDiff%254))
+
     resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF
         {
@@ -33,7 +37,7 @@
 			"cidrBlock": "192.168.0.0/16",
 			"subnetInfoList": [ {
 				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-				"IPv4_CIDR": "192.168.1.0/24"
+				"IPv4_CIDR": "192.168.${CIDRDiff}.0/24"
 			} ]
 		}
 EOF

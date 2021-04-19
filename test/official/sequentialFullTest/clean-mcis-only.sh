@@ -158,6 +158,7 @@ function clean_sequence() {
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 }
@@ -234,6 +235,7 @@ if [ "${INDEX}" == "0" ]; then
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 else
@@ -244,6 +246,7 @@ else
 fi
 
 duration=$SECONDS
+echo "[CMD] $0"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 #}
 

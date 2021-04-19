@@ -30,10 +30,11 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] (MCIR) ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionName}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 }
 
@@ -63,10 +64,11 @@ function test_sequence_allcsp_mcir() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] (MCIR) ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionName}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 }
@@ -95,12 +97,13 @@ echo "####################################################################"
 echo "## Create MCIS from Zero Base"
 echo "####################################################################"
 
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
+# CSP=${1}
+# REGION=${2:-1}
+# POSTFIX=${3:-developer}
 NUMVM=${5:-1}
 
 source ../common-functions.sh
+readParameters "$@"
 getCloudIndex $CSP
 
 if [ "${INDEX}" == "0" ]; then
@@ -116,10 +119,11 @@ if [ "${INDEX}" == "0" ]; then
 			REGION=$cspj
 			#echo $CSP
 			#echo $REGION
-			echo "- Create MCIR in ${CONN_CONFIG[$cspi, $REGION]}"
+			MCIRRegionName=${RegionName[$cspi,$cspj]}
+			echo "- Create MCIR in ${MCIRRegionName}"		
 
 			test_sequence_allcsp_mcir $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
-			dozing 1
+			# dozing 1
 
 		done
 
@@ -134,12 +138,14 @@ else
 	echo ""
 	TOTALVM=$((1 * 1 * NUMVM))
 	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * VMgroup($NUMVM)"
+	MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
 	test_sequence $CSP $REGION $POSTFIX $NUMVM $TestSetFile ${0##*/}
 
 fi
 
 duration=$SECONDS
+echo "[CMD] $0"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
 echo ""

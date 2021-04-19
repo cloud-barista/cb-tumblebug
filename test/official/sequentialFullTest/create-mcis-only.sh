@@ -17,10 +17,11 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] (MCIS) ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >>./executionStatus
+	echo "[MCIS:${MCISID}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 }
 
@@ -41,10 +42,11 @@ function test_sequence_allcsp_mcis() {
 	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[CMD] (MCIS) ${_self} all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIS:${MCISID}] ${_self} all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
+	cp ./executionStatus ./executionStatus.back
 	echo ""
 
 }
@@ -156,11 +158,14 @@ else
 	TOTALVM=$((1 * 1 * NUMVM))
 	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * VMgroup($NUMVM)"
 
+	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+
 	test_sequence $CSP $REGION $POSTFIX $NUMVM $TestSetFile ${0##*/}
 
 fi
 
 duration=$SECONDS
+echo "[CMD] $0"
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
 echo ""
