@@ -208,11 +208,11 @@ func RestDelMcis(c echo.Context) error {
 	err := mcis.DelMcis(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the MCIS"}
+		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	mapA := map[string]string{"message": "Deleting the MCIS info"}
+	mapA := map[string]string{"message": "Deleting the MCIS " + mcisId}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
