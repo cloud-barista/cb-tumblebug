@@ -111,8 +111,6 @@ alibaba,eu-central-1,Germany (Frankfurt),50.4000,8.7000
 alibaba,eu-west-1,UK (London),51.8000,-0.2000
 alibaba,me-east-1,UAE (Dubai),25.2770,55.2962
 cloudit,default,South Korea (Seoul),37.2665,126.7780
-mock,default,South Korea (Seoul),37.0000,126.0000
-openstack,regionone,South Korea (Daejeon),36.3804,127.3650
 ncp,kr-1,South Korea (Seoul),37.4767,126.8841
 ncp,kr-2,South Korea (Seoul),37.3881,126.9705
 ncp,hk-1,Hong Kong,22.3964,114.1095
@@ -120,5 +118,7 @@ ncp,sgn-1,Singapore,1.3400,103.7041
 ncp,jpn-1,Japan,35.6895,139.6917
 ncp,uswn-1,US Western,37.3500,-121.9600
 ncp,den-1,Germany,50.1109,8.6821
-ufc,ufc,South Korea (Seoul),37.4767,126.8841
+openstack,regionone,South Korea (Daejeon),36.3804,127.3650
 cloudtwin,default,South Korea (Daejeon),36.3804,127.3650
+mock,default,South Korea (Seoul),37.0000,126.0000
+ufc,ufc,South Korea (Seoul),37.4767,126.8841

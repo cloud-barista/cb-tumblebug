@@ -186,11 +186,11 @@ type TbVmInfo struct {
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
 
-	// Created time
-	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
-
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+
+	// Created time
+	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
 
 	Label       string `json:"label"`
 	Description string `json:"description"`
@@ -258,6 +258,12 @@ type TbVmStatusInfo struct {
 
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+
+	// Latest system message such as error message
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+
+	// Created time
+	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
 
 	Public_ip  string `json:"public_ip"`
 	Private_ip string `json:"private_ip"`
@@ -3063,7 +3069,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 		common.PrintJsonPretty(resultTmp)
 
-		fmt.Println("[Calling SPIDER]END vmControl\n")
+		fmt.Println("[Calling SPIDER]END vmControl")
 
 		if action != ActionTerminate {
 			//When VM is restared, temporal PublicIP will be chanaged. Need update.
@@ -3454,10 +3460,10 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 	}
 	wg.Wait() //goroutine sync wg
 
-	for num, v := range vmList {
-		// set master IP of MCIS (Default rule: select 1st VM as master)
-		if num == 0 {
-			vmtmp, _ := GetVmObject(nsId, mcisId, v)
+	for _, v := range vmList {
+		// set master IP of MCIS (Default rule: select 1st Running VM as master)
+		vmtmp, _ := GetVmObject(nsId, mcisId, v)
+		if vmtmp.Status == StatusRunning {
 			mcisStatus.MasterVmId = vmtmp.Id
 			mcisStatus.MasterIp = vmtmp.PublicIP
 			mcisStatus.MasterSSHPort = vmtmp.SSHPort
@@ -3579,6 +3585,7 @@ func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId strin
 	if err != nil {
 		common.CBLog.Error(err)
 		vmStatusTmp.Status = StatusFailed
+		vmStatusTmp.SystemMessage = err.Error()
 	}
 
 	results.Vm = append(results.Vm, vmStatusTmp)
@@ -3737,6 +3744,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	vmStatusTmp.Location = temp.Location
 
 	vmStatusTmp.MonAgentStatus = temp.MonAgentStatus
+
+	vmStatusTmp.CreatedTime = temp.CreatedTime
+	vmStatusTmp.SystemMessage = temp.SystemMessage
 
 	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
 	if statusResponseTmp.Status == "Creating" {
