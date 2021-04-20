@@ -969,7 +969,11 @@ func AddVmInfoToMcis(nsId string, mcisId string, vmInfoData TbVmInfo) {
 }
 */
 
+// UpdateMcisInfo func Update MCIS Info (without VM info in MCIS)
 func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
+
+	mcisInfoData.Vm = nil
+
 	key := common.GenMcisKey(nsId, mcisInfoData.Id, "")
 	val, _ := json.Marshal(mcisInfoData)
 	err := common.CBStore.Put(string(key), string(val))
@@ -1484,7 +1488,9 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 		return nil, err
 	}
 	for num := range vmList {
+		fmt.Println("[GetMcisInfo compare two VMs]")
 		common.PrintJsonPretty(mcisObj.Vm[num])
+		common.PrintJsonPretty(mcisStatus.Vm[num])
 
 		mcisObj.Vm[num].Status = mcisStatus.Vm[num].Status
 		mcisObj.Vm[num].TargetStatus = mcisStatus.Vm[num].TargetStatus
@@ -1969,6 +1975,12 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 
 	//Update MCIS status
 
+	mcisTmp, err = GetMcisObject(nsId, mcisId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		return temp, err
+	}
+
 	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
 
 	mcisTmp.Status = mcisStatusTmp.Status
@@ -2254,10 +2266,15 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 	}
 	wg.Wait()
 
-	mcisTmp := TbMcisInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
+	mcisTmp, err := GetMcisObject(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+	}
 
-	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
+	mcisStatusTmp, err := GetMcisStatus(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+	}
 
 	mcisTmp.Status = mcisStatusTmp.Status
 
@@ -2266,6 +2283,9 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 		mcisTmp.TargetAction = ActionComplete
 	}
 	UpdateMcisInfo(nsId, mcisTmp)
+
+	fmt.Println("\n[MCIS has been created]")
+	common.PrintJsonPretty(mcisTmp)
 
 	// Install CB-Dragonfly monitoring agent
 
@@ -2331,17 +2351,17 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
 	// Make VM object
-	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-	val, _ := json.Marshal(vmInfoData)
-	err := common.CBStore.Put(string(key), string(val))
-	if err != nil {
-		common.CBLog.Error(err)
-	}
+	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 
-	fmt.Printf("\n[vmInfoRequestData]\n %+v\n", vmInfoData)
+	fmt.Printf("\n[AddVmToMcis Befor request vmInfoData]\n")
+	common.PrintJsonPretty(vmInfoData)
 
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
-	err = CreateVm(nsId, mcisId, vmInfoData)
+	err := CreateVm(nsId, mcisId, vmInfoData)
+
+	fmt.Printf("\n[AddVmToMcis After request vmInfoData]\n")
+	common.PrintJsonPretty(vmInfoData)
+
 	if err != nil {
 		vmInfoData.Status = StatusFailed
 		vmInfoData.SystemMessage = err.Error()
@@ -2356,10 +2376,15 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 	// get and set current vm status
 	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
+
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
+
+	fmt.Printf("\n[AddVmToMcis vmStatusInfoTmp]\n")
+	common.PrintJsonPretty(vmStatusInfoTmp)
+
 	vmInfoData.Status = vmStatusInfoTmp.Status
 
 	// Monitoring Agent Installation Status (init: notInstalled)
@@ -2494,7 +2519,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		common.PrintJsonPretty(tempReq)
 
 		payload, _ := json.Marshal(tempReq)
-		fmt.Println("payload: " + string(payload))
+		// fmt.Println("payload: " + string(payload))
 
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -2516,7 +2541,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		res, err := client.Do(req)
 		if err != nil {
-			fmt.Println(err)
+			common.PrintJsonPretty(err)
 			common.CBLog.Error(err)
 			return err
 		}
@@ -2526,7 +2551,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		body, err := ioutil.ReadAll(res.Body)
 
 		if err != nil {
-			fmt.Println(err)
+			common.PrintJsonPretty(err)
 			common.CBLog.Error(err)
 			return err
 		}
@@ -2535,7 +2560,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		err = json.Unmarshal(body, &tempSpiderVMInfo)
 
 		if err != nil {
-			fmt.Println(err)
+			common.PrintJsonPretty(err)
 			common.CBLog.Error(err)
 			return err
 		}
@@ -2714,6 +2739,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	//publicIPs := make([]*string, 1)
 	//instanceIds[0] = &content.CspVmId
 	//publicIPs[0] = &content.PublicIP
+
+	UpdateVmInfo(nsId, mcisId, *vmInfoData)
+
 	return nil
 }
 
@@ -3335,6 +3363,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	}
 }
 
+// GetMcisObject func retrieve MCIS object from database (no current status update)
 func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	fmt.Println("[GetMcisObject]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
