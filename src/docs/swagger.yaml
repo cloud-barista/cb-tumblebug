@@ -995,7 +995,7 @@ definitions:
         type: string
       region:
         $ref: '#/definitions/mcis.RegionInfo'
-        description: Provided by CB-Spider
+        description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
         type: object
       securityGroupIds:
         items:
@@ -1114,6 +1114,10 @@ definitions:
     type: object
   mcis.TbVmStatusInfo:
     properties:
+      createdTime:
+        description: Created time
+        example: "2022-11-10 23:00:00"
+        type: string
       csp_vm_id:
         type: string
       id:
@@ -1136,6 +1140,10 @@ definitions:
       sshPort:
         type: string
       status:
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
         type: string
       targetAction:
         type: string

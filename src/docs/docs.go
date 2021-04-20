@@ -4870,7 +4870,7 @@ var doc = `{
                     "type": "string"
                 },
                 "region": {
-                    "description": "Provided by CB-Spider",
+                    "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
                     "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
@@ -5047,6 +5047,11 @@ var doc = `{
         "mcis.TbVmStatusInfo": {
             "type": "object",
             "properties": {
+                "createdTime": {
+                    "description": "Created time",
+                    "type": "string",
+                    "example": "2022-11-10 23:00:00"
+                },
                 "csp_vm_id": {
                     "type": "string"
                 },
@@ -5079,6 +5084,11 @@ var doc = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
                 },
                 "targetAction": {
                     "type": "string"
