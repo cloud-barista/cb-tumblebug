@@ -40,6 +40,12 @@
 						"Direction": "inbound"
 					},
 					{
+						"FromPort": "1",
+						"ToPort": "65535",
+						"IPProtocol": "udp",
+						"Direction": "inbound"
+					},
+					{
 						"FromPort": "-1",
 						"ToPort": "-1",
 						"IPProtocol": "icmp",
