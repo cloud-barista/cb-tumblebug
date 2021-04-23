@@ -29,8 +29,9 @@ getCloudIndex $CSP
 
 MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
 
-PublicDNS=${5:-etri.cloud-barista.org}
-EMAIL=${6:-shsonkorea@etri.re.kr}
+EMAIL=${5}
+PublicDNS=${6}
+
 
 
 
@@ -38,6 +39,20 @@ if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
+
+if [ -z "$EMAIL" ]; then
+	echo "[Warning] Provide your E-MAIL (ex: xxx@cloudbarista.org) to 5th parameter"
+	echo "E-MAIL address will be used to issue a Certificate (https) for JITSI"
+	exit
+fi
+
+if [ -z "$PublicDNS" ]; then
+	echo "[Warning] Provide your PublicDNS-RecordName (ex: xxx.cloud-barista.org) to 6th parameter"
+	echo "PublicDNS-RecordName will be access point for JITSI Server"
+	exit
+fi
+
+
 
 MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status)
 VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
@@ -67,7 +82,7 @@ EOF
 	echo "${VAR1}" | jq ''
 	echo ""
 
-	InstallJitsiCMD="sudo sh -c \\\"echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list\\\"; sudo wget -qO -  https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -; sudo echo \\\"jitsi-videobridge jitsi-videobridge/jvb-hostname string $PublicDNS \\\" | sudo debconf-set-selections; sudo echo \\\"jitsi-meet-web-config jitsi-meet/cert-choice select 'Generate a new self-signed certificate (You will later get a chance to obtain a Let's encrypt certificate)'\\\" | sudo debconf-set-selections; export DEBIAN_FRONTEND=noninteractive; sudo apt update > /dev/null; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::options::=--force-unsafe-io --assume-yes --quiet install jitsi-meet > /dev/null"
+	InstallJitsiCMD="sudo sh -c \\\"echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list\\\"; sudo wget -qO -  https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -; sudo echo \\\"jitsi-videobridge jitsi-videobridge/jvb-hostname string $PublicDNS\\\" | sudo debconf-set-selections; sudo echo \\\"jitsi-meet-web-config jitsi-meet/cert-choice select 'Generate a new self-signed certificate (You will later get a chance to obtain a Let's encrypt certificate)'\\\" | sudo debconf-set-selections; export DEBIAN_FRONTEND=noninteractive; sudo apt update > /dev/null; sudo apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::options::=--force-unsafe-io --assume-yes --quiet install jitsi-meet > /dev/null"
 	echo "InstallJitsiCMD: $InstallJitsiCMD"
 
 	VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
@@ -106,6 +121,40 @@ EOF
 
 done
 
+# Ref: to add passwording
+# https://www.digitalocean.com/community/tutorials/how-to-install-jitsi-meet-on-ubuntu-20-04
+# https://sakwon.tistory.com/56
+
+# sudo vim /etc/prosody/conf.avail/etri.cloud-barista.org.cfg.lua
+
+# [chage authentication "anonymous" to "internal_plain"]
+# VirtualHost "etri.cloud-barista.org"
+#     -- enabled = false -- Remove this line to enable this host
+#     authentication = "internal_plain"
+
+# [last add]
+# VirtualHost "guest.etri.cloud-barista.org"
+#     authentication = "anonymous"
+#     c2s_require_encryption = false
+
+
+# sudo vim /etc/jitsi/meet/etri.cloud-barista.org-config.js
+
+# [chage anonymousdomain]
+# // When using authentication, domain for guest users.
+# anonymousdomain: 'guest.etri.cloud-barista.org',
+
+
+# sudo vim /etc/jitsi/jicofo/sip-communicator.properties
+
+# [last add]
+# org.jitsi.jicofo.auth.URL=XMPP:etri.cloud-barista.org
+
+# sudo prosodyctl register shson etri.cloud-barista.org shsonpw
+
+# sudo systemctl restart prosody.service
+# sudo systemctl restart jicofo.service
+# sudo systemctl restart jitsi-videobridge2.service
 
 echo "Done!"
 duration=$SECONDS
