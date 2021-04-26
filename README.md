@@ -174,14 +174,14 @@ This may involve a vendored copy of golang.org/x/net/trace.”
    - https://cloud-barista.github.io/cb-tumblebug-api-web/#/MCIS/delete_ns__nsId__mcis__mcisId_
 
 ### CB-Tumblebug 스크립트를 통한 테스트 개요
-- cloud-barista/cb-tumblebug/test/official/
+- cloud-barista/cb-tumblebug/src/testclient/script/
    - 클라우드 인증 정보, 테스트 기본 정보 입력
    - 클라우드정보, Namespace, MCIR, MCIS 등 개별 제어 시험 (개별 시험시, 오브젝트들의 의존성 고려 필요))
    - 한꺼번에 통합 시험 (추천 테스트 방법)
-     - cloud-barista/cb-tumblebug/test/official/sequentialFullTest
+     - cloud-barista/cb-tumblebug/src/testclient/script/sequentialFullTest
 
 #### 0) 클라우드 인증 정보, 테스트 기본 정보 입력
-- cloud-barista/cb-tumblebug/test/official/ 이동
+- cloud-barista/cb-tumblebug/src/testclient/script/ 이동
 - credentials.conf  # Cloud 정보 등록을 위한 CSP별 인증정보 (사용자에 맞게 수정 필요)
    - 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA)에 대해 템플릿 제공
 - conf.env  # CB-Spider 및 Tumblebug 서버 위치, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
@@ -237,7 +237,7 @@ This may involve a vendored copy of golang.org/x/net/trace.”
 <summary>입출력 예시 보기</summary>
 
 ```
-~/go/src/github.com/cloud-barista/cb-tumblebug/test/official/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson
+~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/script/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson
 ####################################################################
 ## Create MCIS from Zero Base
 ####################################################################
@@ -508,7 +508,7 @@ Dozing for 1 : 1 (Back to work)
     - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
     - 예시: command-mcis.sh aws 1 shson # aws의 1번 리전에 배치된 MCIS의 모든 VM에 Nginx 및 웹페이지 설치 (접속 테스트 가능)
       ```
-      ~/go/src/github.com/cloud-barista/cb-tumblebug/test/official/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
+      ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/script/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
       ####################################################################
       ## Command (SSH) to MCIS 
       ####################################################################
@@ -544,7 +544,7 @@ Dozing for 1 : 1 (Back to work)
 <summary>테스트 스크립트 디렉토리 전체 Tree 보기</summary>
 
 ```
-~/go/src/github.com/cloud-barista/cb-tumblebug/test/official$ tree
+~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/script$ tree
 .
 ├── 1.configureSpider
 │   ├── get-cloud.sh
