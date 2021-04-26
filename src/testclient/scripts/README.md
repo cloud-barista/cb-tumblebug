@@ -74,7 +74,7 @@
     - ./cleanAll-mcis-mcir-ns-cloud.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 수행
 
 ```
-~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/script/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson 3
+~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson 3
 ####################################################################
 ## Create MCIS from Zero Base
 ####################################################################
@@ -341,7 +341,7 @@ Dozing for 1 : 1 (Back to work)
     - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
     - 예시: command-mcis.sh aws 1 shson # aws의 1번 리전에 배치된 MCIS의 모든 VM에 Nginx 및 웹페이지 설치 (접속 테스트 가능)
       ```
-      ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/script/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
+      ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
       ####################################################################
       ## Command (SSH) to MCIS 
       ####################################################################
@@ -373,7 +373,7 @@ Dozing for 1 : 1 (Back to work)
 
 ## [테스트 코드 파일 트리 설명]
 ```
-son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/script$ tree
+son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ tree
 .
 ├── 1.configureSpider                  # 클라우드 정보 등록 관련 스크립트 모음
 │   ├── get-cloud.sh
