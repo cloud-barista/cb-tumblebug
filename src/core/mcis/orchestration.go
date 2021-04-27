@@ -125,7 +125,7 @@ func OrchestrationController() {
 					fmt.Println("[Check MCIS Policy] " + mcisPolicyTmp.Id)
 					//check, _, _ := LowerizeAndCheckMcis(nsId, mcisPolicyTmp.Id )
 					check, _ := CheckMcis(nsId, mcisPolicyTmp.Id)
-					fmt.Println("[Check existance of MCIS] " + mcisPolicyTmp.Id)
+					fmt.Println("[Check existence of MCIS] " + mcisPolicyTmp.Id)
 					//keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
 
 					if !check {

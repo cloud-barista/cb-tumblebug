@@ -1106,7 +1106,7 @@ func DelMcis(nsId string, mcisId string) error {
 		common.CBLog.Error(err)
 		return err
 	}
-	// for deletion, need to wait untill termination is finished
+	// for deletion, need to wait until termination is finished
 	// Sleep for 5 seconds
 	fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCIS-VMs termination.\n\n")
 	time.Sleep(5 * time.Second)
@@ -1193,7 +1193,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 		common.CBLog.Error(err)
 		return err
 	}
-	// for deletion, need to wait untill termination is finished
+	// for deletion, need to wait until termination is finished
 	// Sleep for 5 seconds
 	fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe VM termination.\n\n")
 	time.Sleep(5 * time.Second)
@@ -1221,7 +1221,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 	return nil
 }
 
-//// Info manage for MCIS recommandation
+//// Info manage for MCIS recommendation
 func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
 
 	fmt.Println("GetRecommendList")

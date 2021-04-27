@@ -142,12 +142,12 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
 		CBLog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return ""
 	}
 	if keyValue == nil {
 		//CBLog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return ""
 	}
 
@@ -215,12 +215,12 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
 		CBLog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", err
 	}
 	if keyValue == nil {
 		//CBLog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", err
 	}
 
@@ -259,7 +259,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 			err = json.Unmarshal([]byte(keyValue.Value), &content)
 			if err != nil {
 				CBLog.Error(err)
-				// if there is no matched value for the key, return empty string. Error will be handled in a parent fucntion
+				// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 				return ""
 			}
 			return content.CspVNicName
