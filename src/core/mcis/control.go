@@ -1277,57 +1277,6 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 // MCIS Control
 
-func CorePostMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
-
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, req.Name)
-	//req.Name = lowerizedName
-	nsId = common.ToLower(nsId)
-	req.Name = common.ToLower(req.Name)
-	check, _ := CheckMcis(nsId, req.Name)
-
-	if check {
-		temp := &TbMcisInfo{}
-		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
-		return temp, err
-	}
-
-	key := CreateMcis(nsId, req)
-	mcisId := common.ToLower(req.Name)
-
-	keyValue, _ := common.CBStore.Get(key)
-
-	content := TbMcisInfo{}
-
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	vmList, err := ListVmId(nsId, mcisId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return nil, err
-	}
-
-	for _, v := range vmList {
-		vmKey := common.GenMcisKey(nsId, mcisId, v)
-		//fmt.Println(vmKey)
-		vmKeyValue, _ := common.CBStore.Get(vmKey)
-		if vmKeyValue == nil {
-			//mapA := map[string]string{"message": "Cannot find " + key}
-			//return c.JSON(http.StatusOK, &mapA)
-			return nil, fmt.Errorf("Cannot find " + key)
-		}
-		//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-		vmTmp := TbVmInfo{}
-		json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-		vmTmp.Id = v
-		content.Vm = append(content.Vm, vmTmp)
-	}
-
-	//mcisStatus, err := GetMcisStatus(nsId, mcisId)
-	//content.Status = mcisStatus.Status
-
-	return &content, nil
-}
-
 func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
 
 	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
@@ -1818,9 +1767,6 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	//CreateMcis(nsId, req)
-	//err := AddVmToMcis(nsId, mcisId, vmInfoData)
-
 	go AddVmToMcis(&wg, nsId, mcisId, vmInfoData)
 
 	wg.Wait()
@@ -2161,13 +2107,20 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 	return &vmTmp, nil
 }
 
-func CreateMcis(nsId string, req *TbMcisReq) string {
+// CreateMcis function create MCIS obeject and deploy requested VMs.
+func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
+
+	nsId = common.ToLower(nsId)
+	req.Name = common.ToLower(req.Name)
+	check, _ := CheckMcis(nsId, req.Name)
+	if check {
+		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
+		return nil, err
+	}
 
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
 
-	//req.Id = common.GenUuid()
-	//req.Id = common.ToLower(req.Name)
 	mcisId := common.ToLower(req.Name)
 	vmRequest := req.Vm
 
@@ -2182,11 +2135,20 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 		"targetStatus":    targetStatus,
 		"InstallMonAgent": req.InstallMonAgent,
 	}
-	val, _ := json.Marshal(mapA)
-	err := common.CBStore.Put(string(key), string(val))
+	val, err := json.Marshal(mapA)
 	if err != nil {
+		err := fmt.Errorf("System Error: CreateMcis json.Marshal(mapA) Error")
 		common.CBLog.Error(err)
+		return nil, err
 	}
+
+	err = common.CBStore.Put(string(key), string(val))
+	if err != nil {
+		err := fmt.Errorf("System Error: CreateMcis CBStore.Put Error")
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
 	keyValue, _ := common.CBStore.Get(string(key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
@@ -2275,11 +2237,13 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 	mcisTmp, err := GetMcisObject(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
+		return nil, err
 	}
 
 	mcisStatusTmp, err := GetMcisStatus(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
+		return nil, err
 	}
 
 	mcisTmp.Status = mcisStatusTmp.Status
@@ -2325,7 +2289,12 @@ func CreateMcis(nsId string, req *TbMcisReq) string {
 		}
 	}
 
-	return key
+	mcisTmp, err = GetMcisObject(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	return &mcisTmp, nil
 }
 
 func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbVmInfo) error {
