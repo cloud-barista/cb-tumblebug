@@ -3260,7 +3260,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all VNets
       tags:
-      - VNet
+      - '[MCIR] VNet management'
     get:
       consumes:
       - application/json
@@ -3288,7 +3288,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all VNets
       tags:
-      - VNet
+      - '[MCIR] VNet management'
     post:
       consumes:
       - application/json
@@ -3322,7 +3322,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VNet
       tags:
-      - VNet
+      - '[MCIR] VNet management'
   /ns/{nsId}/resources/vNet/{vNetId}:
     delete:
       consumes:
@@ -3352,7 +3352,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VNet
       tags:
-      - VNet
+      - '[MCIR] VNet management'
     get:
       consumes:
       - application/json
@@ -3385,7 +3385,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VNet
       tags:
-      - VNet
+      - '[MCIR] VNet management'
   /object:
     delete:
       consumes:

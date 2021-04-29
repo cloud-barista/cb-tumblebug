@@ -3110,7 +3110,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] VNet management"
                 ],
                 "summary": "List all VNets",
                 "parameters": [
@@ -3152,7 +3152,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] VNet management"
                 ],
                 "summary": "Create VNet",
                 "parameters": [
@@ -3203,7 +3203,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] VNet management"
                 ],
                 "summary": "Delete all VNets",
                 "parameters": [
@@ -3241,7 +3241,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] VNet management"
                 ],
                 "summary": "Get VNet",
                 "parameters": [
@@ -3290,7 +3290,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] VNet management"
                 ],
                 "summary": "Delete VNet",
                 "parameters": [

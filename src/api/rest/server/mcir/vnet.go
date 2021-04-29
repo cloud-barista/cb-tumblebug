@@ -12,7 +12,7 @@ import (
 // RestPostVNet godoc
 // @Summary Create VNet
 // @Description Create VNet
-// @Tags VNet
+// @Tags [MCIR] VNet management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -51,7 +51,7 @@ func RestPostVNet(c echo.Context) error {
 // RestPutVNet godoc
 // @Summary Update VNet
 // @Description Update VNet
-// @Tags VNet
+// @Tags [MCIR] VNet management
 // @Accept  json
 // @Produce  json
 // @Param vNetInfo body mcir.TbVNetInfo true "Details for an VNet object"
@@ -69,7 +69,7 @@ func RestPutVNet(c echo.Context) error {
 // RestGetVNet godoc
 // @Summary Get VNet
 // @Description Get VNet
-// @Tags VNet
+// @Tags [MCIR] VNet management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -91,7 +91,7 @@ type RestGetAllVNetResponse struct {
 // RestGetAllVNet godoc
 // @Summary List all VNets
 // @Description List all VNets
-// @Tags VNet
+// @Tags [MCIR] VNet management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -107,7 +107,7 @@ func RestGetAllVNet(c echo.Context) error {
 // RestDelVNet godoc
 // @Summary Delete VNet
 // @Description Delete VNet
-// @Tags VNet
+// @Tags [MCIR] VNet management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -123,7 +123,7 @@ func RestDelVNet(c echo.Context) error {
 // RestDelAllVNet godoc
 // @Summary Delete all VNets
 // @Description Delete all VNets
-// @Tags VNet
+// @Tags [MCIR] VNet management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
