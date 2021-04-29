@@ -1469,7 +1469,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /lookupSpecs:
     get:
       consumes:
@@ -1499,7 +1499,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec list
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns:
     delete:
       consumes:
@@ -2490,7 +2490,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecs:
     post:
       consumes:
@@ -2524,7 +2524,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecsByRange:
     post:
       consumes:
@@ -2558,7 +2558,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs by range
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/image:
     delete:
       consumes:
@@ -2922,7 +2922,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     get:
       consumes:
       - application/json
@@ -2950,7 +2950,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     post:
       consumes:
       - application/json
@@ -2993,7 +2993,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/spec/{specId}:
     delete:
       consumes:
@@ -3023,7 +3023,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     get:
       consumes:
       - application/json
@@ -3056,7 +3056,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     put:
       consumes:
       - application/json
@@ -3085,7 +3085,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/sshKey:
     delete:
       consumes:

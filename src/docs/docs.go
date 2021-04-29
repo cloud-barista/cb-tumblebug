@@ -397,7 +397,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Lookup spec",
                 "parameters": [
@@ -450,7 +450,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Lookup spec list",
                 "parameters": [
@@ -1944,7 +1944,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Fetch specs",
                 "parameters": [
@@ -1988,7 +1988,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs",
                 "parameters": [
@@ -2040,7 +2040,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs by range",
                 "parameters": [
@@ -2602,7 +2602,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "List all specs",
                 "parameters": [
@@ -2644,7 +2644,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Register spec",
                 "parameters": [
@@ -2709,7 +2709,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete all specs",
                 "parameters": [
@@ -2747,7 +2747,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Get spec",
                 "parameters": [
@@ -2796,7 +2796,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Update spec",
                 "parameters": [
@@ -2840,7 +2840,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete spec",
                 "parameters": [

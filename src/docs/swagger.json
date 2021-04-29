@@ -382,7 +382,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Lookup spec",
                 "parameters": [
@@ -435,7 +435,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Lookup spec list",
                 "parameters": [
@@ -1929,7 +1929,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Fetch specs",
                 "parameters": [
@@ -1973,7 +1973,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs",
                 "parameters": [
@@ -2025,7 +2025,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs by range",
                 "parameters": [
@@ -2587,7 +2587,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "List all specs",
                 "parameters": [
@@ -2629,7 +2629,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Register spec",
                 "parameters": [
@@ -2694,7 +2694,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete all specs",
                 "parameters": [
@@ -2732,7 +2732,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Get spec",
                 "parameters": [
@@ -2781,7 +2781,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Update spec",
                 "parameters": [
@@ -2825,7 +2825,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete spec",
                 "parameters": [
