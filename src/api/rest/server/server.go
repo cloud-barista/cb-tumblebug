@@ -92,17 +92,12 @@ func ApiServer() {
 	fmt.Println("")
 	fmt.Printf(banner)
 	fmt.Println("")
-	//	fmt.Printf(ErrorColor, Version)
 	fmt.Println("")
 	fmt.Printf(InfoColor, website)
 	fmt.Println("")
 	fmt.Println("")
 
 	// Route
-
-	//common.UpdateEnv()
-	//common.SPIDER_REST_URL = "TEST"
-
 	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
 
 	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
