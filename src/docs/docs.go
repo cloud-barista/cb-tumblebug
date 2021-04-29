@@ -1558,7 +1558,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Resource monitor (for Developers)"
+                    "[MCIS] Resource monitor (Developer)"
                 ],
                 "summary": "InstallMonitorAgent MCIS",
                 "parameters": [
@@ -1618,7 +1618,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Resource monitor (for Developers)"
+                    "[MCIS] Resource monitor (Developer)"
                 ],
                 "summary": "GetMonitorData MCIS",
                 "parameters": [

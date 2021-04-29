@@ -2266,7 +2266,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: InstallMonitorAgent MCIS
       tags:
-      - '[MCIS] Resource monitor (for Developers)'
+      - '[MCIS] Resource monitor (Developer)'
   /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
     get:
       consumes:
@@ -2305,7 +2305,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: GetMonitorData MCIS
       tags:
-      - '[MCIS] Resource monitor (for Developers)'
+      - '[MCIS] Resource monitor (Developer)'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:
