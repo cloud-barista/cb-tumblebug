@@ -28,7 +28,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "List all configs",
                 "responses": {
@@ -61,7 +61,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Create or Update config",
                 "parameters": [
@@ -105,7 +105,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Delete all configs",
                 "responses": {
@@ -134,7 +134,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Get config",
                 "parameters": [
@@ -168,6 +168,111 @@
                 }
             }
         },
+        "/connConfig": {
+            "get": {
+                "description": "List all registered ConnConfig",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "List all registered ConnConfig",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConnConfigList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/connConfig/{connConfigName}": {
+            "get": {
+                "description": "Get registered ConnConfig info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Get registered ConnConfig info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConnConfig"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Check Tumblebug is alive",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Check Tumblebug is alive",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/lookupImage": {
             "get": {
                 "description": "Lookup image",
@@ -178,7 +283,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image",
                 "parameters": [
@@ -231,7 +336,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image list",
                 "parameters": [
@@ -277,7 +382,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec",
                 "parameters": [
@@ -330,7 +435,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec list",
                 "parameters": [
@@ -376,7 +481,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "List all namespaces",
                 "responses": {
@@ -409,7 +514,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Create namespace",
                 "parameters": [
@@ -453,7 +558,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete all namespaces",
                 "responses": {
@@ -482,7 +587,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Get namespace",
                 "parameters": [
@@ -524,7 +629,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete namespace",
                 "parameters": [
@@ -562,7 +667,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -622,7 +727,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -682,7 +787,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Remote command"
                 ],
                 "summary": "Send a command to specified MCIS",
                 "parameters": [
@@ -742,7 +847,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Remote command"
                 ],
                 "summary": "Send a command to specified VM",
                 "parameters": [
@@ -809,7 +914,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "Install the benchmark agent to specified MCIS",
                 "parameters": [
@@ -869,7 +974,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -911,7 +1016,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create MCIS",
                 "parameters": [
@@ -962,7 +1067,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete all MCISs",
                 "parameters": [
@@ -1000,9 +1105,10 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS recommendation",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1045,7 +1151,7 @@
         },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
-                "description": "Get MCIS",
+                "description": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1053,9 +1159,9 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
-                "summary": "Get MCIS",
+                "summary": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1133,7 +1239,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1178,7 +1284,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create VM in specified MCIS",
                 "parameters": [
@@ -1238,7 +1344,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1325,7 +1431,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1377,7 +1483,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create multiple VMs by VM group in specified MCIS",
                 "parameters": [
@@ -1437,7 +1543,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Monitor"
+                    "[MCIS] Resource monitor (Developer)"
                 ],
                 "summary": "InstallMonitorAgent MCIS",
                 "parameters": [
@@ -1451,7 +1557,7 @@
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
                         "in": "path",
                         "required": true
                     },
@@ -1469,7 +1575,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
@@ -1497,7 +1603,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Monitor"
+                    "[MCIS] Resource monitor (Developer)"
                 ],
                 "summary": "GetMonitorData MCIS",
                 "parameters": [
@@ -1511,7 +1617,14 @@
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Metric type: cpu, memory, disk, network",
+                        "name": "metric",
                         "in": "path",
                         "required": true
                     }
@@ -1520,7 +1633,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.MonResultSimpleResponse"
                         }
                     },
                     "404": {
@@ -1548,7 +1661,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "List all MCIS Policys",
                 "parameters": [
@@ -1590,7 +1703,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Delete all MCIS Policys",
                 "parameters": [
@@ -1628,7 +1741,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Get MCIS Policy",
                 "parameters": [
@@ -1677,7 +1790,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Create MCIS Automation policy",
                 "parameters": [
@@ -1735,7 +1848,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Delete MCIS Policy",
                 "parameters": [
@@ -1780,7 +1893,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Fetch images",
                 "parameters": [
@@ -1824,7 +1937,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Fetch specs",
                 "parameters": [
@@ -1868,7 +1981,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs",
                 "parameters": [
@@ -1920,7 +2033,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs by range",
                 "parameters": [
@@ -1972,7 +2085,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "List all images",
                 "parameters": [
@@ -2014,7 +2127,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Register image",
                 "parameters": [
@@ -2079,7 +2192,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete all images",
                 "parameters": [
@@ -2117,7 +2230,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Get image",
                 "parameters": [
@@ -2166,7 +2279,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete image",
                 "parameters": [
@@ -2211,7 +2324,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Search image",
                 "parameters": [
@@ -2257,7 +2370,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "List all Security Groups",
                 "parameters": [
@@ -2299,7 +2412,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Create Security Group",
                 "parameters": [
@@ -2350,7 +2463,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete all Security Groups",
                 "parameters": [
@@ -2388,7 +2501,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Get Security Group",
                 "parameters": [
@@ -2437,7 +2550,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete Security Group",
                 "parameters": [
@@ -2482,7 +2595,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "List all specs",
                 "parameters": [
@@ -2524,7 +2637,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Register spec",
                 "parameters": [
@@ -2589,7 +2702,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete all specs",
                 "parameters": [
@@ -2627,7 +2740,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Get spec",
                 "parameters": [
@@ -2676,7 +2789,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Update spec",
                 "parameters": [
@@ -2720,7 +2833,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete spec",
                 "parameters": [
@@ -2765,7 +2878,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "List all SSH Keys",
                 "parameters": [
@@ -2807,7 +2920,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Create SSH Key",
                 "parameters": [
@@ -2858,7 +2971,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Delete all SSH Keys",
                 "parameters": [
@@ -2896,7 +3009,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Get SSH Key",
                 "parameters": [
@@ -2945,7 +3058,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Delete SSH Key",
                 "parameters": [
@@ -2990,7 +3103,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "List all VNets",
                 "parameters": [
@@ -3032,7 +3145,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Create VNet",
                 "parameters": [
@@ -3083,7 +3196,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Delete all VNets",
                 "parameters": [
@@ -3121,7 +3234,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Get VNet",
                 "parameters": [
@@ -3170,7 +3283,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Delete VNet",
                 "parameters": [
@@ -3215,7 +3328,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Get value of an object",
                 "parameters": [
@@ -3257,7 +3370,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete an object",
                 "parameters": [
@@ -3301,7 +3414,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "List all objects for a given key",
                 "parameters": [
@@ -3343,7 +3456,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete child objects along with the given object",
                 "parameters": [
@@ -3355,6 +3468,120 @@
                         "required": true
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/region": {
+            "get": {
+                "description": "List all registered regions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "List all registered regions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.RegionList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/region/{regionName}": {
+            "get": {
+                "description": "Get registered region info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Get registered region info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of region to retrieve",
+                        "name": "regionName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.Region"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/swaggerActive": {
+            "get": {
+                "description": "Get API document web",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Get API document web",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3393,6 +3620,37 @@
                 "value": {
                     "type": "string",
                     "example": "http://localhost:1024/spider"
+                }
+            }
+        },
+        "common.ConnConfig": {
+            "type": "object",
+            "properties": {
+                "configName": {
+                    "type": "string"
+                },
+                "credentialName": {
+                    "type": "string"
+                },
+                "driverName": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.ConnConfigList": {
+            "type": "object",
+            "properties": {
+                "connectionconfig": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.ConnConfig"
+                    }
                 }
             }
         },
@@ -3445,6 +3703,34 @@
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "common.Region": {
+            "type": "object",
+            "properties": {
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.RegionList": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.Region"
+                    }
                 }
             }
         },
@@ -4491,6 +4777,40 @@
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmStatusInfo"
                     }
+                }
+            }
+        },
+        "mcis.MonResultSimple": {
+            "type": "object",
+            "properties": {
+                "err": {
+                    "type": "string"
+                },
+                "metric": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.MonResultSimpleResponse": {
+            "type": "object",
+            "properties": {
+                "mcisId": {
+                    "type": "string"
+                },
+                "mcisMonitoring": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.MonResultSimple"
+                    }
+                },
+                "nsId": {
+                    "type": "string"
                 }
             }
         },

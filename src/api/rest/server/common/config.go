@@ -18,7 +18,7 @@ type RestGetAllConfigResponse struct {
 // RestGetConfig godoc
 // @Summary Get config
 // @Description Get config
-// @Tags Config
+// @Tags [Admin] System environment
 // @Accept  json
 // @Produce  json
 // @Param configId path string true "Config ID"
@@ -47,7 +47,7 @@ func RestGetConfig(c echo.Context) error {
 // RestGetAllConfig godoc
 // @Summary List all configs
 // @Description List all configs
-// @Tags Config
+// @Tags [Admin] System environment
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} RestGetAllConfigResponse
@@ -80,7 +80,7 @@ func RestGetAllConfig(c echo.Context) error {
 // RestPostConfig godoc
 // @Summary Create or Update config
 // @Description Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)
-// @Tags Config
+// @Tags [Admin] System environment
 // @Accept  json
 // @Produce  json
 // @Param config body common.ConfigInfo true "Key and Value for configuration"
@@ -113,7 +113,7 @@ func RestPostConfig(c echo.Context) error {
 // RestDelAllConfig godoc
 // @Summary Delete all configs
 // @Description Delete all configs
-// @Tags Config
+// @Tags [Admin] System environment
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg

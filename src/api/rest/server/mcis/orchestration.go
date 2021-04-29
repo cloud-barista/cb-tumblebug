@@ -12,7 +12,7 @@ import (
 // RestPostMcisPolicy godoc
 // @Summary Create MCIS Automation policy
 // @Description Create MCIS Automation policy
-// @Tags MCIS Policy
+// @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -44,7 +44,7 @@ func RestPostMcisPolicy(c echo.Context) error {
 // RestGetMcisPolicy godoc
 // @Summary Get MCIS Policy
 // @Description Get MCIS Policy
-// @Tags MCIS Policy
+// @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -83,7 +83,7 @@ type RestGetAllMcisPolicyResponse struct {
 // RestGetAllMcisPolicy godoc
 // @Summary List all MCIS Policys
 // @Description List all MCIS Policys
-// @Tags MCIS Policy
+// @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -116,7 +116,7 @@ func RestGetAllMcisPolicy(c echo.Context) error {
 // RestPutMcisPolicy godoc
 // @Summary Update MCIS Policy
 // @Description Update MCIS Policy
-// @Tags MCIS Policy
+// @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param mcisInfo body McisPolicyInfo true "Details for an MCIS Policy object"
@@ -132,7 +132,7 @@ func RestPutMcisPolicy(c echo.Context) error {
 // DelMcisPolicy godoc
 // @Summary Delete MCIS Policy
 // @Description Delete MCIS Policy
-// @Tags MCIS Policy
+// @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -159,7 +159,7 @@ func RestDelMcisPolicy(c echo.Context) error {
 // RestDelAllMcisPolicy godoc
 // @Summary Delete all MCIS Policys
 // @Description Delete all MCIS Policys
-// @Tags MCIS Policy
+// @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"

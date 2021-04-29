@@ -12,6 +12,26 @@ definitions:
         example: http://localhost:1024/spider
         type: string
     type: object
+  common.ConnConfig:
+    properties:
+      configName:
+        type: string
+      credentialName:
+        type: string
+      driverName:
+        type: string
+      providerName:
+        type: string
+      regionName:
+        type: string
+    type: object
+  common.ConnConfigList:
+    properties:
+      connectionconfig:
+        items:
+          $ref: '#/definitions/common.ConnConfig'
+        type: array
+    type: object
   common.IID:
     properties:
       nameId:
@@ -46,6 +66,24 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  common.Region:
+    properties:
+      keyValueInfoList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      providerName:
+        type: string
+      regionName:
+        type: string
+    type: object
+  common.RegionList:
+    properties:
+      region:
+        items:
+          $ref: '#/definitions/common.Region'
+        type: array
     type: object
   common.RestGetAllConfigResponse:
     properties:
@@ -746,6 +784,28 @@ definitions:
           $ref: '#/definitions/mcis.TbVmStatusInfo'
         type: array
     type: object
+  mcis.MonResultSimple:
+    properties:
+      err:
+        type: string
+      metric:
+        type: string
+      value:
+        type: string
+      vmId:
+        type: string
+    type: object
+  mcis.MonResultSimpleResponse:
+    properties:
+      mcisId:
+        type: string
+      mcisMonitoring:
+        items:
+          $ref: '#/definitions/mcis.MonResultSimple'
+        type: array
+      nsId:
+        type: string
+    type: object
   mcis.Policy:
     properties:
       autoAction:
@@ -1182,7 +1242,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all configs
       tags:
-      - Config
+      - '[Admin] System environment'
     get:
       consumes:
       - application/json
@@ -1204,7 +1264,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all configs
       tags:
-      - Config
+      - '[Admin] System environment'
     post:
       consumes:
       - application/json
@@ -1233,7 +1293,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create or Update config
       tags:
-      - Config
+      - '[Admin] System environment'
   /config/{configId}:
     get:
       consumes:
@@ -1262,7 +1322,76 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get config
       tags:
-      - Config
+      - '[Admin] System environment'
+  /connConfig:
+    get:
+      consumes:
+      - application/json
+      description: List all registered ConnConfig
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ConnConfigList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all registered ConnConfig
+      tags:
+      - '[Admin] Cloud environment management'
+  /connConfig/{connConfigName}:
+    get:
+      consumes:
+      - application/json
+      description: Get registered ConnConfig info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ConnConfig'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get registered ConnConfig info
+      tags:
+      - '[Admin] Cloud environment management'
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check Tumblebug is alive
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check Tumblebug is alive
+      tags:
+      - '[Admin] System management'
   /lookupImage:
     get:
       consumes:
@@ -1297,7 +1426,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image
       tags:
-      - Image
+      - '[Admin] Cloud environment management'
   /lookupImages:
     get:
       consumes:
@@ -1327,7 +1456,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image list
       tags:
-      - Image
+      - '[Admin] Cloud environment management'
   /lookupSpec:
     get:
       consumes:
@@ -1362,7 +1491,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec
       tags:
-      - Spec
+      - '[Admin] Cloud environment management'
   /lookupSpecs:
     get:
       consumes:
@@ -1392,7 +1521,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec list
       tags:
-      - Spec
+      - '[Admin] Cloud environment management'
   /ns:
     delete:
       consumes:
@@ -1411,7 +1540,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all namespaces
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
     get:
       consumes:
       - application/json
@@ -1433,7 +1562,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all namespaces
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
     post:
       consumes:
       - application/json
@@ -1462,7 +1591,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create namespace
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
   /ns/{nsId}:
     delete:
       consumes:
@@ -1487,7 +1616,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete namespace
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
     get:
       consumes:
       - application/json
@@ -1515,7 +1644,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get namespace
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
   /ns/{nsId}/benchmark/mcis/{mcisId}:
     get:
       consumes:
@@ -1555,7 +1684,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - MCIS
+      - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkall/mcis/{mcisId}:
     get:
       consumes:
@@ -1595,7 +1724,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCISs
       tags:
-      - MCIS
+      - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
@@ -1635,7 +1764,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] Remote command'
   /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}:
     post:
       consumes:
@@ -1680,7 +1809,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified VM
       tags:
-      - MCIS
+      - '[MCIS] Remote command'
   /ns/{nsId}/install/mcis/{mcisId}:
     post:
       consumes:
@@ -1720,7 +1849,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install the benchmark agent to specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/mcis:
     delete:
       consumes:
@@ -1745,7 +1874,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCISs
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
     get:
       consumes:
       - application/json
@@ -1773,7 +1902,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCISs
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
     post:
       consumes:
       - application/json
@@ -1807,7 +1936,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}:
     delete:
       consumes:
@@ -1837,11 +1966,11 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
     get:
       consumes:
       - application/json
-      description: Get MCIS
+      description: Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
       parameters:
       - description: Namespace ID
         in: path
@@ -1887,9 +2016,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS
+      summary: Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
     post:
       consumes:
@@ -1929,7 +2058,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VM in specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
     delete:
       consumes:
@@ -1964,7 +2093,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
     get:
       consumes:
       - application/json
@@ -2021,7 +2150,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
     post:
       consumes:
@@ -2061,11 +2190,12 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create multiple VMs by VM group in specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/recommend:
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Get MCIS recommendation
       parameters:
       - description: Namespace ID
@@ -2096,7 +2226,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS recommendation
       tags:
-      - MCIS
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:
     post:
       consumes:
@@ -2110,7 +2240,7 @@ paths:
         type: string
       - description: MCIS ID
         in: path
-        name: nsId
+        name: mcisId
         required: true
         type: string
       - description: Details for an MCIS object
@@ -2125,7 +2255,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.AgentInstallContentWrapper'
         "404":
           description: Not Found
           schema:
@@ -2136,7 +2266,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: InstallMonitorAgent MCIS
       tags:
-      - Monitor
+      - '[MCIS] Resource monitor (Developer)'
   /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
     get:
       consumes:
@@ -2150,7 +2280,12 @@ paths:
         type: string
       - description: MCIS ID
         in: path
-        name: nsId
+        name: mcisId
+        required: true
+        type: string
+      - description: 'Metric type: cpu, memory, disk, network'
+        in: path
+        name: metric
         required: true
         type: string
       produces:
@@ -2159,7 +2294,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.MonResultSimpleResponse'
         "404":
           description: Not Found
           schema:
@@ -2170,7 +2305,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: GetMonitorData MCIS
       tags:
-      - Monitor
+      - '[MCIS] Resource monitor (Developer)'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:
@@ -2195,7 +2330,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCIS Policys
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -2223,7 +2358,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCIS Policys
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management (WIP)'
   /ns/{nsId}/policy/mcis/{mcisId}:
     delete:
       consumes:
@@ -2253,7 +2388,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS Policy
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -2286,7 +2421,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS Policy
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management (WIP)'
     post:
       consumes:
       - application/json
@@ -2325,7 +2460,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS Automation policy
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management (WIP)'
   /ns/{nsId}/resources/fetchImages:
     post:
       consumes:
@@ -2354,7 +2489,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch images
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/fetchSpecs:
     post:
       consumes:
@@ -2383,7 +2518,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecs:
     post:
       consumes:
@@ -2417,7 +2552,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecsByRange:
     post:
       consumes:
@@ -2451,7 +2586,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs by range
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/image:
     delete:
       consumes:
@@ -2476,7 +2611,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all images
       tags:
-      - Image
+      - '[MCIR] Image management'
     get:
       consumes:
       - application/json
@@ -2504,7 +2639,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all images
       tags:
-      - Image
+      - '[MCIR] Image management'
     post:
       consumes:
       - application/json
@@ -2547,7 +2682,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register image
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/image/{imageId}:
     delete:
       consumes:
@@ -2577,7 +2712,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete image
       tags:
-      - Image
+      - '[MCIR] Image management'
     get:
       consumes:
       - application/json
@@ -2610,7 +2745,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get image
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/searchImage:
     get:
       consumes:
@@ -2640,7 +2775,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Search image
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/securityGroup:
     delete:
       consumes:
@@ -2665,7 +2800,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all Security Groups
       tags:
-      - Security Group
+      - '[MCIR] Security group management'
     get:
       consumes:
       - application/json
@@ -2693,7 +2828,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all Security Groups
       tags:
-      - Security Group
+      - '[MCIR] Security group management'
     post:
       consumes:
       - application/json
@@ -2727,7 +2862,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create Security Group
       tags:
-      - Security Group
+      - '[MCIR] Security group management'
   /ns/{nsId}/resources/securityGroup/{securityGroupId}:
     delete:
       consumes:
@@ -2757,7 +2892,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete Security Group
       tags:
-      - Security Group
+      - '[MCIR] Security group management'
     get:
       consumes:
       - application/json
@@ -2790,7 +2925,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get Security Group
       tags:
-      - Security Group
+      - '[MCIR] Security group management'
   /ns/{nsId}/resources/spec:
     delete:
       consumes:
@@ -2815,7 +2950,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     get:
       consumes:
       - application/json
@@ -2843,7 +2978,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all specs
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     post:
       consumes:
       - application/json
@@ -2886,7 +3021,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/spec/{specId}:
     delete:
       consumes:
@@ -2916,7 +3051,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     get:
       consumes:
       - application/json
@@ -2949,7 +3084,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
     put:
       consumes:
       - application/json
@@ -2978,7 +3113,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update spec
       tags:
-      - Spec
+      - '[MCIR] Spec management'
   /ns/{nsId}/resources/sshKey:
     delete:
       consumes:
@@ -3003,7 +3138,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all SSH Keys
       tags:
-      - SSH Key
+      - '[MCIR] Access key management'
     get:
       consumes:
       - application/json
@@ -3031,7 +3166,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all SSH Keys
       tags:
-      - SSH Key
+      - '[MCIR] Access key management'
     post:
       consumes:
       - application/json
@@ -3065,7 +3200,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create SSH Key
       tags:
-      - SSH Key
+      - '[MCIR] Access key management'
   /ns/{nsId}/resources/sshKey/{sshKeyId}:
     delete:
       consumes:
@@ -3095,7 +3230,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete SSH Key
       tags:
-      - SSH Key
+      - '[MCIR] Access key management'
     get:
       consumes:
       - application/json
@@ -3128,7 +3263,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get SSH Key
       tags:
-      - SSH Key
+      - '[MCIR] Access key management'
   /ns/{nsId}/resources/vNet:
     delete:
       consumes:
@@ -3153,7 +3288,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all VNets
       tags:
-      - VNet
+      - '[MCIR] Network management'
     get:
       consumes:
       - application/json
@@ -3181,7 +3316,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all VNets
       tags:
-      - VNet
+      - '[MCIR] Network management'
     post:
       consumes:
       - application/json
@@ -3215,7 +3350,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VNet
       tags:
-      - VNet
+      - '[MCIR] Network management'
   /ns/{nsId}/resources/vNet/{vNetId}:
     delete:
       consumes:
@@ -3245,7 +3380,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VNet
       tags:
-      - VNet
+      - '[MCIR] Network management'
     get:
       consumes:
       - application/json
@@ -3278,7 +3413,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VNet
       tags:
-      - VNet
+      - '[MCIR] Network management'
   /object:
     delete:
       consumes:
@@ -3307,7 +3442,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete an object
       tags:
-      - Admin
+      - '[Admin] System management'
     get:
       consumes:
       - application/json
@@ -3335,7 +3470,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get value of an object
       tags:
-      - Admin
+      - '[Admin] System management'
   /objects:
     delete:
       consumes:
@@ -3364,7 +3499,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete child objects along with the given object
       tags:
-      - Admin
+      - '[Admin] System management'
     get:
       consumes:
       - application/json
@@ -3392,7 +3527,82 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all objects for a given key
       tags:
-      - Admin
+      - '[Admin] System management'
+  /region:
+    get:
+      consumes:
+      - application/json
+      description: List all registered regions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.RegionList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all registered regions
+      tags:
+      - '[Admin] Cloud environment management'
+  /region/{regionName}:
+    get:
+      consumes:
+      - application/json
+      description: Get registered region info
+      parameters:
+      - description: Name of region to retrieve
+        in: path
+        name: regionName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Region'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get registered region info
+      tags:
+      - '[Admin] Cloud environment management'
+  /swaggerActive:
+    get:
+      consumes:
+      - application/json
+      description: Get API document web
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get API document web
+      tags:
+      - '[Admin] System management'
 securityDefinitions:
   BasicAuth:
     type: basic

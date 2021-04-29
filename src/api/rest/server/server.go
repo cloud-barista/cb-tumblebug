@@ -12,26 +12,25 @@ import (
 	"fmt"
 	"os"
 
-	// REST API (echo)
 	"net/http"
 
+	// REST API (echo)
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	// CB-Store
-
+	// echo-swagger middleware
 	_ "github.com/cloud-barista/cb-tumblebug/src/docs"
-	echoSwagger "github.com/swaggo/echo-swagger" // echo-swagger middleware
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 //var masterConfigInfos confighandler.MASTERCONFIGTYPE
 
 const (
-	InfoColor    = "\033[1;34m%s\033[0m"
-	NoticeColor  = "\033[1;36m%s\033[0m"
-	WarningColor = "\033[1;33m%s\033[0m"
-	ErrorColor   = "\033[1;31m%s\033[0m"
-	DebugColor   = "\033[0;36m%s\033[0m"
+	infoColor    = "\033[1;34m%s\033[0m"
+	noticeColor  = "\033[1;36m%s\033[0m"
+	warningColor = "\033[1;33m%s\033[0m"
+	errorColor   = "\033[1;31m%s\033[0m"
+	debugColor   = "\033[0;36m%s\033[0m"
 )
 
 const (
@@ -64,12 +63,13 @@ func ApiServer() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
-
-	e.GET("/tumblebug/health", rest_common.RestGetHealth)
-
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
+
+	// Route for system management
+	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
+	e.GET("/tumblebug/health", rest_common.RestGetHealth)
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -78,7 +78,7 @@ func ApiServer() {
 
 	API_USERNAME := os.Getenv("API_USERNAME")
 	API_PASSWORD := os.Getenv("API_PASSWORD")
-	fmt.Println("REST API username/password: " + API_USERNAME + "/" + API_PASSWORD)
+
 	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		// Be careful to use constant time comparison to prevent timing attacks
 		if subtle.ConstantTimeCompare([]byte(username), []byte(API_USERNAME)) == 1 &&
@@ -88,23 +88,13 @@ func ApiServer() {
 		return false, nil
 	}))
 
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println("\n \n \n ")
 	fmt.Printf(banner)
-	fmt.Println("")
-	//	fmt.Printf(ErrorColor, Version)
-	fmt.Println("")
-	fmt.Printf(InfoColor, website)
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println("\n \n ")
+	fmt.Printf(infoColor, website)
+	fmt.Println("\n \n ")
 
 	// Route
-
-	//common.UpdateEnv()
-	//common.SPIDER_REST_URL = "TEST"
-
 	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
 
 	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
@@ -123,6 +113,7 @@ func ApiServer() {
 	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
 	e.GET("/tumblebug/webadmin/spec", webadmin.Spec)
 
+	// @Tags [Admin] System environment
 	e.POST("/tumblebug/config", rest_common.RestPostConfig)
 	e.GET("/tumblebug/config/:configId", rest_common.RestGetConfig)
 	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
@@ -135,6 +126,7 @@ func ApiServer() {
 
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
+	//Namespace Management
 	g.POST("", rest_common.RestPostNs)
 	g.GET("/:nsId", rest_common.RestGetNs)
 	g.GET("", rest_common.RestGetAllNs)
@@ -142,6 +134,7 @@ func ApiServer() {
 	g.DELETE("/:nsId", rest_common.RestDelNs)
 	g.DELETE("", rest_common.RestDelAllNs)
 
+	//MCIS Management
 	g.POST("/:nsId/mcis", rest_mcis.RestPostMcis)
 	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis)
 	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
@@ -175,6 +168,7 @@ func ApiServer() {
 	g.POST("/:nsId/monitoring/install/mcis/:mcisId", rest_mcis.RestPostInstallMonitorAgentToMcis)
 	g.GET("/:nsId/monitoring/mcis/:mcisId/metric/:metric", rest_mcis.RestGetMonitorData)
 
+	//MCIR Management
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)
 	g.GET("/:nsId/resources/image", rest_mcir.RestGetAllResources)
@@ -254,6 +248,12 @@ func ApiServer() {
 	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestDeleteObjectAssociation)
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
-	e.Logger.Fatal(e.Start(":1323"))
+	selfEndpoint := os.Getenv("SELF_ENDPOINT")
+	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html?url=http://" + selfEndpoint + "/tumblebug/swaggerActive"
 
+	fmt.Println(" [Access to API dashboard]" + " username/password: (" + API_USERNAME + "/" + API_PASSWORD + ")")
+	fmt.Printf(noticeColor, apidashboard)
+	fmt.Println("\n ")
+
+	e.Logger.Fatal(e.Start(":1323"))
 }

@@ -56,6 +56,7 @@ type DfTelegrafMetric struct {
 }
 */
 
+// MonResultSimple struct is for containing vm monitoring results
 type MonResultSimple struct {
 	Metric string `json:"metric"`
 	VmId   string `json:"vmId"`
@@ -63,6 +64,7 @@ type MonResultSimple struct {
 	Err    string `json:"err"`
 }
 
+// MonResultSimpleResponse struct is for containing Mcis monitoring results
 type MonResultSimpleResponse struct {
 	NsId           string            `json:"nsId"`
 	McisId         string            `json:"mcisId"`
@@ -287,6 +289,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 
 }
 
+// GetMonitoringData func retrieves monitoring data from cb-dragonfly
 func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimpleResponse, error) {
 
 	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)

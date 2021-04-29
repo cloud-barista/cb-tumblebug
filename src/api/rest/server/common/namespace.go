@@ -50,7 +50,7 @@ func RestCheckNs(c echo.Context) error {
 // RestDelAllNs godoc
 // @Summary Delete all namespaces
 // @Description Delete all namespaces
-// @Tags Namespace
+// @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
@@ -82,7 +82,7 @@ func RestDelAllNs(c echo.Context) error {
 // RestDelNs godoc
 // @Summary Delete namespace
 // @Description Delete namespace
-// @Tags Namespace
+// @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -128,7 +128,7 @@ type RestGetAllNsResponse struct {
 // RestGetAllNs godoc
 // @Summary List all namespaces
 // @Description List all namespaces
-// @Tags Namespace
+// @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} RestGetAllNsResponse
@@ -161,7 +161,7 @@ func RestGetAllNs(c echo.Context) error {
 // RestGetNs godoc
 // @Summary Get namespace
 // @Description Get namespace
-// @Tags Namespace
+// @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -190,7 +190,7 @@ func RestGetNs(c echo.Context) error {
 // RestPostNs godoc
 // @Summary Create namespace
 // @Description Create namespace
-// @Tags Namespace
+// @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
 // @Param nsReq body common.NsReq true "Details for a new namespace"
@@ -224,7 +224,7 @@ func RestPostNs(c echo.Context) error {
 // RestPutNs godoc
 // @Summary Update namespace
 // @Description Update namespace
-// @Tags Namespace
+// @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
 // @Param namespace body common.NsInfo true "Details to update existing namespace"

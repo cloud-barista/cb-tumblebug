@@ -11,13 +11,13 @@ import (
 // RestPostInstallMonitorAgentToMcis godoc
 // @Summary InstallMonitorAgent MCIS
 // @Description InstallMonitorAgent MCIS
-// @Tags Monitor
+// @Tags [MCIS] Resource monitor (Developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param nsId path string true "MCIS ID"
+// @Param mcisId path string true "MCIS ID"
 // @Param mcisInfo body mcis.McisCmdReq true "Details for an MCIS object"
-// @Success 200 {object} mcir.TbSshKeyInfo
+// @Success 200 {object} mcis.AgentInstallContentWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/install/mcis/{mcisId} [post]
@@ -43,12 +43,13 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 // RestGetMonitorData godoc
 // @Summary GetMonitorData MCIS
 // @Description GetMonitorData MCIS
-// @Tags Monitor
+// @Tags [MCIS] Resource monitor (Developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param nsId path string true "MCIS ID"
-// @Success 200 {object} mcir.TbSshKeyInfo
+// @Param mcisId path string true "MCIS ID"
+// @Param metric path string true "Metric type: cpu, memory, disk, network"
+// @Success 200 {object} mcis.MonResultSimpleResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric} [get]

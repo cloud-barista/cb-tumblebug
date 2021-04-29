@@ -12,7 +12,7 @@ import (
 // RestPostSpec godoc
 // @Summary Register spec
 // @Description Register spec
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param registeringMethod query string true "registerWithInfo or else"
@@ -70,7 +70,7 @@ func RestPostSpec(c echo.Context) error {
 // RestPutSpec godoc
 // @Summary Update spec
 // @Description Update spec
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param specInfo body mcir.TbSpecInfo true "Details for an spec object"
@@ -117,7 +117,7 @@ type RestLookupSpecRequest struct {
 // RestLookupSpec godoc
 // @Summary Lookup spec
 // @Description Lookup spec
-// @Tags Spec
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupSpecRequest true "Specify connectionName"
@@ -147,7 +147,7 @@ func RestLookupSpec(c echo.Context) error {
 // RestLookupSpecList godoc
 // @Summary Lookup spec list
 // @Description Lookup spec list
-// @Tags Spec
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupSpecRequest true "Specify connectionName"
@@ -180,7 +180,7 @@ func RestLookupSpecList(c echo.Context) error {
 // RestFetchSpecs godoc
 // @Summary Fetch specs
 // @Description Fetch specs
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -213,7 +213,7 @@ type RestFilterSpecsResponse struct {
 // RestFilterSpecs godoc
 // @Summary Filter specs
 // @Description Filter specs
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -247,7 +247,7 @@ func RestFilterSpecs(c echo.Context) error {
 // RestFilterSpecsByRange godoc
 // @Summary Filter specs by range
 // @Description Filter specs by range
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -309,7 +309,7 @@ func RestTestSortSpecs(c echo.Context) error {
 // RestGetSpec godoc
 // @Summary Get spec
 // @Description Get spec
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -331,7 +331,7 @@ type RestGetAllSpecResponse struct {
 // RestGetAllSpec godoc
 // @Summary List all specs
 // @Description List all specs
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -347,7 +347,7 @@ func RestGetAllSpec(c echo.Context) error {
 // RestDelSpec godoc
 // @Summary Delete spec
 // @Description Delete spec
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -363,7 +363,7 @@ func RestDelSpec(c echo.Context) error {
 // RestDelAllSpec godoc
 // @Summary Delete all specs
 // @Description Delete all specs
-// @Tags Spec
+// @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"

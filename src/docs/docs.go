@@ -43,7 +43,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "List all configs",
                 "responses": {
@@ -76,7 +76,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Create or Update config",
                 "parameters": [
@@ -120,7 +120,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Delete all configs",
                 "responses": {
@@ -149,7 +149,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Get config",
                 "parameters": [
@@ -183,6 +183,111 @@ var doc = `{
                 }
             }
         },
+        "/connConfig": {
+            "get": {
+                "description": "List all registered ConnConfig",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "List all registered ConnConfig",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConnConfigList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/connConfig/{connConfigName}": {
+            "get": {
+                "description": "Get registered ConnConfig info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Get registered ConnConfig info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConnConfig"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Check Tumblebug is alive",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Check Tumblebug is alive",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/lookupImage": {
             "get": {
                 "description": "Lookup image",
@@ -193,7 +298,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image",
                 "parameters": [
@@ -246,7 +351,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image list",
                 "parameters": [
@@ -292,7 +397,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec",
                 "parameters": [
@@ -345,7 +450,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec list",
                 "parameters": [
@@ -391,7 +496,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "List all namespaces",
                 "responses": {
@@ -424,7 +529,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Create namespace",
                 "parameters": [
@@ -468,7 +573,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete all namespaces",
                 "responses": {
@@ -497,7 +602,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Get namespace",
                 "parameters": [
@@ -539,7 +644,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete namespace",
                 "parameters": [
@@ -577,7 +682,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -637,7 +742,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -697,7 +802,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Remote command"
                 ],
                 "summary": "Send a command to specified MCIS",
                 "parameters": [
@@ -757,7 +862,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Remote command"
                 ],
                 "summary": "Send a command to specified VM",
                 "parameters": [
@@ -824,7 +929,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "Install the benchmark agent to specified MCIS",
                 "parameters": [
@@ -884,7 +989,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -926,7 +1031,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create MCIS",
                 "parameters": [
@@ -977,7 +1082,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete all MCISs",
                 "parameters": [
@@ -1015,9 +1120,10 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS recommendation",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1060,7 +1166,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
-                "description": "Get MCIS",
+                "description": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1068,9 +1174,9 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
-                "summary": "Get MCIS",
+                "summary": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1148,7 +1254,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1193,7 +1299,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create VM in specified MCIS",
                 "parameters": [
@@ -1253,7 +1359,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1340,7 +1446,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1392,7 +1498,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create multiple VMs by VM group in specified MCIS",
                 "parameters": [
@@ -1452,7 +1558,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Monitor"
+                    "[MCIS] Resource monitor (Developer)"
                 ],
                 "summary": "InstallMonitorAgent MCIS",
                 "parameters": [
@@ -1466,7 +1572,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
                         "in": "path",
                         "required": true
                     },
@@ -1484,7 +1590,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
@@ -1512,7 +1618,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Monitor"
+                    "[MCIS] Resource monitor (Developer)"
                 ],
                 "summary": "GetMonitorData MCIS",
                 "parameters": [
@@ -1526,7 +1632,14 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Metric type: cpu, memory, disk, network",
+                        "name": "metric",
                         "in": "path",
                         "required": true
                     }
@@ -1535,7 +1648,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.MonResultSimpleResponse"
                         }
                     },
                     "404": {
@@ -1563,7 +1676,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "List all MCIS Policys",
                 "parameters": [
@@ -1605,7 +1718,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Delete all MCIS Policys",
                 "parameters": [
@@ -1643,7 +1756,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Get MCIS Policy",
                 "parameters": [
@@ -1692,7 +1805,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Create MCIS Automation policy",
                 "parameters": [
@@ -1750,7 +1863,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Delete MCIS Policy",
                 "parameters": [
@@ -1795,7 +1908,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Fetch images",
                 "parameters": [
@@ -1839,7 +1952,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Fetch specs",
                 "parameters": [
@@ -1883,7 +1996,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs",
                 "parameters": [
@@ -1935,7 +2048,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Filter specs by range",
                 "parameters": [
@@ -1987,7 +2100,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "List all images",
                 "parameters": [
@@ -2029,7 +2142,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Register image",
                 "parameters": [
@@ -2094,7 +2207,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete all images",
                 "parameters": [
@@ -2132,7 +2245,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Get image",
                 "parameters": [
@@ -2181,7 +2294,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete image",
                 "parameters": [
@@ -2226,7 +2339,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Search image",
                 "parameters": [
@@ -2272,7 +2385,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "List all Security Groups",
                 "parameters": [
@@ -2314,7 +2427,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Create Security Group",
                 "parameters": [
@@ -2365,7 +2478,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete all Security Groups",
                 "parameters": [
@@ -2403,7 +2516,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Get Security Group",
                 "parameters": [
@@ -2452,7 +2565,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete Security Group",
                 "parameters": [
@@ -2497,7 +2610,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "List all specs",
                 "parameters": [
@@ -2539,7 +2652,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Register spec",
                 "parameters": [
@@ -2604,7 +2717,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete all specs",
                 "parameters": [
@@ -2642,7 +2755,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Get spec",
                 "parameters": [
@@ -2691,7 +2804,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Update spec",
                 "parameters": [
@@ -2735,7 +2848,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spec"
+                    "[MCIR] Spec management"
                 ],
                 "summary": "Delete spec",
                 "parameters": [
@@ -2780,7 +2893,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "List all SSH Keys",
                 "parameters": [
@@ -2822,7 +2935,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Create SSH Key",
                 "parameters": [
@@ -2873,7 +2986,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Delete all SSH Keys",
                 "parameters": [
@@ -2911,7 +3024,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Get SSH Key",
                 "parameters": [
@@ -2960,7 +3073,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Delete SSH Key",
                 "parameters": [
@@ -3005,7 +3118,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "List all VNets",
                 "parameters": [
@@ -3047,7 +3160,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Create VNet",
                 "parameters": [
@@ -3098,7 +3211,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Delete all VNets",
                 "parameters": [
@@ -3136,7 +3249,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Get VNet",
                 "parameters": [
@@ -3185,7 +3298,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "VNet"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Delete VNet",
                 "parameters": [
@@ -3230,7 +3343,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Get value of an object",
                 "parameters": [
@@ -3272,7 +3385,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete an object",
                 "parameters": [
@@ -3316,7 +3429,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "List all objects for a given key",
                 "parameters": [
@@ -3358,7 +3471,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete child objects along with the given object",
                 "parameters": [
@@ -3370,6 +3483,120 @@ var doc = `{
                         "required": true
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/region": {
+            "get": {
+                "description": "List all registered regions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "List all registered regions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.RegionList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/region/{regionName}": {
+            "get": {
+                "description": "Get registered region info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Get registered region info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of region to retrieve",
+                        "name": "regionName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.Region"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/swaggerActive": {
+            "get": {
+                "description": "Get API document web",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Get API document web",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3408,6 +3635,37 @@ var doc = `{
                 "value": {
                     "type": "string",
                     "example": "http://localhost:1024/spider"
+                }
+            }
+        },
+        "common.ConnConfig": {
+            "type": "object",
+            "properties": {
+                "configName": {
+                    "type": "string"
+                },
+                "credentialName": {
+                    "type": "string"
+                },
+                "driverName": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.ConnConfigList": {
+            "type": "object",
+            "properties": {
+                "connectionconfig": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.ConnConfig"
+                    }
                 }
             }
         },
@@ -3460,6 +3718,34 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "common.Region": {
+            "type": "object",
+            "properties": {
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.RegionList": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.Region"
+                    }
                 }
             }
         },
@@ -4506,6 +4792,40 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmStatusInfo"
                     }
+                }
+            }
+        },
+        "mcis.MonResultSimple": {
+            "type": "object",
+            "properties": {
+                "err": {
+                    "type": "string"
+                },
+                "metric": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.MonResultSimpleResponse": {
+            "type": "object",
+            "properties": {
+                "mcisId": {
+                    "type": "string"
+                },
+                "mcisMonitoring": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.MonResultSimple"
+                    }
+                },
+                "nsId": {
+                    "type": "string"
                 }
             }
         },

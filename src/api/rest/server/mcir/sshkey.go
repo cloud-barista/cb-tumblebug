@@ -12,7 +12,7 @@ import (
 // RestPostSshKey godoc
 // @Summary Create SSH Key
 // @Description Create SSH Key
-// @Tags SSH Key
+// @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -53,7 +53,7 @@ func RestPostSshKey(c echo.Context) error {
 // RestPutSshKey godoc
 // @Summary Update SSH Key
 // @Description Update SSH Key
-// @Tags SSH Key
+// @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
 // @Param sshKeyInfo body mcir.TbSshKeyInfo true "Details for an SSH Key object"
@@ -71,7 +71,7 @@ func RestPutSshKey(c echo.Context) error {
 // RestGetSshKey godoc
 // @Summary Get SSH Key
 // @Description Get SSH Key
-// @Tags SSH Key
+// @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -93,7 +93,7 @@ type RestGetAllSshKeyResponse struct {
 // RestGetAllSshKey godoc
 // @Summary List all SSH Keys
 // @Description List all SSH Keys
-// @Tags SSH Key
+// @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -109,7 +109,7 @@ func RestGetAllSshKey(c echo.Context) error {
 // RestDelSshKey godoc
 // @Summary Delete SSH Key
 // @Description Delete SSH Key
-// @Tags SSH Key
+// @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -125,7 +125,7 @@ func RestDelSshKey(c echo.Context) error {
 // RestDelAllSshKey godoc
 // @Summary Delete all SSH Keys
 // @Description Delete all SSH Keys
-// @Tags SSH Key
+// @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
