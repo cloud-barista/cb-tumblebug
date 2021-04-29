@@ -35,8 +35,8 @@ import (
 // @BasePath /tumblebug
 
 // @securityDefinitions.basic BasicAuth
-
 func main() {
+
 	common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
 	common.DRAGONFLY_REST_URL = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 	common.DB_URL = common.NVL(os.Getenv("DB_URL"), "localhost:3306")

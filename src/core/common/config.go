@@ -8,15 +8,16 @@ import (
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
+// swagger:request ConfigReq
 type ConfigReq struct {
-	Name  string `json:"name" example:"spider"`
+	Name  string `json:"name" example:"SPIDER_REST_URL"`
 	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
 // swagger:response ConfigInfo
 type ConfigInfo struct {
-	Id    string `json:"id" example:"configid01"`
-	Name  string `json:"name" example:"spider"`
+	Id    string `json:"id" example:"SPIDER_REST_URL"`
+	Name  string `json:"name" example:"SPIDER_REST_URL"`
 	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
@@ -58,8 +59,6 @@ func UpdateEnv(id string) error {
 		common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 	*/
 
-	content := ConfigInfo{}
-
 	lowStrSPIDER_REST_URL := ToLower(StrSPIDER_REST_URL)
 	lowStrDRAGONFLY_REST_URL := ToLower(StrDRAGONFLY_REST_URL)
 	lowStrDB_URL := ToLower(StrDB_URL)
@@ -68,37 +67,29 @@ func UpdateEnv(id string) error {
 	lowStrDB_PASSWORD := ToLower(StrDB_PASSWORD)
 	lowStrAUTOCONTROL_DURATION_MS := ToLower(StrAUTOCONTROL_DURATION_MS)
 
-	Key := "/config/" + id
-	keyValue, err := CBStore.Get(Key)
+	configInfo, err := GetConfig(id)
 	if err != nil {
-		CBLog.Error(err)
+		//CBLog.Error(err)
 		return err
 	}
-	if keyValue != nil {
-		err := json.Unmarshal([]byte(keyValue.Value), &content)
-		if err != nil {
-			CBLog.Error(err)
-			return err
-		}
 
-		switch id {
-		case lowStrSPIDER_REST_URL:
-			SPIDER_REST_URL = content.Value
-		case lowStrDRAGONFLY_REST_URL:
-			DRAGONFLY_REST_URL = content.Value
-		case lowStrDB_URL:
-			DB_URL = content.Value
-		case lowStrDB_DATABASE:
-			DB_DATABASE = content.Value
-		case lowStrDB_USER:
-			DB_USER = content.Value
-		case lowStrDB_PASSWORD:
-			DB_PASSWORD = content.Value
-		case lowStrAUTOCONTROL_DURATION_MS:
-			AUTOCONTROL_DURATION_MS = content.Value
-		default:
+	switch id {
+	case lowStrSPIDER_REST_URL:
+		SPIDER_REST_URL = configInfo.Value
+	case lowStrDRAGONFLY_REST_URL:
+		DRAGONFLY_REST_URL = configInfo.Value
+	case lowStrDB_URL:
+		DB_URL = configInfo.Value
+	case lowStrDB_DATABASE:
+		DB_DATABASE = configInfo.Value
+	case lowStrDB_USER:
+		DB_USER = configInfo.Value
+	case lowStrDB_PASSWORD:
+		DB_PASSWORD = configInfo.Value
+	case lowStrAUTOCONTROL_DURATION_MS:
+		AUTOCONTROL_DURATION_MS = configInfo.Value
+	default:
 
-		}
 	}
 
 	fmt.Println("\n<SPIDER_REST_URL> " + SPIDER_REST_URL)

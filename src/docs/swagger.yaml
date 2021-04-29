@@ -3,10 +3,19 @@ definitions:
   common.ConfigInfo:
     properties:
       id:
-        example: configid01
+        example: SPIDER_REST_URL
         type: string
       name:
-        example: spider
+        example: SPIDER_REST_URL
+        type: string
+      value:
+        example: http://localhost:1024/spider
+        type: string
+    type: object
+  common.ConfigReq:
+    properties:
+      name:
+        example: SPIDER_REST_URL
         type: string
       value:
         example: http://localhost:1024/spider
@@ -1275,7 +1284,7 @@ paths:
         name: config
         required: true
         schema:
-          $ref: '#/definitions/common.ConfigInfo'
+          $ref: '#/definitions/common.ConfigReq'
       produces:
       - application/json
       responses:
