@@ -136,6 +136,7 @@ func ApiServer() {
 	g.DELETE("/:nsId", rest_common.RestDelNs)
 	g.DELETE("", rest_common.RestDelAllNs)
 
+	//MCIS Management
 	g.POST("/:nsId/mcis", rest_mcis.RestPostMcis)
 	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis)
 	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
@@ -169,6 +170,7 @@ func ApiServer() {
 	g.POST("/:nsId/monitoring/install/mcis/:mcisId", rest_mcis.RestPostInstallMonitorAgentToMcis)
 	g.GET("/:nsId/monitoring/mcis/:mcisId/metric/:metric", rest_mcis.RestGetMonitorData)
 
+	//MCIR Management
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)
 	g.GET("/:nsId/resources/image", rest_mcir.RestGetAllResources)
