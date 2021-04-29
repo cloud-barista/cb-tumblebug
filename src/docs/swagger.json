@@ -1653,7 +1653,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "List all MCIS Policys",
                 "parameters": [
@@ -1695,7 +1695,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Delete all MCIS Policys",
                 "parameters": [
@@ -1733,7 +1733,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Get MCIS Policy",
                 "parameters": [
@@ -1782,7 +1782,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Create MCIS Automation policy",
                 "parameters": [
@@ -1840,7 +1840,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Delete MCIS Policy",
                 "parameters": [

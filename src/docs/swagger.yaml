@@ -2302,7 +2302,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCIS Policys
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management'
     get:
       consumes:
       - application/json
@@ -2330,7 +2330,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCIS Policys
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management'
   /ns/{nsId}/policy/mcis/{mcisId}:
     delete:
       consumes:
@@ -2360,7 +2360,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS Policy
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management'
     get:
       consumes:
       - application/json
@@ -2393,7 +2393,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS Policy
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management'
     post:
       consumes:
       - application/json
@@ -2432,7 +2432,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS Automation policy
       tags:
-      - MCIS Policy
+      - '[MCIS] Auto control policy management'
   /ns/{nsId}/resources/fetchImages:
     post:
       consumes:

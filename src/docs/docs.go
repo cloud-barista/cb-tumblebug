@@ -1668,7 +1668,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "List all MCIS Policys",
                 "parameters": [
@@ -1710,7 +1710,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Delete all MCIS Policys",
                 "parameters": [
@@ -1748,7 +1748,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Get MCIS Policy",
                 "parameters": [
@@ -1797,7 +1797,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Create MCIS Automation policy",
                 "parameters": [
@@ -1855,7 +1855,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS Policy"
+                    "[MCIS] Auto control policy management"
                 ],
                 "summary": "Delete MCIS Policy",
                 "parameters": [
