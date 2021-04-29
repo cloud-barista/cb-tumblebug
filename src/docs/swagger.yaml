@@ -1220,7 +1220,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all configs
       tags:
-      - Config
+      - '[Admin] System environment config'
     get:
       consumes:
       - application/json
@@ -1242,7 +1242,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all configs
       tags:
-      - Config
+      - '[Admin] System environment config'
     post:
       consumes:
       - application/json
@@ -1271,7 +1271,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create or Update config
       tags:
-      - Config
+      - '[Admin] System environment config'
   /config/{configId}:
     get:
       consumes:
@@ -1300,7 +1300,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get config
       tags:
-      - Config
+      - '[Admin] System environment config'
   /connConfig:
     get:
       consumes:
@@ -1323,7 +1323,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered ConnConfig
       tags:
-      - Admin
+      - Cloud
   /connConfig/{connConfigName}:
     get:
       consumes:
@@ -1346,7 +1346,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
       tags:
-      - Admin
+      - Cloud
   /health:
     get:
       consumes:
@@ -3522,7 +3522,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered regions
       tags:
-      - Admin
+      - Cloud
   /region/{regionName}:
     get:
       consumes:
@@ -3551,7 +3551,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
       tags:
-      - Admin
+      - Cloud
   /swaggerActive:
     get:
       consumes:

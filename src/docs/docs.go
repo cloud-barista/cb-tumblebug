@@ -43,7 +43,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment config"
                 ],
                 "summary": "List all configs",
                 "responses": {
@@ -76,7 +76,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment config"
                 ],
                 "summary": "Create or Update config",
                 "parameters": [
@@ -120,7 +120,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment config"
                 ],
                 "summary": "Delete all configs",
                 "responses": {
@@ -149,7 +149,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "[Admin] System environment config"
                 ],
                 "summary": "Get config",
                 "parameters": [
@@ -193,7 +193,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "Cloud"
                 ],
                 "summary": "List all registered ConnConfig",
                 "responses": {
@@ -228,7 +228,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "Cloud"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "responses": {
@@ -3507,7 +3507,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "Cloud"
                 ],
                 "summary": "List all registered regions",
                 "responses": {
@@ -3542,7 +3542,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "Cloud"
                 ],
                 "summary": "Get registered region info",
                 "parameters": [
