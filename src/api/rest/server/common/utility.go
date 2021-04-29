@@ -78,6 +78,18 @@ func RestGetConnConfigList(c echo.Context) error {
 
 }
 
+// RestGetRegion func is a rest api wrapper for GetRegion.
+// RestGetRegion godoc
+// @Summary Get registered region info
+// @Description Get registered region info
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param regionName path string true "Name of region to retrieve"
+// @Success 200 {object} common.Region
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /region/{regionName} [get]
 func RestGetRegion(c echo.Context) error {
 
 	regionName := c.Param("regionName")

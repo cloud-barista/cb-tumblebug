@@ -3434,6 +3434,35 @@ paths:
       summary: List all registered regions
       tags:
       - Admin
+  /region/{regionName}:
+    get:
+      consumes:
+      - application/json
+      description: Get registered region info
+      parameters:
+      - description: Name of region to retrieve
+        in: path
+        name: regionName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.Region'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get registered region info
+      tags:
+      - Admin
 securityDefinitions:
   BasicAuth:
     type: basic

@@ -3426,6 +3426,50 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/region/{regionName}": {
+            "get": {
+                "description": "Get registered region info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get registered region info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of region to retrieve",
+                        "name": "regionName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.Region"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
