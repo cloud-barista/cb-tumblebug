@@ -57,6 +57,8 @@ func main() {
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	//Setup database (meta_db/dat/cbtumblebug.s3db)
+	fmt.Println("")
+	fmt.Println("[Setup SQL Database]")
 	err := common.OpenSQL("../meta_db/dat/cbtumblebug.s3db")
 	if err != nil {
 		fmt.Println(err.Error())
