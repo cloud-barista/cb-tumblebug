@@ -53,8 +53,8 @@ type JSONResult struct {
 // Annotation for API documention Need to be revised.
 
 // RestGetMcis godoc
-// @Summary Get MCIS
-// @Description Get MCIS
+// @Summary Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
+// @Description Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json

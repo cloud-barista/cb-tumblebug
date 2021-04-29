@@ -1166,7 +1166,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
-                "description": "Get MCIS",
+                "description": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1176,7 +1176,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "Get MCIS",
+                "summary": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2893,7 +2893,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VM access key management"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "List all SSH Keys",
                 "parameters": [
@@ -2935,7 +2935,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VM access key management"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Create SSH Key",
                 "parameters": [
@@ -2986,7 +2986,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VM access key management"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Delete all SSH Keys",
                 "parameters": [
@@ -3024,7 +3024,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VM access key management"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Get SSH Key",
                 "parameters": [
@@ -3073,7 +3073,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VM access key management"
+                    "[MCIR] Access key management"
                 ],
                 "summary": "Delete SSH Key",
                 "parameters": [
@@ -3118,7 +3118,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VNet management"
+                    "[MCIR] Network management"
                 ],
                 "summary": "List all VNets",
                 "parameters": [
@@ -3160,7 +3160,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VNet management"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Create VNet",
                 "parameters": [
@@ -3211,7 +3211,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VNet management"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Delete all VNets",
                 "parameters": [
@@ -3249,7 +3249,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VNet management"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Get VNet",
                 "parameters": [
@@ -3298,7 +3298,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] VNet management"
+                    "[MCIR] Network management"
                 ],
                 "summary": "Delete VNet",
                 "parameters": [

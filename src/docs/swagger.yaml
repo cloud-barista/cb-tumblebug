@@ -1970,7 +1970,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get MCIS
+      description: Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
       parameters:
       - description: Namespace ID
         in: path
@@ -2016,7 +2016,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS
+      summary: Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
       tags:
       - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
@@ -3138,7 +3138,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all SSH Keys
       tags:
-      - '[MCIR] VM access key management'
+      - '[MCIR] Access key management'
     get:
       consumes:
       - application/json
@@ -3166,7 +3166,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all SSH Keys
       tags:
-      - '[MCIR] VM access key management'
+      - '[MCIR] Access key management'
     post:
       consumes:
       - application/json
@@ -3200,7 +3200,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create SSH Key
       tags:
-      - '[MCIR] VM access key management'
+      - '[MCIR] Access key management'
   /ns/{nsId}/resources/sshKey/{sshKeyId}:
     delete:
       consumes:
@@ -3230,7 +3230,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete SSH Key
       tags:
-      - '[MCIR] VM access key management'
+      - '[MCIR] Access key management'
     get:
       consumes:
       - application/json
@@ -3263,7 +3263,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get SSH Key
       tags:
-      - '[MCIR] VM access key management'
+      - '[MCIR] Access key management'
   /ns/{nsId}/resources/vNet:
     delete:
       consumes:
@@ -3288,7 +3288,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all VNets
       tags:
-      - '[MCIR] VNet management'
+      - '[MCIR] Network management'
     get:
       consumes:
       - application/json
@@ -3316,7 +3316,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all VNets
       tags:
-      - '[MCIR] VNet management'
+      - '[MCIR] Network management'
     post:
       consumes:
       - application/json
@@ -3350,7 +3350,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VNet
       tags:
-      - '[MCIR] VNet management'
+      - '[MCIR] Network management'
   /ns/{nsId}/resources/vNet/{vNetId}:
     delete:
       consumes:
@@ -3380,7 +3380,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VNet
       tags:
-      - '[MCIR] VNet management'
+      - '[MCIR] Network management'
     get:
       consumes:
       - application/json
@@ -3413,7 +3413,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VNet
       tags:
-      - '[MCIR] VNet management'
+      - '[MCIR] Network management'
   /object:
     delete:
       consumes:
