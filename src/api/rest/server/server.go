@@ -18,8 +18,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	// CB-Store
-
 	_ "github.com/cloud-barista/cb-tumblebug/src/docs"
 	echoSwagger "github.com/swaggo/echo-swagger" // echo-swagger middleware
 )
