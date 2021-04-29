@@ -183,6 +183,76 @@ var doc = `{
                 }
             }
         },
+        "/connConfig": {
+            "get": {
+                "description": "List all registered ConnConfig",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "List all registered ConnConfig",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConnConfigList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/connConfig/{connConfigName}": {
+            "get": {
+                "description": "Get registered ConnConfig info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get registered ConnConfig info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConnConfig"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/lookupImage": {
             "get": {
                 "description": "Lookup image",
@@ -3487,6 +3557,37 @@ var doc = `{
                 "value": {
                     "type": "string",
                     "example": "http://localhost:1024/spider"
+                }
+            }
+        },
+        "common.ConnConfig": {
+            "type": "object",
+            "properties": {
+                "configName": {
+                    "type": "string"
+                },
+                "credentialName": {
+                    "type": "string"
+                },
+                "driverName": {
+                    "type": "string"
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.ConnConfigList": {
+            "type": "object",
+            "properties": {
+                "connectionconfig": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.ConnConfig"
+                    }
                 }
             }
         },

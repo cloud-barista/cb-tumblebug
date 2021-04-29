@@ -12,6 +12,26 @@ definitions:
         example: http://localhost:1024/spider
         type: string
     type: object
+  common.ConnConfig:
+    properties:
+      configName:
+        type: string
+      credentialName:
+        type: string
+      driverName:
+        type: string
+      providerName:
+        type: string
+      regionName:
+        type: string
+    type: object
+  common.ConnConfigList:
+    properties:
+      connectionconfig:
+        items:
+          $ref: '#/definitions/common.ConnConfig'
+        type: array
+    type: object
   common.IID:
     properties:
       nameId:
@@ -1281,6 +1301,52 @@ paths:
       summary: Get config
       tags:
       - Config
+  /connConfig:
+    get:
+      consumes:
+      - application/json
+      description: List all registered ConnConfig
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ConnConfigList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all registered ConnConfig
+      tags:
+      - Admin
+  /connConfig/{connConfigName}:
+    get:
+      consumes:
+      - application/json
+      description: Get registered ConnConfig info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ConnConfig'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get registered ConnConfig info
+      tags:
+      - Admin
   /lookupImage:
     get:
       consumes:

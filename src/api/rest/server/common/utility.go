@@ -51,6 +51,17 @@ func RestGetHealth(c echo.Context) error {
 	return c.String(http.StatusOK, "The API server of CB-Tumblebug is alive.")
 }
 
+// RestGetConnConfig func is a rest api wrapper for GetConnConfig.
+// RestGetConnConfig godoc
+// @Summary Get registered ConnConfig info
+// @Description Get registered ConnConfig info
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.ConnConfig
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /connConfig/{connConfigName} [get]
 func RestGetConnConfig(c echo.Context) error {
 
 	connConfigName := c.Param("connConfigName")
@@ -65,6 +76,17 @@ func RestGetConnConfig(c echo.Context) error {
 
 }
 
+// RestGetConnConfigList func is a rest api wrapper for GetConnConfigList.
+// RestGetConnConfigList godoc
+// @Summary List all registered ConnConfig
+// @Description List all registered ConnConfig
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.ConnConfigList
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /connConfig [get]
 func RestGetConnConfigList(c echo.Context) error {
 
 	fmt.Println("[Get ConnConfig List]")
