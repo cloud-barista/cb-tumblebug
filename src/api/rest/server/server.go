@@ -12,24 +12,25 @@ import (
 	"fmt"
 	"os"
 
-	// REST API (echo)
 	"net/http"
 
+	// REST API (echo)
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	// echo-swagger middleware
 	_ "github.com/cloud-barista/cb-tumblebug/src/docs"
-	echoSwagger "github.com/swaggo/echo-swagger" // echo-swagger middleware
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 //var masterConfigInfos confighandler.MASTERCONFIGTYPE
 
 const (
-	InfoColor    = "\033[1;34m%s\033[0m"
-	NoticeColor  = "\033[1;36m%s\033[0m"
-	WarningColor = "\033[1;33m%s\033[0m"
-	ErrorColor   = "\033[1;31m%s\033[0m"
-	DebugColor   = "\033[0;36m%s\033[0m"
+	infoColor    = "\033[1;34m%s\033[0m"
+	noticeColor  = "\033[1;36m%s\033[0m"
+	warningColor = "\033[1;33m%s\033[0m"
+	errorColor   = "\033[1;31m%s\033[0m"
+	debugColor   = "\033[0;36m%s\033[0m"
 )
 
 const (
@@ -93,7 +94,7 @@ func ApiServer() {
 	fmt.Printf(banner)
 	fmt.Println("")
 	fmt.Println("")
-	fmt.Printf(InfoColor, website)
+	fmt.Printf(infoColor, website)
 	fmt.Println("")
 	fmt.Println("")
 
