@@ -89,16 +89,11 @@ func ApiServer() {
 		return false, nil
 	}))
 
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println("\n \n \n ")
 	fmt.Printf(banner)
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println("\n \n ")
 	fmt.Printf(infoColor, website)
-	fmt.Println("")
-	fmt.Println("")
+	fmt.Println("\n \n ")
 
 	// Route
 	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
@@ -252,6 +247,12 @@ func ApiServer() {
 	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestDeleteObjectAssociation)
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
-	e.Logger.Fatal(e.Start(":1323"))
+	selfEndpoint := os.Getenv("SELF_ENDPOINT")
+	apidashboard := "  http://" + selfEndpoint + "/tumblebug/swagger/index.html?url=http://" + selfEndpoint + "/tumblebug/swaggerActive"
 
+	fmt.Println(" [Access to API dashboard]")
+	fmt.Printf(noticeColor, apidashboard)
+	fmt.Println("\n ")
+
+	e.Logger.Fatal(e.Start(":1323"))
 }
