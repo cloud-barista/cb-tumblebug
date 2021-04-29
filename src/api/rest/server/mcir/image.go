@@ -12,7 +12,7 @@ import (
 // RestPostImage godoc
 // @Summary Register image
 // @Description Register image
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param registeringMethod query string true "registerWithInfo or registerWithId"
@@ -76,7 +76,7 @@ func RestPostImage(c echo.Context) error {
 // RestPutImage godoc
 // @Summary Update image
 // @Description Update image
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param imageInfo body mcir.TbImageInfo true "Details for an image object"
@@ -100,7 +100,7 @@ type RestLookupImageRequest struct {
 // RestLookupImage godoc
 // @Summary Lookup image
 // @Description Lookup image
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupImageRequest true "Specify connectionName"
@@ -130,7 +130,7 @@ func RestLookupImage(c echo.Context) error {
 // RestLookupImageList godoc
 // @Summary Lookup image list
 // @Description Lookup image list
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupImageRequest true "Specify connectionName"
@@ -163,7 +163,7 @@ func RestLookupImageList(c echo.Context) error {
 // RestFetchImages godoc
 // @Summary Fetch images
 // @Description Fetch images
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -191,7 +191,7 @@ func RestFetchImages(c echo.Context) error {
 // RestGetImage godoc
 // @Summary Get image
 // @Description Get image
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -213,7 +213,7 @@ type RestGetAllImageResponse struct {
 // RestGetAllImage godoc
 // @Summary List all images
 // @Description List all images
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -229,7 +229,7 @@ func RestGetAllImage(c echo.Context) error {
 // RestDelImage godoc
 // @Summary Delete image
 // @Description Delete image
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -245,7 +245,7 @@ func RestDelImage(c echo.Context) error {
 // RestDelAllImage godoc
 // @Summary Delete all images
 // @Description Delete all images
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -265,7 +265,7 @@ type RestSearchImageRequest struct {
 // RestSearchImage godoc
 // @Summary Search image
 // @Description Search image
-// @Tags Image
+// @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param keywords body RestSearchImageRequest true "Keywords"

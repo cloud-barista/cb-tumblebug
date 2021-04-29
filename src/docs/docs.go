@@ -298,7 +298,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Lookup image",
                 "parameters": [
@@ -351,7 +351,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Lookup image list",
                 "parameters": [
@@ -496,7 +496,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "List all namespaces",
                 "responses": {
@@ -529,7 +529,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Create namespace",
                 "parameters": [
@@ -573,7 +573,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete all namespaces",
                 "responses": {
@@ -602,7 +602,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Get namespace",
                 "parameters": [
@@ -644,7 +644,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete namespace",
                 "parameters": [
@@ -1900,7 +1900,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Fetch images",
                 "parameters": [
@@ -2092,7 +2092,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "List all images",
                 "parameters": [
@@ -2134,7 +2134,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Register image",
                 "parameters": [
@@ -2199,7 +2199,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete all images",
                 "parameters": [
@@ -2237,7 +2237,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Get image",
                 "parameters": [
@@ -2286,7 +2286,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete image",
                 "parameters": [
@@ -2331,7 +2331,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Search image",
                 "parameters": [

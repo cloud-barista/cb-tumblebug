@@ -283,7 +283,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Lookup image",
                 "parameters": [
@@ -336,7 +336,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Lookup image list",
                 "parameters": [
@@ -481,7 +481,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "List all namespaces",
                 "responses": {
@@ -514,7 +514,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Create namespace",
                 "parameters": [
@@ -558,7 +558,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete all namespaces",
                 "responses": {
@@ -587,7 +587,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Get namespace",
                 "parameters": [
@@ -629,7 +629,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Namespace"
+                    "[Namespace] Namespace management"
                 ],
                 "summary": "Delete namespace",
                 "parameters": [
@@ -1885,7 +1885,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Fetch images",
                 "parameters": [
@@ -2077,7 +2077,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "List all images",
                 "parameters": [
@@ -2119,7 +2119,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Register image",
                 "parameters": [
@@ -2184,7 +2184,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete all images",
                 "parameters": [
@@ -2222,7 +2222,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Get image",
                 "parameters": [
@@ -2271,7 +2271,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Delete image",
                 "parameters": [
@@ -2316,7 +2316,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Image"
+                    "[MCIR] Image management"
                 ],
                 "summary": "Search image",
                 "parameters": [

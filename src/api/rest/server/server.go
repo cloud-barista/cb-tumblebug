@@ -114,6 +114,7 @@ func ApiServer() {
 	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
 	e.GET("/tumblebug/webadmin/spec", webadmin.Spec)
 
+	// @Tags [Admin] System environment
 	e.POST("/tumblebug/config", rest_common.RestPostConfig)
 	e.GET("/tumblebug/config/:configId", rest_common.RestGetConfig)
 	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
@@ -126,6 +127,7 @@ func ApiServer() {
 
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
+	//Namespace Management
 	g.POST("", rest_common.RestPostNs)
 	g.GET("/:nsId", rest_common.RestGetNs)
 	g.GET("", rest_common.RestGetAllNs)

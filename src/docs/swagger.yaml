@@ -1404,7 +1404,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image
       tags:
-      - Image
+      - '[MCIR] Image management'
   /lookupImages:
     get:
       consumes:
@@ -1434,7 +1434,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image list
       tags:
-      - Image
+      - '[MCIR] Image management'
   /lookupSpec:
     get:
       consumes:
@@ -1518,7 +1518,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all namespaces
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
     get:
       consumes:
       - application/json
@@ -1540,7 +1540,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all namespaces
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
     post:
       consumes:
       - application/json
@@ -1569,7 +1569,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create namespace
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
   /ns/{nsId}:
     delete:
       consumes:
@@ -1594,7 +1594,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete namespace
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
     get:
       consumes:
       - application/json
@@ -1622,7 +1622,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get namespace
       tags:
-      - Namespace
+      - '[Namespace] Namespace management'
   /ns/{nsId}/benchmark/mcis/{mcisId}:
     get:
       consumes:
@@ -2461,7 +2461,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch images
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/fetchSpecs:
     post:
       consumes:
@@ -2583,7 +2583,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all images
       tags:
-      - Image
+      - '[MCIR] Image management'
     get:
       consumes:
       - application/json
@@ -2611,7 +2611,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all images
       tags:
-      - Image
+      - '[MCIR] Image management'
     post:
       consumes:
       - application/json
@@ -2654,7 +2654,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register image
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/image/{imageId}:
     delete:
       consumes:
@@ -2684,7 +2684,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete image
       tags:
-      - Image
+      - '[MCIR] Image management'
     get:
       consumes:
       - application/json
@@ -2717,7 +2717,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get image
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/searchImage:
     get:
       consumes:
@@ -2747,7 +2747,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Search image
       tags:
-      - Image
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/securityGroup:
     delete:
       consumes:
