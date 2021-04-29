@@ -59,7 +59,10 @@ func Validate(c echo.Context, params []string) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /health [get]
 func RestGetHealth(c echo.Context) error {
-	return c.String(http.StatusOK, "The API server of CB-Tumblebug is alive.")
+	okMessage := common.SimpleMsg{}
+	okMessage.Message = "API server of CB-Tumblebug is alive"
+
+	return c.JSON(http.StatusOK, &okMessage)
 }
 
 // RestGetConnConfig func is a rest api wrapper for GetConnConfig.
