@@ -43,7 +43,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "List all configs",
                 "responses": {
@@ -76,7 +76,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Create or Update config",
                 "parameters": [
@@ -120,7 +120,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Delete all configs",
                 "responses": {
@@ -149,7 +149,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Get config",
                 "parameters": [

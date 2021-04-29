@@ -1220,7 +1220,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all configs
       tags:
-      - '[Admin] System environment config'
+      - '[Admin] System environment'
     get:
       consumes:
       - application/json
@@ -1242,7 +1242,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all configs
       tags:
-      - '[Admin] System environment config'
+      - '[Admin] System environment'
     post:
       consumes:
       - application/json
@@ -1271,7 +1271,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create or Update config
       tags:
-      - '[Admin] System environment config'
+      - '[Admin] System environment'
   /config/{configId}:
     get:
       consumes:
@@ -1300,7 +1300,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get config
       tags:
-      - '[Admin] System environment config'
+      - '[Admin] System environment'
   /connConfig:
     get:
       consumes:

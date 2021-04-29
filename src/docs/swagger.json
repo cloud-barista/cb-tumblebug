@@ -28,7 +28,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "List all configs",
                 "responses": {
@@ -61,7 +61,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Create or Update config",
                 "parameters": [
@@ -105,7 +105,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Delete all configs",
                 "responses": {
@@ -134,7 +134,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System environment config"
+                    "[Admin] System environment"
                 ],
                 "summary": "Get config",
                 "parameters": [
