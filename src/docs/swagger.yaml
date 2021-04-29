@@ -1684,7 +1684,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - '[MCIS] Performance benchmarking'
+      - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkall/mcis/{mcisId}:
     get:
       consumes:
@@ -1724,7 +1724,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCISs
       tags:
-      - '[MCIS] Performance benchmarking'
+      - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
@@ -1849,7 +1849,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install the benchmark agent to specified MCIS
       tags:
-      - '[MCIS] Performance benchmarking'
+      - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/mcis:
     delete:
       consumes:
@@ -2266,7 +2266,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: InstallMonitorAgent MCIS
       tags:
-      - '[MCIS] Resource monitor'
+      - '[MCIS] Resource monitor (for Developers)'
   /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
     get:
       consumes:
@@ -2305,7 +2305,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: GetMonitorData MCIS
       tags:
-      - '[MCIS] Resource monitor'
+      - '[MCIS] Resource monitor (for Developers)'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:
@@ -2330,7 +2330,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCIS Policys
       tags:
-      - '[MCIS] Auto control policy management'
+      - '[MCIS] Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -2358,7 +2358,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCIS Policys
       tags:
-      - '[MCIS] Auto control policy management'
+      - '[MCIS] Auto control policy management (WIP)'
   /ns/{nsId}/policy/mcis/{mcisId}:
     delete:
       consumes:
@@ -2388,7 +2388,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS Policy
       tags:
-      - '[MCIS] Auto control policy management'
+      - '[MCIS] Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -2421,7 +2421,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS Policy
       tags:
-      - '[MCIS] Auto control policy management'
+      - '[MCIS] Auto control policy management (WIP)'
     post:
       consumes:
       - application/json
@@ -2460,7 +2460,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS Automation policy
       tags:
-      - '[MCIS] Auto control policy management'
+      - '[MCIS] Auto control policy management (WIP)'
   /ns/{nsId}/resources/fetchImages:
     post:
       consumes:

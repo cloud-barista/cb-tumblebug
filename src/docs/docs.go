@@ -682,7 +682,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Performance benchmarking"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -742,7 +742,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Performance benchmarking"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -929,7 +929,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Performance benchmarking"
+                    "[MCIS] Performance benchmarking (WIP)"
                 ],
                 "summary": "Install the benchmark agent to specified MCIS",
                 "parameters": [
@@ -1558,7 +1558,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Resource monitor"
+                    "[MCIS] Resource monitor (for Developers)"
                 ],
                 "summary": "InstallMonitorAgent MCIS",
                 "parameters": [
@@ -1618,7 +1618,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Resource monitor"
+                    "[MCIS] Resource monitor (for Developers)"
                 ],
                 "summary": "GetMonitorData MCIS",
                 "parameters": [
@@ -1676,7 +1676,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "List all MCIS Policys",
                 "parameters": [
@@ -1718,7 +1718,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Delete all MCIS Policys",
                 "parameters": [
@@ -1756,7 +1756,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Get MCIS Policy",
                 "parameters": [
@@ -1805,7 +1805,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Create MCIS Automation policy",
                 "parameters": [
@@ -1863,7 +1863,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management"
+                    "[MCIS] Auto control policy management (WIP)"
                 ],
                 "summary": "Delete MCIS Policy",
                 "parameters": [

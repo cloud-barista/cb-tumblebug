@@ -387,7 +387,7 @@ func RestPostCmdMcis(c echo.Context) error {
 // RestPostInstallAgentToMcis godoc
 // @Summary Install the benchmark agent to specified MCIS
 // @Description Install the benchmark agent to specified MCIS
-// @Tags [MCIS] Performance benchmarking
+// @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -610,7 +610,7 @@ type RestGetAllBenchmarkRequest struct {
 // RestGetAllBenchmark godoc
 // @Summary List all MCISs
 // @Description List all MCISs
-// @Tags [MCIS] Performance benchmarking
+// @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -654,7 +654,7 @@ type RestGetBenchmarkRequest struct {
 // RestGetBenchmark godoc
 // @Summary Get MCIS
 // @Description Get MCIS
-// @Tags [MCIS] Performance benchmarking
+// @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
