@@ -50,7 +50,7 @@ func main() {
 	time.Sleep(3 * time.Second)
 }
 
-// SimpleNSApiTest - 간단한 NS API 호출
+// SimpleNSApiTest
 func SimpleNSApiTest() {
 
 	fmt.Print("\n\n============= SimpleNSApiTest() =============\n")
@@ -69,14 +69,14 @@ func SimpleNSApiTest() {
 		logger.Fatal(err)
 	}
 
-	/* 서버가 TLS 가 설정된 경우
+	/* TLS enabled
 	err = ns.SetTLSCA(os.Getenv("CBTUMBLEBUG_ROOT") + "/certs/ca.crt")
 	if err != nil {
 		logger.Fatal(err)
 	}
 	*/
 
-	/* 서버가 JWT 인증이 설정된 경우
+	/* JWT enabled
 	err = ns.SetJWTToken("xxxxxxxxxxxxxxxxxxx")
 	if err != nil {
 		logger.Fatal(err)
@@ -98,7 +98,7 @@ func SimpleNSApiTest() {
 	ns.Close()
 }
 
-// ConfigNSApiTest - 환경설정파일을 이용한 NS API 호출
+// ConfigNSApiTest - Call NS API using env config file
 func ConfigNSApiTest() {
 
 	fmt.Print("\n\n============= ConfigNSApiTest() =============\n")
@@ -127,7 +127,7 @@ func ConfigNSApiTest() {
 	ns.Close()
 }
 
-// DocTypeNSApiTest - 입력/출력 타입을 이용한 NS API 호출
+// DocTypeNSApiTest - Call NS API using input/output
 func DocTypeNSApiTest() {
 
 	fmt.Print("\n\n============= DocTypeNSApiTest() =============\n")
@@ -146,7 +146,7 @@ func DocTypeNSApiTest() {
 		logger.Fatal(err)
 	}
 
-	// 입력타입이 json 이고 출력타입이 Json 경우
+	// for JSON input JSON output
 	err = ns.SetInType("json")
 	if err != nil {
 		logger.Fatal(err)
@@ -175,7 +175,7 @@ func DocTypeNSApiTest() {
 
 	fmt.Printf("\njson result :\n%s\n", result)
 
-	// 출력타입을 yaml 로 변경
+	// Change output into yaml
 	err = ns.SetOutType("yaml")
 	if err != nil {
 		logger.Fatal(err)
@@ -188,7 +188,7 @@ func DocTypeNSApiTest() {
 
 	fmt.Printf("\nyaml result :\n%s\n", result)
 
-	// 입력타입을 yaml 로 변경
+	// Change input into yaml
 	err = ns.SetInType("yaml")
 	if err != nil {
 		logger.Fatal(err)
@@ -204,7 +204,7 @@ nsId: ns-test
 
 	fmt.Printf("\nyaml result :\n%s\n", result)
 
-	// 출력타입을 json 로 변경하고 파라미터로 정보 입력
+	// Change output into JSON and provide parameter info
 	err = ns.SetOutType("json")
 	if err != nil {
 		logger.Fatal(err)
@@ -230,7 +230,7 @@ nsId: ns-test
 	ns.Close()
 }
 
-// ConfigMCIRApiTest - 환경설정파일을 이용한 MCIR API 호출
+// ConfigMCIRApiTest - Call MCIR API using env config file
 func ConfigMCIRApiTest() {
 
 	fmt.Print("\n\n============= ConfigMCIRApiTest() =============\n")
@@ -259,7 +259,7 @@ func ConfigMCIRApiTest() {
 	mcir.Close()
 }
 
-// ConfigMCISApiTest - 환경설정파일을 이용한 MCIS API 호출
+// ConfigMCISApiTest - Call MCIS API using env config file
 func ConfigMCISApiTest() {
 
 	fmt.Print("\n\n============= ConfigMCISApiTest() =============\n")
@@ -288,7 +288,7 @@ func ConfigMCISApiTest() {
 	mcis.Close()
 }
 
-// CreateCIMApiTest - 파라미터를 이용한 Create CIM API 호출
+// CreateCIMApiTest - Call Create CIM API using parameter
 func CreateCIMApiTest() {
 
 	fmt.Print("\n\n============= CreateCIMApiTest() =============\n")
@@ -368,7 +368,7 @@ func CreateCIMApiTest() {
 	cim.Close()
 }
 
-// CreateNSApiTest - 파라미터를 이용한 Create NS API 호출
+// CreateNSApiTest - Call Create NS API using parameter
 func CreateNSApiTest() {
 
 	fmt.Print("\n\n============= CreateNSApiTest() =============\n")
@@ -401,7 +401,7 @@ func CreateNSApiTest() {
 	ns.Close()
 }
 
-// CreateMCIRApiTest - 파라미터를 이용한 Create MCIR API 호출
+// CreateMCIRApiTest - Call Create MCIR API using parameter
 func CreateMCIRApiTest() {
 
 	fmt.Print("\n\n============= CreateMCIRApiTest() =============\n")
@@ -539,7 +539,7 @@ func CreateMCIRApiTest() {
 	mcir.Close()
 }
 
-// CreateMCISApiTest - 파라미터를 이용한 Create MCIS API 호출
+// CreateMCISApiTest - Call Create MCIS API using parameter
 func CreateMCISApiTest() {
 
 	fmt.Print("\n\n============= CreateMCISApiTest() =============\n")
@@ -609,7 +609,7 @@ func CreateMCISApiTest() {
 	mcis.Close()
 }
 
-// DeleteMCISApiTest - 파라미터를 이용한 Delete MCIS API 호출
+// DeleteMCISApiTest - Call Delete MCIS API using parameter
 func DeleteMCISApiTest() {
 
 	fmt.Print("\n\n============= DeleteMCISApiTest() =============\n")
@@ -638,7 +638,7 @@ func DeleteMCISApiTest() {
 	mcis.Close()
 }
 
-// DeleteMCIRApiTest - 파라미터를 이용한 Delete MCIR API 호출
+// DeleteMCIRApiTest - Call Delete MCIR API using parameter
 func DeleteMCIRApiTest() {
 
 	fmt.Print("\n\n============= DeleteMCIRApiTest() =============\n")
@@ -695,7 +695,7 @@ func DeleteMCIRApiTest() {
 	mcir.Close()
 }
 
-// DeleteNSApiTest - 파라미터를 이용한 Delete NS API 호출
+// DeleteNSApiTest - Call Delete NS API using parameter
 func DeleteNSApiTest() {
 
 	fmt.Print("\n\n============= DeleteNSApiTest() =============\n")
@@ -724,7 +724,7 @@ func DeleteNSApiTest() {
 	ns.Close()
 }
 
-// DeleteCIMApiTest - 파라미터를 이용한 Delete CIM API 호출
+// DeleteCIMApiTest - Call Delete CIM API using parameter
 func DeleteCIMApiTest() {
 
 	fmt.Print("\n\n============= DeleteCIMApiTest() =============\n")
