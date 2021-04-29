@@ -989,7 +989,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -1031,7 +1031,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create MCIS",
                 "parameters": [
@@ -1082,7 +1082,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete all MCISs",
                 "parameters": [
@@ -1120,7 +1120,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS recommendation",
                 "deprecated": true,
@@ -1174,7 +1174,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1254,7 +1254,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1299,7 +1299,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create VM in specified MCIS",
                 "parameters": [
@@ -1359,7 +1359,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1446,7 +1446,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1498,7 +1498,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create multiple VMs by VM group in specified MCIS",
                 "parameters": [
@@ -1572,7 +1572,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
                         "in": "path",
                         "required": true
                     },
@@ -1590,7 +1590,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
@@ -1632,7 +1632,14 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Metric type: cpu, memory, disk, network",
+                        "name": "metric",
                         "in": "path",
                         "required": true
                     }
@@ -1641,7 +1648,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.MonResultSimpleResponse"
                         }
                     },
                     "404": {
@@ -4785,6 +4792,40 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmStatusInfo"
                     }
+                }
+            }
+        },
+        "mcis.MonResultSimple": {
+            "type": "object",
+            "properties": {
+                "err": {
+                    "type": "string"
+                },
+                "metric": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.MonResultSimpleResponse": {
+            "type": "object",
+            "properties": {
+                "mcisId": {
+                    "type": "string"
+                },
+                "mcisMonitoring": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.MonResultSimple"
+                    }
+                },
+                "nsId": {
+                    "type": "string"
                 }
             }
         },

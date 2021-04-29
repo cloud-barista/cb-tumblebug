@@ -421,9 +421,12 @@ type SshCmdResult struct { // Tumblebug
 	Err     error  `json:"err"`
 }
 
+// AgentInstallContentWrapper ...
 type AgentInstallContentWrapper struct {
 	Result_array []AgentInstallContent `json:"result_array"`
 }
+
+// AgentInstallContent ...
 type AgentInstallContent struct {
 	Mcis_id string `json:"mcis_id"`
 	Vm_id   string `json:"vm_id"`

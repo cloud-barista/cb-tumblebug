@@ -784,6 +784,28 @@ definitions:
           $ref: '#/definitions/mcis.TbVmStatusInfo'
         type: array
     type: object
+  mcis.MonResultSimple:
+    properties:
+      err:
+        type: string
+      metric:
+        type: string
+      value:
+        type: string
+      vmId:
+        type: string
+    type: object
+  mcis.MonResultSimpleResponse:
+    properties:
+      mcisId:
+        type: string
+      mcisMonitoring:
+        items:
+          $ref: '#/definitions/mcis.MonResultSimple'
+        type: array
+      nsId:
+        type: string
+    type: object
   mcis.Policy:
     properties:
       autoAction:
@@ -1852,7 +1874,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCISs
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
     get:
       consumes:
       - application/json
@@ -1880,7 +1902,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCISs
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
     post:
       consumes:
       - application/json
@@ -1914,7 +1936,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}:
     delete:
       consumes:
@@ -1944,7 +1966,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
     get:
       consumes:
       - application/json
@@ -1996,7 +2018,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
     post:
       consumes:
@@ -2036,7 +2058,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VM in specified MCIS
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
     delete:
       consumes:
@@ -2071,7 +2093,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
     get:
       consumes:
       - application/json
@@ -2128,7 +2150,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
     post:
       consumes:
@@ -2168,7 +2190,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create multiple VMs by VM group in specified MCIS
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/recommend:
     post:
       consumes:
@@ -2204,7 +2226,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS recommendation
       tags:
-      - '[MCIS] provisioning management'
+      - '[MCIS] Provisioning management'
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:
     post:
       consumes:
@@ -2218,7 +2240,7 @@ paths:
         type: string
       - description: MCIS ID
         in: path
-        name: nsId
+        name: mcisId
         required: true
         type: string
       - description: Details for an MCIS object
@@ -2233,7 +2255,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.AgentInstallContentWrapper'
         "404":
           description: Not Found
           schema:
@@ -2258,7 +2280,12 @@ paths:
         type: string
       - description: MCIS ID
         in: path
-        name: nsId
+        name: mcisId
+        required: true
+        type: string
+      - description: 'Metric type: cpu, memory, disk, network'
+        in: path
+        name: metric
         required: true
         type: string
       produces:
@@ -2267,7 +2294,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbSshKeyInfo'
+            $ref: '#/definitions/mcis.MonResultSimpleResponse'
         "404":
           description: Not Found
           schema:

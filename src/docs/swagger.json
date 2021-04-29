@@ -974,7 +974,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -1016,7 +1016,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create MCIS",
                 "parameters": [
@@ -1067,7 +1067,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete all MCISs",
                 "parameters": [
@@ -1105,7 +1105,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS recommendation",
                 "deprecated": true,
@@ -1159,7 +1159,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1239,7 +1239,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1284,7 +1284,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create VM in specified MCIS",
                 "parameters": [
@@ -1344,7 +1344,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1431,7 +1431,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1483,7 +1483,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] provisioning management"
+                    "[MCIS] Provisioning management"
                 ],
                 "summary": "Create multiple VMs by VM group in specified MCIS",
                 "parameters": [
@@ -1557,7 +1557,7 @@
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
                         "in": "path",
                         "required": true
                     },
@@ -1575,7 +1575,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
                         }
                     },
                     "404": {
@@ -1617,7 +1617,14 @@
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Metric type: cpu, memory, disk, network",
+                        "name": "metric",
                         "in": "path",
                         "required": true
                     }
@@ -1626,7 +1633,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                            "$ref": "#/definitions/mcis.MonResultSimpleResponse"
                         }
                     },
                     "404": {
@@ -4770,6 +4777,40 @@
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmStatusInfo"
                     }
+                }
+            }
+        },
+        "mcis.MonResultSimple": {
+            "type": "object",
+            "properties": {
+                "err": {
+                    "type": "string"
+                },
+                "metric": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.MonResultSimpleResponse": {
+            "type": "object",
+            "properties": {
+                "mcisId": {
+                    "type": "string"
+                },
+                "mcisMonitoring": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.MonResultSimple"
+                    }
+                },
+                "nsId": {
+                    "type": "string"
                 }
             }
         },

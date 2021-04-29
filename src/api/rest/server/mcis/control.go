@@ -12,7 +12,7 @@ import (
 // RestPostMcis godoc
 // @Summary Create MCIS
 // @Description Create MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -55,7 +55,7 @@ type JSONResult struct {
 // RestGetMcis godoc
 // @Summary Get MCIS
 // @Description Get MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -132,7 +132,7 @@ type RestGetAllMcisStatusResponse struct {
 // RestGetAllMcis godoc
 // @Summary List all MCISs
 // @Description List all MCISs
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -176,7 +176,7 @@ func RestGetAllMcis(c echo.Context) error {
 // RestPutMcis godoc
 // @Summary Update MCIS
 // @Description Update MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param mcisInfo body TbMcisInfo true "Details for an MCIS object"
@@ -192,7 +192,7 @@ func RestPutMcis(c echo.Context) error {
 // RestDelMcis godoc
 // @Summary Delete MCIS
 // @Description Delete MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -219,7 +219,7 @@ func RestDelMcis(c echo.Context) error {
 // RestDelAllMcis godoc
 // @Summary Delete all MCISs
 // @Description Delete all MCISs
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -249,7 +249,7 @@ type RestPostMcisRecommandResponse struct {
 // RestPostMcisRecommand godoc
 // @Summary Get MCIS recommendation
 // @Description Get MCIS recommendation
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -419,7 +419,7 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 // RestPostMcisVm godoc
 // @Summary Create VM in specified MCIS
 // @Description Create VM in specified MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -453,7 +453,7 @@ func RestPostMcisVm(c echo.Context) error {
 // RestPostMcisVmGroup godoc
 // @Summary Create multiple VMs by VM group in specified MCIS
 // @Description Create multiple VMs by VM group in specified MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -490,7 +490,7 @@ func RestPostMcisVmGroup(c echo.Context) error {
 // RestGetMcisVm godoc
 // @Summary Get MCIS
 // @Description Get MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -557,7 +557,7 @@ func RestGetMcisVm(c echo.Context) error {
 // RestPutSshKey godoc
 // @Summary Update MCIS
 // @Description Update MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -576,7 +576,7 @@ func RestPutMcisVm(c echo.Context) error {
 // RestDelMcisVm godoc
 // @Summary Delete MCIS
 // @Description Delete MCIS
-// @Tags [MCIS] provisioning management
+// @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
