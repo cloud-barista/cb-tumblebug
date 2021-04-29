@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/beego/beego/v2/core/validation"
 	"github.com/labstack/echo/v4"
@@ -63,6 +64,35 @@ func RestGetHealth(c echo.Context) error {
 	okMessage.Message = "API server of CB-Tumblebug is alive"
 
 	return c.JSON(http.StatusOK, &okMessage)
+}
+
+// RestGetSwagger func is to get API document web.
+// RestGetSwagger godoc
+// @Summary Get API document web
+// @Description Get API document web
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /swaggerActive [get]
+func RestGetSwagger(c echo.Context) error {
+	docFile := os.Getenv("API_DOC_PATH")
+
+	f, err := os.Open(docFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	dec := json.NewDecoder(f)
+	data := make(map[string]interface{}, 0)
+	if err := dec.Decode(&data); err != nil {
+		return err
+	}
+	data["host"] = os.Getenv("SELF_ENDPOINT")
+	return c.JSON(http.StatusOK, data)
 }
 
 // RestGetConnConfig func is a rest api wrapper for GetConnConfig.

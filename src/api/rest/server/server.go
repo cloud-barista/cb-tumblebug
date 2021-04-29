@@ -65,6 +65,8 @@ func ApiServer() {
 
 	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
 
+	e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
+
 	e.GET("/tumblebug/health", rest_common.RestGetHealth)
 
 	e.HideBanner = true

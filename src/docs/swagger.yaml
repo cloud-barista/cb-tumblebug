@@ -3552,6 +3552,29 @@ paths:
       summary: Get registered region info
       tags:
       - Admin
+  /swaggerActive:
+    get:
+      consumes:
+      - application/json
+      description: Get API document web
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get API document web
+      tags:
+      - Admin
 securityDefinitions:
   BasicAuth:
     type: basic
