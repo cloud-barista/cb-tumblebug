@@ -3376,6 +3376,41 @@
                     }
                 }
             }
+        },
+        "/region": {
+            "get": {
+                "description": "List all registered regions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "List all registered regions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.RegionList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3445,6 +3480,34 @@
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "common.Region": {
+            "type": "object",
+            "properties": {
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.RegionList": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.Region"
+                    }
                 }
             }
         },

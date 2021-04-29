@@ -537,10 +537,12 @@ func GetRegion(RegionName string) (Region, error) {
 	}
 }
 
-type RegionList struct { // Spider
+// RegionList is array struct for Region
+type RegionList struct {
 	Region []Region `json:"region"`
 }
 
+// GetRegionList retrieves region list
 func GetRegionList() (RegionList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {

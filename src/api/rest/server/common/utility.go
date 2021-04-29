@@ -1,10 +1,10 @@
 package common
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
 	"github.com/beego/beego/v2/core/validation"
 	"github.com/labstack/echo/v4"
@@ -93,6 +93,17 @@ func RestGetRegion(c echo.Context) error {
 
 }
 
+// RestGetRegionList func is a rest api wrapper for GetRegionList.
+// RestGetRegionList godoc
+// @Summary List all registered regions
+// @Description List all registered regions
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.RegionList
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /region [get]
 func RestGetRegionList(c echo.Context) error {
 
 	fmt.Println("[Get Region List]")
@@ -107,7 +118,7 @@ func RestGetRegionList(c echo.Context) error {
 }
 
 // ObjectList struct consists of object IDs
-type ObjectList struct { 
+type ObjectList struct {
 	Object []string `json:"object"`
 }
 
@@ -155,9 +166,9 @@ func RestGetObject(c echo.Context) error {
 
 	content, err := common.GetObjectValue(parentKey)
 	if err != nil || content == "" {
-		return SendMessage(c, http.StatusOK, "Cannot find [" + parentKey+ "] object")
+		return SendMessage(c, http.StatusOK, "Cannot find ["+parentKey+"] object")
 	}
-	
+
 	var contentJSON map[string]interface{}
 	json.Unmarshal([]byte(content), &contentJSON)
 
@@ -182,12 +193,12 @@ func RestDeleteObject(c echo.Context) error {
 
 	content, err := common.GetObjectValue(parentKey)
 	if err != nil || content == "" {
-		return SendMessage(c, http.StatusOK, "Cannot find [" + parentKey+ "] object")
+		return SendMessage(c, http.StatusOK, "Cannot find ["+parentKey+"] object")
 	}
 
 	err = common.DeleteObject(parentKey)
 	if err != nil {
-		return SendMessage(c, http.StatusOK, "Cannot delete [" + parentKey+ "] object")
+		return SendMessage(c, http.StatusOK, "Cannot delete ["+parentKey+"] object")
 	}
 
 	return SendMessage(c, http.StatusOK, "The object has been deleted")
