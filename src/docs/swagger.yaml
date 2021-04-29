@@ -1662,7 +1662,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - MCIS
+      - '[MCIS] Performance benchmarking'
   /ns/{nsId}/benchmarkall/mcis/{mcisId}:
     get:
       consumes:
@@ -1702,7 +1702,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCISs
       tags:
-      - MCIS
+      - '[MCIS] Performance benchmarking'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
@@ -1742,7 +1742,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] Remote command'
   /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}:
     post:
       consumes:
@@ -1787,7 +1787,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified VM
       tags:
-      - MCIS
+      - '[MCIS] Remote command'
   /ns/{nsId}/install/mcis/{mcisId}:
     post:
       consumes:
@@ -1827,7 +1827,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install the benchmark agent to specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] Performance benchmarking'
   /ns/{nsId}/mcis:
     delete:
       consumes:
@@ -1852,7 +1852,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCISs
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
     get:
       consumes:
       - application/json
@@ -1880,7 +1880,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCISs
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
     post:
       consumes:
       - application/json
@@ -1914,7 +1914,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
   /ns/{nsId}/mcis/{mcisId}:
     delete:
       consumes:
@@ -1944,7 +1944,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
     get:
       consumes:
       - application/json
@@ -1996,7 +1996,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
     post:
       consumes:
@@ -2036,7 +2036,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VM in specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
     delete:
       consumes:
@@ -2071,7 +2071,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
     get:
       consumes:
       - application/json
@@ -2128,7 +2128,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
     post:
       consumes:
@@ -2168,11 +2168,12 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create multiple VMs by VM group in specified MCIS
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
   /ns/{nsId}/mcis/recommend:
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Get MCIS recommendation
       parameters:
       - description: Namespace ID
@@ -2203,7 +2204,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS recommendation
       tags:
-      - MCIS
+      - '[MCIS] provisioning management'
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:
     post:
       consumes:
@@ -2243,7 +2244,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: InstallMonitorAgent MCIS
       tags:
-      - Monitor
+      - '[MCIS] Resource monitor'
   /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
     get:
       consumes:
@@ -2277,7 +2278,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: GetMonitorData MCIS
       tags:
-      - Monitor
+      - '[MCIS] Resource monitor'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:

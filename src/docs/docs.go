@@ -682,7 +682,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -742,7 +742,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -802,7 +802,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Remote command"
                 ],
                 "summary": "Send a command to specified MCIS",
                 "parameters": [
@@ -862,7 +862,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Remote command"
                 ],
                 "summary": "Send a command to specified VM",
                 "parameters": [
@@ -929,7 +929,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] Performance benchmarking"
                 ],
                 "summary": "Install the benchmark agent to specified MCIS",
                 "parameters": [
@@ -989,7 +989,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "List all MCISs",
                 "parameters": [
@@ -1031,7 +1031,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Create MCIS",
                 "parameters": [
@@ -1082,7 +1082,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Delete all MCISs",
                 "parameters": [
@@ -1120,9 +1120,10 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Get MCIS recommendation",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1173,7 +1174,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1253,7 +1254,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1298,7 +1299,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Create VM in specified MCIS",
                 "parameters": [
@@ -1358,7 +1359,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Get MCIS",
                 "parameters": [
@@ -1445,7 +1446,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1497,7 +1498,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "MCIS"
+                    "[MCIS] provisioning management"
                 ],
                 "summary": "Create multiple VMs by VM group in specified MCIS",
                 "parameters": [
@@ -1557,7 +1558,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Monitor"
+                    "[MCIS] Resource monitor"
                 ],
                 "summary": "InstallMonitorAgent MCIS",
                 "parameters": [
@@ -1617,7 +1618,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Monitor"
+                    "[MCIS] Resource monitor"
                 ],
                 "summary": "GetMonitorData MCIS",
                 "parameters": [
