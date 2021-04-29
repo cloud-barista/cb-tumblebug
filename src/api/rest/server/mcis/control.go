@@ -30,7 +30,7 @@ func RestPostMcis(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.CorePostMcis(nsId, req)
+	result, err := mcis.CreateMcis(nsId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
