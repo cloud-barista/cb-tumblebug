@@ -63,14 +63,13 @@ func ApiServer() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
-
-	e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
-
-	e.GET("/tumblebug/health", rest_common.RestGetHealth)
-
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
+
+	// Route for system management
+	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
+	e.GET("/tumblebug/health", rest_common.RestGetHealth)
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -79,7 +78,7 @@ func ApiServer() {
 
 	API_USERNAME := os.Getenv("API_USERNAME")
 	API_PASSWORD := os.Getenv("API_PASSWORD")
-	fmt.Println("REST API username/password: " + API_USERNAME + "/" + API_PASSWORD)
+
 	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		// Be careful to use constant time comparison to prevent timing attacks
 		if subtle.ConstantTimeCompare([]byte(username), []byte(API_USERNAME)) == 1 &&
@@ -254,6 +253,8 @@ func ApiServer() {
 
 	fmt.Println(" [Access to API dashboard]")
 	fmt.Printf(noticeColor, apidashboard)
+	fmt.Println("\n ")
+	fmt.Println("  (REST API username/password: " + API_USERNAME + "/" + API_PASSWORD + ")")
 	fmt.Println("\n ")
 
 	e.Logger.Fatal(e.Start(":1323"))
