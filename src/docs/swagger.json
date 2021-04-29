@@ -2362,7 +2362,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "List all Security Groups",
                 "parameters": [
@@ -2404,7 +2404,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Create Security Group",
                 "parameters": [
@@ -2455,7 +2455,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete all Security Groups",
                 "parameters": [
@@ -2493,7 +2493,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Get Security Group",
                 "parameters": [
@@ -2542,7 +2542,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete Security Group",
                 "parameters": [

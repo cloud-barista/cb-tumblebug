@@ -12,7 +12,7 @@ import (
 // RestPostSecurityGroup godoc
 // @Summary Create Security Group
 // @Description Create Security Group
-// @Tags Security Group
+// @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -50,7 +50,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 // RestPutSecurityGroup godoc
 // @Summary Update Security Group
 // @Description Update Security Group
-// @Tags Security Group
+// @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
 // @Param securityGroupInfo body mcir.TbSecurityGroupInfo true "Details for an securityGroup object"
@@ -68,7 +68,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 // RestGetSecurityGroup godoc
 // @Summary Get Security Group
 // @Description Get Security Group
-// @Tags Security Group
+// @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -90,7 +90,7 @@ type RestGetAllSecurityGroupResponse struct {
 // RestGetAllSecurityGroup godoc
 // @Summary List all Security Groups
 // @Description List all Security Groups
-// @Tags Security Group
+// @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -106,7 +106,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // RestDelSecurityGroup godoc
 // @Summary Delete Security Group
 // @Description Delete Security Group
-// @Tags Security Group
+// @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
@@ -122,7 +122,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 // RestDelAllSecurityGroup godoc
 // @Summary Delete all Security Groups
 // @Description Delete all Security Groups
-// @Tags Security Group
+// @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"

@@ -2377,7 +2377,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "List all Security Groups",
                 "parameters": [
@@ -2419,7 +2419,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Create Security Group",
                 "parameters": [
@@ -2470,7 +2470,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete all Security Groups",
                 "parameters": [
@@ -2508,7 +2508,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Get Security Group",
                 "parameters": [
@@ -2557,7 +2557,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Security Group"
+                    "[MCIR] Security group management"
                 ],
                 "summary": "Delete Security Group",
                 "parameters": [
