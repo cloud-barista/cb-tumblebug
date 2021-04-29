@@ -56,6 +56,26 @@ func main() {
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
+	//Setup database (meta_db/dat/cbtumblebug.s3db)
+	err := common.OpenSQL("../meta_db/dat/cbtumblebug.s3db")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	err = common.SelectDatabase(common.DB_DATABASE)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	err = common.CreateSpecTable()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	err = common.CreateImageTable()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	//defer db.Close()
+
 	//Ticker for MCIS Orchestration Policy
 	fmt.Println("")
 	fmt.Println("Initiate Multi-Cloud Orchestration")
@@ -72,40 +92,8 @@ func main() {
 	}()
 	defer ticker.Stop()
 
-	var err error
-
-	err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db")
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Database access info set successfully")
-	}
-
-	err = common.SelectDatabase(common.DB_DATABASE)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("DB selected successfully..")
-	}
-
-	err = common.CreateSpecTable()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Table spec created successfully..")
-	}
-
-	err = common.CreateImageTable()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Table image created successfully..")
-	}
-
-	//defer db.Close()
-
+	// Launch API servers (REST and gRPC)
 	wg := new(sync.WaitGroup)
-
 	wg.Add(2)
 
 	go func() {
