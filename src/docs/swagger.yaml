@@ -3110,7 +3110,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all SSH Keys
       tags:
-      - SSH Key
+      - '[MCIR] VM access key management'
     get:
       consumes:
       - application/json
@@ -3138,7 +3138,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all SSH Keys
       tags:
-      - SSH Key
+      - '[MCIR] VM access key management'
     post:
       consumes:
       - application/json
@@ -3172,7 +3172,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create SSH Key
       tags:
-      - SSH Key
+      - '[MCIR] VM access key management'
   /ns/{nsId}/resources/sshKey/{sshKeyId}:
     delete:
       consumes:
@@ -3202,7 +3202,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete SSH Key
       tags:
-      - SSH Key
+      - '[MCIR] VM access key management'
     get:
       consumes:
       - application/json
@@ -3235,7 +3235,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get SSH Key
       tags:
-      - SSH Key
+      - '[MCIR] VM access key management'
   /ns/{nsId}/resources/vNet:
     delete:
       consumes:

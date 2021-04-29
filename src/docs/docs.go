@@ -2885,7 +2885,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] VM access key management"
                 ],
                 "summary": "List all SSH Keys",
                 "parameters": [
@@ -2927,7 +2927,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] VM access key management"
                 ],
                 "summary": "Create SSH Key",
                 "parameters": [
@@ -2978,7 +2978,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] VM access key management"
                 ],
                 "summary": "Delete all SSH Keys",
                 "parameters": [
@@ -3016,7 +3016,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] VM access key management"
                 ],
                 "summary": "Get SSH Key",
                 "parameters": [
@@ -3065,7 +3065,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "SSH Key"
+                    "[MCIR] VM access key management"
                 ],
                 "summary": "Delete SSH Key",
                 "parameters": [
