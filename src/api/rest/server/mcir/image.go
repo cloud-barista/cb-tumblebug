@@ -100,7 +100,7 @@ type RestLookupImageRequest struct {
 // RestLookupImage godoc
 // @Summary Lookup image
 // @Description Lookup image
-// @Tags [MCIR] Image management
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupImageRequest true "Specify connectionName"
@@ -130,7 +130,7 @@ func RestLookupImage(c echo.Context) error {
 // RestLookupImageList godoc
 // @Summary Lookup image list
 // @Description Lookup image list
-// @Tags [MCIR] Image management
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupImageRequest true "Specify connectionName"

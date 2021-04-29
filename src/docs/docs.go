@@ -193,7 +193,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "List all registered ConnConfig",
                 "responses": {
@@ -228,7 +228,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "responses": {
@@ -298,7 +298,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image",
                 "parameters": [
@@ -351,7 +351,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image list",
                 "parameters": [
@@ -397,7 +397,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec",
                 "parameters": [
@@ -450,7 +450,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec list",
                 "parameters": [
@@ -3515,7 +3515,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "List all registered regions",
                 "responses": {
@@ -3550,7 +3550,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Get registered region info",
                 "parameters": [

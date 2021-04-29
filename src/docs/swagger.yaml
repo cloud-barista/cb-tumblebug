@@ -1345,7 +1345,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered ConnConfig
       tags:
-      - '[Cloud] Associated Cloud info'
+      - '[Admin] Cloud environment management'
   /connConfig/{connConfigName}:
     get:
       consumes:
@@ -1368,7 +1368,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
       tags:
-      - '[Cloud] Associated Cloud info'
+      - '[Admin] Cloud environment management'
   /health:
     get:
       consumes:
@@ -1426,7 +1426,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image
       tags:
-      - '[MCIR] Image management'
+      - '[Admin] Cloud environment management'
   /lookupImages:
     get:
       consumes:
@@ -1456,7 +1456,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image list
       tags:
-      - '[MCIR] Image management'
+      - '[Admin] Cloud environment management'
   /lookupSpec:
     get:
       consumes:
@@ -1491,7 +1491,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec
       tags:
-      - '[MCIR] Spec management'
+      - '[Admin] Cloud environment management'
   /lookupSpecs:
     get:
       consumes:
@@ -1521,7 +1521,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec list
       tags:
-      - '[MCIR] Spec management'
+      - '[Admin] Cloud environment management'
   /ns:
     delete:
       consumes:
@@ -3550,7 +3550,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered regions
       tags:
-      - '[Cloud] Associated Cloud info'
+      - '[Admin] Cloud environment management'
   /region/{regionName}:
     get:
       consumes:
@@ -3579,7 +3579,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
       tags:
-      - '[Cloud] Associated Cloud info'
+      - '[Admin] Cloud environment management'
   /swaggerActive:
     get:
       consumes:

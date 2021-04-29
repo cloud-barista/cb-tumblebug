@@ -178,7 +178,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "List all registered ConnConfig",
                 "responses": {
@@ -213,7 +213,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "responses": {
@@ -283,7 +283,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image",
                 "parameters": [
@@ -336,7 +336,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup image list",
                 "parameters": [
@@ -382,7 +382,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec",
                 "parameters": [
@@ -435,7 +435,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Lookup spec list",
                 "parameters": [
@@ -3500,7 +3500,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "List all registered regions",
                 "responses": {
@@ -3535,7 +3535,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Cloud] Associated Cloud info"
+                    "[Admin] Cloud environment management"
                 ],
                 "summary": "Get registered region info",
                 "parameters": [

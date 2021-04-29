@@ -249,12 +249,10 @@ func ApiServer() {
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
-	apidashboard := "  http://" + selfEndpoint + "/tumblebug/swagger/index.html?url=http://" + selfEndpoint + "/tumblebug/swaggerActive"
+	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html?url=http://" + selfEndpoint + "/tumblebug/swaggerActive"
 
-	fmt.Println(" [Access to API dashboard]")
+	fmt.Println(" [Access to API dashboard]" + " username/password: (" + API_USERNAME + "/" + API_PASSWORD + ")")
 	fmt.Printf(noticeColor, apidashboard)
-	fmt.Println("\n ")
-	fmt.Println("  (REST API username/password: " + API_USERNAME + "/" + API_PASSWORD + ")")
 	fmt.Println("\n ")
 
 	e.Logger.Fatal(e.Start(":1323"))

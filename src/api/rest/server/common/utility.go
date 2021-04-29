@@ -99,7 +99,7 @@ func RestGetSwagger(c echo.Context) error {
 // RestGetConnConfig godoc
 // @Summary Get registered ConnConfig info
 // @Description Get registered ConnConfig info
-// @Tags [Cloud] Associated Cloud info
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.ConnConfig
@@ -124,7 +124,7 @@ func RestGetConnConfig(c echo.Context) error {
 // RestGetConnConfigList godoc
 // @Summary List all registered ConnConfig
 // @Description List all registered ConnConfig
-// @Tags [Cloud] Associated Cloud info
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.ConnConfigList
@@ -148,7 +148,7 @@ func RestGetConnConfigList(c echo.Context) error {
 // RestGetRegion godoc
 // @Summary Get registered region info
 // @Description Get registered region info
-// @Tags [Cloud] Associated Cloud info
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param regionName path string true "Name of region to retrieve"
@@ -175,7 +175,7 @@ func RestGetRegion(c echo.Context) error {
 // RestGetRegionList godoc
 // @Summary List all registered regions
 // @Description List all registered regions
-// @Tags [Cloud] Associated Cloud info
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.RegionList

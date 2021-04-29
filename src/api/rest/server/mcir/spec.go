@@ -117,7 +117,7 @@ type RestLookupSpecRequest struct {
 // RestLookupSpec godoc
 // @Summary Lookup spec
 // @Description Lookup spec
-// @Tags [MCIR] Spec management
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupSpecRequest true "Specify connectionName"
@@ -147,7 +147,7 @@ func RestLookupSpec(c echo.Context) error {
 // RestLookupSpecList godoc
 // @Summary Lookup spec list
 // @Description Lookup spec list
-// @Tags [MCIR] Spec management
+// @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestLookupSpecRequest true "Specify connectionName"
