@@ -47,6 +47,17 @@ func Validate(c echo.Context, params []string) error {
 	return nil
 }
 
+// RestGetHealth func is for checking Tumblebug server health.
+// RestGetHealth godoc
+// @Summary Check Tumblebug is alive
+// @Description Check Tumblebug is alive
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /health [get]
 func RestGetHealth(c echo.Context) error {
 	return c.String(http.StatusOK, "The API server of CB-Tumblebug is alive.")
 }

@@ -1347,6 +1347,29 @@ paths:
       summary: Get registered ConnConfig info
       tags:
       - Admin
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check Tumblebug is alive
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check Tumblebug is alive
+      tags:
+      - Admin
   /lookupImage:
     get:
       consumes:
