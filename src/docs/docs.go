@@ -193,7 +193,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "List all registered ConnConfig",
                 "responses": {
@@ -228,7 +228,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "responses": {
@@ -263,7 +263,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Check Tumblebug is alive",
                 "responses": {
@@ -3335,7 +3335,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Get value of an object",
                 "parameters": [
@@ -3377,7 +3377,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete an object",
                 "parameters": [
@@ -3421,7 +3421,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "List all objects for a given key",
                 "parameters": [
@@ -3463,7 +3463,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete child objects along with the given object",
                 "parameters": [
@@ -3507,7 +3507,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "List all registered regions",
                 "responses": {
@@ -3542,7 +3542,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "Get registered region info",
                 "parameters": [
@@ -3586,7 +3586,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Get API document web",
                 "responses": {

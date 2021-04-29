@@ -178,7 +178,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "List all registered ConnConfig",
                 "responses": {
@@ -213,7 +213,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "responses": {
@@ -248,7 +248,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Check Tumblebug is alive",
                 "responses": {
@@ -3320,7 +3320,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Get value of an object",
                 "parameters": [
@@ -3362,7 +3362,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete an object",
                 "parameters": [
@@ -3406,7 +3406,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "List all objects for a given key",
                 "parameters": [
@@ -3448,7 +3448,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Delete child objects along with the given object",
                 "parameters": [
@@ -3492,7 +3492,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "List all registered regions",
                 "responses": {
@@ -3527,7 +3527,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Cloud"
+                    "[Cloud] Associated Cloud info"
                 ],
                 "summary": "Get registered region info",
                 "parameters": [
@@ -3571,7 +3571,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Admin"
+                    "[Admin] System management"
                 ],
                 "summary": "Get API document web",
                 "responses": {

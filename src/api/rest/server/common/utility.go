@@ -52,7 +52,7 @@ func Validate(c echo.Context, params []string) error {
 // RestGetHealth godoc
 // @Summary Check Tumblebug is alive
 // @Description Check Tumblebug is alive
-// @Tags Admin
+// @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
@@ -70,7 +70,7 @@ func RestGetHealth(c echo.Context) error {
 // RestGetSwagger godoc
 // @Summary Get API document web
 // @Description Get API document web
-// @Tags Admin
+// @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
@@ -99,7 +99,7 @@ func RestGetSwagger(c echo.Context) error {
 // RestGetConnConfig godoc
 // @Summary Get registered ConnConfig info
 // @Description Get registered ConnConfig info
-// @Tags Cloud
+// @Tags [Cloud] Associated Cloud info
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.ConnConfig
@@ -124,7 +124,7 @@ func RestGetConnConfig(c echo.Context) error {
 // RestGetConnConfigList godoc
 // @Summary List all registered ConnConfig
 // @Description List all registered ConnConfig
-// @Tags Cloud
+// @Tags [Cloud] Associated Cloud info
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.ConnConfigList
@@ -148,7 +148,7 @@ func RestGetConnConfigList(c echo.Context) error {
 // RestGetRegion godoc
 // @Summary Get registered region info
 // @Description Get registered region info
-// @Tags Cloud
+// @Tags [Cloud] Associated Cloud info
 // @Accept  json
 // @Produce  json
 // @Param regionName path string true "Name of region to retrieve"
@@ -175,7 +175,7 @@ func RestGetRegion(c echo.Context) error {
 // RestGetRegionList godoc
 // @Summary List all registered regions
 // @Description List all registered regions
-// @Tags Cloud
+// @Tags [Cloud] Associated Cloud info
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.RegionList
@@ -204,7 +204,7 @@ type ObjectList struct {
 // RestGetObjects godoc
 // @Summary List all objects for a given key
 // @Description List all objects for a given key
-// @Tags Admin
+// @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "retrieve objects by key"
@@ -230,7 +230,7 @@ func RestGetObjects(c echo.Context) error {
 // RestGetObject godoc
 // @Summary Get value of an object
 // @Description Get value of an object
-// @Tags Admin
+// @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "get object value by key"
@@ -257,7 +257,7 @@ func RestGetObject(c echo.Context) error {
 // RestDeleteObject godoc
 // @Summary Delete an object
 // @Description Delete an object
-// @Tags Admin
+// @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "delete object value by key"
@@ -286,7 +286,7 @@ func RestDeleteObject(c echo.Context) error {
 // RestDeleteObjects godoc
 // @Summary Delete child objects along with the given object
 // @Description Delete child objects along with the given object
-// @Tags Admin
+// @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
 // @Param key query string true "Delete child objects based on the given key string"

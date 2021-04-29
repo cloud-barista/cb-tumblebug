@@ -1323,7 +1323,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered ConnConfig
       tags:
-      - Cloud
+      - '[Cloud] Associated Cloud info'
   /connConfig/{connConfigName}:
     get:
       consumes:
@@ -1346,7 +1346,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
       tags:
-      - Cloud
+      - '[Cloud] Associated Cloud info'
   /health:
     get:
       consumes:
@@ -1369,7 +1369,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Check Tumblebug is alive
       tags:
-      - Admin
+      - '[Admin] System management'
   /lookupImage:
     get:
       consumes:
@@ -3414,7 +3414,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete an object
       tags:
-      - Admin
+      - '[Admin] System management'
     get:
       consumes:
       - application/json
@@ -3442,7 +3442,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get value of an object
       tags:
-      - Admin
+      - '[Admin] System management'
   /objects:
     delete:
       consumes:
@@ -3471,7 +3471,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete child objects along with the given object
       tags:
-      - Admin
+      - '[Admin] System management'
     get:
       consumes:
       - application/json
@@ -3499,7 +3499,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all objects for a given key
       tags:
-      - Admin
+      - '[Admin] System management'
   /region:
     get:
       consumes:
@@ -3522,7 +3522,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered regions
       tags:
-      - Cloud
+      - '[Cloud] Associated Cloud info'
   /region/{regionName}:
     get:
       consumes:
@@ -3551,7 +3551,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
       tags:
-      - Cloud
+      - '[Cloud] Associated Cloud info'
   /swaggerActive:
     get:
       consumes:
@@ -3574,7 +3574,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get API document web
       tags:
-      - Admin
+      - '[Admin] System management'
 securityDefinitions:
   BasicAuth:
     type: basic
