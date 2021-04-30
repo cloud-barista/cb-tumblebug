@@ -5394,7 +5394,7 @@ var doc = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "csp_vmId": {
+                "cspVmId": {
                     "type": "string"
                 },
                 "id": {
@@ -5412,7 +5412,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "native_status": {
+                "nativeStatus": {
                     "type": "string"
                 },
                 "privateIp": {

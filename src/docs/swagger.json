@@ -5379,7 +5379,7 @@
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "csp_vmId": {
+                "cspVmId": {
                     "type": "string"
                 },
                 "id": {
@@ -5397,7 +5397,7 @@
                 "name": {
                     "type": "string"
                 },
-                "native_status": {
+                "nativeStatus": {
                     "type": "string"
                 },
                 "privateIp": {

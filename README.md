@@ -454,8 +454,8 @@ Dozing for 1 : 1 (Back to work)
    "vm" : [
       {
          "publicIp" : "35.173.215.4",
-         "native_status" : "Running",
-         "csp_vmId" : "aws-us-east-1-shson-01",
+         "nativeStatus" : "Running",
+         "cspId" : "aws-us-east-1-shson-01",
          "name" : "aws-us-east-1-shson-01",
          "status" : "Running",
          "targetAction" : "None",
@@ -469,8 +469,8 @@ Dozing for 1 : 1 (Back to work)
          "targetStatus" : "None",
          "id" : "aws-us-east-1-shson-02",
          "publicIp" : "18.206.13.233",
-         "csp_vmId" : "aws-us-east-1-shson-02",
-         "native_status" : "Running"
+         "cspId" : "aws-us-east-1-shson-02",
+         "nativeStatus" : "Running"
       },
       {
          "targetAction" : "None",
@@ -478,8 +478,8 @@ Dozing for 1 : 1 (Back to work)
          "targetStatus" : "None",
          "name" : "aws-us-east-1-shson-03",
          "status" : "Running",
-         "csp_vmId" : "aws-us-east-1-shson-03",
-         "native_status" : "Running",
+         "cspId" : "aws-us-east-1-shson-03",
+         "nativeStatus" : "Running",
          "publicIp" : "18.232.53.134"
       }
    ],

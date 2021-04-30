@@ -1187,7 +1187,7 @@ definitions:
         description: Created time
         example: "2022-11-10 23:00:00"
         type: string
-      csp_vmId:
+      cspVmId:
         type: string
       id:
         type: string
@@ -1200,7 +1200,7 @@ definitions:
         type: string
       name:
         type: string
-      native_status:
+      nativeStatus:
         type: string
       privateIp:
         type: string

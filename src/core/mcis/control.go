@@ -247,14 +247,14 @@ type McisStatusInfo struct {
 
 // struct TbVmStatusInfo is to define simple information of VM with updated status
 type TbVmStatusInfo struct {
-	Id       string `json:"id"`
-	Name     string `json:"name"`
-	Csp_vmId string `json:"csp_vmId"`
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	CspVmId string `json:"cspVmId"`
 
 	Status        string `json:"status"`
 	TargetStatus  string `json:"targetStatus"`
 	TargetAction  string `json:"targetAction"`
-	Native_status string `json:"native_status"`
+	NativeStatus string `json:"nativeStatus"`
 
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
@@ -2891,8 +2891,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	defer wg.Done() //goroutine sync done
 
 	var content struct {
-		CloudId  string `json:"cloudId"`
-		Csp_vmId string `json:"csp_vmId"`
+		CloudId string `json:"cloudId"`
+		CspVmId string `json:"cspVmId"`
 	}
 
 	fmt.Println("[ControlVm]" + vmId)
@@ -2906,7 +2906,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
 	//fmt.Printf("%+v\n", content.CloudId)
-	//fmt.Printf("%+v\n", content.Csp_vmId)
+	//fmt.Printf("%+v\n", content.CspVmId)
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -3148,8 +3148,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	var content struct {
-		CloudId  string `json:"cloudId"`
-		Csp_vmId string `json:"csp_vmId"`
+		CloudId string `json:"cloudId"`
+		CspVmId string `json:"cspVmId"`
 	}
 
 	fmt.Println("[ControlVm]" + vmId)
@@ -3163,7 +3163,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
 	//fmt.Printf("%+v\n", content.CloudId)
-	//fmt.Printf("%+v\n", content.Csp_vmId)
+	//fmt.Printf("%+v\n", content.CspVmId)
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -3263,15 +3263,15 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 		fmt.Println("[Calling SPIDER]END vmControl\n")
 		/*
-			if strings.Compare(content.Csp_vmId, "Not assigned yet") == 0 {
+			if strings.Compare(content.CspVmId, "Not assigned yet") == 0 {
 				return nil
 			}
 			if strings.Compare(content.CloudId, "aws") == 0 {
-				controlVmAws(content.Csp_vmId)
+				controlVmAws(content.CspVmId)
 			} else if strings.Compare(content.CloudId, "gcp") == 0 {
-				controlVmGcp(content.Csp_vmId)
+				controlVmGcp(content.CspVmId)
 			} else if strings.Compare(content.CloudId, "azure") == 0 {
-				controlVmAzure(content.Csp_vmId)
+				controlVmAzure(content.CspVmId)
 			} else {
 				fmt.Println("==============ERROR=no matched providerId=================")
 			}
@@ -3584,7 +3584,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	//json.Unmarshal([]byte(keyValue.Value), &content)
 
 	//fmt.Printf("%+v\n", content.CloudId)
-	//fmt.Printf("%+v\n", content.Csp_vmId)
+	//fmt.Printf("%+v\n", content.CspVmId)
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -3704,11 +3704,11 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Id = vmId
 	vmStatusTmp.Name = temp.Name
-	vmStatusTmp.Csp_vmId = temp.CspViewVmDetail.IId.NameId
+	vmStatusTmp.CspVmId = temp.CspViewVmDetail.IId.NameId
 	vmStatusTmp.PublicIp = temp.PublicIP
 	vmStatusTmp.SSHPort = temp.SSHPort
 	vmStatusTmp.PrivateIp = temp.PrivateIP
-	vmStatusTmp.Native_status = statusResponseTmp.Status
+	vmStatusTmp.NativeStatus = statusResponseTmp.Status
 
 	vmStatusTmp.TargetAction = temp.TargetAction
 	vmStatusTmp.TargetStatus = temp.TargetStatus
