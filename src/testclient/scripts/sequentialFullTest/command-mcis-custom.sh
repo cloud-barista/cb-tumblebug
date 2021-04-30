@@ -26,7 +26,7 @@ getCloudIndex $CSP
 
 USERCMD=${5}
 
-MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers

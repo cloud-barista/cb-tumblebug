@@ -199,7 +199,7 @@ if [ "${INDEX}" == "0" ]; then
 
 	# MCISPREFIX=avengers
 
-	OUTPUT=$(../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX)
+	OUTPUT=$(../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
@@ -209,7 +209,7 @@ if [ "${INDEX}" == "0" ]; then
 		echo "============== sleep 20 before delete MCIS obj"
 		dozing 20
 	fi
-	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
+	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 
 	# INDEXX=${NumCSP}
 	# for ((cspi=1;cspi<=INDEXX;cspi++)); do

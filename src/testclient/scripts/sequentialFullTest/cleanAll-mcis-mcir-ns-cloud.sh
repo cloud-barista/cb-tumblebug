@@ -148,6 +148,7 @@ function clean_sequence() {
 
 	echo ""
 	echo "[Cleaning related commands in history file executionStatus]"
+	echo "Remove ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
 	sed -i "/${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
@@ -192,9 +193,9 @@ if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel excution for all CSP regions]"
 
 	# MCISPREFIX=avengers
-	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
-	../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
-	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
+	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 
 	INDEXX=${NumCSP}
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do

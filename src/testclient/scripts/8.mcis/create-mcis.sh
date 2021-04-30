@@ -3,7 +3,7 @@
 #function create_mcis() {
 
 
-	TestSetFile=${5:-../testSet.env}
+	TestSetFile=${4:-../testSet.env}
     
     FILE=$TestSetFile
     if [ ! -f "$FILE" ]; then
@@ -21,7 +21,8 @@
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-	NUMVM=${4:-3}
+	
+	NUMVM=${5:-3}
 
 	source ../common-functions.sh
 	getCloudIndex $CSP

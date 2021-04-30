@@ -2,37 +2,38 @@
 
 #function just_terminate_mcis() {
 
+TestSetFile=${4:-../testSet.env}
 
-	TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+FILE=$TestSetFile
+if [ ! -f "$FILE" ]; then
+	echo "$FILE does not exist."
+	exit
+fi
+source $TestSetFile
+source ../conf.env
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
-	echo "####################################################################"
-	echo "## 8. VM: Just Terminate MCIS"
-	echo "####################################################################"
+echo "####################################################################"
+echo "## 8. VM: Just Terminate MCIS"
+echo "####################################################################"
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
-	MCISPREFIX=${5}
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 
-	source ../common-functions.sh
-	getCloudIndex $CSP
+source ../common-functions.sh
+getCloudIndex $CSP
 
-	if [ -z "$MCISPREFIX" ]
-	then
-		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?action=terminate | jq ''
-	else
-		MCISID=${MCISPREFIX}-${POSTFIX}
-		curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=terminate | jq ''
-	fi
-#}
+if [ "${INDEX}" == "0" ]; then
+	MCISID=${MCISPREFIX}-${POSTFIX}
+else
+	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+fi
+
+echo "${MCISID}"
+
+ControlCmd=terminate
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=${ControlCmd} | jq ''
+
 
 #just_terminate_mcis

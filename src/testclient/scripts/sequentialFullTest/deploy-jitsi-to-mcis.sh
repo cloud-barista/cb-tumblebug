@@ -27,7 +27,7 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
-MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 EMAIL=${5}
 PublicDNS=${6}
