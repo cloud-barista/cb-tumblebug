@@ -4754,7 +4754,7 @@ var doc = `{
         "mcis.McisRecommendReq": {
             "type": "object",
             "properties": {
-                "max_result_num": {
+                "maxResultNum": {
                     "type": "string"
                 },
                 "placementAlgo": {
@@ -5313,7 +5313,7 @@ var doc = `{
                 "disk_size": {
                     "type": "string"
                 },
-                "max_result_num": {
+                "maxResultNum": {
                     "type": "string"
                 },
                 "memory_size": {

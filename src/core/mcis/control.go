@@ -286,12 +286,12 @@ type McisRecommendReq struct {
 	VmReq          []TbVmRecommendReq `json:"vmReq"`
 	PlacementAlgo  string             `json:"placementAlgo"`
 	PlacementParam []common.KeyValue  `json:"placementParam"`
-	Max_result_num string             `json:"max_result_num"`
+	MaxResultNum   string             `json:"maxResultNum"`
 }
 
 type TbVmRecommendReq struct {
-	Request_name   string `json:"request_name"`
-	Max_result_num string `json:"max_result_num"`
+	Request_name string `json:"request_name"`
+	MaxResultNum string `json:"maxResultNum"`
 
 	Vcpu_size   string `json:"vcpu_size"`
 	Memory_size string `json:"memory_size"`

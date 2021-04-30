@@ -750,7 +750,7 @@ definitions:
     type: object
   mcis.McisRecommendReq:
     properties:
-      max_result_num:
+      maxResultNum:
         type: string
       placementAlgo:
         type: string
@@ -1132,7 +1132,7 @@ definitions:
     properties:
       disk_size:
         type: string
-      max_result_num:
+      maxResultNum:
         type: string
       memory_size:
         type: string
