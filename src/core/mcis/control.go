@@ -283,7 +283,7 @@ type McisCmdReq struct {
 }
 
 type McisRecommendReq struct {
-	VmReq         []TbVmRecommendReq `json:"vmReq"`
+	VmReq          []TbVmRecommendReq `json:"vmReq"`
 	PlacementAlgo  string             `json:"placementAlgo"`
 	PlacementParam []common.KeyValue  `json:"placementParam"`
 	Max_result_num string             `json:"max_result_num"`
@@ -304,11 +304,11 @@ type TbVmRecommendReq struct {
 
 type TbVmPriority struct {
 	Priority string          `json:"priority"`
-	Vm_spec  mcir.TbSpecInfo `json:"vm_spec"`
+	VmSpec   mcir.TbSpecInfo `json:"vmSpec"`
 }
 
 type TbVmRecommendInfo struct {
-	VmReq         TbVmRecommendReq  `json:"vmReq"`
+	VmReq          TbVmRecommendReq  `json:"vmReq"`
 	VmPriority     []TbVmPriority    `json:"vmPriority"`
 	PlacementAlgo  string            `json:"placementAlgo"`
 	PlacementParam []common.KeyValue `json:"placementParam"`
@@ -1269,7 +1269,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 		vmPriorityTmp := TbVmPriority{}
 		vmPriorityTmp.Priority = strconv.Itoa(cnt)
-		vmPriorityTmp.Vm_spec = content2
+		vmPriorityTmp.VmSpec = content2
 		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
 	}
 

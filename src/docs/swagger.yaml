@@ -1108,7 +1108,7 @@ definitions:
     properties:
       priority:
         type: string
-      vm_spec:
+      vmSpec:
         $ref: '#/definitions/mcir.TbSpecInfo'
         type: object
     type: object

@@ -5277,7 +5277,7 @@ var doc = `{
                 "priority": {
                     "type": "string"
                 },
-                "vm_spec": {
+                "vmSpec": {
                     "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
