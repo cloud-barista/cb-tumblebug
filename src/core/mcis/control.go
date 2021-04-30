@@ -115,7 +115,7 @@ type TbMcisReq struct {
 	Label string `json:"label"`
 
 	PlacementAlgo string `json:"placementAlgo"`
-	Description    string `json:"description"`
+	Description   string `json:"description"`
 
 	Vm []TbVmReq `json:"vm"`
 }
@@ -133,8 +133,8 @@ type TbMcisInfo struct {
 	Label string `json:"label"`
 
 	PlacementAlgo string     `json:"placementAlgo"`
-	Description    string     `json:"description"`
-	Vm             []TbVmInfo `json:"vm"`
+	Description   string     `json:"description"`
+	Vm            []TbVmInfo `json:"vm"`
 }
 
 // struct TbVmReq is to get requirements to create a new server instance.
@@ -245,7 +245,7 @@ type McisStatusInfo struct {
 	Vm []TbVmStatusInfo `json:"vm"`
 }
 
-// struct TbVmStatusInfo is to define simple information of VM with updated status
+// TbVmStatusInfo is to define simple information of VM with updated status
 type TbVmStatusInfo struct {
 	Id      string `json:"id"`
 	Name    string `json:"name"`
@@ -272,11 +272,21 @@ type TbVmStatusInfo struct {
 	Location GeoLocation `json:"location"`
 }
 
+// McisCmdReq is remote command struct
+type McisCmdReq struct {
+	McisId   string `json:"mcisId"`
+	VmId     string `json:"vmId"`
+	Ip       string `json:"ip"`
+	UserName string `json:"userName"`
+	SshKey   string `json:"sshKey"`
+	Command  string `json:"command"`
+}
+
 type McisRecommendReq struct {
-	Vm_req          []TbVmRecommendReq `json:"vm_req"`
+	VmReq         []TbVmRecommendReq `json:"vmReq"`
 	PlacementAlgo  string             `json:"placementAlgo"`
-	Placement_param []common.KeyValue  `json:"placement_param"`
-	Max_result_num  string             `json:"max_result_num"`
+	PlacementParam []common.KeyValue  `json:"placementParam"`
+	Max_result_num string             `json:"max_result_num"`
 }
 
 type TbVmRecommendReq struct {
@@ -289,27 +299,19 @@ type TbVmRecommendReq struct {
 	//Disk_type   string `json:"disk_type"`
 
 	PlacementAlgo  string            `json:"placementAlgo"`
-	Placement_param []common.KeyValue `json:"placement_param"`
-}
-
-type McisCmdReq struct {
-	McisId   string `json:"mcisId"`
-	VmId     string `json:"vmId"`
-	Ip       string `json:"ip"`
-	UserName string `json:"userName"`
-	SshKey   string `json:"sshKey"`
-	Command  string `json:"command"`
+	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
 type TbVmPriority struct {
 	Priority string          `json:"priority"`
 	Vm_spec  mcir.TbSpecInfo `json:"vm_spec"`
 }
+
 type TbVmRecommendInfo struct {
-	Vm_req          TbVmRecommendReq  `json:"vm_req"`
-	Vm_priority     []TbVmPriority    `json:"vm_priority"`
+	VmReq         TbVmRecommendReq  `json:"vmReq"`
+	VmPriority     []TbVmPriority    `json:"vmPriority"`
 	PlacementAlgo  string            `json:"placementAlgo"`
-	Placement_param []common.KeyValue `json:"placement_param"`
+	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
 func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
@@ -1577,30 +1579,30 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 	/*
 		var content struct {
-			//Vm_req          []TbVmRecommendReq    `json:"vm_req"`
+			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
 			Vm_recommend    []mcis.TbVmRecommendInfo `json:"vm_recommend"`
 			PlacementAlgo  string                   `json:"placementAlgo"`
-			Placement_param []common.KeyValue        `json:"placement_param"`
+			PlacementParam []common.KeyValue        `json:"placementParam"`
 		}
 	*/
 	//content := RestPostMcisRecommandResponse{}
-	//content.Vm_req = req.Vm_req
+	//content.VmReq = req.VmReq
 	//content.PlacementAlgo = req.PlacementAlgo
-	//content.Placement_param = req.Placement_param
+	//content.PlacementParam = req.PlacementParam
 
 	Vm_recommend := []TbVmRecommendInfo{}
 
-	vmList := req.Vm_req
+	vmList := req.VmReq
 
 	for i, v := range vmList {
 		vmTmp := TbVmRecommendInfo{}
 		//vmTmp.Request_name = v.Request_name
-		vmTmp.Vm_req = req.Vm_req[i]
+		vmTmp.VmReq = req.VmReq[i]
 		vmTmp.PlacementAlgo = v.PlacementAlgo
-		vmTmp.Placement_param = v.Placement_param
+		vmTmp.PlacementParam = v.PlacementParam
 
 		var err error
-		vmTmp.Vm_priority, err = GetRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
+		vmTmp.VmPriority, err = GetRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
 
 		if err != nil {
 			common.CBLog.Error(err)

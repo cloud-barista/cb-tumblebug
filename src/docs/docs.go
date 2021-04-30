@@ -4760,13 +4760,13 @@ var doc = `{
                 "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
-                "vm_req": {
+                "vmReq": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmRecommendReq"
@@ -4958,14 +4958,14 @@ var doc = `{
                 "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
                 "vm_recommend": {
-                    "description": "Vm_req          []TbVmRecommendReq    ` + "`" + `json:\"vm_req\"` + "`" + `",
+                    "description": "VmReq          []TbVmRecommendReq    ` + "`" + `json:\"vmReq\"` + "`" + `",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmRecommendInfo"
@@ -5289,19 +5289,19 @@ var doc = `{
                 "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
-                "vm_priority": {
+                "vmPriority": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmPriority"
                     }
                 },
-                "vm_req": {
+                "vmReq": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
@@ -5322,7 +5322,7 @@ var doc = `{
                 "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"

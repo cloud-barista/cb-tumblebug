@@ -281,7 +281,7 @@ func (s *MCISService) RecommandMcis(ctx context.Context, req *pb.McisRecommendCr
 	content := rest_mcis.RestPostMcisRecommandResponse{}
 	content.Vm_recommend = result
 	content.PlacementAlgo = mcisObj.PlacementAlgo
-	content.Placement_param = mcisObj.Placement_param
+	content.PlacementParam = mcisObj.PlacementParam
 
 	// MCIS 객체에서 GRPC 메시지로 복사
 	var grpcObj pb.McisRecommendInfo

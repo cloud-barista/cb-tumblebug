@@ -752,13 +752,13 @@ definitions:
     properties:
       max_result_num:
         type: string
-      placement_param:
+      placementAlgo:
+        type: string
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      placementAlgo:
-        type: string
-      vm_req:
+      vmReq:
         items:
           $ref: '#/definitions/mcis.TbVmRecommendReq'
         type: array
@@ -882,14 +882,14 @@ definitions:
     type: object
   mcis.RestPostMcisRecommandResponse:
     properties:
-      placement_param:
+      placementAlgo:
+        type: string
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      placementAlgo:
-        type: string
       vm_recommend:
-        description: Vm_req          []TbVmRecommendReq    `json:"vm_req"`
+        description: VmReq          []TbVmRecommendReq    `json:"vmReq"`
         items:
           $ref: '#/definitions/mcis.TbVmRecommendInfo'
         type: array
@@ -1114,17 +1114,17 @@ definitions:
     type: object
   mcis.TbVmRecommendInfo:
     properties:
-      placement_param:
+      placementAlgo:
+        type: string
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      placementAlgo:
-        type: string
-      vm_priority:
+      vmPriority:
         items:
           $ref: '#/definitions/mcis.TbVmPriority'
         type: array
-      vm_req:
+      vmReq:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
         type: object
     type: object
@@ -1136,12 +1136,12 @@ definitions:
         type: string
       memory_size:
         type: string
-      placement_param:
+      placementAlgo:
+        type: string
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      placementAlgo:
-        type: string
       request_name:
         type: string
       vcpu_size:
