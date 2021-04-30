@@ -4588,7 +4588,7 @@
                 "actionType": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "postCommand": {
@@ -4742,7 +4742,7 @@
                 "max_result_num": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {
@@ -4940,7 +4940,7 @@
         "mcis.RestPostMcisRecommandResponse": {
             "type": "object",
             "properties": {
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {
@@ -5092,7 +5092,7 @@
                 "name": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "status": {
@@ -5134,7 +5134,7 @@
                 "name": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "vm": {
@@ -5271,7 +5271,7 @@
         "mcis.TbVmRecommendInfo": {
             "type": "object",
             "properties": {
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {
@@ -5304,7 +5304,7 @@
                 "memory_size": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {

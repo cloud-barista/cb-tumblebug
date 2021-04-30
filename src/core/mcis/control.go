@@ -114,7 +114,7 @@ type TbMcisReq struct {
 
 	Label string `json:"label"`
 
-	Placement_algo string `json:"placement_algo"`
+	PlacementAlgo string `json:"placementAlgo"`
 	Description    string `json:"description"`
 
 	Vm []TbVmReq `json:"vm"`
@@ -132,7 +132,7 @@ type TbMcisInfo struct {
 
 	Label string `json:"label"`
 
-	Placement_algo string     `json:"placement_algo"`
+	PlacementAlgo string     `json:"placementAlgo"`
 	Description    string     `json:"description"`
 	Vm             []TbVmInfo `json:"vm"`
 }
@@ -274,7 +274,7 @@ type TbVmStatusInfo struct {
 
 type McisRecommendReq struct {
 	Vm_req          []TbVmRecommendReq `json:"vm_req"`
-	Placement_algo  string             `json:"placement_algo"`
+	PlacementAlgo  string             `json:"placementAlgo"`
 	Placement_param []common.KeyValue  `json:"placement_param"`
 	Max_result_num  string             `json:"max_result_num"`
 }
@@ -288,7 +288,7 @@ type TbVmRecommendReq struct {
 	Disk_size   string `json:"disk_size"`
 	//Disk_type   string `json:"disk_type"`
 
-	Placement_algo  string            `json:"placement_algo"`
+	PlacementAlgo  string            `json:"placementAlgo"`
 	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
@@ -308,7 +308,7 @@ type TbVmPriority struct {
 type TbVmRecommendInfo struct {
 	Vm_req          TbVmRecommendReq  `json:"vm_req"`
 	Vm_priority     []TbVmPriority    `json:"vm_priority"`
-	Placement_algo  string            `json:"placement_algo"`
+	PlacementAlgo  string            `json:"placementAlgo"`
 	Placement_param []common.KeyValue `json:"placement_param"`
 }
 
@@ -1579,13 +1579,13 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 		var content struct {
 			//Vm_req          []TbVmRecommendReq    `json:"vm_req"`
 			Vm_recommend    []mcis.TbVmRecommendInfo `json:"vm_recommend"`
-			Placement_algo  string                   `json:"placement_algo"`
+			PlacementAlgo  string                   `json:"placementAlgo"`
 			Placement_param []common.KeyValue        `json:"placement_param"`
 		}
 	*/
 	//content := RestPostMcisRecommandResponse{}
 	//content.Vm_req = req.Vm_req
-	//content.Placement_algo = req.Placement_algo
+	//content.PlacementAlgo = req.PlacementAlgo
 	//content.Placement_param = req.Placement_param
 
 	Vm_recommend := []TbVmRecommendInfo{}
@@ -1596,7 +1596,7 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 		vmTmp := TbVmRecommendInfo{}
 		//vmTmp.Request_name = v.Request_name
 		vmTmp.Vm_req = req.Vm_req[i]
-		vmTmp.Placement_algo = v.Placement_algo
+		vmTmp.PlacementAlgo = v.PlacementAlgo
 		vmTmp.Placement_param = v.Placement_param
 
 		var err error
@@ -2662,7 +2662,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	//vmInfoData.Disk_size = vmInfoData.Disk_size
 	//vmInfoData.Disk_type = vmInfoData.Disk_type
 
-	//vmInfoData.Placement_algo = vmInfoData.Placement_algo
+	//vmInfoData.PlacementAlgo = vmInfoData.PlacementAlgo
 
 	// 2. Provided by CB-Spider
 	//vmInfoData.CspVmId = temp.Id

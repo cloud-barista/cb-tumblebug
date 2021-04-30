@@ -40,7 +40,7 @@ type TbMcisCreateRequest struct {
 type TbMcisReq struct {
 	Name           string    `yaml:"name" json:"name"`
 	Vm             []TbVmReq `yaml:"vm" json:"vm"`
-	Placement_algo string    `yaml:"placement_algo" json:"placement_algo"`
+	PlacementAlgo string    `yaml:"placementAlgo" json:"placementAlgo"`
 	Description    string    `yaml:"description" json:"description"`
 }
 
@@ -158,7 +158,7 @@ type McisRecommendCreateRequest struct {
 // McisRecommendReq - MCIS 추천 요청 구조 정의
 type McisRecommendReq struct {
 	Vm_req          []TbVmRecommendReq `yaml:"vm_req" json:"vm_req"`
-	Placement_algo  string             `yaml:"placement_algo" json:"placement_algo"`
+	PlacementAlgo  string             `yaml:"placementAlgo" json:"placementAlgo"`
 	Placement_param []KeyValue         `yaml:"placement_param" json:"placement_param"`
 	Max_result_num  string             `yaml:"max_result_num" json:"max_result_num"`
 }
@@ -172,7 +172,7 @@ type TbVmRecommendReq struct {
 	Memory_size string `yaml:"memory_size" json:"memory_size"`
 	Disk_size   string `yaml:"disk_size" json:"disk_size"`
 
-	Placement_algo  string     `yaml:"placement_algo" json:"placement_algo"`
+	PlacementAlgo  string     `yaml:"placementAlgo" json:"placementAlgo"`
 	Placement_param []KeyValue `yaml:"placement_param" json:"placement_param"`
 }
 

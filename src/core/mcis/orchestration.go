@@ -53,7 +53,7 @@ type AutoAction struct {
 	ActionType     string     `json:"actionType"`
 	Vm             TbVmInfo   `json:"vm"`
 	PostCommand    McisCmdReq `json:"postCommand"`
-	Placement_algo string     `json:"placement_algo"`
+	PlacementAlgo string     `json:"placementAlgo"`
 }
 
 // Policy is struct for MCIS auto-control Policy request that includes AutoCondition, AutoAction, Status.
@@ -272,10 +272,10 @@ func OrchestrationController() {
 						autoAction.Vm.Name = autoAction.Vm.Name + "-" + common.GenUuid()
 						//vmReqTmp := autoAction.Vm
 
-						if autoAction.Placement_algo == "random" {
-							fmt.Println("[autoAction.Placement_algo] " + autoAction.Placement_algo)
+						if autoAction.PlacementAlgo == "random" {
+							fmt.Println("[autoAction.PlacementAlgo] " + autoAction.PlacementAlgo)
 							var vmTmpErr error
-							autoAction.Vm, vmTmpErr = GetVmTemplate(nsId, mcisPolicyTmp.Id, autoAction.Placement_algo)
+							autoAction.Vm, vmTmpErr = GetVmTemplate(nsId, mcisPolicyTmp.Id, autoAction.PlacementAlgo)
 							if vmTmpErr != nil {
 								mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)

@@ -375,7 +375,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
    "name" : "aws-us-east-1-shson",
    "description" : "Tumblebug Demo",
    "targetStatus" : "Running",
-   "placement_algo" : "",
+   "placementAlgo" : "",
    "vm" : [
       {
          "vmUserId" : "",

@@ -562,7 +562,7 @@ func CreateMCISApiTest() {
 		NsId: "ns-test",
 		Item: tb_api.TbMcisReq{
 			Name:           "mcis-01",
-			Placement_algo: "",
+			PlacementAlgo: "",
 			Description:    "",
 			Vm: []tb_api.TbVmReq{
 				tb_api.TbVmReq{

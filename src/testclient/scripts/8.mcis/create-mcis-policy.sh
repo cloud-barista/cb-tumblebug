@@ -52,7 +52,7 @@
 					},
 					"autoAction": {
 						"actionType": "ScaleOut",
-						"placement_algo": "random",
+						"placementAlgo": "random",
 						"vm": {
 							"name": "AutoGen"
 						},

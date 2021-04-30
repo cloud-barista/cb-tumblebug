@@ -649,7 +649,7 @@ definitions:
     properties:
       actionType:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
       postCommand:
         $ref: '#/definitions/mcis.McisCmdReq'
@@ -752,12 +752,12 @@ definitions:
     properties:
       max_result_num:
         type: string
-      placement_algo:
-        type: string
       placement_param:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
+      placementAlgo:
+        type: string
       vm_req:
         items:
           $ref: '#/definitions/mcis.TbVmRecommendReq'
@@ -882,12 +882,12 @@ definitions:
     type: object
   mcis.RestPostMcisRecommandResponse:
     properties:
-      placement_algo:
-        type: string
       placement_param:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
+      placementAlgo:
+        type: string
       vm_recommend:
         description: Vm_req          []TbVmRecommendReq    `json:"vm_req"`
         items:
@@ -990,7 +990,7 @@ definitions:
         type: string
       name:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
       status:
         type: string
@@ -1019,7 +1019,7 @@ definitions:
         type: string
       name:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
       vm:
         items:
@@ -1114,12 +1114,12 @@ definitions:
     type: object
   mcis.TbVmRecommendInfo:
     properties:
-      placement_algo:
-        type: string
       placement_param:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
+      placementAlgo:
+        type: string
       vm_priority:
         items:
           $ref: '#/definitions/mcis.TbVmPriority'
@@ -1136,12 +1136,12 @@ definitions:
         type: string
       memory_size:
         type: string
-      placement_algo:
-        type: string
       placement_param:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
+      placementAlgo:
+        type: string
       request_name:
         type: string
       vcpu_size:

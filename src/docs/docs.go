@@ -4603,7 +4603,7 @@ var doc = `{
                 "actionType": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "postCommand": {
@@ -4757,7 +4757,7 @@ var doc = `{
                 "max_result_num": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {
@@ -4955,7 +4955,7 @@ var doc = `{
         "mcis.RestPostMcisRecommandResponse": {
             "type": "object",
             "properties": {
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {
@@ -5107,7 +5107,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "status": {
@@ -5149,7 +5149,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "vm": {
@@ -5286,7 +5286,7 @@ var doc = `{
         "mcis.TbVmRecommendInfo": {
             "type": "object",
             "properties": {
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {
@@ -5319,7 +5319,7 @@ var doc = `{
                 "memory_size": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "placement_param": {
