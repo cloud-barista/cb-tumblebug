@@ -8,15 +8,16 @@ import (
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
+// swagger:request ConfigReq
 type ConfigReq struct {
-	Name  string `json:"name" example:"spider"`
+	Name  string `json:"name" example:"SPIDER_REST_URL"`
 	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
 // swagger:response ConfigInfo
 type ConfigInfo struct {
-	Id    string `json:"id" example:"configid01"`
-	Name  string `json:"name" example:"spider"`
+	Id    string `json:"id" example:"SPIDER_REST_URL"`
+	Name  string `json:"name" example:"SPIDER_REST_URL"`
 	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
@@ -58,8 +59,6 @@ func UpdateEnv(id string) error {
 		common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 	*/
 
-	content := ConfigInfo{}
-
 	lowStrSPIDER_REST_URL := ToLower(StrSPIDER_REST_URL)
 	lowStrDRAGONFLY_REST_URL := ToLower(StrDRAGONFLY_REST_URL)
 	lowStrDB_URL := ToLower(StrDB_URL)
@@ -68,46 +67,37 @@ func UpdateEnv(id string) error {
 	lowStrDB_PASSWORD := ToLower(StrDB_PASSWORD)
 	lowStrAUTOCONTROL_DURATION_MS := ToLower(StrAUTOCONTROL_DURATION_MS)
 
-	Key := "/config/" + id
-	keyValue, err := CBStore.Get(Key)
+	configInfo, err := GetConfig(id)
 	if err != nil {
-		CBLog.Error(err)
+		//CBLog.Error(err)
 		return err
 	}
-	if keyValue != nil {
-		err := json.Unmarshal([]byte(keyValue.Value), &content)
-		if err != nil {
-			CBLog.Error(err)
-			return err
-		}
 
-		switch id {
-		case lowStrSPIDER_REST_URL:
-			SPIDER_REST_URL = content.Value
-		case lowStrDRAGONFLY_REST_URL:
-			DRAGONFLY_REST_URL = content.Value
-		case lowStrDB_URL:
-			DB_URL = content.Value
-		case lowStrDB_DATABASE:
-			DB_DATABASE = content.Value
-		case lowStrDB_USER:
-			DB_USER = content.Value
-		case lowStrDB_PASSWORD:
-			DB_PASSWORD = content.Value
-		case lowStrAUTOCONTROL_DURATION_MS:
-			AUTOCONTROL_DURATION_MS = content.Value
-		default:
+	switch id {
+	case lowStrSPIDER_REST_URL:
+		SPIDER_REST_URL = configInfo.Value
+		fmt.Println("<SPIDER_REST_URL> " + SPIDER_REST_URL)
+	case lowStrDRAGONFLY_REST_URL:
+		DRAGONFLY_REST_URL = configInfo.Value
+		fmt.Println("<DRAGONFLY_REST_URL> " + DRAGONFLY_REST_URL)
+	case lowStrDB_URL:
+		DB_URL = configInfo.Value
+		fmt.Println("<DB_URL> " + DB_URL)
+	case lowStrDB_DATABASE:
+		DB_DATABASE = configInfo.Value
+		fmt.Println("<DB_DATABASE> " + DB_DATABASE)
+	case lowStrDB_USER:
+		DB_USER = configInfo.Value
+		fmt.Println("<DB_USER> " + DB_USER)
+	case lowStrDB_PASSWORD:
+		DB_PASSWORD = configInfo.Value
+		fmt.Println("<DB_PASSWORD> " + DB_PASSWORD)
+	case lowStrAUTOCONTROL_DURATION_MS:
+		AUTOCONTROL_DURATION_MS = configInfo.Value
+		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
+	default:
 
-		}
 	}
-
-	fmt.Println("\n<SPIDER_REST_URL> " + SPIDER_REST_URL)
-	fmt.Println("<DRAGONFLY_REST_URL> " + DRAGONFLY_REST_URL)
-	fmt.Println("<DB_URL> " + DB_URL)
-	fmt.Println("<DB_DATABASE> " + DB_DATABASE)
-	fmt.Println("<DB_USER> " + DB_USER)
-	fmt.Println("<DB_PASSWORD> " + DB_PASSWORD)
-	fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
 
 	return nil
 }
@@ -134,7 +124,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	fmt.Println("[Get config] " + lowerizedId)
 	key := "/config/" + lowerizedId
-	fmt.Println(key)
+	//fmt.Println(key)
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
@@ -142,8 +132,8 @@ func GetConfig(id string) (ConfigInfo, error) {
 		return res, err
 	}
 
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	fmt.Println("<" + keyValue.Key + "> " + keyValue.Value)
+	//fmt.Println("===============================================")
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
@@ -254,7 +244,7 @@ func CheckConfig(Id string) (bool, error) {
 
 	lowerizedId := ToLower(Id)
 
-	fmt.Println("[Check config] " + lowerizedId)
+	//fmt.Println("[Check config] " + lowerizedId)
 
 	key := "/config/" + lowerizedId
 	//fmt.Println(key)

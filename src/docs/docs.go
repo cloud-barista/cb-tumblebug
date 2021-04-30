@@ -86,7 +86,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.ConfigInfo"
+                            "$ref": "#/definitions/common.ConfigReq"
                         }
                     }
                 ],
@@ -3626,11 +3626,24 @@ var doc = `{
             "properties": {
                 "id": {
                     "type": "string",
-                    "example": "configid01"
+                    "example": "SPIDER_REST_URL"
                 },
                 "name": {
                     "type": "string",
-                    "example": "spider"
+                    "example": "SPIDER_REST_URL"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "http://localhost:1024/spider"
+                }
+            }
+        },
+        "common.ConfigReq": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "SPIDER_REST_URL"
                 },
                 "value": {
                     "type": "string",

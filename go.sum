@@ -107,11 +107,15 @@ github.com/clbanning/x2j v0.0.0-20191024224557-825249438eec/go.mod h1:jMjuTZXRI4
 github.com/cloud-barista/cb-log v0.2.0-cappuccino.0.20201008023843-31002c0a088d/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-log v0.3.0-espresso h1:q+bw/quMV2LldEgHYqbANajb330GNIfpAIIMsqYGuK0=
 github.com/cloud-barista/cb-log v0.3.0-espresso/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
+github.com/cloud-barista/cb-log v0.3.1 h1:50Q0i7hZ7NrUzYsAJxzmTTlQc6PObZZAqGtxD9naxqY=
+github.com/cloud-barista/cb-log v0.3.1/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-spider v0.3.0-espresso h1:CJzdL0wbJt24jPby5+k6oZ5iOKCIdpaVLQ/ijBFJOfw=
 github.com/cloud-barista/cb-spider v0.3.0-espresso/go.mod h1:KUQDfzTMP/ghzTFqs0twUiCaNcR6v9KWDLP2veIaExE=
 github.com/cloud-barista/cb-store v0.2.0-cappuccino.0.20201111072717-b0bb715e2694/go.mod h1:tcMkva0951xAwoMcTqn9nXttnzk3ytHlJLs4MyH7p84=
 github.com/cloud-barista/cb-store v0.3.0-espresso h1:yduf2JeyIhxPWZIevn7RMrZUUTXJzi5okJgWWqSg1x8=
 github.com/cloud-barista/cb-store v0.3.0-espresso/go.mod h1:tcMkva0951xAwoMcTqn9nXttnzk3ytHlJLs4MyH7p84=
+github.com/cloud-barista/cb-store v0.3.2 h1:3WnyI4TGxzqyQG6z8N2hRoWbSIv3Aj6P189p68hzqNU=
+github.com/cloud-barista/cb-store v0.3.2/go.mod h1:jsw1K8IZd70SRcuHhPXPRO9Juxm5iO69iaGMOD0Fd34=
 github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58/go.mod h1:EOBUe0h4xcZ5GoxqC5SDxFQ8gwyZPKQoEzownBlhI80=
 github.com/cncf/udpa/go v0.0.0-20200313221541-5f7e5dd04533/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/cncf/udpa/go v0.0.0-20200327203949-e8cd3a4bb307/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
@@ -166,6 +170,8 @@ github.com/envoyproxy/go-control-plane v0.9.5/go.mod h1:OXl5to++W0ctG+EHWTFUjiyp
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/etcd-io/etcd v3.3.18+incompatible h1:iBOwlpFcpg+GJEiZ2ODqwkcu2UEK3y4aKFa3d8+LneM=
 github.com/etcd-io/etcd v3.3.18+incompatible/go.mod h1:cdZ77EstHBwVtD6iTgzgvogwcjo9m4iOqoijouPJ4bs=
+github.com/etcd-io/etcd v3.3.25+incompatible h1:dwTnorWhynXruhNhJ89adl8WPdiBTWnqOeBxgri26SM=
+github.com/etcd-io/etcd v3.3.25+incompatible/go.mod h1:cdZ77EstHBwVtD6iTgzgvogwcjo9m4iOqoijouPJ4bs=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
@@ -932,6 +938,8 @@ gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C
 gopkg.in/yaml.v3 v3.0.0-20200603094226-e3079894b1e8/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 h1:tQIYjPdBoyREyB9XMu+nnTclpTYkz2zFM+lzLJFO4gQ=
 gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b h1:h8qDotaEPuJATrMmW04NCwg7v22aHH28wwpauUhK9Oo=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190418001031-e561f6794a2a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=

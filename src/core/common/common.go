@@ -74,24 +74,12 @@ func OpenSQL(path string) error {
 
 	fullPathString := "file:" + path
 	MYDB, err = sql.Open("sqlite3", fullPathString)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Database access info set successfully")
-	}
-
 	return err
 }
 
 func SelectDatabase(database string) error {
 	query := "USE " + database
 	_, err = MYDB.Exec(query)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("DB selected successfully..")
-	}
-
 	return err
 }
 
@@ -135,11 +123,6 @@ func CreateSpecTable() error {
 		fmt.Println(err.Error())
 	}
 	_, err = stmt.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Table spec created successfully..")
-	}
 
 	return err
 }
@@ -161,11 +144,6 @@ func CreateImageTable() error {
 		fmt.Println(err.Error())
 	}
 	_, err = stmt.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Table image created successfully..")
-	}
 
 	return err
 }

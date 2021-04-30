@@ -83,7 +83,7 @@ func RestGetAllConfig(c echo.Context) error {
 // @Tags [Admin] System environment
 // @Accept  json
 // @Produce  json
-// @Param config body common.ConfigInfo true "Key and Value for configuration"
+// @Param config body common.ConfigReq true "Key and Value for configuration"
 // @Success 200 {object} common.ConfigInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
