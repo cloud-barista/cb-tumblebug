@@ -251,9 +251,9 @@ type TbVmStatusInfo struct {
 	Name    string `json:"name"`
 	CspVmId string `json:"cspVmId"`
 
-	Status        string `json:"status"`
-	TargetStatus  string `json:"targetStatus"`
-	TargetAction  string `json:"targetAction"`
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
 	NativeStatus string `json:"nativeStatus"`
 
 	// Montoring agent status
@@ -293,12 +293,12 @@ type TbVmRecommendReq struct {
 }
 
 type McisCmdReq struct {
-	McisId    string `json:"mcisId"`
-	VmId      string `json:"vmId"`
-	Ip        string `json:"ip"`
-	User_name string `json:"user_name"`
-	Ssh_key   string `json:"ssh_key"`
-	Command   string `json:"command"`
+	McisId   string `json:"mcisId"`
+	VmId     string `json:"vmId"`
+	Ip       string `json:"ip"`
+	UserName string `json:"userName"`
+	SshKey   string `json:"sshKey"`
+	Command  string `json:"command"`
 }
 
 type TbVmPriority struct {
@@ -473,14 +473,14 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 
 		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		// if (userName == "") {
-		// 	userName = req.User_name
+		// 	userName = req.UserName
 		// }
 		// if (userName == "") {
 		// 	userName = sshDefaultUserName
 		// }
 
 		// find vaild username
-		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
+		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -1633,11 +1633,11 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 
 	//fmt.Printf("[vmIp] " +vmIp)
 
-	//sshKey := req.Ssh_key
+	//sshKey := req.SshKey
 	cmd := req.Command
 
 	// find vaild username
-	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
+	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
 	if userName == "" {
 		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
@@ -1710,13 +1710,13 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		// if (userName == "") {
-		// 	userName = req.User_name
+		// 	userName = req.UserName
 		// }
 		// if (userName == "") {
 		// 	userName = sshDefaultUserName
 		// }
 		// find vaild username
-		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
+		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -1802,7 +1802,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
@@ -1960,7 +1960,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
@@ -2274,7 +2274,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n===========================\n")
 			// Sleep for 60 seconds for a safe DF agent installation.

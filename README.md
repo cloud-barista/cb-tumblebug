@@ -422,7 +422,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
          "name" : "aws-us-east-1-shson-01",
          "id" : "aws-us-east-1-shson-01",
          "vnetId" : "aws-us-east-1-shson",
-         "ssh_keyId" : "aws-us-east-1-shson",
+         "sshKeyId" : "aws-us-east-1-shson",
          "privateIP" : "192.168.1.108",
          "config_name" : "aws-us-east-1",
          "vmBlockDisk" : "/dev/sda1",

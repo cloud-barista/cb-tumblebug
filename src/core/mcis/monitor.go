@@ -36,14 +36,14 @@ const MonMetricDisk string = "disk"
 const MonMetricDiskio string = "diskio"
 
 type MonAgentInstallReq struct {
-	NsId      string `json:"nsId,omitempty"`
-	McisId    string `json:"mcisId,omitempty"`
-	VmId      string `json:"vmId,omitempty"`
-	PublicIp  string `json:"publicIp,omitempty"`
-	Port      string `json:"port,omitempty"`
-	User_name string `json:"user_name,omitempty"`
-	Ssh_key   string `json:"ssh_key,omitempty"`
-	Csp_type  string `json:"cspType,omitempty"`
+	NsId     string `json:"nsId,omitempty"`
+	McisId   string `json:"mcisId,omitempty"`
+	VmId     string `json:"vmId,omitempty"`
+	PublicIp string `json:"publicIp,omitempty"`
+	Port     string `json:"port,omitempty"`
+	UserName string `json:"userName,omitempty"`
+	SshKey   string `json:"sshKey,omitempty"`
+	Csp_type string `json:"cspType,omitempty"`
 }
 
 /*
@@ -125,16 +125,16 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
-		NsId:      nsID,
-		McisId:    mcisID,
-		VmId:      vmID,
-		PublicIp:  vmIP,
-		Port:      sshPort,
-		User_name: userName,
-		Ssh_key:   privateKey,
+		NsId:     nsID,
+		McisId:   mcisID,
+		VmId:     vmID,
+		PublicIp: vmIP,
+		Port:     sshPort,
+		UserName: userName,
+		SshKey:   privateKey,
 	}
-	if tempReq.Ssh_key == "" {
-		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.Ssh_key is empty.\n")
+	if tempReq.SshKey == "" {
+		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.SshKey is empty.\n")
 		common.PrintJsonPretty(tempReq)
 	}
 
@@ -262,7 +262,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 			// Avoid RunSSH to not ready VM
 			if err == nil {
 				wg.Add(1)
-				go CallMonitoringAsync(&wg, nsId, mcisId, v, req.User_name, method, cmd, &resultArray)
+				go CallMonitoringAsync(&wg, nsId, mcisId, v, req.UserName, method, cmd, &resultArray)
 			} else {
 				common.CBLog.Error(err)
 			}

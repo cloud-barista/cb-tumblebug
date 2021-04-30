@@ -4715,10 +4715,10 @@ var doc = `{
                 "mcisId": {
                     "type": "string"
                 },
-                "ssh_key": {
+                "sshKey": {
                     "type": "string"
                 },
-                "user_name": {
+                "userName": {
                     "type": "string"
                 },
                 "vmId": {
