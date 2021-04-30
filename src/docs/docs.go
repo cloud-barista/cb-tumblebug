@@ -5328,7 +5328,7 @@ var doc = `{
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
-                "request_name": {
+                "requestName": {
                     "type": "string"
                 },
                 "vcpu_size": {

@@ -157,15 +157,15 @@ type McisRecommendCreateRequest struct {
 
 // McisRecommendReq - MCIS 추천 요청 구조 정의
 type McisRecommendReq struct {
-	VmReq         []TbVmRecommendReq `yaml:"vmReq" json:"vmReq"`
+	VmReq          []TbVmRecommendReq `yaml:"vmReq" json:"vmReq"`
 	PlacementAlgo  string             `yaml:"placementAlgo" json:"placementAlgo"`
 	PlacementParam []KeyValue         `yaml:"placementParam" json:"placementParam"`
-	MaxResultNum string             `yaml:"maxResultNum" json:"maxResultNum"`
+	MaxResultNum   string             `yaml:"maxResultNum" json:"maxResultNum"`
 }
 
 // McisRecommendReq - MCIS VM 추천 요청 구조 정의
 type TbVmRecommendReq struct {
-	Request_name   string `yaml:"request_name" json:"request_name"`
+	RequestName  string `yaml:"requestName" json:"requestName"`
 	MaxResultNum string `yaml:"maxResultNum" json:"maxResultNum"`
 
 	Vcpu_size   string `yaml:"vcpu_size" json:"vcpu_size"`

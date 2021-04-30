@@ -1142,7 +1142,7 @@ definitions:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      request_name:
+      requestName:
         type: string
       vcpu_size:
         type: string

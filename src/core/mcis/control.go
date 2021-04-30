@@ -290,7 +290,7 @@ type McisRecommendReq struct {
 }
 
 type TbVmRecommendReq struct {
-	Request_name string `json:"request_name"`
+	RequestName  string `json:"requestName"`
 	MaxResultNum string `json:"maxResultNum"`
 
 	Vcpu_size   string `json:"vcpu_size"`
@@ -1596,7 +1596,7 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 	for i, v := range vmList {
 		vmTmp := TbVmRecommendInfo{}
-		//vmTmp.Request_name = v.Request_name
+		//vmTmp.RequestName = v.RequestName
 		vmTmp.VmReq = req.VmReq[i]
 		vmTmp.PlacementAlgo = v.PlacementAlgo
 		vmTmp.PlacementParam = v.PlacementParam
