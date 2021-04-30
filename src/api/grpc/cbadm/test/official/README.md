@@ -287,7 +287,7 @@ Dozing for 1 : 1 (Back to work)
       {
          "public_ip" : "35.173.215.4",
          "native_status" : "Running",
-         "csp_vm_id" : "aws-us-east-1-shson-01",
+         "csp_vmId" : "aws-us-east-1-shson-01",
          "name" : "aws-us-east-1-shson-01",
          "status" : "Running",
          "targetAction" : "None",
@@ -301,7 +301,7 @@ Dozing for 1 : 1 (Back to work)
          "targetStatus" : "None",
          "id" : "aws-us-east-1-shson-02",
          "public_ip" : "18.206.13.233",
-         "csp_vm_id" : "aws-us-east-1-shson-02",
+         "csp_vmId" : "aws-us-east-1-shson-02",
          "native_status" : "Running"
       },
       {
@@ -310,7 +310,7 @@ Dozing for 1 : 1 (Back to work)
          "targetStatus" : "None",
          "name" : "aws-us-east-1-shson-03",
          "status" : "Running",
-         "csp_vm_id" : "aws-us-east-1-shson-03",
+         "csp_vmId" : "aws-us-east-1-shson-03",
          "native_status" : "Running",
          "public_ip" : "18.232.53.134"
       }
@@ -348,20 +348,20 @@ Dozing for 1 : 1 (Back to work)
         "result_array" : [
             {
               "vm_ip" : "35.173.215.4",
-              "vm_id" : "aws-us-east-1-shson-01",
+              "vmId" : "aws-us-east-1-shson-01",
               "result" : "WebServer is ready. Access http://35.173.215.4",
-              "mcis_id" : "aws-us-east-1-shson"
+              "mcisId" : "aws-us-east-1-shson"
             },
             {
               "vm_ip" : "18.206.13.233",
-              "vm_id" : "aws-us-east-1-shson-02",
+              "vmId" : "aws-us-east-1-shson-02",
               "result" : "WebServer is ready. Access http://18.206.13.233",
-              "mcis_id" : "aws-us-east-1-shson"
+              "mcisId" : "aws-us-east-1-shson"
             },
             {
-              "mcis_id" : "aws-us-east-1-shson",
+              "mcisId" : "aws-us-east-1-shson",
               "result" : "WebServer is ready. Access http://18.232.53.134",
-              "vm_id" : "aws-us-east-1-shson-03",
+              "vmId" : "aws-us-east-1-shson-03",
               "vm_ip" : "18.232.53.134"
             }
         ]

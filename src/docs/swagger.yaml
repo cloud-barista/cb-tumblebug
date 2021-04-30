@@ -629,13 +629,13 @@ definitions:
     type: object
   mcis.AgentInstallContent:
     properties:
-      mcis_id:
+      mcisId:
         type: string
       result:
         type: string
-      vm_id:
-        type: string
       vm_ip:
+        type: string
+      vmId:
         type: string
     type: object
   mcis.AgentInstallContentWrapper:
@@ -722,13 +722,13 @@ definitions:
         type: string
       ip:
         type: string
-      mcis_id:
+      mcisId:
         type: string
       ssh_key:
         type: string
       user_name:
         type: string
-      vm_id:
+      vmId:
         type: string
     type: object
   mcis.McisPolicyInfo:
@@ -859,13 +859,13 @@ definitions:
     type: object
   mcis.RestPostCmdMcisResponse:
     properties:
-      mcis_id:
+      mcisId:
         type: string
       result:
         type: string
-      vm_id:
-        type: string
       vm_ip:
+        type: string
+      vmId:
         type: string
     type: object
   mcis.RestPostCmdMcisResponseWrapper:
@@ -1187,7 +1187,7 @@ definitions:
         description: Created time
         example: "2022-11-10 23:00:00"
         type: string
-      csp_vm_id:
+      csp_vmId:
         type: string
       id:
         type: string

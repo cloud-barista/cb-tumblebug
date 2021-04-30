@@ -4563,13 +4563,13 @@ var doc = `{
         "mcis.AgentInstallContent": {
             "type": "object",
             "properties": {
-                "mcis_id": {
+                "mcisId": {
                     "type": "string"
                 },
                 "result": {
                     "type": "string"
                 },
-                "vm_id": {
+                "vmId": {
                     "type": "string"
                 },
                 "vm_ip": {
@@ -4703,7 +4703,7 @@ var doc = `{
                 "ip": {
                     "type": "string"
                 },
-                "mcis_id": {
+                "mcisId": {
                     "type": "string"
                 },
                 "ssh_key": {
@@ -4712,7 +4712,7 @@ var doc = `{
                 "user_name": {
                     "type": "string"
                 },
-                "vm_id": {
+                "vmId": {
                     "type": "string"
                 }
             }
@@ -4910,13 +4910,13 @@ var doc = `{
         "mcis.RestPostCmdMcisResponse": {
             "type": "object",
             "properties": {
-                "mcis_id": {
+                "mcisId": {
                     "type": "string"
                 },
                 "result": {
                     "type": "string"
                 },
-                "vm_id": {
+                "vmId": {
                     "type": "string"
                 },
                 "vm_ip": {
@@ -5385,7 +5385,7 @@ var doc = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "csp_vm_id": {
+                "csp_vmId": {
                     "type": "string"
                 },
                 "id": {

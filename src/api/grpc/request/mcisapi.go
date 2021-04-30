@@ -185,8 +185,8 @@ type McisCmdCreateRequest struct {
 
 // McisCmdReq - MCIS 명령 실행 요청 구조 정의
 type McisCmdReq struct {
-	Mcis_id   string `yaml:"mcis_id" json:"mcis_id"`
-	Vm_id     string `yaml:"vm_id" json:"vm_id"`
+	McisId    string `yaml:"mcisId" json:"mcisId"`
+	VmId      string `yaml:"vmId" json:"vmId"`
 	Ip        string `yaml:"ip" json:"ip"`
 	User_name string `yaml:"user_name" json:"user_name"`
 	Ssh_key   string `yaml:"ssh_key" json:"ssh_key"`

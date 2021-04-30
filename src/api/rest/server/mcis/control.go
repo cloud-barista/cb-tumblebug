@@ -325,10 +325,10 @@ func RestPostCmdMcisVm(c echo.Context) error {
 }
 
 type RestPostCmdMcisResponse struct {
-	Mcis_id string `json:"mcis_id"`
-	Vm_id   string `json:"vm_id"`
-	Vm_ip   string `json:"vm_ip"`
-	Result  string `json:"result"`
+	McisId string `json:"mcisId"`
+	VmId   string `json:"vmId"`
+	Vm_ip  string `json:"vm_ip"`
+	Result string `json:"result"`
 }
 
 type RestPostCmdMcisResponseWrapper struct {
@@ -369,8 +369,8 @@ func RestPostCmdMcis(c echo.Context) error {
 	for _, v := range resultArray {
 
 		resultTmp := RestPostCmdMcisResponse{}
-		resultTmp.Mcis_id = mcisId
-		resultTmp.Vm_id = v.Vm_id
+		resultTmp.McisId = mcisId
+		resultTmp.VmId = v.VmId
 		resultTmp.Vm_ip = v.Vm_ip
 		resultTmp.Result = v.Result
 		content.Result_array = append(content.Result_array, resultTmp)

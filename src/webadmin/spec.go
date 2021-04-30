@@ -10,7 +10,7 @@ import (
 
 func makePostSpecFunc_js() string {
 
-	// curl -X POST http://$RESTSERVER:1323/tumblebug/ns/{ns_id}/resources/spec -H 'Content-Type: application/json'  -d '{"name": "webadmin-test", "description": "webadmin-test-desc"}'
+	// curl -X POST http://$RESTSERVER:1323/tumblebug/ns/{nsId}/resources/spec -H 'Content-Type: application/json'  -d '{"name": "webadmin-test", "description": "webadmin-test-desc"}'
 
 	strFunc := `
         function postNs() {

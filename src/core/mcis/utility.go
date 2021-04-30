@@ -298,8 +298,8 @@ func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, u
 	//wg.Done() //goroutin sync done
 
 	sshResultTmp := SshCmdResult{}
-	sshResultTmp.Mcis_id = ""
-	sshResultTmp.Vm_id = vmID
+	sshResultTmp.McisId = ""
+	sshResultTmp.VmId = vmID
 	sshResultTmp.Vm_ip = vmIP
 
 	if err != nil {
