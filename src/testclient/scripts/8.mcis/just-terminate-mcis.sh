@@ -27,7 +27,7 @@ getCloudIndex $CSP
 if [ "${INDEX}" == "0" ]; then
 	MCISID=${MCISPREFIX}-${POSTFIX}
 else
-	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
 echo "${MCISID}"

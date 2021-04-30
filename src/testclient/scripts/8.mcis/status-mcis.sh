@@ -30,7 +30,6 @@ else
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-echo "${INDEX}"
 echo "${MCISID}"
 
 ControlCmd=status
