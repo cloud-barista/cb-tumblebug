@@ -1360,6 +1360,12 @@ paths:
       consumes:
       - application/json
       description: Get registered ConnConfig info
+      parameters:
+      - description: Name of connection config (cloud config)
+        in: path
+        name: connConfigName
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -2529,7 +2535,7 @@ paths:
       tags:
       - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecs:
-    post:
+    get:
       consumes:
       - application/json
       description: Filter specs
@@ -2563,7 +2569,7 @@ paths:
       tags:
       - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecsByRange:
-    post:
+    get:
       consumes:
       - application/json
       description: Filter specs by range

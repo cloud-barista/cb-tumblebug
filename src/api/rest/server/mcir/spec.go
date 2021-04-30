@@ -205,7 +205,7 @@ func RestFetchSpecs(c echo.Context) error {
 	return c.JSON(http.StatusCreated, &mapA) //content)
 }
 
-// Response structure for RestFilterSpecs
+// RestFilterSpecsResponse is Response structure for RestFilterSpecs
 type RestFilterSpecsResponse struct {
 	Spec []mcir.TbSpecInfo `json:"spec"`
 }
@@ -221,7 +221,7 @@ type RestFilterSpecsResponse struct {
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/filterSpecs [post]
+// @Router /ns/{nsId}/resources/filterSpecs [get]
 func RestFilterSpecs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -255,7 +255,7 @@ func RestFilterSpecs(c echo.Context) error {
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/filterSpecsByRange [post]
+// @Router /ns/{nsId}/resources/filterSpecsByRange [get]
 func RestFilterSpecsByRange(c echo.Context) error {
 
 	nsId := c.Param("nsId")

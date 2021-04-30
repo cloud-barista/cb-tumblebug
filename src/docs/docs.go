@@ -231,6 +231,15 @@ var doc = `{
                     "[Admin] Cloud environment management"
                 ],
                 "summary": "Get registered ConnConfig info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of connection config (cloud config)",
+                        "name": "connConfigName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1987,7 +1996,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/resources/filterSpecs": {
-            "post": {
+            "get": {
                 "description": "Filter specs",
                 "consumes": [
                     "application/json"
@@ -2039,7 +2048,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/resources/filterSpecsByRange": {
-            "post": {
+            "get": {
                 "description": "Filter specs by range",
                 "consumes": [
                     "application/json"
