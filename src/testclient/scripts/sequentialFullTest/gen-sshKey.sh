@@ -44,7 +44,7 @@
 	if ! dpkg-query -W -f='${Status}' putty-tools  | grep "ok installed"; then sudo apt install -y putty-tools; fi
 
 
-	# curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/sshKey/$MCIRID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCISID.pem
+	# curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$MCIRID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCISID.pem
 	# chmod 600 ./sshkey-tmp/$MCISID.pem
 	# puttygen ./sshkey-tmp/$MCISID.pem -o ./sshkey-tmp/$MCISID.ppk -O private
 
@@ -54,7 +54,7 @@
 
 	./command-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 
-	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status`
+	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status`
 	VMARRAY=$(jq '.status.vm' <<< "$MCISINFO")
 
 	echo "$VMARRAY" | jq ''
@@ -72,15 +72,15 @@
             }
 
 			id=$(_jq '.id')
-            ip=$(_jq '.public_ip')
+            ip=$(_jq '.publicIp')
 
-			VMINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}/vm/${id}`
+			VMINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id}`
 			VMKEYID=$(jq -r '.sshKeyId' <<< "$VMINFO")
 
 			# KEYFILENAME="MCIS_${MCISID}_VM_${id}"
 			KEYFILENAME="${VMKEYID}"
 
-			curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/sshKey/$VMKEYID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$KEYFILENAME.pem
+			curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$VMKEYID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$KEYFILENAME.pem
 			chmod 600 ./sshkey-tmp/$KEYFILENAME.pem
 			puttygen ./sshkey-tmp/$KEYFILENAME.pem -o ./sshkey-tmp/$KEYFILENAME.ppk -O private
 
@@ -98,12 +98,12 @@
             }
 
 			id=$(_jq '.id')
-            ip=$(_jq '.public_ip')
+            ip=$(_jq '.publicIp')
 
-			VMINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}/vm/${id}`
+			VMINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id}`
 			VMKEYID=$(jq -r '.sshKeyId' <<< "$VMINFO")
 
-			KEYINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/${NS_ID}/resources/sshKey/${VMKEYID}`
+			KEYINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/${NSID}/resources/sshKey/${VMKEYID}`
 			USERNAME=$(jq -r '.verifiedUsername' <<< "$KEYINFO")
 
 			# KEYFILENAME="MCIS_${MCISID}_VM_${id}"

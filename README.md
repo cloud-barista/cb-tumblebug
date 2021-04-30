@@ -375,12 +375,12 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
    "name" : "aws-us-east-1-shson",
    "description" : "Tumblebug Demo",
    "targetStatus" : "Running",
-   "placement_algo" : "",
+   "placementAlgo" : "",
    "vm" : [
       {
          "vmUserId" : "",
          "targetStatus" : "None",
-         "subnet_id" : "aws-us-east-1-shson",
+         "subnetId" : "aws-us-east-1-shson",
          "location" : {
             "nativeRegion" : "us-east-1",
             "cloudType" : "aws",
@@ -388,16 +388,16 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
             "briefAddr" : "Virginia",
             "longitude" : "-78.4500"
          },
-         "vm_access_id" : "",
+         "vm_accessId" : "",
          "region" : {
             "Region" : "us-east-1",
             "Zone" : "us-east-1f"
          },
-         "image_id" : "aws-us-east-1-shson",
+         "imageId" : "aws-us-east-1-shson",
          "privateDNS" : "ip-192-168-1-108.ec2.internal",
          "vmBootDisk" : "/dev/sda1",
          "status" : "Running",
-         "security_group_ids" : [
+         "security_groupIds" : [
             "aws-us-east-1-shson"
          ],
          "vm_access_passwd" : "",
@@ -421,14 +421,14 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
          "publicIP" : "35.173.215.4",
          "name" : "aws-us-east-1-shson-01",
          "id" : "aws-us-east-1-shson-01",
-         "vnet_id" : "aws-us-east-1-shson",
-         "ssh_key_id" : "aws-us-east-1-shson",
+         "vnetId" : "aws-us-east-1-shson",
+         "sshKeyId" : "aws-us-east-1-shson",
          "privateIP" : "192.168.1.108",
          "config_name" : "aws-us-east-1",
          "vmBlockDisk" : "/dev/sda1",
          "targetAction" : "None",
          "description" : "description",
-         "spec_id" : "aws-us-east-1-shson",
+         "specId" : "aws-us-east-1-shson",
          "publicDNS" : "",
          "vmUserPasswd" : ""
       },
@@ -436,7 +436,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
          "vmBlockDisk" : "/dev/sda1",
          "targetAction" : "None",
          "description" : "description",
-         "spec_id" : "aws-us-east-1-shson",
+         "specId" : "aws-us-east-1-shson",
          "vmUserPasswd" : "",
          ..........
       }
@@ -453,9 +453,9 @@ Dozing for 1 : 1 (Back to work)
    "targetAction" : "None",
    "vm" : [
       {
-         "public_ip" : "35.173.215.4",
-         "native_status" : "Running",
-         "csp_vm_id" : "aws-us-east-1-shson-01",
+         "publicIp" : "35.173.215.4",
+         "nativeStatus" : "Running",
+         "cspId" : "aws-us-east-1-shson-01",
          "name" : "aws-us-east-1-shson-01",
          "status" : "Running",
          "targetAction" : "None",
@@ -468,9 +468,9 @@ Dozing for 1 : 1 (Back to work)
          "targetAction" : "None",
          "targetStatus" : "None",
          "id" : "aws-us-east-1-shson-02",
-         "public_ip" : "18.206.13.233",
-         "csp_vm_id" : "aws-us-east-1-shson-02",
-         "native_status" : "Running"
+         "publicIp" : "18.206.13.233",
+         "cspId" : "aws-us-east-1-shson-02",
+         "nativeStatus" : "Running"
       },
       {
          "targetAction" : "None",
@@ -478,9 +478,9 @@ Dozing for 1 : 1 (Back to work)
          "targetStatus" : "None",
          "name" : "aws-us-east-1-shson-03",
          "status" : "Running",
-         "csp_vm_id" : "aws-us-east-1-shson-03",
-         "native_status" : "Running",
-         "public_ip" : "18.232.53.134"
+         "cspId" : "aws-us-east-1-shson-03",
+         "nativeStatus" : "Running",
+         "publicIp" : "18.232.53.134"
       }
    ],
    "status" : "Running-(3/3)",
@@ -517,22 +517,22 @@ Dozing for 1 : 1 (Back to work)
       {
         "result_array" : [
             {
-              "vm_ip" : "35.173.215.4",
-              "vm_id" : "aws-us-east-1-shson-01",
+              "vmIp" : "35.173.215.4",
+              "vmId" : "aws-us-east-1-shson-01",
               "result" : "WebServer is ready. Access http://35.173.215.4",
-              "mcis_id" : "aws-us-east-1-shson"
+              "mcisId" : "aws-us-east-1-shson"
             },
             {
-              "vm_ip" : "18.206.13.233",
-              "vm_id" : "aws-us-east-1-shson-02",
+              "vmIp" : "18.206.13.233",
+              "vmId" : "aws-us-east-1-shson-02",
               "result" : "WebServer is ready. Access http://18.206.13.233",
-              "mcis_id" : "aws-us-east-1-shson"
+              "mcisId" : "aws-us-east-1-shson"
             },
             {
-              "mcis_id" : "aws-us-east-1-shson",
+              "mcisId" : "aws-us-east-1-shson",
               "result" : "WebServer is ready. Access http://18.232.53.134",
-              "vm_id" : "aws-us-east-1-shson-03",
-              "vm_ip" : "18.232.53.134"
+              "vmId" : "aws-us-east-1-shson-03",
+              "vmIp" : "18.232.53.134"
             }
         ]
       }

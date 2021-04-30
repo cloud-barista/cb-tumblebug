@@ -102,6 +102,7 @@ func RestGetSwagger(c echo.Context) error {
 // @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
+// @Param connConfigName path string true "Name of connection config (cloud config)"
 // @Success 200 {object} common.ConnConfig
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

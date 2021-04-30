@@ -20,24 +20,26 @@ echo "####################################################################"
 CSP=${1}
 REGION=${2:-1}
 POSTFIX=${3:-developer}
-MCISPREFIX=${5}
-GIVENMCISID=${6}
+
 
 source ../common-functions.sh
 getCloudIndex $CSP
 
-if [ -z "$MCISPREFIX" ]; then
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX} | jq ''
+
+
+MCISID=TBD
+if [ "${INDEX}" == "0" ]; then
+	MCISID=${MCISPREFIX}-${POSTFIX}
 else
-	if [ ! -z "$GIVENMCISID" ]; then
-		MCISID=${GIVENMCISID}
-	else
-		MCISID=${MCISPREFIX}-${POSTFIX}
-	fi
-	echo ""
-	echo "Terminate and Delete [MCIS: $MCISID]"
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID} | jq ''
+	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
+
+echo "${INDEX} ${REGION} ${MCISID}"
+
+
+echo ""
+echo "Terminate and Delete [MCIS: $MCISID]"
+curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID} | jq ''
 
 #}
 

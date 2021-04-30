@@ -19,7 +19,7 @@
 	echo "####################################################################"
 
 	resp=$(
-        curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/spec/aws-us-east-1-m5ad.2xlarge -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/resources/spec/aws-us-east-1-m5ad.2xlarge -H 'Content-Type: application/json' -d @- <<EOF
 		{ 
 			"id": "aws-us-east-1-m5ad.2xlarge", 
 			"description": "UpdateSpec() test"

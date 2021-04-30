@@ -32,7 +32,7 @@
 		MCISID=${MCISPREFIX}-${POSTFIX}
 	fi
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/monitoring/install/mcis/$MCISID -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/monitoring/install/mcis/$MCISID -H 'Content-Type: application/json' -d \
 		'{
 			"command": "echo -n [CMD] Works! [Public IP: ; curl https://api.ipify.org ; echo -n ], [Hostname: ; hostname ; echo -n ]"
 		}' | jq '' #|| return 1

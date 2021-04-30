@@ -16,7 +16,7 @@
 
     $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec filter-by-range --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	    '{
-            "nsId":  "'${NS_ID}'",
+            "nsId":  "'${NSID}'",
 		    "spec": {
 			    "num_vCPU": {
                     "min": 2,

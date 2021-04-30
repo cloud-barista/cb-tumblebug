@@ -5,11 +5,11 @@ function test_sequence() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
-	local NUMVM=$4
-	local TestSetFile=$5
+	local TestSetFile=$4
+	local NUMVM=$5
 	local CMDPATH=$6
 
-	../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX $NUMVM $TestSetFile
+	../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $NUMVM 
 	dozing 1
 	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 
@@ -17,7 +17,7 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIS:${MCISID}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >>./executionStatus
+	echo "[MCIS:${MCISID}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${NUMVM}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
@@ -30,14 +30,14 @@ function test_sequence_allcsp_mcis() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
-	local NUMVM=$4
-	local MCISPREFIX=$5
-	local TestSetFile=$6
-	local CMDPATH=$7
+	local TestSetFile=$4
+	local NUMVM=$5
+
+	local CMDPATH=$6
 
 	_self=$CMDPATH
 
-	../8.mcis/create-single-vm-mcis.sh $CSP $REGION $POSTFIX $NUMVM $MCISPREFIX $TestSetFile
+	../8.mcis/create-single-vm-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $NUMVM
 	#dozing 1
 	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
 	echo ""
@@ -55,9 +55,8 @@ function test_sequence_allcsp_mcis_vm() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
-	local NUMVM=$4
-	local MCISPREFIX=$5
-	local TestSetFile=$6
+	local TestSetFile=$4
+	local NUMVM=$5
 
 	../8.mcis/add-vmgroup-to-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $NUMVM 
 
@@ -120,7 +119,7 @@ if [ "${INDEX}" == "0" ]; then
 			if [ "${cspi}" -eq 1 ] && [ "${cspj}" -eq 1 ]; then
 				echo ""
 				echo "[Create a MCIS object with a VM]"
-				test_sequence_allcsp_mcis $CSP $REGION $POSTFIX $NUMVM $MCISPREFIX $TestSetFile ${0##*/} &
+				test_sequence_allcsp_mcis $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/} &
 				# Check MCIS object is created
 				echo ""
 				echo "[Waiting for initialization of MCIS:$MCISID (5s)]"
@@ -129,7 +128,7 @@ if [ "${INDEX}" == "0" ]; then
 				echo "Checking MCIS object. (upto 3s * 20 trials)"
 				for ((try = 1; try <= 20; try++)); do
 					HTTP_CODE=0
-					HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}" --silent)
+					HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}" --silent)
 					echo "HTTP status for get MCIS object: $HTTP_CODE"
 					if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
 						echo "[$try : MCIS object is READY]"
@@ -143,7 +142,7 @@ if [ "${INDEX}" == "0" ]; then
 				dozing 6
 				echo ""
 				echo "[Create VM and add it into the MCIS in parallel]"
-				test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $NUMVM $MCISPREFIX $TestSetFile &
+				test_sequence_allcsp_mcis_vm $CSP $REGION $POSTFIX $TestSetFile $NUMVM &
 
 			fi
 		done
@@ -151,7 +150,7 @@ if [ "${INDEX}" == "0" ]; then
 	done
 	wait
 
-	../8.mcis/status-mcis.sh ${CSPType[1]} 1 $POSTFIX $TestSetFile $MCISPREFIX
+	../8.mcis/status-mcis.sh "$@"
 
 else
 	echo ""
@@ -160,7 +159,7 @@ else
 
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
-	test_sequence $CSP $REGION $POSTFIX $NUMVM $TestSetFile ${0##*/}
+	test_sequence $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/}
 
 fi
 

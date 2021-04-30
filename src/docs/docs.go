@@ -231,6 +231,15 @@ var doc = `{
                     "[Admin] Cloud environment management"
                 ],
                 "summary": "Get registered ConnConfig info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of connection config (cloud config)",
+                        "name": "connConfigName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1987,7 +1996,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/resources/filterSpecs": {
-            "post": {
+            "get": {
                 "description": "Filter specs",
                 "consumes": [
                     "application/json"
@@ -2039,7 +2048,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/resources/filterSpecsByRange": {
-            "post": {
+            "get": {
                 "description": "Filter specs by range",
                 "consumes": [
                     "application/json"
@@ -4563,16 +4572,16 @@ var doc = `{
         "mcis.AgentInstallContent": {
             "type": "object",
             "properties": {
-                "mcis_id": {
+                "mcisId": {
                     "type": "string"
                 },
                 "result": {
                     "type": "string"
                 },
-                "vm_id": {
+                "vmId": {
                     "type": "string"
                 },
-                "vm_ip": {
+                "vmIp": {
                     "type": "string"
                 }
             }
@@ -4594,7 +4603,7 @@ var doc = `{
                 "actionType": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "postCommand": {
@@ -4703,16 +4712,16 @@ var doc = `{
                 "ip": {
                     "type": "string"
                 },
-                "mcis_id": {
+                "mcisId": {
                     "type": "string"
                 },
-                "ssh_key": {
+                "sshKey": {
                     "type": "string"
                 },
-                "user_name": {
+                "userName": {
                     "type": "string"
                 },
-                "vm_id": {
+                "vmId": {
                     "type": "string"
                 }
             }
@@ -4745,19 +4754,19 @@ var doc = `{
         "mcis.McisRecommendReq": {
             "type": "object",
             "properties": {
-                "max_result_num": {
+                "maxResultNum": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
-                "vm_req": {
+                "vmReq": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmRecommendReq"
@@ -4910,16 +4919,16 @@ var doc = `{
         "mcis.RestPostCmdMcisResponse": {
             "type": "object",
             "properties": {
-                "mcis_id": {
+                "mcisId": {
                     "type": "string"
                 },
                 "result": {
                     "type": "string"
                 },
-                "vm_id": {
+                "vmId": {
                     "type": "string"
                 },
-                "vm_ip": {
+                "vmIp": {
                     "type": "string"
                 }
             }
@@ -4946,17 +4955,17 @@ var doc = `{
         "mcis.RestPostMcisRecommandResponse": {
             "type": "object",
             "properties": {
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
                 "vm_recommend": {
-                    "description": "Vm_req          []TbVmRecommendReq    ` + "`" + `json:\"vm_req\"` + "`" + `",
+                    "description": "VmReq          []TbVmRecommendReq    ` + "`" + `json:\"vmReq\"` + "`" + `",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmRecommendInfo"
@@ -5098,7 +5107,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "status": {
@@ -5140,7 +5149,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
                 "vm": {
@@ -5268,7 +5277,7 @@ var doc = `{
                 "priority": {
                     "type": "string"
                 },
-                "vm_spec": {
+                "vmSpec": {
                     "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
@@ -5277,22 +5286,22 @@ var doc = `{
         "mcis.TbVmRecommendInfo": {
             "type": "object",
             "properties": {
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
-                "vm_priority": {
+                "vmPriority": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmPriority"
                     }
                 },
-                "vm_req": {
+                "vmReq": {
                     "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
@@ -5301,28 +5310,28 @@ var doc = `{
         "mcis.TbVmRecommendReq": {
             "type": "object",
             "properties": {
-                "disk_size": {
+                "diskSize": {
                     "type": "string"
                 },
-                "max_result_num": {
+                "maxResultNum": {
                     "type": "string"
                 },
-                "memory_size": {
+                "memorySize": {
                     "type": "string"
                 },
-                "placement_algo": {
+                "placementAlgo": {
                     "type": "string"
                 },
-                "placement_param": {
+                "placementParam": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
-                "request_name": {
+                "requestName": {
                     "type": "string"
                 },
-                "vcpu_size": {
+                "vcpuSize": {
                     "type": "string"
                 }
             }
@@ -5385,7 +5394,7 @@ var doc = `{
                     "type": "string",
                     "example": "2022-11-10 23:00:00"
                 },
-                "csp_vm_id": {
+                "cspVmId": {
                     "type": "string"
                 },
                 "id": {
@@ -5403,13 +5412,13 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "native_status": {
+                "nativeStatus": {
                     "type": "string"
                 },
-                "private_ip": {
+                "privateIp": {
                     "type": "string"
                 },
-                "public_ip": {
+                "publicIp": {
                     "type": "string"
                 },
                 "sshPort": {

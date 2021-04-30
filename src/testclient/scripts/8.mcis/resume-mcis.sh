@@ -24,19 +24,16 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
-
-if [ -z "$MCISPREFIX" ]; then
-	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
-	if [ "${INDEX}" == "0" ]; then
-		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
-	fi
-else
+if [ "${INDEX}" == "0" ]; then
 	MCISID=${MCISPREFIX}-${POSTFIX}
+else
+	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
+echo "${MCISID}"
+
 ControlCmd=resume
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=${ControlCmd} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=${ControlCmd} | jq ''
 
 #}
 

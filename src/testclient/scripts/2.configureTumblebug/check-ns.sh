@@ -20,7 +20,7 @@
 
     INDEX=${1}
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/checkNs/$NS_ID | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/checkNs/$NSID | jq ''
     echo ""
 #}
 

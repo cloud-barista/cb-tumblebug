@@ -27,7 +27,7 @@ getCloudIndex $CSP
 VMID=${5}
 USERCMD=${6}
 
-MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
@@ -35,7 +35,7 @@ if [ "${INDEX}" == "0" ]; then
 fi
 
 VAR1=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${USERCMD}"
 	} 

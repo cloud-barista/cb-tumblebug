@@ -26,7 +26,7 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 	
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis | jq '' 
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/policy/mcis | jq '' 
 
 #}
 

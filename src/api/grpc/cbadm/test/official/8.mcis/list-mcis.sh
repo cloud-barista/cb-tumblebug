@@ -14,7 +14,7 @@
     echo "## 8. VM: List MCIS"
     echo "####################################################################"
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID --option status
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID --option status
 
 #}
 

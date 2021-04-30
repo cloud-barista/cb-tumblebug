@@ -37,7 +37,7 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
-MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 HostedZoneID=${5}
 
@@ -56,7 +56,7 @@ if [ -z "$HostedZoneID" ]; then
 	exit
 fi
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status)
+MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)
 VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
 
 echo "VMARRAY: $VMARRAY"
@@ -72,7 +72,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	}
 
 	VMID=$(_jq '.id')
-	PublicIP=$(_jq '.public_ip')
+	PublicIP=$(_jq '.publicIp')
 
 	# ref: http://www.scalingbits.com/aws/dnsfailover/changehostnameentries
 	Result=$(aws route53 change-resource-record-sets --hosted-zone-id $HostedZoneID --change-batch '{

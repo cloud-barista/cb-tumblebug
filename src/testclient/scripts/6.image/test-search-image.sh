@@ -19,7 +19,7 @@
     echo "####################################################################"
 
     resp=$(
-        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/searchImage -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/searchImage -H 'Content-Type: application/json' -d @- <<EOF
         { 
             "keywords": [
                     "ubuntu",

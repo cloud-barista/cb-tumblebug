@@ -36,14 +36,14 @@ const MonMetricDisk string = "disk"
 const MonMetricDiskio string = "diskio"
 
 type MonAgentInstallReq struct {
-	Ns_id     string `json:"ns_id,omitempty"`
-	Mcis_id   string `json:"mcis_id,omitempty"`
-	Vm_id     string `json:"vm_id,omitempty"`
-	Public_ip string `json:"public_ip,omitempty"`
-	Port      string `json:"port,omitempty"`
-	User_name string `json:"user_name,omitempty"`
-	Ssh_key   string `json:"ssh_key,omitempty"`
-	Csp_type  string `json:"cspType,omitempty"`
+	NsId     string `json:"nsId,omitempty"`
+	McisId   string `json:"mcisId,omitempty"`
+	VmId     string `json:"vmId,omitempty"`
+	PublicIp string `json:"publicIp,omitempty"`
+	Port     string `json:"port,omitempty"`
+	UserName string `json:"userName,omitempty"`
+	SshKey   string `json:"sshKey,omitempty"`
+	Csp_type string `json:"cspType,omitempty"`
 }
 
 /*
@@ -125,16 +125,16 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
-		Ns_id:     nsID,
-		Mcis_id:   mcisID,
-		Vm_id:     vmID,
-		Public_ip: vmIP,
-		Port:      sshPort,
-		User_name: userName,
-		Ssh_key:   privateKey,
+		NsId:     nsID,
+		McisId:   mcisID,
+		VmId:     vmID,
+		PublicIp: vmIP,
+		Port:     sshPort,
+		UserName: userName,
+		SshKey:   privateKey,
 	}
-	if tempReq.Ssh_key == "" {
-		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.Ssh_key is empty.\n")
+	if tempReq.SshKey == "" {
+		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.SshKey is empty.\n")
 		common.PrintJsonPretty(tempReq)
 	}
 
@@ -197,9 +197,9 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	//vmInfoTmp, _ := GetVmObject(nsID, mcisID, vmID)
 
 	sshResultTmp := SshCmdResult{}
-	sshResultTmp.Mcis_id = mcisID
-	sshResultTmp.Vm_id = vmID
-	sshResultTmp.Vm_ip = vmIP
+	sshResultTmp.McisId = mcisID
+	sshResultTmp.VmId = vmID
+	sshResultTmp.VmIp = vmIP
 
 	if err != nil {
 		sshResultTmp.Result = errStr
@@ -262,7 +262,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 			// Avoid RunSSH to not ready VM
 			if err == nil {
 				wg.Add(1)
-				go CallMonitoringAsync(&wg, nsId, mcisId, v, req.User_name, method, cmd, &resultArray)
+				go CallMonitoringAsync(&wg, nsId, mcisId, v, req.UserName, method, cmd, &resultArray)
 			} else {
 				common.CBLog.Error(err)
 			}
@@ -274,9 +274,9 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 	for _, v := range resultArray {
 
 		resultTmp := AgentInstallContent{}
-		resultTmp.Mcis_id = mcisId
-		resultTmp.Vm_id = v.Vm_id
-		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.McisId = mcisId
+		resultTmp.VmId = v.VmId
+		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
 		content.Result_array = append(content.Result_array, resultTmp)
 		//fmt.Println("result from goroutin " + v)
@@ -326,7 +326,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
 
 		// DF: Get vm on-demand monitoring metric info
-		// Path Para: /ns/:ns_id/mcis/:mcis_id/vm/:vm_id/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
+		// Path Para: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
 		cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
 		fmt.Println("[CMD] " + cmd)
 
@@ -358,8 +358,8 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
-		Mcis_id: mcisID,
-		Vm_id:   vmID,
+		McisId: mcisID,
+		VmId:   vmID,
 	}
 	fmt.Printf("\n[Request body to CB-DRAGONFLY]\n")
 	common.PrintJsonPretty(tempReq)

@@ -27,13 +27,15 @@ getCloudIndex $CSP
 if [ "${INDEX}" == "0" ]; then
 	MCISID=${MCISPREFIX}-${POSTFIX}
 else
-	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi
 
-ControlCmd=status
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=${ControlCmd} | jq ''
+echo "${MCISID}"
 
-#HTTP_CODE=$(curl -o /dev/null -w "%{http_code}\n" -H "${AUTH}" "http://${TumblebugServer}/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status" --silent)
+ControlCmd=status
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=${ControlCmd} | jq ''
+
+#HTTP_CODE=$(curl -o /dev/null -w "%{http_code}\n" -H "${AUTH}" "http://${TumblebugServer}/tumblebug/ns/$NSID/mcis/${MCISID}?action=status" --silent)
 #echo "Status: $HTTP_CODE"
 
 #}

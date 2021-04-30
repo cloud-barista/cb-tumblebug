@@ -38,10 +38,10 @@ type TbMcisCreateRequest struct {
 
 // TbMcisReq - MCIS 생성 요청 구조 정의
 type TbMcisReq struct {
-	Name           string    `yaml:"name" json:"name"`
-	Vm             []TbVmReq `yaml:"vm" json:"vm"`
-	Placement_algo string    `yaml:"placement_algo" json:"placement_algo"`
-	Description    string    `yaml:"description" json:"description"`
+	Name          string    `yaml:"name" json:"name"`
+	Vm            []TbVmReq `yaml:"vm" json:"vm"`
+	PlacementAlgo string    `yaml:"placementAlgo" json:"placementAlgo"`
+	Description   string    `yaml:"description" json:"description"`
 }
 
 // TbVmReq - MCIS VM 생성 요청 구조 정의
@@ -157,23 +157,23 @@ type McisRecommendCreateRequest struct {
 
 // McisRecommendReq - MCIS 추천 요청 구조 정의
 type McisRecommendReq struct {
-	Vm_req          []TbVmRecommendReq `yaml:"vm_req" json:"vm_req"`
-	Placement_algo  string             `yaml:"placement_algo" json:"placement_algo"`
-	Placement_param []KeyValue         `yaml:"placement_param" json:"placement_param"`
-	Max_result_num  string             `yaml:"max_result_num" json:"max_result_num"`
+	VmReq          []TbVmRecommendReq `yaml:"vmReq" json:"vmReq"`
+	PlacementAlgo  string             `yaml:"placementAlgo" json:"placementAlgo"`
+	PlacementParam []KeyValue         `yaml:"placementParam" json:"placementParam"`
+	MaxResultNum   string             `yaml:"maxResultNum" json:"maxResultNum"`
 }
 
 // McisRecommendReq - MCIS VM 추천 요청 구조 정의
 type TbVmRecommendReq struct {
-	Request_name   string `yaml:"request_name" json:"request_name"`
-	Max_result_num string `yaml:"max_result_num" json:"max_result_num"`
+	RequestName  string `yaml:"requestName" json:"requestName"`
+	MaxResultNum string `yaml:"maxResultNum" json:"maxResultNum"`
 
-	Vcpu_size   string `yaml:"vcpu_size" json:"vcpu_size"`
-	Memory_size string `yaml:"memory_size" json:"memory_size"`
-	Disk_size   string `yaml:"disk_size" json:"disk_size"`
+	VcpuSize   string `yaml:"vcpuSize" json:"vcpuSize"`
+	MemorySize string `yaml:"memorySize" json:"memorySize"`
+	DiskSize   string `yaml:"diskSize" json:"diskSize"`
 
-	Placement_algo  string     `yaml:"placement_algo" json:"placement_algo"`
-	Placement_param []KeyValue `yaml:"placement_param" json:"placement_param"`
+	PlacementAlgo  string     `yaml:"placementAlgo" json:"placementAlgo"`
+	PlacementParam []KeyValue `yaml:"placementParam" json:"placementParam"`
 }
 
 // McisCmdCreateRequest - MCIS 명령 실행 요청 구조 Wrapper 정의
@@ -185,12 +185,12 @@ type McisCmdCreateRequest struct {
 
 // McisCmdReq - MCIS 명령 실행 요청 구조 정의
 type McisCmdReq struct {
-	Mcis_id   string `yaml:"mcis_id" json:"mcis_id"`
-	Vm_id     string `yaml:"vm_id" json:"vm_id"`
-	Ip        string `yaml:"ip" json:"ip"`
-	User_name string `yaml:"user_name" json:"user_name"`
-	Ssh_key   string `yaml:"ssh_key" json:"ssh_key"`
-	Command   string `yaml:"command" json:"command"`
+	McisId   string `yaml:"mcisId" json:"mcisId"`
+	VmId     string `yaml:"vmId" json:"vmId"`
+	Ip       string `yaml:"ip" json:"ip"`
+	UserName string `yaml:"userName" json:"userName"`
+	SshKey   string `yaml:"sshKey" json:"sshKey"`
+	Command  string `yaml:"command" json:"command"`
 }
 
 // McisCmdVmCreateRequest - MCIS VM 명령 실행 요청 구조 Wrapper 정의

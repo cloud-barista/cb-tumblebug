@@ -112,7 +112,7 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 		//resourceType == "vNic" {
 		return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
 	} else {
-		return "/invalid_key"
+		return "/invalidKey"
 	}
 }
 
@@ -136,7 +136,7 @@ type mcirIds struct { // Tumblebug
 /*
 func GetResourcesCspType(nsId string, resourceType string, resourceId string) string {
 	key := GenResourceKey(nsId, resourceType, resourceId)
-	if key == "/invalid_key" {
+	if key == "/invalidKey" {
 		return "invalid nsId or resourceType or resourceId"
 	}
 	keyValue, err := CBStore.Get(key)
@@ -209,7 +209,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 
 func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
 	key := GenResourceKey(nsId, resourceType, resourceId)
-	if key == "/invalid_key" {
+	if key == "/invalidKey" {
 		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
 	}
 	keyValue, err := CBStore.Get(key)

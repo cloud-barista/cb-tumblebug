@@ -114,8 +114,8 @@ type TbMcisReq struct {
 
 	Label string `json:"label"`
 
-	Placement_algo string `json:"placement_algo"`
-	Description    string `json:"description"`
+	PlacementAlgo string `json:"placementAlgo"`
+	Description   string `json:"description"`
 
 	Vm []TbVmReq `json:"vm"`
 }
@@ -132,9 +132,9 @@ type TbMcisInfo struct {
 
 	Label string `json:"label"`
 
-	Placement_algo string     `json:"placement_algo"`
-	Description    string     `json:"description"`
-	Vm             []TbVmInfo `json:"vm"`
+	PlacementAlgo string     `json:"placementAlgo"`
+	Description   string     `json:"description"`
+	Vm            []TbVmInfo `json:"vm"`
 }
 
 // struct TbVmReq is to get requirements to create a new server instance.
@@ -245,16 +245,16 @@ type McisStatusInfo struct {
 	Vm []TbVmStatusInfo `json:"vm"`
 }
 
-// struct TbVmStatusInfo is to define simple information of VM with updated status
+// TbVmStatusInfo is to define simple information of VM with updated status
 type TbVmStatusInfo struct {
-	Id        string `json:"id"`
-	Name      string `json:"name"`
-	Csp_vm_id string `json:"csp_vm_id"`
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	CspVmId string `json:"cspVmId"`
 
-	Status        string `json:"status"`
-	TargetStatus  string `json:"targetStatus"`
-	TargetAction  string `json:"targetAction"`
-	Native_status string `json:"native_status"`
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+	NativeStatus string `json:"nativeStatus"`
 
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
@@ -265,51 +265,53 @@ type TbVmStatusInfo struct {
 	// Created time
 	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
 
-	Public_ip  string `json:"public_ip"`
-	Private_ip string `json:"private_ip"`
-	SSHPort    string `json:"sshPort"`
+	PublicIp  string `json:"publicIp"`
+	PrivateIp string `json:"privateIp"`
+	SSHPort   string `json:"sshPort"`
 
 	Location GeoLocation `json:"location"`
 }
 
+// McisCmdReq is remote command struct
+type McisCmdReq struct {
+	McisId   string `json:"mcisId"`
+	VmId     string `json:"vmId"`
+	Ip       string `json:"ip"`
+	UserName string `json:"userName"`
+	SshKey   string `json:"sshKey"`
+	Command  string `json:"command"`
+}
+
 type McisRecommendReq struct {
-	Vm_req          []TbVmRecommendReq `json:"vm_req"`
-	Placement_algo  string             `json:"placement_algo"`
-	Placement_param []common.KeyValue  `json:"placement_param"`
-	Max_result_num  string             `json:"max_result_num"`
+	VmReq          []TbVmRecommendReq `json:"vmReq"`
+	PlacementAlgo  string             `json:"placementAlgo"`
+	PlacementParam []common.KeyValue  `json:"placementParam"`
+	MaxResultNum   string             `json:"maxResultNum"`
 }
 
 type TbVmRecommendReq struct {
-	Request_name   string `json:"request_name"`
-	Max_result_num string `json:"max_result_num"`
+	RequestName  string `json:"requestName"`
+	MaxResultNum string `json:"maxResultNum"`
 
-	Vcpu_size   string `json:"vcpu_size"`
-	Memory_size string `json:"memory_size"`
-	Disk_size   string `json:"disk_size"`
+	VcpuSize   string `json:"vcpuSize"`
+	MemorySize string `json:"memorySize"`
+	DiskSize   string `json:"diskSize"`
 	//Disk_type   string `json:"disk_type"`
 
-	Placement_algo  string            `json:"placement_algo"`
-	Placement_param []common.KeyValue `json:"placement_param"`
-}
-
-type McisCmdReq struct {
-	Mcis_id   string `json:"mcis_id"`
-	Vm_id     string `json:"vm_id"`
-	Ip        string `json:"ip"`
-	User_name string `json:"user_name"`
-	Ssh_key   string `json:"ssh_key"`
-	Command   string `json:"command"`
+	PlacementAlgo  string            `json:"placementAlgo"`
+	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
 type TbVmPriority struct {
 	Priority string          `json:"priority"`
-	Vm_spec  mcir.TbSpecInfo `json:"vm_spec"`
+	VmSpec   mcir.TbSpecInfo `json:"vmSpec"`
 }
+
 type TbVmRecommendInfo struct {
-	Vm_req          TbVmRecommendReq  `json:"vm_req"`
-	Vm_priority     []TbVmPriority    `json:"vm_priority"`
-	Placement_algo  string            `json:"placement_algo"`
-	Placement_param []common.KeyValue `json:"placement_param"`
+	VmReq          TbVmRecommendReq  `json:"vmReq"`
+	VmPriority     []TbVmPriority    `json:"vmPriority"`
+	PlacementAlgo  string            `json:"placementAlgo"`
+	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
 func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
@@ -414,11 +416,11 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 }
 
 type SshCmdResult struct { // Tumblebug
-	Mcis_id string `json:"mcis_id"`
-	Vm_id   string `json:"vm_id"`
-	Vm_ip   string `json:"vm_ip"`
-	Result  string `json:"result"`
-	Err     error  `json:"err"`
+	McisId string `json:"mcisId"`
+	VmId   string `json:"vmId"`
+	VmIp   string `json:"vmIp"`
+	Result string `json:"result"`
+	Err    error  `json:"err"`
 }
 
 // AgentInstallContentWrapper ...
@@ -428,10 +430,10 @@ type AgentInstallContentWrapper struct {
 
 // AgentInstallContent ...
 type AgentInstallContent struct {
-	Mcis_id string `json:"mcis_id"`
-	Vm_id   string `json:"vm_id"`
-	Vm_ip   string `json:"vm_ip"`
-	Result  string `json:"result"`
+	McisId string `json:"mcisId"`
+	VmId   string `json:"vmId"`
+	VmIp   string `json:"vmIp"`
+	Result string `json:"result"`
 }
 
 func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
@@ -473,14 +475,14 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 
 		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		// if (userName == "") {
-		// 	userName = req.User_name
+		// 	userName = req.UserName
 		// }
 		// if (userName == "") {
 		// 	userName = sshDefaultUserName
 		// }
 
 		// find vaild username
-		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
+		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -492,9 +494,9 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 		} else {
 			common.CBLog.Error(err)
 			sshResultTmp := SshCmdResult{}
-			sshResultTmp.Mcis_id = mcisId
-			sshResultTmp.Vm_id = vmId
-			sshResultTmp.Vm_ip = vmIp
+			sshResultTmp.McisId = mcisId
+			sshResultTmp.VmId = vmId
+			sshResultTmp.VmIp = vmIp
 			sshResultTmp.Result = err.Error()
 			sshResultTmp.Err = err
 		}
@@ -505,9 +507,9 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 	for _, v := range resultArray {
 
 		resultTmp := AgentInstallContent{}
-		resultTmp.Mcis_id = mcisId
-		resultTmp.Vm_id = v.Vm_id
-		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.McisId = mcisId
+		resultTmp.VmId = v.VmId
+		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
 		content.Result_array = append(content.Result_array, resultTmp)
 		//fmt.Println("result from goroutin " + v)
@@ -1267,7 +1269,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 		vmPriorityTmp := TbVmPriority{}
 		vmPriorityTmp.Priority = strconv.Itoa(cnt)
-		vmPriorityTmp.Vm_spec = content2
+		vmPriorityTmp.VmSpec = content2
 		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
 	}
 
@@ -1577,30 +1579,30 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 	/*
 		var content struct {
-			//Vm_req          []TbVmRecommendReq    `json:"vm_req"`
+			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
 			Vm_recommend    []mcis.TbVmRecommendInfo `json:"vm_recommend"`
-			Placement_algo  string                   `json:"placement_algo"`
-			Placement_param []common.KeyValue        `json:"placement_param"`
+			PlacementAlgo  string                   `json:"placementAlgo"`
+			PlacementParam []common.KeyValue        `json:"placementParam"`
 		}
 	*/
 	//content := RestPostMcisRecommandResponse{}
-	//content.Vm_req = req.Vm_req
-	//content.Placement_algo = req.Placement_algo
-	//content.Placement_param = req.Placement_param
+	//content.VmReq = req.VmReq
+	//content.PlacementAlgo = req.PlacementAlgo
+	//content.PlacementParam = req.PlacementParam
 
 	Vm_recommend := []TbVmRecommendInfo{}
 
-	vmList := req.Vm_req
+	vmList := req.VmReq
 
 	for i, v := range vmList {
 		vmTmp := TbVmRecommendInfo{}
-		//vmTmp.Request_name = v.Request_name
-		vmTmp.Vm_req = req.Vm_req[i]
-		vmTmp.Placement_algo = v.Placement_algo
-		vmTmp.Placement_param = v.Placement_param
+		//vmTmp.RequestName = v.RequestName
+		vmTmp.VmReq = req.VmReq[i]
+		vmTmp.PlacementAlgo = v.PlacementAlgo
+		vmTmp.PlacementParam = v.PlacementParam
 
 		var err error
-		vmTmp.Vm_priority, err = GetRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
+		vmTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
 
 		if err != nil {
 			common.CBLog.Error(err)
@@ -1633,11 +1635,11 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 
 	//fmt.Printf("[vmIp] " +vmIp)
 
-	//sshKey := req.Ssh_key
+	//sshKey := req.SshKey
 	cmd := req.Command
 
 	// find vaild username
-	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
+	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
 	if userName == "" {
 		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
@@ -1679,9 +1681,9 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 	/*
 		type contentSub struct {
-			Mcis_id string `json:"mcis_id"`
-			Vm_id   string `json:"vm_id"`
-			Vm_ip   string `json:"vm_ip"`
+			McisId string `json:"mcisId"`
+			VmId   string `json:"vmId"`
+			VmIp   string `json:"vmIp"`
 			Result  string `json:"result"`
 		}
 		var content struct {
@@ -1710,13 +1712,13 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
 		// if (userName == "") {
-		// 	userName = req.User_name
+		// 	userName = req.UserName
 		// }
 		// if (userName == "") {
 		// 	userName = sshDefaultUserName
 		// }
 		// find vaild username
-		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.User_name)
+		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
 		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
@@ -1728,9 +1730,9 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		} else {
 			common.CBLog.Error(err)
 			sshResultTmp := SshCmdResult{}
-			sshResultTmp.Mcis_id = mcisId
-			sshResultTmp.Vm_id = vmId
-			sshResultTmp.Vm_ip = vmIp
+			sshResultTmp.McisId = mcisId
+			sshResultTmp.VmId = vmId
+			sshResultTmp.VmIp = vmIp
 			sshResultTmp.Result = err.Error()
 			sshResultTmp.Err = err
 		}
@@ -1802,7 +1804,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
@@ -1912,8 +1914,8 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 		vmInfoData.ImageId = vmRequest.ImageId
 		vmInfoData.VNetId = vmRequest.VNetId
 		vmInfoData.SubnetId = vmRequest.SubnetId
-		//vmInfoData.Vnic_id = vmRequest.Vnic_id
-		//vmInfoData.Public_ip_id = vmRequest.Public_ip_id
+		//vmInfoData.VnicId = vmRequest.VnicId
+		//vmInfoData.PublicIpId = vmRequest.PublicIpId
 		vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
 		vmInfoData.SshKeyId = vmRequest.SshKeyId
 		vmInfoData.Description = vmRequest.Description
@@ -1960,7 +1962,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
@@ -2274,7 +2276,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.User_name = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n===========================\n")
 			// Sleep for 60 seconds for a safe DF agent installation.
@@ -2657,12 +2659,12 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	//vmInfoData.Location = vmInfoData.Location
 
-	//vmInfoData.Vcpu_size = vmInfoData.Vcpu_size
-	//vmInfoData.Memory_size = vmInfoData.Memory_size
-	//vmInfoData.Disk_size = vmInfoData.Disk_size
+	//vmInfoData.VcpuSize = vmInfoData.VcpuSize
+	//vmInfoData.MemorySize = vmInfoData.MemorySize
+	//vmInfoData.DiskSize = vmInfoData.DiskSize
 	//vmInfoData.Disk_type = vmInfoData.Disk_type
 
-	//vmInfoData.Placement_algo = vmInfoData.Placement_algo
+	//vmInfoData.PlacementAlgo = vmInfoData.PlacementAlgo
 
 	// 2. Provided by CB-Spider
 	//vmInfoData.CspVmId = temp.Id
@@ -2692,7 +2694,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	}
 
 	//content.Status = temp.
-	//content.Cloud_id = temp.
+	//content.CloudId = temp.
 
 	// cb-store
 	//fmt.Println("=========================== PUT createVM")
@@ -2879,7 +2881,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 }
 
 type ControlVmResult struct {
-	VmId   string `json:"vm_id"`
+	VmId   string `json:"vmId"`
 	Status string `json:"Status"`
 	Error  error  `json:"Error"`
 }
@@ -2891,8 +2893,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	defer wg.Done() //goroutine sync done
 
 	var content struct {
-		Cloud_id  string `json:"cloud_id"`
-		Csp_vm_id string `json:"csp_vm_id"`
+		CloudId string `json:"cloudId"`
+		CspVmId string `json:"cspVmId"`
 	}
 
 	fmt.Println("[ControlVm]" + vmId)
@@ -2905,8 +2907,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	//fmt.Printf("%+v\n", content.Cloud_id)
-	//fmt.Printf("%+v\n", content.Csp_vm_id)
+	//fmt.Printf("%+v\n", content.CloudId)
+	//fmt.Printf("%+v\n", content.CspVmId)
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -3148,8 +3150,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	var content struct {
-		Cloud_id  string `json:"cloud_id"`
-		Csp_vm_id string `json:"csp_vm_id"`
+		CloudId string `json:"cloudId"`
+		CspVmId string `json:"cspVmId"`
 	}
 
 	fmt.Println("[ControlVm]" + vmId)
@@ -3162,8 +3164,8 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	//fmt.Printf("%+v\n", content.Cloud_id)
-	//fmt.Printf("%+v\n", content.Csp_vm_id)
+	//fmt.Printf("%+v\n", content.CloudId)
+	//fmt.Printf("%+v\n", content.CspVmId)
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -3263,17 +3265,17 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 		fmt.Println("[Calling SPIDER]END vmControl\n")
 		/*
-			if strings.Compare(content.Csp_vm_id, "Not assigned yet") == 0 {
+			if strings.Compare(content.CspVmId, "Not assigned yet") == 0 {
 				return nil
 			}
-			if strings.Compare(content.Cloud_id, "aws") == 0 {
-				controlVmAws(content.Csp_vm_id)
-			} else if strings.Compare(content.Cloud_id, "gcp") == 0 {
-				controlVmGcp(content.Csp_vm_id)
-			} else if strings.Compare(content.Cloud_id, "azure") == 0 {
-				controlVmAzure(content.Csp_vm_id)
+			if strings.Compare(content.CloudId, "aws") == 0 {
+				controlVmAws(content.CspVmId)
+			} else if strings.Compare(content.CloudId, "gcp") == 0 {
+				controlVmGcp(content.CspVmId)
+			} else if strings.Compare(content.CloudId, "azure") == 0 {
+				controlVmAzure(content.CspVmId)
 			} else {
-				fmt.Println("==============ERROR=no matched provider_id=================")
+				fmt.Println("==============ERROR=no matched providerId=================")
 			}
 		*/
 
@@ -3419,7 +3421,7 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 	// 	// set master IP of MCIS (Default rule: select 1st VM as master)
 	// 	if num == 0 {
 	// 		mcisStatus.MasterVmId = vmStatusTmp.Id
-	// 		mcisStatus.MasterIp = vmStatusTmp.Public_ip
+	// 		mcisStatus.MasterIp = vmStatusTmp.PublicIp
 	// 		mcisStatus.MasterSSHPort = vmStatusTmp.SSHPort
 	// 	}
 	// }
@@ -3583,8 +3585,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 
 	//json.Unmarshal([]byte(keyValue.Value), &content)
 
-	//fmt.Printf("%+v\n", content.Cloud_id)
-	//fmt.Printf("%+v\n", content.Csp_vm_id)
+	//fmt.Printf("%+v\n", content.CloudId)
+	//fmt.Printf("%+v\n", content.CspVmId)
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -3704,11 +3706,11 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Id = vmId
 	vmStatusTmp.Name = temp.Name
-	vmStatusTmp.Csp_vm_id = temp.CspViewVmDetail.IId.NameId
-	vmStatusTmp.Public_ip = temp.PublicIP
+	vmStatusTmp.CspVmId = temp.CspViewVmDetail.IId.NameId
+	vmStatusTmp.PublicIp = temp.PublicIP
 	vmStatusTmp.SSHPort = temp.SSHPort
-	vmStatusTmp.Private_ip = temp.PrivateIP
-	vmStatusTmp.Native_status = statusResponseTmp.Status
+	vmStatusTmp.PrivateIp = temp.PrivateIP
+	vmStatusTmp.NativeStatus = statusResponseTmp.Status
 
 	vmStatusTmp.TargetAction = temp.TargetAction
 	vmStatusTmp.TargetStatus = temp.TargetStatus
@@ -3805,7 +3807,7 @@ func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 		return err
 	}
 
-	vmInfoData.PublicIP = vmInfoTmp.Public_ip
+	vmInfoData.PublicIP = vmInfoTmp.PublicIp
 	vmInfoData.SSHPort = vmInfoTmp.SSHPort
 
 	UpdateVmInfo(nsId, mcisId, vmInfoData)
@@ -3923,7 +3925,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	//fmt.Println("[Calling SPIDER]END\n")
 
 	vmStatusTmp := TbVmStatusInfo{}
-	vmStatusTmp.Public_ip = statusResponseTmp.PublicIP
+	vmStatusTmp.PublicIp = statusResponseTmp.PublicIP
 	vmStatusTmp.SSHPort, _ = TrimIP(statusResponseTmp.SSHAccessPoint)
 
 	return vmStatusTmp, nil

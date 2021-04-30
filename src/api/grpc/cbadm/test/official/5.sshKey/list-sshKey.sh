@@ -14,7 +14,7 @@
     echo "## 5. sshKey: List"
     echo "####################################################################"
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm keypair list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm keypair list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID
 
 #}
 

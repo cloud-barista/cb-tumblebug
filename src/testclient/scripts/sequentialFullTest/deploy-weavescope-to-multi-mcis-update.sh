@@ -40,7 +40,7 @@ LORDVM=""
 LORDMCIS=""
 
 for MCISID in "$@"; do
-    MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status)
+    MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)
     VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
     MASTERIP=$(jq -r '.status.masterIp' <<<"$MCISINFO")
     MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCISINFO")
@@ -56,7 +56,7 @@ for MCISID in "$@"; do
             echo ${row} | base64 --decode | jq -r ${1}
         }
 
-        IPLIST+=$(_jq '.public_ip')
+        IPLIST+=$(_jq '.publicIp')
         IPLIST+=" "
     done
 
@@ -70,7 +70,7 @@ for MCISID in "$@"; do
             echo ${row} | base64 --decode | jq -r ${1}
         }
 
-        PRIVIPLIST+=$(_jq '.private_ip')
+        PRIVIPLIST+=$(_jq '.privateIp')
         PRIVIPLIST+=" "
     done
 
@@ -101,7 +101,7 @@ for MCISID in "$@"; do
     echo ""
 
     VAR1=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${INSTALLCMD}"
 	}
@@ -113,7 +113,7 @@ done
 
 LAUNCHCMD="sudo scope stop"
 echo "Stopping Weavescope for master node if exist..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
@@ -124,7 +124,7 @@ LAUNCHCMD="sudo scope launch $WHOLE_IPLIST"
 #echo $LAUNCHCMD
 
 echo "Launching Weavescope for master node..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
@@ -141,7 +141,7 @@ echo "Working on clustring..."
 for MCISID in "$@"; do
 
     echo "Launching Weavescope for the other nodes..."
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
         {
         "command"        : "${LAUNCHCMD}"
         }

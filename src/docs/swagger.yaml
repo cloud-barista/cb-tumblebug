@@ -629,13 +629,13 @@ definitions:
     type: object
   mcis.AgentInstallContent:
     properties:
-      mcis_id:
+      mcisId:
         type: string
       result:
         type: string
-      vm_id:
+      vmId:
         type: string
-      vm_ip:
+      vmIp:
         type: string
     type: object
   mcis.AgentInstallContentWrapper:
@@ -649,7 +649,7 @@ definitions:
     properties:
       actionType:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
       postCommand:
         $ref: '#/definitions/mcis.McisCmdReq'
@@ -722,13 +722,13 @@ definitions:
         type: string
       ip:
         type: string
-      mcis_id:
+      mcisId:
         type: string
-      ssh_key:
+      sshKey:
         type: string
-      user_name:
+      userName:
         type: string
-      vm_id:
+      vmId:
         type: string
     type: object
   mcis.McisPolicyInfo:
@@ -750,15 +750,15 @@ definitions:
     type: object
   mcis.McisRecommendReq:
     properties:
-      max_result_num:
+      maxResultNum:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
-      placement_param:
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      vm_req:
+      vmReq:
         items:
           $ref: '#/definitions/mcis.TbVmRecommendReq'
         type: array
@@ -859,13 +859,13 @@ definitions:
     type: object
   mcis.RestPostCmdMcisResponse:
     properties:
-      mcis_id:
+      mcisId:
         type: string
       result:
         type: string
-      vm_id:
+      vmId:
         type: string
-      vm_ip:
+      vmIp:
         type: string
     type: object
   mcis.RestPostCmdMcisResponseWrapper:
@@ -882,14 +882,14 @@ definitions:
     type: object
   mcis.RestPostMcisRecommandResponse:
     properties:
-      placement_algo:
+      placementAlgo:
         type: string
-      placement_param:
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
       vm_recommend:
-        description: Vm_req          []TbVmRecommendReq    `json:"vm_req"`
+        description: VmReq          []TbVmRecommendReq    `json:"vmReq"`
         items:
           $ref: '#/definitions/mcis.TbVmRecommendInfo'
         type: array
@@ -990,7 +990,7 @@ definitions:
         type: string
       name:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
       status:
         type: string
@@ -1019,7 +1019,7 @@ definitions:
         type: string
       name:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
       vm:
         items:
@@ -1108,43 +1108,43 @@ definitions:
     properties:
       priority:
         type: string
-      vm_spec:
+      vmSpec:
         $ref: '#/definitions/mcir.TbSpecInfo'
         type: object
     type: object
   mcis.TbVmRecommendInfo:
     properties:
-      placement_algo:
+      placementAlgo:
         type: string
-      placement_param:
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      vm_priority:
+      vmPriority:
         items:
           $ref: '#/definitions/mcis.TbVmPriority'
         type: array
-      vm_req:
+      vmReq:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
         type: object
     type: object
   mcis.TbVmRecommendReq:
     properties:
-      disk_size:
+      diskSize:
         type: string
-      max_result_num:
+      maxResultNum:
         type: string
-      memory_size:
+      memorySize:
         type: string
-      placement_algo:
+      placementAlgo:
         type: string
-      placement_param:
+      placementParam:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      request_name:
+      requestName:
         type: string
-      vcpu_size:
+      vcpuSize:
         type: string
     type: object
   mcis.TbVmReq:
@@ -1187,7 +1187,7 @@ definitions:
         description: Created time
         example: "2022-11-10 23:00:00"
         type: string
-      csp_vm_id:
+      cspVmId:
         type: string
       id:
         type: string
@@ -1200,11 +1200,11 @@ definitions:
         type: string
       name:
         type: string
-      native_status:
+      nativeStatus:
         type: string
-      private_ip:
+      privateIp:
         type: string
-      public_ip:
+      publicIp:
         type: string
       sshPort:
         type: string
@@ -1360,6 +1360,12 @@ paths:
       consumes:
       - application/json
       description: Get registered ConnConfig info
+      parameters:
+      - description: Name of connection config (cloud config)
+        in: path
+        name: connConfigName
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -2529,7 +2535,7 @@ paths:
       tags:
       - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecs:
-    post:
+    get:
       consumes:
       - application/json
       description: Filter specs
@@ -2563,7 +2569,7 @@ paths:
       tags:
       - '[MCIR] Spec management'
   /ns/{nsId}/resources/filterSpecsByRange:
-    post:
+    get:
       consumes:
       - application/json
       description: Filter specs by range

@@ -39,7 +39,7 @@
 		MCISID=${MCISNAME}
 	fi
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/$MCISID -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/policy/mcis/$MCISID -H 'Content-Type: application/json' -d \
 		'{
 			"description": "Tumblebug Auto Control Demo",
 			"policy": [
@@ -52,7 +52,7 @@
 					},
 					"autoAction": {
 						"actionType": "ScaleOut",
-						"placement_algo": "random",
+						"placementAlgo": "random",
 						"vm": {
 							"name": "AutoGen"
 						},

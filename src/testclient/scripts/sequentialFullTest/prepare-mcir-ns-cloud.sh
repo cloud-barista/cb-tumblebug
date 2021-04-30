@@ -5,8 +5,9 @@ function test_sequence() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
-	local NUMVM=$4
-	local TestSetFile=$5
+	local TestSetFile=$4
+	local NUMVM=$5
+
 	local CMDPATH=$6
 
 	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
@@ -30,7 +31,7 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIR:${MCIRRegionName}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${NUMVM}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionName}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
@@ -140,7 +141,7 @@ else
 	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * VMgroup($NUMVM)"
 	MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
-	test_sequence $CSP $REGION $POSTFIX $NUMVM $TestSetFile ${0##*/}
+	test_sequence $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/}
 
 fi
 
