@@ -5310,13 +5310,13 @@ var doc = `{
         "mcis.TbVmRecommendReq": {
             "type": "object",
             "properties": {
-                "disk_size": {
+                "diskSize": {
                     "type": "string"
                 },
                 "maxResultNum": {
                     "type": "string"
                 },
-                "memory_size": {
+                "memorySize": {
                     "type": "string"
                 },
                 "placementAlgo": {
@@ -5331,7 +5331,7 @@ var doc = `{
                 "requestName": {
                     "type": "string"
                 },
-                "vcpu_size": {
+                "vcpuSize": {
                     "type": "string"
                 }
             }

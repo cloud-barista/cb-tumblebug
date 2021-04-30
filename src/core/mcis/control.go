@@ -293,9 +293,9 @@ type TbVmRecommendReq struct {
 	RequestName  string `json:"requestName"`
 	MaxResultNum string `json:"maxResultNum"`
 
-	Vcpu_size   string `json:"vcpu_size"`
-	Memory_size string `json:"memory_size"`
-	Disk_size   string `json:"disk_size"`
+	VcpuSize   string `json:"vcpuSize"`
+	MemorySize string `json:"memorySize"`
+	DiskSize   string `json:"diskSize"`
 	//Disk_type   string `json:"disk_type"`
 
 	PlacementAlgo  string            `json:"placementAlgo"`
@@ -1602,7 +1602,7 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 		vmTmp.PlacementParam = v.PlacementParam
 
 		var err error
-		vmTmp.VmPriority, err = GetRecommendList(nsId, v.Vcpu_size, v.Memory_size, v.Disk_size)
+		vmTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
 
 		if err != nil {
 			common.CBLog.Error(err)
@@ -2659,9 +2659,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	//vmInfoData.Location = vmInfoData.Location
 
-	//vmInfoData.Vcpu_size = vmInfoData.Vcpu_size
-	//vmInfoData.Memory_size = vmInfoData.Memory_size
-	//vmInfoData.Disk_size = vmInfoData.Disk_size
+	//vmInfoData.VcpuSize = vmInfoData.VcpuSize
+	//vmInfoData.MemorySize = vmInfoData.MemorySize
+	//vmInfoData.DiskSize = vmInfoData.DiskSize
 	//vmInfoData.Disk_type = vmInfoData.Disk_type
 
 	//vmInfoData.PlacementAlgo = vmInfoData.PlacementAlgo

@@ -168,9 +168,9 @@ type TbVmRecommendReq struct {
 	RequestName  string `yaml:"requestName" json:"requestName"`
 	MaxResultNum string `yaml:"maxResultNum" json:"maxResultNum"`
 
-	Vcpu_size   string `yaml:"vcpu_size" json:"vcpu_size"`
-	Memory_size string `yaml:"memory_size" json:"memory_size"`
-	Disk_size   string `yaml:"disk_size" json:"disk_size"`
+	VcpuSize   string `yaml:"vcpuSize" json:"vcpuSize"`
+	MemorySize string `yaml:"memorySize" json:"memorySize"`
+	DiskSize   string `yaml:"diskSize" json:"diskSize"`
 
 	PlacementAlgo  string     `yaml:"placementAlgo" json:"placementAlgo"`
 	PlacementParam []KeyValue `yaml:"placementParam" json:"placementParam"`

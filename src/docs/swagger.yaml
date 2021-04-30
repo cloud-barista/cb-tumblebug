@@ -1130,11 +1130,11 @@ definitions:
     type: object
   mcis.TbVmRecommendReq:
     properties:
-      disk_size:
+      diskSize:
         type: string
       maxResultNum:
         type: string
-      memory_size:
+      memorySize:
         type: string
       placementAlgo:
         type: string
@@ -1144,7 +1144,7 @@ definitions:
         type: array
       requestName:
         type: string
-      vcpu_size:
+      vcpuSize:
         type: string
     type: object
   mcis.TbVmReq:
