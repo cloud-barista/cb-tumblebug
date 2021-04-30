@@ -37,7 +37,7 @@
 
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec update --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	'{
-		"nsId":  "'${NS_ID}'",
+		"nsId":  "'${NSID}'",
 		"spec": {
 			"id": "aws-us-east-1-a1.2xlarge", 
             "description": "UpdateSpec() test"

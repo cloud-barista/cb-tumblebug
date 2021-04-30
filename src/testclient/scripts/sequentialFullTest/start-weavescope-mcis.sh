@@ -36,7 +36,7 @@
     LAUNCHCMD="sudo scope launch"
     
     echo "Launching Weavescope for the other nodes..."
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
     {
     "command"        : "${LAUNCHCMD}"
     }

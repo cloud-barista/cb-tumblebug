@@ -40,7 +40,7 @@ LORDVM=""
 LORDMCIS=""
 
 for MCISID in "$@"; do
-    MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status)
+    MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)
     VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
     MASTERIP=$(jq -r '.status.masterIp' <<<"$MCISINFO")
     MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCISINFO")
@@ -100,7 +100,7 @@ for MCISID in "$@"; do
     ScopeInstallFile="git.io/scope"
     ScopeInstallFile="https://gist.githubusercontent.com/seokho-son/bb2703ca49555f9afe0d0097894c74fa/raw/9eb65b296b85bc53f53af3e8733603d807fb9287/scope"
     echo ""
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
         '{
         "command": "sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L ${ScopeInstallFile} -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
         }' | jq ''
@@ -108,7 +108,7 @@ for MCISID in "$@"; do
 done
 
 echo "Launching Weavescope for master node..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
@@ -123,7 +123,7 @@ echo "Working on clustring..."
 for MCISID in "$@"; do
 
     echo "Launching Weavescope for the other nodes..."
-    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
         {
         "command"        : "${LAUNCHCMD}"
         }

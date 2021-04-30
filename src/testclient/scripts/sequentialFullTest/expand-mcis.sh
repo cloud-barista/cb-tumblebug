@@ -46,7 +46,7 @@
 		echo $MCISID
 		echo $VMID
 
-		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/$MCISID/vm -H 'Content-Type: application/json' -d \
+		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vm -H 'Content-Type: application/json' -d \
 		'{
 			"name": "'${VMID}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",

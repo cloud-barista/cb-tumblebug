@@ -25,7 +25,7 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/sshKey -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey -H 'Content-Type: application/json' -d \
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 

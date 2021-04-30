@@ -32,7 +32,7 @@
 	echo " AgentInstallOn: $AgentInstallOn"
 	echo "####################"
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis -H 'Content-Type: application/json' -d \
 		'{
 			"name": "'${MCISID}'",
 			"description": "Tumblebug Demo",

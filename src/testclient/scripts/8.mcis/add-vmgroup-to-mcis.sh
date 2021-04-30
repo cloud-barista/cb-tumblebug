@@ -29,7 +29,7 @@
 	getCloudIndex $CSP
 
 	
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/$MCISID/vmgroup -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vmgroup -H 'Content-Type: application/json' -d \
 		'{
 			"vmGroupSize": "'${NUMVM}'",
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",

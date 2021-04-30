@@ -34,7 +34,7 @@ if [ "${INDEX}" == "0" ]; then
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID})
+MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID})
 VMARRAY=$(jq -r '.vm' <<<"$MCISINFO")
 
 for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do

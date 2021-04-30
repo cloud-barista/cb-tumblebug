@@ -129,7 +129,7 @@ if [ "${INDEX}" == "0" ]; then
 				echo "Checking MCIS object. (upto 3s * 20 trials)"
 				for ((try = 1; try <= 20; try++)); do
 					HTTP_CODE=0
-					HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}" --silent)
+					HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}" --silent)
 					echo "HTTP status for get MCIS object: $HTTP_CODE"
 					if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
 						echo "[$try : MCIS object is READY]"

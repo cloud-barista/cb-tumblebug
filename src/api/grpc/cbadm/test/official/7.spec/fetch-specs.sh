@@ -16,7 +16,7 @@
 
     $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec fetch --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml --ns ns-01
 #	    '{
-#		    "nsId":  "'${NS_ID}'"
+#		    "nsId":  "'${NSID}'"
 #	  }'
 #}
 

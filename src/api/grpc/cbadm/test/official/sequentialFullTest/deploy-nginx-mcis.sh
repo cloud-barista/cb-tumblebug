@@ -39,7 +39,7 @@
 
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis command --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	'{
-		"nsId":  "'${NS_ID}'",
+		"nsId":  "'${NSID}'",
 		"mcisId": "'${MCISID}'",
 		"cmd": {
 			"command": "wget https://gist.githubusercontent.com/seokho-son/92f757bd4caf50127803833787b5a77d/raw/4f6ced2d04c05910f444af4f202bcef475db73ce/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
@@ -101,7 +101,7 @@
 
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis command --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	'{
-		"nsId":  "'${NS_ID}'",
+		"nsId":  "'${NSID}'",
 		"mcisId": "'${MCISID}'",
 		"cmd": {
 			"command": "wget https://gist.githubusercontent.com/seokho-son/92f757bd4caf50127803833787b5a77d/raw/4f6ced2d04c05910f444af4f202bcef475db73ce/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"

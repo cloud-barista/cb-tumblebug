@@ -19,7 +19,7 @@
     echo "####################################################################"
 
     resp=$(
-        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/testSortSpecs -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/testSortSpecs -H 'Content-Type: application/json' -d @- <<EOF
 	    { 
 		    "num_vCPU": 4
 	    }

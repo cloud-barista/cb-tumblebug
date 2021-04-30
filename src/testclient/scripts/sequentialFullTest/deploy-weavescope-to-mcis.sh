@@ -34,7 +34,7 @@ if [ "${INDEX}" == "0" ]; then
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=status)
+MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)
 VMARRAY=$(jq -r '.status.vm' <<<"$MCISINFO")
 MASTERIP=$(jq -r '.status.masterIp' <<<"$MCISINFO")
 MASTERVM=$(jq -r '.status.masterVmId' <<<"$MCISINFO")
@@ -81,7 +81,7 @@ ScopeInstallFile="https://gist.githubusercontent.com/seokho-son/bb2703ca49555f9a
 INSTALLCMD="sudo apt-get update > /dev/null;  sudo apt install docker.io -y; sudo curl -L $ScopeInstallFile -o /usr/local/bin/scope; sudo chmod a+x /usr/local/bin/scope"
 echo ""
 
-VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${INSTALLCMD}"
 	}
@@ -91,7 +91,7 @@ echo "${VAR1}" | jq ''
 echo ""
 
 echo "Launching Weavescope for master node..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}
@@ -107,7 +107,7 @@ echo ""
 echo "Working on clustring..."
 
 echo "Launching Weavescope for the other nodes..."
-curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${LAUNCHCMD}"
 	}

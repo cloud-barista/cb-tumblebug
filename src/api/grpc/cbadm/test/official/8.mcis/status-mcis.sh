@@ -40,10 +40,10 @@
 
 	if [ -z "$MCISPREFIX" ]
 	then
-		$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis status --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID --mcis ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+		$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis status --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID --mcis ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 	else
 		MCISID=${MCISPREFIX}-${POSTFIX}
-		$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis status --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID --mcis ${MCISID}
+		$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis status --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID --mcis ${MCISID}
 	fi
 
 	

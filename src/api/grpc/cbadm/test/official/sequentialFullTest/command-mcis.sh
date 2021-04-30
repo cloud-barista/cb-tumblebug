@@ -39,7 +39,7 @@
 
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis command --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	'{
-		"nsId":  "'${NS_ID}'",
+		"nsId":  "'${NSID}'",
 		"mcisId": "'${MCISID}'",
 		"cmd": {
 			"command": "echo -n [CMD] Works! [Public IP: ; curl https://api.ipify.org ; echo -n ], [Hostname: ; hostname ; echo -n ]"

@@ -39,7 +39,7 @@
 
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml  -i json -o json -d \
 	'{
-		"nsId":  "'${NS_ID}'",
+		"nsId":  "'${NSID}'",
 		"mcis": {
 			"name": "'${MCISID}'",
 			"description": "Tumblebug Demo",

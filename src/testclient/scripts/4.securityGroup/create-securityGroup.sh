@@ -26,7 +26,7 @@
 	getCloudIndex $CSP
 
     resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/resources/securityGroup -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup -H 'Content-Type: application/json' -d @- <<EOF
         {
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",

@@ -18,7 +18,7 @@
 
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespace create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 		'{
-			"name": "'$NS_ID'",
+			"name": "'$NSID'",
 			"description": "NameSpace for General Testing"
 		}' 
 #}

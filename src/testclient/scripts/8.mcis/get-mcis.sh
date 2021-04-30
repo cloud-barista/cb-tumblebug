@@ -34,7 +34,7 @@ else
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID} | jq ''
 
 
 #get_mcis

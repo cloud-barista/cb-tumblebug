@@ -37,7 +37,7 @@
 
 	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm network create --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -i json -o json -d \
 	'{
-		"nsId":  "'${NS_ID}'",
+		"nsId":  "'${NSID}'",
 		"vNet": {
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",

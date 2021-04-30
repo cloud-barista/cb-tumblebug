@@ -23,7 +23,7 @@
     resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns -H 'Content-Type: application/json' -d @- <<EOF
         {
-			"name": "$NS_ID",
+			"name": "$NSID",
 			"description": "NameSpace for General Testing"
 		}
 EOF

@@ -35,7 +35,7 @@
 		INDEX=1
 	fi
 
-	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm securitygroup get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID --id ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm securitygroup get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID --id ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 #}
 

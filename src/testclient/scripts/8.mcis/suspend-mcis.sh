@@ -36,7 +36,7 @@ else
 fi
 
 ControlCmd=suspend
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis/${MCISID}?action=${ControlCmd} | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=${ControlCmd} | jq ''
 
 
 #suspend_mcis

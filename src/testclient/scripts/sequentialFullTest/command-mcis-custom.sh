@@ -34,7 +34,7 @@ if [ "${INDEX}" == "0" ]; then
 fi
 
 VAR1=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NS_ID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${USERCMD}"
 	} 

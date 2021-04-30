@@ -40,7 +40,7 @@
 	fi
 	
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NS_ID/policy/mcis/${MCISID} | jq '' 
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/policy/mcis/${MCISID} | jq '' 
 
 
 #}

@@ -19,7 +19,7 @@
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NS_ID/mcis | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis | jq ''
 #}
 
 #list_mcis

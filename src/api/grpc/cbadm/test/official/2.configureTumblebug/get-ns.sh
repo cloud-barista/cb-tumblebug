@@ -16,7 +16,7 @@
 
     INDEX=${1}
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespace get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NS_ID
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm namespace get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID
 #}
 
 #get_ns
