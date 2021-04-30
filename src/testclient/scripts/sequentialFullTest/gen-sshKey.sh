@@ -72,7 +72,7 @@
             }
 
 			id=$(_jq '.id')
-            ip=$(_jq '.public_ip')
+            ip=$(_jq '.publicIp')
 
 			VMINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id}`
 			VMKEYID=$(jq -r '.sshKeyId' <<< "$VMINFO")
@@ -98,7 +98,7 @@
             }
 
 			id=$(_jq '.id')
-            ip=$(_jq '.public_ip')
+            ip=$(_jq '.publicIp')
 
 			VMINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id}`
 			VMKEYID=$(jq -r '.sshKeyId' <<< "$VMINFO")

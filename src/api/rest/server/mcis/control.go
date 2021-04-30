@@ -327,7 +327,7 @@ func RestPostCmdMcisVm(c echo.Context) error {
 type RestPostCmdMcisResponse struct {
 	McisId string `json:"mcisId"`
 	VmId   string `json:"vmId"`
-	Vm_ip  string `json:"vm_ip"`
+	VmIp   string `json:"vmIp"`
 	Result string `json:"result"`
 }
 
@@ -371,7 +371,7 @@ func RestPostCmdMcis(c echo.Context) error {
 		resultTmp := RestPostCmdMcisResponse{}
 		resultTmp.McisId = mcisId
 		resultTmp.VmId = v.VmId
-		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
 		content.Result_array = append(content.Result_array, resultTmp)
 		//fmt.Println("result from goroutin " + v)

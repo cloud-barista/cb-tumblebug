@@ -300,7 +300,7 @@ func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, u
 	sshResultTmp := SshCmdResult{}
 	sshResultTmp.McisId = ""
 	sshResultTmp.VmId = vmID
-	sshResultTmp.Vm_ip = vmIP
+	sshResultTmp.VmIp = vmIP
 
 	if err != nil {
 		sshResultTmp.Result = err.Error()

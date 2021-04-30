@@ -247,8 +247,8 @@ type McisStatusInfo struct {
 
 // struct TbVmStatusInfo is to define simple information of VM with updated status
 type TbVmStatusInfo struct {
-	Id        string `json:"id"`
-	Name      string `json:"name"`
+	Id       string `json:"id"`
+	Name     string `json:"name"`
 	Csp_vmId string `json:"csp_vmId"`
 
 	Status        string `json:"status"`
@@ -265,9 +265,9 @@ type TbVmStatusInfo struct {
 	// Created time
 	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
 
-	Public_ip  string `json:"public_ip"`
-	Private_ip string `json:"private_ip"`
-	SSHPort    string `json:"sshPort"`
+	PublicIp  string `json:"publicIp"`
+	PrivateIp string `json:"privateIp"`
+	SSHPort   string `json:"sshPort"`
 
 	Location GeoLocation `json:"location"`
 }
@@ -293,8 +293,8 @@ type TbVmRecommendReq struct {
 }
 
 type McisCmdReq struct {
-	McisId   string `json:"mcisId"`
-	VmId     string `json:"vmId"`
+	McisId    string `json:"mcisId"`
+	VmId      string `json:"vmId"`
 	Ip        string `json:"ip"`
 	User_name string `json:"user_name"`
 	Ssh_key   string `json:"ssh_key"`
@@ -416,9 +416,9 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 type SshCmdResult struct { // Tumblebug
 	McisId string `json:"mcisId"`
 	VmId   string `json:"vmId"`
-	Vm_ip   string `json:"vm_ip"`
-	Result  string `json:"result"`
-	Err     error  `json:"err"`
+	VmIp   string `json:"vmIp"`
+	Result string `json:"result"`
+	Err    error  `json:"err"`
 }
 
 // AgentInstallContentWrapper ...
@@ -430,8 +430,8 @@ type AgentInstallContentWrapper struct {
 type AgentInstallContent struct {
 	McisId string `json:"mcisId"`
 	VmId   string `json:"vmId"`
-	Vm_ip   string `json:"vm_ip"`
-	Result  string `json:"result"`
+	VmIp   string `json:"vmIp"`
+	Result string `json:"result"`
 }
 
 func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
@@ -494,7 +494,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 			sshResultTmp := SshCmdResult{}
 			sshResultTmp.McisId = mcisId
 			sshResultTmp.VmId = vmId
-			sshResultTmp.Vm_ip = vmIp
+			sshResultTmp.VmIp = vmIp
 			sshResultTmp.Result = err.Error()
 			sshResultTmp.Err = err
 		}
@@ -507,7 +507,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 		resultTmp := AgentInstallContent{}
 		resultTmp.McisId = mcisId
 		resultTmp.VmId = v.VmId
-		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
 		content.Result_array = append(content.Result_array, resultTmp)
 		//fmt.Println("result from goroutin " + v)
@@ -1681,7 +1681,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		type contentSub struct {
 			McisId string `json:"mcisId"`
 			VmId   string `json:"vmId"`
-			Vm_ip   string `json:"vm_ip"`
+			VmIp   string `json:"vmIp"`
 			Result  string `json:"result"`
 		}
 		var content struct {
@@ -1730,7 +1730,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 			sshResultTmp := SshCmdResult{}
 			sshResultTmp.McisId = mcisId
 			sshResultTmp.VmId = vmId
-			sshResultTmp.Vm_ip = vmIp
+			sshResultTmp.VmIp = vmIp
 			sshResultTmp.Result = err.Error()
 			sshResultTmp.Err = err
 		}
@@ -1913,7 +1913,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 		vmInfoData.VNetId = vmRequest.VNetId
 		vmInfoData.SubnetId = vmRequest.SubnetId
 		//vmInfoData.VnicId = vmRequest.VnicId
-		//vmInfoData.Public_ipId = vmRequest.Public_ipId
+		//vmInfoData.PublicIpId = vmRequest.PublicIpId
 		vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
 		vmInfoData.SshKeyId = vmRequest.SshKeyId
 		vmInfoData.Description = vmRequest.Description
@@ -3419,7 +3419,7 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 	// 	// set master IP of MCIS (Default rule: select 1st VM as master)
 	// 	if num == 0 {
 	// 		mcisStatus.MasterVmId = vmStatusTmp.Id
-	// 		mcisStatus.MasterIp = vmStatusTmp.Public_ip
+	// 		mcisStatus.MasterIp = vmStatusTmp.PublicIp
 	// 		mcisStatus.MasterSSHPort = vmStatusTmp.SSHPort
 	// 	}
 	// }
@@ -3705,9 +3705,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	vmStatusTmp.Id = vmId
 	vmStatusTmp.Name = temp.Name
 	vmStatusTmp.Csp_vmId = temp.CspViewVmDetail.IId.NameId
-	vmStatusTmp.Public_ip = temp.PublicIP
+	vmStatusTmp.PublicIp = temp.PublicIP
 	vmStatusTmp.SSHPort = temp.SSHPort
-	vmStatusTmp.Private_ip = temp.PrivateIP
+	vmStatusTmp.PrivateIp = temp.PrivateIP
 	vmStatusTmp.Native_status = statusResponseTmp.Status
 
 	vmStatusTmp.TargetAction = temp.TargetAction
@@ -3805,7 +3805,7 @@ func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 		return err
 	}
 
-	vmInfoData.PublicIP = vmInfoTmp.Public_ip
+	vmInfoData.PublicIP = vmInfoTmp.PublicIp
 	vmInfoData.SSHPort = vmInfoTmp.SSHPort
 
 	UpdateVmInfo(nsId, mcisId, vmInfoData)
@@ -3923,7 +3923,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	//fmt.Println("[Calling SPIDER]END\n")
 
 	vmStatusTmp := TbVmStatusInfo{}
-	vmStatusTmp.Public_ip = statusResponseTmp.PublicIP
+	vmStatusTmp.PublicIp = statusResponseTmp.PublicIP
 	vmStatusTmp.SSHPort, _ = TrimIP(statusResponseTmp.SSHAccessPoint)
 
 	return vmStatusTmp, nil

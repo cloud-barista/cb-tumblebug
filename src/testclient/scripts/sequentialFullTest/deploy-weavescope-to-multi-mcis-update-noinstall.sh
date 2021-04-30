@@ -56,7 +56,7 @@ for MCISID in "$@"; do
             echo ${row} | base64 --decode | jq -r ${1}
         }
 
-        IPLIST+=$(_jq '.public_ip')
+        IPLIST+=$(_jq '.publicIp')
         IPLIST+=" "
     done
 
@@ -70,7 +70,7 @@ for MCISID in "$@"; do
             echo ${row} | base64 --decode | jq -r ${1}
         }
 
-        PRIVIPLIST+=$(_jq '.private_ip')
+        PRIVIPLIST+=$(_jq '.privateIp')
         PRIVIPLIST+=" "
     done
 

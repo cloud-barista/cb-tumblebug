@@ -36,10 +36,10 @@ const MonMetricDisk string = "disk"
 const MonMetricDiskio string = "diskio"
 
 type MonAgentInstallReq struct {
-	NsId     string `json:"nsId,omitempty"`
-	McisId   string `json:"mcisId,omitempty"`
-	VmId     string `json:"vmId,omitempty"`
-	Public_ip string `json:"public_ip,omitempty"`
+	NsId      string `json:"nsId,omitempty"`
+	McisId    string `json:"mcisId,omitempty"`
+	VmId      string `json:"vmId,omitempty"`
+	PublicIp  string `json:"publicIp,omitempty"`
 	Port      string `json:"port,omitempty"`
 	User_name string `json:"user_name,omitempty"`
 	Ssh_key   string `json:"ssh_key,omitempty"`
@@ -125,10 +125,10 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	fmt.Println("url: " + url + " method: " + method)
 
 	tempReq := MonAgentInstallReq{
-		NsId:     nsID,
-		McisId:   mcisID,
-		VmId:     vmID,
-		Public_ip: vmIP,
+		NsId:      nsID,
+		McisId:    mcisID,
+		VmId:      vmID,
+		PublicIp:  vmIP,
 		Port:      sshPort,
 		User_name: userName,
 		Ssh_key:   privateKey,
@@ -140,9 +140,9 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
-	_ = writer.WriteField("nsId", nsID)
-	_ = writer.WriteField("mcisId", mcisID)
-	_ = writer.WriteField("vmId", vmID)
+	_ = writer.WriteField("ns_id", nsID)
+	_ = writer.WriteField("mcis_id", mcisID)
+	_ = writer.WriteField("vm_id", vmID)
 	_ = writer.WriteField("public_ip", vmIP)
 	_ = writer.WriteField("port", sshPort)
 	_ = writer.WriteField("user_name", userName)
@@ -199,7 +199,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	sshResultTmp := SshCmdResult{}
 	sshResultTmp.McisId = mcisID
 	sshResultTmp.VmId = vmID
-	sshResultTmp.Vm_ip = vmIP
+	sshResultTmp.VmIp = vmIP
 
 	if err != nil {
 		sshResultTmp.Result = errStr
@@ -276,7 +276,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		resultTmp := AgentInstallContent{}
 		resultTmp.McisId = mcisId
 		resultTmp.VmId = v.VmId
-		resultTmp.Vm_ip = v.Vm_ip
+		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
 		content.Result_array = append(content.Result_array, resultTmp)
 		//fmt.Println("result from goroutin " + v)

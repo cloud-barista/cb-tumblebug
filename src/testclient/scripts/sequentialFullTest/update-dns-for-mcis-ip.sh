@@ -72,7 +72,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	}
 
 	VMID=$(_jq '.id')
-	PublicIP=$(_jq '.public_ip')
+	PublicIP=$(_jq '.publicIp')
 
 	# ref: http://www.scalingbits.com/aws/dnsfailover/changehostnameentries
 	Result=$(aws route53 change-resource-record-sets --hosted-zone-id $HostedZoneID --change-batch '{

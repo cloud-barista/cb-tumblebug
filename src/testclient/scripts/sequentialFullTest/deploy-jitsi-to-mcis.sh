@@ -68,7 +68,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	}
 
 	VMID=$(_jq '.id')
-	PublicIP=$(_jq '.public_ip')
+	PublicIP=$(_jq '.publicIp')
 
 	SetHostCMD="sudo -- sh -c \\\"echo $PublicIP $PublicDNS >> /etc/hosts\\\"; sudo hostnamectl set-hostname etri.cloud-barista.org; hostname -f"
 	echo "SetHostCMD: $SetHostCMD"

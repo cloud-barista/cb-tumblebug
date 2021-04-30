@@ -287,7 +287,7 @@ Dozing for 1 : 1 (Back to work)
    "targetAction" : "None",
    "vm" : [
       {
-         "public_ip" : "35.173.215.4",
+         "publicIp" : "35.173.215.4",
          "native_status" : "Running",
          "csp_vmId" : "aws-us-east-1-shson-01",
          "name" : "aws-us-east-1-shson-01",
@@ -302,7 +302,7 @@ Dozing for 1 : 1 (Back to work)
          "targetAction" : "None",
          "targetStatus" : "None",
          "id" : "aws-us-east-1-shson-02",
-         "public_ip" : "18.206.13.233",
+         "publicIp" : "18.206.13.233",
          "csp_vmId" : "aws-us-east-1-shson-02",
          "native_status" : "Running"
       },
@@ -314,7 +314,7 @@ Dozing for 1 : 1 (Back to work)
          "status" : "Running",
          "csp_vmId" : "aws-us-east-1-shson-03",
          "native_status" : "Running",
-         "public_ip" : "18.232.53.134"
+         "publicIp" : "18.232.53.134"
       }
    ],
    "status" : "Running-(3/3)",
@@ -349,13 +349,13 @@ Dozing for 1 : 1 (Back to work)
       {
         "result_array" : [
             {
-              "vm_ip" : "35.173.215.4",
+              "vmIp" : "35.173.215.4",
               "vmId" : "aws-us-east-1-shson-01",
               "result" : "WebServer is ready. Access http://35.173.215.4",
               "mcisId" : "aws-us-east-1-shson"
             },
             {
-              "vm_ip" : "18.206.13.233",
+              "vmIp" : "18.206.13.233",
               "vmId" : "aws-us-east-1-shson-02",
               "result" : "WebServer is ready. Access http://18.206.13.233",
               "mcisId" : "aws-us-east-1-shson"
@@ -364,7 +364,7 @@ Dozing for 1 : 1 (Back to work)
               "mcisId" : "aws-us-east-1-shson",
               "result" : "WebServer is ready. Access http://18.232.53.134",
               "vmId" : "aws-us-east-1-shson-03",
-              "vm_ip" : "18.232.53.134"
+              "vmIp" : "18.232.53.134"
             }
         ]
       }

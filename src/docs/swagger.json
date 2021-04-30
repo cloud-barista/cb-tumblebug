@@ -4566,7 +4566,7 @@
                 "vmId": {
                     "type": "string"
                 },
-                "vm_ip": {
+                "vmIp": {
                     "type": "string"
                 }
             }
@@ -4913,7 +4913,7 @@
                 "vmId": {
                     "type": "string"
                 },
-                "vm_ip": {
+                "vmIp": {
                     "type": "string"
                 }
             }
@@ -5400,10 +5400,10 @@
                 "native_status": {
                     "type": "string"
                 },
-                "private_ip": {
+                "privateIp": {
                     "type": "string"
                 },
-                "public_ip": {
+                "publicIp": {
                     "type": "string"
                 },
                 "sshPort": {

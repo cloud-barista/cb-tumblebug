@@ -4581,7 +4581,7 @@ var doc = `{
                 "vmId": {
                     "type": "string"
                 },
-                "vm_ip": {
+                "vmIp": {
                     "type": "string"
                 }
             }
@@ -4928,7 +4928,7 @@ var doc = `{
                 "vmId": {
                     "type": "string"
                 },
-                "vm_ip": {
+                "vmIp": {
                     "type": "string"
                 }
             }
@@ -5415,10 +5415,10 @@ var doc = `{
                 "native_status": {
                     "type": "string"
                 },
-                "private_ip": {
+                "privateIp": {
                     "type": "string"
                 },
-                "public_ip": {
+                "publicIp": {
                     "type": "string"
                 },
                 "sshPort": {

@@ -633,9 +633,9 @@ definitions:
         type: string
       result:
         type: string
-      vm_ip:
-        type: string
       vmId:
+        type: string
+      vmIp:
         type: string
     type: object
   mcis.AgentInstallContentWrapper:
@@ -863,9 +863,9 @@ definitions:
         type: string
       result:
         type: string
-      vm_ip:
-        type: string
       vmId:
+        type: string
+      vmIp:
         type: string
     type: object
   mcis.RestPostCmdMcisResponseWrapper:
@@ -1202,9 +1202,9 @@ definitions:
         type: string
       native_status:
         type: string
-      private_ip:
+      privateIp:
         type: string
-      public_ip:
+      publicIp:
         type: string
       sshPort:
         type: string

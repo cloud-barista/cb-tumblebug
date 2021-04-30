@@ -67,7 +67,7 @@
 	for k in $(jq -c '.[]' <<< "$MCISINFO"); do
 		
 		id=$(jq ".id" <<< "$k");
-		ip=$(jq ".public_ip" <<< "$k");
+		ip=$(jq ".publicIp" <<< "$k");
 		printf ' VMID: %s \t VMIP: %s\n' "$id" "$ip";
 
 	done 
@@ -77,7 +77,7 @@
 	for k in $(jq -c '.[]' <<< "$MCISINFO"); do
 		
 		id=$(jq -r ".id" <<< "$k");
-		ip=$(jq -r ".public_ip" <<< "$k");
+		ip=$(jq -r ".publicIp" <<< "$k");
 		user="ubuntu"
 		printf ' ssh -i ./sshkey-tmp/%s.pem %s@%s -o StrictHostKeyChecking=no\n' "$MCISID" "$user" "$ip";
 		#echo "Use [ssh -i ./sshkey-tmp/$MCISID.pem $user@$ip]"
