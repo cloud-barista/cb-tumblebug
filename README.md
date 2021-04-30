@@ -8,7 +8,8 @@
 [![GoDoc](https://godoc.org/github.com/cloud-barista/cb-tumblebug?status.svg)](https://pkg.go.dev/github.com/cloud-barista/cb-tumblebug@master)
 [![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/src/docs/swagger.yaml)
 
-[![Release Version](https://img.shields.io/github/v/release/cloud-barista/cb-tumblebug)](https://github.com/cloud-barista/cb-tumblebug/releases)
+[![Release Version](https://img.shields.io/github/v/release/cloud-barista/cb-tumblebug)](https://github.com/cloud-barista/cb-tumblebug/releases/latest)
+[![Pre Release Version](https://img.shields.io/github/v/release/cloud-barista/cb-tumblebug?color=9cf&include_prereleases&label=release%28dev%29)](https://github.com/cloud-barista/cb-tumblebug/releases)
 [![License](https://img.shields.io/github/license/cloud-barista/cb-tumblebug)](https://github.com/cloud-barista/cb-tumblebug/blob/master/LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcloud-barista%2Fcb-tumblebug.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcloud-barista%2Fcb-tumblebug?ref=badge_shield)
 
