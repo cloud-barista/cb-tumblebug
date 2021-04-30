@@ -37,6 +37,8 @@ import (
 // @securityDefinitions.basic BasicAuth
 func main() {
 
+	fmt.Println("")
+
 	common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
 	common.DRAGONFLY_REST_URL = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 	common.DB_URL = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
@@ -46,6 +48,8 @@ func main() {
 	common.AUTOCONTROL_DURATION_MS = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
 
 	// load the latest configuration from DB (if exist)
+	fmt.Println("")
+	fmt.Println("[Update system environment]")
 	lowerizedName := common.ToLower("DRAGONFLY_REST_URL")
 	common.UpdateEnv(lowerizedName)
 	lowerizedName = common.ToLower("SPIDER_REST_URL")
@@ -62,25 +66,36 @@ func main() {
 	err := common.OpenSQL("../meta_db/dat/cbtumblebug.s3db")
 	if err != nil {
 		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Database access info set successfully")
 	}
+
 	err = common.SelectDatabase(common.DB_DATABASE)
 	if err != nil {
 		fmt.Println(err.Error())
+	} else {
+		fmt.Println("DB selected successfully..")
 	}
+
 	err = common.CreateSpecTable()
 	if err != nil {
 		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Table spec created successfully..")
 	}
+
 	err = common.CreateImageTable()
 	if err != nil {
 		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Table image created successfully..")
 	}
 
 	//defer db.Close()
 
 	//Ticker for MCIS Orchestration Policy
 	fmt.Println("")
-	fmt.Println("Initiate Multi-Cloud Orchestration")
+	fmt.Println("[Initiate Multi-Cloud Orchestration]")
 
 	autoControlDuration, _ := strconv.Atoi(common.AUTOCONTROL_DURATION_MS) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))
@@ -98,11 +113,13 @@ func main() {
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
 
+	// Start REST Server
 	go func() {
 		restapiserver.ApiServer()
 		wg.Done()
 	}()
 
+	// Start gRPC Server
 	go func() {
 		grpcserver.RunServer()
 		//fmt.Println("gRPC server started on " + grpcserver.Port)

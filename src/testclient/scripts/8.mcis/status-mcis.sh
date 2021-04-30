@@ -24,14 +24,10 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
-if [ -z "$MCISPREFIX" ]; then
-	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
-	if [ "${INDEX}" == "0" ]; then
-		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
-	fi
-else
+if [ "${INDEX}" == "0" ]; then
 	MCISID=${MCISPREFIX}-${POSTFIX}
+else
+	MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
 fi
 
 ControlCmd=status

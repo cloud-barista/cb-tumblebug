@@ -34,7 +34,7 @@ const (
 )
 
 const (
-	website = " Repository: https://github.com/cloud-barista/cb-tumblebug"
+	website = " https://github.com/cloud-barista/cb-tumblebug"
 	banner  = `
 
   ██████╗██████╗    ████████╗██████╗      
@@ -88,9 +88,9 @@ func ApiServer() {
 		return false, nil
 	}))
 
-	fmt.Println("\n \n \n ")
-	fmt.Printf(banner)
 	fmt.Println("\n \n ")
+	fmt.Printf(banner)
+	fmt.Println("\n ")
 	fmt.Printf(infoColor, website)
 	fmt.Println("\n \n ")
 
@@ -251,7 +251,7 @@ func ApiServer() {
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html?url=http://" + selfEndpoint + "/tumblebug/swaggerActive"
 
-	fmt.Println(" [Access to API dashboard]" + " username/password: (" + API_USERNAME + "/" + API_PASSWORD + ")")
+	fmt.Println(" Access to API dashboard" + " (username: " + API_USERNAME + " / password: " + API_PASSWORD + ")")
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 

@@ -76,7 +76,7 @@ func UpdateEnv(id string) error {
 	switch id {
 	case lowStrSPIDER_REST_URL:
 		SPIDER_REST_URL = configInfo.Value
-		fmt.Println("\n<SPIDER_REST_URL> " + SPIDER_REST_URL)
+		fmt.Println("<SPIDER_REST_URL> " + SPIDER_REST_URL)
 	case lowStrDRAGONFLY_REST_URL:
 		DRAGONFLY_REST_URL = configInfo.Value
 		fmt.Println("<DRAGONFLY_REST_URL> " + DRAGONFLY_REST_URL)
@@ -244,7 +244,7 @@ func CheckConfig(Id string) (bool, error) {
 
 	lowerizedId := ToLower(Id)
 
-	fmt.Println("[Check config] " + lowerizedId)
+	//fmt.Println("[Check config] " + lowerizedId)
 
 	key := "/config/" + lowerizedId
 	//fmt.Println(key)
