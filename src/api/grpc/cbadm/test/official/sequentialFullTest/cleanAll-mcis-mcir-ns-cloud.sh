@@ -168,7 +168,7 @@ function clean_sequence()
 
 	echo ""
 	echo "[Cleaning related commands in history file executionStatus]"
-	sed -i "/${CSP} ${REGION} ${POSTFIX}/d" ./executionStatus
+	sed -i "/[MCIS] ${CSP} ${REGION} ${POSTFIX}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat  ./executionStatus

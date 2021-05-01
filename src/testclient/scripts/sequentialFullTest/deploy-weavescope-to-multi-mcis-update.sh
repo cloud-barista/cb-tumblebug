@@ -151,8 +151,7 @@ done
 
 echo "Done!"
 duration=$SECONDS
-echo "[CMD] $0"
-echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
+echo "[ElapsedTime] $(($duration / 60)):$(($duration % 60)) (min:sec) $duration (sec) / [Command] $0 "
 echo ""
 
 echo "[MCIS Weavescope: complete cluster] Access to"
