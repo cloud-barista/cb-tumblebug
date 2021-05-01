@@ -31,7 +31,7 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIR:${MCIRRegionName}] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	#cat ./executionStatus
@@ -65,7 +65,7 @@ function test_sequence_allcsp_mcir() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIR:${MCIRRegionName}] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
