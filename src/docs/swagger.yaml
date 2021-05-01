@@ -2449,7 +2449,7 @@ paths:
         type: string
       - description: MCIS ID
         in: path
-        name: nsId
+        name: mcisId
         required: true
         type: string
       - description: Details for an MCIS object
@@ -3111,6 +3111,16 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbSpecInfo'
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Spec ID
+        in: path
+        name: specId
+        required: true
+        type: string
       produces:
       - application/json
       responses:

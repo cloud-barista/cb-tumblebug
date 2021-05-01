@@ -1828,7 +1828,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "MCIS ID",
-                        "name": "nsId",
+                        "name": "mcisId",
                         "in": "path",
                         "required": true
                     },
@@ -2825,6 +2825,20 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/mcir.TbSpecInfo"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Spec ID",
+                        "name": "specId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {

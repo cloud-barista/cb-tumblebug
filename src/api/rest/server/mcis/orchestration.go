@@ -16,7 +16,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param nsId path string true "MCIS ID"
+// @Param mcisId path string true "MCIS ID"
 // @Param mcisInfo body mcis.McisPolicyInfo true "Details for an MCIS object"
 // @Success 200 {object} mcis.McisPolicyInfo
 // @Failure 404 {object} common.SimpleMsg
