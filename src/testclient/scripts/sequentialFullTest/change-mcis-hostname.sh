@@ -60,7 +60,9 @@ wait
 
 echo "Done!"
 duration=$SECONDS
-echo "[ElapsedTime] $(($duration / 60)):$(($duration % 60)) (min:sec) $duration (sec) / [Command] $0 "
+echo ""
+echo "[Command] $0 "
+echo "[ElapsedTime] $duration sec  /  $(($duration / 60)) min : $(($duration % 60)) sec"
 echo ""
 
 ./command-mcis.sh "$@"
