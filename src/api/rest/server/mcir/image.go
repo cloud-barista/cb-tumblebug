@@ -268,6 +268,7 @@ type RestSearchImageRequest struct {
 // @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
+// @Param nsId path string true "Namespace ID"
 // @Param keywords body RestSearchImageRequest true "Keywords"
 // @Success 200 {object} RestGetAllImageResponse
 // @Failure 404 {object} common.SimpleMsg

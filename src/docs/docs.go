@@ -2353,6 +2353,13 @@ var doc = `{
                 "summary": "Search image",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Keywords",
                         "name": "keywords",
                         "in": "body",
