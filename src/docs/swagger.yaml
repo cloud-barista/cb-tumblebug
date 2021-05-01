@@ -2767,6 +2767,11 @@ paths:
       - application/json
       description: Search image
       parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
       - description: Keywords
         in: body
         name: keywords
