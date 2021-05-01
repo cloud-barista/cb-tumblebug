@@ -74,6 +74,8 @@ func RestPostSpec(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param specInfo body mcir.TbSpecInfo true "Details for an spec object"
+// @Param nsId path string true "Namespace ID"
+// @Param specId path string true "Spec ID"
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
