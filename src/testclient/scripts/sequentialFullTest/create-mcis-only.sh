@@ -42,7 +42,7 @@ function test_sequence_allcsp_mcis() {
 	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIS:${MCISID}(${SECONDS}s)] ${_self} (MCIS) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIS:${MCISID}(${SECONDS}s+More)] ${_self} (MCIS) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	#cat ./executionStatus
@@ -164,9 +164,8 @@ else
 fi
 
 duration=$SECONDS
-echo ""
-echo "[Command] $0 "
-echo "[ElapsedTime] $duration sec  /  $(($duration / 60)) min : $(($duration % 60)) sec"
+
+printElapsed $@
 
 echo ""
 echo "[Executed Command List]"

@@ -6,7 +6,7 @@ SECONDS=0
 ./clean-mcir-ns-cloud.sh "$@"
 
 duration=$SECONDS
-echo ""
-echo "[Command] $0 "
-echo "[ElapsedTime] $duration sec  /  $(($duration / 60)) min : $(($duration % 60)) sec"
 
+source ../common-functions.sh
+printElapsed $@
+echo "" >>./executionStatus.history

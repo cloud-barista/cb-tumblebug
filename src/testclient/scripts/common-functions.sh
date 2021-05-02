@@ -1,25 +1,31 @@
 #!/bin/bash
 
-function dozing()
-{
+function dozing() {
 	duration=$1
 	printf "Dozing for %s : " $duration
-	for (( i=1; i<=$duration; i++ ))
-	do
+	for ((i = 1; i <= $duration; i++)); do
 		printf "%s " $i
 		sleep 1
 	done
 	echo "(Finish dozing. Back to work)"
 }
 
-function readParameters()
-{
+function readParameters() {
 	CSP=${1}
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
-		
+
 	echo "[Input parameters]"
 	echo "CSP: $CSP, REGION: $REGION, POSTFIX: $POSTFIX,"
+}
+
+function printElapsed() {
+	echo ""
+	NowHist="[DATE: $(date +'%d/%m/%Y %H:%M:%S')]"
+	CommandHist="[Command: $0 $@]"
+	ElapsedHist="[ElapsedTime: ${duration}s ($(($duration / 60))m:$(($duration % 60))s)]"
+	echo "${NowHist} ${ElapsedHist} ${CommandHist}"
+	echo "${NowHist} ${ElapsedHist} ${CommandHist}" >>./executionStatus.history
 }
 
 # function getCloudIndex()

@@ -72,6 +72,9 @@ function test_sequence_allcsp_mcir() {
 	cp ./executionStatus ./executionStatus.back
 	echo ""
 
+	duration=$SECONDS
+	printElapsed $CSP $REGION $POSTFIX $TestSetFile $MCIRRegionName
+
 }
 
 SECONDS=0
@@ -146,7 +149,6 @@ else
 fi
 
 duration=$SECONDS
-echo ""
-echo "[Command] $0 "
-echo "[ElapsedTime] $duration sec  /  $(($duration / 60)) min : $(($duration % 60)) sec"
+
+printElapsed $@
 
