@@ -31,10 +31,10 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIR:${MCIRRegionName}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
-	cat ./executionStatus
+	#cat ./executionStatus
 	cp ./executionStatus ./executionStatus.back
 	echo ""
 }
@@ -65,12 +65,15 @@ function test_sequence_allcsp_mcir() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIR:${MCIRRegionName}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
 	cp ./executionStatus ./executionStatus.back
 	echo ""
+
+	duration=$SECONDS
+	printElapsed $CSP $REGION $POSTFIX $TestSetFile $MCIRRegionName
 
 }
 
@@ -146,10 +149,6 @@ else
 fi
 
 duration=$SECONDS
-echo "[CMD] $0"
-echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
 
-echo ""
-echo "[Executed Command List]"
-cat ./executionStatus
-echo ""
+printElapsed $@
+

@@ -5,34 +5,9 @@ function clean_sequence() {
 	local REGION=$2
 	local POSTFIX=$3
 	local TestSetFile=$4
-	local CMDPATH=$5
 
-	echo '## 8. MCIS: Terminate'
-	OUTPUT=$(../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile)
-	echo "${OUTPUT}"
-	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
-	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
-	OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
-
-	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]; then
-		echo "============== sleep 30 before delete MCIS obj"
-		dozing 30
-	fi
-
-	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
-	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 	../7.spec/unregister-spec.sh $CSP $REGION $POSTFIX $TestSetFile
 	../6.image/unregister-image.sh $CSP $REGION $POSTFIX $TestSetFile
-
-	# echo '## 5. sshKey: Delete'
-	# OUTPUT=$(../5.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX)
-	# echo "${OUTPUT}"
-	# OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
-	# echo "${OUTPUT}"
-	# if [ "${OUTPUT}" != 1 ]; then
-	# 	echo "============== sleep 10 after delete-sshKey"
-	# 	dozing 5
-	# fi
 
 	echo '## 5. sshKey: Delete'
 	OUTPUT=$(../5.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile)
@@ -63,16 +38,6 @@ function clean_sequence() {
 		done
 
 	fi
-
-	# echo '## 4. SecurityGroup: Delete'
-	# OUTPUT=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX)
-	# echo "${OUTPUT}"
-	# OUTPUT=$(echo "${OUTPUT}" | grep -c 'does not exist')
-	# echo "${OUTPUT}"
-	# if [ "${OUTPUT}" != 1 ]; then
-	# 	echo "============== sleep 10 after delete-securityGroup"
-	# 	dozing 5
-	# fi
 
 	echo '## 4. SecurityGroup: Delete'
 	OUTPUT=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile)
@@ -144,12 +109,10 @@ function clean_sequence() {
 		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX doit $TestSetFile
 	fi
 
-	#_self="${0##*/}"
-
 	echo ""
 	echo "[Cleaning related commands in history file executionStatus]"
-	echo "Remove ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
-	sed -i "/${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
+	echo "Remove [MCIR-NS-CLOUD] ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+	sed -i "/(MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
@@ -179,7 +142,7 @@ AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 source ../credentials.conf
 
 echo "####################################################################"
-echo "## Remove MCIS test to Zero Base"
+echo "## Remove mcir-ns-cloud"
 echo "####################################################################"
 
 CSP=${1}
@@ -192,10 +155,7 @@ getCloudIndex $CSP
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel excution for all CSP regions]"
 
-	# MCISPREFIX=avengers
 	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
-	../8.mcis/just-terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
-	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 
 	INDEXX=${NumCSP}
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do
@@ -215,16 +175,8 @@ if [ "${INDEX}" == "0" ]; then
 	done
 	wait
 
-	echo ""
-	echo "[Cleaning related commands in history file executionStatus]"
-	sed -i "/all 1 ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
-	echo ""
-	echo "[Executed Command List]"
-	cat ./executionStatus
-	cp ./executionStatus ./executionStatus.back
-	echo ""
-
 else
+
 	echo "[Single excution for a CSP region]"
 
 	clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
@@ -232,8 +184,8 @@ else
 fi
 
 duration=$SECONDS
-echo "[CMD] $0"
-echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
+
+printElapsed $@
 #}
 
 #cleanAll

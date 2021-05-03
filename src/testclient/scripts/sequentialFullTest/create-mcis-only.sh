@@ -17,10 +17,10 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIS:${MCISID}] ${_self} ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${NUMVM}" >>./executionStatus
+	echo "[MCIS:${MCISID}(${SECONDS}s)] ${_self} (MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${NUMVM}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
-	cat ./executionStatus
+	#cat ./executionStatus
 	cp ./executionStatus ./executionStatus.back
 	echo ""
 }
@@ -42,10 +42,10 @@ function test_sequence_allcsp_mcis() {
 	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIS:${MCISID}] ${_self} all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIS:${MCISID}(${SECONDS}s+More)] ${_self} (MCIS) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
-	cat ./executionStatus
+	#cat ./executionStatus
 	cp ./executionStatus ./executionStatus.back
 	echo ""
 
@@ -164,8 +164,8 @@ else
 fi
 
 duration=$SECONDS
-echo "[CMD] $0"
-echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."
+
+printElapsed $@
 
 echo ""
 echo "[Executed Command List]"
