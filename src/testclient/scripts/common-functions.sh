@@ -23,7 +23,7 @@ function printElapsed() {
 	echo ""
 	NowHist="[DATE: $(date +'%d/%m/%Y %H:%M:%S')]"
 	CommandHist="[Command: $0 $@]"
-	ElapsedHist="[ElapsedTime: ${duration}s ($(($duration / 60))m:$(($duration % 60))s)]"
+	ElapsedHist="[ElapsedTime: ${SECONDS}s ($(($SECONDS / 60))m:$(($SECONDS % 60))s)]"
 	echo "${NowHist} ${ElapsedHist} ${CommandHist}"
 	echo "${NowHist} ${ElapsedHist} ${CommandHist}" >>./executionStatus.history
 }
