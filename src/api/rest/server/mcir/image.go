@@ -273,7 +273,7 @@ type RestSearchImageRequest struct {
 // @Success 200 {object} RestGetAllImageResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/searchImage [get]
+// @Router /ns/{nsId}/resources/searchImage [post]
 func RestSearchImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 

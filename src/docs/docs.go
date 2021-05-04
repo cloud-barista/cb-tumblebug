@@ -1996,7 +1996,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/resources/filterSpecs": {
-            "get": {
+            "post": {
                 "description": "Filter specs",
                 "consumes": [
                     "application/json"
@@ -2048,7 +2048,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/resources/filterSpecsByRange": {
-            "get": {
+            "post": {
                 "description": "Filter specs by range",
                 "consumes": [
                     "application/json"
@@ -2339,7 +2339,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/resources/searchImage": {
-            "get": {
+            "post": {
                 "description": "Search image",
                 "consumes": [
                     "application/json"
