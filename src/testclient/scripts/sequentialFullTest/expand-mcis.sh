@@ -5,15 +5,13 @@
 
 	TestSetFile=${6:-../testSet.env}
     
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
+    if [ ! -f "$TestSetFile" ]; then
+        echo "$TestSetFile does not exist."
         exit
     fi
 	source $TestSetFile
     source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
-
+	
 	echo "####################################################################"
 	echo "## 8. vm: Create MCIS"
 	echo "####################################################################"

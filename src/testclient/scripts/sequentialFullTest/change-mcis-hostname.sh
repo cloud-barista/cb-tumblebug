@@ -6,15 +6,12 @@ echo "[Check jq package (if not, install)]"
 if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
 
 TestSetFile=${4:-../testSet.env}
-
-FILE=$TestSetFile
-if [ ! -f "$FILE" ]; then
-	echo "$FILE does not exist."
+if [ ! -f "$TestSetFile" ]; then
+	echo "$TestSetFile does not exist."
 	exit
 fi
 source $TestSetFile
 source ../conf.env
-AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## Command (SSH) to MCIS to change-mcis-hostname"
