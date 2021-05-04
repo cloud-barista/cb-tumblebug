@@ -120,70 +120,48 @@ definitions:
     properties:
       cost_per_hour:
         $ref: '#/definitions/mcir.Range'
-        type: object
       ebs_bw_Mbps:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_01:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_02:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_03:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_04:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_05:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_06:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_07:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_08:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_09:
         $ref: '#/definitions/mcir.Range'
-        type: object
       evaluationScore_10:
         $ref: '#/definitions/mcir.Range'
-        type: object
       gpumem_GiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
       max_num_storage:
         $ref: '#/definitions/mcir.Range'
-        type: object
       max_total_storage_TiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
       mem_GiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
       net_bw_Gbps:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_core:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_gpu:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_storage:
         $ref: '#/definitions/mcir.Range'
-        type: object
       num_vCPU:
         $ref: '#/definitions/mcir.Range'
-        type: object
       storage_GiB:
         $ref: '#/definitions/mcir.Range'
-        type: object
     type: object
   mcir.Range:
     properties:
@@ -234,6 +212,11 @@ definitions:
           $ref: '#/definitions/mcir.TbVNetInfo'
         type: array
     type: object
+  mcir.RestListResourceStatusRequest:
+    properties:
+      connectionName:
+        type: string
+    type: object
   mcir.RestLookupImageRequest:
     properties:
       connectionName:
@@ -274,7 +257,6 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
-        type: object
       keyValueList:
         items:
           $ref: '#/definitions/common.KeyValue'
@@ -322,7 +304,6 @@ definitions:
         type: string
       vcpu:
         $ref: '#/definitions/mcir.SpiderVCpuInfo'
-        type: object
     type: object
   mcir.SpiderSpecList:
     properties:
@@ -336,7 +317,6 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: '{NameId, SystemId}'
-        type: object
       ipv4_CIDR:
         type: string
       keyValueList:
@@ -406,6 +386,15 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  mcir.TbListResourceStatusResponse:
+    properties:
+      resourcesOnCsp:
+        type: object
+      resourcesOnSpider:
+        type: object
+      resourcesOnTumblebug:
+        type: object
     type: object
   mcir.TbSecurityGroupInfo:
     properties:
@@ -653,10 +642,8 @@ definitions:
         type: string
       postCommand:
         $ref: '#/definitions/mcis.McisCmdReq'
-        type: object
       vm:
         $ref: '#/definitions/mcis.TbVmInfo'
-        type: object
     type: object
   mcis.AutoCondition:
     properties:
@@ -819,10 +806,8 @@ definitions:
     properties:
       autoAction:
         $ref: '#/definitions/mcis.AutoAction'
-        type: object
       autoCondition:
         $ref: '#/definitions/mcis.AutoCondition'
-        type: object
       status:
         type: string
     type: object
@@ -899,15 +884,12 @@ definitions:
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
-        type: object
       imageIId:
         $ref: '#/definitions/common.IID'
-        type: object
       imageName:
         type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
-        type: object
       keyPairName:
         type: string
       keyValueList:
@@ -931,7 +913,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
-        type: object
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -949,7 +930,6 @@ definitions:
       subnetIID:
         $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
-        type: object
       subnetName:
         type: string
       vmblockDisk:
@@ -968,7 +948,6 @@ definitions:
         type: string
       vpcIID:
         $ref: '#/definitions/common.IID'
-        type: object
       vpcname:
         type: string
     type: object
@@ -1036,7 +1015,6 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
-        type: object
       description:
         type: string
       id:
@@ -1047,7 +1025,6 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
-        type: object
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -1065,7 +1042,6 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-        type: object
       securityGroupIds:
         items:
           type: string
@@ -1110,7 +1086,6 @@ definitions:
         type: string
       vmSpec:
         $ref: '#/definitions/mcir.TbSpecInfo'
-        type: object
     type: object
   mcis.TbVmRecommendInfo:
     properties:
@@ -1126,7 +1101,6 @@ definitions:
         type: array
       vmReq:
         $ref: '#/definitions/mcis.TbVmRecommendReq'
-        type: object
     type: object
   mcis.TbVmRecommendReq:
     properties:
@@ -1193,7 +1167,6 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/mcis.GeoLocation'
-        type: object
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -1407,6 +1380,96 @@ paths:
       summary: Check Tumblebug is alive
       tags:
       - '[Admin] System management'
+  /listSecurityGroupStatus:
+    get:
+      consumes:
+      - application/json
+      description: List SecurityGroup Status
+      parameters:
+      - description: Specify connectionName
+        in: body
+        name: connectionName
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestListResourceStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbListResourceStatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List SecurityGroup Status
+      tags:
+      - '[Admin] Cloud environment management'
+  /listSshKeyStatus:
+    get:
+      consumes:
+      - application/json
+      description: List SshKey Status
+      parameters:
+      - description: Specify connectionName
+        in: body
+        name: connectionName
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestListResourceStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbListResourceStatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List SshKey Status
+      tags:
+      - '[Admin] Cloud environment management'
+  /listVNetStatus:
+    get:
+      consumes:
+      - application/json
+      description: List vNet Status
+      parameters:
+      - description: Specify connectionName
+        in: body
+        name: connectionName
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.RestListResourceStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbListResourceStatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List vNet Status
+      tags:
+      - '[Admin] Cloud environment management'
   /lookupImage:
     get:
       consumes:

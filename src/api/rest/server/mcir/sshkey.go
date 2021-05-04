@@ -81,7 +81,7 @@ func RestPutSshKey(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [get]
 func RestGetSshKey(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -102,7 +102,7 @@ type RestGetAllSshKeyResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [get]
 func RestGetAllSshKey(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -118,7 +118,7 @@ func RestGetAllSshKey(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [delete]
 func RestDelSshKey(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -133,6 +133,22 @@ func RestDelSshKey(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [delete]
 func RestDelAllSshKey(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
+	return nil
+}
+
+// RestListSshKeyStatus godoc
+// @Summary List SshKey Status
+// @Description List SshKey Status
+// @Tags [Admin] Cloud environment management
+// @Accept  json
+// @Produce  json
+// @Param connectionName body RestListResourceStatusRequest true "Specify connectionName"
+// @Success 200 {object} TbListResourceStatusResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /listSshKeyStatus [get]
+func RestListSshKeyStatus(c echo.Context) error {
+	// This is a dummy function for Swagger.
 	return nil
 }

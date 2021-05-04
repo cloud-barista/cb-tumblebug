@@ -201,7 +201,7 @@ func RestFetchImages(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [get]
 func RestGetImage(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -222,7 +222,7 @@ type RestGetAllImageResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image [get]
 func RestGetAllImage(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -238,7 +238,7 @@ func RestGetAllImage(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [delete]
 func RestDelImage(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -253,7 +253,7 @@ func RestDelImage(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image [delete]
 func RestDelAllImage(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 

@@ -455,6 +455,94 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 }
 
+type SpiderNameIdSystemId struct {
+	NameId   string
+	SystemId string
+}
+
+type SpiderAllListWrapper struct {
+	AllList SpiderAllList
+}
+
+type SpiderAllList struct {
+	MappedList     []SpiderNameIdSystemId
+	OnlySpiderList []SpiderNameIdSystemId
+	OnlyCSPList    []SpiderNameIdSystemId
+}
+
+// Response struct for ListResourceStatus
+type TbListResourceStatusResponse struct {
+	ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
+	ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
+	ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
+}
+
+// ListResourceStatus returns the state list of TB MCIR objects of given resourceType
+func ListResourceStatus(connConfig string, resourceType string) (interface{}, error) {
+
+	nsList := common.ListNsId()
+	var TbResourceList []string
+	for _, ns := range nsList {
+		resourceListInNs := ListResourceId(ns, resourceType)
+		for i, _ := range resourceListInNs {
+			resourceListInNs[i] = ns + "/" + resourceListInNs[i]
+		}
+		TbResourceList = append(TbResourceList, resourceListInNs...)
+	}
+
+	client := resty.New()
+	client.SetAllowGetMethodPayload(true)
+
+	// Create Req body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	tempReq := JsonTemplate{}
+	tempReq.ConnectionName = connConfig
+
+	var spiderRequestURL string
+	switch resourceType {
+	case common.StrVNet:
+		spiderRequestURL = common.SPIDER_REST_URL + "/allvpc"
+	case common.StrSecurityGroup:
+		spiderRequestURL = common.SPIDER_REST_URL + "/allsecuritygroup"
+	case common.StrSSHKey:
+		spiderRequestURL = common.SPIDER_REST_URL + "/allkeypair"
+	}
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderAllListWrapper{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Get(spiderRequestURL)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return nil, err
+	}
+
+	fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		//return res.StatusCode, body, err
+		return nil, err
+	default:
+	}
+
+	temp, _ := resp.Result().(*SpiderAllListWrapper)
+
+	result := TbListResourceStatusResponse{}
+	result.ResourcesOnTumblebug = TbResourceList
+	result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
+	result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
+
+	return result, nil
+}
+
 // ListResourceId returns the list of TB MCIR object IDs of given resourceType
 func ListResourceId(nsId string, resourceType string) []string {
 

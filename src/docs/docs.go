@@ -297,6 +297,144 @@ var doc = `{
                 }
             }
         },
+        "/listSecurityGroupStatus": {
+            "get": {
+                "description": "List SecurityGroup Status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "List SecurityGroup Status",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName",
+                        "name": "connectionName",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestListResourceStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbListResourceStatusResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/listSshKeyStatus": {
+            "get": {
+                "description": "List SshKey Status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "List SshKey Status",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName",
+                        "name": "connectionName",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestListResourceStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbListResourceStatusResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/listVNetStatus": {
+            "get": {
+                "description": "List vNet Status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "List vNet Status",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName",
+                        "name": "connectionName",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestListResourceStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbListResourceStatusResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/lookupImage": {
             "get": {
                 "description": "Lookup image",
@@ -3829,91 +3967,69 @@ var doc = `{
             "type": "object",
             "properties": {
                 "cost_per_hour": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "ebs_bw_Mbps": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_01": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_02": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_03": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_04": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_05": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_06": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_07": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_08": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_09": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore_10": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "gpumem_GiB": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "max_num_storage": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "max_total_storage_TiB": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "mem_GiB": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "net_bw_Gbps": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_core": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_gpu": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_storage": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "num_vCPU": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "storage_GiB": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.Range"
                 }
             }
@@ -3995,6 +4111,14 @@ var doc = `{
                 }
             }
         },
+        "mcir.RestListResourceStatusRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                }
+            }
+        },
         "mcir.RestLookupImageRequest": {
             "type": "object",
             "properties": {
@@ -4054,7 +4178,6 @@ var doc = `{
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
@@ -4126,7 +4249,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vcpu": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.SpiderVCpuInfo"
                 }
             }
@@ -4147,7 +4269,6 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "{NameId, SystemId}",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "ipv4_CIDR": {
@@ -4253,6 +4374,20 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "mcir.TbListResourceStatusResponse": {
+            "type": "object",
+            "properties": {
+                "resourcesOnCsp": {
+                    "type": "object"
+                },
+                "resourcesOnSpider": {
+                    "type": "object"
+                },
+                "resourcesOnTumblebug": {
+                    "type": "object"
                 }
             }
         },
@@ -4628,11 +4763,9 @@ var doc = `{
                     "type": "string"
                 },
                 "postCommand": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.McisCmdReq"
                 },
                 "vm": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmInfo"
                 }
             }
@@ -4876,11 +5009,9 @@ var doc = `{
             "type": "object",
             "properties": {
                 "autoAction": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.AutoAction"
                 },
                 "autoCondition": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.AutoCondition"
                 },
                 "status": {
@@ -4999,18 +5130,15 @@ var doc = `{
             "properties": {
                 "iid": {
                     "description": "Fields for response",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "imageName": {
                     "type": "string"
                 },
                 "keyPairIId": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "keyPairName": {
@@ -5044,7 +5172,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIIds": {
@@ -5069,7 +5196,6 @@ var doc = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
@@ -5095,7 +5221,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vpcIID": {
-                    "type": "object",
                     "$ref": "#/definitions/common.IID"
                 },
                 "vpcname": {
@@ -5193,7 +5318,6 @@ var doc = `{
                     "example": "2022-11-10 23:00:00"
                 },
                 "cspViewVmDetail": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
                 "description": {
@@ -5209,7 +5333,6 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "monAgentStatus": {
@@ -5234,7 +5357,6 @@ var doc = `{
                 },
                 "region": {
                     "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "type": "object",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "securityGroupIds": {
@@ -5299,7 +5421,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vmSpec": {
-                    "type": "object",
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
@@ -5323,7 +5444,6 @@ var doc = `{
                     }
                 },
                 "vmReq": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.TbVmRecommendReq"
                 }
             }
@@ -5422,7 +5542,6 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
-                    "type": "object",
                     "$ref": "#/definitions/mcis.GeoLocation"
                 },
                 "monAgentStatus": {

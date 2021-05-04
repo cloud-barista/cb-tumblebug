@@ -108,6 +108,10 @@ func ApiServer() {
 	e.GET("/tumblebug/lookupImages", rest_mcir.RestLookupImageList)
 	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
 
+	e.GET("/tumblebug/listVNetStatus", rest_mcir.RestListResourceStatus)
+	e.GET("/tumblebug/listSecurityGroupStatus", rest_mcir.RestListResourceStatus)
+	e.GET("/tumblebug/listSshKeyStatus", rest_mcir.RestListResourceStatus)
+
 	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
 	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
 	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)

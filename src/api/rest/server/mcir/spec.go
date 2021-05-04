@@ -321,7 +321,7 @@ func RestTestSortSpecs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [get]
 func RestGetSpec(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -342,7 +342,7 @@ type RestGetAllSpecResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec [get]
 func RestGetAllSpec(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -358,7 +358,7 @@ func RestGetAllSpec(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [delete]
 func RestDelSpec(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -373,6 +373,6 @@ func RestDelSpec(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec [delete]
 func RestDelAllSpec(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }

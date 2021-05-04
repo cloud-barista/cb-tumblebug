@@ -134,7 +134,6 @@ func RestGetAllResources(c echo.Context) error {
 }
 
 func RestGetResource(c echo.Context) error {
-	fmt.Println("RestGetResource called;") // for debug
 
 	nsId := c.Param("nsId")
 
@@ -238,4 +237,49 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 	}
 	mapA := map[string]int{"associatedObjectCount": associatedObjectCount}
 	return c.JSON(http.StatusOK, &mapA)
+}
+
+// Request struct for RestListResourceStatus
+type RestListResourceStatusRequest struct {
+	ConnectionName string `json:"connectionName"`
+}
+
+// RestListResourceStatus is a REST API call handling function
+// to provide List of resources' status.
+func RestListResourceStatus(c echo.Context) error {
+
+	fmt.Println("RestListResourceStatus called;") // for debug
+
+	//type JsonTemplate struct {
+	//	ConnectionName string
+	//}
+
+	resourceTypeHint := strings.Split(c.Path(), "/")[2]
+	// c.Path(): /tumblebug/listVNetStatus
+
+	var resourceType string
+	switch resourceTypeHint {
+	case "listVNetStatus":
+		resourceType = common.StrVNet
+	case "listSecurityGroupStatus":
+		resourceType = common.StrSecurityGroup
+	case "listSshKeyStatus":
+		resourceType = common.StrSSHKey
+	}
+
+	u := &RestListResourceStatusRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Printf("[List Resource Status: %s]", resourceType)
+	content, err := mcir.ListResourceStatus(u.ConnectionName, resourceType)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
 }

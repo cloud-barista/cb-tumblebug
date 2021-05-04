@@ -79,7 +79,7 @@ func RestPutVNet(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [get]
 func RestGetVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -100,7 +100,7 @@ type RestGetAllVNetResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [get]
 func RestGetAllVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -116,7 +116,7 @@ func RestGetAllVNet(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [delete]
 func RestDelVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -131,6 +131,22 @@ func RestDelVNet(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [delete]
 func RestDelAllVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
+	return nil
+}
+
+// RestListVNetStatus godoc
+// @Summary List vNet Status
+// @Description List vNet Status
+// @Tags [Admin] Cloud environment management
+// @Accept  json
+// @Produce  json
+// @Param connectionName body RestListResourceStatusRequest true "Specify connectionName"
+// @Success 200 {object} TbListResourceStatusResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /listVNetStatus [get]
+func RestListVNetStatus(c echo.Context) error {
+	// This is a dummy function for Swagger.
 	return nil
 }
