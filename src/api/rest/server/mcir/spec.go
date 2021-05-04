@@ -223,7 +223,7 @@ type RestFilterSpecsResponse struct {
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/filterSpecs [get]
+// @Router /ns/{nsId}/resources/filterSpecs [post]
 func RestFilterSpecs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -257,7 +257,7 @@ func RestFilterSpecs(c echo.Context) error {
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/filterSpecsByRange [get]
+// @Router /ns/{nsId}/resources/filterSpecsByRange [post]
 func RestFilterSpecsByRange(c echo.Context) error {
 
 	nsId := c.Param("nsId")
