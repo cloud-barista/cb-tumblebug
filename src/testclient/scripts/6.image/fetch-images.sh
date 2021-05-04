@@ -11,7 +11,6 @@ if [ ! -f "$FILE" ]; then
 fi
 source $TestSetFile
 source ../conf.env
-AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 6. image: Fetch"

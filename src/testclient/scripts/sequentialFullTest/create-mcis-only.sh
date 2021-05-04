@@ -70,16 +70,13 @@ if [ ! -f "$FILE" ]; then
 fi
 
 TestSetFile=${4:-../testSet.env}
-
-FILE=$TestSetFile
-if [ ! -f "$FILE" ]; then
-	echo "$FILE does not exist."
+if [ ! -f "$TestSetFile" ]; then
+	echo "$TestSetFile does not exist."
 	exit
 fi
 source $TestSetFile
 source ../conf.env
 source ../credentials.conf
-AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## Create MCIS from Zero Base"

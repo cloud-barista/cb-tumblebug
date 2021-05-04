@@ -3,17 +3,14 @@
 #function delete_ns() {
 
 
-    TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-	source $TestSetFile
+    # TestSetFile=${4:-../testSet.env}
+    # if [ ! -f "$TestSetFile" ]; then
+    #     echo "$TestSetFile does not exist."
+    #     exit
+    # fi
+	# source $TestSetFile
     source ../conf.env
-    AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
-
+    
     echo "####################################################################"
     echo "## 0. Config: Delete ALL"
     echo "####################################################################"

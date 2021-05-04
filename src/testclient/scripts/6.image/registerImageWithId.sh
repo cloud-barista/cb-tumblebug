@@ -4,16 +4,13 @@
 
 
 	TestSetFile=${4:-../testSet.env}
-    
-    FILE=$TestSetFile
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
+    if [ ! -f "$TestSetFile" ]; then
+        echo "$TestSetFile does not exist."
         exit
     fi
 	source $TestSetFile
     source ../conf.env
-	AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
-
+	
 	echo "####################################################################"
 	echo "## 6. image: Register"
 	echo "####################################################################"
@@ -26,7 +23,7 @@
 	getCloudIndex $CSP
 
 	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?action=registerWithInfo -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?action=registerWithId -H 'Content-Type: application/json' -d @- <<EOF
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}", 
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",

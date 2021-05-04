@@ -5,15 +5,12 @@
 SECONDS=0
 
 TestSetFile=${4:-../testSet.env}
-
-FILE=$TestSetFile
-if [ ! -f "$FILE" ]; then
-	echo "$FILE does not exist."
+if [ ! -f "$TestSetFile" ]; then
+	echo "$TestSetFile does not exist."
 	exit
 fi
 source $TestSetFile
 source ../conf.env
-AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
 
 echo "####################################################################"
 echo "## 7. spec: Lookup Spec List"
