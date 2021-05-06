@@ -122,6 +122,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	}
 	content.ConnectionName = u.ConnectionName
 	content.Id = common.ToLower(u.Name)
+	content.AssociatedObjectList = []string{}
 
 	sql := "INSERT INTO `image`(" +
 		"`namespace`, " +
@@ -204,6 +205,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	//content.Id = common.GenUuid()
 	content.Id = lowerizedName
 	content.Name = lowerizedName
+	content.AssociatedObjectList = []string{}
 
 	sql := "INSERT INTO `image`(" +
 		"`namespace`, " +

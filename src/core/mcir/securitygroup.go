@@ -181,6 +181,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	content.Description = u.Description
 	content.FirewallRules = tempSpiderSecurityInfo.SecurityRules
 	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
+	content.AssociatedObjectList = []string{}
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateSecurityGroup")

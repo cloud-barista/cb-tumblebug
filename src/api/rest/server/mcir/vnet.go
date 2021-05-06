@@ -79,7 +79,7 @@ func RestPutVNet(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [get]
 func RestGetVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -100,7 +100,7 @@ type RestGetAllVNetResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [get]
 func RestGetAllVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -116,7 +116,7 @@ func RestGetAllVNet(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId} [delete]
 func RestDelVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -131,6 +131,6 @@ func RestDelVNet(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [delete]
 func RestDelAllVNet(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }

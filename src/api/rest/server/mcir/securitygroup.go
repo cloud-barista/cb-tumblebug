@@ -78,7 +78,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [get]
 func RestGetSecurityGroup(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -99,7 +99,7 @@ type RestGetAllSecurityGroupResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [get]
 func RestGetAllSecurityGroup(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -115,7 +115,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId} [delete]
 func RestDelSecurityGroup(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
 
@@ -130,6 +130,6 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [delete]
 func RestDelAllSecurityGroup(c echo.Context) error {
-	// Obsolete function. This is just for Swagger.
+	// This is a dummy function for Swagger.
 	return nil
 }
