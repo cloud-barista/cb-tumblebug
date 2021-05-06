@@ -178,6 +178,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	content.SubnetInfoList = tempSpiderVPCInfo.SubnetInfoList
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderVPCInfo.KeyValueList
+	content.AssociatedObjectList = []string{}
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateVNet")

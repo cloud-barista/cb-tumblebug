@@ -167,6 +167,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 	content.PrivateKey = tempSpiderKeyPairInfo.PrivateKey
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderKeyPairInfo.KeyValueList
+	content.AssociatedObjectList = []string{}
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateSshKey")

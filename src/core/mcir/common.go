@@ -609,9 +609,23 @@ func ListResourceStatus(connConfig string, resourceType string) (interface{}, er
 	temp, _ := resp.Result().(*SpiderAllListWrapper) // type assertion
 
 	result := TbInspectResourcesResponse{}
-	result.ResourcesOnTumblebug = TbResourceList
+
+	/*
+		// Implementation style 1
+		if len(TbResourceList) > 0 {
+			result.ResourcesOnTumblebug = TbResourceList
+		} else {
+			result.ResourcesOnTumblebug = []resourceOnTumblebug{}
+		}
+	*/
+	// Implementation style 2
+	result.ResourcesOnTumblebug = []resourceOnTumblebug{}
+	result.ResourcesOnTumblebug = append(result.ResourcesOnTumblebug, TbResourceList...)
+
 	// result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
 	// result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
+	result.ResourcesOnCsp = []resourceOnCspOrSpider{}
+	result.ResourcesOnSpider = []resourceOnCspOrSpider{}
 
 	for _, v := range (*temp).AllList.MappedList {
 		tmpObj := resourceOnCspOrSpider{}

@@ -353,6 +353,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	content.Name = common.ToLower(u.Name)
 	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
+	content.AssociatedObjectList = []string{}
 
 	tempUint64, _ := strconv.ParseUint(res.VCpu.Count, 10, 16)
 	content.Num_vCPU = uint16(tempUint64)
@@ -493,6 +494,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	content.Id = content.Name
 	//content.Name = content.Name
+	content.AssociatedObjectList = []string{}
 
 	sql := "INSERT INTO `spec`(" +
 		"`namespace`, " +
