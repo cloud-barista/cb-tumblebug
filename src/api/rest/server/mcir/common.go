@@ -239,41 +239,34 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-// Request struct for RestListResourceStatus
-type RestListResourceStatusRequest struct {
+// Request struct for RestInspectResources
+type RestInspectResourcesRequest struct {
 	ConnectionName string `json:"connectionName"`
+	Type           string `json:"type"`
 }
 
-// RestListResourceStatus is a REST API call handling function
-// to provide List of resources' status.
-func RestListResourceStatus(c echo.Context) error {
+// RestInspectResources godoc
+// @Summary Inspect Resources
+// @Description Inspect Resources
+// @Tags [Admin] Cloud environment management
+// @Accept  json
+// @Produce  json
+// @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and type"
+// @Success 200 {object} TbInspectResourcesResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /inspectResources [post]
+func RestInspectResources(c echo.Context) error {
 
 	fmt.Println("RestListResourceStatus called;") // for debug
 
-	//type JsonTemplate struct {
-	//	ConnectionName string
-	//}
-
-	resourceTypeHint := strings.Split(c.Path(), "/")[2]
-	// c.Path(): /tumblebug/listVNetStatus
-
-	var resourceType string
-	switch resourceTypeHint {
-	case "listVNetStatus":
-		resourceType = common.StrVNet
-	case "listSecurityGroupStatus":
-		resourceType = common.StrSecurityGroup
-	case "listSshKeyStatus":
-		resourceType = common.StrSSHKey
-	}
-
-	u := &RestListResourceStatusRequest{}
+	u := &RestInspectResourcesRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	fmt.Printf("[List Resource Status: %s]", resourceType)
-	content, err := mcir.ListResourceStatus(u.ConnectionName, resourceType)
+	fmt.Printf("[List Resource Status: %s]", u.Type)
+	content, err := mcir.ListResourceStatus(u.ConnectionName, u.Type)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}

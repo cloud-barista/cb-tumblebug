@@ -470,24 +470,97 @@ type SpiderAllList struct {
 	OnlyCSPList    []SpiderNameIdSystemId
 }
 
-// Response struct for ListResourceStatus
-type TbListResourceStatusResponse struct {
-	ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
-	ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
-	ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
+// Response struct for InspectResources
+type TbInspectResourcesResponse struct {
+	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
+	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
+	// ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
+	ResourcesOnCsp       []resourceOnCspOrSpider `json:"resourcesOnCsp"`
+	ResourcesOnSpider    []resourceOnCspOrSpider `json:"resourcesOnSpider"`
+	ResourcesOnTumblebug []resourceOnTumblebug   `json:"resourcesOnTumblebug"`
+}
+
+type resourceOnCspOrSpider struct {
+	Id          string `json:"id"`
+	CspNativeId string `json:"cspNativeId"`
+}
+
+type resourceOnTumblebug struct {
+	Id          string `json:"id"`
+	CspNativeId string `json:"cspNativeId"`
+	NsId        string `json:"nsId"`
+	McisId      string `json:"mcisId"`
+	Type        string `json:"type"`
+	ObjectKey   string `json:"objectKey"`
 }
 
 // ListResourceStatus returns the state list of TB MCIR objects of given resourceType
 func ListResourceStatus(connConfig string, resourceType string) (interface{}, error) {
 
 	nsList := common.ListNsId()
-	var TbResourceList []string
+	// var TbResourceList []string
+	var TbResourceList []resourceOnTumblebug
 	for _, ns := range nsList {
-		resourceListInNs := ListResourceId(ns, resourceType)
-		for i, _ := range resourceListInNs {
-			resourceListInNs[i] = ns + "/" + resourceListInNs[i]
+		/*
+			resourceListInNs := ListResourceId(ns, resourceType)
+			for i, _ := range resourceListInNs {
+				resourceListInNs[i] = ns + "/" + resourceListInNs[i]
+			}
+			TbResourceList = append(TbResourceList, resourceListInNs...)
+		*/
+
+		resourceListInNs, err := ListResource(ns, resourceType)
+		if err != nil {
+			common.CBLog.Error(err)
+			err := fmt.Errorf("an error occurred while getting resource list")
+			return nil, err
 		}
-		TbResourceList = append(TbResourceList, resourceListInNs...)
+		if resourceListInNs == nil {
+			continue
+		}
+
+		switch resourceType {
+		case common.StrVNet:
+			resourcesInNs := resourceListInNs.([]TbVNetInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				temp := resourceOnTumblebug{}
+				temp.Id = resource.Id
+				temp.CspNativeId = resource.CspVNetId
+				temp.NsId = ns
+				//temp.McisId = ""
+				temp.Type = resourceType
+				temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+
+				TbResourceList = append(TbResourceList, temp)
+			}
+		case common.StrSecurityGroup:
+			resourcesInNs := resourceListInNs.([]TbSecurityGroupInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				temp := resourceOnTumblebug{}
+				temp.Id = resource.Id
+				temp.CspNativeId = resource.CspSecurityGroupId
+				temp.NsId = ns
+				//temp.McisId = ""
+				temp.Type = resourceType
+				temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+
+				TbResourceList = append(TbResourceList, temp)
+			}
+		case common.StrSSHKey:
+			resourcesInNs := resourceListInNs.([]TbSshKeyInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				temp := resourceOnTumblebug{}
+				temp.Id = resource.Id
+				temp.CspNativeId = resource.CspSshKeyName
+				temp.NsId = ns
+				//temp.McisId = ""
+				temp.Type = resourceType
+				temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+
+				TbResourceList = append(TbResourceList, temp)
+			}
+		}
+
 	}
 
 	client := resty.New()
@@ -533,12 +606,37 @@ func ListResourceStatus(connConfig string, resourceType string) (interface{}, er
 	default:
 	}
 
-	temp, _ := resp.Result().(*SpiderAllListWrapper)
+	temp, _ := resp.Result().(*SpiderAllListWrapper) // type assertion
 
-	result := TbListResourceStatusResponse{}
+	result := TbInspectResourcesResponse{}
 	result.ResourcesOnTumblebug = TbResourceList
-	result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
-	result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
+	// result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
+	// result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
+
+	for _, v := range (*temp).AllList.MappedList {
+		tmpObj := resourceOnCspOrSpider{}
+		tmpObj.Id = v.NameId
+		tmpObj.CspNativeId = v.SystemId
+
+		result.ResourcesOnCsp = append(result.ResourcesOnCsp, tmpObj)
+		result.ResourcesOnSpider = append(result.ResourcesOnSpider, tmpObj)
+	}
+
+	for _, v := range (*temp).AllList.OnlySpiderList {
+		tmpObj := resourceOnCspOrSpider{}
+		tmpObj.Id = v.NameId
+		tmpObj.CspNativeId = v.SystemId
+
+		result.ResourcesOnSpider = append(result.ResourcesOnSpider, tmpObj)
+	}
+
+	for _, v := range (*temp).AllList.OnlyCSPList {
+		tmpObj := resourceOnCspOrSpider{}
+		tmpObj.Id = v.NameId
+		tmpObj.CspNativeId = v.SystemId
+
+		result.ResourcesOnCsp = append(result.ResourcesOnCsp, tmpObj)
+	}
 
 	return result, nil
 }

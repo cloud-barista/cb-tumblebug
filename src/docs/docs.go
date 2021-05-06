@@ -297,9 +297,9 @@ var doc = `{
                 }
             }
         },
-        "/listSecurityGroupStatus": {
-            "get": {
-                "description": "List SecurityGroup Status",
+        "/inspectResources": {
+            "post": {
+                "description": "Inspect Resources",
                 "consumes": [
                     "application/json"
                 ],
@@ -309,15 +309,15 @@ var doc = `{
                 "tags": [
                     "[Admin] Cloud environment management"
                 ],
-                "summary": "List SecurityGroup Status",
+                "summary": "Inspect Resources",
                 "parameters": [
                     {
-                        "description": "Specify connectionName",
+                        "description": "Specify connectionName and type",
                         "name": "connectionName",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestListResourceStatusRequest"
+                            "$ref": "#/definitions/mcir.RestInspectResourcesRequest"
                         }
                     }
                 ],
@@ -325,99 +325,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbListResourceStatusResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/listSshKeyStatus": {
-            "get": {
-                "description": "List SshKey Status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Admin] Cloud environment management"
-                ],
-                "summary": "List SshKey Status",
-                "parameters": [
-                    {
-                        "description": "Specify connectionName",
-                        "name": "connectionName",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcir.RestListResourceStatusRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcir.TbListResourceStatusResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/listVNetStatus": {
-            "get": {
-                "description": "List vNet Status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Admin] Cloud environment management"
-                ],
-                "summary": "List vNet Status",
-                "parameters": [
-                    {
-                        "description": "Specify connectionName",
-                        "name": "connectionName",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcir.RestListResourceStatusRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcir.TbListResourceStatusResponse"
+                            "$ref": "#/definitions/mcir.TbInspectResourcesResponse"
                         }
                     },
                     "404": {
@@ -4111,10 +4019,13 @@ var doc = `{
                 }
             }
         },
-        "mcir.RestListResourceStatusRequest": {
+        "mcir.RestInspectResourcesRequest": {
             "type": "object",
             "properties": {
                 "connectionName": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 }
             }
@@ -4377,17 +4288,27 @@ var doc = `{
                 }
             }
         },
-        "mcir.TbListResourceStatusResponse": {
+        "mcir.TbInspectResourcesResponse": {
             "type": "object",
             "properties": {
                 "resourcesOnCsp": {
-                    "type": "object"
+                    "description": "ResourcesOnCsp       interface{} ` + "`" + `json:\"resourcesOnCsp\"` + "`" + `\nResourcesOnSpider    interface{} ` + "`" + `json:\"resourcesOnSpider\"` + "`" + `\nResourcesOnTumblebug interface{} ` + "`" + `json:\"resourcesOnTumblebug\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.resourceOnCspOrSpider"
+                    }
                 },
                 "resourcesOnSpider": {
-                    "type": "object"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.resourceOnCspOrSpider"
+                    }
                 },
                 "resourcesOnTumblebug": {
-                    "type": "object"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.resourceOnTumblebug"
+                    }
                 }
             }
         },
@@ -4722,6 +4643,40 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcir.SpiderSubnetReqInfo"
                     }
+                }
+            }
+        },
+        "mcir.resourceOnCspOrSpider": {
+            "type": "object",
+            "properties": {
+                "cspNativeId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.resourceOnTumblebug": {
+            "type": "object",
+            "properties": {
+                "cspNativeId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mcisId": {
+                    "type": "string"
+                },
+                "nsId": {
+                    "type": "string"
+                },
+                "objectKey": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },

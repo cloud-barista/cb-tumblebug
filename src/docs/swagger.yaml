@@ -212,9 +212,11 @@ definitions:
           $ref: '#/definitions/mcir.TbVNetInfo'
         type: array
     type: object
-  mcir.RestListResourceStatusRequest:
+  mcir.RestInspectResourcesRequest:
     properties:
       connectionName:
+        type: string
+      type:
         type: string
     type: object
   mcir.RestLookupImageRequest:
@@ -387,14 +389,24 @@ definitions:
       name:
         type: string
     type: object
-  mcir.TbListResourceStatusResponse:
+  mcir.TbInspectResourcesResponse:
     properties:
       resourcesOnCsp:
-        type: object
+        description: |-
+          ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
+          ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
+          ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
+        items:
+          $ref: '#/definitions/mcir.resourceOnCspOrSpider'
+        type: array
       resourcesOnSpider:
-        type: object
+        items:
+          $ref: '#/definitions/mcir.resourceOnCspOrSpider'
+        type: array
       resourcesOnTumblebug:
-        type: object
+        items:
+          $ref: '#/definitions/mcir.resourceOnTumblebug'
+        type: array
     type: object
   mcir.TbSecurityGroupInfo:
     properties:
@@ -615,6 +627,28 @@ definitions:
         items:
           $ref: '#/definitions/mcir.SpiderSubnetReqInfo'
         type: array
+    type: object
+  mcir.resourceOnCspOrSpider:
+    properties:
+      cspNativeId:
+        type: string
+      id:
+        type: string
+    type: object
+  mcir.resourceOnTumblebug:
+    properties:
+      cspNativeId:
+        type: string
+      id:
+        type: string
+      mcisId:
+        type: string
+      nsId:
+        type: string
+      objectKey:
+        type: string
+      type:
+        type: string
     type: object
   mcis.AgentInstallContent:
     properties:
@@ -1380,25 +1414,25 @@ paths:
       summary: Check Tumblebug is alive
       tags:
       - '[Admin] System management'
-  /listSecurityGroupStatus:
-    get:
+  /inspectResources:
+    post:
       consumes:
       - application/json
-      description: List SecurityGroup Status
+      description: Inspect Resources
       parameters:
-      - description: Specify connectionName
+      - description: Specify connectionName and type
         in: body
         name: connectionName
         required: true
         schema:
-          $ref: '#/definitions/mcir.RestListResourceStatusRequest'
+          $ref: '#/definitions/mcir.RestInspectResourcesRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbListResourceStatusResponse'
+            $ref: '#/definitions/mcir.TbInspectResourcesResponse'
         "404":
           description: Not Found
           schema:
@@ -1407,67 +1441,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List SecurityGroup Status
-      tags:
-      - '[Admin] Cloud environment management'
-  /listSshKeyStatus:
-    get:
-      consumes:
-      - application/json
-      description: List SshKey Status
-      parameters:
-      - description: Specify connectionName
-        in: body
-        name: connectionName
-        required: true
-        schema:
-          $ref: '#/definitions/mcir.RestListResourceStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcir.TbListResourceStatusResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List SshKey Status
-      tags:
-      - '[Admin] Cloud environment management'
-  /listVNetStatus:
-    get:
-      consumes:
-      - application/json
-      description: List vNet Status
-      parameters:
-      - description: Specify connectionName
-        in: body
-        name: connectionName
-        required: true
-        schema:
-          $ref: '#/definitions/mcir.RestListResourceStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcir.TbListResourceStatusResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List vNet Status
+      summary: Inspect Resources
       tags:
       - '[Admin] Cloud environment management'
   /lookupImage:

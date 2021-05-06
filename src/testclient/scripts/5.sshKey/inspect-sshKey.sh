@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function create_securityGroup() {
+#function create_sshKey() {
 
 
 	TestSetFile=${4:-../testSet.env}
@@ -12,7 +12,7 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## 3. securityGroup: Status"
+	echo "## 3. sshKey: Status"
 	echo "####################################################################"
 
 	CSP=${1}
@@ -27,13 +27,14 @@
 	CIDRDiff=$(($CIDRDiff%254))
 
     resp=$(
-        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/listSecurityGroupStatus -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
         {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+			"type": "sshKey"
 		}
 EOF
     ); echo ${resp} | jq ''
     echo ""
 #}
 
-#create_securityGroup
+#create_sshKey

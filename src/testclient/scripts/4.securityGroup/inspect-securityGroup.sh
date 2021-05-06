@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function create_vNet() {
+#function create_securityGroup() {
 
 
 	TestSetFile=${4:-../testSet.env}
@@ -12,7 +12,7 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## 3. vNet: Status"
+	echo "## 3. securityGroup: Status"
 	echo "####################################################################"
 
 	CSP=${1}
@@ -27,13 +27,14 @@
 	CIDRDiff=$(($CIDRDiff%254))
 
     resp=$(
-        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/listVNetStatus -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
         {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+			"type": "securityGroup"
 		}
 EOF
     ); echo ${resp} | jq ''
     echo ""
 #}
 
-#create_vNet
+#create_securityGroup
