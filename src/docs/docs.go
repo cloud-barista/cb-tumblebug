@@ -3869,7 +3869,14 @@ var doc = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "vNet",
+                        "securityGroup",
+                        "sshKey",
+                        "vm"
+                    ],
+                    "example": "vNet"
                 }
             }
         },

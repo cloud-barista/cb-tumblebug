@@ -312,7 +312,7 @@ func RestDeleteObjects(c echo.Context) error {
 // Request struct for RestInspectResources
 type RestInspectResourcesRequest struct {
 	ConnectionName string `json:"connectionName"`
-	Type           string `json:"type"`
+	Type           string `json:"type" example:"vNet" enums:"vNet,securityGroup,sshKey,vm"`
 }
 
 // RestInspectResources godoc
