@@ -338,7 +338,7 @@ func RestInspectResources(c echo.Context) error {
 	fmt.Printf("[List Resource Status: %s]", u.Type)
 	var content interface{}
 	var err error
-	if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrVNet {
+	if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
 		content, err = mcir.InspectResources(u.ConnectionName, u.Type)
 	} else if u.Type == "vm" {
 		content, err = mcis.InspectVMs(u.ConnectionName)
