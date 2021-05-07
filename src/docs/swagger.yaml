@@ -754,7 +754,8 @@ definitions:
       id:
         type: string
       installMonAgent:
-        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
         example: '[yes, no]'
         type: string
       masterIp:
@@ -977,7 +978,8 @@ definitions:
         type: string
       installMonAgent:
         default: "yes"
-        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
         enum:
         - "yes"
         - "no"
@@ -1006,7 +1008,8 @@ definitions:
         type: string
       installMonAgent:
         default: "yes"
-        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
         enum:
         - "yes"
         - "no"
@@ -1150,7 +1153,8 @@ definitions:
       label:
         type: string
       name:
-        description: VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
+        description: VM name or VM group name if is (not empty) && (> 0). If it is
+          a group, actual VM name will be generated with -N postfix.
         type: string
       securityGroupIds:
         items:
@@ -1165,7 +1169,8 @@ definitions:
       vNetId:
         type: string
       vmGroupSize:
-        description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
+        description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
+          VMs will be created accordingly.
         example: "3"
         type: string
       vmUserAccount:
