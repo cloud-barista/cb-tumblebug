@@ -489,13 +489,13 @@ type resourceOnTumblebug struct {
 	Id          string `json:"id"`
 	CspNativeId string `json:"cspNativeId"`
 	NsId        string `json:"nsId"`
-	McisId      string `json:"mcisId"`
-	Type        string `json:"type"`
-	ObjectKey   string `json:"objectKey"`
+	//McisId      string `json:"mcisId"`
+	Type      string `json:"type"`
+	ObjectKey string `json:"objectKey"`
 }
 
-// ListResourceStatus returns the state list of TB MCIR objects of given resourceType
-func ListResourceStatus(connConfig string, resourceType string) (interface{}, error) {
+// InspectResources returns the state list of TB MCIR objects of given connConfig and resourceType
+func InspectResources(connConfig string, resourceType string) (interface{}, error) {
 
 	nsList := common.ListNsId()
 	// var TbResourceList []string
@@ -523,44 +523,49 @@ func ListResourceStatus(connConfig string, resourceType string) (interface{}, er
 		case common.StrVNet:
 			resourcesInNs := resourceListInNs.([]TbVNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
-				temp := resourceOnTumblebug{}
-				temp.Id = resource.Id
-				temp.CspNativeId = resource.CspVNetId
-				temp.NsId = ns
-				//temp.McisId = ""
-				temp.Type = resourceType
-				temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+				if resource.ConnectionName == connConfig { // filtering
+					temp := resourceOnTumblebug{}
+					temp.Id = resource.Id
+					temp.CspNativeId = resource.CspVNetId
+					temp.NsId = ns
+					//temp.McisId = ""
+					temp.Type = resourceType
+					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
-				TbResourceList = append(TbResourceList, temp)
+					TbResourceList = append(TbResourceList, temp)
+				}
 			}
 		case common.StrSecurityGroup:
 			resourcesInNs := resourceListInNs.([]TbSecurityGroupInfo) // type assertion
 			for _, resource := range resourcesInNs {
-				temp := resourceOnTumblebug{}
-				temp.Id = resource.Id
-				temp.CspNativeId = resource.CspSecurityGroupId
-				temp.NsId = ns
-				//temp.McisId = ""
-				temp.Type = resourceType
-				temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+				if resource.ConnectionName == connConfig { // filtering
+					temp := resourceOnTumblebug{}
+					temp.Id = resource.Id
+					temp.CspNativeId = resource.CspSecurityGroupId
+					temp.NsId = ns
+					//temp.McisId = ""
+					temp.Type = resourceType
+					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
-				TbResourceList = append(TbResourceList, temp)
+					TbResourceList = append(TbResourceList, temp)
+				}
 			}
 		case common.StrSSHKey:
 			resourcesInNs := resourceListInNs.([]TbSshKeyInfo) // type assertion
 			for _, resource := range resourcesInNs {
-				temp := resourceOnTumblebug{}
-				temp.Id = resource.Id
-				temp.CspNativeId = resource.CspSshKeyName
-				temp.NsId = ns
-				//temp.McisId = ""
-				temp.Type = resourceType
-				temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+				if resource.ConnectionName == connConfig { // filtering
+					temp := resourceOnTumblebug{}
+					temp.Id = resource.Id
+					temp.CspNativeId = resource.CspSshKeyName
+					temp.NsId = ns
+					//temp.McisId = ""
+					temp.Type = resourceType
+					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
-				TbResourceList = append(TbResourceList, temp)
+					TbResourceList = append(TbResourceList, temp)
+				}
 			}
 		}
-
 	}
 
 	client := resty.New()

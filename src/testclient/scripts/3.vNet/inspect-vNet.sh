@@ -22,10 +22,6 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	CIRDNum=$(($INDEX+1))
-	CIDRDiff=$(($CIRDNum*$REGION))
-	CIDRDiff=$(($CIDRDiff%254))
-
     resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
         {

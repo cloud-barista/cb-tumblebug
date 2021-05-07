@@ -317,7 +317,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestInspectResourcesRequest"
+                            "$ref": "#/definitions/common.RestInspectResourcesRequest"
                         }
                     }
                 ],
@@ -325,7 +325,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbInspectResourcesResponse"
+                            "$ref": "#/definitions/mcis.TbInspectResourcesResponse"
                         }
                     },
                     "404": {
@@ -3862,6 +3862,24 @@ var doc = `{
                 }
             }
         },
+        "common.RestInspectResourcesRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "vNet",
+                        "securityGroup",
+                        "sshKey",
+                        "vm"
+                    ],
+                    "example": "vNet"
+                }
+            }
+        },
         "common.SimpleMsg": {
             "type": "object",
             "properties": {
@@ -4016,17 +4034,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcir.TbVNetInfo"
                     }
-                }
-            }
-        },
-        "mcir.RestInspectResourcesRequest": {
-            "type": "object",
-            "properties": {
-                "connectionName": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
                 }
             }
         },
@@ -4285,30 +4292,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "mcir.TbInspectResourcesResponse": {
-            "type": "object",
-            "properties": {
-                "resourcesOnCsp": {
-                    "description": "ResourcesOnCsp       interface{} ` + "`" + `json:\"resourcesOnCsp\"` + "`" + `\nResourcesOnSpider    interface{} ` + "`" + `json:\"resourcesOnSpider\"` + "`" + `\nResourcesOnTumblebug interface{} ` + "`" + `json:\"resourcesOnTumblebug\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.resourceOnCspOrSpider"
-                    }
-                },
-                "resourcesOnSpider": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.resourceOnCspOrSpider"
-                    }
-                },
-                "resourcesOnTumblebug": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcir.resourceOnTumblebug"
-                    }
                 }
             }
         },
@@ -4643,40 +4626,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcir.SpiderSubnetReqInfo"
                     }
-                }
-            }
-        },
-        "mcir.resourceOnCspOrSpider": {
-            "type": "object",
-            "properties": {
-                "cspNativeId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcir.resourceOnTumblebug": {
-            "type": "object",
-            "properties": {
-                "cspNativeId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "mcisId": {
-                    "type": "string"
-                },
-                "nsId": {
-                    "type": "string"
-                },
-                "objectKey": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
                 }
             }
         },
@@ -5183,6 +5132,30 @@ var doc = `{
                 }
             }
         },
+        "mcis.TbInspectResourcesResponse": {
+            "type": "object",
+            "properties": {
+                "resourcesOnCsp": {
+                    "description": "ResourcesOnCsp       interface{} ` + "`" + `json:\"resourcesOnCsp\"` + "`" + `\nResourcesOnSpider    interface{} ` + "`" + `json:\"resourcesOnSpider\"` + "`" + `\nResourcesOnTumblebug interface{} ` + "`" + `json:\"resourcesOnTumblebug\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                    }
+                },
+                "resourcesOnSpider": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                    }
+                },
+                "resourcesOnTumblebug": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnTumblebug"
+                    }
+                }
+            }
+        },
         "mcis.TbMcisInfo": {
             "type": "object",
             "properties": {
@@ -5531,6 +5504,40 @@ var doc = `{
                     "type": "string"
                 },
                 "targetStatus": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.resourceOnCspOrSpider": {
+            "type": "object",
+            "properties": {
+                "cspNativeId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.resourceOnTumblebug": {
+            "type": "object",
+            "properties": {
+                "cspNativeId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mcisId": {
+                    "type": "string"
+                },
+                "nsId": {
+                    "type": "string"
+                },
+                "objectKey": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 }
             }

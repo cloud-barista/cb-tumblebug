@@ -22,8 +22,8 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	CIRDNum=$(($INDEX+1))
-	CIDRDiff=$(($CIRDNum*$REGION))
+	CIDRNum=$(($INDEX+1))
+	CIDRDiff=$(($CIDRNum*$REGION))
 	CIDRDiff=$(($CIDRDiff%254))
 
     resp=$(

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#function create_sshKey() {
-
-
 	TestSetFile=${4:-../testSet.env}
     if [ ! -f "$TestSetFile" ]; then
         echo "$TestSetFile does not exist."
@@ -12,7 +9,7 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## 3. sshKey: Status"
+	echo "## 8. vm: inspect"
 	echo "####################################################################"
 
 	CSP=${1}
@@ -26,11 +23,10 @@
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
         {
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"type": "sshKey"
+			"type": "vm"
 		}
 EOF
     ); echo ${resp} | jq ''
     echo ""
 #}
 
-#create_sshKey
