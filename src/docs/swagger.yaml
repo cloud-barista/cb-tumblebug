@@ -110,6 +110,13 @@ definitions:
           $ref: '#/definitions/common.NsInfo'
         type: array
     type: object
+  common.RestInspectResourcesRequest:
+    properties:
+      connectionName:
+        type: string
+      type:
+        type: string
+    type: object
   common.SimpleMsg:
     properties:
       message:
@@ -211,13 +218,6 @@ definitions:
         items:
           $ref: '#/definitions/mcir.TbVNetInfo'
         type: array
-    type: object
-  mcir.RestInspectResourcesRequest:
-    properties:
-      connectionName:
-        type: string
-      type:
-        type: string
     type: object
   mcir.RestLookupImageRequest:
     properties:
@@ -388,25 +388,6 @@ definitions:
         type: string
       name:
         type: string
-    type: object
-  mcir.TbInspectResourcesResponse:
-    properties:
-      resourcesOnCsp:
-        description: |-
-          ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
-          ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
-          ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
-        items:
-          $ref: '#/definitions/mcir.resourceOnCspOrSpider'
-        type: array
-      resourcesOnSpider:
-        items:
-          $ref: '#/definitions/mcir.resourceOnCspOrSpider'
-        type: array
-      resourcesOnTumblebug:
-        items:
-          $ref: '#/definitions/mcir.resourceOnTumblebug'
-        type: array
     type: object
   mcir.TbSecurityGroupInfo:
     properties:
@@ -627,28 +608,6 @@ definitions:
         items:
           $ref: '#/definitions/mcir.SpiderSubnetReqInfo'
         type: array
-    type: object
-  mcir.resourceOnCspOrSpider:
-    properties:
-      cspNativeId:
-        type: string
-      id:
-        type: string
-    type: object
-  mcir.resourceOnTumblebug:
-    properties:
-      cspNativeId:
-        type: string
-      id:
-        type: string
-      mcisId:
-        type: string
-      nsId:
-        type: string
-      objectKey:
-        type: string
-      type:
-        type: string
     type: object
   mcis.AgentInstallContent:
     properties:
@@ -985,6 +944,25 @@ definitions:
       vpcname:
         type: string
     type: object
+  mcis.TbInspectResourcesResponse:
+    properties:
+      resourcesOnCsp:
+        description: |-
+          ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
+          ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
+          ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
+        items:
+          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+        type: array
+      resourcesOnSpider:
+        items:
+          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+        type: array
+      resourcesOnTumblebug:
+        items:
+          $ref: '#/definitions/mcis.resourceOnTumblebug'
+        type: array
+    type: object
   mcis.TbMcisInfo:
     properties:
       description:
@@ -1226,6 +1204,28 @@ definitions:
       targetStatus:
         type: string
     type: object
+  mcis.resourceOnCspOrSpider:
+    properties:
+      cspNativeId:
+        type: string
+      id:
+        type: string
+    type: object
+  mcis.resourceOnTumblebug:
+    properties:
+      cspNativeId:
+        type: string
+      id:
+        type: string
+      mcisId:
+        type: string
+      nsId:
+        type: string
+      objectKey:
+        type: string
+      type:
+        type: string
+    type: object
 host: localhost:1323
 info:
   contact:
@@ -1425,14 +1425,14 @@ paths:
         name: connectionName
         required: true
         schema:
-          $ref: '#/definitions/mcir.RestInspectResourcesRequest'
+          $ref: '#/definitions/common.RestInspectResourcesRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbInspectResourcesResponse'
+            $ref: '#/definitions/mcis.TbInspectResourcesResponse'
         "404":
           description: Not Found
           schema:

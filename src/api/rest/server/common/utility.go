@@ -11,6 +11,8 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 )
 
 type Existence struct {
@@ -305,4 +307,49 @@ func RestDeleteObjects(c echo.Context) error {
 	}
 
 	return SendMessage(c, http.StatusOK, "Objects have been deleted")
+}
+
+// Request struct for RestInspectResources
+type RestInspectResourcesRequest struct {
+	ConnectionName string `json:"connectionName"`
+	Type           string `json:"type"`
+}
+
+// RestInspectResources godoc
+// @Summary Inspect Resources
+// @Description Inspect Resources
+// @Tags [Admin] Cloud environment management
+// @Accept  json
+// @Produce  json
+// @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and type"
+// @Success 200 {object} mcis.TbInspectResourcesResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /inspectResources [post]
+func RestInspectResources(c echo.Context) error {
+
+	fmt.Println("RestInspectResources called;") // for debug
+
+	u := &RestInspectResourcesRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Printf("[List Resource Status: %s]", u.Type)
+	var content interface{}
+	var err error
+	if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrVNet {
+		content, err = mcir.InspectResources(u.ConnectionName, u.Type)
+	} else if u.Type == "vm" {
+		content, err = mcis.InspectVMs(u.ConnectionName)
+	}
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
 }
