@@ -9,7 +9,6 @@ replace (
 )
 
 require (
-	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/beego/beego/v2 v2.0.1
 	github.com/bramvdbogaerde/go-scp v0.0.0-20201229172121-7a6c0268fa67
@@ -17,7 +16,6 @@ require (
 	github.com/cloud-barista/cb-spider v0.3.0-espresso
 	github.com/cloud-barista/cb-store v0.3.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-resty/resty/v2 v2.4.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.2
