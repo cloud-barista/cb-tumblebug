@@ -28,7 +28,7 @@ func RestPostImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
-	fmt.Println("[POST Image requested action: " + action)
+	fmt.Println("[POST Image] (action: " + action + ")")
 	/*
 		if action == "create" {
 			fmt.Println("[Creating Image]")
@@ -103,8 +103,7 @@ type RestLookupImageRequest struct {
 // @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestLookupImageRequest true "Specify connectionName"
-// @Param imageId path string true "Image ID"
+// @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName & cspImageId"
 // @Success 200 {object} mcir.SpiderImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -116,7 +115,7 @@ func RestLookupImage(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[Lookup image]" + u.CspImageId)
+	fmt.Println("[Lookup image]: " + u.CspImageId)
 	content, err := mcir.LookupImage(u.ConnectionName, u.CspImageId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -133,7 +132,7 @@ func RestLookupImage(c echo.Context) error {
 // @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestLookupImageRequest true "Specify connectionName"
+// @Param lookupImagesReq body common.TbConnectionName true "Specify connectionName"
 // @Success 200 {object} mcir.SpiderImageList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -149,7 +148,7 @@ func RestLookupImageList(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[Get Region List]")
+	fmt.Println("[Lookup images]")
 	content, err := mcir.LookupImageList(u.ConnectionName)
 	if err != nil {
 		common.CBLog.Error(err)

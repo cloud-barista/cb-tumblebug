@@ -358,20 +358,13 @@ var doc = `{
                 "summary": "Lookup image",
                 "parameters": [
                     {
-                        "description": "Specify connectionName",
-                        "name": "connectionName",
+                        "description": "Specify connectionName \u0026 cspImageId",
+                        "name": "lookupImageReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/mcir.RestLookupImageRequest"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Image ID",
-                        "name": "imageId",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -412,11 +405,11 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "Specify connectionName",
-                        "name": "connectionName",
+                        "name": "lookupImagesReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestLookupImageRequest"
+                            "$ref": "#/definitions/common.TbConnectionName"
                         }
                     }
                 ],
@@ -457,20 +450,13 @@ var doc = `{
                 "summary": "Lookup spec",
                 "parameters": [
                     {
-                        "description": "Specify connectionName",
-                        "name": "connectionName",
+                        "description": "Specify connectionName \u0026 cspSpecName",
+                        "name": "lookupSpecReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/mcir.RestLookupSpecRequest"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Spec name",
-                        "name": "specName",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -511,11 +497,11 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "Specify connectionName",
-                        "name": "connectionName",
+                        "name": "lookupSpecsReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestLookupSpecRequest"
+                            "$ref": "#/definitions/common.TbConnectionName"
                         }
                     }
                 ],
@@ -3886,6 +3872,14 @@ var doc = `{
                 "message": {
                     "type": "string",
                     "example": "Any message"
+                }
+            }
+        },
+        "common.TbConnectionName": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
                 }
             }
         },

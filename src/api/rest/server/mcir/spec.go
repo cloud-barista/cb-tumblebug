@@ -28,7 +28,7 @@ func RestPostSpec(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
-	fmt.Println("[POST Spec requested action: " + action)
+	fmt.Println("[POST Spec] (action: " + action + ")")
 
 	if action == "registerWithInfo" { // `RegisterSpecWithInfo` will be deprecated in Cappuccino.
 		fmt.Println("[Registering Spec with info]")
@@ -122,20 +122,18 @@ type RestLookupSpecRequest struct {
 // @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestLookupSpecRequest true "Specify connectionName"
-// @Param specName path string true "Spec name"
+// @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspSpecName"
 // @Success 200 {object} mcir.SpiderSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupSpec [get]
 func RestLookupSpec(c echo.Context) error {
-
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	fmt.Println("[Lookup spec]" + u.CspSpecName)
+	fmt.Println("[Lookup spec]: " + u.CspSpecName)
 	content, err := mcir.LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -152,7 +150,7 @@ func RestLookupSpec(c echo.Context) error {
 // @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestLookupSpecRequest true "Specify connectionName"
+// @Param lookupSpecsReq body common.TbConnectionName true "Specify connectionName"
 // @Success 200 {object} mcir.SpiderSpecList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -168,7 +166,7 @@ func RestLookupSpecList(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[Get Region List]")
+	fmt.Println("[Lookup specs]")
 	content, err := mcir.LookupSpecList(u.ConnectionName)
 	if err != nil {
 		common.CBLog.Error(err)

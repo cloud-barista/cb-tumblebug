@@ -129,6 +129,11 @@ definitions:
         example: Any message
         type: string
     type: object
+  common.TbConnectionName:
+    properties:
+      connectionName:
+        type: string
+    type: object
   mcir.FilterSpecsByRangeRequest:
     properties:
       cost_per_hour:
@@ -1461,17 +1466,12 @@ paths:
       - application/json
       description: Lookup image
       parameters:
-      - description: Specify connectionName
+      - description: Specify connectionName & cspImageId
         in: body
-        name: connectionName
+        name: lookupImageReq
         required: true
         schema:
           $ref: '#/definitions/mcir.RestLookupImageRequest'
-      - description: Image ID
-        in: path
-        name: imageId
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1498,10 +1498,10 @@ paths:
       parameters:
       - description: Specify connectionName
         in: body
-        name: connectionName
+        name: lookupImagesReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.RestLookupImageRequest'
+          $ref: '#/definitions/common.TbConnectionName'
       produces:
       - application/json
       responses:
@@ -1526,17 +1526,12 @@ paths:
       - application/json
       description: Lookup spec
       parameters:
-      - description: Specify connectionName
+      - description: Specify connectionName & cspSpecName
         in: body
-        name: connectionName
+        name: lookupSpecReq
         required: true
         schema:
           $ref: '#/definitions/mcir.RestLookupSpecRequest'
-      - description: Spec name
-        in: path
-        name: specName
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1563,10 +1558,10 @@ paths:
       parameters:
       - description: Specify connectionName
         in: body
-        name: connectionName
+        name: lookupSpecsReq
         required: true
         schema:
-          $ref: '#/definitions/mcir.RestLookupSpecRequest'
+          $ref: '#/definitions/common.TbConnectionName'
       produces:
       - application/json
       responses:
