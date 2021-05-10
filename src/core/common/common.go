@@ -82,7 +82,7 @@ func OpenSQL(path string) error {
 }
 
 func SelectDatabase(database string) error {
-	query := "USE " + database
+	query := "USE " + database + ";"
 	_, err = MYDB.Exec(query)
 	return err
 }
