@@ -15,6 +15,10 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 )
 
+type TbConnectionName struct {
+	ConnectionName string `json:"connectionName"`
+}
+
 type Existence struct {
 	Exists bool `json:"exists"`
 }

@@ -22,12 +22,11 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-
 	resp=$(
         curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupImage -H 'Content-Type: application/json' -d @- <<EOF
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-            "cspImageId": "${IMAGE_NAME[$INDEX,$REGION]}"
+			"cspImageId": "${IMAGE_NAME[$INDEX,$REGION]}"
 		}
 EOF
     ); echo ${resp} | jq ''

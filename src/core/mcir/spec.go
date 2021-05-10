@@ -116,15 +116,19 @@ type SpiderSpecList struct {
 // in the form of the list of Spider spec objects
 func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 
+	if connConfig == "" {
+		content := SpiderSpecList{}
+		err := fmt.Errorf("LookupSpec() called with empty connConfig.")
+		common.CBLog.Error(err)
+		return content, err
+	}
+
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		url := common.SPIDER_REST_URL + "/vmspec"
 
 		// Create Req body
-		type JsonTemplate struct {
-			ConnectionName string `json:"ConnectionName"`
-		}
-		tempReq := JsonTemplate{}
+		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
 		client := resty.New()
@@ -193,16 +197,25 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 // LookupSpec accepts Spider conn config and CSP spec name, lookups and returns the Spider spec object
 func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
+	if connConfig == "" {
+		content := SpiderSpecInfo{}
+		err := fmt.Errorf("LookupSpec() called with empty connConfig.")
+		common.CBLog.Error(err)
+		return content, err
+	} else if specName == "" {
+		content := SpiderSpecInfo{}
+		err := fmt.Errorf("LookupSpec() called with empty specName.")
+		common.CBLog.Error(err)
+		return content, err
+	}
+
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		//url := common.SPIDER_REST_URL + "/vmspec/" + u.CspSpecName
 		url := common.SPIDER_REST_URL + "/vmspec/" + specName
 
 		// Create Req body
-		type JsonTemplate struct {
-			ConnectionName string `json:"ConnectionName"`
-		}
-		tempReq := JsonTemplate{}
+		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
 		client := resty.New()

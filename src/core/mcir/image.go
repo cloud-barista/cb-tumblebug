@@ -272,15 +272,19 @@ type SpiderImageList struct {
 // in the form of the list of Spider image objects
 func LookupImageList(connConfig string) (SpiderImageList, error) {
 
+	if connConfig == "" {
+		content := SpiderImageList{}
+		err := fmt.Errorf("LookupImage() called with empty connConfig.")
+		common.CBLog.Error(err)
+		return content, err
+	}
+
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		url := common.SPIDER_REST_URL + "/vmimage"
 
 		// Create Req body
-		type JsonTemplate struct {
-			ConnectionName string `json:"ConnectionName"`
-		}
-		tempReq := JsonTemplate{}
+		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
 		client := resty.New()
@@ -349,15 +353,24 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 // LookupImage accepts Spider conn config and CSP image ID, lookups and returns the Spider image object
 func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
+	if connConfig == "" {
+		content := SpiderImageInfo{}
+		err := fmt.Errorf("LookupImage() called with empty connConfig.")
+		common.CBLog.Error(err)
+		return content, err
+	} else if imageId == "" {
+		content := SpiderImageInfo{}
+		err := fmt.Errorf("LookupImage() called with empty imageId.")
+		common.CBLog.Error(err)
+		return content, err
+	}
+
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		url := common.SPIDER_REST_URL + "/vmimage/" + url.QueryEscape(imageId)
 
 		// Create Req body
-		type JsonTemplate struct {
-			ConnectionName string `json:"ConnectionName"`
-		}
-		tempReq := JsonTemplate{}
+		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
 		client := resty.New()

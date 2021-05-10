@@ -63,6 +63,10 @@ type IID struct {
 	SystemId string // SystemID by CloudOS
 }
 
+type SpiderConnectionName struct {
+	ConnectionName string `json:"ConnectionName"`
+}
+
 func OpenSQL(path string) error {
 	/*
 		common.MYDB, err = sql.Open("mysql", //"root:pwd@tcp(127.0.0.1:3306)/testdb")
