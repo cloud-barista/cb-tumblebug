@@ -3395,6 +3395,61 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/testRecommendVm": {
+            "post": {
+                "description": "RestRecommendVm specs by range",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MCIS] Provisioning management"
+                ],
+                "summary": "RestRecommendVm specs by range",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "RestRecommendVm for range-filtering specs",
+                        "name": "deploymentPlan",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.DeploymentPlan"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/mcir.TbSpecInfo"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/object": {
             "get": {
                 "description": "Get value of an object",
@@ -4732,6 +4787,45 @@ var doc = `{
                 }
             }
         },
+        "mcis.DeploymentPlan": {
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "$ref": "#/definitions/mcis.FilterInfo"
+                },
+                "limit": {
+                    "type": "string"
+                },
+                "priority": {
+                    "$ref": "#/definitions/mcis.PriorityInfo"
+                }
+            }
+        },
+        "mcis.FilterCondition": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.Operation"
+                    }
+                },
+                "metric": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.FilterInfo": {
+            "type": "object",
+            "properties": {
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.FilterCondition"
+                    }
+                }
+            }
+        },
         "mcis.GeoLocation": {
             "type": "object",
             "properties": {
@@ -4903,6 +4997,35 @@ var doc = `{
                 }
             }
         },
+        "mcis.Operation": {
+            "type": "object",
+            "properties": {
+                "operand": {
+                    "description": "10, 70, 80, 98, ...",
+                    "type": "string"
+                },
+                "operator": {
+                    "description": "\u003c, \u003c=, \u003e, \u003e=, ...",
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.ParameterKeyVal": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "coordinate",
+                    "type": "string"
+                },
+                "val": {
+                    "description": "[{Latitude,Longitude},{12,543},{66,33},{31,433}]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "mcis.Policy": {
             "type": "object",
             "properties": {
@@ -4914,6 +5037,36 @@ var doc = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.PriorityCondition": {
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "description": "location",
+                    "type": "string"
+                },
+                "parameter": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.ParameterKeyVal"
+                    }
+                },
+                "weight": {
+                    "description": "0.3",
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.PriorityInfo": {
+            "type": "object",
+            "properties": {
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.PriorityCondition"
+                    }
                 }
             }
         },
