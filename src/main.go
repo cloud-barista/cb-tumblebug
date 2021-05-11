@@ -70,25 +70,27 @@ func main() {
 		fmt.Println("Database access info set successfully")
 	}
 
+	/* // Required if using MySQL // Not required if using SQLite
 	err = common.SelectDatabase(common.DB_DATABASE)
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
 		fmt.Println("DB selected successfully..")
 	}
+	*/
 
 	err = common.CreateSpecTable()
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Table spec created successfully..")
+		fmt.Println("Table spec set successfully..")
 	}
 
 	err = common.CreateImageTable()
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Table image created successfully..")
+		fmt.Println("Table image set successfully..")
 	}
 
 	//defer db.Close()
