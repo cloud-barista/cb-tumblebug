@@ -692,6 +692,31 @@ definitions:
           $ref: '#/definitions/mcis.BenchmarkInfo'
         type: array
     type: object
+  mcis.DeploymentPlan:
+    properties:
+      filter:
+        $ref: '#/definitions/mcis.FilterInfo'
+      limit:
+        type: string
+      priority:
+        $ref: '#/definitions/mcis.PriorityInfo'
+    type: object
+  mcis.FilterCondition:
+    properties:
+      condition:
+        items:
+          $ref: '#/definitions/mcis.Operation'
+        type: array
+      metric:
+        type: string
+    type: object
+  mcis.FilterInfo:
+    properties:
+      policy:
+        items:
+          $ref: '#/definitions/mcis.FilterCondition'
+        type: array
+    type: object
   mcis.GeoLocation:
     properties:
       briefAddr:
@@ -807,6 +832,26 @@ definitions:
       nsId:
         type: string
     type: object
+  mcis.Operation:
+    properties:
+      operand:
+        description: 10, 70, 80, 98, ...
+        type: string
+      operator:
+        description: <, <=, >, >=, ...
+        type: string
+    type: object
+  mcis.ParameterKeyVal:
+    properties:
+      key:
+        description: coordinate
+        type: string
+      val:
+        description: '[{Latitude,Longitude},{12,543},{66,33},{31,433}]'
+        items:
+          type: string
+        type: array
+    type: object
   mcis.Policy:
     properties:
       autoAction:
@@ -815,6 +860,26 @@ definitions:
         $ref: '#/definitions/mcis.AutoCondition'
       status:
         type: string
+    type: object
+  mcis.PriorityCondition:
+    properties:
+      metric:
+        description: location
+        type: string
+      parameter:
+        items:
+          $ref: '#/definitions/mcis.ParameterKeyVal'
+        type: array
+      weight:
+        description: "0.3"
+        type: string
+    type: object
+  mcis.PriorityInfo:
+    properties:
+      policy:
+        items:
+          $ref: '#/definitions/mcis.PriorityCondition'
+        type: array
     type: object
   mcis.RegionInfo:
     properties:
@@ -3487,6 +3552,42 @@ paths:
       summary: Get VNet
       tags:
       - '[MCIR] Network management'
+  /ns/{nsId}/testRecommendVm:
+    post:
+      consumes:
+      - application/json
+      description: RestRecommendVm specs by range
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: RestRecommendVm for range-filtering specs
+        in: body
+        name: deploymentPlan
+        schema:
+          $ref: '#/definitions/mcis.DeploymentPlan'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/mcir.TbSpecInfo'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: RestRecommendVm specs by range
+      tags:
+      - '[MCIS] Provisioning management'
   /object:
     delete:
       consumes:

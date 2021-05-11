@@ -4103,9 +4103,22 @@ func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 
 }
 
+// GetCloudLocation. (need error handling)
 func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 
 	location := GeoLocation{}
+
+	if cloudType == "" || nativeRegion == "" {
+
+		// need error handling instead of assigning default value
+		location.CloudType = "ufc"
+		location.NativeRegion = "ufc"
+		location.BriefAddr = "South Korea (Seoul)"
+		location.Latitude = "37.4767"
+		location.Longitude = "126.8841"
+
+		return location
+	}
 
 	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
 
@@ -4146,11 +4159,11 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 			}
 			fmt.Println()
 		}
-	}
-	keyValue, err = common.CBStore.Get(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		return location
+		keyValue, err = common.CBStore.Get(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			return location
+		}
 	}
 
 	if keyValue != nil {
