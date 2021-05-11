@@ -168,7 +168,9 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 		switch v.Key {
 		case "coordinateClose":
+			//
 			coordinateStr := v.Val[0]
+
 			slice := strings.Split(coordinateStr, ",")
 			latitude, err := strconv.ParseFloat(slice[0], 32)
 			if err != nil {
@@ -201,27 +203,31 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
 			})
-			fmt.Println(distances)
+			fmt.Printf("\n distances : %v \n", distances)
 
 			priorityCnt := 1
 			for i := range distances {
-				if i+1 == len(distances) {
-					break
-				}
+
 				// priorityIndex++ if two distances are not equal (give the same priorityIndex if two variables are same)
-				if distances[i].distance < distances[i+1].distance {
-					priorityCnt++
+				if i != 0 {
+					if distances[i].distance > distances[i-1].distance {
+						priorityCnt++
+					}
 				}
 				distances[i].priorityIndex = priorityCnt
+
 			}
 
 			for i := range *specList {
 				// update OrderInFilteredResult based on calculated priorityIndex
 				(*specList)[distances[i].index].OrderInFilteredResult = uint16(distances[i].priorityIndex)
 				// assign nomalized priorityIdex value to EvaluationScore_01
-				(*specList)[distances[i].index].EvaluationScore_01 = float32(distances[i].priorityIndex / priorityCnt)
+				(*specList)[distances[i].index].EvaluationScore_01 = float32(1 - (float32(distances[i].priorityIndex) / float32(len(*specList))))
+				(*specList)[distances[i].index].EvaluationScore_02 = float32(distances[i].distance)
 			}
-			fmt.Println(distances)
+			fmt.Printf("\n distances : %v \n", distances)
+
+			//fmt.Printf("\n distances : %v \n", *specList)
 
 		case "coordinateWithin":
 			//
@@ -235,8 +241,13 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 	for i := range *specList {
 		result = append(result, (*specList)[i])
-		result[i].OrderInFilteredResult = uint16(i + 1)
+		//result[i].OrderInFilteredResult = uint16(i + 1)
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
+	})
+	fmt.Printf("\n result : %v \n", result)
 
 	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
 	// content, err = mcir.SortSpecs(*specList, "mem_GiB", "descending")
