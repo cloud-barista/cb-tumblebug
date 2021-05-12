@@ -9,7 +9,7 @@ source $TestSetFile
 source ../conf.env
 
 echo "####################################################################"
-echo "## Generate SSH KEY (PEM, PPK)"
+echo "## Config Ansible environment (generate host file)"
 echo "####################################################################"
 
 CSP=${1}
@@ -19,7 +19,7 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
-MCIRID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+MCISID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
@@ -30,6 +30,15 @@ fi
 echo "[Check jq and putty-tools package (if not, install)]"
 if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
 if ! dpkg-query -W -f='${Status}' putty-tools | grep "ok installed"; then sudo apt install -y putty-tools; fi
+
+echo "[Check Ansible (if not, Exit)]"
+
+printf ' [Command to install Ansible]\n 1. apt install python-pip\n 2. pip install ansible\n 3. ansible -h\n 4. ansible localhost -m ping'
+# apt install python-pip
+# pip install ansible
+# ansible -h
+# ansible localhost -m ping
+if ! dpkg-query -W -f='${Status}' ansible | grep "ok installed"; then exit; fi
 
 # curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$MCIRID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCISID.pem
 # chmod 600 ./sshkey-tmp/$MCISID.pem
@@ -77,7 +86,11 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 done
 
 echo ""
-echo "[SSH COMMAND EXAMPLE]"
+echo "[Configure Ansible Host File based on MCIS Info]"
+
+HostFileName="${MCISID}-host"
+echo "[mcis_hosts]" >./ansibleAutoConf/${HostFileName}
+
 for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	_jq() {
 		echo ${row} | base64 --decode | jq -r ${1}
@@ -92,13 +105,22 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	KEYINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/${NSID}/resources/sshKey/${VMKEYID})
 	USERNAME=$(jq -r '.verifiedUsername' <<<"$KEYINFO")
 
-	# KEYFILENAME="MCIS_${MCISID}_VM_${id}"
+
 	KEYFILENAME="${VMKEYID}"
 
 	echo ""
-	# USERNAME="ubuntu"
+
 	printf ' [VMIP]: %s   [MCISID]: %s   [VMID]: %s\n' "$ip" "MCISID" "$id"
 	printf ' ssh -i ./sshkey-tmp/%s.pem %s@%s -o StrictHostKeyChecking=no\n' "$KEYFILENAME" "$USERNAME" "$ip"
+
+	echo "Add ansible hosts to ./ansibleAutoConf/${HostFileName}"
+	echo "- $ip ansible_ssh_port=22 ansible_user=$USERNAME ansible_ssh_private_key_file=./sshkey-tmp/$KEYFILENAME.pem ansible_ssh_common_args=\"-o StrictHostKeyChecking=no\""
+	echo "$ip ansible_ssh_port=22 ansible_user=$USERNAME ansible_ssh_private_key_file=./sshkey-tmp/$KEYFILENAME.pem ansible_ssh_common_args=\"-o StrictHostKeyChecking=no\"" >>./ansibleAutoConf/${HostFileName}
+
+	echo ""
+	echo "[You can use Asible in ./ansibleAutoConf/]"
+	echo " Ex) ansible-playbook ./ansibleAutoConf/helloworld.yml -i ./ansibleAutoConf/${HostFileName}"
+
 done
 
 echo ""

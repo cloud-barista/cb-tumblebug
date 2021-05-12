@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+  tasks:
+    - name: test
+      shell: echo "hello world"
+      register: shell_result
+
+    - debug:
+        var: shell_result.stdout_lines
+
+- hosts: all
+  tasks:
+    - name: test
+      shell: echo "hello world"
+      register: shell_result
+
+    - debug:
+        var: shell_result.stdout_lines
+  
