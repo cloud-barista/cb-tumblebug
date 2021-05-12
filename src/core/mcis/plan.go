@@ -279,8 +279,22 @@ func getDistance(latitude float64, longitude float64, ConnectionName string) (fl
 		return 0, err
 	}
 
-	first := math.Pow(float64(cloudLatitude-latitude), 2)
-	second := math.Pow(float64(cloudLongitude-longitude), 2)
-	return math.Sqrt(first + second), nil
+	// first := math.Pow(float64(cloudLatitude-latitude), 2)
+	// second := math.Pow(float64(cloudLongitude-longitude), 2)
+	// return math.Sqrt(first + second), nil
+	return getHaversineDistance(cloudLatitude, cloudLongitude, latitude, longitude), nil
 
+}
+
+// getHaversineDistance func return HaversineDistance
+func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (distance float64) {
+	deltaA := (a2 - a1) * (math.Pi / 180)
+	deltaB := (b2 - b1) * (math.Pi / 180)
+
+	a := math.Sin(deltaA/2)*math.Sin(deltaA/2) +
+		math.Cos(a1*(math.Pi/180))*math.Cos(a2*(math.Pi/180))*math.Sin(deltaB/2)*math.Sin(deltaB/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	earthRadius := float64(6371)
+	return (earthRadius * c)
 }
