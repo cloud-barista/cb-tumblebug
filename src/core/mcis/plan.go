@@ -15,7 +15,7 @@ import (
 type DeploymentPlan struct {
 	Filter   FilterInfo   `json:"filter"`
 	Priority PriorityInfo `json:"priority"`
-	Limit    string       `json:"limit"`
+	Limit    string       `json:"limit" example:"5" enums:"1,2,...,30,..."`
 }
 
 // FilterInfo is struct for .
