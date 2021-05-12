@@ -33,7 +33,7 @@ if ! dpkg-query -W -f='${Status}' putty-tools | grep "ok installed"; then sudo a
 
 echo "[Check Ansible (if not, Exit)]"
 
-printf ' [Command to install Ansible]\n 1. apt install python-pip\n 2. pip install ansible\n 3. ansible -h\n 4. ansible localhost -m ping'
+printf '[Command to install Ansible]\n 1. apt install python-pip\n 2. pip install ansible\n 3. ansible -h\n 4. ansible localhost -m ping'
 # apt install python-pip
 # pip install ansible
 # ansible -h

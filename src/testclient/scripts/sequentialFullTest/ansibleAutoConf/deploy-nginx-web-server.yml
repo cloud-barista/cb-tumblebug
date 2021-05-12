@@ -1,0 +1,51 @@
+---
+- hosts: all
+  become: yes
+  collections:
+    - nginxinc.nginx_core
+  roles:
+    - role: nginx
+    - role: nginx_config
+      vars:
+        nginx_config_http_template_enable: true
+        nginx_config_http_template:
+          app:
+            template_file: http/default.conf.j2
+            conf_file_name: default.conf
+            conf_file_location: /etc/nginx/conf.d/
+            servers:
+              server1:
+                listen:
+                  listen_localhost:
+                    port: 80
+                server_name: localhost
+                access_log:
+                  - name: main
+                    location: /var/log/nginx/access.log
+                sub_filter:
+                  once: false
+                  sub_filters:
+                    - "'server_hostname' '$hostname'"
+                    - "'server_address' '$server_addr:$server_port'"
+                    - "'server_url' '$request_uri'"
+                    - "'remote_addr' '$remote_addr:$remote_port'"
+                    - "'server_date' '$time_local'"
+                    - "'client_browser' '$http_user_agent'"
+                    - "'request_id' '$request_id'"
+                    - "'nginx_version' '$nginx_version'"
+                    - "'document_root' '$document_root'"
+                    - "'proxied_for_ip' '$http_x_forwarded_for'"
+                web_server:
+                  locations:
+                    main_site:
+                      location: /
+                      html_file_location: /usr/share/nginx/html
+                      html_file_name: index.html
+
+        nginx_config_html_demo_template_enable: true
+        nginx_config_html_demo_template:
+          main:
+            template_file: www/index.html.j2
+            html_file_name: index.html
+            html_file_location: /usr/share/nginx/html
+            web_server_name: Ansible NGINX collection
