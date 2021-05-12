@@ -708,6 +708,11 @@ definitions:
           $ref: '#/definitions/mcis.Operation'
         type: array
       metric:
+        enum:
+        - num_vCPU
+        - mem_GiB
+        - Cost_per_hour
+        example: num_vCPU
         type: string
     type: object
   mcis.FilterInfo:
@@ -836,18 +841,36 @@ definitions:
     properties:
       operand:
         description: 10, 70, 80, 98, ...
+        enum:
+        - "4"
+        - "8"
+        - ..
+        example: "4"
         type: string
       operator:
-        description: <, <=, >, >=, ...
+        description: '>=, <=, =='
+        enum:
+        - '>='
+        - <=
+        - ==
+        example: '>='
         type: string
     type: object
   mcis.ParameterKeyVal:
     properties:
       key:
         description: coordinate
+        enum:
+        - coordinateClose
+        - coordinateWithin
+        - coordinateFair
+        example: coordinateClose
         type: string
       val:
-        description: '[{Latitude,Longitude},{12,543},{66,33},{31,433}]'
+        description: '["Latitude,Longitude","12,543",..,"31,433"]'
+        example:
+        - "46.3772"
+        - "2.3730"
         items:
           type: string
         type: array
@@ -864,7 +887,12 @@ definitions:
   mcis.PriorityCondition:
     properties:
       metric:
-        description: location
+        description: location,latency,cost
+        enum:
+        - location
+        - latency
+        - cost
+        example: location
         type: string
       parameter:
         items:
@@ -872,6 +900,11 @@ definitions:
         type: array
       weight:
         description: "0.3"
+        enum:
+        - "0.1"
+        - "0.2"
+        - '...'
+        example: "0.3"
         type: string
     type: object
   mcis.PriorityInfo:

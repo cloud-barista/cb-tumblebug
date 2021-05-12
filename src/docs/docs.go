@@ -4811,7 +4811,13 @@ var doc = `{
                     }
                 },
                 "metric": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "num_vCPU",
+                        "mem_GiB",
+                        "Cost_per_hour"
+                    ],
+                    "example": "num_vCPU"
                 }
             }
         },
@@ -5002,11 +5008,23 @@ var doc = `{
             "properties": {
                 "operand": {
                     "description": "10, 70, 80, 98, ...",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "4",
+                        "8",
+                        ".."
+                    ],
+                    "example": "4"
                 },
                 "operator": {
-                    "description": "\u003c, \u003c=, \u003e, \u003e=, ...",
-                    "type": "string"
+                    "description": "\u003e=, \u003c=, ==",
+                    "type": "string",
+                    "enum": [
+                        "\u003e=",
+                        "\u003c=",
+                        "=="
+                    ],
+                    "example": "\u003e="
                 }
             }
         },
@@ -5015,14 +5033,24 @@ var doc = `{
             "properties": {
                 "key": {
                     "description": "coordinate",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "coordinateClose",
+                        "coordinateWithin",
+                        "coordinateFair"
+                    ],
+                    "example": "coordinateClose"
                 },
                 "val": {
-                    "description": "[{Latitude,Longitude},{12,543},{66,33},{31,433}]",
+                    "description": "[\"Latitude,Longitude\",\"12,543\",..,\"31,433\"]",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "46.3772",
+                        "2.3730"
+                    ]
                 }
             }
         },
@@ -5044,8 +5072,14 @@ var doc = `{
             "type": "object",
             "properties": {
                 "metric": {
-                    "description": "location",
-                    "type": "string"
+                    "description": "location,latency,cost",
+                    "type": "string",
+                    "enum": [
+                        "location",
+                        "latency",
+                        "cost"
+                    ],
+                    "example": "location"
                 },
                 "parameter": {
                     "type": "array",
@@ -5055,7 +5089,13 @@ var doc = `{
                 },
                 "weight": {
                     "description": "0.3",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "0.1",
+                        "0.2",
+                        "..."
+                    ],
+                    "example": "0.3"
                 }
             }
         },
