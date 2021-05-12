@@ -697,6 +697,13 @@ definitions:
       filter:
         $ref: '#/definitions/mcis.FilterInfo'
       limit:
+        enum:
+        - "1"
+        - "2"
+        - '...'
+        - "30"
+        - '...'
+        example: "5"
         type: string
       priority:
         $ref: '#/definitions/mcis.PriorityInfo'

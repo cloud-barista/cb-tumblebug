@@ -4794,7 +4794,15 @@ var doc = `{
                     "$ref": "#/definitions/mcis.FilterInfo"
                 },
                 "limit": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "1",
+                        "2",
+                        "...",
+                        "30",
+                        "..."
+                    ],
+                    "example": "5"
                 },
                 "priority": {
                     "$ref": "#/definitions/mcis.PriorityInfo"
