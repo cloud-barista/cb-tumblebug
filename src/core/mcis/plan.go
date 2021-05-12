@@ -50,7 +50,7 @@ type PriorityCondition struct {
 // Operation is struct for .
 type ParameterKeyVal struct {
 	Key string   `json:"key" example:"coordinateClose" enums:"coordinateClose,coordinateWithin,coordinateFair"` // coordinate
-	Val []string `json:"val" example:"46.3772,2.3730"`                                                          // ["Latitude,Longitude","12,543",..,"31,433"]
+	Val []string `json:"val" example:"46.3772/2.3730"`                                                          // ["Latitude,Longitude","12,543",..,"31,433"]
 }
 
 ///
@@ -134,6 +134,9 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 		common.CBLog.Error(err)
 		return []mcir.TbSpecInfo{}, err
 	}
+	if len(filteredSpecs) == 0 {
+		return []mcir.TbSpecInfo{}, nil
+	}
 
 	// Prioritizing
 	fmt.Println("[Prioritizing specs]")
@@ -171,7 +174,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			//
 			coordinateStr := v.Val[0]
 
-			slice := strings.Split(coordinateStr, ",")
+			slice := strings.Split(coordinateStr, "/")
 			latitude, err := strconv.ParseFloat(slice[0], 32)
 			if err != nil {
 				common.CBLog.Error(err)
