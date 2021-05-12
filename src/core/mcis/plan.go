@@ -25,14 +25,14 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric"`
+	Metric    string      `json:"metric" example:"num_vCPU" enums:"num_vCPU,mem_GiB,Cost_per_hour"`
 	Condition []Operation `json:"condition"`
 }
 
 // Operation is struct for .
 type Operation struct {
-	Operator string `json:"operator" ` // <, <=, >, >=, ...
-	Operand  string `json:"operand"`   // 10, 70, 80, 98, ...
+	Operator string `json:"operator" example:">=" enums:">=,<=,=="` // >=, <=, ==
+	Operand  string `json:"operand" example:"4" enums:"4,8,.."`     // 10, 70, 80, 98, ...
 }
 
 // PriorityInfo is struct for .
@@ -42,15 +42,15 @@ type PriorityInfo struct {
 
 // FilterCondition is struct for .
 type PriorityCondition struct {
-	Metric    string            `json:"metric"` // location
-	Weight    string            `json:"weight"` // 0.3
+	Metric    string            `json:"metric" example:"location" enums:"location,latency,cost"` // location,latency,cost
+	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`                // 0.3
 	Parameter []ParameterKeyVal `json:"parameter"`
 }
 
 // Operation is struct for .
 type ParameterKeyVal struct {
-	Key string   `json:"key" ` // coordinate
-	Val []string `json:"val"`  // [{Latitude,Longitude},{12,543},{66,33},{31,433}]
+	Key string   `json:"key" example:"coordinateClose" enums:"coordinateClose,coordinateWithin,coordinateFair"` // coordinate
+	Val []string `json:"val" example:"46.3772,2.3730"`                                                          // ["Latitude,Longitude","12,543",..,"31,433"]
 }
 
 ///
