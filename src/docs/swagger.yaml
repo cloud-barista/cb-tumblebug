@@ -876,8 +876,7 @@ definitions:
       val:
         description: '["Latitude,Longitude","12,543",..,"31,433"]'
         example:
-        - "46.3772"
-        - "2.3730"
+        - 46.3772/2.3730
         items:
           type: string
         type: array
