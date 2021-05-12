@@ -87,6 +87,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "MZC-CSC",
+      "name": "MZC-CSC",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78469943?v=4",
+      "profile": "https://github.com/MZC-CSC",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
