@@ -633,7 +633,7 @@ type RestGetAllBenchmarkRequest struct {
 // @Success 200 {object} mcis.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/benchmarkall/mcis/{mcisId} [get]
+// @Router /ns/{nsId}/benchmarkall/mcis/{mcisId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 
@@ -666,18 +666,19 @@ type RestGetBenchmarkRequest struct {
 }
 
 // RestGetBenchmark godoc
-// @Summary Get MCIS
-// @Description Get MCIS
+// @Summary Benchmark Action to MCIS
+// @Description Benchmark Action to MCIS
 // @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
 // @Param hostIP body RestGetBenchmarkRequest true "Host IP address to benchmark"
+// @Param action query string true "Benchmark Action to MCIS" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)
 // @Success 200 {object} mcis.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/benchmark/mcis/{mcisId} [get]
+// @Router /ns/{nsId}/benchmark/mcis/{mcisId} [post]
 func RestGetBenchmark(c echo.Context) error {
 	//id, _ := strconv.Atoi(c.Param("id"))
 

@@ -353,7 +353,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 		for i := 0; i < retrycheck; i++ {
 			conerr := CheckConnectivity(vmIp, sshPort)
 			if conerr == nil {
-				fmt.Println("[ERR: conerr] nil. break")
+				fmt.Println("[ERR: CheckConnectivity] nil. break")
 				break
 			}
 			if i == retrycheck-1 {

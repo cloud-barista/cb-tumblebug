@@ -158,7 +158,20 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
 	}
 
-	return prioritySpecs, nil
+	// limit the number of items in result list
+	result := []mcir.TbSpecInfo{}
+	limitNum, err := strconv.Atoi(plan.Limit)
+	if err != nil {
+		limitNum = 65535
+	}
+	for i, v := range prioritySpecs {
+		result = append(result, v)
+		if i == (limitNum - 1) {
+			break
+		}
+	}
+
+	return result, nil
 
 }
 

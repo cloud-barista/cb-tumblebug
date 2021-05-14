@@ -1808,10 +1808,10 @@ paths:
       tags:
       - '[Namespace] Namespace management'
   /ns/{nsId}/benchmark/mcis/{mcisId}:
-    get:
+    post:
       consumes:
       - application/json
-      description: Get MCIS
+      description: Benchmark Action to MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -1829,6 +1829,25 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcis.RestGetBenchmarkRequest'
+      - description: Benchmark Action to MCIS
+        enum:
+        - install
+        - init
+        - cpus
+        - cpum
+        - memR
+        - memW
+        - fioR
+        - fioW
+        - dbR
+        - dbW
+        - rtt
+        - mrtt
+        - clean
+        in: query
+        name: action
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1844,11 +1863,11 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS
+      summary: Benchmark Action to MCIS
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkall/mcis/{mcisId}:
-    get:
+    post:
       consumes:
       - application/json
       description: List all MCISs

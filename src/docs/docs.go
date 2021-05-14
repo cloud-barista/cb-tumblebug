@@ -714,8 +714,8 @@ var doc = `{
             }
         },
         "/ns/{nsId}/benchmark/mcis/{mcisId}": {
-            "get": {
-                "description": "Get MCIS",
+            "post": {
+                "description": "Benchmark Action to MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -725,7 +725,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Performance benchmarking (WIP)"
                 ],
-                "summary": "Get MCIS",
+                "summary": "Benchmark Action to MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -749,6 +749,28 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/mcis.RestGetBenchmarkRequest"
                         }
+                    },
+                    {
+                        "enum": [
+                            "install",
+                            "init",
+                            "cpus",
+                            "cpum",
+                            "memR",
+                            "memW",
+                            "fioR",
+                            "fioW",
+                            "dbR",
+                            "dbW",
+                            "rtt",
+                            "mrtt",
+                            "clean"
+                        ],
+                        "type": "string",
+                        "description": "Benchmark Action to MCIS",
+                        "name": "action",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -774,7 +796,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/benchmarkall/mcis/{mcisId}": {
-            "get": {
+            "post": {
                 "description": "List all MCISs",
                 "consumes": [
                     "application/json"
