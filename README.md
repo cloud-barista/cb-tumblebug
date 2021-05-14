@@ -57,7 +57,7 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 
 ## [실행 및 개발 환경]
 - Linux (추천: Ubuntu v18.04)
-- Go (추천: v1.14)
+- Go (추천: v1.16)
 
 ## [실행 방법]
 
@@ -104,10 +104,10 @@ cb-operator/src$ ./operator
   - `# apt install git`
 
 - Go 설치
-  - https://golang.org/dl/ 를 참고하여 Go v1.14 (Tumblebug 추천 개발 환경) 이상 설치 
+  - https://golang.org/dl/ 를 참고하여 Go v1.16 (Tumblebug 추천 개발 환경) 이상 설치 
   - 설치 예시
-    - `wget https://golang.org/dl/go1.14.15.linux-amd64.tar.gz`
-    - `tar -C /usr/local -xzf go1.14.15.linux-amd64.tar.gz`
+    - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
+    - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
     - `.bashrc` 파일 하단에 다음을 추가 
     ```
     export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
