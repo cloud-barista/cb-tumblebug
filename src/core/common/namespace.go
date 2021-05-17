@@ -34,7 +34,12 @@ func NsValidation() echo.MiddlewareFunc {
 			if nsId == "" {
 				return next(c)
 			}
-			nsId = ToLower(nsId)
+			nsId = strings.ToLower(nsId)
+			err := CheckString(nsId)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusNotFound, "The first character of name must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.")
+			}
+
 			check, err := CheckNs(nsId)
 
 			if !check || err != nil {
@@ -46,12 +51,19 @@ func NsValidation() echo.MiddlewareFunc {
 }
 
 func CreateNs(u *NsReq) (NsInfo, error) {
-	lowerizedName := ToLower(u.Name)
-	check, err := CheckNs(lowerizedName)
+	u.Name = strings.ToLower(u.Name)
+	err := CheckString(u.Name)
+	if err != nil {
+		temp := NsInfo{}
+		CBLog.Error(err)
+		return temp, err
+	}
+
+	check, err := CheckNs(u.Name)
 
 	if check {
 		temp := NsInfo{}
-		err := fmt.Errorf("CreateNs(); The namespace " + lowerizedName + " already exists.")
+		err := fmt.Errorf("CreateNs(); The namespace " + u.Name + " already exists.")
 		return temp, err
 	}
 
@@ -63,8 +75,8 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 
 	content := NsInfo{}
 	//content.Id = GenUuid()
-	content.Id = lowerizedName
-	content.Name = lowerizedName
+	content.Id = u.Name
+	content.Name = u.Name
 	content.Description = u.Description
 
 	// TODO here: implement the logic
@@ -89,11 +101,17 @@ func GetNs(id string) (NsInfo, error) {
 
 	res := NsInfo{}
 
-	lowerizedId := ToLower(id)
-	check, err := CheckNs(lowerizedId)
+	id = strings.ToLower(id)
+	err := CheckString(id)
+	if err != nil {
+		temp := NsInfo{}
+		CBLog.Error(err)
+		return temp, err
+	}
+	check, err := CheckNs(id)
 
 	if !check {
-		errString := "The namespace " + lowerizedId + " does not exist."
+		errString := "The namespace " + id + " does not exist."
 		//mapA := map[string]string{"message": errString}
 		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
@@ -106,8 +124,8 @@ func GetNs(id string) (NsInfo, error) {
 		return temp, err
 	}
 
-	fmt.Println("[Get namespace] " + lowerizedId)
-	key := "/ns/" + lowerizedId
+	fmt.Println("[Get namespace] " + id)
+	key := "/ns/" + id
 	fmt.Println(key)
 
 	keyValue, err := CBStore.Get(key)
@@ -182,13 +200,19 @@ func ListNsId() []string {
 
 }
 
-func DelNs(Id string) error {
+func DelNs(id string) error {
 
-	lowerizedId := ToLower(Id)
-	check, err := CheckNs(lowerizedId)
+	id = strings.ToLower(id)
+	err := CheckString(id)
+	if err != nil {
+		CBLog.Error(err)
+		return err
+	}
+
+	check, err := CheckNs(id)
 
 	if !check {
-		errString := "The namespace " + lowerizedId + " does not exist."
+		errString := "The namespace " + id + " does not exist."
 		err := fmt.Errorf(errString)
 		return err
 	}
@@ -198,8 +222,8 @@ func DelNs(Id string) error {
 		return err
 	}
 
-	fmt.Println("[Delete ns] " + lowerizedId)
-	key := "/ns/" + lowerizedId
+	fmt.Println("[Delete ns] " + id)
+	key := "/ns/" + id
 	fmt.Println(key)
 
 	mcisList := GetChildIdList(key + "/mcis")
@@ -219,7 +243,7 @@ func DelNs(Id string) error {
 		len(securityGroupList)+
 		len(specList)+
 		len(sshKeyList) > 0 {
-		errString := "Cannot delete NS " + lowerizedId + ", which is not empty. There exists at least one MCIS or one of resources."
+		errString := "Cannot delete NS " + id + ", which is not empty. There exists at least one MCIS or one of resources."
 		errString += " \n len(mcisList): " + strconv.Itoa(len(mcisList))
 		errString += " \n len(imageList): " + strconv.Itoa(len(imageList))
 		errString += " \n len(vNetList): " + strconv.Itoa(len(vNetList))
@@ -263,18 +287,23 @@ func DelAllNs() error {
 	return nil
 }
 
-func CheckNs(Id string) (bool, error) {
+func CheckNs(id string) (bool, error) {
 
-	if Id == "" {
+	if id == "" {
 		err := fmt.Errorf("CheckNs failed; nsId given is null.")
 		return false, err
 	}
 
-	lowerizedId := ToLower(Id)
+	id = strings.ToLower(id)
+	err := CheckString(id)
+	if err != nil {
+		CBLog.Error(err)
+		return false, err
+	}
 
 	//fmt.Println("[Check ns] " + lowerizedId)
 
-	key := "/ns/" + lowerizedId
+	key := "/ns/" + id
 	//fmt.Println(key)
 
 	keyValue, _ := CBStore.Get(key)

@@ -3,6 +3,7 @@ package mcis
 import (
 
 	//"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -174,7 +175,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		common.CBLog.Error(err)
 		errStr = err.Error()
 	} else {
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err1 := fmt.Errorf("HTTP Status: not in 200-399")
@@ -220,10 +221,20 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := AgentInstallContentWrapper{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := AgentInstallContentWrapper{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -292,10 +303,20 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 // GetMonitoringData func retrieves monitoring data from cb-dragonfly
 func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimpleResponse, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := MonResultSimpleResponse{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := MonResultSimpleResponse{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -387,7 +408,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		common.CBLog.Error(err)
 		errStr = err.Error()
 	} else {
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err1 := fmt.Errorf("HTTP Status: not in 200-399")

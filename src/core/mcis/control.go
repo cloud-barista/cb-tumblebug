@@ -438,10 +438,20 @@ type AgentInstallContent struct {
 
 func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := AgentInstallContentWrapper{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := AgentInstallContentWrapper{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -614,7 +624,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	}
 	fmt.Println(string(body))
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
@@ -638,10 +648,22 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 
 func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	var err error
+
+	nsId = strings.ToLower(nsId)
+	err = common.CheckString(nsId)
+	if err != nil {
+		temp := BenchmarkInfoArray{}
+		common.CBLog.Error(err)
+		return &temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := BenchmarkInfoArray{}
+		common.CBLog.Error(err)
+		return &temp, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -657,8 +679,6 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 
 	option := "localhost"
 	option = target
-
-	var err error
 
 	content := BenchmarkInfoArray{}
 
@@ -787,10 +807,22 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 
 func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*BenchmarkInfoArray, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	var err error
+
+	nsId = strings.ToLower(nsId)
+	err = common.CheckString(nsId)
+	if err != nil {
+		temp := BenchmarkInfoArray{}
+		common.CBLog.Error(err)
+		return &temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := BenchmarkInfoArray{}
+		common.CBLog.Error(err)
+		return &temp, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -806,7 +838,6 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 	option := "localhost"
 	option = target
 
-	var err error
 	content := BenchmarkInfoArray{}
 
 	vaildActions := "install init cpus cpum memR memW fioR fioW dbR dbW rtt mrtt clean"
@@ -927,7 +958,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		}
 		fmt.Println(string(body))
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err := fmt.Errorf(string(body))
@@ -1012,7 +1043,12 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 func ListMcisId(nsId string) []string {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil
+	}
 
 	fmt.Println("[Get MCIS ID list]")
 	key := "/ns/" + nsId + "/mcis"
@@ -1039,8 +1075,18 @@ func ListMcisId(nsId string) []string {
 
 func ListVmId(nsId string, mcisId string) ([]string, error) {
 
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	fmt.Println("[ListVmId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -1071,8 +1117,18 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 // func ListVmGroupId returns list of VmGroups in a given MCIS.
 func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	fmt.Println("[ListVmGroupId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -1092,10 +1148,18 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 
 func DelMcis(nsId string, mcisId string) error {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -1106,7 +1170,7 @@ func DelMcis(nsId string, mcisId string) error {
 	fmt.Println("[Delete MCIS] " + mcisId)
 
 	// ControlMcis first
-	err := ControlMcisAsync(nsId, mcisId, ActionTerminate)
+	err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -1177,11 +1241,24 @@ func DelMcis(nsId string, mcisId string) error {
 
 func DelMcisVm(nsId string, mcisId string, vmId string) error {
 
-	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	//vmId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
-	vmId = common.ToLower(vmId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	vmId = strings.ToLower(vmId)
+	err = common.CheckString(vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if !check {
@@ -1192,7 +1269,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 	fmt.Println("[Delete VM] " + vmId)
 
 	// ControlVm first
-	err := ControlVm(nsId, mcisId, vmId, ActionTerminate)
+	err = ControlVm(nsId, mcisId, vmId, ActionTerminate)
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1284,10 +1361,18 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -1376,10 +1461,20 @@ func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error
 
 func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &McisStatusInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := &McisStatusInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -1413,10 +1508,20 @@ func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 // GetMcisInfo func returns MCIS information with the current status update
 func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -1462,7 +1567,12 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
 func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	/*
 		var content struct {
@@ -1550,7 +1660,12 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 func CoreDelAllMcis(nsId string) (string, error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
 
 	mcisList := ListMcisId(nsId)
 
@@ -1575,7 +1690,12 @@ func CoreDelAllMcis(nsId string) (string, error) {
 
 func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	/*
 		var content struct {
@@ -1619,11 +1739,24 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	//vmId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
-	vmId = common.ToLower(vmId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+	vmId = strings.ToLower(vmId)
+	err = common.CheckString(vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if !check {
@@ -1667,10 +1800,18 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 
 func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -1745,11 +1886,27 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmInfoData.Name)
-	//vmInfoData.Name = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
-	vmInfoData.Name = common.ToLower(vmInfoData.Name)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &TbVmInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := &TbVmInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	vmInfoData.Name = strings.ToLower(vmInfoData.Name)
+	err = common.CheckString(vmInfoData.Name)
+	if err != nil {
+		temp := &TbVmInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckVm(nsId, mcisId, vmInfoData.Name)
 
 	if check {
@@ -1761,7 +1918,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
 
-	vmInfoData.Id = common.ToLower(vmInfoData.Name)
+	vmInfoData.Id = vmInfoData.Name
 	vmInfoData.PublicIP = "Not assigned yet"
 	vmInfoData.PublicDNS = "Not assigned yet"
 	vmInfoData.TargetAction = targetAction
@@ -1831,11 +1988,29 @@ func CorePostMcisGroupVm(nsId string, mcisId string, vmReq *TbVmReq) (*TbMcisInf
 	return content, nil
 }
 
-func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, error) {
+func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisInfo, error) {
 
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
-	req.Name = common.ToLower(req.Name)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	vmRequest.Name = strings.ToLower(vmRequest.Name)
+	err = common.CheckString(vmRequest.Name)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 
 	mcisTmp, err := GetMcisObject(nsId, mcisId)
 
@@ -1844,7 +2019,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 		return temp, err
 	}
 
-	vmRequest := req
+	//vmRequest := req
 
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
@@ -1863,8 +2038,8 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 
 		// TODO: Enhancement Required. Need to check existing VM Group. Need to update it if exist.
 		vmGroupInfoData := TbVmGroupInfo{}
-		vmGroupInfoData.Id = common.ToLower(vmRequest.Name)
-		vmGroupInfoData.Name = common.ToLower(vmRequest.Name)
+		vmGroupInfoData.Id = vmRequest.Name
+		vmGroupInfoData.Name = vmRequest.Name
 		vmGroupInfoData.VmGroupSize = vmRequest.VmGroupSize
 
 		for i := 0; i < vmGroupSize; i++ {
@@ -1886,14 +2061,14 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 		vmInfoData := TbVmInfo{}
 
 		if vmGroupSize == 0 { // for VM (not in a group)
-			vmInfoData.Name = common.ToLower(vmRequest.Name)
+			vmInfoData.Name = vmRequest.Name
 		} else { // for VM (in a group)
 			if i == vmGroupSize {
 				break // if vmGroupSize != 0 && vmGroupSize == i, skip the final loop
 			}
-			vmInfoData.VmGroupId = common.ToLower(vmRequest.Name)
+			vmInfoData.VmGroupId = vmRequest.Name
 			// TODO: Enhancement Required. Need to check existing VM Group. Need to update it if exist.
-			vmInfoData.Name = common.ToLower(vmRequest.Name) + "-" + strconv.Itoa(i)
+			vmInfoData.Name = vmRequest.Name + "-" + strconv.Itoa(i)
 			fmt.Println("===========================")
 			fmt.Println("vmInfoData.Name: " + vmInfoData.Name)
 			fmt.Println("===========================")
@@ -1980,11 +2155,24 @@ func CreateMcisGroupVm(nsId string, mcisId string, req *TbVmReq) (*TbMcisInfo, e
 
 func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string) (string, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	//vmId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
-	vmId = common.ToLower(vmId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+	vmId = strings.ToLower(vmId)
+	err = common.CheckString(vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if !check {
@@ -2032,11 +2220,29 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 
 func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	//vmId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
-	vmId = common.ToLower(vmId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &TbVmStatusInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := &TbVmStatusInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
+	vmId = strings.ToLower(vmId)
+	err = common.CheckString(vmId)
+	if err != nil {
+		temp := &TbVmStatusInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if !check {
@@ -2068,11 +2274,27 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 
 func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 
-	//check, lowerizedName, _ := LowerizeAndCheckVm(nsId, mcisId, vmId)
-	//vmId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
-	vmId = common.ToLower(vmId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &TbVmInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := &TbVmInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	vmId = strings.ToLower(vmId)
+	err = common.CheckString(vmId)
+	if err != nil {
+		temp := &TbVmInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if !check {
@@ -2115,8 +2337,20 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 // CreateMcis function create MCIS obeject and deploy requested VMs.
 func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
-	nsId = common.ToLower(nsId)
-	req.Name = common.ToLower(req.Name)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	req.Name = strings.ToLower(req.Name)
+	err = common.CheckString(req.Name)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	check, _ := CheckMcis(nsId, req.Name)
 	if check {
 		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
@@ -2126,7 +2360,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 	targetAction := ActionCreate
 	targetStatus := StatusRunning
 
-	mcisId := common.ToLower(req.Name)
+	mcisId := req.Name
 	vmRequest := req.Vm
 
 	fmt.Println("=========================== Create MCIS object")
@@ -2157,6 +2391,16 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 	keyValue, _ := common.CBStore.Get(string(key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
+
+	// Check whether VM names meet requirement.
+	for _, k := range vmRequest {
+		err = common.CheckString(k.Name)
+		if err != nil {
+			temp := &TbMcisInfo{}
+			common.CBLog.Error(err)
+			return temp, err
+		}
+	}
 
 	//goroutin
 	var wg sync.WaitGroup
@@ -2549,7 +2793,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		common.PrintJsonPretty(tempSpiderVMInfo)
 		fmt.Println("[Calling SPIDER]END\n")
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err := fmt.Errorf(string(body))
@@ -2941,7 +3185,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			temp.TargetStatus = StatusTerminated
 			temp.Status = StatusTerminating
 
-			//url = common.SPIDER_REST_URL + "/vm/" + cspVmId + "?connection_name=" + temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/vm/" + cspVmId
 			method = "DELETE"
 		case ActionReboot:
@@ -2950,7 +3193,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			temp.TargetStatus = StatusRunning
 			temp.Status = StatusRebooting
 
-			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=reboot"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=reboot"
 			method = "GET"
 		case ActionSuspend:
@@ -2959,7 +3201,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			temp.TargetStatus = StatusSuspended
 			temp.Status = StatusSuspending
 
-			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=suspend"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=suspend"
 			method = "GET"
 		case ActionResume:
@@ -2968,7 +3209,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			temp.TargetStatus = StatusRunning
 			temp.Status = StatusResuming
 
-			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=resume"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=resume"
 			method = "GET"
 		default:
@@ -3011,7 +3251,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		//}
 
 		var errTmp error
-		fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err := fmt.Errorf(string(body))
@@ -3198,7 +3438,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusTerminated
 			temp.Status = StatusTerminating
 
-			//url = common.SPIDER_REST_URL + "/vm/" + cspVmId + "?connection_name=" + temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/vm/" + cspVmId
 			method = "DELETE"
 		case ActionReboot:
@@ -3207,7 +3446,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusRunning
 			temp.Status = StatusRebooting
 
-			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=reboot"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=reboot"
 			method = "GET"
 		case ActionSuspend:
@@ -3216,7 +3454,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusSuspended
 			temp.Status = StatusSuspending
 
-			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=suspend"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=suspend"
 			method = "GET"
 		case ActionResume:
@@ -3225,7 +3462,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusRunning
 			temp.Status = StatusResuming
 
-			//url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?connection_name=" + temp.ConnectionName + "&action=resume"
 			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=resume"
 			method = "GET"
 		default:
@@ -3375,10 +3611,20 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 
 func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
-	//_, lowerizedName, _ := LowerizeAndCheckMcis(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := McisStatusInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := McisStatusInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 
 	fmt.Println("[GetMcisStatus]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -3622,7 +3868,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vmstatus/" + cspVmId // + "?connection_name=" + temp.ConnectionName
+		url := common.SPIDER_REST_URL + "/vmstatus/" + cspVmId
 		method := "GET"
 
 		//fmt.Println("url: " + url)
@@ -3843,7 +4089,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vm/" + cspVmId // + "?connection_name=" + temp.ConnectionName
+		url := common.SPIDER_REST_URL + "/vm/" + cspVmId
 		method := "GET"
 
 		type VMStatusReqInfo struct {
