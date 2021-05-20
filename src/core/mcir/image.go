@@ -72,9 +72,9 @@ func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInf
 	}
 
 	tumblebugImage := TbImageInfo{}
-	tumblebugImage.Id = spiderImage.IId.SystemId
+	tumblebugImage.Id = spiderImage.IId.NameId
 	tumblebugImage.Name = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
-	tumblebugImage.CspImageId = spiderImage.IId.SystemId
+	tumblebugImage.CspImageId = spiderImage.IId.NameId
 	tumblebugImage.CspImageName = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
 	tumblebugImage.CreationDate = common.LookupKeyValueList(spiderImage.KeyValueList, "CreationDate")
