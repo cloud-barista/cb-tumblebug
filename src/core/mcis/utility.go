@@ -71,12 +71,18 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 		return false, err
 	}
 
-	lowerizedNsId := common.ToLower(nsId)
-	nsId = lowerizedNsId
-
-	lowerizedMcisId := common.ToLower(mcisId)
-	mcisId = lowerizedMcisId
-
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
 	fmt.Println("[Check mcis] " + mcisId)
 
 	//key := "/ns/" + nsId + "/mcis/" + mcisId
@@ -105,15 +111,24 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 		return false, err
 	}
 
-	lowerizedNsId := common.ToLower(nsId)
-	nsId = lowerizedNsId
-
-	lowerizedMcisId := common.ToLower(mcisId)
-	mcisId = lowerizedMcisId
-
-	lowerizedVmId := common.ToLower(vmId)
-	vmId = lowerizedVmId
-
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	vmId = strings.ToLower(vmId)
+	err = common.CheckString(vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
 	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
@@ -138,12 +153,18 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 		return false, err
 	}
 
-	lowerizedNsId := common.ToLower(nsId)
-	nsId = lowerizedNsId
-
-	lowerizedMcisId := common.ToLower(mcisId)
-	mcisId = lowerizedMcisId
-
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
 	fmt.Println("[Check McisPolicy] " + mcisId)
 
 	//key := "/ns/" + nsId + "/mcis/" + mcisId
@@ -343,12 +364,11 @@ func InspectVMs(connConfig string) (interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
 		common.CBLog.Error(err)
-		//return res.StatusCode, body, err
 		return nil, err
 	default:
 	}

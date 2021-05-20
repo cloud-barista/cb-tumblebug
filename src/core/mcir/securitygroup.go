@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -79,10 +80,21 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	resourceType := common.StrSecurityGroup
 
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(u.Name)
-	u.Name = lowerizedName
-	check, err := CheckResource(nsId, resourceType, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbSecurityGroupInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	u.Name = strings.ToLower(u.Name)
+	err = common.CheckString(u.Name)
+	if err != nil {
+		temp := TbSecurityGroupInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
 		temp := TbSecurityGroupInfo{}
@@ -107,7 +119,6 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		//url := common.SPIDER_REST_URL + "/securitygroup?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/securitygroup"
 
 		client := resty.New()
@@ -126,13 +137,12 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			content := TbSecurityGroupInfo{}
-			//return content, res.StatusCode, body, err
 			return content, err
 		}
 
@@ -172,8 +182,8 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	content := TbSecurityGroupInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = common.ToLower(u.Name)
-	content.Name = common.ToLower(u.Name)
+	content.Id = u.Name
+	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
 	content.VNetId = tempSpiderSecurityInfo.VpcIID.NameId
 	content.CspSecurityGroupId = tempSpiderSecurityInfo.IId.SystemId
@@ -190,12 +200,10 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
-		//return content, res.StatusCode, body, err
 		return content, err
 	}
 	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	//return content, res.StatusCode, body, nil
 	return content, nil
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 
 	//"strings"
 
@@ -150,7 +151,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 
 		fmt.Println(string(resp.Body()))
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -237,7 +238,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
 		fmt.Println(string(resp.Body()))
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -284,7 +285,12 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 // FetchSpecs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
 func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err = common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return 0, 0, err
+	}
 
 	connConfigs, err := common.GetConnConfigList()
 	if err != nil {
@@ -341,10 +347,21 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	resourceType := common.StrSpec
 
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(u.Name)
-	u.Name = lowerizedName
-	check, _ := CheckResource(nsId, resourceType, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	u.Name = strings.ToLower(u.Name)
+	err = common.CheckString(u.Name)
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, _ := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
 		temp := TbSpecInfo{}
@@ -362,8 +379,8 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	content := TbSpecInfo{}
 	//content.Id = common.GenUuid()
-	content.Id = common.ToLower(u.Name)
-	content.Name = common.ToLower(u.Name)
+	content.Id = u.Name
+	content.Name = u.Name
 	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
 	content.AssociatedObjectList = []string{}
@@ -494,10 +511,22 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	resourceType := common.StrSpec
 
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(content.Name)
-	content.Name = lowerizedName
-	check, _ := CheckResource(nsId, resourceType, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	content.Name = strings.ToLower(content.Name)
+	err = common.CheckString(content.Name)
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	content.Name = content.Name
+	check, _ := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
 		temp := TbSpecInfo{}
@@ -580,7 +609,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	fmt.Println("sql: " + sql)
 	// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-	_, err := sqlparser.Parse(sql)
+	_, err = sqlparser.Parse(sql)
 	if err != nil {
 		return *content, err
 	}
@@ -622,7 +651,12 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 // RegisterRecommendList creates the spec recommendation info
 func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize uint16, diskSize uint32, specId string, price float32) error {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 
 	//fmt.Println("[Get MCISs")
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + strconv.Itoa(int(cpuSize)) + "/memSize/" + strconv.Itoa(int(memSize)) + "/diskSize/" + strconv.Itoa(int(diskSize)) + "/specId/" + specId
@@ -631,7 +665,7 @@ func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, m
 	mapA := map[string]string{"id": specId, "price": fmt.Sprintf("%.6f", price), "connectionName": connectionName}
 	Val, _ := json.Marshal(mapA)
 
-	err := common.CBStore.Put(string(key), string(Val))
+	err = common.CBStore.Put(string(key), string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -645,13 +679,18 @@ func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, m
 // DelRecommendSpec deletes the spec recommendation info
 func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16, diskSize uint32) error {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 
 	fmt.Println("DelRecommendSpec()")
 
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + strconv.Itoa(int(cpuSize)) + "/memSize/" + strconv.Itoa(int(memSize)) + "/diskSize/" + strconv.Itoa(int(diskSize)) + "/specId/" + specId
 
-	err := common.CBStore.Delete(key)
+	err = common.CBStore.Delete(key)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -664,7 +703,12 @@ func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16
 // FilterSpecs accepts criteria for filtering, and returns the list of filtered TB spec objects
 func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	tempList := []TbSpecInfo{}
 
@@ -765,7 +809,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery += " AND `evaluationScore_10`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_10)
 	}
 	sqlQuery += ";"
-	_, err := sqlparser.Parse(sqlQuery)
+	_, err = sqlparser.Parse(sqlQuery)
 	if err != nil {
 		return tempList, err
 	}
@@ -859,7 +903,12 @@ type FilterSpecsByRangeRequest struct {
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
 func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpecInfo, error) {
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	tempList := []TbSpecInfo{}
 
@@ -1020,7 +1069,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	}
 
 	sqlQuery += ";"
-	_, err := sqlparser.Parse(sqlQuery)
+	_, err = sqlparser.Parse(sqlQuery)
 	if err != nil {
 		return tempList, err
 	}
@@ -1205,10 +1254,21 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 	resourceType := common.StrSpec
 
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(newSpec.Id)
-	newSpec.Id = lowerizedName
-	check, _ := CheckResource(nsId, resourceType, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	newSpec.Id = strings.ToLower(newSpec.Id)
+	err = common.CheckString(newSpec.Id)
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, _ := CheckResource(nsId, resourceType, newSpec.Id)
 
 	if !check {
 		temp := TbSpecInfo{}
@@ -1219,14 +1279,14 @@ func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 	tempInterface, err := GetResource(nsId, resourceType, newSpec.Id)
 	if err != nil {
 		temp := TbSpecInfo{}
-		err := fmt.Errorf("Failed to get the spec " + lowerizedName + ".")
+		err := fmt.Errorf("Failed to get the spec " + newSpec.Id + ".")
 		return temp, err
 	}
 	tempSpec := TbSpecInfo{}
 	err = common.CopySrcToDest(&tempInterface, &tempSpec)
 	if err != nil {
 		temp := TbSpecInfo{}
-		err := fmt.Errorf("Failed to CopySrcToDest() " + lowerizedName + ".")
+		err := fmt.Errorf("Failed to CopySrcToDest() " + newSpec.Id + ".")
 		return temp, err
 	}
 

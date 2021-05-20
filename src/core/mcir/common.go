@@ -34,7 +34,12 @@ func init() {
 // DelAllResources deletes all TB MCIR object of given resourceType
 func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 
 	resourceIdList := ListResourceId(nsId, resourceType)
 
@@ -54,13 +59,20 @@ func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 // DelResource deletes the TB MCIR object
 func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) error {
 
-	//fmt.Println("[Delete " + resourceType + "] " + resourceId)
 	fmt.Printf("DelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
-	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
-	//resourceId = lowerizedResourceId
-	nsId = common.ToLower(nsId)
-	resourceId = common.ToLower(resourceId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	resourceId = strings.ToLower(resourceId)
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
@@ -188,7 +200,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/keypair/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+			url = common.SPIDER_REST_URL + "/keypair/" + temp.Name
 		case common.StrVNet:
 			temp := TbVNetInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -197,7 +209,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/vpc/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+			url = common.SPIDER_REST_URL + "/vpc/" + temp.Name
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -206,7 +218,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/securitygroup/" + temp.Name //+ "?connection_name=" + temp.ConnectionName
+			url = common.SPIDER_REST_URL + "/securitygroup/" + temp.Name
 		/*
 			case "subnet":
 				temp := subnetInfo{}
@@ -216,12 +228,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				temp := publicIpInfo{}
 				json.Unmarshal([]byte(keyValue.Value), &temp)
 				tempReq.ConnectionName = temp.ConnectionName
-				url = common.SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpName //+ "?connection_name=" + temp.ConnectionName
+				url = common.SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpName
 			case "vNic":
 				temp := vNicInfo{}
 				json.Unmarshal([]byte(keyValue.Value), &temp)
 				tempReq.ConnectionName = temp.ConnectionName
-				url = common.SPIDER_REST_URL + "/vnic/" + temp.CspVNicName //+ "?connection_name=" + temp.ConnectionName
+				url = common.SPIDER_REST_URL + "/vnic/" + temp.CspVNicName
 		*/
 		default:
 			err := fmt.Errorf("invalid resourceType")
@@ -246,25 +258,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 
-		/*
-			if res.StatusCode == 400 || res.StatusCode == 401 {
-				fmt.Println("HTTP Status code 400 Bad Request or 401 Unauthorized.")
-				err := fmt.Errorf("HTTP Status code 400 Bad Request or 401 Unauthorized")
-				common.CBLog.Error(err)
-				return res, err
-			}
-
-			// delete vNet info
-			err := common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return res, err
-			}
-
-			return res, nil
-		*/
-
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case forceFlag == "true":
 			url += "?force=true"
@@ -286,24 +280,19 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			err = common.CBStore.Delete(key)
 			if err != nil {
 				common.CBLog.Error(err)
-				//return res.StatusCode, body, err
 				return err
 			}
-			//return res.StatusCode, body, nil
 			return nil
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
-			//return res.StatusCode, body, err
 			return err
 		default:
 			err := common.CBStore.Delete(key)
 			if err != nil {
 				common.CBLog.Error(err)
-				//return res.StatusCode, body, err
 				return err
 			}
-			//return res.StatusCode, body, nil
 			return nil
 		}
 
@@ -601,12 +590,11 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 		return nil, err
 	}
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
 		common.CBLog.Error(err)
-		//return res.StatusCode, body, err
 		return nil, err
 	default:
 	}
@@ -663,7 +651,12 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 // ListResourceId returns the list of TB MCIR object IDs of given resourceType
 func ListResourceId(nsId string, resourceType string) []string {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil
+	}
 
 	if resourceType == common.StrImage ||
 		resourceType == common.StrSSHKey ||
@@ -701,7 +694,12 @@ func ListResourceId(nsId string, resourceType string) []string {
 // ListResource returns the list of TB MCIR objects of given resourceType
 func ListResource(nsId string, resourceType string) (interface{}, error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	if resourceType == common.StrImage ||
 		resourceType == common.StrSSHKey ||
@@ -812,8 +810,18 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 
 // GetAssociatedObjectCount returns the number of MCIR's associated Tumblebug objects
 func GetAssociatedObjectCount(nsId string, resourceType string, resourceId string) (int, error) {
-	nsId = common.ToLower(nsId)
-	resourceId = common.ToLower(resourceId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return -1, err
+	}
+	resourceId = strings.ToLower(resourceId)
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return -1, err
+	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
@@ -852,10 +860,18 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	var result []string
 
-	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
-	//resourceId = lowerizedResourceId
-	nsId = common.ToLower(nsId)
-	resourceId = common.ToLower(resourceId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	resourceId = strings.ToLower(resourceId)
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
@@ -935,8 +951,18 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 // UpdateAssociatedObjectList adds or deletes the objectKey (currently, vmKey) to/from TB object's associatedObjectList
 func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId string, cmd string, objectKey string) ([]string, error) {
 
-	nsId = common.ToLower(nsId)
-	resourceId = common.ToLower(resourceId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	resourceId = strings.ToLower(resourceId)
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 	/*
 		check, err := CheckResource(nsId, resourceType, resourceId)
 
@@ -1024,13 +1050,11 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 
 		if err != nil {
 			common.CBLog.Error(err)
-			//return content, res.StatusCode, body, err
 			return nil, err
 		}
 		err = common.CBStore.Put(key, keyValue.Value)
 		if err != nil {
 			common.CBLog.Error(err)
-			//return content, res.StatusCode, body, err
 			return nil, err
 		}
 		/*
@@ -1052,10 +1076,18 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 // GetResource returns the requested TB MCIR object
 func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
 
-	//check, lowerizedResourceId, err := LowerizeAndCheckResource(nsId, resourceType, resourceId)
-	//resourceId = lowerizedResourceId
-	nsId = common.ToLower(nsId)
-	resourceId = common.ToLower(resourceId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	resourceId = strings.ToLower(resourceId)
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
 	if !check {
@@ -1161,12 +1193,22 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		return false, err
 	}
 
-	lowerizedNsId := common.ToLower(nsId)
-	lowerizedResourceId := common.ToLower(resourceId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	resourceId = strings.ToLower(resourceId)
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
 
-	fmt.Println("[Check resource] " + resourceType + ", " + lowerizedResourceId)
+	fmt.Println("[Check resource] " + resourceType + ", " + resourceId)
 
-	key := common.GenResourceKey(lowerizedNsId, resourceType, lowerizedResourceId)
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	//fmt.Println(key)
 
 	keyValue, _ := common.CBStore.Get(key)

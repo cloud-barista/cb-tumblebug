@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"strings"
 
 	gc "github.com/cloud-barista/cb-tumblebug/src/api/grpc/common"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/logger"
@@ -125,8 +126,14 @@ func (s *NSService) CheckNS(ctx context.Context, req *pb.NSQryRequest) (*pb.Exis
 
 	logger.Debug("calling NSService.CheckNS()")
 
-	lowerizedNsId := common.ToLower(req.NsId)
-	exists, err := common.CheckNs(lowerizedNsId)
+	req.NsId = strings.ToLower(req.NsId)
+	err := common.CheckString(req.NsId)
+	if err != nil {
+		resp := &pb.ExistsResponse{Exists: false}
+		common.CBLog.Error(err)
+		return resp, err
+	}
+	exists, err := common.CheckNs(req.NsId)
 	if err != nil {
 		logger.Debug(err)
 	}

@@ -36,13 +36,6 @@ func RestPostSshKey(c echo.Context) error {
 	content, err := mcir.CreateSshKey(nsId, u)
 	if err != nil {
 		common.CBLog.Error(err)
-		/*
-			mapA := map[string]string{
-				"message": "Failed to create a SshKey"}
-			return c.JSON(http.StatusFailedDependency, &mapA)
-		*/
-		//return c.JSON(res.StatusCode, res)
-		//body, _ := ioutil.ReadAll(res.Body)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}

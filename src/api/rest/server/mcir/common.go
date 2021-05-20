@@ -156,7 +156,6 @@ func RestCheckResource(c echo.Context) error {
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
 
-	//exists, _, err := mcir.LowerizeAndCheckResource(nsId, resourceType, resourceId)
 	exists, err := mcir.CheckResource(nsId, resourceType, resourceId)
 
 	type JsonTemplate struct {

@@ -22,12 +22,17 @@ type ConfigInfo struct {
 }
 
 func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
-	//_, lowerizedName, _ := LowerizeAndCheckConfig(u.Name)
-	lowerizedName := ToLower(u.Name)
+	// u.Name = strings.ToLower(u.Name)
+	// err := CheckString(u.Name)
+	// if err != nil {
+	// 	temp := ConfigInfo{}
+	// 	CBLog.Error(err)
+	// 	return temp, err
+	// }
 
 	content := ConfigInfo{}
-	content.Id = lowerizedName
-	content.Name = lowerizedName
+	content.Id = u.Name
+	content.Name = u.Name
 	content.Value = u.Value
 
 	key := "/config/" + content.Id
@@ -59,13 +64,14 @@ func UpdateEnv(id string) error {
 		common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 	*/
 
-	lowStrSPIDER_REST_URL := ToLower(StrSPIDER_REST_URL)
-	lowStrDRAGONFLY_REST_URL := ToLower(StrDRAGONFLY_REST_URL)
-	lowStrDB_URL := ToLower(StrDB_URL)
-	lowStrDB_DATABASE := ToLower(StrDB_DATABASE)
-	lowStrDB_USER := ToLower(StrDB_USER)
-	lowStrDB_PASSWORD := ToLower(StrDB_PASSWORD)
-	lowStrAUTOCONTROL_DURATION_MS := ToLower(StrAUTOCONTROL_DURATION_MS)
+	// One should not CheckString() these variables.
+	// lowStrSPIDER_REST_URL := strings.ToLower(StrSPIDER_REST_URL)
+	// lowStrDRAGONFLY_REST_URL := strings.ToLower(StrDRAGONFLY_REST_URL)
+	// lowStrDB_URL := strings.ToLower(StrDB_URL)
+	// lowStrDB_DATABASE := strings.ToLower(StrDB_DATABASE)
+	// lowStrDB_USER := strings.ToLower(StrDB_USER)
+	// lowStrDB_PASSWORD := strings.ToLower(StrDB_PASSWORD)
+	// lowStrAUTOCONTROL_DURATION_MS := strings.ToLower(StrAUTOCONTROL_DURATION_MS)
 
 	configInfo, err := GetConfig(id)
 	if err != nil {
@@ -74,25 +80,25 @@ func UpdateEnv(id string) error {
 	}
 
 	switch id {
-	case lowStrSPIDER_REST_URL:
+	case StrSPIDER_REST_URL:
 		SPIDER_REST_URL = configInfo.Value
 		fmt.Println("<SPIDER_REST_URL> " + SPIDER_REST_URL)
-	case lowStrDRAGONFLY_REST_URL:
+	case StrDRAGONFLY_REST_URL:
 		DRAGONFLY_REST_URL = configInfo.Value
 		fmt.Println("<DRAGONFLY_REST_URL> " + DRAGONFLY_REST_URL)
-	case lowStrDB_URL:
+	case StrDB_URL:
 		DB_URL = configInfo.Value
 		fmt.Println("<DB_URL> " + DB_URL)
-	case lowStrDB_DATABASE:
+	case StrDB_DATABASE:
 		DB_DATABASE = configInfo.Value
 		fmt.Println("<DB_DATABASE> " + DB_DATABASE)
-	case lowStrDB_USER:
+	case StrDB_USER:
 		DB_USER = configInfo.Value
 		fmt.Println("<DB_USER> " + DB_USER)
-	case lowStrDB_PASSWORD:
+	case StrDB_PASSWORD:
 		DB_PASSWORD = configInfo.Value
 		fmt.Println("<DB_PASSWORD> " + DB_PASSWORD)
-	case lowStrAUTOCONTROL_DURATION_MS:
+	case StrAUTOCONTROL_DURATION_MS:
 		AUTOCONTROL_DURATION_MS = configInfo.Value
 		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
 	default:
@@ -106,12 +112,17 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	res := ConfigInfo{}
 
-	//check, lowerizedId, err := LowerizeAndCheckConfig(id)
-	lowerizedId := ToLower(id)
-	check, err := CheckConfig(lowerizedId)
+	// id = strings.ToLower(id)
+	// err := CheckString(id)
+	// if err != nil {
+	// 	temp := ConfigInfo{}
+	// 	CBLog.Error(err)
+	// 	return temp, err
+	// }
+	check, err := CheckConfig(id)
 
 	if !check {
-		errString := "The config " + lowerizedId + " does not exist."
+		errString := "The config " + id + " does not exist."
 		err := fmt.Errorf(errString)
 		return res, err
 	}
@@ -122,8 +133,8 @@ func GetConfig(id string) (ConfigInfo, error) {
 		return temp, err
 	}
 
-	fmt.Println("[Get config] " + lowerizedId)
-	key := "/config/" + lowerizedId
+	fmt.Println("[Get config] " + id)
+	key := "/config/" + id
 	//fmt.Println(key)
 
 	keyValue, err := CBStore.Get(key)
@@ -212,41 +223,23 @@ func DelAllConfig() error {
 	return nil
 }
 
-/*
-func LowerizeAndCheckConfig(Id string) (bool, string, error) {
+func CheckConfig(id string) (bool, error) {
 
-	if Id == "" {
-		err := fmt.Errorf("CheckConfig failed; configId given is null.")
-		return false, "", err
-	}
-
-	lowerizedId := ToLower(Id)
-
-	fmt.Println("[Check config] " + lowerizedId)
-
-	key := "/config/" + lowerizedId
-	//fmt.Println(key)
-
-	keyValue, _ := CBStore.Get(key)
-	if keyValue != nil {
-		return true, lowerizedId, nil
-	}
-	return false, lowerizedId, nil
-}
-*/
-
-func CheckConfig(Id string) (bool, error) {
-
-	if Id == "" {
+	if id == "" {
 		err := fmt.Errorf("CheckConfig failed; configId given is null.")
 		return false, err
 	}
 
-	lowerizedId := ToLower(Id)
+	// id = strings.ToLower(id)
+	// err := CheckString(id)
+	// if err != nil {
+	// 	CBLog.Error(err)
+	// 	return false, err
+	// }
 
 	//fmt.Println("[Check config] " + lowerizedId)
 
-	key := "/config/" + lowerizedId
+	key := "/config/" + id
 	//fmt.Println(key)
 
 	keyValue, _ := CBStore.Get(key)

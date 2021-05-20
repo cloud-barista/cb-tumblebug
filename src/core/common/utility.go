@@ -41,9 +41,24 @@ func GenUuid() string {
 	return uuid.New().String()
 }
 
+func CheckString(name string) error {
+	name = strings.ToLower(name)
+
+	r, _ := regexp.Compile("[a-z]([-a-z0-9]*[a-z0-9])?")
+	filtered := r.FindString(name)
+
+	if filtered != name {
+		err := fmt.Errorf(name + ": The first character of name must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.")
+		return err
+	}
+
+	return nil
+}
+
+// To be deprecated
 func ToLower(name string) string {
-	r, _ := regexp.Compile("_")
-	out := r.ReplaceAllString(name, "-")
+	out := strings.ReplaceAll(name, "_", "-")
+	out = strings.ReplaceAll(out, " ", "-")
 	out = strings.ToLower(out)
 	return out
 }
@@ -183,7 +198,7 @@ func GetResourcesCspType(nsId string, resourceType string, resourceId string) st
 		return "ioutil.ReadAll error"
 	}
 
-	fmt.Println("HTTP Status code " + strconv.Itoa(res.StatusCode))
+	fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 	switch {
 	case res.StatusCode >= 400 || res.StatusCode < 200:
 		err := fmt.Errorf(string(body))
@@ -300,7 +315,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -372,7 +387,7 @@ func GetRegionInfo(RegionName string) (RegionInfo, error) {
 
 		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -421,7 +436,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -493,7 +508,7 @@ func GetRegion(RegionName string) (Region, error) {
 
 		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -565,7 +580,7 @@ func GetRegionList() (RegionList, error) {
 
 		fmt.Println(string(resp.Body())) // for debug
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))

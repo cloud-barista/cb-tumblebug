@@ -50,9 +50,9 @@ type AutoCondition struct {
 
 // AutoAction is struct for MCIS auto-control action.
 type AutoAction struct {
-	ActionType     string     `json:"actionType"`
-	Vm             TbVmInfo   `json:"vm"`
-	PostCommand    McisCmdReq `json:"postCommand"`
+	ActionType    string     `json:"actionType"`
+	Vm            TbVmInfo   `json:"vm"`
+	PostCommand   McisCmdReq `json:"postCommand"`
 	PlacementAlgo string     `json:"placementAlgo"`
 }
 
@@ -123,7 +123,6 @@ func OrchestrationController() {
 					UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 
 					fmt.Println("[Check MCIS Policy] " + mcisPolicyTmp.Id)
-					//check, _, _ := LowerizeAndCheckMcis(nsId, mcisPolicyTmp.Id )
 					check, _ := CheckMcis(nsId, mcisPolicyTmp.Id)
 					fmt.Println("[Check existence of MCIS] " + mcisPolicyTmp.Id)
 					//keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
@@ -387,14 +386,24 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 // CreateMcisPolicy create McisPolicyInfo object in DB according to user's requirements.
 func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicyInfo, error) {
 
-	//nsId = common.ToLower(nsId)
-	//check, lowerizedName, _ := LowerizeAndCheckMcisPolicy(nsId, mcisId)
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(mcisId)
-	check, _ := CheckMcisPolicy(nsId, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := McisPolicyInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := McisPolicyInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, _ := CheckMcisPolicy(nsId, mcisId)
 
-	u.Name = lowerizedName
-	u.Id = lowerizedName
+	u.Name = mcisId
+	u.Id = mcisId
 	//u.Status = AutoStatusReady
 
 	if check {
@@ -416,7 +425,7 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 
 	//fmt.Println("Key: ", Key)
 	//fmt.Println("Val: ", Val)
-	err := common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(string(Key), string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return content, err
@@ -431,7 +440,20 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 // GetMcisPolicyObject returns McisPolicyInfo object.
 func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 	fmt.Println("[GetMcisPolicyObject]" + mcisId)
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := McisPolicyInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := McisPolicyInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 	fmt.Println("Key: ", key)
 	keyValue, err := common.CBStore.Get(key)
@@ -453,7 +475,12 @@ func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 // GetAllMcisPolicyObject returns all McisPolicyInfo objects.
 func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 	Mcis := []McisPolicyInfo{}
 	mcisList := ListMcisPolicyId(nsId)
 
@@ -475,7 +502,12 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 // ListMcisPolicyId returns a list of Ids for all McisPolicyInfo objects .
 func ListMcisPolicyId(nsId string) []string {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil
+	}
 	//fmt.Println("[Get MCIS Policy ID list]")
 	key := "/ns/" + nsId + "/policy/mcis"
 	keyValue, _ := common.CBStore.GetList(key, true)
@@ -492,11 +524,18 @@ func ListMcisPolicyId(nsId string) []string {
 // DelMcisPolicy deletes McisPolicyInfo object by mcisId.
 func DelMcisPolicy(nsId string, mcisId string) error {
 
-	//nsId = common.ToLower(nsId)
-	//check, lowerizedName, _ := LowerizeAndCheckMcisPolicy(nsId, mcisId)
-	//mcisId = lowerizedName
-	nsId = common.ToLower(nsId)
-	mcisId = common.ToLower(mcisId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	mcisId = strings.ToLower(mcisId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 	check, _ := CheckMcisPolicy(nsId, mcisId)
 
 	if !check {
@@ -510,7 +549,7 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 	fmt.Println(key)
 
 	// delete mcis Policy info
-	err := common.CBStore.Delete(key)
+	err = common.CBStore.Delete(key)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -522,7 +561,12 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 // DelAllMcisPolicy deletes all McisPolicyInfo objects.
 func DelAllMcisPolicy(nsId string) (string, error) {
 
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
 	mcisList := ListMcisPolicyId(nsId)
 	if len(mcisList) == 0 {
 		return "No MCIS Policy to delete", nil
@@ -532,8 +576,8 @@ func DelAllMcisPolicy(nsId string) (string, error) {
 		if err != nil {
 			common.CBLog.Error(err)
 
-			return "", fmt.Errorf("Failed to delete All MCISs")
+			return "", fmt.Errorf("Failed to delete All MCIS Policies")
 		}
 	}
-	return "All MCIS Policys has been deleted", nil
+	return "All MCIS Policies has been deleted", nil
 }

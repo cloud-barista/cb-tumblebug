@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/xwb1989/sqlparser"
@@ -89,26 +90,38 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	resourceType := common.StrImage
 
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(u.Name)
-	check, err := CheckResource(nsId, resourceType, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbImageInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	u.Name = strings.ToLower(u.Name)
+	err = common.CheckString(u.Name)
+	if err != nil {
+		temp := TbImageInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
 		temp := TbImageInfo{}
-		err := fmt.Errorf("The image " + lowerizedName + " already exists.")
+		err := fmt.Errorf("The image " + u.Name + " already exists.")
 		return temp, err
 	}
 
 	if err != nil {
 		temp := TbImageInfo{}
-		err := fmt.Errorf("Failed to check the existence of the image " + lowerizedName + ".")
+		err := fmt.Errorf("Failed to check the existence of the image " + u.Name + ".")
 		return temp, err
 	}
 
 	res, err := LookupImage(u.ConnectionName, u.CspImageId)
 	if err != nil {
 		common.CBLog.Error(err)
-		err := fmt.Errorf("an error occurred while lookup image via CB-Spider")
+		//err := fmt.Errorf("an error occurred while lookup image via CB-Spider")
 		emptyImageInfoObj := TbImageInfo{}
 		return emptyImageInfoObj, err
 	}
@@ -116,12 +129,13 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	content, err := ConvertSpiderImageToTumblebugImage(res)
 	if err != nil {
 		common.CBLog.Error(err)
-		err := fmt.Errorf("an error occurred while converting Spider image info to Tumblebug image info.")
+		//err := fmt.Errorf("an error occurred while converting Spider image info to Tumblebug image info.")
 		emptyImageInfoObj := TbImageInfo{}
 		return emptyImageInfoObj, err
 	}
 	content.ConnectionName = u.ConnectionName
-	content.Id = common.ToLower(u.Name)
+	content.Id = u.Name
+	content.Name = u.Name
 	content.AssociatedObjectList = []string{}
 
 	sql := "INSERT INTO `image`(" +
@@ -186,25 +200,37 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	resourceType := common.StrImage
 
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(content.Name)
-	check, err := CheckResource(nsId, resourceType, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbImageInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	content.Name = strings.ToLower(content.Name)
+	err = common.CheckString(content.Name)
+	if err != nil {
+		temp := TbImageInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
 		temp := TbImageInfo{}
-		err := fmt.Errorf("The image " + lowerizedName + " already exists.")
+		err := fmt.Errorf("The image " + content.Name + " already exists.")
 		return temp, err
 	}
 
 	if err != nil {
 		temp := TbImageInfo{}
-		err := fmt.Errorf("Failed to check the existence of the image " + lowerizedName + ".")
+		err := fmt.Errorf("Failed to check the existence of the image " + content.Name + ".")
 		return temp, err
 	}
 
 	//content.Id = common.GenUuid()
-	content.Id = lowerizedName
-	content.Name = lowerizedName
+	content.Id = content.Name
+	content.Name = content.Name
 	content.AssociatedObjectList = []string{}
 
 	sql := "INSERT INTO `image`(" +
@@ -306,7 +332,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 
 		fmt.Println(string(resp.Body()))
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -392,7 +418,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
 		fmt.Println(string(resp.Body()))
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
@@ -491,7 +517,12 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 
 // SearchImage accepts arbitrary number of keywords, and returns the list of matched TB image objects
 func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
-	nsId = common.ToLower(nsId)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	tempList := []TbImageInfo{}
 
@@ -499,11 +530,11 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 
 	for _, keyword := range keywords {
 		//fmt.Println("in SearchImage(); keyword: " + keyword) // for debug
-		keyword = common.ToLower(keyword)
+		keyword = strings.ToLower(keyword)
 		sqlQuery += " AND `name` LIKE '%" + keyword + "%'"
 	}
 	sqlQuery += ";"
-	_, err := sqlparser.Parse(sqlQuery)
+	_, err = sqlparser.Parse(sqlQuery)
 	if err != nil {
 		return tempList, err
 	}

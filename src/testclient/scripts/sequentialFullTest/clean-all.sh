@@ -1,3 +1,4 @@
+#!/bin/bash
 
 SECONDS=0
 

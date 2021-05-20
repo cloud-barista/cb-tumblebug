@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -76,10 +77,21 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	resourceType := common.StrVNet
 
-	nsId = common.ToLower(nsId)
-	lowerizedName := common.ToLower(u.Name)
-	u.Name = lowerizedName
-	check, err := CheckResource(nsId, resourceType, lowerizedName)
+	nsId = strings.ToLower(nsId)
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbVNetInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	u.Name = strings.ToLower(u.Name)
+	err = common.CheckString(u.Name)
+	if err != nil {
+		temp := TbVNetInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
 		temp := TbVNetInfo{}
@@ -89,7 +101,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	if err != nil {
 		temp := TbVNetInfo{}
-		err := fmt.Errorf("Failed to check the existence of the vNet " + lowerizedName + ".")
+		err := fmt.Errorf("Failed to check the existence of the vNet " + u.Name + ".")
 		return temp, err
 	}
 
@@ -103,7 +115,6 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		//url := common.SPIDER_REST_URL + "/vpc?connection_name=" + u.ConnectionName
 		url := common.SPIDER_REST_URL + "/vpc"
 
 		client := resty.New()
@@ -122,13 +133,12 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code " + strconv.Itoa(resp.StatusCode()))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			content := TbVNetInfo{}
-			//return content, res.StatusCode, body, err
 			return content, err
 		}
 
@@ -190,12 +200,10 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	err3 := common.CBStore.Put(string(Key), string(Val))
 	if err3 != nil {
 		common.CBLog.Error(err3)
-		//return content, res.StatusCode, body, err3
 		return content, err3
 	}
 	keyValue, _ := common.CBStore.Get(string(Key))
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	//return content, res.StatusCode, body, nil
 	return content, nil
 }
