@@ -117,7 +117,7 @@ cb-operator/src$ ./operator
       - `source ~/.bashrc`, `. ~/.bashrc`
 
 - CB-Tumblebug 소스 다운로드
-  - `# go get -v github.com/cloud-barista/cb-tumblebug`
+  - `# git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug`
 
 - CB-Tumblebug 실행에 필요한 환경변수 설정
   - cb-tumblebug/conf/setup.env 내용 확인 및 설정 (CB-Tumblebug 기본 설정)
