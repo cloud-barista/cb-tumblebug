@@ -2,7 +2,7 @@ version: 1
 grpc:
   tumblebugcli:
     server_addr: 127.0.0.1:50252
-    timeout: 90s
+    timeout: 500s
     #tls:
     #  tls_ca: $CBTUMBLEBUG_ROOT/certs/ca.crt
     interceptors:

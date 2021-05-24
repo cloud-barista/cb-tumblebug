@@ -27,11 +27,13 @@ func NewSpecCmd() *cobra.Command {
 
 	//  Adds the commands for application.
 	specCmd.AddCommand(NewSpecWithInfoCreateCmd())
+	specCmd.AddCommand(NewSpecWithIdCreateCmd())
 	specCmd.AddCommand(NewSpecListCmd())
 	specCmd.AddCommand(NewSpecListCspCmd())
 	specCmd.AddCommand(NewSpecGetCmd())
 	specCmd.AddCommand(NewSpecGetCspCmd())
 	specCmd.AddCommand(NewSpecDeleteCmd())
+	specCmd.AddCommand(NewSpecDeleteAllCmd())
 	specCmd.AddCommand(NewSpecFetchCmd())
 	specCmd.AddCommand(NewSpecFilterCmd())
 	specCmd.AddCommand(NewSpecFilterByRangeCmd())
@@ -66,6 +68,33 @@ func NewSpecWithInfoCreateCmd() *cobra.Command {
 	createWithInfoCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
 
 	return createWithInfoCmd
+}
+
+// NewSpecWithIdCreateCmd - Spec 생성 기능을 수행하는 Cobra Command 생성
+func NewSpecWithIdCreateCmd() *cobra.Command {
+
+	createWithIdCmd := &cobra.Command{
+		Use:   "create-id",
+		Short: "This is create-id command for spec",
+		Long:  "This is create-id command for spec",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	createWithIdCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	createWithIdCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return createWithIdCmd
 }
 
 // NewSpecListCmd - Spec 목록 기능을 수행하는 Cobra Command 생성
@@ -159,19 +188,19 @@ func NewSpecGetCspCmd() *cobra.Command {
 				logger.Error("failed to validate --cc parameter")
 				return
 			}
-			if specName == "" {
+			if cspSpecName == "" {
 				logger.Error("failed to validate --spec parameter")
 				return
 			}
 			logger.Debug("--cc parameter value : ", connConfigName)
-			logger.Debug("--spec parameter value : ", specName)
+			logger.Debug("--spec parameter value : ", cspSpecName)
 
 			SetupAndRun(cmd, args)
 		},
 	}
 
 	getCspCmd.PersistentFlags().StringVarP(&connConfigName, "cc", "", "", "connection name")
-	getCspCmd.PersistentFlags().StringVarP(&specName, "spec", "", "", "spec name")
+	getCspCmd.PersistentFlags().StringVarP(&cspSpecName, "spec", "", "", "csp spec name")
 
 	return getCspCmd
 }
@@ -210,6 +239,36 @@ func NewSpecDeleteCmd() *cobra.Command {
 	deleteCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
 
 	return deleteCmd
+}
+
+// NewSpecDeleteAllCmd - 전체 Spec 삭제 기능을 수행하는 Cobra Command 생성
+func NewSpecDeleteAllCmd() *cobra.Command {
+
+	deleteAllCmd := &cobra.Command{
+		Use:   "delete-all",
+		Short: "This is delete-all command for spec",
+		Long:  "This is delete-all command for spec",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if force == "" {
+				logger.Error("failed to validate --force parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--force parameter value : ", force)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	deleteAllCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	deleteAllCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
+
+	return deleteAllCmd
 }
 
 // NewSpecFetchCmd - Spec Fetch 기능을 수행하는 Cobra Command 생성

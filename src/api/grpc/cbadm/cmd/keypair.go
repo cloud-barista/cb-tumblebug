@@ -31,6 +31,7 @@ func NewKeypairCmd() *cobra.Command {
 	keypairCmd.AddCommand(NewKeypairGetCmd())
 	keypairCmd.AddCommand(NewKeypairSaveCmd())
 	keypairCmd.AddCommand(NewKeypairDeleteCmd())
+	keypairCmd.AddCommand(NewKeypairDeleteAllCmd())
 
 	return keypairCmd
 }
@@ -186,4 +187,34 @@ func NewKeypairDeleteCmd() *cobra.Command {
 	deleteCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
 
 	return deleteCmd
+}
+
+// NewKeypairDeleteAllCmd - 전체 Keypair 삭제 기능을 수행하는 Cobra Command 생성
+func NewKeypairDeleteAllCmd() *cobra.Command {
+
+	deleteAllCmd := &cobra.Command{
+		Use:   "delete-all",
+		Short: "This is delete-all command for keypair",
+		Long:  "This is delete-all command for keypair",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if force == "" {
+				logger.Error("failed to validate --force parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--force parameter value : ", force)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	deleteAllCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	deleteAllCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
+
+	return deleteAllCmd
 }

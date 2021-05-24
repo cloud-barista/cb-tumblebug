@@ -99,9 +99,15 @@ func ConvertToOutput(outType string, obj interface{}) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		logger.Debug("json Marshal: \n", string(j))
+		outStr := string(j)
 
-		return string(j), nil
+		// json.Marshal 함수는  <,>, & 문자를 escape 함.. 다시 원래대로 변환
+		outStr = strings.Replace(outStr, "\\u003c", "<", -1)
+		outStr = strings.Replace(outStr, "\\u003e", ">", -1)
+		outStr = strings.Replace(outStr, "\\u0026", "&", -1)
+
+		logger.Debug("json Marshal: \n", outStr)
+		return outStr, nil
 	}
 
 	return "", nil

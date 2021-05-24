@@ -164,6 +164,28 @@ func (s *MCIRService) FetchImage(ctx context.Context, req *pb.FetchImageQryReque
 	return resp, nil
 }
 
+// SearchImage - Image 검색
+func (s *MCIRService) SearchImage(ctx context.Context, req *pb.SearchImageQryRequest) (*pb.ListTbImageInfoResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.SearchImage()")
+
+	content, err := mcir.SearchImage(req.NsId, req.Keywords...)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.SearchImage()")
+	}
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj []*pb.TbImageInfo
+	err = gc.CopySrcToDest(&content, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.SearchImage()")
+	}
+
+	resp := &pb.ListTbImageInfoResponse{Items: grpcObj}
+	return resp, nil
+}
+
 // ===== [ Private Functions ] =====
 
 // ===== [ Public Functions ] =====

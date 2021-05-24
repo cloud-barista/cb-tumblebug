@@ -27,12 +27,15 @@ func NewImageCmd() *cobra.Command {
 
 	//  Adds the commands for application.
 	imageCmd.AddCommand(NewImageCreateWithInfoCmd())
+	imageCmd.AddCommand(NewImageCreateWithIdCmd())
 	imageCmd.AddCommand(NewImageListCmd())
 	imageCmd.AddCommand(NewImageListCspCmd())
 	imageCmd.AddCommand(NewImageGetCmd())
 	imageCmd.AddCommand(NewImageGetCspCmd())
 	imageCmd.AddCommand(NewImageDeleteCmd())
+	imageCmd.AddCommand(NewImageDeleteAllCmd())
 	imageCmd.AddCommand(NewImageFetchCmd())
+	imageCmd.AddCommand(NewImageSearchCmd())
 
 	return imageCmd
 }
@@ -62,6 +65,33 @@ func NewImageCreateWithInfoCmd() *cobra.Command {
 	createWithInfoCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
 
 	return createWithInfoCmd
+}
+
+// NewImageCreateWithIdCmd - Image 생성 기능을 수행하는 Cobra Command 생성
+func NewImageCreateWithIdCmd() *cobra.Command {
+
+	createWithIdCmd := &cobra.Command{
+		Use:   "create-id",
+		Short: "This is create-id command for image",
+		Long:  "This is create-id command for image",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	createWithIdCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	createWithIdCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return createWithIdCmd
 }
 
 // NewImageListCmd - Image 목록 기능을 수행하는 Cobra Command 생성
@@ -155,19 +185,19 @@ func NewImageGetCspCmd() *cobra.Command {
 				logger.Error("failed to validate --cc parameter")
 				return
 			}
-			if imageId == "" {
+			if cspImageId == "" {
 				logger.Error("failed to validate --image parameter")
 				return
 			}
 			logger.Debug("--cc parameter value : ", connConfigName)
-			logger.Debug("--image parameter value : ", imageId)
+			logger.Debug("--image parameter value : ", cspImageId)
 
 			SetupAndRun(cmd, args)
 		},
 	}
 
 	getCspCmd.PersistentFlags().StringVarP(&connConfigName, "cc", "", "", "connection name")
-	getCspCmd.PersistentFlags().StringVarP(&imageId, "image", "", "", "image name")
+	getCspCmd.PersistentFlags().StringVarP(&cspImageId, "image", "", "", "csp image id")
 
 	return getCspCmd
 }
@@ -208,6 +238,36 @@ func NewImageDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
+// NewImageDeleteAllCmd - 전체 Image 삭제 기능을 수행하는 Cobra Command 생성
+func NewImageDeleteAllCmd() *cobra.Command {
+
+	deleteAllCmd := &cobra.Command{
+		Use:   "delete-all",
+		Short: "This is delete-all command for image",
+		Long:  "This is delete-all command for image",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if force == "" {
+				logger.Error("failed to validate --force parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--force parameter value : ", force)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	deleteAllCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	deleteAllCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
+
+	return deleteAllCmd
+}
+
 // NewImageFetchCmd - Image Fetch 기능을 수행하는 Cobra Command 생성
 func NewImageFetchCmd() *cobra.Command {
 
@@ -230,4 +290,31 @@ func NewImageFetchCmd() *cobra.Command {
 	fetchCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return fetchCmd
+}
+
+// NewImageSearchCmd - Image 검색 기능을 수행하는 Cobra Command 생성
+func NewImageSearchCmd() *cobra.Command {
+
+	searchCmd := &cobra.Command{
+		Use:   "search",
+		Short: "This is search command for image",
+		Long:  "This is search command for image",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	searchCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	searchCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return searchCmd
 }

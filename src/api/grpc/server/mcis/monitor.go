@@ -45,7 +45,7 @@ func (s *MCISService) InstallMonitorAgentToMcis(ctx context.Context, req *pb.Mci
 }
 
 // GetMonitorData - MCIS Monitor 정보 조회
-func (s *MCISService) GetMonitorData(ctx context.Context, req *pb.MonitorQryRequest) (*pb.ListAgentInstallResponse, error) {
+func (s *MCISService) GetMonitorData(ctx context.Context, req *pb.MonitorQryRequest) (*pb.MonitorResultSimpleResponse, error) {
 	logger := logger.NewLogger()
 
 	logger.Debug("calling MCISService.GetMonitorData()")
@@ -56,13 +56,14 @@ func (s *MCISService) GetMonitorData(ctx context.Context, req *pb.MonitorQryRequ
 	}
 
 	// MCIS 객체에서 GRPC 메시지로 복사
-	var grpcObj pb.ListAgentInstallResponse
+	var grpcObj pb.MonResultSimpleInfo
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.GetMonitorData()")
 	}
 
-	return &grpcObj, nil
+	resp := &pb.MonitorResultSimpleResponse{Item: &grpcObj}
+	return resp, nil
 }
 
 // ===== [ Private Functions ] =====
