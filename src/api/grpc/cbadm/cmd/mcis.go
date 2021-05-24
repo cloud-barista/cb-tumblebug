@@ -30,6 +30,8 @@ func NewMcisCmd() *cobra.Command {
 	mcisCmd.AddCommand(NewMcisListCmd())
 	mcisCmd.AddCommand(NewMcisGetCmd())
 	mcisCmd.AddCommand(NewMcisDeleteCmd())
+	mcisCmd.AddCommand(NewMcisDeleteAllCmd())
+	mcisCmd.AddCommand(NewMcisStatusListCmd())
 	mcisCmd.AddCommand(NewMcisStatusCmd())
 	mcisCmd.AddCommand(NewMcisSuspendCmd())
 	mcisCmd.AddCommand(NewMcisResumeCmd())
@@ -37,6 +39,7 @@ func NewMcisCmd() *cobra.Command {
 	mcisCmd.AddCommand(NewMcisTerminateCmd())
 
 	mcisCmd.AddCommand(NewMcisVmAddCmd())
+	mcisCmd.AddCommand(NewMcisVmGroupCmd())
 	mcisCmd.AddCommand(NewMcisVmListCmd())
 	mcisCmd.AddCommand(NewMcisVmGetCmd())
 	mcisCmd.AddCommand(NewMcisVmDeleteCmd())
@@ -46,6 +49,9 @@ func NewMcisCmd() *cobra.Command {
 	mcisCmd.AddCommand(NewMcisVmRebootCmd())
 	mcisCmd.AddCommand(NewMcisVmTerminateCmd())
 
+	mcisCmd.AddCommand(NewMcisRecommandCmd())
+	mcisCmd.AddCommand(NewMcisRecommandVmCmd())
+
 	mcisCmd.AddCommand(NewCmdMcisCmd())
 	mcisCmd.AddCommand(NewCmdMcisVmCmd())
 
@@ -53,6 +59,15 @@ func NewMcisCmd() *cobra.Command {
 
 	mcisCmd.AddCommand(NewAccessVmCmd())
 	mcisCmd.AddCommand(NewBenchmarkCmd())
+
+	mcisCmd.AddCommand(NewInstallMonAgentCmd())
+	mcisCmd.AddCommand(NewGetMonDataCmd())
+
+	mcisCmd.AddCommand(NewMcisCreatePolicyCmd())
+	mcisCmd.AddCommand(NewMcisListPolicyCmd())
+	mcisCmd.AddCommand(NewMcisGetPolicyCmd())
+	mcisCmd.AddCommand(NewMcisDeletePolicyCmd())
+	mcisCmd.AddCommand(NewMcisDeleteAllPolicyCmd())
 
 	return mcisCmd
 }
@@ -97,19 +112,13 @@ func NewMcisListCmd() *cobra.Command {
 				logger.Error("failed to validate --ns parameter")
 				return
 			}
-			if option == "" {
-				logger.Error("failed to validate --option parameter")
-				return
-			}
 			logger.Debug("--ns parameter value : ", nameSpaceID)
-			logger.Debug("--option parameter value : ", option)
 
 			SetupAndRun(cmd, args)
 		},
 	}
 
 	listCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
-	listCmd.PersistentFlags().StringVarP(&option, "option", "", "", "status option")
 
 	return listCmd
 }
@@ -172,6 +181,54 @@ func NewMcisDeleteCmd() *cobra.Command {
 	deleteCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
 
 	return deleteCmd
+}
+
+// NewMcisDeleteAllCmd - 전체 Mcis 삭제 기능을 수행하는 Cobra Command 생성
+func NewMcisDeleteAllCmd() *cobra.Command {
+
+	deleteAllCmd := &cobra.Command{
+		Use:   "delete-all",
+		Short: "This is delete-all command for mcis",
+		Long:  "This is delete-all command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	deleteAllCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return deleteAllCmd
+}
+
+// NewMcisStatusListCmd - Mcis 상태 목록 기능을 수행하는 Cobra Command 생성
+func NewMcisStatusListCmd() *cobra.Command {
+
+	statusListCmd := &cobra.Command{
+		Use:   "status-list",
+		Short: "This is status-list command for mcis",
+		Long:  "This is status-list command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	statusListCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return statusListCmd
 }
 
 // NewMcisStatusCmd - Mcis 상태 조회 기능을 수행하는 Cobra Command 생성
@@ -349,6 +406,33 @@ func NewMcisVmAddCmd() *cobra.Command {
 	vmAddCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
 
 	return vmAddCmd
+}
+
+// NewMcisVmGroupCmd - Mcis VM 그룹 생성 기능을 수행하는 Cobra Command 생성
+func NewMcisVmGroupCmd() *cobra.Command {
+
+	vmGroupCmd := &cobra.Command{
+		Use:   "group-vm",
+		Short: "This is group-vm command for mcis",
+		Long:  "This is group-vm command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	vmGroupCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	vmGroupCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return vmGroupCmd
 }
 
 // NewMcisVmListCmd - Mcis VM 목록 기능을 수행하는 Cobra Command 생성
@@ -633,6 +717,60 @@ func NewMcisVmTerminateCmd() *cobra.Command {
 	return vmTerminateCmd
 }
 
+// NewMcisRecommandCmd - Mcis 추천 기능을 수행하는 Cobra Command 생성
+func NewMcisRecommandCmd() *cobra.Command {
+
+	recommandCmd := &cobra.Command{
+		Use:   "recommand",
+		Short: "This is recommand command for mcis",
+		Long:  "This is recommand command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	recommandCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	recommandCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return recommandCmd
+}
+
+// NewMcisRecommandVmCmd - Mcis VM 추천 기능을 수행하는 Cobra Command 생성
+func NewMcisRecommandVmCmd() *cobra.Command {
+
+	recommandVmCmd := &cobra.Command{
+		Use:   "recommand-vm",
+		Short: "This is recommand-vm command for mcis",
+		Long:  "This is recommand-vm command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	recommandVmCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	recommandVmCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return recommandVmCmd
+}
+
 // NewCmdMcisCmd - MCIS 명령 실행 기능을 수행하는 Cobra Command 생성
 func NewCmdMcisCmd() *cobra.Command {
 
@@ -737,9 +875,227 @@ func NewBenchmarkCmd() *cobra.Command {
 		Short: "This is benchmark command for mcis",
 		Long:  "This is benchmark command for mcis",
 		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if mcisID == "" {
+				logger.Error("failed to validate --mcis parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--mcis parameter value : ", mcisID)
+			logger.Debug("--action parameter value : ", action)
+			logger.Debug("--host parameter value : ", host)
+
 			SetupAndRun(cmd, args)
 		},
 	}
 
+	benchmarkCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	benchmarkCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
+	benchmarkCmd.PersistentFlags().StringVarP(&action, "action", "", "all", "action name")
+	benchmarkCmd.PersistentFlags().StringVarP(&host, "host", "", "localhost", "target host ip address")
+
 	return benchmarkCmd
+}
+
+// NewInstallMonAgentCmd - MCIS Monitor Agent 설치 기능을 수행하는 Cobra Command 생성
+func NewInstallMonAgentCmd() *cobra.Command {
+
+	installMonCmd := &cobra.Command{
+		Use:   "install-mon",
+		Short: "This is install-mon command for mcis",
+		Long:  "This is install-mon command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	installMonCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	installMonCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return installMonCmd
+}
+
+// NewGetMonDataCmd - MCIS Monitor 정보 조회 기능을 수행하는 Cobra Command 생성
+func NewGetMonDataCmd() *cobra.Command {
+
+	getMonCmd := &cobra.Command{
+		Use:   "get-mon",
+		Short: "This is get-mon command for mcis",
+		Long:  "This is get-mon command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if mcisID == "" {
+				logger.Error("failed to validate --mcis parameter")
+				return
+			}
+			if metric == "" {
+				logger.Error("failed to validate --metric parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--mcis parameter value : ", mcisID)
+			logger.Debug("--metric parameter value : ", metric)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	getMonCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	getMonCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
+	getMonCmd.PersistentFlags().StringVarP(&metric, "metric", "", "", "metric")
+
+	return getMonCmd
+}
+
+// NewMcisCreatePolicyCmd - Mcis Policy 생성 기능을 수행하는 Cobra Command 생성
+func NewMcisCreatePolicyCmd() *cobra.Command {
+
+	createPolicyCmd := &cobra.Command{
+		Use:   "create-policy",
+		Short: "This is create-policy command for mcis",
+		Long:  "This is create-policy command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			readInDataFromFile()
+			if inData == "" {
+				logger.Error("failed to validate --indata parameter")
+				return
+			}
+			logger.Debug("--indata parameter value : \n", inData)
+			logger.Debug("--infile parameter value : ", inFile)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	createPolicyCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	createPolicyCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+
+	return createPolicyCmd
+}
+
+// NewMcisListPolicyCmd - Mcis Policy 목록 기능을 수행하는 Cobra Command 생성
+func NewMcisListPolicyCmd() *cobra.Command {
+
+	listPolicyCmd := &cobra.Command{
+		Use:   "list-policy",
+		Short: "This is list-policy command for mcis",
+		Long:  "This is list-policy command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	listPolicyCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return listPolicyCmd
+}
+
+// NewMcisGetPolicyCmd - Mcis Policy 조회 기능을 수행하는 Cobra Command 생성
+func NewMcisGetPolicyCmd() *cobra.Command {
+
+	getPolicyCmd := &cobra.Command{
+		Use:   "get-policy",
+		Short: "This is get-policy command for mcis",
+		Long:  "This is get-policy command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if mcisID == "" {
+				logger.Error("failed to validate --mcis parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--mcis parameter value : ", mcisID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	getPolicyCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	getPolicyCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
+
+	return getPolicyCmd
+}
+
+// NewMcisDeletePolicyCmd - Mcis Policy 삭제 기능을 수행하는 Cobra Command 생성
+func NewMcisDeletePolicyCmd() *cobra.Command {
+
+	deletePolicyCmd := &cobra.Command{
+		Use:   "delete-policy",
+		Short: "This is delete-policy command for mcis",
+		Long:  "This is delete-policy command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if mcisID == "" {
+				logger.Error("failed to validate --mcis parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--mcis parameter value : ", mcisID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	deletePolicyCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	deletePolicyCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
+
+	return deletePolicyCmd
+}
+
+// NewMcisDeleteAllPolicyCmd - 전체 Mcis Policy 삭제 기능을 수행하는 Cobra Command 생성
+func NewMcisDeleteAllPolicyCmd() *cobra.Command {
+
+	deleteAllPolicyCmd := &cobra.Command{
+		Use:   "delete-all-policy",
+		Short: "This is delete-all-policy command for mcis",
+		Long:  "This is delete-all-policy command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	deleteAllPolicyCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return deleteAllPolicyCmd
 }

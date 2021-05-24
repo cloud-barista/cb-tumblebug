@@ -65,7 +65,7 @@ func (r *MCISRequest) GetMonitorData() (string, error) {
 	}
 
 	// 결과값 마샬링
-	return gc.ConvertToOutput(r.OutType, &resp)
+	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
 // ===== [ Private Functions ] =====

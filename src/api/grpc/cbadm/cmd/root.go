@@ -37,11 +37,14 @@ var (
 	connConfigName string
 
 	resourceType string
-	specName     string
-	imageId      string
+	cspSpecName  string
+	cspImageId   string
 	host         string
 	action       string
 	metric       string
+
+	configId string
+	objKey   string
 
 	parser config.Parser
 )
@@ -91,6 +94,9 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewYamlGetCmd())
 	rootCmd.AddCommand(NewYamlListCmd())
 	rootCmd.AddCommand(NewYamlRemoveCmd())
+
+	rootCmd.AddCommand(NewUtilCmd())
+	rootCmd.AddCommand(NewConfigCmd())
 
 	return rootCmd
 }

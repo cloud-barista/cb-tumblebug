@@ -278,7 +278,7 @@ func ConfigMCISApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err := mcis.GetMcisStatusByParam("ns-test", "mcis-01")
+	result, err := mcis.ListMcisByParam("ns-test")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -512,6 +512,18 @@ func CreateMCIRApiTest() {
 			Num_gpu:               0,
 			Gpumem_GiB:            0,
 			Gpu_p2p:               "",
+			OrderInFilteredResult: 0,
+			EvaluationStatus:      "",
+			EvaluationScore_01:    0.0,
+			EvaluationScore_02:    0.0,
+			EvaluationScore_03:    0.0,
+			EvaluationScore_04:    0.0,
+			EvaluationScore_05:    0.0,
+			EvaluationScore_06:    0.0,
+			EvaluationScore_07:    0.0,
+			EvaluationScore_08:    0.0,
+			EvaluationScore_09:    0.0,
+			EvaluationScore_10:    0.0,
 		},
 	}
 	result, err = mcir.CreateSpecWithInfoByParam(reqTbSpecInfo)
@@ -561,11 +573,14 @@ func CreateMCISApiTest() {
 	reqTbMcis := &tb_api.TbMcisCreateRequest{
 		NsId: "ns-test",
 		Item: tb_api.TbMcisReq{
-			Name:           "mcis-01",
-			PlacementAlgo: "",
-			Description:    "",
+			Name:            "mcis-01",
+			PlacementAlgo:   "",
+			InstallMonAgent: "no",
+			Description:     "",
+			Label:           "",
 			Vm: []tb_api.TbVmReq{
 				tb_api.TbVmReq{
+					VmGroupSize:    "0",
 					Name:           "openstack-config01-test-01",
 					ConnectionName: "openstack-config01",
 					SpecId:         "openstack-config01-test",
@@ -579,8 +594,10 @@ func CreateMCISApiTest() {
 					VmUserAccount:  "cb-user",
 					VmUserPassword: "",
 					Description:    "description",
+					Label:          "label",
 				},
 				tb_api.TbVmReq{
+					VmGroupSize:    "0",
 					Name:           "openstack-config01-test-02",
 					ConnectionName: "openstack-config01",
 					SpecId:         "openstack-config01-test",
@@ -594,6 +611,7 @@ func CreateMCISApiTest() {
 					VmUserAccount:  "cb-user",
 					VmUserPassword: "",
 					Description:    "description",
+					Label:          "label",
 				},
 			},
 		},

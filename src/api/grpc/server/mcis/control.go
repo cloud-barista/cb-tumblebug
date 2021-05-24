@@ -52,7 +52,7 @@ func (s *MCISService) ListMcis(ctx context.Context, req *pb.TbMcisAllQryRequest)
 
 	logger.Debug("calling MCISService.ListMcis()")
 
-	result, err := mcis.CoreGetAllMcis(req.NsId, req.Option)
+	result, err := mcis.CoreGetAllMcis(req.NsId, "status")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.ListMcis()")
 	}
@@ -80,6 +80,28 @@ func (s *MCISService) ControlMcis(ctx context.Context, req *pb.TbMcisActionReque
 	}
 
 	resp := &pb.MessageResponse{Message: result}
+	return resp, nil
+}
+
+// ListMcisStatus - MCIS 상태 목록
+func (s *MCISService) ListMcisStatus(ctx context.Context, req *pb.TbMcisAllQryRequest) (*pb.ListTbMcisStatusInfoResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCISService.ListMcisStatus()")
+
+	result, err := mcis.GetMcisStatusAll(req.NsId)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.ListMcisStatus()")
+	}
+
+	// MCIS 객체에서 GRPC 메시지로 복사
+	var grpcObj []*pb.McisStatusInfo
+	err = gc.CopySrcToDest(&result, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.ListMcisStatus()")
+	}
+
+	resp := &pb.ListTbMcisStatusInfoResponse{Items: grpcObj}
 	return resp, nil
 }
 
@@ -138,7 +160,7 @@ func (s *MCISService) DeleteMcis(ctx context.Context, req *pb.TbMcisQryRequest) 
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteMcis()")
 	}
 
-	resp := &pb.MessageResponse{Message: "Deleting the MCIS info"}
+	resp := &pb.MessageResponse{Message: "Deleting the MCIS " + req.McisId}
 	return resp, nil
 }
 
@@ -183,6 +205,35 @@ func (s *MCISService) CreateMcisVM(ctx context.Context, req *pb.TbVmCreateReques
 	}
 
 	resp := &pb.TbVmInfoResponse{Item: &grpcObj}
+	return resp, nil
+}
+
+// CreateMcisVMGroup - MCIS VM 그룹 생성
+func (s *MCISService) CreateMcisVMGroup(ctx context.Context, req *pb.TbVmGroupCreateRequest) (*pb.TbMcisInfoResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCISService.CreateMcisVMGroup()")
+
+	// GRPC 메시지에서 MCIS 객체로 복사
+	var mcisObj mcis.TbVmReq
+	err := gc.CopySrcToDest(&req.Item, &mcisObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
+	}
+
+	result, err := mcis.CorePostMcisGroupVm(req.NsId, req.McisId, &mcisObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
+	}
+
+	// MCIS 객체에서 GRPC 메시지로 복사
+	var grpcObj pb.TbMcisInfo
+	err = gc.CopySrcToDest(&result, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
+	}
+
+	resp := &pb.TbMcisInfoResponse{Item: &grpcObj}
 	return resp, nil
 }
 
@@ -319,6 +370,10 @@ func (s *MCISService) CmdMcis(ctx context.Context, req *pb.McisCmdCreateRequest)
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CmdMcis()")
 	}
 
+	for _, v := range grpcObj {
+		v.McisId = req.McisId
+	}
+
 	resp := &pb.ListCmdMcisResponse{Items: grpcObj}
 	return resp, nil
 }
@@ -392,14 +447,13 @@ func (s *MCISService) GetBenchmark(ctx context.Context, req *pb.BmQryRequest) (*
 	}
 
 	// MCIS 객체에서 GRPC 메시지로 복사
-	var grpcObj []*pb.BenchmarkInfo
+	var grpcObj pb.ListBenchmarkInfoResponse
 	err = gc.CopySrcToDest(&result, &grpcObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.GetBenchmark()")
 	}
 
-	resp := &pb.ListBenchmarkInfoResponse{Items: grpcObj}
-	return resp, nil
+	return &grpcObj, nil
 }
 
 // GetAllBenchmark - Benchmark 목록
@@ -421,14 +475,13 @@ func (s *MCISService) GetAllBenchmark(ctx context.Context, req *pb.BmQryAllReque
 	}
 
 	// MCIS 객체에서 GRPC 메시지로 복사
-	var grpcObj []*pb.BenchmarkInfo
+	var grpcObj pb.ListBenchmarkInfoResponse
 	err = gc.CopySrcToDest(&result, &grpcObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.GetAllBenchmark()")
 	}
 
-	resp := &pb.ListBenchmarkInfoResponse{Items: grpcObj}
-	return resp, nil
+	return &grpcObj, nil
 }
 
 // ===== [ Private Functions ] =====

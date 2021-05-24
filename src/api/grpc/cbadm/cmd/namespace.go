@@ -30,6 +30,8 @@ func NewNameSpaceCmd() *cobra.Command {
 	nameSpaceCmd.AddCommand(NewNameSpaceListCmd())
 	nameSpaceCmd.AddCommand(NewNameSpaceGetCmd())
 	nameSpaceCmd.AddCommand(NewNameSpaceDeleteCmd())
+	nameSpaceCmd.AddCommand(NewNameSpaceDeleteAllCmd())
+	nameSpaceCmd.AddCommand(NewNameSpaceCheckCmd())
 
 	return nameSpaceCmd
 }
@@ -122,4 +124,43 @@ func NewNameSpaceDeleteCmd() *cobra.Command {
 	deleteCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return deleteCmd
+}
+
+// NewNameSpaceDeleteAllCmd - 전체 Namespace 삭제 기능을 수행하는 Cobra Command 생성
+func NewNameSpaceDeleteAllCmd() *cobra.Command {
+
+	deleteAllCmd := &cobra.Command{
+		Use:   "delete-all",
+		Short: "This is delete-all command for namespace",
+		Long:  "This is delete-all command for namespace",
+		Run: func(cmd *cobra.Command, args []string) {
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	return deleteAllCmd
+}
+
+// NewNameSpaceCheckCmd - Namespace 체크 기능을 수행하는 Cobra Command 생성
+func NewNameSpaceCheckCmd() *cobra.Command {
+
+	checkCmd := &cobra.Command{
+		Use:   "check",
+		Short: "This is check command for namespace",
+		Long:  "This is check command for namespace",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	checkCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return checkCmd
 }

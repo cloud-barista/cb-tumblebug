@@ -59,7 +59,7 @@ func (s *MCIRService) GetLookupSpec(ctx context.Context, req *pb.LookupSpecQryRe
 
 	logger.Debug("calling MCIRService.GetLookupSpec()")
 
-	content, err := mcir.LookupSpec(req.ConnectionName, req.SpecName)
+	content, err := mcir.LookupSpec(req.ConnectionName, req.CspSpecName)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.GetLookupSpec()")
 	}
@@ -102,7 +102,7 @@ func (s *MCIRService) GetLookupImage(ctx context.Context, req *pb.LookupImageQry
 
 	logger.Debug("calling MCIRService.GetLookupImage()")
 
-	content, err := mcir.LookupImage(req.ConnectionName, req.ImageName)
+	content, err := mcir.LookupImage(req.ConnectionName, req.CspImageId)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.GetLookupImage()")
 	}

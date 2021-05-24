@@ -95,6 +95,33 @@ func (r *MCISRequest) ControlMcis() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// ListMcisStatus - MCIS 상태 목록
+func (r *MCISRequest) ListMcisStatus() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.TbMcisAllQryRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.ListMcisStatus(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // GetMcisStatus - MCIS 상태 조회
 func (r *MCISRequest) GetMcisStatus() (string, error) {
 	// 입력데이터 검사
@@ -119,7 +146,7 @@ func (r *MCISRequest) GetMcisStatus() (string, error) {
 	}
 
 	// 결과값 마샬링
-	return gc.ConvertToOutput(r.OutType, &resp.Item)
+	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
 // GetMcisInfo - MCIS 정보 조회
@@ -222,6 +249,33 @@ func (r *MCISRequest) CreateMcisVM() (string, error) {
 	defer cancel()
 
 	resp, err := r.Client.CreateMcisVM(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp.Item)
+}
+
+// CreateMcisVMGroup -MCIS VM 그룹 생성
+func (r *MCISRequest) CreateMcisVMGroup() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.TbVmGroupCreateRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.CreateMcisVMGroup(ctx, &item)
 	if err != nil {
 		return "", err
 	}

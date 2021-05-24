@@ -30,6 +30,7 @@ func NewNetworkCmd() *cobra.Command {
 	networkCmd.AddCommand(NewNetworkListCmd())
 	networkCmd.AddCommand(NewNetworkGetCmd())
 	networkCmd.AddCommand(NewNetworkDeleteCmd())
+	networkCmd.AddCommand(NewNetworkDeleteAllCmd())
 
 	return networkCmd
 }
@@ -149,4 +150,34 @@ func NewNetworkDeleteCmd() *cobra.Command {
 	deleteCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
 
 	return deleteCmd
+}
+
+// NewNetworkDeleteAllCmd - 전체 VNet 삭제 기능을 수행하는 Cobra Command 생성
+func NewNetworkDeleteAllCmd() *cobra.Command {
+
+	deleteAllCmd := &cobra.Command{
+		Use:   "delete-all",
+		Short: "This is delete-all command for network",
+		Long:  "This is delete-all command for network",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if force == "" {
+				logger.Error("failed to validate --force parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--force parameter value : ", force)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	deleteAllCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	deleteAllCmd.PersistentFlags().StringVarP(&force, "force", "", "false", "force flag")
+
+	return deleteAllCmd
 }
