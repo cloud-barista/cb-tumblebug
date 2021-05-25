@@ -1075,6 +1075,8 @@ func ListMcisId(nsId string) []string {
 
 func ListVmId(nsId string, mcisId string) ([]string, error) {
 
+	// common.CBLog.Info("ListVmId called. nsId: " + nsId + ", mcisId: " + mcisId) // for debug
+	fmt.Println("ListVmId called. nsId: " + nsId + ", mcisId: " + mcisId) // for debug
 	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1101,6 +1103,7 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 	var vmList []string
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/vm/") {
+			common.CBLog.Info("in ListVmId; v.Key: " + v.Key + ", key: " + key + ", after TrimPrefix: " + strings.TrimPrefix(v.Key, (key+"/vm/"))) // for debug
 			vmList = append(vmList, strings.TrimPrefix(v.Key, (key+"/vm/")))
 		}
 	}
@@ -1594,7 +1597,7 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 		if keyValue == nil {
 			//mapA := map[string]string{"message": "Cannot find " + key}
 			//return c.JSON(http.StatusOK, &mapA)
-			return nil, fmt.Errorf("Cannot find " + key)
+			return nil, fmt.Errorf("in CoreGetAllMcis() mcis loop; Cannot find " + key)
 		}
 		//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		mcisTmp := TbMcisInfo{}
@@ -1622,13 +1625,19 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 		}
 
 		for _, v1 := range vmList {
-			vmKey := common.GenMcisKey(nsId, mcisId, v1)
+			var vmKey string
+			if strings.Contains(v1, "/ns/") && strings.Contains(v1, "/mcis/") && strings.Contains(v1, "/vm/") {
+				vmKey = v1
+			} else {
+				vmKey = common.GenMcisKey(nsId, mcisId, v1)
+			}
+
 			//fmt.Println(vmKey)
 			vmKeyValue, _ := common.CBStore.Get(vmKey)
 			if vmKeyValue == nil {
 				//mapA := map[string]string{"message": "Cannot find " + key}
 				//return c.JSON(http.StatusOK, &mapA)
-				return nil, fmt.Errorf("Cannot find " + key)
+				return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
 			}
 			//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
 			//vmTmp := vmOverview{}
@@ -3786,8 +3795,13 @@ func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 }
 
 func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
-	fmt.Println("[GetVmObject]" + mcisId + ", VM:" + vmId)
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	fmt.Println("[GetVmObject] mcisId: " + mcisId + ", vmId: " + vmId)
+	var key string
+	if strings.Contains(vmId, "/ns/") && strings.Contains(vmId, "/mcis/") && strings.Contains(vmId, "/vm/") {
+		key = vmId
+	} else {
+		key = common.GenMcisKey(nsId, mcisId, vmId)
+	}
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -3814,8 +3828,21 @@ func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId strin
 
 func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
+	defer func() {
+		if runtimeErr := recover(); runtimeErr != nil {
+			myErr := fmt.Errorf("in GetVmStatus; mcisId: " + mcisId + ", vmId: " + vmId)
+			common.CBLog.Error(myErr)
+			common.CBLog.Error(runtimeErr)
+		}
+	}()
+
 	fmt.Println("[GetVmStatus]" + vmId)
-	key := common.GenMcisKey(nsId, mcisId, vmId)
+	var key string
+	if strings.Contains(vmId, "/ns/") && strings.Contains(vmId, "/mcis/") && strings.Contains(vmId, "/vm/") {
+		key = vmId
+	} else {
+		key = common.GenMcisKey(nsId, mcisId, vmId)
+	}
 	//fmt.Println(key)
 	errorInfo := TbVmStatusInfo{}
 
@@ -3824,7 +3851,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		fmt.Println(err)
 		return errorInfo, err
 	}
+
 	fmt.Println(keyValue.Value)
+
 	fmt.Println("<" + keyValue.Key + "> \n")
 
 	fmt.Println("===============================================")

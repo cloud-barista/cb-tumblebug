@@ -49,6 +49,20 @@ type JSONResult struct {
 	//Data    interface{}  `json:"data"`
 }
 
+func RestTestListVmId(c echo.Context) error { // for debug
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+
+	vmList, err := mcis.ListVmId(nsId, mcisId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	// mapA := map[string]string{"message": result}
+	return c.JSON(http.StatusOK, &vmList)
+}
+
 // TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention Need to be revised.
 
@@ -241,7 +255,7 @@ func RestDelAllMcis(c echo.Context) error {
 
 type RestPostMcisRecommandResponse struct {
 	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-	Vm_recommend    []mcis.TbVmRecommendInfo `json:"vm_recommend"`
+	Vm_recommend   []mcis.TbVmRecommendInfo `json:"vm_recommend"`
 	PlacementAlgo  string                   `json:"placementAlgo"`
 	PlacementParam []common.KeyValue        `json:"placementParam"`
 }
