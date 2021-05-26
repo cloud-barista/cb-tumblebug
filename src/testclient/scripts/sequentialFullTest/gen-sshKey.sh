@@ -19,7 +19,7 @@ POSTFIX=${3:-developer}
 source ../common-functions.sh
 getCloudIndex $CSP
 
-MCIRID=${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}
+MCIRID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers

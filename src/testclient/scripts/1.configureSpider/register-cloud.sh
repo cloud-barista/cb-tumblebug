@@ -89,15 +89,15 @@ if [ "${CSP}" == "azure" ]; then
             "ProviderName" : "${ProviderName[$INDEX]}",
             "KeyValueInfoList" : [
                 {
-                    "Key" : "${RegionKey01[$INDEX, $REGION]:-NULL}",
-                    "Value" : "${RegionVal01[$INDEX, $REGION]:-NULL}"
+                    "Key" : "${RegionKey01[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal01[$INDEX,$REGION]:-NULL}"
                 },
                 {
-                    "Key" : "${RegionKey02[$INDEX, $REGION]:-NULL}",
-                    "Value" : "${RegionVal02[$INDEX, $REGION]:-NULL}-${CONN_CONFIG[$INDEX, $REGION]}-${POSTFIX}"
+                    "Key" : "${RegionKey02[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal02[$INDEX,$REGION]:-NULL}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
                 }
             ],
-            "RegionName" : "${RegionName[$INDEX, $REGION]}"
+            "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
     )
@@ -110,15 +110,15 @@ else
             "ProviderName" : "${ProviderName[$INDEX]}",
             "KeyValueInfoList" : [
                 {
-                    "Key" : "${RegionKey01[$INDEX, $REGION]:-NULL}",
-                    "Value" : "${RegionVal01[$INDEX, $REGION]:-NULL}"
+                    "Key" : "${RegionKey01[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal01[$INDEX,$REGION]:-NULL}"
                 },
                 {
-                    "Key" : "${RegionKey02[$INDEX, $REGION]:-NULL}",
-                    "Value" : "${RegionVal02[$INDEX, $REGION]:-NULL}"
+                    "Key" : "${RegionKey02[$INDEX,$REGION]:-NULL}",
+                    "Value" : "${RegionVal02[$INDEX,$REGION]:-NULL}"
                 }
             ],
-            "RegionName" : "${RegionName[$INDEX, $REGION]}"
+            "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
     )
@@ -130,19 +130,11 @@ fi
 resp=$(
     curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d @- <<EOF
         {
-<<<<<<< HEAD
             "ConfigName" : "${CONN_CONFIG[$INDEX,$REGION]}",
             "CredentialName" : "${CredentialName[$INDEX]}",
             "ProviderName" : "${ProviderName[$INDEX]}",
             "DriverName" : "${DriverName[$INDEX]}",
             "RegionName" : "${RegionName[$INDEX,$REGION]}"
-=======
-            "CredentialName" : "${CredentialName[INDEX]}",
-            "ConfigName" : "${CONN_CONFIG[$INDEX, $REGION]}",
-            "ProviderName" : "${ProviderName[INDEX]}",
-            "DriverName" : "${DriverName[INDEX]}",
-            "RegionName" : "${RegionName[$INDEX, $REGION]}"
->>>>>>> Add install jq in script
         }
 EOF
 )
