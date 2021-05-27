@@ -9,13 +9,13 @@ import (
 )
 
 // RestRecommendVm godoc
-// @Summary RestRecommendVm specs by range
-// @Description RestRecommendVm specs by range
+// @Summary Recommend MCIS plan (filter and priority)
+// @Description Recommend MCIS plan (filter and priority)
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param deploymentPlan body mcis.DeploymentPlan false "RestRecommendVm for range-filtering specs"
+// @Param deploymentPlan body mcis.DeploymentPlan false "Recommend MCIS plan (filter and priority)"
 // @Success 200 {object} []mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

@@ -320,12 +320,12 @@ type RestInspectResourcesRequest struct {
 }
 
 // RestInspectResources godoc
-// @Summary Inspect Resources
-// @Description Inspect Resources
+// @Summary Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
+// @Description Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
 // @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
-// @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and type"
+// @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
 // @Success 200 {object} mcis.TbInspectResourcesResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

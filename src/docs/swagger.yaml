@@ -1538,9 +1538,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Inspect Resources
+      description: Inspect Resources (vNet, securityGroup, sshKey, vm) registered
+        in CB-Tumblebug, CB-Spider, CSP
       parameters:
-      - description: Specify connectionName and type
+      - description: Specify connectionName and resource type
         in: body
         name: connectionName
         required: true
@@ -1561,7 +1562,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Inspect Resources
+      summary: Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug,
+        CB-Spider, CSP
       tags:
       - '[Admin] Cloud environment management'
   /lookupImage:
@@ -1811,7 +1813,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Benchmark Action to MCIS
+      description: Run MCIS benchmark for a single performance metric and return results
       parameters:
       - description: Namespace ID
         in: path
@@ -1863,14 +1865,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Benchmark Action to MCIS
+      summary: Run MCIS benchmark for a single performance metric and return results
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkall/mcis/{mcisId}:
     post:
       consumes:
       - application/json
-      description: List all MCISs
+      description: Run MCIS benchmark for all performance metrics and return results
       parameters:
       - description: Namespace ID
         in: path
@@ -1903,7 +1905,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all MCISs
+      summary: Run MCIS benchmark for all performance metrics and return results
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/cmd/mcis/{mcisId}:
@@ -2244,7 +2246,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete MCIS
+      description: Delete VM in specified MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -2272,13 +2274,13 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete MCIS
+      summary: Delete VM in specified MCIS
       tags:
       - '[MCIS] Provisioning management'
     get:
       consumes:
       - application/json
-      description: Get MCIS
+      description: Get VM in specified MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -2329,7 +2331,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS
+      summary: Get VM in specified MCIS
       tags:
       - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
@@ -2412,7 +2414,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: InstallMonitorAgent MCIS
+      description: Install monitoring agent (CB-Dragonfly agent) to MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -2445,14 +2447,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: InstallMonitorAgent MCIS
+      summary: Install monitoring agent (CB-Dragonfly agent) to MCIS
       tags:
       - '[MCIS] Resource monitor (Developer)'
   /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
     get:
       consumes:
       - application/json
-      description: GetMonitorData MCIS
+      description: Get monitoring data of specified MCIS for specified monitoring
+        metric (cpu, memory, disk, network)
       parameters:
       - description: Namespace ID
         in: path
@@ -2484,14 +2487,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: GetMonitorData MCIS
+      summary: Get monitoring data of specified MCIS for specified monitoring metric
+        (cpu, memory, disk, network)
       tags:
       - '[MCIS] Resource monitor (Developer)'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:
       - application/json
-      description: Delete all MCIS Policys
+      description: Delete all MCIS policies
       parameters:
       - description: Namespace ID
         in: path
@@ -2509,13 +2513,13 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete all MCIS Policys
+      summary: Delete all MCIS policies
       tags:
       - '[MCIS] Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
-      description: List all MCIS Policys
+      description: List all MCIS policies
       parameters:
       - description: Namespace ID
         in: path
@@ -2537,7 +2541,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all MCIS Policys
+      summary: List all MCIS policies
       tags:
       - '[MCIS] Auto control policy management (WIP)'
   /ns/{nsId}/policy/mcis/{mcisId}:
@@ -3614,14 +3618,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: RestRecommendVm specs by range
+      description: Recommend MCIS plan (filter and priority)
       parameters:
       - description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: RestRecommendVm for range-filtering specs
+      - description: Recommend MCIS plan (filter and priority)
         in: body
         name: deploymentPlan
         schema:
@@ -3643,7 +3647,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: RestRecommendVm specs by range
+      summary: Recommend MCIS plan (filter and priority)
       tags:
       - '[MCIS] Provisioning management'
   /object:

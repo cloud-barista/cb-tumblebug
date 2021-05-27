@@ -299,7 +299,7 @@ var doc = `{
         },
         "/inspectResources": {
             "post": {
-                "description": "Inspect Resources",
+                "description": "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP",
                 "consumes": [
                     "application/json"
                 ],
@@ -309,10 +309,10 @@ var doc = `{
                 "tags": [
                     "[Admin] Cloud environment management"
                 ],
-                "summary": "Inspect Resources",
+                "summary": "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP",
                 "parameters": [
                     {
-                        "description": "Specify connectionName and type",
+                        "description": "Specify connectionName and resource type",
                         "name": "connectionName",
                         "in": "body",
                         "required": true,
@@ -715,7 +715,7 @@ var doc = `{
         },
         "/ns/{nsId}/benchmark/mcis/{mcisId}": {
             "post": {
-                "description": "Benchmark Action to MCIS",
+                "description": "Run MCIS benchmark for a single performance metric and return results",
                 "consumes": [
                     "application/json"
                 ],
@@ -725,7 +725,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Performance benchmarking (WIP)"
                 ],
-                "summary": "Benchmark Action to MCIS",
+                "summary": "Run MCIS benchmark for a single performance metric and return results",
                 "parameters": [
                     {
                         "type": "string",
@@ -797,7 +797,7 @@ var doc = `{
         },
         "/ns/{nsId}/benchmarkall/mcis/{mcisId}": {
             "post": {
-                "description": "List all MCISs",
+                "description": "Run MCIS benchmark for all performance metrics and return results",
                 "consumes": [
                     "application/json"
                 ],
@@ -807,7 +807,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Performance benchmarking (WIP)"
                 ],
-                "summary": "List all MCISs",
+                "summary": "Run MCIS benchmark for all performance metrics and return results",
                 "parameters": [
                     {
                         "type": "string",
@@ -1414,7 +1414,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}": {
             "get": {
-                "description": "Get MCIS",
+                "description": "Get VM in specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -1424,7 +1424,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "Get MCIS",
+                "summary": "Get VM in specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -1501,7 +1501,7 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "Delete MCIS",
+                "description": "Delete VM in specified MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -1511,7 +1511,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "Delete MCIS",
+                "summary": "Delete VM in specified MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -1613,7 +1613,7 @@ var doc = `{
         },
         "/ns/{nsId}/monitoring/install/mcis/{mcisId}": {
             "post": {
-                "description": "InstallMonitorAgent MCIS",
+                "description": "Install monitoring agent (CB-Dragonfly agent) to MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -1623,7 +1623,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Resource monitor (Developer)"
                 ],
-                "summary": "InstallMonitorAgent MCIS",
+                "summary": "Install monitoring agent (CB-Dragonfly agent) to MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -1673,7 +1673,7 @@ var doc = `{
         },
         "/ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}": {
             "get": {
-                "description": "GetMonitorData MCIS",
+                "description": "Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1683,7 +1683,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Resource monitor (Developer)"
                 ],
-                "summary": "GetMonitorData MCIS",
+                "summary": "Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1731,7 +1731,7 @@ var doc = `{
         },
         "/ns/{nsId}/policy/mcis": {
             "get": {
-                "description": "List all MCIS Policys",
+                "description": "List all MCIS policies",
                 "consumes": [
                     "application/json"
                 ],
@@ -1741,7 +1741,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Auto control policy management (WIP)"
                 ],
-                "summary": "List all MCIS Policys",
+                "summary": "List all MCIS policies",
                 "parameters": [
                     {
                         "type": "string",
@@ -1773,7 +1773,7 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "Delete all MCIS Policys",
+                "description": "Delete all MCIS policies",
                 "consumes": [
                     "application/json"
                 ],
@@ -1783,7 +1783,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Auto control policy management (WIP)"
                 ],
-                "summary": "Delete all MCIS Policys",
+                "summary": "Delete all MCIS policies",
                 "parameters": [
                     {
                         "type": "string",
@@ -3419,7 +3419,7 @@ var doc = `{
         },
         "/ns/{nsId}/testRecommendVm": {
             "post": {
-                "description": "RestRecommendVm specs by range",
+                "description": "Recommend MCIS plan (filter and priority)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3429,7 +3429,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "RestRecommendVm specs by range",
+                "summary": "Recommend MCIS plan (filter and priority)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3439,7 +3439,7 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "RestRecommendVm for range-filtering specs",
+                        "description": "Recommend MCIS plan (filter and priority)",
                         "name": "deploymentPlan",
                         "in": "body",
                         "schema": {
