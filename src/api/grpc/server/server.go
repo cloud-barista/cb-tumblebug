@@ -53,7 +53,7 @@ func RunServer() {
 	pb.RegisterMCISServer(gs, &grpc_mcis.MCISService{})
 
 	if tumblebugsrv.Reflection == "enable" {
-		if tumblebugsrv.Interceptors.AuthJWT != nil {
+		if tumblebugsrv.Interceptors != nil && tumblebugsrv.Interceptors.AuthJWT != nil {
 			fmt.Printf("\n\n*** you can run reflection when jwt auth interceptor is not used ***\n\n")
 		} else {
 			reflection.Register(gs)
