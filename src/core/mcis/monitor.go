@@ -264,7 +264,15 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 	method := "POST"
 
 	for _, v := range vmList {
-		vmObjTmp, _ := GetVmObject(nsId, mcisId, v)
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
+		vmObjTmp, _ := GetVmObject(nsId, mcisId, vmId)
 		fmt.Println("MonAgentStatus : " + vmObjTmp.MonAgentStatus)
 
 		// Request agent installation (skip if in installing or installed status)
@@ -343,7 +351,14 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 	for _, v := range vmList {
 		wg.Add(1)
 
-		vmId := v
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
 		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
 
 		// DF: Get vm on-demand monitoring metric info

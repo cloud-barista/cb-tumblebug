@@ -478,7 +478,14 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 
 	for _, v := range vmList {
 
-		vmId := v
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
 		vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
 
 		//cmd := req.Command
@@ -873,10 +880,18 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
-	for _, v := range vmList {
+	for i, v := range vmList {
 		wg.Add(1)
 
-		vmId := v
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+			vmList[i] = vmId
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
 		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
 
 		go CallMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
@@ -1194,7 +1209,15 @@ func DelMcis(nsId string, mcisId string) error {
 
 	// delete vms info
 	for _, v := range vmList {
-		vmKey := common.GenMcisKey(nsId, mcisId, v)
+		var vmKey string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmKey = v
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmKey = common.GenMcisKey(nsId, mcisId, v)
+		}
+
 		fmt.Println(vmKey)
 
 		// get vm info
@@ -1627,8 +1650,10 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 		for _, v1 := range vmList {
 			var vmKey string
 			if strings.Contains(v1, "/ns/") && strings.Contains(v1, "/mcis/") && strings.Contains(v1, "/vm/") {
+				// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
 				vmKey = v1
 			} else {
+				// The case that v is a string in form of "vm-01".
 				vmKey = common.GenMcisKey(nsId, mcisId, v1)
 			}
 
@@ -1855,7 +1880,14 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 	for _, v := range vmList {
 
-		vmId := v
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
 		vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
 
 		cmd := req.Command
@@ -3004,7 +3036,15 @@ func ControlMcis(nsId string, mcisId string, action string) error {
 
 	// delete vms info
 	for _, v := range vmList {
-		ControlVm(nsId, mcisId, v, action)
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
+		ControlVm(nsId, mcisId, vmId, action)
 	}
 	return nil
 
@@ -3123,7 +3163,16 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 		// Avoid concurrent requests to CSP.
 		time.Sleep(time.Duration(2) * time.Second)
 
-		go ControlVmAsync(&wg, nsId, mcisId, v, action, &results)
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
+
+		go ControlVmAsync(&wg, nsId, mcisId, vmId, action, &results)
 	}
 	wg.Wait() //goroutine sync wg
 
@@ -3606,8 +3655,16 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 		return TbMcisInfo{}, err
 	}
 
-	for _, vmID := range vmList {
-		vmtmp, err := GetVmObject(nsId, mcisId, vmID)
+	for _, v := range vmList {
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
+		vmtmp, err := GetVmObject(nsId, mcisId, vmId)
 		if err != nil {
 			common.CBLog.Error(err)
 			return TbMcisInfo{}, err
@@ -3685,13 +3742,29 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 	var wg sync.WaitGroup
 	for _, v := range vmList {
 		wg.Add(1)
-		go GetVmStatusAsync(&wg, nsId, mcisId, v, &mcisStatus)
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
+		go GetVmStatusAsync(&wg, nsId, mcisId, vmId, &mcisStatus)
 	}
 	wg.Wait() //goroutine sync wg
 
 	for _, v := range vmList {
 		// set master IP of MCIS (Default rule: select 1st Running VM as master)
-		vmtmp, _ := GetVmObject(nsId, mcisId, v)
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
+		vmtmp, _ := GetVmObject(nsId, mcisId, vmId)
 		if vmtmp.Status == StatusRunning {
 			mcisStatus.MasterVmId = vmtmp.Id
 			mcisStatus.MasterIp = vmtmp.PublicIP
@@ -4323,7 +4396,15 @@ func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error
 
 	// delete vms info
 	for _, v := range vmList {
-		vmObj, vmErr := GetVmObject(nsId, mcisId, v)
+		var vmId string
+		if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+			// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+			vmId = strings.Split(v, "/")[6]
+		} else {
+			// The case that v is a string in form of "vm-01".
+			vmId = v
+		}
+		vmObj, vmErr := GetVmObject(nsId, mcisId, vmId)
 		if vmErr != nil {
 			common.CBLog.Error(err)
 			return nil, vmErr
@@ -4354,7 +4435,15 @@ func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 
 	rand.Seed(time.Now().UnixNano())
 	index := rand.Intn(len(vmList))
-	vmObj, vmErr := GetVmObject(nsId, mcisId, vmList[index])
+	var vmId string
+	if strings.Contains(vmList[index], "/ns/") && strings.Contains(vmList[index], "/mcis/") && strings.Contains(vmList[index], "/vm/") {
+		// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+		vmId = strings.Split(vmList[index], "/")[6]
+	} else {
+		// The case that v is a string in form of "vm-01".
+		vmId = vmList[index]
+	}
+	vmObj, vmErr := GetVmObject(nsId, mcisId, vmId)
 	var vmTemplate TbVmInfo
 
 	// only take template required to create VM

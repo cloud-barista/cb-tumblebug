@@ -316,7 +316,15 @@ func InspectVMs(connConfig string) (interface{}, error) {
 				continue
 			}
 
-			for _, vmId := range vmListInMcis {
+			for _, v := range vmListInMcis {
+				var vmId string
+				if strings.Contains(v, "/ns/") && strings.Contains(v, "/mcis/") && strings.Contains(v, "/vm/") {
+					// The case that v is a string in form of "/ns/ns-01/mcis/mcis-01/vm/vm-01".
+					vmId = strings.Split(v, "/")[6]
+				} else {
+					// The case that v is a string in form of "vm-01".
+					vmId = v
+				}
 				vm, err := GetVmObject(ns, mcis, vmId)
 				if err != nil {
 					common.CBLog.Error(err)

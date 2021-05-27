@@ -2,7 +2,7 @@ version: 1
 grpc:
   tumblebugsrv:
     addr: :50252
-    #reflection: enable
+    reflection: enable
     #tls:
     #  tls_cert: $CBTUMBLEBUG_ROOT/certs/server.crt
     #  tls_key: $CBTUMBLEBUG_ROOT/certs/server.key
