@@ -11,7 +11,7 @@ replace (
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/beego/beego/v2 v2.0.1
-	github.com/bramvdbogaerde/go-scp v0.0.0-20210327204631-70ee53679fc9
+	github.com/bramvdbogaerde/go-scp v0.0.0-20210526132241-877482f5981e
 	github.com/cloud-barista/cb-log v0.3.1
 	github.com/cloud-barista/cb-spider v0.3.13
 	github.com/cloud-barista/cb-store v0.3.14
@@ -32,12 +32,13 @@ require (
 	github.com/labstack/echo/v4 v4.3.0
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pelletier/go-toml v1.9.1 // indirect
 	github.com/prometheus/client_golang v1.10.0
-	github.com/prometheus/common v0.24.0 // indirect
+	github.com/prometheus/common v0.25.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/assertions v1.1.0 // indirect
@@ -50,18 +51,21 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/echo-swagger v1.1.0
 	github.com/swaggo/swag v1.7.0
-	github.com/tidwall/gjson v1.7.5
+	github.com/tidwall/gjson v1.8.0
+	github.com/tidwall/pretty v1.1.1 // indirect
 	github.com/tidwall/sjson v1.1.6
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20200427203606-3cfed13b9966 // indirect
-	github.com/uber/jaeger-client-go v2.28.0+incompatible
+	github.com/uber/jaeger-client-go v2.29.1+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
+	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
-	golang.org/x/sys v0.0.0-20210511113859-b0526f3d8744 // indirect
+	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
+	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
-	golang.org/x/tools v0.1.1 // indirect
-	google.golang.org/genproto v0.0.0-20210513213006-bf773b8c8384 // indirect
-	google.golang.org/grpc v1.37.1
+	golang.org/x/tools v0.1.2 // indirect
+	google.golang.org/genproto v0.0.0-20210524171403-669157292da3 // indirect
+	google.golang.org/grpc v1.38.0
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.2.0 // indirect

@@ -697,6 +697,13 @@ definitions:
       filter:
         $ref: '#/definitions/mcis.FilterInfo'
       limit:
+        enum:
+        - "1"
+        - "2"
+        - '...'
+        - "30"
+        - '...'
+        example: "5"
         type: string
       priority:
         $ref: '#/definitions/mcis.PriorityInfo'
@@ -708,6 +715,11 @@ definitions:
           $ref: '#/definitions/mcis.Operation'
         type: array
       metric:
+        enum:
+        - num_vCPU
+        - mem_GiB
+        - Cost_per_hour
+        example: num_vCPU
         type: string
     type: object
   mcis.FilterInfo:
@@ -836,18 +848,35 @@ definitions:
     properties:
       operand:
         description: 10, 70, 80, 98, ...
+        enum:
+        - "4"
+        - "8"
+        - ..
+        example: "4"
         type: string
       operator:
-        description: <, <=, >, >=, ...
+        description: '>=, <=, =='
+        enum:
+        - '>='
+        - <=
+        - ==
+        example: '>='
         type: string
     type: object
   mcis.ParameterKeyVal:
     properties:
       key:
         description: coordinate
+        enum:
+        - coordinateClose
+        - coordinateWithin
+        - coordinateFair
+        example: coordinateClose
         type: string
       val:
-        description: '[{Latitude,Longitude},{12,543},{66,33},{31,433}]'
+        description: '["Latitude,Longitude","12,543",..,"31,433"]'
+        example:
+        - 46.3772/2.3730
         items:
           type: string
         type: array
@@ -864,7 +893,12 @@ definitions:
   mcis.PriorityCondition:
     properties:
       metric:
-        description: location
+        description: location,latency,cost
+        enum:
+        - location
+        - latency
+        - cost
+        example: location
         type: string
       parameter:
         items:
@@ -872,6 +906,11 @@ definitions:
         type: array
       weight:
         description: "0.3"
+        enum:
+        - "0.1"
+        - "0.2"
+        - '...'
+        example: "0.3"
         type: string
     type: object
   mcis.PriorityInfo:
@@ -1769,10 +1808,10 @@ paths:
       tags:
       - '[Namespace] Namespace management'
   /ns/{nsId}/benchmark/mcis/{mcisId}:
-    get:
+    post:
       consumes:
       - application/json
-      description: Get MCIS
+      description: Benchmark Action to MCIS
       parameters:
       - description: Namespace ID
         in: path
@@ -1790,6 +1829,25 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcis.RestGetBenchmarkRequest'
+      - description: Benchmark Action to MCIS
+        enum:
+        - install
+        - init
+        - cpus
+        - cpum
+        - memR
+        - memW
+        - fioR
+        - fioW
+        - dbR
+        - dbW
+        - rtt
+        - mrtt
+        - clean
+        in: query
+        name: action
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1805,11 +1863,11 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS
+      summary: Benchmark Action to MCIS
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkall/mcis/{mcisId}:
-    get:
+    post:
       consumes:
       - application/json
       description: List all MCISs

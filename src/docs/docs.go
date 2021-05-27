@@ -714,8 +714,8 @@ var doc = `{
             }
         },
         "/ns/{nsId}/benchmark/mcis/{mcisId}": {
-            "get": {
-                "description": "Get MCIS",
+            "post": {
+                "description": "Benchmark Action to MCIS",
                 "consumes": [
                     "application/json"
                 ],
@@ -725,7 +725,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Performance benchmarking (WIP)"
                 ],
-                "summary": "Get MCIS",
+                "summary": "Benchmark Action to MCIS",
                 "parameters": [
                     {
                         "type": "string",
@@ -749,6 +749,28 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/mcis.RestGetBenchmarkRequest"
                         }
+                    },
+                    {
+                        "enum": [
+                            "install",
+                            "init",
+                            "cpus",
+                            "cpum",
+                            "memR",
+                            "memW",
+                            "fioR",
+                            "fioW",
+                            "dbR",
+                            "dbW",
+                            "rtt",
+                            "mrtt",
+                            "clean"
+                        ],
+                        "type": "string",
+                        "description": "Benchmark Action to MCIS",
+                        "name": "action",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -774,7 +796,7 @@ var doc = `{
             }
         },
         "/ns/{nsId}/benchmarkall/mcis/{mcisId}": {
-            "get": {
+            "post": {
                 "description": "List all MCISs",
                 "consumes": [
                     "application/json"
@@ -4794,7 +4816,15 @@ var doc = `{
                     "$ref": "#/definitions/mcis.FilterInfo"
                 },
                 "limit": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "1",
+                        "2",
+                        "...",
+                        "30",
+                        "..."
+                    ],
+                    "example": "5"
                 },
                 "priority": {
                     "$ref": "#/definitions/mcis.PriorityInfo"
@@ -4811,7 +4841,13 @@ var doc = `{
                     }
                 },
                 "metric": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "num_vCPU",
+                        "mem_GiB",
+                        "Cost_per_hour"
+                    ],
+                    "example": "num_vCPU"
                 }
             }
         },
@@ -5002,11 +5038,23 @@ var doc = `{
             "properties": {
                 "operand": {
                     "description": "10, 70, 80, 98, ...",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "4",
+                        "8",
+                        ".."
+                    ],
+                    "example": "4"
                 },
                 "operator": {
-                    "description": "\u003c, \u003c=, \u003e, \u003e=, ...",
-                    "type": "string"
+                    "description": "\u003e=, \u003c=, ==",
+                    "type": "string",
+                    "enum": [
+                        "\u003e=",
+                        "\u003c=",
+                        "=="
+                    ],
+                    "example": "\u003e="
                 }
             }
         },
@@ -5015,14 +5063,23 @@ var doc = `{
             "properties": {
                 "key": {
                     "description": "coordinate",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "coordinateClose",
+                        "coordinateWithin",
+                        "coordinateFair"
+                    ],
+                    "example": "coordinateClose"
                 },
                 "val": {
-                    "description": "[{Latitude,Longitude},{12,543},{66,33},{31,433}]",
+                    "description": "[\"Latitude,Longitude\",\"12,543\",..,\"31,433\"]",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "46.3772/2.3730"
+                    ]
                 }
             }
         },
@@ -5044,8 +5101,14 @@ var doc = `{
             "type": "object",
             "properties": {
                 "metric": {
-                    "description": "location",
-                    "type": "string"
+                    "description": "location,latency,cost",
+                    "type": "string",
+                    "enum": [
+                        "location",
+                        "latency",
+                        "cost"
+                    ],
+                    "example": "location"
                 },
                 "parameter": {
                     "type": "array",
@@ -5055,7 +5118,13 @@ var doc = `{
                 },
                 "weight": {
                     "description": "0.3",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "0.1",
+                        "0.2",
+                        "..."
+                    ],
+                    "example": "0.3"
                 }
             }
         },

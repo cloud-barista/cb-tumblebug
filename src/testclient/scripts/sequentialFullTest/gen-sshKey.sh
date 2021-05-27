@@ -70,7 +70,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	chmod 600 ./sshkey-tmp/$KEYFILENAME.pem
 	puttygen ./sshkey-tmp/$KEYFILENAME.pem -o ./sshkey-tmp/$KEYFILENAME.ppk -O private
 
-	printf ' [VMIP]: %s   [MCISID]: %s   [VMID]: %s\n' "$ip" "MCISID" "$id"
+	printf ' [VMIP]: %s   [MCISID]: %s   [VMID]: %s\n' "$ip" "$MCISID" "$id"
 
 	echo -e " ./sshkey-tmp/$KEYFILENAME.pem \n ./sshkey-tmp/$KEYFILENAME.ppk"
 	echo ""
@@ -97,7 +97,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 
 	echo ""
 	# USERNAME="ubuntu"
-	printf ' [VMIP]: %s   [MCISID]: %s   [VMID]: %s\n' "$ip" "MCISID" "$id"
+	printf ' [VMIP]: %s   [MCISID]: %s   [VMID]: %s\n' "$ip" "$MCISID" "$id"
 	printf ' ssh -i ./sshkey-tmp/%s.pem %s@%s -o StrictHostKeyChecking=no\n' "$KEYFILENAME" "$USERNAME" "$ip"
 done
 

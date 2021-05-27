@@ -2,50 +2,53 @@
 
 #function register_cloud() {
 
+echo "[Check jq package (if not, install)]"
+if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
 
-    FILE=../credentials.conf
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
+FILE=../credentials.conf
+if [ ! -f "$FILE" ]; then
+    echo "$FILE does not exist."
+    exit
+fi
 
-    TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-    source ../credentials.conf
-    
-    echo "####################################################################"
-    echo "## 1. Create Cloud Connction Config"
-    echo "####################################################################"
+TestSetFile=${4:-../testSet.env}
+if [ ! -f "$TestSetFile" ]; then
+    echo "$TestSetFile does not exist."
+    exit
+fi
+source $TestSetFile
+source ../conf.env
+source ../credentials.conf
 
-    CSP=${1}
-    REGION=${2:-1}
-    POSTFIX=${3:-developer}
-    
-	source ../common-functions.sh
-	getCloudIndex $CSP
+echo "####################################################################"
+echo "## 1. Create Cloud Connction Config"
+echo "####################################################################"
 
-    RESTSERVER=localhost
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
 
-    # for Cloud Driver Info
-    resp=$(
-        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d @- <<EOF
+source ../common-functions.sh
+getCloudIndex $CSP
+
+RESTSERVER=localhost
+
+# for Cloud Driver Info
+resp=$(
+    curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d @- <<EOF
         {
              "ProviderName" : "${ProviderName[$INDEX]}",
              "DriverLibFileName" : "${DriverLibFileName[$INDEX]}",
              "DriverName" : "${DriverName[$INDEX]}"
          }
 EOF
-    ); echo ${resp} | jq ''
-    echo ""
+)
+echo ${resp} | jq ''
+echo ""
 
-    # for Cloud Credential Info
-    resp=$(
-        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d @- <<EOF
+# for Cloud Credential Info
+resp=$(
+    curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d @- <<EOF
         {
              "ProviderName" : "${ProviderName[$INDEX]}",
              "CredentialName" : "${CredentialName[$INDEX]}",
@@ -73,14 +76,15 @@ EOF
              ]
          }
 EOF
-    ); echo ${resp} | jq '.message'
-    echo ""
+)
+echo ${resp} | jq '.message'
+echo ""
 
-    # for Cloud Region Info
-    # Differenciate Cloud Region Value for Resource Group Name
-    if [ "${CSP}" == "azure" ]; then
-        resp=$(
-            curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
+# for Cloud Region Info
+# Differenciate Cloud Region Value for Resource Group Name
+if [ "${CSP}" == "azure" ]; then
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
             {
             "ProviderName" : "${ProviderName[$INDEX]}",
             "KeyValueInfoList" : [
@@ -96,11 +100,12 @@ EOF
             "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
-        ); echo ${resp} | jq ''
-        echo ""
-    else
-        resp=$(
-            curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
+    )
+    echo ${resp} | jq ''
+    echo ""
+else
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
             {
             "ProviderName" : "${ProviderName[$INDEX]}",
             "KeyValueInfoList" : [
@@ -116,14 +121,14 @@ EOF
             "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
-        ); echo ${resp} | jq ''
-        echo ""
-    fi
+    )
+    echo ${resp} | jq ''
+    echo ""
+fi
 
-
-    # for Cloud Connection Config Info
-    resp=$(
-        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d @- <<EOF
+# for Cloud Connection Config Info
+resp=$(
+    curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d @- <<EOF
         {
             "ConfigName" : "${CONN_CONFIG[$INDEX,$REGION]}",
             "CredentialName" : "${CredentialName[$INDEX]}",
@@ -132,8 +137,9 @@ EOF
             "RegionName" : "${RegionName[$INDEX,$REGION]}"
         }
 EOF
-    ); echo ${resp} | jq ''
-    echo ""
+)
+echo ${resp} | jq ''
+echo ""
 #}
 
 #register_cloud
