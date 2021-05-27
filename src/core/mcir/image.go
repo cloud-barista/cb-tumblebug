@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/xwb1989/sqlparser"
@@ -457,6 +458,15 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	}
 }
 
+func RefineImageName(specName string) string {
+	out := strings.ToLower(specName)
+	out = strings.ReplaceAll(out, ".", "-")
+	out = strings.ReplaceAll(out, "_", "-")
+	out = strings.ReplaceAll(out, ":", "-")
+
+	return out
+}
+
 // FetchImages gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
 func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error) {
 	connConfigs, err := common.GetConnConfigList()
@@ -481,7 +491,7 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 				return 0, 0, err
 			}
 
-			tumblebugImageId := connConfig.ConfigName + "-" + tumblebugImage.Name
+			tumblebugImageId := connConfig.ConfigName + "-" + RefineImageName(tumblebugImage.Name)
 			//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
 
 			check, err := CheckResource(nsId, common.StrImage, tumblebugImageId)
@@ -492,7 +502,6 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 				common.CBLog.Infoln("Cannot check the existence of " + tumblebugImageId + " in TB; continue")
 				continue
 			} else {
-				tumblebugImage.Id = tumblebugImageId
 				tumblebugImage.Name = tumblebugImageId
 				tumblebugImage.ConnectionName = connConfig.ConfigName
 
