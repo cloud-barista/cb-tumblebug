@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 
 	//"strings"
 
@@ -281,6 +282,14 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 	}
 }
 
+func RefineSpecName(specName string) string {
+	out := strings.ToLower(specName)
+	out = strings.ReplaceAll(out, ".", "-")
+	out = strings.ReplaceAll(out, "_", "-")
+
+	return out
+}
+
 // FetchSpecs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
 func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
@@ -312,7 +321,7 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 				return 0, 0, err
 			}
 
-			tumblebugSpecId := connConfig.ConfigName + "-" + tumblebugSpec.Name
+			tumblebugSpecId := connConfig.ConfigName + "-" + RefineSpecName(tumblebugSpec.Name)
 			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
 
 			check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
@@ -323,7 +332,6 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 				common.CBLog.Infoln("Cannot check the existence of " + tumblebugSpecId + " in TB; continue")
 				continue
 			} else {
-				tumblebugSpec.Id = tumblebugSpecId
 				tumblebugSpec.Name = tumblebugSpecId
 				tumblebugSpec.ConnectionName = connConfig.ConfigName
 
