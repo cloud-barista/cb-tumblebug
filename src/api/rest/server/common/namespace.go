@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -35,19 +34,19 @@ func RestCheckNs(c echo.Context) error {
 
 	if err := Validate(c, []string{"nsId"}); err != nil {
 		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusBadRequest, err.Error())
+		return SendMessage(c, http.StatusNotFound, err.Error())
 	}
 
-	lowerizedNsId := strings.ToLower(c.Param("nsId"))
-	err := common.CheckString(lowerizedNsId)
+	nsId := c.Param("nsId")
+	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
-	exists, err := common.CheckNs(lowerizedNsId)
+	exists, err := common.CheckNs(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusBadRequest, err.Error())
+		return SendMessage(c, http.StatusNotFound, err.Error())
 	}
 
 	return SendExistence(c, http.StatusOK, exists)

@@ -34,7 +34,6 @@ func init() {
 // DelAllResources deletes all TB MCIR object of given resourceType
 func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -61,13 +60,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	fmt.Printf("DelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
-	resourceId = strings.ToLower(resourceId)
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -651,7 +649,6 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 // ListResourceId returns the list of TB MCIR object IDs of given resourceType
 func ListResourceId(nsId string, resourceType string) []string {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -694,7 +691,6 @@ func ListResourceId(nsId string, resourceType string) []string {
 // ListResource returns the list of TB MCIR objects of given resourceType
 func ListResource(nsId string, resourceType string) (interface{}, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -810,13 +806,13 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 
 // GetAssociatedObjectCount returns the number of MCIR's associated Tumblebug objects
 func GetAssociatedObjectCount(nsId string, resourceType string, resourceId string) (int, error) {
-	nsId = strings.ToLower(nsId)
+
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return -1, err
 	}
-	resourceId = strings.ToLower(resourceId)
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -860,13 +856,12 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	var result []string
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	resourceId = strings.ToLower(resourceId)
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -951,13 +946,12 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 // UpdateAssociatedObjectList adds or deletes the objectKey (currently, vmKey) to/from TB object's associatedObjectList
 func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId string, cmd string, objectKey string) ([]string, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	resourceId = strings.ToLower(resourceId)
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1076,13 +1070,12 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 // GetResource returns the requested TB MCIR object
 func GetResource(nsId string, resourceType string, resourceId string) (interface{}, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	resourceId = strings.ToLower(resourceId)
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1193,13 +1186,12 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		return false, err
 	}
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return false, err
 	}
-	resourceId = strings.ToLower(resourceId)
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)

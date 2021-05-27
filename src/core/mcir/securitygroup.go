@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -80,14 +79,12 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	resourceType := common.StrSecurityGroup
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSecurityGroupInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	u.Name = strings.ToLower(u.Name)
 	err = common.CheckString(u.Name)
 	if err != nil {
 		temp := TbSecurityGroupInfo{}

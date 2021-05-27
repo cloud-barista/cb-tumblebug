@@ -3,7 +3,7 @@ package mcis
 import (
 
 	//"encoding/json"
-	"strings"
+
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -221,14 +221,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := AgentInstallContentWrapper{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := AgentInstallContentWrapper{}
@@ -303,14 +302,13 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 // GetMonitoringData func retrieves monitoring data from cb-dragonfly
 func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimpleResponse, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := MonResultSimpleResponse{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := MonResultSimpleResponse{}

@@ -34,7 +34,7 @@ func NsValidation() echo.MiddlewareFunc {
 			if nsId == "" {
 				return next(c)
 			}
-			nsId = strings.ToLower(nsId)
+
 			err := CheckString(nsId)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusNotFound, "The first character of name must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.")
@@ -51,7 +51,6 @@ func NsValidation() echo.MiddlewareFunc {
 }
 
 func CreateNs(u *NsReq) (NsInfo, error) {
-	u.Name = strings.ToLower(u.Name)
 	err := CheckString(u.Name)
 	if err != nil {
 		temp := NsInfo{}
@@ -101,7 +100,6 @@ func GetNs(id string) (NsInfo, error) {
 
 	res := NsInfo{}
 
-	id = strings.ToLower(id)
 	err := CheckString(id)
 	if err != nil {
 		temp := NsInfo{}
@@ -202,7 +200,6 @@ func ListNsId() []string {
 
 func DelNs(id string) error {
 
-	id = strings.ToLower(id)
 	err := CheckString(id)
 	if err != nil {
 		CBLog.Error(err)
@@ -294,7 +291,6 @@ func CheckNs(id string) (bool, error) {
 		return false, err
 	}
 
-	id = strings.ToLower(id)
 	err := CheckString(id)
 	if err != nil {
 		CBLog.Error(err)

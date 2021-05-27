@@ -438,14 +438,13 @@ type AgentInstallContent struct {
 
 func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := AgentInstallContentWrapper{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := AgentInstallContentWrapper{}
@@ -650,14 +649,13 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 
 	var err error
 
-	nsId = strings.ToLower(nsId)
 	err = common.CheckString(nsId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
 		common.CBLog.Error(err)
 		return &temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
@@ -809,14 +807,13 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 
 	var err error
 
-	nsId = strings.ToLower(nsId)
 	err = common.CheckString(nsId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
 		common.CBLog.Error(err)
 		return &temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
@@ -1043,7 +1040,6 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 func ListMcisId(nsId string) []string {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1077,13 +1073,13 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 	// common.CBLog.Info("ListVmId called. nsId: " + nsId + ", mcisId: " + mcisId) // for debug
 	fmt.Println("ListVmId called. nsId: " + nsId + ", mcisId: " + mcisId) // for debug
-	nsId = strings.ToLower(nsId)
+
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1120,13 +1116,12 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 // func ListVmGroupId returns list of VmGroups in a given MCIS.
 func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1151,13 +1146,12 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 
 func DelMcis(nsId string, mcisId string) error {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1244,19 +1238,18 @@ func DelMcis(nsId string, mcisId string) error {
 
 func DelMcisVm(nsId string, mcisId string, vmId string) error {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
-	vmId = strings.ToLower(vmId)
+
 	err = common.CheckString(vmId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1364,13 +1357,12 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return "", err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1464,14 +1456,13 @@ func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error
 
 func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &McisStatusInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &McisStatusInfo{}
@@ -1511,14 +1502,13 @@ func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 // GetMcisInfo func returns MCIS information with the current status update
 func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbMcisInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &TbMcisInfo{}
@@ -1570,7 +1560,6 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
 func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1669,7 +1658,6 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 func CoreDelAllMcis(nsId string) (string, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1699,7 +1687,6 @@ func CoreDelAllMcis(nsId string) (string, error) {
 
 func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1748,19 +1735,18 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return "", err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return "", err
 	}
-	vmId = strings.ToLower(vmId)
+
 	err = common.CheckString(vmId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1809,13 +1795,12 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 
 func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1895,21 +1880,19 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 
 func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbVmInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &TbVmInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	vmInfoData.Name = strings.ToLower(vmInfoData.Name)
 	err = common.CheckString(vmInfoData.Name)
 	if err != nil {
 		temp := &TbVmInfo{}
@@ -1999,21 +1982,19 @@ func CorePostMcisGroupVm(nsId string, mcisId string, vmReq *TbVmReq) (*TbMcisInf
 
 func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbMcisInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &TbMcisInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	vmRequest.Name = strings.ToLower(vmRequest.Name)
 	err = common.CheckString(vmRequest.Name)
 	if err != nil {
 		temp := &TbMcisInfo{}
@@ -2164,19 +2145,18 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 
 func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string) (string, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return "", err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return "", err
 	}
-	vmId = strings.ToLower(vmId)
+
 	err = common.CheckString(vmId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -2229,14 +2209,13 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 
 func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbVmStatusInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &TbVmStatusInfo{}
@@ -2244,7 +2223,6 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 		return temp, err
 	}
 
-	vmId = strings.ToLower(vmId)
 	err = common.CheckString(vmId)
 	if err != nil {
 		temp := &TbVmStatusInfo{}
@@ -2283,21 +2261,20 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 
 func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbVmInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &TbVmInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	vmId = strings.ToLower(vmId)
+
 	err = common.CheckString(vmId)
 	if err != nil {
 		temp := &TbVmInfo{}
@@ -2346,14 +2323,12 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 // CreateMcis function create MCIS obeject and deploy requested VMs.
 func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbMcisInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	req.Name = strings.ToLower(req.Name)
 	err = common.CheckString(req.Name)
 	if err != nil {
 		temp := &TbMcisInfo{}
@@ -3620,14 +3595,13 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 
 func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := McisStatusInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := McisStatusInfo{}

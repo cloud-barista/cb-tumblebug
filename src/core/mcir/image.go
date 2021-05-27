@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/xwb1989/sqlparser"
@@ -90,14 +89,12 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	resourceType := common.StrImage
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbImageInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	u.Name = strings.ToLower(u.Name)
 	err = common.CheckString(u.Name)
 	if err != nil {
 		temp := TbImageInfo{}
@@ -200,14 +197,12 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	resourceType := common.StrImage
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbImageInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	content.Name = strings.ToLower(content.Name)
 	err = common.CheckString(content.Name)
 	if err != nil {
 		temp := TbImageInfo{}
@@ -230,7 +225,6 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	//content.Id = common.GenUuid()
 	content.Id = content.Name
-	content.Name = content.Name
 	content.AssociatedObjectList = []string{}
 
 	sql := "INSERT INTO `image`(" +
@@ -517,7 +511,7 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 
 // SearchImage accepts arbitrary number of keywords, and returns the list of matched TB image objects
 func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
-	nsId = strings.ToLower(nsId)
+
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -530,7 +524,7 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 
 	for _, keyword := range keywords {
 		//fmt.Println("in SearchImage(); keyword: " + keyword) // for debug
-		keyword = strings.ToLower(keyword)
+		//keyword = strings.ToLower(keyword)
 		sqlQuery += " AND `name` LIKE '%" + keyword + "%'"
 	}
 	sqlQuery += ";"
