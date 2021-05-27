@@ -81,8 +81,8 @@ type RestGetAllMcisPolicyResponse struct {
 }
 
 // RestGetAllMcisPolicy godoc
-// @Summary List all MCIS Policys
-// @Description List all MCIS Policys
+// @Summary List all MCIS policies
+// @Description List all MCIS policies
 // @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
@@ -157,8 +157,8 @@ func RestDelMcisPolicy(c echo.Context) error {
 }
 
 // RestDelAllMcisPolicy godoc
-// @Summary Delete all MCIS Policys
-// @Description Delete all MCIS Policys
+// @Summary Delete all MCIS policies
+// @Description Delete all MCIS policies
 // @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json

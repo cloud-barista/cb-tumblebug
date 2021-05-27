@@ -502,8 +502,8 @@ func RestPostMcisVmGroup(c echo.Context) error {
 // Annotation for API documention Need to be revised.
 
 // RestGetMcisVm godoc
-// @Summary Get MCIS
-// @Description Get MCIS
+// @Summary Get VM in specified MCIS
+// @Description Get VM in specified MCIS
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
@@ -588,8 +588,8 @@ func RestPutMcisVm(c echo.Context) error {
 }
 
 // RestDelMcisVm godoc
-// @Summary Delete MCIS
-// @Description Delete MCIS
+// @Summary Delete VM in specified MCIS
+// @Description Delete VM in specified MCIS
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
@@ -622,8 +622,8 @@ type RestGetAllBenchmarkRequest struct {
 }
 
 // RestGetAllBenchmark godoc
-// @Summary List all MCISs
-// @Description List all MCISs
+// @Summary Run MCIS benchmark for all performance metrics and return results
+// @Description Run MCIS benchmark for all performance metrics and return results
 // @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
@@ -666,8 +666,8 @@ type RestGetBenchmarkRequest struct {
 }
 
 // RestGetBenchmark godoc
-// @Summary Benchmark Action to MCIS
-// @Description Benchmark Action to MCIS
+// @Summary Run MCIS benchmark for a single performance metric and return results
+// @Description Run MCIS benchmark for a single performance metric and return results
 // @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
