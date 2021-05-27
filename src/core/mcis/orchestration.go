@@ -386,14 +386,13 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 // CreateMcisPolicy create McisPolicyInfo object in DB according to user's requirements.
 func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicyInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := McisPolicyInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := McisPolicyInfo{}
@@ -440,14 +439,14 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 // GetMcisPolicyObject returns McisPolicyInfo object.
 func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 	fmt.Println("[GetMcisPolicyObject]" + mcisId)
-	nsId = strings.ToLower(nsId)
+
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := McisPolicyInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := McisPolicyInfo{}
@@ -475,7 +474,6 @@ func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 // GetAllMcisPolicyObject returns all McisPolicyInfo objects.
 func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -502,7 +500,6 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 // ListMcisPolicyId returns a list of Ids for all McisPolicyInfo objects .
 func ListMcisPolicyId(nsId string) []string {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -524,13 +521,12 @@ func ListMcisPolicyId(nsId string) []string {
 // DelMcisPolicy deletes McisPolicyInfo object by mcisId.
 func DelMcisPolicy(nsId string, mcisId string) error {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -561,7 +557,6 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 // DelAllMcisPolicy deletes all McisPolicyInfo objects.
 func DelAllMcisPolicy(nsId string) (string, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)

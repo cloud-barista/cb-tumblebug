@@ -71,13 +71,12 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 		return false, err
 	}
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return false, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -111,19 +110,17 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 		return false, err
 	}
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return false, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return false, err
 	}
-	vmId = strings.ToLower(vmId)
 	err = common.CheckString(vmId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -153,13 +150,12 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 		return false, err
 	}
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return false, err
 	}
-	mcisId = strings.ToLower(mcisId)
+
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)

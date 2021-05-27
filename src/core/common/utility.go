@@ -42,7 +42,6 @@ func GenUuid() string {
 }
 
 func CheckString(name string) error {
-	name = strings.ToLower(name)
 
 	r, _ := regexp.Compile("[a-z]([-a-z0-9]*[a-z0-9])?")
 	filtered := r.FindString(name)
@@ -115,7 +114,6 @@ func PrintJsonPretty(v interface{}) {
 }
 
 func GenResourceKey(nsId string, resourceType string, resourceId string) string {
-	//resourceType = strings.ToLower(resourceType)
 
 	if resourceType == StrImage ||
 		resourceType == StrSSHKey ||

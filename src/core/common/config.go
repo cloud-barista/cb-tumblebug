@@ -22,13 +22,6 @@ type ConfigInfo struct {
 }
 
 func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
-	// u.Name = strings.ToLower(u.Name)
-	// err := CheckString(u.Name)
-	// if err != nil {
-	// 	temp := ConfigInfo{}
-	// 	CBLog.Error(err)
-	// 	return temp, err
-	// }
 
 	content := ConfigInfo{}
 	content.Id = u.Name
@@ -63,15 +56,6 @@ func UpdateEnv(id string) error {
 		common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
 		common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 	*/
-
-	// One should not CheckString() these variables.
-	// lowStrSPIDER_REST_URL := strings.ToLower(StrSPIDER_REST_URL)
-	// lowStrDRAGONFLY_REST_URL := strings.ToLower(StrDRAGONFLY_REST_URL)
-	// lowStrDB_URL := strings.ToLower(StrDB_URL)
-	// lowStrDB_DATABASE := strings.ToLower(StrDB_DATABASE)
-	// lowStrDB_USER := strings.ToLower(StrDB_USER)
-	// lowStrDB_PASSWORD := strings.ToLower(StrDB_PASSWORD)
-	// lowStrAUTOCONTROL_DURATION_MS := strings.ToLower(StrAUTOCONTROL_DURATION_MS)
 
 	configInfo, err := GetConfig(id)
 	if err != nil {
@@ -112,13 +96,6 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	res := ConfigInfo{}
 
-	// id = strings.ToLower(id)
-	// err := CheckString(id)
-	// if err != nil {
-	// 	temp := ConfigInfo{}
-	// 	CBLog.Error(err)
-	// 	return temp, err
-	// }
 	check, err := CheckConfig(id)
 
 	if !check {
@@ -229,15 +206,6 @@ func CheckConfig(id string) (bool, error) {
 		err := fmt.Errorf("CheckConfig failed; configId given is null.")
 		return false, err
 	}
-
-	// id = strings.ToLower(id)
-	// err := CheckString(id)
-	// if err != nil {
-	// 	CBLog.Error(err)
-	// 	return false, err
-	// }
-
-	//fmt.Println("[Check config] " + lowerizedId)
 
 	key := "/config/" + id
 	//fmt.Println(key)

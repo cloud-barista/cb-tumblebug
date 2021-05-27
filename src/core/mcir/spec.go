@@ -6,7 +6,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 
 	//"strings"
 
@@ -285,7 +284,6 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 // FetchSpecs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
 func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
-	nsId = strings.ToLower(nsId)
 	err = common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -347,14 +345,12 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	resourceType := common.StrSpec
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSpecInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	u.Name = strings.ToLower(u.Name)
 	err = common.CheckString(u.Name)
 	if err != nil {
 		temp := TbSpecInfo{}
@@ -511,21 +507,18 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 
 	resourceType := common.StrSpec
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSpecInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	content.Name = strings.ToLower(content.Name)
 	err = common.CheckString(content.Name)
 	if err != nil {
 		temp := TbSpecInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	content.Name = content.Name
 	check, _ := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
@@ -535,7 +528,6 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	}
 
 	content.Id = content.Name
-	//content.Name = content.Name
 	content.AssociatedObjectList = []string{}
 
 	sql := "INSERT INTO `spec`(" +
@@ -651,7 +643,6 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 // RegisterRecommendList creates the spec recommendation info
 func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize uint16, diskSize uint32, specId string, price float32) error {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -679,7 +670,6 @@ func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, m
 // DelRecommendSpec deletes the spec recommendation info
 func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16, diskSize uint32) error {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -703,7 +693,6 @@ func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16
 // FilterSpecs accepts criteria for filtering, and returns the list of filtered TB spec objects
 func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -903,7 +892,7 @@ type FilterSpecsByRangeRequest struct {
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
 func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpecInfo, error) {
-	nsId = strings.ToLower(nsId)
+
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1254,14 +1243,12 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 func UpdateSpec(nsId string, newSpec TbSpecInfo) (TbSpecInfo, error) {
 	resourceType := common.StrSpec
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSpecInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	newSpec.Id = strings.ToLower(newSpec.Id)
 	err = common.CheckString(newSpec.Id)
 	if err != nil {
 		temp := TbSpecInfo{}

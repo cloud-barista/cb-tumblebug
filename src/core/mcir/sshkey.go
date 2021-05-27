@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -65,14 +64,12 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	resourceType := common.StrSSHKey
 
-	nsId = strings.ToLower(nsId)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSshKeyInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	u.Name = strings.ToLower(u.Name)
 	err = common.CheckString(u.Name)
 	if err != nil {
 		temp := TbSshKeyInfo{}
