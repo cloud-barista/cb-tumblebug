@@ -100,7 +100,7 @@ func RestGetMcis(c echo.Context) error {
 
 	} else if action == "status" {
 
-		result, err := mcis.CoreGetMcisStatus(nsId, mcisId)
+		result, err := mcis.GetMcisStatus(nsId, mcisId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusInternalServerError, &mapA)
