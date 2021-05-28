@@ -192,12 +192,31 @@ func RestFetchSpecs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	connConfigCount, specCount, err := mcir.FetchSpecs(nsId)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{
-			"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
+	u := &RestLookupSpecRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	var connConfigCount, specCount uint
+	var err error
+
+	if u.ConnectionName == "" {
+		connConfigCount, specCount, err = mcir.FetchSpecsForAllConnConfigs(nsId)
+		if err != nil {
+			common.CBLog.Error(err)
+			mapA := map[string]string{
+				"message": err.Error()}
+			return c.JSON(http.StatusInternalServerError, &mapA)
+		}
+	} else {
+		connConfigCount = 1
+		specCount, err = mcir.FetchSpecsForConnConfig(u.ConnectionName, nsId)
+		if err != nil {
+			common.CBLog.Error(err)
+			mapA := map[string]string{
+				"message": err.Error()}
+			return c.JSON(http.StatusInternalServerError, &mapA)
+		}
 	}
 
 	mapA := map[string]string{

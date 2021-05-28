@@ -412,10 +412,10 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcis.DeleteMcisPolicyByParam(nameSpaceID, mcisID)
 		case "delete-all-policy":
 			result, err = mcis.DeleteAllMcisPolicyByParam(nameSpaceID)
-		case "recommand":
-			result, err = mcis.RecommandMcis(inData)
-		case "recommand-vm":
-			result, err = mcis.RecommandVM(inData)
+		case "recommend":
+			result, err = mcis.RecommendMcis(inData)
+		case "recommend-vm":
+			result, err = mcis.RecommendVM(inData)
 		}
 	case "util":
 		switch cmd.Name() {

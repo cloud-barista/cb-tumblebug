@@ -253,14 +253,14 @@ func RestDelAllMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-type RestPostMcisRecommandResponse struct {
+type RestPostMcisRecommendResponse struct {
 	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
 	Vm_recommend   []mcis.TbVmRecommendInfo `json:"vm_recommend"`
 	PlacementAlgo  string                   `json:"placementAlgo"`
 	PlacementParam []common.KeyValue        `json:"placementParam"`
 }
 
-// RestPostMcisRecommand godoc
+// RestPostMcisRecommend godoc
 // @Summary Get MCIS recommendation
 // @Description Get MCIS recommendation
 // @Tags [MCIS] Provisioning management
@@ -268,12 +268,12 @@ type RestPostMcisRecommandResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisRecommendReq body mcis.McisRecommendReq true "Details for an MCIS object"
-// @Success 200 {object} RestPostMcisRecommandResponse
+// @Success 200 {object} RestPostMcisRecommendResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/recommend [post]
 // @Deprecated
-func RestPostMcisRecommand(c echo.Context) error {
+func RestPostMcisRecommend(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
@@ -282,13 +282,13 @@ func RestPostMcisRecommand(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.CorePostMcisRecommand(nsId, req)
+	result, err := mcis.CorePostMcisRecommend(nsId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	content := RestPostMcisRecommandResponse{}
+	content := RestPostMcisRecommendResponse{}
 	content.Vm_recommend = result
 	content.PlacementAlgo = req.PlacementAlgo
 	content.PlacementParam = req.PlacementParam

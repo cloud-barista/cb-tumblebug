@@ -155,7 +155,7 @@ func (s *MCIRService) FetchImage(ctx context.Context, req *pb.FetchImageQryReque
 
 	logger.Debug("calling MCIRService.FetchImage()")
 
-	connConfigCount, ImageCount, err := mcir.FetchImages(req.NsId)
+	connConfigCount, ImageCount, err := mcir.FetchImagesForAllConnConfigs(req.NsId)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchImage()")
 	}

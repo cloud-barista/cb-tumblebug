@@ -290,8 +290,50 @@ func RefineSpecName(specName string) string {
 	return out
 }
 
-// FetchSpecs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
-func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
+// FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects
+func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, err error) {
+	fmt.Println("FetchSpecsForConnConfig(" + connConfig + ")")
+
+	spiderSpecList, err := LookupSpecList(connConfig)
+	if err != nil {
+		common.CBLog.Error(err)
+		return 0, err
+	}
+
+	for _, spiderSpec := range spiderSpecList.Vmspec {
+		tumblebugSpec, err := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+		if err != nil {
+			common.CBLog.Error(err)
+			return 0, err
+		}
+
+		tumblebugSpecId := connConfig + "-" + RefineSpecName(tumblebugSpec.Name)
+		//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
+
+		check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
+		if check {
+			common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
+			continue
+		} else if err != nil {
+			common.CBLog.Infoln("Cannot check the existence of " + tumblebugSpecId + " in TB; continue")
+			continue
+		} else {
+			tumblebugSpec.Name = tumblebugSpecId
+			tumblebugSpec.ConnectionName = connConfig
+
+			_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec)
+			if err != nil {
+				common.CBLog.Error(err)
+				return 0, err
+			}
+			specCount++
+		}
+	}
+	return specCount, nil
+}
+
+// FetchSpecsForAllConnConfigs gets all conn configs from Spider, lookups all specs for each region of conn config, and saves into TB spec objects
+func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount uint, err error) {
 
 	err = common.CheckString(nsId)
 	if err != nil {
@@ -306,43 +348,8 @@ func FetchSpecs(nsId string) (connConfigCount uint, specCount uint, err error) {
 	}
 
 	for _, connConfig := range connConfigs.Connectionconfig {
-		fmt.Println("connConfig " + connConfig.ConfigName)
-
-		spiderSpecList, err := LookupSpecList(connConfig.ConfigName)
-		if err != nil {
-			common.CBLog.Error(err)
-			return 0, 0, err
-		}
-
-		for _, spiderSpec := range spiderSpecList.Vmspec {
-			tumblebugSpec, err := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
-			if err != nil {
-				common.CBLog.Error(err)
-				return 0, 0, err
-			}
-
-			tumblebugSpecId := connConfig.ConfigName + "-" + RefineSpecName(tumblebugSpec.Name)
-			//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
-
-			check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
-			if check {
-				common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
-				continue
-			} else if err != nil {
-				common.CBLog.Infoln("Cannot check the existence of " + tumblebugSpecId + " in TB; continue")
-				continue
-			} else {
-				tumblebugSpec.Name = tumblebugSpecId
-				tumblebugSpec.ConnectionName = connConfig.ConfigName
-
-				_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec)
-				if err != nil {
-					common.CBLog.Error(err)
-					return 0, 0, err
-				}
-			}
-			specCount++
-		}
+		temp, _ := FetchSpecsForConnConfig(connConfig.ConfigName, nsId)
+		specCount += temp
 		connConfigCount++
 	}
 	return connConfigCount, specCount, nil

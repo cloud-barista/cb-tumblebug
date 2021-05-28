@@ -557,8 +557,8 @@ service MCIS {
 	rpc GetMcisVMInfo (TbVmQryRequest) returns (TbVmInfoResponse) {}
   rpc DeleteMcisVM (TbVmQryRequest) returns (MessageResponse) {}  
 
-	rpc RecommandMcis (McisRecommendCreateRequest) returns (McisRecommendInfoResponse) {}
-	rpc RecommandVM (McisRecommendVmCreateRequest) returns (ListTbSpecInfoResponse) {} 
+	rpc RecommendMcis (McisRecommendCreateRequest) returns (McisRecommendInfoResponse) {}
+	rpc RecommendVM (McisRecommendVmCreateRequest) returns (ListTbSpecInfoResponse) {} 
 
 	rpc CmdMcis (McisCmdCreateRequest) returns (ListCmdMcisResponse) {} 
 	rpc CmdMcisVm (McisCmdVmCreateRequest) returns (StringResponse) {} 

@@ -1194,7 +1194,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestPostMcisRecommandResponse"
+                            "$ref": "#/definitions/mcis.RestPostMcisRecommendResponse"
                         }
                     },
                     "404": {
@@ -5209,7 +5209,7 @@
                 }
             }
         },
-        "mcis.RestPostMcisRecommandResponse": {
+        "mcis.RestPostMcisRecommendResponse": {
             "type": "object",
             "properties": {
                 "placementAlgo": {

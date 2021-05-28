@@ -311,25 +311,25 @@ func (s *MCISService) DeleteMcisVM(ctx context.Context, req *pb.TbVmQryRequest) 
 	return resp, nil
 }
 
-// RecommandMcis - MCIS 추천
-func (s *MCISService) RecommandMcis(ctx context.Context, req *pb.McisRecommendCreateRequest) (*pb.McisRecommendInfoResponse, error) {
+// RecommendMcis - MCIS 추천
+func (s *MCISService) RecommendMcis(ctx context.Context, req *pb.McisRecommendCreateRequest) (*pb.McisRecommendInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling MCISService.RecommandMcis()")
+	logger.Debug("calling MCISService.RecommendMcis()")
 
 	// GRPC 메시지에서 MCIS 객체로 복사
 	var mcisObj mcis.McisRecommendReq
 	err := gc.CopySrcToDest(&req.Item, &mcisObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.RecommandMcis()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.RecommendMcis()")
 	}
 
-	result, err := mcis.CorePostMcisRecommand(req.NsId, &mcisObj)
+	result, err := mcis.CorePostMcisRecommend(req.NsId, &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcis()")
 	}
 
-	content := rest_mcis.RestPostMcisRecommandResponse{}
+	content := rest_mcis.RestPostMcisRecommendResponse{}
 	content.Vm_recommend = result
 	content.PlacementAlgo = mcisObj.PlacementAlgo
 	content.PlacementParam = mcisObj.PlacementParam
@@ -338,7 +338,7 @@ func (s *MCISService) RecommandMcis(ctx context.Context, req *pb.McisRecommendCr
 	var grpcObj pb.McisRecommendInfo
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.RecommandMcis()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.RecommendMcis()")
 	}
 
 	resp := &pb.McisRecommendInfoResponse{Item: &grpcObj}

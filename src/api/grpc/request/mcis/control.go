@@ -392,8 +392,8 @@ func (r *MCISRequest) DeleteMcisVM() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// RecommandMcis - MCIS 추천
-func (r *MCISRequest) RecommandMcis() (string, error) {
+// RecommendMcis - MCIS 추천
+func (r *MCISRequest) RecommendMcis() (string, error) {
 	// 입력데이터 검사
 	if r.InData == "" {
 		return "", errors.New("input data required")
@@ -410,7 +410,7 @@ func (r *MCISRequest) RecommandMcis() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
-	resp, err := r.Client.RecommandMcis(ctx, &item)
+	resp, err := r.Client.RecommendMcis(ctx, &item)
 	if err != nil {
 		return "", err
 	}
