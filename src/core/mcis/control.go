@@ -1355,7 +1355,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 // MCIS Control
 
-func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
+func HandleMcisAction(nsId string, mcisId string, action string) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1452,51 +1452,6 @@ func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error
 	} else {
 		return "", fmt.Errorf(action + " not supported")
 	}
-}
-
-func CoreGetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := &McisStatusInfo{}
-		common.CBLog.Error(err)
-		return temp, err
-	}
-
-	err = common.CheckString(mcisId)
-	if err != nil {
-		temp := &McisStatusInfo{}
-		common.CBLog.Error(err)
-		return temp, err
-	}
-	check, _ := CheckMcis(nsId, mcisId)
-
-	if !check {
-		temp := &McisStatusInfo{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
-		return temp, err
-	}
-
-	fmt.Println("[status MCIS]")
-
-	vmList, err := ListVmId(nsId, mcisId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return nil, err
-	}
-
-	if len(vmList) == 0 {
-		//mapA := map[string]string{"message": "No VM to check in the MCIS"}
-		//return c.JSON(http.StatusOK, &mapA)
-		return nil, nil
-	}
-	mcisStatusResponse, err := GetMcisStatus(nsId, mcisId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return nil, err
-	}
-
-	return &mcisStatusResponse, nil
 }
 
 // GetMcisInfo func returns MCIS information with the current status update
@@ -3593,29 +3548,28 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	return mcisTmp, nil
 }
 
-func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
+func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := McisStatusInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return &McisStatusInfo{}, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		temp := McisStatusInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return &McisStatusInfo{}, err
 	}
 
 	fmt.Println("[GetMcisStatus]" + mcisId)
+
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//fmt.Println(key)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
-		return McisStatusInfo{}, err
+		return &McisStatusInfo{}, err
 	}
 
 	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -3631,29 +3585,11 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 	//fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
 		common.CBLog.Error(err)
-		return McisStatusInfo{}, err
+		return &McisStatusInfo{}, err
 	}
 	if len(vmList) == 0 {
-		return McisStatusInfo{}, nil
+		return &McisStatusInfo{}, nil
 	}
-
-	// for num, v := range vmList {
-	// 	vmStatusTmp, err := GetVmStatus(nsId, mcisId, v)
-	// 	if err != nil {
-	// 		common.CBLog.Error(err)
-	// 		vmStatusTmp.Status = StatusFailed
-	// 		return mcisStatus, err
-	// 	}
-
-	// 	mcisStatus.Vm = append(mcisStatus.Vm, vmStatusTmp)
-
-	// 	// set master IP of MCIS (Default rule: select 1st VM as master)
-	// 	if num == 0 {
-	// 		mcisStatus.MasterVmId = vmStatusTmp.Id
-	// 		mcisStatus.MasterIp = vmStatusTmp.PublicIp
-	// 		mcisStatus.MasterSSHPort = vmStatusTmp.SSHPort
-	// 	}
-	// }
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
@@ -3744,7 +3680,7 @@ func GetMcisStatus(nsId string, mcisId string) (McisStatusInfo, error) {
 		UpdateMcisInfo(nsId, mcisTmp)
 	}
 
-	return mcisStatus, nil
+	return &mcisStatus, nil
 
 	//need to change status
 
@@ -3760,7 +3696,7 @@ func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 			common.CBLog.Error(err)
 			return mcisStatuslist, err
 		}
-		mcisStatuslist = append(mcisStatuslist, mcisStatus)
+		mcisStatuslist = append(mcisStatuslist, *mcisStatus)
 	}
 	return mcisStatuslist, nil
 

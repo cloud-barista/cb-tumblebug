@@ -74,7 +74,7 @@ func (s *MCISService) ControlMcis(ctx context.Context, req *pb.TbMcisActionReque
 
 	logger.Debug("calling MCISService.ControlMcis()")
 
-	result, err := mcis.CoreGetMcisAction(req.NsId, req.McisId, req.Action)
+	result, err := mcis.HandleMcisAction(req.NsId, req.McisId, req.Action)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.ControlMcis()")
 	}
@@ -111,7 +111,7 @@ func (s *MCISService) GetMcisStatus(ctx context.Context, req *pb.TbMcisQryReques
 
 	logger.Debug("calling MCISService.GetMcisStatus()")
 
-	result, err := mcis.CoreGetMcisStatus(req.NsId, req.McisId)
+	result, err := mcis.GetMcisStatus(req.NsId, req.McisId)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.GetMcisStatus()")
 	}
