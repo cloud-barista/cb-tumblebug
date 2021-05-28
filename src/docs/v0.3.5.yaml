@@ -880,7 +880,7 @@ definitions:
       result:
         type: string
     type: object
-  mcis.RestPostMcisRecommandResponse:
+  mcis.RestPostMcisRecommendResponse:
     properties:
       placementAlgo:
         type: string
@@ -2230,7 +2230,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.RestPostMcisRecommandResponse'
+            $ref: '#/definitions/mcis.RestPostMcisRecommendResponse'
         "404":
           description: Not Found
           schema:

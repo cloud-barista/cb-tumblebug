@@ -1209,7 +1209,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestPostMcisRecommandResponse"
+                            "$ref": "#/definitions/mcis.RestPostMcisRecommendResponse"
                         }
                     },
                     "404": {
@@ -5224,7 +5224,7 @@ var doc = `{
                 }
             }
         },
-        "mcis.RestPostMcisRecommandResponse": {
+        "mcis.RestPostMcisRecommendResponse": {
             "type": "object",
             "properties": {
                 "placementAlgo": {

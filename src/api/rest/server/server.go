@@ -154,7 +154,7 @@ func ApiServer() {
 
 	g.GET("/:nsId/mcis/:mcisId/testListVmId", rest_mcis.RestTestListVmId) // for debug
 
-	g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommand)
+	g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommend)
 
 	g.POST("/:nsId/testRecommendVm", rest_mcis.RestRecommendVm)
 

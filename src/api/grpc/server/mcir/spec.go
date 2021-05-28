@@ -155,7 +155,7 @@ func (s *MCIRService) FetchSpec(ctx context.Context, req *pb.FetchSpecQryRequest
 
 	logger.Debug("calling MCIRService.FetchSpec()")
 
-	connConfigCount, specCount, err := mcir.FetchSpecs(req.NsId)
+	connConfigCount, specCount, err := mcir.FetchSpecsForAllConnConfigs(req.NsId)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchSpec()")
 	}

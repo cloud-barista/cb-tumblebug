@@ -1071,9 +1071,6 @@ func ListMcisId(nsId string) []string {
 
 func ListVmId(nsId string, mcisId string) ([]string, error) {
 
-	// common.CBLog.Info("ListVmId called. nsId: " + nsId + ", mcisId: " + mcisId) // for debug
-	fmt.Println("ListVmId called. nsId: " + nsId + ", mcisId: " + mcisId) // for debug
-
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1099,7 +1096,6 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 	var vmList []string
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/vm/") {
-			common.CBLog.Info("in ListVmId; v.Key: " + v.Key + ", key: " + key + ", after TrimPrefix: " + strings.TrimPrefix(v.Key, (key+"/vm/"))) // for debug
 			vmList = append(vmList, strings.TrimPrefix(v.Key, (key+"/vm/")))
 		}
 	}
@@ -1569,13 +1565,7 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 		}
 
 		for _, v1 := range vmList {
-			var vmKey string
-			if strings.Contains(v1, "/ns/") && strings.Contains(v1, "/mcis/") && strings.Contains(v1, "/vm/") {
-				vmKey = v1
-			} else {
-				vmKey = common.GenMcisKey(nsId, mcisId, v1)
-			}
-
+			vmKey := common.GenMcisKey(nsId, mcisId, v1)
 			//fmt.Println(vmKey)
 			vmKeyValue, _ := common.CBStore.Get(vmKey)
 			if vmKeyValue == nil {
@@ -1640,7 +1630,7 @@ func CoreDelAllMcis(nsId string) (string, error) {
 	return "All MCISs has been deleted", nil
 }
 
-func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
+func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1656,7 +1646,7 @@ func CorePostMcisRecommand(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 			PlacementParam []common.KeyValue        `json:"placementParam"`
 		}
 	*/
-	//content := RestPostMcisRecommandResponse{}
+	//content := RestPostMcisRecommendResponse{}
 	//content.VmReq = req.VmReq
 	//content.PlacementAlgo = req.PlacementAlgo
 	//content.PlacementParam = req.PlacementParam
@@ -3706,12 +3696,7 @@ func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
 func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	fmt.Println("[GetVmObject] mcisId: " + mcisId + ", vmId: " + vmId)
-	var key string
-	if strings.Contains(vmId, "/ns/") && strings.Contains(vmId, "/mcis/") && strings.Contains(vmId, "/vm/") {
-		key = vmId
-	} else {
-		key = common.GenMcisKey(nsId, mcisId, vmId)
-	}
+	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -3747,12 +3732,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	}()
 
 	fmt.Println("[GetVmStatus]" + vmId)
-	var key string
-	if strings.Contains(vmId, "/ns/") && strings.Contains(vmId, "/mcis/") && strings.Contains(vmId, "/vm/") {
-		key = vmId
-	} else {
-		key = common.GenMcisKey(nsId, mcisId, vmId)
-	}
+	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 	errorInfo := TbVmStatusInfo{}
 

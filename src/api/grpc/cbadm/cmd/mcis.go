@@ -49,8 +49,8 @@ func NewMcisCmd() *cobra.Command {
 	mcisCmd.AddCommand(NewMcisVmRebootCmd())
 	mcisCmd.AddCommand(NewMcisVmTerminateCmd())
 
-	mcisCmd.AddCommand(NewMcisRecommandCmd())
-	mcisCmd.AddCommand(NewMcisRecommandVmCmd())
+	mcisCmd.AddCommand(NewMcisRecommendCmd())
+	mcisCmd.AddCommand(NewMcisRecommendVmCmd())
 
 	mcisCmd.AddCommand(NewCmdMcisCmd())
 	mcisCmd.AddCommand(NewCmdMcisVmCmd())
@@ -717,13 +717,13 @@ func NewMcisVmTerminateCmd() *cobra.Command {
 	return vmTerminateCmd
 }
 
-// NewMcisRecommandCmd - Mcis 추천 기능을 수행하는 Cobra Command 생성
-func NewMcisRecommandCmd() *cobra.Command {
+// NewMcisRecommendCmd - Mcis 추천 기능을 수행하는 Cobra Command 생성
+func NewMcisRecommendCmd() *cobra.Command {
 
-	recommandCmd := &cobra.Command{
-		Use:   "recommand",
-		Short: "This is recommand command for mcis",
-		Long:  "This is recommand command for mcis",
+	recommendCmd := &cobra.Command{
+		Use:   "recommend",
+		Short: "This is recommend command for mcis",
+		Long:  "This is recommend command for mcis",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			readInDataFromFile()
@@ -738,19 +738,19 @@ func NewMcisRecommandCmd() *cobra.Command {
 		},
 	}
 
-	recommandCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
-	recommandCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+	recommendCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	recommendCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
 
-	return recommandCmd
+	return recommendCmd
 }
 
-// NewMcisRecommandVmCmd - Mcis VM 추천 기능을 수행하는 Cobra Command 생성
-func NewMcisRecommandVmCmd() *cobra.Command {
+// NewMcisRecommendVmCmd - Mcis VM 추천 기능을 수행하는 Cobra Command 생성
+func NewMcisRecommendVmCmd() *cobra.Command {
 
-	recommandVmCmd := &cobra.Command{
-		Use:   "recommand-vm",
-		Short: "This is recommand-vm command for mcis",
-		Long:  "This is recommand-vm command for mcis",
+	recommendVmCmd := &cobra.Command{
+		Use:   "recommend-vm",
+		Short: "This is recommend-vm command for mcis",
+		Long:  "This is recommend-vm command for mcis",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
 			readInDataFromFile()
@@ -765,10 +765,10 @@ func NewMcisRecommandVmCmd() *cobra.Command {
 		},
 	}
 
-	recommandVmCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
-	recommandVmCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+	recommendVmCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	recommendVmCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
 
-	return recommandVmCmd
+	return recommendVmCmd
 }
 
 // NewCmdMcisCmd - MCIS 명령 실행 기능을 수행하는 Cobra Command 생성

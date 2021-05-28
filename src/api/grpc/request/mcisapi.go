@@ -893,18 +893,18 @@ func (m *MCISApi) DeleteMcisVMByParam(nameSpaceID string, mcisID string, vmID st
 	return result, err
 }
 
-// RecommandMcis - MCIS 추천
-func (m *MCISApi) RecommandMcis(doc string) (string, error) {
+// RecommendMcis - MCIS 추천
+func (m *MCISApi) RecommendMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	m.requestMCIS.InData = doc
-	return m.requestMCIS.RecommandMcis()
+	return m.requestMCIS.RecommendMcis()
 }
 
-// RecommandMcisByParam - MCIS 추천
-func (m *MCISApi) RecommandMcisByParam(req *McisRecommendCreateRequest) (string, error) {
+// RecommendMcisByParam - MCIS 추천
+func (m *MCISApi) RecommendMcisByParam(req *McisRecommendCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
@@ -916,24 +916,24 @@ func (m *MCISApi) RecommandMcisByParam(req *McisRecommendCreateRequest) (string,
 		return "", err
 	}
 	m.requestMCIS.InData = string(j)
-	result, err := m.requestMCIS.RecommandMcis()
+	result, err := m.requestMCIS.RecommendMcis()
 	m.SetInType(holdType)
 
 	return result, err
 }
 
-// RecommandVM - MCIS VM 추천
-func (m *MCISApi) RecommandVM(doc string) (string, error) {
+// RecommendVM - MCIS VM 추천
+func (m *MCISApi) RecommendVM(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	m.requestMCIS.InData = doc
-	return m.requestMCIS.RecommandVM()
+	return m.requestMCIS.RecommendVM()
 }
 
-// RecommandVMByParam - MCIS VM 추천
-func (m *MCISApi) RecommandVMByParam(req *McisRecommendVmCreateRequest) (string, error) {
+// RecommendVMByParam - MCIS VM 추천
+func (m *MCISApi) RecommendVMByParam(req *McisRecommendVmCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
@@ -945,7 +945,7 @@ func (m *MCISApi) RecommandVMByParam(req *McisRecommendVmCreateRequest) (string,
 		return "", err
 	}
 	m.requestMCIS.InData = string(j)
-	result, err := m.requestMCIS.RecommandVM()
+	result, err := m.requestMCIS.RecommendVM()
 	m.SetInType(holdType)
 
 	return result, err

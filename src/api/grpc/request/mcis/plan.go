@@ -14,8 +14,8 @@ import (
 
 // ===== [ Implementations ] =====
 
-// RecommandVM - MCIS VM 추천
-func (r *MCISRequest) RecommandVM() (string, error) {
+// RecommendVM - MCIS VM 추천
+func (r *MCISRequest) RecommendVM() (string, error) {
 	// 입력데이터 검사
 	if r.InData == "" {
 		return "", errors.New("input data required")
@@ -32,7 +32,7 @@ func (r *MCISRequest) RecommandVM() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
-	resp, err := r.Client.RecommandVM(ctx, &item)
+	resp, err := r.Client.RecommendVM(ctx, &item)
 	if err != nil {
 		return "", err
 	}

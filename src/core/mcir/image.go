@@ -467,8 +467,57 @@ func RefineImageName(specName string) string {
 	return out
 }
 
-// FetchImages gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
-func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error) {
+// FetchImagesForAllConnConfigs gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
+func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, err error) {
+	fmt.Println("FetchImagesForConnConfig(" + connConfig + ")")
+
+	spiderImageList, err := LookupImageList(connConfig)
+	if err != nil {
+		common.CBLog.Error(err)
+		return 0, err
+	}
+
+	for _, spiderImage := range spiderImageList.Image {
+		tumblebugImage, err := ConvertSpiderImageToTumblebugImage(spiderImage)
+		if err != nil {
+			common.CBLog.Error(err)
+			return 0, err
+		}
+
+		tumblebugImageId := connConfig + "-" + RefineImageName(tumblebugImage.Name)
+		//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
+
+		check, err := CheckResource(nsId, common.StrImage, tumblebugImageId)
+		if check {
+			common.CBLog.Infoln("The image " + tumblebugImageId + " already exists in TB; continue")
+			continue
+		} else if err != nil {
+			common.CBLog.Infoln("Cannot check the existence of " + tumblebugImageId + " in TB; continue")
+			continue
+		} else {
+			tumblebugImage.Name = tumblebugImageId
+			tumblebugImage.ConnectionName = connConfig
+
+			_, err := RegisterImageWithInfo(nsId, &tumblebugImage)
+			if err != nil {
+				common.CBLog.Error(err)
+				return 0, err
+			}
+			imageCount++
+		}
+	}
+	return imageCount, nil
+}
+
+// FetchImagesForAllConnConfigs gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
+func FetchImagesForAllConnConfigs(nsId string) (connConfigCount uint, imageCount uint, err error) {
+
+	err = common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return 0, 0, err
+	}
+
 	connConfigs, err := common.GetConnConfigList()
 	if err != nil {
 		common.CBLog.Error(err)
@@ -476,43 +525,8 @@ func FetchImages(nsId string) (connConfigCount uint, imageCount uint, err error)
 	}
 
 	for _, connConfig := range connConfigs.Connectionconfig {
-		fmt.Println("connConfig " + connConfig.ConfigName)
-
-		spiderImageList, err := LookupImageList(connConfig.ConfigName)
-		if err != nil {
-			common.CBLog.Error(err)
-			return 0, 0, err
-		}
-
-		for _, spiderImage := range spiderImageList.Image {
-			tumblebugImage, err := ConvertSpiderImageToTumblebugImage(spiderImage)
-			if err != nil {
-				common.CBLog.Error(err)
-				return 0, 0, err
-			}
-
-			tumblebugImageId := connConfig.ConfigName + "-" + RefineImageName(tumblebugImage.Name)
-			//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
-
-			check, err := CheckResource(nsId, common.StrImage, tumblebugImageId)
-			if check {
-				common.CBLog.Infoln("The image " + tumblebugImageId + " already exists in TB; continue")
-				continue
-			} else if err != nil {
-				common.CBLog.Infoln("Cannot check the existence of " + tumblebugImageId + " in TB; continue")
-				continue
-			} else {
-				tumblebugImage.Name = tumblebugImageId
-				tumblebugImage.ConnectionName = connConfig.ConfigName
-
-				_, err := RegisterImageWithInfo(nsId, &tumblebugImage)
-				if err != nil {
-					common.CBLog.Error(err)
-					return 0, 0, err
-				}
-			}
-			imageCount++
-		}
+		temp, _ := FetchImagesForConnConfig(connConfig.ConfigName, nsId)
+		imageCount += temp
 		connConfigCount++
 	}
 	return connConfigCount, imageCount, nil
