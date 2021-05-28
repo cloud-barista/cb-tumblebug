@@ -1355,7 +1355,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 // MCIS Control
 
-func CoreGetMcisAction(nsId string, mcisId string, action string) (string, error) {
+func HandleMcisAction(nsId string, mcisId string, action string) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
