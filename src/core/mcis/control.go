@@ -3682,10 +3682,10 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	if statusFlag[0] > 0 {
 		mcisStatus.Status = statusFlagStr[0] + proportionStr
 	}
-	proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
-	if statusFlag[9] > 0 {
-		mcisStatus.Status = statusFlagStr[9] + proportionStr
-	}
+	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
+	// if statusFlag[9] > 0 {
+	// 	mcisStatus.Status = statusFlagStr[9] + proportionStr
+	// }
 
 	var isDone bool
 	isDone = true
