@@ -1188,9 +1188,13 @@ func DelMcis(nsId string, mcisId string) error {
 		fmt.Println(vmKey)
 
 		// get vm info
-		vmInfo, _ := GetVmObject(nsId, mcisId, v)
+		vmInfo, err := GetVmObject(nsId, mcisId, v)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
 
-		err := common.CBStore.Delete(vmKey)
+		err = common.CBStore.Delete(vmKey)
 		if err != nil {
 			common.CBLog.Error(err)
 			return err
@@ -1437,14 +1441,43 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 		*/
 		err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
 		if err != nil {
-			//mapA := map[string]string{"message": err.Error()}
-			//return c.JSON(http.StatusFailedDependency, &mapA)
 			return "", err
 		}
 
-		//mapA := map[string]string{"message": "Terminating the MCIS"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Terminating the MCIS", nil
+
+	} else if action == "refine" { //refine delete VMs in StatusFailed
+		fmt.Println("[terminate MCIS]")
+
+		vmList, err := ListVmId(nsId, mcisId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return "", err
+		}
+
+		if len(vmList) == 0 {
+			return "No VM in the MCIS", nil
+		}
+
+		for _, v := range vmList {
+			// get vm info
+			vmInfo, err := GetVmObject(nsId, mcisId, v)
+			if err != nil {
+				common.CBLog.Error(err)
+				return "", err
+			}
+			if vmInfo.Status == StatusFailed {
+				// Delete VM sequentially for safety (for performance, need to use goroutine)
+				err := DelMcisVm(nsId, mcisId, v)
+				if err != nil {
+					common.CBLog.Error(err)
+					return "", err
+				}
+			}
+		}
+
+		return "Refined the MCIS", nil
+
 	} else {
 		return "", fmt.Errorf(action + " not supported")
 	}
@@ -2910,10 +2943,9 @@ func ControlMcis(nsId string, mcisId string, action string) error {
 	}
 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
 
 	vmList, err := ListVmId(nsId, mcisId)
-	fmt.Println("=============================================== %#v", vmList)
+
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -2921,8 +2953,8 @@ func ControlMcis(nsId string, mcisId string, action string) error {
 	if len(vmList) == 0 {
 		return nil
 	}
+	fmt.Println("vmList ", vmList)
 
-	// delete vms info
 	for _, v := range vmList {
 		ControlVm(nsId, mcisId, v, action)
 	}
@@ -2994,7 +3026,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 	}
 
 	vmList, err := ListVmId(nsId, mcisId)
-	fmt.Println("=============================================== %#v", vmList)
+	fmt.Println("=============================================== ", vmList)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -3601,7 +3633,7 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	}
 
 	statusFlag := []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	statusFlagStr := []string{StatusFailed, StatusSuspended, StatusRunning, StatusTerminated, StatusCreating, StatusSuspending, StatusResuming, StatusRebooting, StatusTerminating, "Include-NotDefinedStatus"}
+	statusFlagStr := []string{StatusFailed, StatusSuspended, StatusRunning, StatusTerminated, StatusCreating, StatusSuspending, StatusResuming, StatusRebooting, StatusTerminating, StatusUndefined}
 	for _, v := range mcisStatus.Vm {
 
 		switch v.Status {

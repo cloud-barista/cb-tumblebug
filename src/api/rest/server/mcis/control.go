@@ -67,14 +67,14 @@ func RestTestListVmId(c echo.Context) error { // for debug
 // Annotation for API documention Need to be revised.
 
 // RestGetMcis godoc
-// @Summary Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
-// @Description Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate)
+// @Summary Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate, refine)
+// @Description Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate, refine)
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
-// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
+// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate, refine)
 // @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[STATUS]=mcis.McisStatusInfo,[CONTROL]=common.SimpleMsg} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -87,7 +87,7 @@ func RestGetMcis(c echo.Context) error {
 
 	action := c.QueryParam("action")
 
-	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
+	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
 
 		result, err := mcis.HandleMcisAction(nsId, mcisId, action)
 		if err != nil {
