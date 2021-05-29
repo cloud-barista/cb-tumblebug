@@ -1446,7 +1446,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 
 		return "Terminating the MCIS", nil
 
-	} else if action == "refine" { //refine delete VMs in StatusFailed
+	} else if action == "refine" { //refine delete VMs in StatusFailed or StatusUndefined
 		fmt.Println("[terminate MCIS]")
 
 		vmList, err := ListVmId(nsId, mcisId)
@@ -1459,16 +1459,19 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 			return "No VM in the MCIS", nil
 		}
 
-		for _, v := range vmList {
-			// get vm info
-			vmInfo, err := GetVmObject(nsId, mcisId, v)
-			if err != nil {
-				common.CBLog.Error(err)
-				return "", err
-			}
-			if vmInfo.Status == StatusFailed {
+		mcisStatus, err := GetMcisStatus(nsId, mcisId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return "", err
+		}
+
+		for _, v := range mcisStatus.Vm {
+
+			// Remove VMs in StatusFailed or StatusUndefined
+			fmt.Println("[vmInfo.Status]", v.Status)
+			if v.Status == StatusFailed || v.Status == StatusUndefined {
 				// Delete VM sequentially for safety (for performance, need to use goroutine)
-				err := DelMcisVm(nsId, mcisId, v)
+				err := DelMcisVm(nsId, mcisId, v.Id)
 				if err != nil {
 					common.CBLog.Error(err)
 					return "", err
