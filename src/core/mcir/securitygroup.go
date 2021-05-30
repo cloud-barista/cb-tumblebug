@@ -171,9 +171,10 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		}
 
 		tempSpiderSecurityInfo = &SpiderSecurityInfo{}
-		err2 := json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbSecurityGroupInfo{}, err
 		}
 	}
 

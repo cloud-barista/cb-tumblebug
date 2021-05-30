@@ -186,9 +186,10 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 		}
 
 		temp := SpiderSpecList{}
-		err2 := json.Unmarshal([]byte(result), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
+			return SpiderSpecList{}, err
 		}
 		return temp, nil
 

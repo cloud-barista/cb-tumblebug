@@ -143,7 +143,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	} else {
 
-		// CCM API 설정
+		// Set CCM API
 		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
@@ -167,9 +167,10 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		}
 
 		tempSpiderVPCInfo = &SpiderVPCInfo{} // Spider
-		err2 := json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbVNetInfo{}, err
 		}
 
 	}
