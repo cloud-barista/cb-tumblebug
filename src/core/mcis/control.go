@@ -635,7 +635,8 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	resultTmp := BenchmarkInfo{}
 	err2 := json.Unmarshal(body, &resultTmp)
 	if err2 != nil {
-		fmt.Println("whoops:", err2)
+		common.CBLog.Error(err2)
+		errStr = err2.Error()
 	}
 	//benchInfoTmp.ResultArray =  resultTmp.ResultArray
 	if errStr != "" {
@@ -968,7 +969,8 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 			resultTmp := BenchmarkInfo{}
 			err2 := json.Unmarshal(body, &resultTmp)
 			if err2 != nil {
-				fmt.Println("whoops:", err2)
+				common.CBLog.Error(err2)
+				return BenchmarkInfoArray{}, err2
 			}
 			//benchInfoTmp.ResultArray =  resultTmp.ResultArray
 			results.ResultArray = append(results.ResultArray, resultTmp)
@@ -977,7 +979,8 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 			resultTmp := BenchmarkInfo{}
 			err2 := json.Unmarshal(body, &resultTmp)
 			if err2 != nil {
-				fmt.Println("whoops:", err2)
+				common.CBLog.Error(err2)
+				return BenchmarkInfoArray{}, err2
 			}
 			results.ResultArray = append(results.ResultArray, resultTmp)
 		}
@@ -2853,7 +2856,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		err2 := json.Unmarshal([]byte(result), &tempSpiderVMInfo)
 
 		if err2 != nil {
-			fmt.Println("whoops:", err2)
 			fmt.Println(err)
 			common.CBLog.Error(err)
 			return err
@@ -3223,12 +3225,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			errTmp = err
 		}
 
-		//err2 := json.Unmarshal(body, &resBodyTmp)
-		//if err2 != nil {
-		//	fmt.Println("whoops:", err2)
-		//	return errors.New("whoops: "+ err2.Error())
-		//}
-
 		resultTmp := ControlVmResult{}
 		err2 := json.Unmarshal(body, &resultTmp)
 		if err2 != nil {
@@ -3328,7 +3324,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		resultTmp := ControlVmResult{}
 		err2 := json.Unmarshal([]byte(result), &resultTmp)
 		if err2 != nil {
-			fmt.Println("whoops:", err2)
 			common.CBLog.Error(err)
 			errTmp = err
 		}
@@ -3683,7 +3678,10 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	}
 	proportionStr = "-(" + strconv.Itoa(statusFlag[0]) + "/" + strconv.Itoa(numVm) + ")"
 	if statusFlag[0] > 0 {
-		mcisStatus.Status = statusFlagStr[0] + proportionStr
+		mcisStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
+		if statusFlag[0] == numVm {
+			mcisStatus.Status = statusFlagStr[0] + proportionStr
+		}
 	}
 	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
 	// if statusFlag[9] > 0 {
