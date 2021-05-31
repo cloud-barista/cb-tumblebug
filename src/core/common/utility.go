@@ -146,80 +146,6 @@ type mcirIds struct { // Tumblebug
 	ConnectionName string
 }
 
-/*
-func GetResourcesCspType(nsId string, resourceType string, resourceId string) string {
-	key := GenResourceKey(nsId, resourceType, resourceId)
-	if key == "/invalidKey" {
-		return "invalid nsId or resourceType or resourceId"
-	}
-	keyValue, err := CBStore.Get(key)
-	if err != nil {
-		CBLog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
-		return ""
-	}
-	if keyValue == nil {
-		//CBLog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
-		return ""
-	}
-
-	content := mcirIds{}
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	url := SPIDER_REST_URL + "/connectionconfig/" + content.ConnectionName
-
-	method := "GET"
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		CBLog.Error(err)
-		return "http request error"
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		CBLog.Error(err)
-		return "ioutil.ReadAll error"
-	}
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		CBLog.Error(err)
-		return "Cannot get VM's CSP type"
-	default:
-
-	}
-
-	type ConnConfigInfo struct {
-		ProviderName            string
-	}
-
-	temp := ConnConfigInfo{}
-	err2 := json.Unmarshal(body, &temp)
-	if err2 != nil {
-		fmt.Println("whoops:", err2)
-	}
-
-	return temp.ProviderName
-}
-*/
-
 func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
 	key := GenResourceKey(nsId, resourceType, resourceId)
 	if key == "/invalidKey" {
@@ -348,9 +274,10 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 		}
 
 		temp := ConnConfig{}
-		err2 := json.Unmarshal([]byte(result), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &temp)
+		if err != nil {
+			CBLog.Error("cim api request failed : ", err)
+			return ConnConfig{}, err
 		}
 		return temp, nil
 	}
@@ -469,9 +396,10 @@ func GetConnConfigList() (ConnConfigList, error) {
 		}
 
 		temp := ConnConfigList{}
-		err2 := json.Unmarshal([]byte(result), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &temp)
+		if err != nil {
+			CBLog.Error("cim api Unmarshal failed : ", err)
+			return ConnConfigList{}, err
 		}
 		return temp, nil
 
@@ -541,9 +469,10 @@ func GetRegion(RegionName string) (Region, error) {
 		}
 
 		temp := Region{}
-		err2 := json.Unmarshal([]byte(result), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &temp)
+		if err != nil {
+			CBLog.Error("cim api Unmarshal failed : ", err)
+			return Region{}, err
 		}
 		return temp, nil
 
@@ -613,9 +542,10 @@ func GetRegionList() (RegionList, error) {
 		}
 
 		temp := RegionList{}
-		err2 := json.Unmarshal([]byte(result), &temp)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &temp)
+		if err != nil {
+			CBLog.Error("cim api Unmarshal failed : ", err)
+			return RegionList{}, err
 		}
 		return temp, nil
 

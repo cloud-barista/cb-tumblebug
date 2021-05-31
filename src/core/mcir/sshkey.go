@@ -155,9 +155,10 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 		}
 
 		tempSpiderKeyPairInfo = &SpiderKeyPairInfo{}
-		err2 := json.Unmarshal([]byte(result), &tempSpiderKeyPairInfo)
-		if err2 != nil {
-			fmt.Println("whoops:", err2)
+		err = json.Unmarshal([]byte(result), &tempSpiderKeyPairInfo)
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbSshKeyInfo{}, err
 		}
 
 	}
