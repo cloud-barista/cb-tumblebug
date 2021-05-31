@@ -598,14 +598,14 @@ func (m *MCIRApi) FetchImage(doc string) (string, error) {
 }
 
 // FetchImageByParam - Image 가져오기
-func (m *MCIRApi) FetchImageByParam(nameSpaceID string) (string, error) {
+func (m *MCIRApi) FetchImageByParam(connConfigName string, nameSpaceID string) (string, error) {
 	if m.requestMCIR == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := m.GetInType()
 	m.SetInType("json")
-	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `"}`
+	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `", "nsId":"` + nameSpaceID + `"}`
 	result, err := m.requestMCIR.FetchImage()
 	m.SetInType(holdType)
 
@@ -989,14 +989,14 @@ func (m *MCIRApi) FetchSpec(doc string) (string, error) {
 }
 
 // FetchSpecByParam - Spec 가져오기
-func (m *MCIRApi) FetchSpecByParam(nameSpaceID string) (string, error) {
+func (m *MCIRApi) FetchSpecByParam(connConfigName string, nameSpaceID string) (string, error) {
 	if m.requestMCIR == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := m.GetInType()
 	m.SetInType("json")
-	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `"}`
+	m.requestMCIR.InData = `{"ConnectionName":"` + connConfigName + `", "nsId":"` + nameSpaceID + `"}`
 	result, err := m.requestMCIR.FetchSpec()
 	m.SetInType(holdType)
 

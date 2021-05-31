@@ -155,12 +155,23 @@ func (s *MCIRService) FetchImage(ctx context.Context, req *pb.FetchImageQryReque
 
 	logger.Debug("calling MCIRService.FetchImage()")
 
-	connConfigCount, ImageCount, err := mcir.FetchImagesForAllConnConfigs(req.NsId)
-	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchImage()")
+	var connConfigCount, imageCount uint
+	var err error
+
+	if req.ConnectionName == "!all" {
+		connConfigCount, imageCount, err = mcir.FetchImagesForAllConnConfigs(req.NsId)
+		if err != nil {
+			return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchImage()")
+		}
+	} else {
+		connConfigCount = 1
+		imageCount, err = mcir.FetchImagesForConnConfig(req.ConnectionName, req.NsId)
+		if err != nil {
+			return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchImage()")
+		}
 	}
 
-	resp := &pb.MessageResponse{Message: "Fetched " + fmt.Sprint(ImageCount) + " Images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
+	resp := &pb.MessageResponse{Message: "Fetched " + fmt.Sprint(imageCount) + " images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
 	return resp, nil
 }
 

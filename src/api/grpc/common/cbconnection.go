@@ -93,6 +93,10 @@ func NewCBConnection(gConf *config.GrpcClientConfig) (*CBConnection, io.Closer, 
 
 	opts = append(opts, grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(unaryIntercepters...)))
 	opts = append(opts, grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(streamIntercepters...)))
+
+	maxSizeOption := grpc.MaxCallRecvMsgSize(1024 * 1024 * 1024) // 1 GB
+	opts = append(opts, grpc.WithDefaultCallOptions(maxSizeOption))
+
 	conn, err := grpc.Dial(gConf.ServerAddr, opts...)
 
 	return &CBConnection{Conn: conn}, closer, err

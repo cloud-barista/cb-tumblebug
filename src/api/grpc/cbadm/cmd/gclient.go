@@ -266,7 +266,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete-all":
 			result, err = mcir.DeleteAllImageByParam(nameSpaceID, force)
 		case "fetch":
-			result, err = mcir.FetchImageByParam(nameSpaceID)
+			result, err = mcir.FetchImageByParam(connConfigName, nameSpaceID)
 		case "search":
 			result, err = mcir.SearchImage(inData)
 		}
@@ -330,7 +330,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "delete-all":
 			result, err = mcir.DeleteAllSpecByParam(nameSpaceID, force)
 		case "fetch":
-			result, err = mcir.FetchSpecByParam(nameSpaceID)
+			result, err = mcir.FetchSpecByParam(connConfigName, nameSpaceID)
 		case "filter":
 			result, err = mcir.FilterSpec(inData)
 		case "filter-by-range":
