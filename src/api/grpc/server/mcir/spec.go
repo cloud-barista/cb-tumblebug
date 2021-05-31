@@ -155,9 +155,25 @@ func (s *MCIRService) FetchSpec(ctx context.Context, req *pb.FetchSpecQryRequest
 
 	logger.Debug("calling MCIRService.FetchSpec()")
 
-	connConfigCount, specCount, err := mcir.FetchSpecsForAllConnConfigs(req.NsId)
-	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchSpec()")
+	// connConfigCount, specCount, err := mcir.FetchSpecsForAllConnConfigs(req.NsId)
+	// if err != nil {
+	// 	return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchSpec()")
+	// }
+
+	var connConfigCount, specCount uint
+	var err error
+
+	if req.ConnectionName == "!all" {
+		connConfigCount, specCount, err = mcir.FetchSpecsForAllConnConfigs(req.NsId)
+		if err != nil {
+			return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchSpec()")
+		}
+	} else {
+		connConfigCount = 1
+		specCount, err = mcir.FetchSpecsForConnConfig(req.ConnectionName, req.NsId)
+		if err != nil {
+			return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.FetchSpec()")
+		}
 	}
 
 	resp := &pb.MessageResponse{Message: "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}

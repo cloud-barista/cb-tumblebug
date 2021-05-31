@@ -18,8 +18,20 @@ echo "####################################################################"
 echo "## 7. spec: Fetch"
 echo "####################################################################"
 
-$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec fetch --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID | jq '' #|| return 1
-#}
+CSP=${1}
+REGION=${2:-1}
+POSTFIX=${3:-developer}
+
+if [ "$CSP" == '' ]; then #|| [ "$CSP" == "all" ]
+	$CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec fetch --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o yaml --ns $NSID --cc "!all"
+
+else
+	source ../common-functions.sh
+	getCloudIndex $CSP
+
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm spec fetch --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o yaml --ns $NSID --cc "${CONN_CONFIG[$INDEX,$REGION]}"
+
+fi
 
 source ../common-functions.sh
 printElapsed $@

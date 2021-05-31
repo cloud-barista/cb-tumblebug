@@ -6,6 +6,8 @@ swag swagger:
 	~/go/bin/swag i
 proto protobuf pb:
 	cd api/grpc/protobuf && $(MAKE) regenerate
+cbadm:
+	cd api/grpc/cbadm && $(MAKE)
 run:
 	./cb-tumblebug
 clean:

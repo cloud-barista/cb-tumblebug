@@ -16,7 +16,7 @@
     echo "####################################################################"
 
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm image list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID | jq '' #|| return 1
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm image list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o yaml --ns $NSID #| jq '' #|| return 1
 #}
 
 #list_image

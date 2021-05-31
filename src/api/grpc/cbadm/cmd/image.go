@@ -277,16 +277,22 @@ func NewImageFetchCmd() *cobra.Command {
 		Long:  "This is fetch command for image",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
+			if connConfigName == "" {
+				logger.Error("failed to validate --cc parameter")
+				return
+			}
 			if nameSpaceID == "" {
 				logger.Error("failed to validate --ns parameter")
 				return
 			}
+			logger.Debug("--cc parameter value : ", connConfigName)
 			logger.Debug("--ns parameter value : ", nameSpaceID)
 
 			SetupAndRun(cmd, args)
 		},
 	}
 
+	fetchCmd.PersistentFlags().StringVarP(&connConfigName, "cc", "", "", "connection name")
 	fetchCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return fetchCmd
