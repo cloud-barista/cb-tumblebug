@@ -1913,7 +1913,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	if err != nil {
 		//mapA := map[string]string{"message": "Cannot find " + common.GenMcisKey(nsId, mcisId, "")}
 		//return c.JSON(http.StatusOK, &mapA)
-		return nil, fmt.Errorf("Cannot find " + common.GenMcisKey(nsId, mcisId, ""))
+		return nil, fmt.Errorf("Cannot find " + common.GenMcisKey(nsId, mcisId, vmInfoData.Id))
 	}
 
 	vmInfoData.Status = vmStatus.Status
@@ -2938,9 +2938,8 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 func ControlMcis(nsId string, mcisId string, action string) error {
 
-	fmt.Println("[ControlMcis]" + mcisId + " to " + action)
 	key := common.GenMcisKey(nsId, mcisId, "")
-	fmt.Println(key)
+	fmt.Println("[ControlMcis] " + key + " to " + action)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -3012,9 +3011,8 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 		return checkError
 	}
 
-	fmt.Println("[ControlMcis]" + mcisId + " to " + action)
 	key := common.GenMcisKey(nsId, mcisId, "")
-	fmt.Println(key)
+	fmt.Println("[ControlMcisAsync] " + key + " to " + action)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -3107,9 +3105,8 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 		CspVmId string `json:"cspVmId"`
 	}
 
-	fmt.Println("[ControlVm]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	fmt.Println(key)
+	fmt.Println("[ControlVmAsync] " + key)
 
 	keyValue, _ := common.CBStore.Get(key)
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
@@ -3353,9 +3350,8 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		CspVmId string `json:"cspVmId"`
 	}
 
-	fmt.Println("[ControlVm]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	fmt.Println(key)
+	fmt.Println("[ControlVm] " + key)
 
 	keyValue, _ := common.CBStore.Get(key)
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
