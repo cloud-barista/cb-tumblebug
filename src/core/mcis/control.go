@@ -365,7 +365,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 		result, err := RunSSH(vmIp, sshPort, verifiedUserName, privateKey, cmd)
 		if err != nil {
 			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
-			return "", "", fmt.Errorf("Cannot do ssh, with verifiedUserName")
+			return "", "", fmt.Errorf("Cannot do ssh, with" + verifiedUserName + ", " + err.Error())
 		}
 		if err == nil {
 			theUserName = verifiedUserName
@@ -1087,8 +1087,16 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 	}
 
 	fmt.Println("[ListVmId]")
+	var vmList []string
+
+	// Check MCIS exists
 	key := common.GenMcisKey(nsId, mcisId, "")
-	//fmt.Println(key)
+	_, err = common.CBStore.Get(key)
+	if err != nil {
+		fmt.Println("[Not found] " + mcisId)
+		common.CBLog.Error(err)
+		return vmList, err
+	}
 
 	keyValue, err := common.CBStore.GetList(key, true)
 
@@ -1096,7 +1104,7 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	var vmList []string
+
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/vm/") {
 			vmList = append(vmList, strings.TrimPrefix(v.Key, (key+"/vm/")))
@@ -1753,13 +1761,8 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	// find vaild username
 	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
-	if userName == "" {
-		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
-		return "", fmt.Errorf("No vaild username")
-	}
-	if err != nil {
-		//return c.JSON(http.StatusInternalServerError, errors.New("No vaild username"))
-		return "", err
+	if err != nil || userName == "" {
+		return "", fmt.Errorf("Not found: valid ssh username, " + err.Error())
 	}
 
 	fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
