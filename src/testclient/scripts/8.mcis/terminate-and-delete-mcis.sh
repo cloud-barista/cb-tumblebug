@@ -18,6 +18,7 @@ CSP=${1}
 REGION=${2:-1}
 POSTFIX=${3:-developer}
 
+OPTION=${5:-notforce}
 
 source ../common-functions.sh
 getCloudIndex $CSP
@@ -36,7 +37,7 @@ echo "${INDEX} ${REGION} ${MCISID}"
 
 echo ""
 echo "Terminate and Delete [MCIS: $MCISID]"
-curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID} | jq ''
+curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=${OPTION} | jq ''
 
 #}
 

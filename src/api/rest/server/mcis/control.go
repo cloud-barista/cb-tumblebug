@@ -211,6 +211,7 @@ func RestPutMcis(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
+// @Param option query string false "Option for delete MCIS (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [delete]
@@ -218,8 +219,9 @@ func RestDelMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
+	option := c.QueryParam("option")
 
-	err := mcis.DelMcis(nsId, mcisId)
+	err := mcis.DelMcis(nsId, mcisId, option)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -237,13 +239,15 @@ func RestDelMcis(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
+// @Param option query string false "Option for delete MCIS (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis [delete]
 func RestDelAllMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
+	option := c.QueryParam("option")
 
-	result, err := mcis.CoreDelAllMcis(nsId)
+	result, err := mcis.CoreDelAllMcis(nsId, option)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
@@ -596,6 +600,7 @@ func RestPutMcisVm(c echo.Context) error {
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
 // @Param vmId path string true "VM ID"
+// @Param option query string false "Option for delete VM (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [delete]
@@ -604,8 +609,9 @@ func RestDelMcisVm(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
+	option := c.QueryParam("option")
 
-	err := mcis.DelMcisVm(nsId, mcisId, vmId)
+	err := mcis.DelMcisVm(nsId, mcisId, vmId, option)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": "Failed to delete the VM info"}

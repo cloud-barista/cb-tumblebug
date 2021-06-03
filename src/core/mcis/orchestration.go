@@ -318,7 +318,7 @@ func OrchestrationController() {
 						if len(vmList) != 0 {
 							removeTargetVm := vmList[len(vmList)-1]
 							fmt.Println("[Removing VM ID] " + removeTargetVm)
-							delVmErr := DelMcisVm(nsId, mcisPolicyTmp.Id, removeTargetVm)
+							delVmErr := DelMcisVm(nsId, mcisPolicyTmp.Id, removeTargetVm, "")
 							if delVmErr != nil {
 								mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
