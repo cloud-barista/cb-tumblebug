@@ -155,7 +155,7 @@ func (s *MCISService) DeleteMcis(ctx context.Context, req *pb.TbMcisQryRequest) 
 
 	logger.Debug("calling MCISService.DeleteMcis()")
 
-	err := mcis.DelMcis(req.NsId, req.McisId)
+	err := mcis.DelMcis(req.NsId, req.McisId, "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteMcis()")
 	}
@@ -170,7 +170,7 @@ func (s *MCISService) DeleteAllMcis(ctx context.Context, req *pb.TbMcisAllQryReq
 
 	logger.Debug("calling MCISService.DeleteAllMcis()")
 
-	result, err := mcis.CoreDelAllMcis(req.NsId)
+	result, err := mcis.CoreDelAllMcis(req.NsId, "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteAllMcis()")
 	}
@@ -302,7 +302,7 @@ func (s *MCISService) DeleteMcisVM(ctx context.Context, req *pb.TbVmQryRequest) 
 
 	logger.Debug("calling MCISService.DeleteMcisVM()")
 
-	err := mcis.DelMcisVm(req.NsId, req.McisId, req.VmId)
+	err := mcis.DelMcisVm(req.NsId, req.McisId, req.VmId, "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteMcisVM()")
 	}
