@@ -3991,8 +3991,17 @@ var doc = `{
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
             "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
                 "cost_per_hour": {
                     "$ref": "#/definitions/mcir.Range"
+                },
+                "cspSpecName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "ebs_bw_Mbps": {
                     "$ref": "#/definitions/mcir.Range"
@@ -4027,8 +4036,20 @@ var doc = `{
                 "evaluationScore_10": {
                     "$ref": "#/definitions/mcir.Range"
                 },
+                "evaluationStatus": {
+                    "type": "string"
+                },
+                "gpu_model": {
+                    "type": "string"
+                },
+                "gpu_p2p": {
+                    "type": "string"
+                },
                 "gpumem_GiB": {
                     "$ref": "#/definitions/mcir.Range"
+                },
+                "id": {
+                    "type": "string"
                 },
                 "max_num_storage": {
                     "$ref": "#/definitions/mcir.Range"
@@ -4038,6 +4059,9 @@ var doc = `{
                 },
                 "mem_GiB": {
                     "$ref": "#/definitions/mcir.Range"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "net_bw_Gbps": {
                     "$ref": "#/definitions/mcir.Range"
@@ -4053,6 +4077,9 @@ var doc = `{
                 },
                 "num_vCPU": {
                     "$ref": "#/definitions/mcir.Range"
+                },
+                "os_type": {
+                    "type": "string"
                 },
                 "storage_GiB": {
                     "$ref": "#/definitions/mcir.Range"

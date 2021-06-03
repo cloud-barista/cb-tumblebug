@@ -34,8 +34,8 @@ meta_db/
 # Config file for test
 src/testclient/scripts/sequentialFullTest/executionStatus*
 src/testclient/scripts/credentials.conf
-src/api/grpc/cbadm/test/official/sequentialFullTest/executionStatus
-src/api/grpc/cbadm/test/official/credentials.conf
+src/api/grpc/cbadm/testclient/scripts/sequentialFullTest/executionStatus*
+src/api/grpc/cbadm/testclient/scripts/credentials.conf
 
 # Config file for mcism
 conf/

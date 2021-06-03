@@ -20,6 +20,7 @@
 	    "{
           \"nsId\":  \"${NSID}\",
 		  \"filter\": {
+              \"connectionName\": \"gcp\",
 			    \"num_vCPU\": {
                     \"min\": 2,
                     \"max\": 4
