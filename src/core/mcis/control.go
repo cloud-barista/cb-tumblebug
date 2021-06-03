@@ -1151,7 +1151,7 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 	return vmGroupList, nil
 }
 
-func DelMcis(nsId string, mcisId string) error {
+func DelMcis(nsId string, mcisId string, option string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1177,7 +1177,9 @@ func DelMcis(nsId string, mcisId string) error {
 	err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		if option != "force" {
+			return err
+		}
 	}
 	// for deletion, need to wait until termination is finished
 	// Sleep for 5 seconds
@@ -1247,7 +1249,7 @@ func DelMcis(nsId string, mcisId string) error {
 	return nil
 }
 
-func DelMcisVm(nsId string, mcisId string, vmId string) error {
+func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1280,7 +1282,9 @@ func DelMcisVm(nsId string, mcisId string, vmId string) error {
 
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		if option != "force" {
+			return err
+		}
 	}
 	// for deletion, need to wait until termination is finished
 	// Sleep for 5 seconds
@@ -1482,7 +1486,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 			fmt.Println("[vmInfo.Status]", v.Status)
 			if v.Status == StatusFailed || v.Status == StatusUndefined {
 				// Delete VM sequentially for safety (for performance, need to use goroutine)
-				err := DelMcisVm(nsId, mcisId, v.Id)
+				err := DelMcisVm(nsId, mcisId, v.Id, "force")
 				if err != nil {
 					common.CBLog.Error(err)
 					return "", err
@@ -1648,7 +1652,7 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 	return Mcis, nil
 }
 
-func CoreDelAllMcis(nsId string) (string, error) {
+func CoreDelAllMcis(nsId string, option string) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1665,7 +1669,7 @@ func CoreDelAllMcis(nsId string) (string, error) {
 	}
 
 	for _, v := range mcisList {
-		err := DelMcis(nsId, v)
+		err := DelMcis(nsId, v, option)
 		if err != nil {
 			common.CBLog.Error(err)
 			//mapA := map[string]string{"message": "Failed to delete All MCISs"}
