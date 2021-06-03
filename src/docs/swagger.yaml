@@ -2044,6 +2044,12 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Option for delete MCIS (support force delete)
+        enum:
+        - force
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
@@ -2135,6 +2141,12 @@ paths:
         in: path
         name: mcisId
         required: true
+        type: string
+      - description: Option for delete MCIS (support force delete)
+        enum:
+        - force
+        in: query
+        name: option
         type: string
       produces:
       - application/json
@@ -2265,6 +2277,12 @@ paths:
         in: path
         name: vmId
         required: true
+        type: string
+      - description: Option for delete VM (support force delete)
+        enum:
+        - force
+        in: query
+        name: option
         type: string
       produces:
       - application/json

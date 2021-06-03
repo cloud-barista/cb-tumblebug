@@ -1155,6 +1155,15 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Option for delete MCIS (support force delete)",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1335,6 +1344,15 @@ var doc = `{
                         "name": "mcisId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Option for delete MCIS (support force delete)",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1534,6 +1552,15 @@ var doc = `{
                         "name": "vmId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "force"
+                        ],
+                        "type": "string",
+                        "description": "Option for delete VM (support force delete)",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
