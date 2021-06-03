@@ -154,13 +154,12 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
 		CBLog.Error(err)
-		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", err
 	}
 	if keyValue == nil {
 		//CBLog.Error(err)
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
-		return "", err
+		return "", fmt.Errorf("cannot find the key " + key)
 	}
 
 	switch resourceType {
@@ -171,7 +170,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	case StrSSHKey:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspSshKeyName, nil
+		return resourceId, nil
 	case StrSpec:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
@@ -179,7 +178,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	case StrVNet:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspVNetName, nil // contains CspSubnetId
+		return resourceId, nil // contains CspSubnetId
 	// case "subnet":
 	// 	content := subnetInfo{}
 	// 	json.Unmarshal([]byte(keyValue.Value), &content)

@@ -2677,12 +2677,13 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 			return err
 		}
 
-		tempReq.ReqInfo.VPCName = vmInfoData.VNetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
+		tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
 		if tempReq.ReqInfo.VPCName == "" {
 			common.CBLog.Error(err)
 			return err
 		}
 
+		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
 		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
 		if tempReq.ReqInfo.SubnetName == "" {
 			common.CBLog.Error(err)
@@ -2701,7 +2702,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		}
 		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
-		tempReq.ReqInfo.KeyPairName = vmInfoData.SshKeyId //common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
+		tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
 		if tempReq.ReqInfo.KeyPairName == "" {
 			common.CBLog.Error(err)
 			return err
@@ -3074,7 +3075,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 	//goroutin sync wg
 	var wg sync.WaitGroup
 	var results ControlVmResultWrapper
-	// delete vms info
+
 	for _, v := range vmList {
 		wg.Add(1)
 
@@ -3084,6 +3085,18 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 		go ControlVmAsync(&wg, nsId, mcisId, v, action, &results)
 	}
 	wg.Wait() //goroutine sync wg
+
+	checkErrFlag := ""
+	for _, v := range results.ResultArray {
+		if v.Error != nil {
+			checkErrFlag += "["
+			checkErrFlag += v.Error.Error()
+			checkErrFlag += "]"
+		}
+	}
+	if checkErrFlag != "" {
+		return fmt.Errorf(checkErrFlag)
+	}
 
 	return nil
 
@@ -3103,247 +3116,234 @@ type ControlVmResultWrapper struct {
 func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, action string, results *ControlVmResultWrapper) error {
 	defer wg.Done() //goroutine sync done
 
-	var content struct {
-		CloudId string `json:"cloudId"`
-		CspVmId string `json:"cspVmId"`
-	}
+	var errTmp error
+	var err error
+	var err2 error
+	resultTmp := ControlVmResult{}
+	resultTmp.VmId = vmId
+	resultTmp.Status = ""
+	temp := TbVmInfo{}
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	fmt.Println("[ControlVmAsync] " + key)
 
-	keyValue, _ := common.CBStore.Get(key)
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
+	keyValue, err := common.CBStore.Get(key)
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
+	if keyValue == nil || err != nil {
 
-	//fmt.Printf("%+v\n", content.CloudId)
-	//fmt.Printf("%+v\n", content.CspVmId)
-
-	temp := TbVmInfo{}
-	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
-	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
-	}
-
-	fmt.Println("\n[Calling SPIDER]START vmControl")
-
-	//fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
-
-	/*
-		cspType := getVMsCspType(nsId, mcisId, vmId)
-		var cspVmId string
-		if cspType == "AWS" {
-			cspVmId = temp.CspViewVmDetail.Id
-		} else {
-	*/
-	cspVmId := temp.CspViewVmDetail.IId.NameId
-	common.PrintJsonPretty(temp.CspViewVmDetail)
-
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
-		url := ""
-		method := ""
-		switch action {
-		case ActionTerminate:
-
-			temp.TargetAction = ActionTerminate
-			temp.TargetStatus = StatusTerminated
-			temp.Status = StatusTerminating
-
-			url = common.SPIDER_REST_URL + "/vm/" + cspVmId
-			method = "DELETE"
-		case ActionReboot:
-
-			temp.TargetAction = ActionReboot
-			temp.TargetStatus = StatusRunning
-			temp.Status = StatusRebooting
-
-			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=reboot"
-			method = "GET"
-		case ActionSuspend:
-
-			temp.TargetAction = ActionSuspend
-			temp.TargetStatus = StatusSuspended
-			temp.Status = StatusSuspending
-
-			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=suspend"
-			method = "GET"
-		case ActionResume:
-
-			temp.TargetAction = ActionResume
-			temp.TargetStatus = StatusRunning
-			temp.Status = StatusResuming
-
-			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=resume"
-			method = "GET"
-		default:
-			return errors.New(action + "is invalid actionType")
-		}
-
-		UpdateVmInfo(nsId, mcisId, temp)
-		//fmt.Println("url: " + url + " method: " + method)
-
-		type ControlVMReqInfo struct {
-			ConnectionName string
-		}
-		tempReq := ControlVMReqInfo{}
-		tempReq.ConnectionName = temp.ConnectionName
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		//fmt.Println("payload: " + string(payload)) // for debug
-
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-		if err != nil {
-			fmt.Println(err)
-			temp.Status = StatusFailed
-			UpdateVmInfo(nsId, mcisId, temp)
-			return err
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
-		//fmt.Println("Called mockAPI.")
-		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
-
-		//var resBodyTmp struct {
-		//	Status string `json:"Status"`
-		//}
-
-		var errTmp error
-		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
-			common.CBLog.Error(err)
-			errTmp = err
-		}
-
-		resultTmp := ControlVmResult{}
-		err2 := json.Unmarshal(body, &resultTmp)
-		if err2 != nil {
-			fmt.Println(err2)
-			common.CBLog.Error(err)
-			errTmp = err
-		}
-		if errTmp != nil {
-			resultTmp.Error = errTmp
-
-			temp.Status = StatusFailed
-			temp.SystemMessage = errTmp.Error()
-			UpdateVmInfo(nsId, mcisId, temp)
-		}
+		resultTmp.Error = fmt.Errorf("CBStoreGetErr. keyValue == nil || err != nil. key[" + key + "]")
 		results.ResultArray = append(results.ResultArray, resultTmp)
-
 		common.PrintJsonPretty(resultTmp)
-
-		fmt.Println("[Calling SPIDER]END vmControl")
-
-		if action != ActionTerminate {
-			//When VM is restared, temporal PublicIP will be chanaged. Need update.
-			UpdateVmPublicIp(nsId, mcisId, temp)
-		}
-
-		return nil
+		return resultTmp.Error
 
 	} else {
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===============================================")
 
-		// CCM API 설정
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
+		unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
+		if unmarshalErr != nil {
+			fmt.Println("Unmarshal error:", unmarshalErr)
+		}
+
+		fmt.Println("\n[Calling SPIDER]START vmControl")
+
+		cspVmId := temp.CspViewVmDetail.IId.NameId
+		common.PrintJsonPretty(temp.CspViewVmDetail)
+
+		// Prevent malformed cspVmId
+		if cspVmId == "" || common.CheckString(cspVmId) != nil {
+			resultTmp.Error = fmt.Errorf("Not valid requested CSPNativeVmId: [" + cspVmId + "]")
 			temp.Status = StatusFailed
+			temp.SystemMessage = resultTmp.Error.Error()
 			UpdateVmInfo(nsId, mcisId, temp)
-			return err
+			//return err
+		} else {
+			if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+				url := ""
+				method := ""
+				switch action {
+				case ActionTerminate:
+
+					temp.TargetAction = ActionTerminate
+					temp.TargetStatus = StatusTerminated
+					temp.Status = StatusTerminating
+
+					url = common.SPIDER_REST_URL + "/vm/" + cspVmId
+					method = "DELETE"
+				case ActionReboot:
+
+					temp.TargetAction = ActionReboot
+					temp.TargetStatus = StatusRunning
+					temp.Status = StatusRebooting
+
+					url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=reboot"
+					method = "GET"
+				case ActionSuspend:
+
+					temp.TargetAction = ActionSuspend
+					temp.TargetStatus = StatusSuspended
+					temp.Status = StatusSuspending
+
+					url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=suspend"
+					method = "GET"
+				case ActionResume:
+
+					temp.TargetAction = ActionResume
+					temp.TargetStatus = StatusRunning
+					temp.Status = StatusResuming
+
+					url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=resume"
+					method = "GET"
+				default:
+					return errors.New(action + "is invalid actionType")
+				}
+
+				UpdateVmInfo(nsId, mcisId, temp)
+				//fmt.Println("url: " + url + " method: " + method)
+
+				type ControlVMReqInfo struct {
+					ConnectionName string
+				}
+				tempReq := ControlVMReqInfo{}
+				tempReq.ConnectionName = temp.ConnectionName
+				payload, _ := json.MarshalIndent(tempReq, "", "  ")
+				//fmt.Println("payload: " + string(payload)) // for debug
+
+				client := &http.Client{
+					CheckRedirect: func(req *http.Request, via []*http.Request) error {
+						return http.ErrUseLastResponse
+					},
+				}
+				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+				if err != nil {
+					common.CBLog.Error(err)
+					return err
+				}
+				req.Header.Add("Content-Type", "application/json")
+
+				res, err := client.Do(req)
+				if err != nil {
+					common.CBLog.Error(err)
+					return err
+				}
+				defer res.Body.Close()
+				body, err := ioutil.ReadAll(res.Body)
+				if err != nil {
+					common.CBLog.Error(err)
+					return err
+				}
+
+				fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+				switch {
+				case res.StatusCode >= 400 || res.StatusCode < 200:
+					err := fmt.Errorf(string(body))
+					common.CBLog.Error(err)
+					errTmp = err
+				}
+
+				err2 = json.Unmarshal(body, &resultTmp)
+
+			} else {
+
+				// CCM API 설정
+				ccm := api.NewCloudResourceHandler()
+				err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+				if err != nil {
+					common.CBLog.Error("ccm failed to set config : ", err)
+					temp.Status = StatusFailed
+					UpdateVmInfo(nsId, mcisId, temp)
+					return err
+				}
+				err = ccm.Open()
+				if err != nil {
+					common.CBLog.Error("ccm api open failed : ", err)
+					temp.Status = StatusFailed
+					UpdateVmInfo(nsId, mcisId, temp)
+					return err
+				}
+				defer ccm.Close()
+
+				var result string
+
+				switch action {
+				case ActionTerminate:
+
+					temp.TargetAction = ActionTerminate
+					temp.TargetStatus = StatusTerminated
+					temp.Status = StatusTerminating
+
+					UpdateVmInfo(nsId, mcisId, temp)
+
+					result, err = ccm.TerminateVMByParam(temp.ConnectionName, cspVmId, "false")
+
+				case ActionReboot:
+
+					temp.TargetAction = ActionReboot
+					temp.TargetStatus = StatusRunning
+					temp.Status = StatusRebooting
+
+					UpdateVmInfo(nsId, mcisId, temp)
+
+					result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "reboot")
+
+				case ActionSuspend:
+
+					temp.TargetAction = ActionSuspend
+					temp.TargetStatus = StatusSuspended
+					temp.Status = StatusSuspending
+
+					UpdateVmInfo(nsId, mcisId, temp)
+
+					result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "suspend")
+
+				case ActionResume:
+
+					temp.TargetAction = ActionResume
+					temp.TargetStatus = StatusRunning
+					temp.Status = StatusResuming
+
+					UpdateVmInfo(nsId, mcisId, temp)
+
+					result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "resume")
+
+				default:
+					return errors.New(action + "is invalid actionType")
+				}
+
+				err2 = json.Unmarshal([]byte(result), &resultTmp)
+
+			}
+
+			if err2 != nil {
+				fmt.Println(err2)
+				common.CBLog.Error(err)
+				errTmp = err
+			}
+			if errTmp != nil {
+				resultTmp.Error = errTmp
+
+				temp.Status = StatusFailed
+				temp.SystemMessage = errTmp.Error()
+				UpdateVmInfo(nsId, mcisId, temp)
+			}
+			results.ResultArray = append(results.ResultArray, resultTmp)
+
+			common.PrintJsonPretty(resultTmp)
+
+			fmt.Println("[Calling SPIDER]END vmControl")
+
+			if action != ActionTerminate {
+				//When VM is restared, temporal PublicIP will be chanaged. Need update.
+				UpdateVmPublicIp(nsId, mcisId, temp)
+			}
 		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			temp.Status = StatusFailed
-			UpdateVmInfo(nsId, mcisId, temp)
-			return err
-		}
-		defer ccm.Close()
-
-		var result string
-
-		switch action {
-		case ActionTerminate:
-
-			temp.TargetAction = ActionTerminate
-			temp.TargetStatus = StatusTerminated
-			temp.Status = StatusTerminating
-
-			UpdateVmInfo(nsId, mcisId, temp)
-
-			result, err = ccm.TerminateVMByParam(temp.ConnectionName, cspVmId, "false")
-
-		case ActionReboot:
-
-			temp.TargetAction = ActionReboot
-			temp.TargetStatus = StatusRunning
-			temp.Status = StatusRebooting
-
-			UpdateVmInfo(nsId, mcisId, temp)
-
-			result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "reboot")
-
-		case ActionSuspend:
-
-			temp.TargetAction = ActionSuspend
-			temp.TargetStatus = StatusSuspended
-			temp.Status = StatusSuspending
-
-			UpdateVmInfo(nsId, mcisId, temp)
-
-			result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "suspend")
-
-		case ActionResume:
-
-			temp.TargetAction = ActionResume
-			temp.TargetStatus = StatusRunning
-			temp.Status = StatusResuming
-
-			UpdateVmInfo(nsId, mcisId, temp)
-
-			result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "resume")
-
-		default:
-			return errors.New(action + "is invalid actionType")
-		}
-
-		var errTmp error
-
-		resultTmp := ControlVmResult{}
-		err2 := json.Unmarshal([]byte(result), &resultTmp)
-		if err2 != nil {
-			common.CBLog.Error(err)
-			errTmp = err
-		}
-		if errTmp != nil {
-			resultTmp.Error = errTmp
-
-			temp.Status = StatusFailed
-			UpdateVmInfo(nsId, mcisId, temp)
-		}
-		results.ResultArray = append(results.ResultArray, resultTmp)
-
-		common.PrintJsonPretty(resultTmp)
-
-		fmt.Println("[Calling SPIDER]END vmControl\n")
-
-		UpdateVmPublicIp(nsId, mcisId, temp)
-
-		return nil
 
 	}
+
+	return nil
+
 }
 
 func ControlVm(nsId string, mcisId string, vmId string, action string) error {
@@ -3730,7 +3730,7 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	fmt.Println("[GetVmObject] mcisId: " + mcisId + ", vmId: " + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
+	if keyValue == nil || err != nil {
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
 	}
@@ -3769,7 +3769,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	errorInfo := TbVmStatusInfo{}
 
 	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
+	if keyValue == nil || err != nil {
+		fmt.Println("CBStoreGetErr. keyValue == nil || err != nil", err)
 		fmt.Println(err)
 		return errorInfo, err
 	}
@@ -3780,11 +3781,6 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 
 	fmt.Println("===============================================")
 
-	//json.Unmarshal([]byte(keyValue.Value), &content)
-
-	//fmt.Printf("%+v\n", content.CloudId)
-	//fmt.Printf("%+v\n", content.CspVmId)
-
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
@@ -3793,24 +3789,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		return errorInfo, err
 	}
 
-	//UpdateVmPublicIp. update temp TbVmInfo{} with changed IP
-	UpdateVmPublicIp(nsId, mcisId, temp)
-	keyValue, _ = common.CBStore.Get(key)
-	unmarshalErr = json.Unmarshal([]byte(keyValue.Value), &temp)
-	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
-	}
-
 	fmt.Print("\n[Calling SPIDER] ")
-	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
-	/*
-		var cspVmId string
-		cspType := getVMsCspType(nsId, mcisId, vmId)
-		if cspType == "AWS" {
-			cspVmId = temp.CspViewVmDetail.Id
-		} else {
-	*/
 	cspVmId := temp.CspViewVmDetail.IId.NameId
+	fmt.Println("CspVmId: " + cspVmId)
 
 	type statusResponse struct {
 		Status string
@@ -3900,8 +3881,11 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	fmt.Println(statusResponseTmp)
 	//fmt.Println("[Calling SPIDER]END\n")
 
+	//UpdateVmPublicIp. update temp TbVmInfo{} with changed IP
+	UpdateVmPublicIp(nsId, mcisId, temp)
+
 	vmStatusTmp := TbVmStatusInfo{}
-	vmStatusTmp.Id = vmId
+	vmStatusTmp.Id = temp.Id
 	vmStatusTmp.Name = temp.Name
 	vmStatusTmp.CspVmId = temp.CspViewVmDetail.IId.NameId
 	vmStatusTmp.PublicIp = temp.PublicIP
