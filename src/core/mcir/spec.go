@@ -720,13 +720,13 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	sqlQuery := "SELECT * FROM `spec` WHERE `namespace`='" + nsId + "'"
 
 	if filter.Id != "" {
-		sqlQuery += " AND `id`='" + filter.Id + "'"
+		sqlQuery += " AND `id` LIKE '%" + filter.Id + "%'"
 	}
 	if filter.Name != "" {
 		sqlQuery += " AND `name` LIKE '%" + filter.Name + "%'"
 	}
 	if filter.ConnectionName != "" {
-		sqlQuery += " AND `connectionName`='" + filter.ConnectionName + "'"
+		sqlQuery += " AND `connectionName` LIKE '%" + filter.ConnectionName + "%'"
 	}
 	if filter.CspSpecName != "" {
 		sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
@@ -781,7 +781,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery += " AND `gpu_p2p` LIKE '%" + filter.Gpu_p2p + "%'"
 	}
 	if filter.EvaluationStatus != "" {
-		sqlQuery += " AND `evaluationStatus`='" + filter.EvaluationStatus + "'"
+		sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
 	}
 	if filter.EvaluationScore_01 > 0 {
 		sqlQuery += " AND `evaluationScore_01`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_01)
@@ -882,28 +882,37 @@ type Range struct {
 }
 
 type FilterSpecsByRangeRequest struct {
-	Num_vCPU              Range `json:"num_vCPU"`
-	Num_core              Range `json:"num_core"`
-	Mem_GiB               Range `json:"mem_GiB"`
-	Storage_GiB           Range `json:"storage_GiB"`
-	Cost_per_hour         Range `json:"cost_per_hour"`
-	Num_storage           Range `json:"num_storage"`
-	Max_num_storage       Range `json:"max_num_storage"`
-	Max_total_storage_TiB Range `json:"max_total_storage_TiB"`
-	Net_bw_Gbps           Range `json:"net_bw_Gbps"`
-	Ebs_bw_Mbps           Range `json:"ebs_bw_Mbps"`
-	Num_gpu               Range `json:"num_gpu"`
-	Gpumem_GiB            Range `json:"gpumem_GiB"`
-	EvaluationScore_01    Range `json:"evaluationScore_01"`
-	EvaluationScore_02    Range `json:"evaluationScore_02"`
-	EvaluationScore_03    Range `json:"evaluationScore_03"`
-	EvaluationScore_04    Range `json:"evaluationScore_04"`
-	EvaluationScore_05    Range `json:"evaluationScore_05"`
-	EvaluationScore_06    Range `json:"evaluationScore_06"`
-	EvaluationScore_07    Range `json:"evaluationScore_07"`
-	EvaluationScore_08    Range `json:"evaluationScore_08"`
-	EvaluationScore_09    Range `json:"evaluationScore_09"`
-	EvaluationScore_10    Range `json:"evaluationScore_10"`
+	Id                    string `json:"id"`
+	Name                  string `json:"name"`
+	ConnectionName        string `json:"connectionName"`
+	CspSpecName           string `json:"cspSpecName"`
+	Os_type               string `json:"os_type"`
+	Num_vCPU              Range  `json:"num_vCPU"`
+	Num_core              Range  `json:"num_core"`
+	Mem_GiB               Range  `json:"mem_GiB"`
+	Storage_GiB           Range  `json:"storage_GiB"`
+	Description           string `json:"description"`
+	Cost_per_hour         Range  `json:"cost_per_hour"`
+	Num_storage           Range  `json:"num_storage"`
+	Max_num_storage       Range  `json:"max_num_storage"`
+	Max_total_storage_TiB Range  `json:"max_total_storage_TiB"`
+	Net_bw_Gbps           Range  `json:"net_bw_Gbps"`
+	Ebs_bw_Mbps           Range  `json:"ebs_bw_Mbps"`
+	Gpu_model             string `json:"gpu_model"`
+	Num_gpu               Range  `json:"num_gpu"`
+	Gpumem_GiB            Range  `json:"gpumem_GiB"`
+	Gpu_p2p               string `json:"gpu_p2p"`
+	EvaluationStatus      string `json:"evaluationStatus"`
+	EvaluationScore_01    Range  `json:"evaluationScore_01"`
+	EvaluationScore_02    Range  `json:"evaluationScore_02"`
+	EvaluationScore_03    Range  `json:"evaluationScore_03"`
+	EvaluationScore_04    Range  `json:"evaluationScore_04"`
+	EvaluationScore_05    Range  `json:"evaluationScore_05"`
+	EvaluationScore_06    Range  `json:"evaluationScore_06"`
+	EvaluationScore_07    Range  `json:"evaluationScore_07"`
+	EvaluationScore_08    Range  `json:"evaluationScore_08"`
+	EvaluationScore_09    Range  `json:"evaluationScore_09"`
+	EvaluationScore_10    Range  `json:"evaluationScore_10"`
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
@@ -918,6 +927,22 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	tempList := []TbSpecInfo{}
 
 	sqlQuery := "SELECT * FROM `spec` WHERE `namespace`='" + nsId + "'"
+
+	if filter.Id != "" {
+		sqlQuery += " AND `id` LIKE '%" + filter.Id + "%'"
+	}
+	if filter.Name != "" {
+		sqlQuery += " AND `name` LIKE '%" + filter.Name + "%'"
+	}
+	if filter.ConnectionName != "" {
+		sqlQuery += " AND `connectionName` LIKE '%" + filter.ConnectionName + "%'"
+	}
+	if filter.CspSpecName != "" {
+		sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
+	}
+	if filter.Os_type != "" {
+		sqlQuery += " AND `os_type` LIKE '%" + filter.Os_type + "%'"
+	}
 
 	if filter.Num_vCPU.Min > 0 {
 		sqlQuery += " AND `num_vCPU`>=" + fmt.Sprintf("%.6f", filter.Num_vCPU.Min)
@@ -945,6 +970,10 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	}
 	if filter.Storage_GiB.Max > 0 {
 		sqlQuery += " AND `storage_GiB`<=" + fmt.Sprintf("%.6f", filter.Storage_GiB.Max)
+	}
+
+	if filter.Description != "" {
+		sqlQuery += " AND `description` LIKE '%" + filter.Description + "%'"
 	}
 
 	if filter.Cost_per_hour.Min > 0 {
@@ -989,6 +1018,10 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		sqlQuery += " AND `ebs_bw_Mbps`<=" + fmt.Sprintf("%.6f", filter.Ebs_bw_Mbps.Max)
 	}
 
+	if filter.Gpu_model != "" {
+		sqlQuery += " AND `gpu_model` LIKE '%" + filter.Gpu_model + "%'"
+	}
+
 	if filter.Num_gpu.Min > 0 {
 		sqlQuery += " AND `num_gpu`>=" + fmt.Sprintf("%.6f", filter.Num_gpu.Min)
 	}
@@ -1001,6 +1034,13 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	}
 	if filter.Gpumem_GiB.Max > 0 {
 		sqlQuery += " AND `gpumem_GiB`<=" + fmt.Sprintf("%.6f", filter.Gpumem_GiB.Max)
+	}
+
+	if filter.Gpu_p2p != "" {
+		sqlQuery += " AND `gpu_p2p` LIKE '%" + filter.Gpu_p2p + "%'"
+	}
+	if filter.EvaluationStatus != "" {
+		sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
 	}
 
 	if filter.EvaluationScore_01.Min > 0 {

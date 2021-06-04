@@ -18,9 +18,10 @@
     resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/filterSpecsByRange -H 'Content-Type: application/json' -d @- <<EOF
 	    { 
+		"connectionName": "gcp",
 		    "num_vCPU": {
 			    "min": 2,
-			    "max": 4
+			    "max": 2
 		    }, 
 		    "mem_GiB": {
 			    "min": 4
