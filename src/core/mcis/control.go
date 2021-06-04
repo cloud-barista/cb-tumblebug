@@ -2665,7 +2665,10 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		tempReq := SpiderVMReqInfoWrapper{}
 		tempReq.ConnectionName = vmInfoData.ConnectionName
 
-		tempReq.ReqInfo.Name = vmInfoData.Name
+		//generate VM ID(Name) to request to CSP(Spider)
+		//combination of nsId, mcidId, and vmName reqested from user
+		cspVmIdToRequest := nsId + "-" + mcisId + "-" + vmInfoData.Name
+		tempReq.ReqInfo.Name = cspVmIdToRequest
 
 		err := fmt.Errorf("")
 
@@ -2767,7 +2770,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		fmt.Println("[Response from SPIDER]")
 		common.PrintJsonPretty(tempSpiderVMInfo)
-		fmt.Println("[Calling SPIDER]END\n")
+		fmt.Println("[Calling SPIDER]END")
 
 		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
@@ -2994,16 +2997,20 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 
 	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
 
+	fmt.Println("1CheckAllowedTransition" + action + " for MCIS in " + mcisStatusTmp.Status)
+
 	UpdateMcisInfo(nsId, mcisTmp)
 
-	if mcisStatusTmp.Status == StatusTerminating || mcisStatusTmp.Status == StatusResuming || mcisStatusTmp.Status == StatusSuspending || mcisStatusTmp.Status == StatusCreating || mcisStatusTmp.Status == StatusRebooting {
+	fmt.Println("2CheckAllowedTransition" + action + " for MCIS in " + mcisStatusTmp.Status)
+
+	if strings.Contains(mcisStatusTmp.Status, StatusTerminating) || strings.Contains(mcisStatusTmp.Status, StatusResuming) || strings.Contains(mcisStatusTmp.Status, StatusSuspending) || strings.Contains(mcisStatusTmp.Status, StatusCreating) || strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
 		return errors.New(action + " is not allowed for MCIS under " + mcisStatusTmp.Status)
 	}
-	if mcisStatusTmp.Status == StatusTerminated {
+	if strings.Contains(mcisStatusTmp.Status, StatusTerminated) {
 		return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
 	}
-	if mcisStatusTmp.Status == StatusSuspended {
-		if action == ActionResume || action == ActionTerminate {
+	if strings.Contains(mcisStatusTmp.Status, StatusSuspended) {
+		if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionTerminate) {
 			return nil
 		} else {
 			return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
@@ -3594,7 +3601,11 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 		common.CBLog.Error(err)
 		return &McisStatusInfo{}, err
 	}
-
+	if keyValue == nil {
+		err := fmt.Errorf("Not found [" + key + "]")
+		common.CBLog.Error(err)
+		return &McisStatusInfo{}, err
+	}
 	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	//fmt.Println("===============================================")
 
