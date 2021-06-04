@@ -18,7 +18,7 @@ function clean_mcis_sequence() {
 		dozing 30
 	fi
 
-	../8.mcis/terminate-and-delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	../8.mcis/delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
 }
 
 SECONDS=0
