@@ -2992,16 +2992,12 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 	mcisTmp := TbMcisInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
+		fmt.Println("Unmarshal Error:", unmarshalErr)
 	}
 
 	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
 
-	fmt.Println("1CheckAllowedTransition" + action + " for MCIS in " + mcisStatusTmp.Status)
-
 	UpdateMcisInfo(nsId, mcisTmp)
-
-	fmt.Println("2CheckAllowedTransition" + action + " for MCIS in " + mcisStatusTmp.Status)
 
 	if strings.Contains(mcisStatusTmp.Status, StatusTerminating) || strings.Contains(mcisStatusTmp.Status, StatusResuming) || strings.Contains(mcisStatusTmp.Status, StatusSuspending) || strings.Contains(mcisStatusTmp.Status, StatusCreating) || strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
 		return errors.New(action + " is not allowed for MCIS under " + mcisStatusTmp.Status)
