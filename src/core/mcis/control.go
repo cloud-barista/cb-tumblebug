@@ -1173,18 +1173,36 @@ func DelMcis(nsId string, mcisId string, option string) error {
 
 	fmt.Println("[Delete MCIS] " + mcisId)
 
-	// ControlMcis first
-	err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
-	if err != nil {
+	// // ControlMcis first
+	// err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
+	// if err != nil {
+	// 	common.CBLog.Error(err)
+	// 	if option != "force" {
+	// 		return err
+	// 	}
+	// }
+	// // for deletion, need to wait until termination is finished
+	// // Sleep for 5 seconds
+	// fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCIS-VMs termination.\n\n")
+	// time.Sleep(5 * time.Second)
+
+	// Check MCIS status is Terminated so that approve deletion
+	mcisStatus, _ := GetMcisStatus(nsId, mcisId)
+	if mcisStatus == nil {
+		err := fmt.Errorf("MCIS " + mcisId + " status nil, Deletion is not allowed (use option=force for force deletion)")
 		common.CBLog.Error(err)
 		if option != "force" {
 			return err
 		}
 	}
-	// for deletion, need to wait until termination is finished
-	// Sleep for 5 seconds
-	fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCIS-VMs termination.\n\n")
-	time.Sleep(5 * time.Second)
+	// Check MCIS status is Terminated (not Partial)
+	if !(!strings.Contains(mcisStatus.Status, "Partial-") && strings.Contains(mcisStatus.Status, StatusTerminated)) {
+		err := fmt.Errorf("MCIS " + mcisId + " is " + mcisStatus.Status + " and not " + StatusTerminated + ", Deletion is not allowed (use option=force for force deletion)")
+		common.CBLog.Error(err)
+		if option != "force" {
+			return err
+		}
+	}
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
@@ -3002,11 +3020,11 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 	if strings.Contains(mcisStatusTmp.Status, StatusTerminating) || strings.Contains(mcisStatusTmp.Status, StatusResuming) || strings.Contains(mcisStatusTmp.Status, StatusSuspending) || strings.Contains(mcisStatusTmp.Status, StatusCreating) || strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
 		return errors.New(action + " is not allowed for MCIS under " + mcisStatusTmp.Status)
 	}
-	if strings.Contains(mcisStatusTmp.Status, StatusTerminated) {
+	if !strings.Contains(mcisStatusTmp.Status, "Partial-") && strings.Contains(mcisStatusTmp.Status, StatusTerminated) {
 		return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
 	}
 	if strings.Contains(mcisStatusTmp.Status, StatusSuspended) {
-		if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionTerminate) {
+		if strings.EqualFold(action, ActionResume) {
 			return nil
 		} else {
 			return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
@@ -3984,6 +4002,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	if vmStatusTmp.TargetStatus == vmStatusTmp.Status {
 		vmStatusTmp.TargetStatus = StatusComplete
 		vmStatusTmp.TargetAction = ActionComplete
+		vmStatusTmp.SystemMessage = ""
 	}
 
 	return vmStatusTmp, nil
