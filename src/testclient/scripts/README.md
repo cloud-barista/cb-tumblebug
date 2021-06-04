@@ -467,7 +467,7 @@ son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ t
 │   ├── delete-mcis-policy.sh
 │   ├── get-mcis-policy.sh
 │   ├── get-mcis.sh
-│   ├── just-terminate-mcis.sh
+│   ├── terminate-mcis.sh
 │   ├── list-mcis-policy.sh
 │   ├── list-mcis.sh
 │   ├── list-mcis-status.sh

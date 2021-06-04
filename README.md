@@ -621,7 +621,7 @@ Dozing for 1 : 1 (Back to work)
 │   ├── delete-mcis-policy.sh
 │   ├── get-mcis-policy.sh
 │   ├── get-mcis.sh
-│   ├── just-terminate-mcis.sh
+│   ├── terminate-mcis.sh
 │   ├── list-mcis-policy.sh
 │   ├── list-mcis.sh
 │   ├── list-mcis-status.sh
