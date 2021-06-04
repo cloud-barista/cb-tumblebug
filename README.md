@@ -621,7 +621,7 @@ Dozing for 1 : 1 (Back to work)
 │   ├── delete-mcis-policy.sh
 │   ├── get-mcis-policy.sh
 │   ├── get-mcis.sh
-│   ├── just-terminate-mcis.sh
+│   ├── terminate-mcis.sh
 │   ├── list-mcis-policy.sh
 │   ├── list-mcis.sh
 │   ├── list-mcis-status.sh
@@ -633,7 +633,7 @@ Dozing for 1 : 1 (Back to work)
 │   ├── spider-get-vmstatus.sh
 │   ├── status-mcis.sh
 │   ├── suspend-mcis.sh
-│   └── terminate-and-delete-mcis.sh
+│   └── delete-mcis.sh
 ├── 9.monitoring
 │   ├── get-monitoring-data.sh
 │   └── install-agent.sh

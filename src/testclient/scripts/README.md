@@ -467,7 +467,7 @@ son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ t
 │   ├── delete-mcis-policy.sh
 │   ├── get-mcis-policy.sh
 │   ├── get-mcis.sh
-│   ├── just-terminate-mcis.sh
+│   ├── terminate-mcis.sh
 │   ├── list-mcis-policy.sh
 │   ├── list-mcis.sh
 │   ├── list-mcis-status.sh
@@ -479,7 +479,7 @@ son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ t
 │   ├── spider-get-vmstatus.sh
 │   ├── status-mcis.sh
 │   ├── suspend-mcis.sh
-│   └── terminate-and-delete-mcis.sh
+│   └── delete-mcis.sh
 ├── 9.monitoring                       # 모니터링 에이전트 설치 및 테스트 관련 스크립트
 │   ├── get-monitoring-data.sh
 │   └── install-agent.sh
