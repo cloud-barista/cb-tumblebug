@@ -36,19 +36,22 @@
 									\"FromPort\": \"1\",
 									\"ToPort\": \"65535\",
 									\"IPProtocol\": \"tcp\",
-									\"Direction\": \"inbound\"
+									\"Direction\": \"inbound\",
+									\"CIDR\": \"0.0.0.0/0\"
 								},
 								{
 									\"FromPort\": \"1\",
 									\"ToPort\": \"65535\",
 									\"IPProtocol\": \"udp\",
-									\"Direction\": \"inbound\"
+									\"Direction\": \"inbound\",
+									\"CIDR\": \"0.0.0.0/0\"
 								},
 								{
 									\"FromPort\": \"-1\",
 									\"ToPort\": \"-1\",
 									\"IPProtocol\": \"icmp\",
-									\"Direction\": \"inbound\"
+									\"Direction\": \"inbound\",
+									\"CIDR\": \"0.0.0.0/0\"
 								}
 							]
 					}

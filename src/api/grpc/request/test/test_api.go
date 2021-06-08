@@ -478,6 +478,7 @@ func CreateMCIRApiTest() {
 					ToPort:     "65535",
 					IPProtocol: "tcp",
 					Direction:  "inbound",
+					CIDR:       "0.0.0.0/0",
 				},
 			},
 		},

@@ -28,10 +28,11 @@ type SpiderSecurityReqInfo struct { // Spider
 */
 
 type SpiderSecurityRuleInfo struct { // Spider
-	FromPort   string `json:"fromPort"`
-	ToPort     string `json:"toPort"`
-	IPProtocol string `json:"ipProtocol"`
-	Direction  string `json:"direction"`
+	FromPort   string //`json:"fromPort"`
+	ToPort     string //`json:"toPort"`
+	IPProtocol string //`json:"ipProtocol"`
+	Direction  string //`json:"direction"`
+	CIDR       string
 }
 
 type SpiderSecurityInfo struct { // Spider
