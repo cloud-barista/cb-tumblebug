@@ -105,6 +105,7 @@ type SpiderSecurityRuleInfo struct { // Spider
 	ToPort     string `yaml:"toPort" json:"toPort"`
 	IPProtocol string `yaml:"ipProtocol" json:"ipProtocol"`
 	Direction  string `yaml:"direction" json:"direction"`
+	CIDR       string `yaml:"cidr" json:"cidr"`
 }
 
 // TbSpecCreateRequest - Spec 이름을 이용한 생성 요청 구조 Wrapper 정의

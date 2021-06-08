@@ -479,6 +479,7 @@ message SpiderSecurityRuleInfo {
 	string to_port = 2 [json_name="toPort", (gogoproto.jsontag) = "toPort", (gogoproto.moretags) = "yaml:\"toPort\""];
 	string ip_protocol = 3 [json_name="ipProtocol", (gogoproto.jsontag) = "ipProtocol", (gogoproto.moretags) = "yaml:\"ipProtocol\""];
 	string direction = 4 [json_name="direction", (gogoproto.jsontag) = "direction", (gogoproto.moretags) = "yaml:\"direction\""];
+	string cidr = 5 [json_name="cidr", (gogoproto.jsontag) = "cidr", (gogoproto.moretags) = "yaml:\"cidr\""];
 }
 
 message TbSecurityGroupCreateRequest {

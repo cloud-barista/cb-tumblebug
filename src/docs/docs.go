@@ -4254,16 +4254,23 @@ var doc = `{
         "mcir.SpiderSecurityRuleInfo": {
             "type": "object",
             "properties": {
+                "cidr": {
+                    "type": "string"
+                },
                 "direction": {
+                    "description": "` + "`" + `json:\"direction\"` + "`" + `",
                     "type": "string"
                 },
                 "fromPort": {
+                    "description": "` + "`" + `json:\"fromPort\"` + "`" + `",
                     "type": "string"
                 },
-                "ipProtocol": {
+                "ipprotocol": {
+                    "description": "` + "`" + `json:\"ipProtocol\"` + "`" + `",
                     "type": "string"
                 },
                 "toPort": {
+                    "description": "` + "`" + `json:\"toPort\"` + "`" + `",
                     "type": "string"
                 }
             }
