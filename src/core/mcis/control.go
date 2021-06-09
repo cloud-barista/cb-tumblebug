@@ -1196,8 +1196,8 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		}
 	}
 	// Check MCIS status is Terminated (not Partial)
-	if !(!strings.Contains(mcisStatus.Status, "Partial-") && strings.Contains(mcisStatus.Status, StatusTerminated)) {
-		err := fmt.Errorf("MCIS " + mcisId + " is " + mcisStatus.Status + " and not " + StatusTerminated + ", Deletion is not allowed (use option=force for force deletion)")
+	if !(!strings.Contains(mcisStatus.Status, "Partial-") && (strings.Contains(mcisStatus.Status, StatusTerminated) || strings.Contains(mcisStatus.Status, StatusUndefined) || strings.Contains(mcisStatus.Status, StatusFailed))) {
+		err := fmt.Errorf("MCIS " + mcisId + " is " + mcisStatus.Status + " and not " + StatusTerminated + "/" + StatusUndefined + "/" + StatusFailed + ", Deletion is not allowed (use option=force for force deletion)")
 		common.CBLog.Error(err)
 		if option != "force" {
 			return err
