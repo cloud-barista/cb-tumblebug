@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewUtilCmd - Tumblebug Util 관리 기능을 수행하는 Cobra Command 생성
+// NewUtilCmd : "cbadm util *" (for CB-Tumblebug)
 func NewUtilCmd() *cobra.Command {
 
 	utilCmd := &cobra.Command{
@@ -43,7 +43,7 @@ func NewUtilCmd() *cobra.Command {
 	return utilCmd
 }
 
-// NewConnConfigListCmd - Connection Config 목록 기능을 수행하는 Cobra Command 생성
+// NewConnConfigListCmd : "cbadm util list-cc"
 func NewConnConfigListCmd() *cobra.Command {
 
 	listCCCmd := &cobra.Command{
@@ -58,7 +58,7 @@ func NewConnConfigListCmd() *cobra.Command {
 	return listCCCmd
 }
 
-// NewConnConfigGetCmd -  Connection Config 조회 기능을 수행하는 Cobra Command 생성
+// NewConnConfigGetCmd : "cbadm util get-cc"
 func NewConnConfigGetCmd() *cobra.Command {
 
 	getCCCmd := &cobra.Command{
@@ -82,7 +82,7 @@ func NewConnConfigGetCmd() *cobra.Command {
 	return getCCCmd
 }
 
-// NewRegionSpiderListCmd - Region 목록 기능을 수행하는 Cobra Command 생성
+// NewRegionSpiderListCmd : "cbadm util list-region"
 func NewRegionSpiderListCmd() *cobra.Command {
 
 	listRegionCmd := &cobra.Command{
@@ -97,7 +97,7 @@ func NewRegionSpiderListCmd() *cobra.Command {
 	return listRegionCmd
 }
 
-// NewRegionSpiderGetCmd - Region 조회 기능을 수행하는 Cobra Command 생성
+// NewRegionSpiderGetCmd : "cbadm util get-region"
 func NewRegionSpiderGetCmd() *cobra.Command {
 
 	getRegionCmd := &cobra.Command{
@@ -121,7 +121,7 @@ func NewRegionSpiderGetCmd() *cobra.Command {
 	return getRegionCmd
 }
 
-// NewMcirResourcesInspectCmd - MCIR 리소스 점검 기능을 수행하는 Cobra Command 생성
+// NewMcirResourcesInspectCmd : "cbadm util inspect-mcir"
 func NewMcirResourcesInspectCmd() *cobra.Command {
 
 	inspectMcirCmd := &cobra.Command{
@@ -151,7 +151,7 @@ func NewMcirResourcesInspectCmd() *cobra.Command {
 	return inspectMcirCmd
 }
 
-// NewVmResourcesInspectCmd - VM 리소스 점검 기능을 수행하는 Cobra Command 생성
+// NewVmResourcesInspectCmd : "cbadm util inspect-vm"
 func NewVmResourcesInspectCmd() *cobra.Command {
 
 	inspectVmCmd := &cobra.Command{
@@ -175,7 +175,7 @@ func NewVmResourcesInspectCmd() *cobra.Command {
 	return inspectVmCmd
 }
 
-// NewObjectListCmd - 객체 목록 기능을 수행하는 Cobra Command 생성
+// NewObjectListCmd : "cbadm util list-obj"
 func NewObjectListCmd() *cobra.Command {
 
 	listObjCmd := &cobra.Command{
@@ -199,7 +199,7 @@ func NewObjectListCmd() *cobra.Command {
 	return listObjCmd
 }
 
-// NewObjectGetCmd - 객체 조회 기능을 수행하는 Cobra Command 생성
+// NewObjectGetCmd : "cbadm util get-obj"
 func NewObjectGetCmd() *cobra.Command {
 
 	getObjCmd := &cobra.Command{
@@ -223,7 +223,7 @@ func NewObjectGetCmd() *cobra.Command {
 	return getObjCmd
 }
 
-// NewObjectDeleteCmd - 객체 삭제 기능을 수행하는 Cobra Command 생성
+// NewObjectDeleteCmd : "cbadm util delete-obj"
 func NewObjectDeleteCmd() *cobra.Command {
 
 	deleteObjCmd := &cobra.Command{
@@ -247,7 +247,7 @@ func NewObjectDeleteCmd() *cobra.Command {
 	return deleteObjCmd
 }
 
-// NewObjectDeleteAllCmd - 객체 전체 삭제 기능을 수행하는 Cobra Command 생성
+// NewObjectDeleteAllCmd : "cbadm util delete-all-obj"
 func NewObjectDeleteAllCmd() *cobra.Command {
 
 	deleteAllObjCmd := &cobra.Command{

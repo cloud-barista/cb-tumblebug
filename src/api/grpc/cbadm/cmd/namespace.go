@@ -16,13 +16,14 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewNameSpaceCmd - Namespace 관리 기능을 수행하는 Cobra Command 생성
+// NewNameSpaceCmd : "cbadm namespace *" (for CB-Tumblebug)
 func NewNameSpaceCmd() *cobra.Command {
 
 	nameSpaceCmd := &cobra.Command{
-		Use:   "namespace",
-		Short: "This is a manageable command for namespace",
-		Long:  "This is a manageable command for namespace",
+		Use:     "namespace",
+		Aliases: []string{"ns"},
+		Short:   "This is a manageable command for namespace",
+		Long:    "This is a manageable command for namespace",
 	}
 
 	//  Adds the commands for application.
@@ -36,7 +37,7 @@ func NewNameSpaceCmd() *cobra.Command {
 	return nameSpaceCmd
 }
 
-// NewNameSpaceCreateCmd - Namespace 생성 기능을 수행하는 Cobra Command 생성
+// NewNameSpaceCreateCmd : "cbadm namespace create"
 func NewNameSpaceCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -63,7 +64,7 @@ func NewNameSpaceCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewNameSpaceListCmd - Namespace 목록 기능을 수행하는 Cobra Command 생성
+// NewNameSpaceListCmd : "cbadm namespace list"
 func NewNameSpaceListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -78,7 +79,7 @@ func NewNameSpaceListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewNameSpaceGetCmd - Namespace 조회 기능을 수행하는 Cobra Command 생성
+// NewNameSpaceGetCmd : "cbadm namespace get"
 func NewNameSpaceGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -102,7 +103,7 @@ func NewNameSpaceGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewNameSpaceDeleteCmd - Namespace 삭제 기능을 수행하는 Cobra Command 생성
+// NewNameSpaceDeleteCmd : "cbadm namespace delete"
 func NewNameSpaceDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
@@ -126,7 +127,7 @@ func NewNameSpaceDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
-// NewNameSpaceDeleteAllCmd - 전체 Namespace 삭제 기능을 수행하는 Cobra Command 생성
+// NewNameSpaceDeleteAllCmd : "cbadm namespace delete-all"
 func NewNameSpaceDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{
@@ -141,7 +142,7 @@ func NewNameSpaceDeleteAllCmd() *cobra.Command {
 	return deleteAllCmd
 }
 
-// NewNameSpaceCheckCmd - Namespace 체크 기능을 수행하는 Cobra Command 생성
+// NewNameSpaceCheckCmd : "cbadm namespace check"
 func NewNameSpaceCheckCmd() *cobra.Command {
 
 	checkCmd := &cobra.Command{

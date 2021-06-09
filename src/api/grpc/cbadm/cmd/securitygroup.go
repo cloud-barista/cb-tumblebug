@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewSecurityCmd - Security Group 관리 기능을 수행하는 Cobra Command 생성
+// NewSecurityCmd : "cbadm securitygroup *" (for CB-Tumblebug)
 func NewSecurityCmd() *cobra.Command {
 
 	securityCmd := &cobra.Command{
@@ -36,7 +36,7 @@ func NewSecurityCmd() *cobra.Command {
 	return securityCmd
 }
 
-// NewSecurityCreateCmd - Security Group 생성 기능을 수행하는 Cobra Command 생성
+// NewSecurityCreateCmd : "cbadm securitygroup create"
 func NewSecurityCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -63,7 +63,7 @@ func NewSecurityCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewSecurityListCmd - Security Group 목록 기능을 수행하는 Cobra Command 생성
+// NewSecurityListCmd : "cbadm securitygroup list"
 func NewSecurityListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -87,7 +87,7 @@ func NewSecurityListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewSecurityGetCmd - Security Group 조회 기능을 수행하는 Cobra Command 생성
+// NewSecurityGetCmd : "cbadm securitygroup get"
 func NewSecurityGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -117,7 +117,7 @@ func NewSecurityGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewSecurityDeleteCmd - Security Group 삭제 기능을 수행하는 Cobra Command 생성
+// NewSecurityDeleteCmd : "cbadm securitygroup delete"
 func NewSecurityDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
@@ -153,7 +153,7 @@ func NewSecurityDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
-// NewSecurityDeleteAllCmd - 전체 Security Group 삭제 기능을 수행하는 Cobra Command 생성
+// NewSecurityDeleteAllCmd : "cbadm securitygroup delete-all"
 func NewSecurityDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{

@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// SaveSshKey - Keypair 파일로 저장
+// SaveSshKey : Write keypair to file
 func SaveSshKey(mcir *tb_api.MCIRApi, nameSpaceID string, resourceID string, sshSaveFileName string) (string, error) {
 
 	holdType, _ := mcir.GetOutType()

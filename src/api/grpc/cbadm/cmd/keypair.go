@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewKeypairCmd - Keypair 관리 기능을 수행하는 Cobra Command 생성
+// NewKeypairCmd : "cbadm keypair *" (for CB-Tumblebug)
 func NewKeypairCmd() *cobra.Command {
 
 	keypairCmd := &cobra.Command{
@@ -36,7 +36,7 @@ func NewKeypairCmd() *cobra.Command {
 	return keypairCmd
 }
 
-// NewKeypairCreateCmd - Keypair 생성 기능을 수행하는 Cobra Command 생성
+// NewKeypairCreateCmd : "cbadm keypair create"
 func NewKeypairCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -63,7 +63,7 @@ func NewKeypairCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewKeypairListCmd - Keypair 목록 기능을 수행하는 Cobra Command 생성
+// NewKeypairListCmd : "cbadm keypair list"
 func NewKeypairListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -87,7 +87,7 @@ func NewKeypairListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewKeypairGetCmd - Keypair 조회 기능을 수행하는 Cobra Command 생성
+// NewKeypairGetCmd : "cbadm keypair get"
 func NewKeypairGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -117,7 +117,7 @@ func NewKeypairGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewKeypairSaveCmd - Keypair 저장 기능을 수행하는 Cobra Command 생성
+// NewKeypairSaveCmd : "cbadm keypair save"
 func NewKeypairSaveCmd() *cobra.Command {
 
 	saveCmd := &cobra.Command{
@@ -153,7 +153,7 @@ func NewKeypairSaveCmd() *cobra.Command {
 	return saveCmd
 }
 
-// NewKeypairDeleteCmd - Keypair 삭제 기능을 수행하는 Cobra Command 생성
+// NewKeypairDeleteCmd : "cbadm keypair delete"
 func NewKeypairDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
@@ -189,7 +189,7 @@ func NewKeypairDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
-// NewKeypairDeleteAllCmd - 전체 Keypair 삭제 기능을 수행하는 Cobra Command 생성
+// NewKeypairDeleteAllCmd : "cbadm keypair delete-all"
 func NewKeypairDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{

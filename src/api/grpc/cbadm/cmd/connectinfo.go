@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewConnectInfosCmd - 연결설정 관리 기능을 수행하는 Cobra Command 생성
+// NewConnectInfosCmd : "cbadm connect-info *" (for CB-Spider)
 func NewConnectInfosCmd() *cobra.Command {
 
 	connectionCmd := &cobra.Command{
@@ -34,7 +34,7 @@ func NewConnectInfosCmd() *cobra.Command {
 	return connectionCmd
 }
 
-// NewConnectInfosCreateCmd - 연결설정 생성 기능을 수행하는 Cobra Command 생성
+// NewConnectInfosCreateCmd : "cbadm connect-info create"
 func NewConnectInfosCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -61,7 +61,7 @@ func NewConnectInfosCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewConnectInfosListCmd - 연결설정 목록 기능을 수행하는 Cobra Command 생성
+// NewConnectInfosListCmd : "cbadm connect-info list"
 func NewConnectInfosListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -76,7 +76,7 @@ func NewConnectInfosListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewCConnectInfosGetCmd - 연결설정 조회 기능을 수행하는 Cobra Command 생성
+// NewCConnectInfosGetCmd : "cbadm connect-info get"
 func NewCConnectInfosGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -100,7 +100,7 @@ func NewCConnectInfosGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewConnectInfosDeleteCmd - 연결설정 삭제 기능을 수행하는 Cobra Command 생성
+// NewConnectInfosDeleteCmd : "cbadm connect-info delete"
 func NewConnectInfosDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{

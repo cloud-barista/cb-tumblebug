@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewSpecCmd - Spec 관리 기능을 수행하는 Cobra Command 생성
+// NewSpecCmd : "cbadm spec *" (for CB-Tumblebug)
 func NewSpecCmd() *cobra.Command {
 
 	specCmd := &cobra.Command{
@@ -43,7 +43,7 @@ func NewSpecCmd() *cobra.Command {
 	return specCmd
 }
 
-// NewSpecWithInfoCreateCmd - Spec 생성 기능을 수행하는 Cobra Command 생성
+// NewSpecWithInfoCreateCmd : "cbadm spec create"
 func NewSpecWithInfoCreateCmd() *cobra.Command {
 
 	createWithInfoCmd := &cobra.Command{
@@ -70,7 +70,7 @@ func NewSpecWithInfoCreateCmd() *cobra.Command {
 	return createWithInfoCmd
 }
 
-// NewSpecWithIdCreateCmd - Spec 생성 기능을 수행하는 Cobra Command 생성
+// NewSpecWithIdCreateCmd : "cbadm spec create-id"
 func NewSpecWithIdCreateCmd() *cobra.Command {
 
 	createWithIdCmd := &cobra.Command{
@@ -97,7 +97,7 @@ func NewSpecWithIdCreateCmd() *cobra.Command {
 	return createWithIdCmd
 }
 
-// NewSpecListCmd - Spec 목록 기능을 수행하는 Cobra Command 생성
+// NewSpecListCmd : "cbadm spec list"
 func NewSpecListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -121,7 +121,7 @@ func NewSpecListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewSpecListCspCmd - CSP Spec 목록 기능을 수행하는 Cobra Command 생성
+// NewSpecListCspCmd : "cbadm spec list-csp"
 func NewSpecListCspCmd() *cobra.Command {
 
 	listCspCmd := &cobra.Command{
@@ -145,7 +145,7 @@ func NewSpecListCspCmd() *cobra.Command {
 	return listCspCmd
 }
 
-// NewSpecGetCmd - Spec 조회 기능을 수행하는 Cobra Command 생성
+// NewSpecGetCmd : "cbadm spec get"
 func NewSpecGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -175,7 +175,7 @@ func NewSpecGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewSpecGetCspCmd - CSP Spec 조회 기능을 수행하는 Cobra Command 생성
+// NewSpecGetCspCmd : "cbadm spec get-csp"
 func NewSpecGetCspCmd() *cobra.Command {
 
 	getCspCmd := &cobra.Command{
@@ -205,7 +205,7 @@ func NewSpecGetCspCmd() *cobra.Command {
 	return getCspCmd
 }
 
-// NewSpecDeleteCmd - Spec 삭제 기능을 수행하는 Cobra Command 생성
+// NewSpecDeleteCmd : "cbadm spec delete"
 func NewSpecDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
@@ -241,7 +241,7 @@ func NewSpecDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
-// NewSpecDeleteAllCmd - 전체 Spec 삭제 기능을 수행하는 Cobra Command 생성
+// NewSpecDeleteAllCmd : "cbadm spec delete-all"
 func NewSpecDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{
@@ -271,7 +271,7 @@ func NewSpecDeleteAllCmd() *cobra.Command {
 	return deleteAllCmd
 }
 
-// NewSpecFetchCmd - Spec Fetch 기능을 수행하는 Cobra Command 생성
+// NewSpecFetchCmd : "cbadm spec fetch"
 func NewSpecFetchCmd() *cobra.Command {
 
 	fetchCmd := &cobra.Command{
@@ -301,7 +301,7 @@ func NewSpecFetchCmd() *cobra.Command {
 	return fetchCmd
 }
 
-// NewSpecFilterCmd
+// NewSpecFilterCmd : "cbadm spec filter"
 func NewSpecFilterCmd() *cobra.Command {
 
 	filterCmd := &cobra.Command{
@@ -336,7 +336,7 @@ func NewSpecFilterCmd() *cobra.Command {
 	return filterCmd
 }
 
-// NewSpecFilterByRangeCmd
+// NewSpecFilterByRangeCmd : "cbadm spec filter-by-range"
 func NewSpecFilterByRangeCmd() *cobra.Command {
 
 	filterByRangeCmd := &cobra.Command{
@@ -371,7 +371,7 @@ func NewSpecFilterByRangeCmd() *cobra.Command {
 	return filterByRangeCmd
 }
 
-// NewSpecSortCmd
+// NewSpecSortCmd : "cbadm spec sort"
 func NewSpecSortCmd() *cobra.Command {
 
 	sortCmd := &cobra.Command{
@@ -406,7 +406,7 @@ func NewSpecSortCmd() *cobra.Command {
 	return sortCmd
 }
 
-// NewSpecUpdateCmd
+// NewSpecUpdateCmd : "cbadm spec update"
 func NewSpecUpdateCmd() *cobra.Command {
 
 	updateCmd := &cobra.Command{

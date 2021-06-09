@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewMcisCmd - Mcis 관리 기능을 수행하는 Cobra Command 생성
+// NewMcisCmd : "cbadm mcis *" (for CB-Tumblebug)
 func NewMcisCmd() *cobra.Command {
 
 	mcisCmd := &cobra.Command{
@@ -72,7 +72,7 @@ func NewMcisCmd() *cobra.Command {
 	return mcisCmd
 }
 
-// NewMcisCreateCmd - Mcis 생성 기능을 수행하는 Cobra Command 생성
+// NewMcisCreateCmd : "cbadm mcis create"
 func NewMcisCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -99,7 +99,7 @@ func NewMcisCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewMcisListCmd - Mcis 목록 기능을 수행하는 Cobra Command 생성
+// NewMcisListCmd : "cbadm mcis list"
 func NewMcisListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -123,7 +123,7 @@ func NewMcisListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewMcisGetCmd - Mcis 조회 기능을 수행하는 Cobra Command 생성
+// NewMcisGetCmd : "cbadm mcis get"
 func NewMcisGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -153,7 +153,7 @@ func NewMcisGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewMcisDeleteCmd - Mcis 삭제 기능을 수행하는 Cobra Command 생성
+// NewMcisDeleteCmd : "cbadm mcis delete"
 func NewMcisDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
@@ -183,7 +183,7 @@ func NewMcisDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
-// NewMcisDeleteAllCmd - 전체 Mcis 삭제 기능을 수행하는 Cobra Command 생성
+// NewMcisDeleteAllCmd : "cbadm mcis delete-all"
 func NewMcisDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{
@@ -207,7 +207,7 @@ func NewMcisDeleteAllCmd() *cobra.Command {
 	return deleteAllCmd
 }
 
-// NewMcisStatusListCmd - Mcis 상태 목록 기능을 수행하는 Cobra Command 생성
+// NewMcisStatusListCmd : "cbadm mcis status-list"
 func NewMcisStatusListCmd() *cobra.Command {
 
 	statusListCmd := &cobra.Command{
@@ -231,7 +231,7 @@ func NewMcisStatusListCmd() *cobra.Command {
 	return statusListCmd
 }
 
-// NewMcisStatusCmd - Mcis 상태 조회 기능을 수행하는 Cobra Command 생성
+// NewMcisStatusCmd : "cbadm mcis status"
 func NewMcisStatusCmd() *cobra.Command {
 
 	statusCmd := &cobra.Command{
@@ -261,7 +261,7 @@ func NewMcisStatusCmd() *cobra.Command {
 	return statusCmd
 }
 
-// NewMcisSuspendCmd - Mcis Suspend 기능을 수행하는 Cobra Command 생성
+// NewMcisSuspendCmd : "cbadm mcis suspend"
 func NewMcisSuspendCmd() *cobra.Command {
 
 	suspendCmd := &cobra.Command{
@@ -291,7 +291,7 @@ func NewMcisSuspendCmd() *cobra.Command {
 	return suspendCmd
 }
 
-// NewMcisResumeCmd - Mcis Resume 기능을 수행하는 Cobra Command 생성
+// NewMcisResumeCmd : "cbadm mcis resume"
 func NewMcisResumeCmd() *cobra.Command {
 
 	resumeCmd := &cobra.Command{
@@ -321,7 +321,7 @@ func NewMcisResumeCmd() *cobra.Command {
 	return resumeCmd
 }
 
-// NewMcisRebootCmd - Mcis Reboot 기능을 수행하는 Cobra Command 생성
+// NewMcisRebootCmd : "cbadm mcis reboot"
 func NewMcisRebootCmd() *cobra.Command {
 
 	rebootCmd := &cobra.Command{
@@ -351,7 +351,7 @@ func NewMcisRebootCmd() *cobra.Command {
 	return rebootCmd
 }
 
-// NewMcisTerminateCmd - Mcis Terminate 기능을 수행하는 Cobra Command 생성
+// NewMcisTerminateCmd : "cbadm mcis terminate"
 func NewMcisTerminateCmd() *cobra.Command {
 
 	terminateCmd := &cobra.Command{
@@ -381,7 +381,7 @@ func NewMcisTerminateCmd() *cobra.Command {
 	return terminateCmd
 }
 
-// NewMcisVmAddCmd - Mcis VM 생성 기능을 수행하는 Cobra Command 생성
+// NewMcisVmAddCmd : "cbadm mcis add-vm"
 func NewMcisVmAddCmd() *cobra.Command {
 
 	vmAddCmd := &cobra.Command{
@@ -408,7 +408,7 @@ func NewMcisVmAddCmd() *cobra.Command {
 	return vmAddCmd
 }
 
-// NewMcisVmGroupCmd - Mcis VM 그룹 생성 기능을 수행하는 Cobra Command 생성
+// NewMcisVmGroupCmd : "cbadm mcis group-vm"
 func NewMcisVmGroupCmd() *cobra.Command {
 
 	vmGroupCmd := &cobra.Command{
@@ -435,7 +435,7 @@ func NewMcisVmGroupCmd() *cobra.Command {
 	return vmGroupCmd
 }
 
-// NewMcisVmListCmd - Mcis VM 목록 기능을 수행하는 Cobra Command 생성
+// NewMcisVmListCmd : "cbadm mcis list-vm"
 func NewMcisVmListCmd() *cobra.Command {
 
 	vmListCmd := &cobra.Command{
@@ -465,7 +465,7 @@ func NewMcisVmListCmd() *cobra.Command {
 	return vmListCmd
 }
 
-// NewMcisVmGetCmd - Mcis VM 조회 기능을 수행하는 Cobra Command 생성
+// NewMcisVmGetCmd : "cbadm mcis get-vm"
 func NewMcisVmGetCmd() *cobra.Command {
 
 	vmGetCmd := &cobra.Command{
@@ -501,7 +501,7 @@ func NewMcisVmGetCmd() *cobra.Command {
 	return vmGetCmd
 }
 
-// NewMcisVmDeleteCmd - Mcis VM 삭제 기능을 수행하는 Cobra Command 생성
+// NewMcisVmDeleteCmd : "cbadm mcis del-vm"
 func NewMcisVmDeleteCmd() *cobra.Command {
 
 	vmDeleteCmd := &cobra.Command{
@@ -537,7 +537,7 @@ func NewMcisVmDeleteCmd() *cobra.Command {
 	return vmDeleteCmd
 }
 
-// NewMcisVmStatusCmd - Mcis VM 상태 조회 기능을 수행하는 Cobra Command 생성
+// NewMcisVmStatusCmd : "cbadm mcis status-vm"
 func NewMcisVmStatusCmd() *cobra.Command {
 
 	vmStatusCmd := &cobra.Command{
@@ -573,7 +573,7 @@ func NewMcisVmStatusCmd() *cobra.Command {
 	return vmStatusCmd
 }
 
-// NewMcisVmSuspendCmd - Mcis VM Suspend 기능을 수행하는 Cobra Command 생성
+// NewMcisVmSuspendCmd : "cbadm mcis suspend-vm"
 func NewMcisVmSuspendCmd() *cobra.Command {
 
 	vmSuspendCmd := &cobra.Command{
@@ -609,7 +609,7 @@ func NewMcisVmSuspendCmd() *cobra.Command {
 	return vmSuspendCmd
 }
 
-// NewMcisVmResumeCmd - Mcis VM Resume 기능을 수행하는 Cobra Command 생성
+// NewMcisVmResumeCmd : "cbadm mcis resume-vm"
 func NewMcisVmResumeCmd() *cobra.Command {
 
 	vmResumeCmd := &cobra.Command{
@@ -645,7 +645,7 @@ func NewMcisVmResumeCmd() *cobra.Command {
 	return vmResumeCmd
 }
 
-// NewMcisVmRebootCmd - Mcis VM Reboot 기능을 수행하는 Cobra Command 생성
+// NewMcisVmRebootCmd : "cbadm mcis reboot-vm"
 func NewMcisVmRebootCmd() *cobra.Command {
 
 	vmRebootCmd := &cobra.Command{
@@ -681,7 +681,7 @@ func NewMcisVmRebootCmd() *cobra.Command {
 	return vmRebootCmd
 }
 
-// NewMcisVmTerminateCmd - Mcis VM Terminate 기능을 수행하는 Cobra Command 생성
+// NewMcisVmTerminateCmd : "cbadm mcis terminate-vm"
 func NewMcisVmTerminateCmd() *cobra.Command {
 
 	vmTerminateCmd := &cobra.Command{
@@ -717,7 +717,7 @@ func NewMcisVmTerminateCmd() *cobra.Command {
 	return vmTerminateCmd
 }
 
-// NewMcisRecommendCmd - Mcis 추천 기능을 수행하는 Cobra Command 생성
+// NewMcisRecommendCmd : "cbadm mcis recommend"
 func NewMcisRecommendCmd() *cobra.Command {
 
 	recommendCmd := &cobra.Command{
@@ -744,7 +744,7 @@ func NewMcisRecommendCmd() *cobra.Command {
 	return recommendCmd
 }
 
-// NewMcisRecommendVmCmd - Mcis VM 추천 기능을 수행하는 Cobra Command 생성
+// NewMcisRecommendVmCmd : "cbadm mcis recommend-vm"
 func NewMcisRecommendVmCmd() *cobra.Command {
 
 	recommendVmCmd := &cobra.Command{
@@ -771,7 +771,7 @@ func NewMcisRecommendVmCmd() *cobra.Command {
 	return recommendVmCmd
 }
 
-// NewCmdMcisCmd - MCIS 명령 실행 기능을 수행하는 Cobra Command 생성
+// NewCmdMcisCmd : "cbadm mcis command"
 func NewCmdMcisCmd() *cobra.Command {
 
 	mcisCmdCmd := &cobra.Command{
@@ -798,7 +798,7 @@ func NewCmdMcisCmd() *cobra.Command {
 	return mcisCmdCmd
 }
 
-// NewCmdMcisVmCmd - MCIS VM 명령 실행 기능을 수행하는 Cobra Command 생성
+// NewCmdMcisVmCmd : "cbadm mcis command-vm"
 func NewCmdMcisVmCmd() *cobra.Command {
 
 	vmCmdCmd := &cobra.Command{
@@ -825,7 +825,7 @@ func NewCmdMcisVmCmd() *cobra.Command {
 	return vmCmdCmd
 }
 
-// NewDeployMilkywayCmd - MCIS Agent 설치 기능을 수행하는 Cobra Command 생성
+// NewDeployMilkywayCmd : "cbadm mcis deploy-milkyway"
 func NewDeployMilkywayCmd() *cobra.Command {
 
 	deployMilkywayCmd := &cobra.Command{
@@ -852,7 +852,7 @@ func NewDeployMilkywayCmd() *cobra.Command {
 	return deployMilkywayCmd
 }
 
-// NewAccessVmCmd - MCIS VM 에 SSH 접속 기능을 수행하는 Cobra Command 생성
+// NewAccessVmCmd : "cbadm mcis access-vm"
 func NewAccessVmCmd() *cobra.Command {
 
 	accessVmCmd := &cobra.Command{
@@ -867,7 +867,7 @@ func NewAccessVmCmd() *cobra.Command {
 	return accessVmCmd
 }
 
-// NewBenchmarkCmd - MCIS VM 에 벤치마크 기능을 수행하는 Cobra Command 생성
+// NewBenchmarkCmd : "cbadm mcis benchmark"
 func NewBenchmarkCmd() *cobra.Command {
 
 	benchmarkCmd := &cobra.Command{
@@ -901,7 +901,7 @@ func NewBenchmarkCmd() *cobra.Command {
 	return benchmarkCmd
 }
 
-// NewInstallMonAgentCmd - MCIS Monitor Agent 설치 기능을 수행하는 Cobra Command 생성
+// NewInstallMonAgentCmd : "cbadm mcis install-mon"
 func NewInstallMonAgentCmd() *cobra.Command {
 
 	installMonCmd := &cobra.Command{
@@ -928,7 +928,7 @@ func NewInstallMonAgentCmd() *cobra.Command {
 	return installMonCmd
 }
 
-// NewGetMonDataCmd - MCIS Monitor 정보 조회 기능을 수행하는 Cobra Command 생성
+// NewGetMonDataCmd : "cbadm mcis get-mon"
 func NewGetMonDataCmd() *cobra.Command {
 
 	getMonCmd := &cobra.Command{
@@ -964,7 +964,7 @@ func NewGetMonDataCmd() *cobra.Command {
 	return getMonCmd
 }
 
-// NewMcisCreatePolicyCmd - Mcis Policy 생성 기능을 수행하는 Cobra Command 생성
+// NewMcisCreatePolicyCmd : "cbadm mcis create-policy"
 func NewMcisCreatePolicyCmd() *cobra.Command {
 
 	createPolicyCmd := &cobra.Command{
@@ -991,7 +991,7 @@ func NewMcisCreatePolicyCmd() *cobra.Command {
 	return createPolicyCmd
 }
 
-// NewMcisListPolicyCmd - Mcis Policy 목록 기능을 수행하는 Cobra Command 생성
+// NewMcisListPolicyCmd : "cbadm mcis list-policy"
 func NewMcisListPolicyCmd() *cobra.Command {
 
 	listPolicyCmd := &cobra.Command{
@@ -1016,7 +1016,7 @@ func NewMcisListPolicyCmd() *cobra.Command {
 	return listPolicyCmd
 }
 
-// NewMcisGetPolicyCmd - Mcis Policy 조회 기능을 수행하는 Cobra Command 생성
+// NewMcisGetPolicyCmd : "cbadm mcis get-policy"
 func NewMcisGetPolicyCmd() *cobra.Command {
 
 	getPolicyCmd := &cobra.Command{
@@ -1046,7 +1046,7 @@ func NewMcisGetPolicyCmd() *cobra.Command {
 	return getPolicyCmd
 }
 
-// NewMcisDeletePolicyCmd - Mcis Policy 삭제 기능을 수행하는 Cobra Command 생성
+// NewMcisDeletePolicyCmd : "cbadm mcis delete-policy"
 func NewMcisDeletePolicyCmd() *cobra.Command {
 
 	deletePolicyCmd := &cobra.Command{
@@ -1076,7 +1076,7 @@ func NewMcisDeletePolicyCmd() *cobra.Command {
 	return deletePolicyCmd
 }
 
-// NewMcisDeleteAllPolicyCmd - 전체 Mcis Policy 삭제 기능을 수행하는 Cobra Command 생성
+// NewMcisDeleteAllPolicyCmd : "cbadm mcis delete-all-policy"
 func NewMcisDeleteAllPolicyCmd() *cobra.Command {
 
 	deleteAllPolicyCmd := &cobra.Command{
