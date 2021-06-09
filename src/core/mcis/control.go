@@ -3990,6 +3990,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	if temp.Status == StatusFailed {
 		statusResponseTmp.Status = StatusFailed
 	}
+	if temp.Status == StatusTerminated {
+		statusResponseTmp.Status = StatusTerminated
+	}
 
 	vmStatusTmp.Status = statusResponseTmp.Status
 	/*
