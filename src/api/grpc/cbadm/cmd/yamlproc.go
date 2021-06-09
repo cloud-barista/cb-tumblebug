@@ -14,7 +14,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewYamlApplyCmd - YAML 파일에 있는 항목을 생성하는 기능을 수행하는 Cobra Command 생성
+// NewYamlApplyCmd : "cbadm apply" (create/update objects according to YAML description)
 func NewYamlApplyCmd() *cobra.Command {
 
 	yamlApplyCmd := &cobra.Command{
@@ -29,7 +29,7 @@ func NewYamlApplyCmd() *cobra.Command {
 	return yamlApplyCmd
 }
 
-// NewYamlGetCmd - YAML 파일에 있는 항목을 조회하는 기능을 수행하는 Cobra Command 생성
+// NewYamlGetCmd : "cbadm get" (get objects according to YAML description)
 func NewYamlGetCmd() *cobra.Command {
 
 	yamlGetCmd := &cobra.Command{
@@ -44,7 +44,7 @@ func NewYamlGetCmd() *cobra.Command {
 	return yamlGetCmd
 }
 
-// NewYamlListCmd - YAML 파일에 있는 항목의 목록 조회하는 기능을 수행하는 Cobra Command 생성
+// NewYamlListCmd : "cbadm list" (list objects according to YAML description)
 func NewYamlListCmd() *cobra.Command {
 
 	yamlListCmd := &cobra.Command{
@@ -59,13 +59,14 @@ func NewYamlListCmd() *cobra.Command {
 	return yamlListCmd
 }
 
-// NewYamlRemoveCmd - YAML 파일에 있는 항목을 삭제하는 기능을 수행하는 Cobra Command 생성
+// NewYamlRemoveCmd : "cbadm remove" (remove objects according to YAML description)
 func NewYamlRemoveCmd() *cobra.Command {
 
 	yamlRemoveCmd := &cobra.Command{
-		Use:   "remove",
-		Short: "This is a remove command for yaml",
-		Long:  "This is a remove command for yaml",
+		Use:     "remove",
+		Aliases: []string{"rm", "delete"},
+		Short:   "This is a remove command for yaml",
+		Long:    "This is a remove command for yaml",
 		Run: func(cmd *cobra.Command, args []string) {
 			SetupAndRun(cmd, args)
 		},

@@ -11,7 +11,7 @@ source $TestSetFile
 source ../conf.env
 
 echo "####################################################################"
-echo "## 8. VM: Terminate and Delete MCIS"
+echo "## 8. VM: Delete MCIS"
 echo "####################################################################"
 
 CSP=${1}
@@ -36,7 +36,7 @@ echo "${INDEX} ${REGION} ${MCISID}"
 
 
 echo ""
-echo "Terminate and Delete [MCIS: $MCISID]"
+echo "Delete [MCIS: $MCISID]"
 curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=${OPTION} | jq ''
 
 #}

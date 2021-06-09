@@ -36,7 +36,7 @@ func readInDataFromFile() {
 
 // ===== [ Public Functions ] =====
 
-// SetupAndRun - SPIDER GRPC CLI 구동
+// SetupAndRun : setup and run Cloud-Barista gRPC CLI
 func SetupAndRun(cmd *cobra.Command, args []string) {
 	logger := logger.NewLogger()
 
@@ -52,7 +52,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		tbutil *tb_api.UTILITYApi = nil
 	)
 
-	// panic 처리
+	// panic handling
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("tbctl is stopped : ", r)
@@ -60,7 +60,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 	}()
 
 	if cmd.Parent().Name() == "driver" || cmd.Parent().Name() == "credential" || cmd.Parent().Name() == "region" || cmd.Parent().Name() == "connect-info" {
-		// CIM API 설정
+		// CIM API
 		cim = sp_api.NewCloudInfoManager()
 		err = cim.SetConfigPath(configFile)
 		if err != nil {
@@ -76,7 +76,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 	}
 
 	if cmd.Parent().Name() == "namespace" {
-		// NS API 설정
+		// NS API
 		ns = tb_api.NewNSManager()
 		err = ns.SetConfigPath(configFile)
 		if err != nil {
@@ -92,7 +92,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 	}
 
 	if cmd.Parent().Name() == "image" || cmd.Parent().Name() == "network" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypair" || cmd.Parent().Name() == "spec" {
-		// MCIR API 설정
+		// MCIR API
 		mcir = tb_api.NewMCIRManager()
 		err = mcir.SetConfigPath(configFile)
 		if err != nil {
@@ -108,7 +108,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 	}
 
 	if cmd.Parent().Name() == "mcis" {
-		// MCIS API 설정
+		// MCIS API
 		mcis = tb_api.NewMCISManager()
 		err = mcis.SetConfigPath(configFile)
 		if err != nil {
@@ -124,7 +124,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 	}
 
 	if cmd.Parent().Name() == "util" || cmd.Parent().Name() == "config" {
-		// UTILITY API 설정
+		// Utility API
 		tbutil = tb_api.NewUTILITYManager()
 		err = tbutil.SetConfigPath(configFile)
 		if err != nil {
@@ -139,7 +139,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		defer tbutil.Close()
 	}
 
-	// 입력 파라미터 처리
+	// Validate input parameters
 	if outType != "json" && outType != "yaml" {
 		logger.Error("failed to validate --output parameter : ", outType)
 		return

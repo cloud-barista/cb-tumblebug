@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewCredentialCmd - Credential 관리 기능을 수행하는 Cobra Command 생성
+// NewCredentialCmd : "cbadm credential *" (for CB-Spider)
 func NewCredentialCmd() *cobra.Command {
 
 	credentialCmd := &cobra.Command{
@@ -34,7 +34,7 @@ func NewCredentialCmd() *cobra.Command {
 	return credentialCmd
 }
 
-// NewCredentialCreateCmd -Credential 생성 기능을 수행하는 Cobra Command 생성
+// NewCredentialCreateCmd : "cbadm credential create"
 func NewCredentialCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -61,7 +61,7 @@ func NewCredentialCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewCredentialListCmd - Credential 목록 기능을 수행하는 Cobra Command 생성
+// NewCredentialListCmd : "cbadm credential list"
 func NewCredentialListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -76,7 +76,7 @@ func NewCredentialListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewCredentialGetCmd - Credential 조회 기능을 수행하는 Cobra Command 생성
+// NewCredentialGetCmd : "cbadm credential get"
 func NewCredentialGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -100,7 +100,7 @@ func NewCredentialGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewCredentialDeleteCmd - Credential 삭제 기능을 수행하는 Cobra Command 생성
+// NewCredentialDeleteCmd : "cbadm credential delete"
 func NewCredentialDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{

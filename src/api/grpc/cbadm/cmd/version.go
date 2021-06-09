@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewVersionCmd - 버전 표시 기능을 수행하는 Cobra Command 생성
+// NewVersionCmd : "cbadm version"
 func NewVersionCmd() *cobra.Command {
 
 	versionCmd := &cobra.Command{
@@ -24,7 +24,7 @@ func NewVersionCmd() *cobra.Command {
 		Short: "This is a version command for cbadm",
 		Long:  "This is a version command for cbadm",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("CBADM CLI VERSION %s\n", CLIVersion)
+			fmt.Printf("cbadm cli version %s\n", CLIVersion)
 		},
 	}
 

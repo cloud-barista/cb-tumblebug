@@ -121,7 +121,7 @@ func RestDelNs(c echo.Context) error {
 		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
-	return SendMessage(c, http.StatusOK, "The ns has been deleted")
+	return SendMessage(c, http.StatusOK, "The ns "+c.Param("nsId")+" has been deleted")
 }
 
 // Response structure for RestGetAllNs

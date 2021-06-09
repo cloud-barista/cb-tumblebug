@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewDriverCmd - Cloud Driver 관리 기능을 수행하는 Cobra Command 생성
+// NewDriverCmd : "cbadm driver *" (for CB-Spider)
 func NewDriverCmd() *cobra.Command {
 
 	driverCmd := &cobra.Command{
@@ -34,7 +34,7 @@ func NewDriverCmd() *cobra.Command {
 	return driverCmd
 }
 
-// NewDriverCreateCmd - Cloud Driver 생성 기능을 수행하는 Cobra Command 생성
+// NewDriverCreateCmd : "cbadm driver create"
 func NewDriverCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -61,7 +61,7 @@ func NewDriverCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewDriverListCmd - Cloud Driver 목록 기능을 수행하는 Cobra Command 생성
+// NewDriverListCmd : "cbadm driver list"
 func NewDriverListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -76,7 +76,7 @@ func NewDriverListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewDriverGetCmd - Cloud Driver 조회 기능을 수행하는 Cobra Command 생성
+// NewDriverGetCmd : "cbadm driver get"
 func NewDriverGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -100,7 +100,7 @@ func NewDriverGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewDriverDeleteCmd - Cloud Driver 삭제 기능을 수행하는 Cobra Command 생성
+// NewDriverDeleteCmd : "cbadm driver delete"
 func NewDriverDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{

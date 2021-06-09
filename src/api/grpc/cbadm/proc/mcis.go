@@ -10,7 +10,7 @@ import (
 
 // ===== [ Constants and Variables ] =====
 
-// VMListInfo - VM 목록 구조 정의
+// VMListInfo
 type VMListInfo struct {
 	Id   string   `yaml:"id" json:"id"`
 	Name string   `yaml:"name" json:"name"`
@@ -23,7 +23,7 @@ type VMListInfo struct {
 
 // ===== [ Public Functions ] =====
 
-// ListMcisVM - VM 목록
+// ListMcisVM
 func ListMcisVM(mcis *tb_api.MCISApi, nameSpaceID string, mcisID string) (string, error) {
 
 	holdType, _ := mcis.GetOutType()

@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewConfigCmd - Config 관리 기능을 수행하는 Cobra Command 생성
+// NewConfigCmd : "cbadm config *" (for CB-Tumblebug)
 func NewConfigCmd() *cobra.Command {
 
 	configCmd := &cobra.Command{
@@ -34,7 +34,7 @@ func NewConfigCmd() *cobra.Command {
 	return configCmd
 }
 
-// NewConfigCreateCmd - Config 생성 기능을 수행하는 Cobra Command 생성
+// NewConfigCreateCmd : "cbadm config create"
 func NewConfigCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -61,7 +61,7 @@ func NewConfigCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewConfigListCmd - Config 목록 기능을 수행하는 Cobra Command 생성
+// NewConfigListCmd : "cbadm config list"
 func NewConfigListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -76,7 +76,7 @@ func NewConfigListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewConfigGetCmd - Config 조회 기능을 수행하는 Cobra Command 생성
+// NewConfigGetCmd : "cbadm config get"
 func NewConfigGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -100,12 +100,12 @@ func NewConfigGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewConfigDeleteAllCmd - Config 모든 삭제 기능을 수행하는 Cobra Command 생성
+// NewConfigDeleteAllCmd : "cbadm config delete-all"
 func NewConfigDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{
 		Use:   "delete-all",
-		Short: "This is delete alll command for config",
+		Short: "This is delete all command for config",
 		Long:  "This is delete all command for config",
 		Run: func(cmd *cobra.Command, args []string) {
 

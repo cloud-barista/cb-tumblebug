@@ -16,13 +16,14 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewNetworkCmd - VNet 관리 기능을 수행하는 Cobra Command 생성
+// NewNetworkCmd : "cbadm network *" (for CB-Tumblebug)
 func NewNetworkCmd() *cobra.Command {
 
 	networkCmd := &cobra.Command{
-		Use:   "network",
-		Short: "This is a manageable command for network",
-		Long:  "This is a manageable command for network",
+		Use:     "network",
+		Short:   "This is a manageable command for network",
+		Long:    "This is a manageable command for network",
+		Aliases: []string{"vnet", "net", "vpc"},
 	}
 
 	//  Adds the commands for application.
@@ -35,7 +36,7 @@ func NewNetworkCmd() *cobra.Command {
 	return networkCmd
 }
 
-// NewNetworkCreateCmd - VNet 생성 기능을 수행하는 Cobra Command 생성
+// NewNetworkCreateCmd : "cbadm network create"
 func NewNetworkCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -62,7 +63,7 @@ func NewNetworkCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewNetworkListCmd - VNet 목록 기능을 수행하는 Cobra Command 생성
+// NewNetworkListCmd : "cbadm network list"
 func NewNetworkListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -86,7 +87,7 @@ func NewNetworkListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewNetworkGetCmd - VNet 조회 기능을 수행하는 Cobra Command 생성
+// NewNetworkGetCmd : "cbadm network get"
 func NewNetworkGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -116,7 +117,7 @@ func NewNetworkGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewNetworkDeleteCmd - VNet 삭제 기능을 수행하는 Cobra Command 생성
+// NewNetworkDeleteCmd : "cbadm network delete"
 func NewNetworkDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
@@ -152,7 +153,7 @@ func NewNetworkDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
-// NewNetworkDeleteAllCmd - 전체 VNet 삭제 기능을 수행하는 Cobra Command 생성
+// NewNetworkDeleteAllCmd : "cbadm network delete-all"
 func NewNetworkDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{

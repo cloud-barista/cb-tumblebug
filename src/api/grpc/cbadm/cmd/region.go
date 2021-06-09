@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewRegionCmd - Region 관리 기능을 수행하는 Cobra Command 생성
+// NewRegionCmd : "cbadm region *" (for CB-Spider)
 func NewRegionCmd() *cobra.Command {
 
 	regionCmd := &cobra.Command{
@@ -34,7 +34,7 @@ func NewRegionCmd() *cobra.Command {
 	return regionCmd
 }
 
-// NewRegionCreateCmd - Region 생성 기능을 수행하는 Cobra Command 생성
+// NewRegionCreateCmd : "cbadm region create"
 func NewRegionCreateCmd() *cobra.Command {
 
 	createCmd := &cobra.Command{
@@ -61,7 +61,7 @@ func NewRegionCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-// NewRegionListCmd - Region 목록 기능을 수행하는 Cobra Command 생성
+// NewRegionListCmd : "cbadm region list"
 func NewRegionListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -76,7 +76,7 @@ func NewRegionListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewRegionGetCmd - Region 조회 기능을 수행하는 Cobra Command 생성
+// NewRegionGetCmd : "cbadm region get"
 func NewRegionGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -100,7 +100,7 @@ func NewRegionGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewRegionDeleteCmd - Region 삭제 기능을 수행하는 Cobra Command 생성
+// NewRegionDeleteCmd : "cbadm region delete"
 func NewRegionDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{

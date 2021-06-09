@@ -16,7 +16,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// NewImageCmd - Image 관리 기능을 수행하는 Cobra Command 생성
+// NewImageCmd : "cbadm image *" (for CB-Tumblebug)
 func NewImageCmd() *cobra.Command {
 
 	imageCmd := &cobra.Command{
@@ -40,7 +40,7 @@ func NewImageCmd() *cobra.Command {
 	return imageCmd
 }
 
-// NewImageCreateWithInfoCmd - Image 생성 기능을 수행하는 Cobra Command 생성
+// NewImageCreateWithInfoCmd : "cbadm image create"
 func NewImageCreateWithInfoCmd() *cobra.Command {
 
 	createWithInfoCmd := &cobra.Command{
@@ -67,7 +67,7 @@ func NewImageCreateWithInfoCmd() *cobra.Command {
 	return createWithInfoCmd
 }
 
-// NewImageCreateWithIdCmd - Image 생성 기능을 수행하는 Cobra Command 생성
+// NewImageCreateWithIdCmd : "cbadm image create-id"
 func NewImageCreateWithIdCmd() *cobra.Command {
 
 	createWithIdCmd := &cobra.Command{
@@ -94,7 +94,7 @@ func NewImageCreateWithIdCmd() *cobra.Command {
 	return createWithIdCmd
 }
 
-// NewImageListCmd - Image 목록 기능을 수행하는 Cobra Command 생성
+// NewImageListCmd : "cbadm image list"
 func NewImageListCmd() *cobra.Command {
 
 	listCmd := &cobra.Command{
@@ -118,7 +118,7 @@ func NewImageListCmd() *cobra.Command {
 	return listCmd
 }
 
-// NewImageListCspCmd - CSP Image 목록 기능을 수행하는 Cobra Command 생성
+// NewImageListCspCmd : "cbadm image list-csp"
 func NewImageListCspCmd() *cobra.Command {
 
 	listCspCmd := &cobra.Command{
@@ -142,7 +142,7 @@ func NewImageListCspCmd() *cobra.Command {
 	return listCspCmd
 }
 
-// NewImageGetCmd - Image 조회 기능을 수행하는 Cobra Command 생성
+// NewImageGetCmd : "cbadm image get"
 func NewImageGetCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
@@ -172,7 +172,7 @@ func NewImageGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewImageGetCspCmd - CSP Image 조회 기능을 수행하는 Cobra Command 생성
+// NewImageGetCspCmd : "cbadm image get-csp"
 func NewImageGetCspCmd() *cobra.Command {
 
 	getCspCmd := &cobra.Command{
@@ -202,7 +202,7 @@ func NewImageGetCspCmd() *cobra.Command {
 	return getCspCmd
 }
 
-// NewImageDeleteCmd - Image 삭제 기능을 수행하는 Cobra Command 생성
+// NewImageDeleteCmd : "cbadm image delete"
 func NewImageDeleteCmd() *cobra.Command {
 
 	deleteCmd := &cobra.Command{
@@ -238,7 +238,7 @@ func NewImageDeleteCmd() *cobra.Command {
 	return deleteCmd
 }
 
-// NewImageDeleteAllCmd - 전체 Image 삭제 기능을 수행하는 Cobra Command 생성
+// NewImageDeleteAllCmd : "cbadm image delete-all"
 func NewImageDeleteAllCmd() *cobra.Command {
 
 	deleteAllCmd := &cobra.Command{
@@ -268,7 +268,7 @@ func NewImageDeleteAllCmd() *cobra.Command {
 	return deleteAllCmd
 }
 
-// NewImageFetchCmd - Image Fetch 기능을 수행하는 Cobra Command 생성
+// NewImageFetchCmd : "cbadm image fetch"
 func NewImageFetchCmd() *cobra.Command {
 
 	fetchCmd := &cobra.Command{
@@ -298,7 +298,7 @@ func NewImageFetchCmd() *cobra.Command {
 	return fetchCmd
 }
 
-// NewImageSearchCmd - Image 검색 기능을 수행하는 Cobra Command 생성
+// NewImageSearchCmd : "cbadm image search"
 func NewImageSearchCmd() *cobra.Command {
 
 	searchCmd := &cobra.Command{

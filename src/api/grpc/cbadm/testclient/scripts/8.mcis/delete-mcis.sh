@@ -11,7 +11,7 @@ source $TestSetFile
 source ../conf.env
 
 echo "####################################################################"
-echo "## 8. VM: Terminate and Delete MCIS"
+echo "## 8. VM: Delete MCIS"
 echo "####################################################################"
 
 CSP=${1}
@@ -35,7 +35,7 @@ echo "${INDEX} ${REGION} ${MCISID}"
 
 
 echo ""
-echo "Terminate and Delete [MCIS: $MCISID]"
+echo "Delete [MCIS: $MCISID]"
 $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm mcis delete --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID --mcis ${MCISID} | jq ''
 
 #}
