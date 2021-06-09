@@ -383,11 +383,12 @@ son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ t
 ├── 2.configureTumblebug               # 네임스페이스 및 TB 설정 관련 스크립트 모음
 │   ├── check-ns.sh
 │   ├── create-ns.sh
-│   ├── delete-all-config.sh
 │   ├── delete-all-ns.sh
 │   ├── delete-ns.sh
 │   ├── get-config.sh
 │   ├── get-ns.sh
+│   ├── init-all-config.sh
+│   ├── init-config.sh
 │   ├── list-config.sh
 │   ├── list-ns.sh
 │   └── update-config.sh

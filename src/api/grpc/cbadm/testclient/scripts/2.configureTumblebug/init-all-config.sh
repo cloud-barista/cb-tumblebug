@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function delete_ns() {
+#function init_all_config() {
 
 
     # TestSetFile=${4:-../testSet.env}
@@ -12,12 +12,12 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 0. Config: Delete ALL"
+    echo "## 0. Config: Init ALL"
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config | jq ''
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm config init-all --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json | jq ''
     echo ""
 #}
 
-#delete_ns
+#init_all_config

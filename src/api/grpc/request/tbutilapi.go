@@ -396,13 +396,38 @@ func (u *UTILITYApi) GetConfigByParam(configId string) (string, error) {
 	return result, err
 }
 
-// DeleteAllConfig - Config 전체 삭제
-func (u *UTILITYApi) DeleteAllConfig() (string, error) {
+// InitConfig - Config 조회
+func (u *UTILITYApi) InitConfig(doc string) (string, error) {
 	if u.requestUTILITY == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	return u.requestUTILITY.DeleteAllConfig()
+	u.requestUTILITY.InData = doc
+	return u.requestUTILITY.InitConfig()
+}
+
+// InitConfigByParam - Config 조회
+func (u *UTILITYApi) InitConfigByParam(configId string) (string, error) {
+	if u.requestUTILITY == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := u.GetInType()
+	u.SetInType("json")
+	u.requestUTILITY.InData = `{"configId":"` + configId + `"}`
+	result, err := u.requestUTILITY.InitConfig()
+	u.SetInType(holdType)
+
+	return result, err
+}
+
+// InitAllConfig - Config 전체 삭제
+func (u *UTILITYApi) InitAllConfig() (string, error) {
+	if u.requestUTILITY == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	return u.requestUTILITY.InitAllConfig()
 }
 
 // InspectMcirResources - MCIR 리소스 점검

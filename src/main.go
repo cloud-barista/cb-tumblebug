@@ -50,9 +50,9 @@ func main() {
 	// load the latest configuration from DB (if exist)
 	fmt.Println("")
 	fmt.Println("[Update system environment]")
-	common.UpdateEnv(common.StrDRAGONFLY_REST_URL)
-	common.UpdateEnv(common.StrSPIDER_REST_URL)
-	common.UpdateEnv(common.StrAUTOCONTROL_DURATION_MS)
+	common.UpdateGlobalVariable(common.StrDRAGONFLY_REST_URL)
+	common.UpdateGlobalVariable(common.StrSPIDER_REST_URL)
+	common.UpdateGlobalVariable(common.StrAUTOCONTROL_DURATION_MS)
 
 	// load config
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()

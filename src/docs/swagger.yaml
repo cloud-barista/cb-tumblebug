@@ -1388,7 +1388,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete all configs
+      description: Init all configs
       produces:
       - application/json
       responses:
@@ -1400,7 +1400,7 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete all configs
+      summary: Init all configs
       tags:
       - '[Admin] System environment'
     get:
@@ -1455,6 +1455,34 @@ paths:
       tags:
       - '[Admin] System environment'
   /config/{configId}:
+    delete:
+      consumes:
+      - application/json
+      description: Init config
+      parameters:
+      - description: Config ID
+        in: path
+        name: configId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ConfigInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Init config
+      tags:
+      - '[Admin] System environment'
     get:
       consumes:
       - application/json

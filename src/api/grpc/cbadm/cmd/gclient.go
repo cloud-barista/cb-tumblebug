@@ -448,8 +448,10 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = tbutil.ListConfig()
 		case "get":
 			result, err = tbutil.GetConfigByParam(configId)
-		case "delete-all":
-			result, err = tbutil.DeleteAllConfig()
+		case "init":
+			result, err = tbutil.InitConfigByParam(configId)
+		case "init-all":
+			result, err = tbutil.InitAllConfig()
 		}
 	}
 

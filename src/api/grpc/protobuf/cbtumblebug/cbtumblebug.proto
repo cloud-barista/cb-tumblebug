@@ -1086,7 +1086,8 @@ service UTILITY {
 	rpc CreateConfig (ConfigCreateRequest) returns (ConfigInfoResponse) {}
 	rpc ListConfig (Empty) returns (ListConfigInfoResponse) {}
 	rpc GetConfig (ConfigQryRequest) returns (ConfigInfoResponse) {}
-	rpc DeleteAllConfig (Empty) returns (MessageResponse) {}
+	rpc InitConfig (ConfigQryRequest) returns (MessageResponse) {}
+	rpc InitAllConfig (Empty) returns (MessageResponse) {}
 	
 	rpc InspectMcirResources (InspectQryRequest) returns (InspectMcirInfoResponse) {}
 	rpc InspectVmResources (InspectQryRequest) returns (InspectVmInfoResponse) {}

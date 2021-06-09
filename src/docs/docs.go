@@ -112,7 +112,7 @@ var doc = `{
                 }
             },
             "delete": {
-                "description": "Delete all configs",
+                "description": "Init all configs",
                 "consumes": [
                     "application/json"
                 ],
@@ -122,7 +122,7 @@ var doc = `{
                 "tags": [
                     "[Admin] System environment"
                 ],
-                "summary": "Delete all configs",
+                "summary": "Init all configs",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -152,6 +152,48 @@ var doc = `{
                     "[Admin] System environment"
                 ],
                 "summary": "Get config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Config ID",
+                        "name": "configId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.ConfigInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Init config",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System environment"
+                ],
+                "summary": "Init config",
                 "parameters": [
                     {
                         "type": "string",

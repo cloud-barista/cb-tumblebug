@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function get_config() {
+#function init_config() {
 
 
     TestSetFile=${4:-../testSet.env}
@@ -12,13 +12,13 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 0. Config: Get (option: SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)"
+    echo "## 0. Config: Init (option: SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)"
     echo "####################################################################"
 
     VAR=${1}
 
-    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm config get --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --id $VAR | jq ''
+    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/config/$VAR | jq ''
     echo ""
 #}
 
-#get_config
+#init_config
