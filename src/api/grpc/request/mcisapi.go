@@ -79,36 +79,38 @@ type TbVmGroupCreateRequest struct {
 
 // TbVmInfo - MCIS VM 구조 정의
 type TbVmInfo struct {
-	Id               string       `yaml:"id" json:"id"`
-	Name             string       `yaml:"name" json:"name"`
-	VmGroupId        string       `yaml:"vmGroupId" json:"vmGroupId"`
-	Location         GeoLocation  `yaml:"location" json:"location"`
-	Status           string       `yaml:"status" json:"status"`
-	TargetStatus     string       `yaml:"targetStatus" json:"targetStatus"`
-	TargetAction     string       `yaml:"targetAction" json:"targetAction"`
-	MonAgentStatus   string       `yaml:"monAgentStatus" json:"monAgentStatus"`
-	SystemMessage    string       `yaml:"systemMessage" json:"systemMessage"`
-	CreatedTime      string       `yaml:"createdTime" json:"createdTime"`
-	Label            string       `yaml:"label" json:"label"`
-	Description      string       `yaml:"description" json:"description"`
-	Region           RegionInfo   `yaml:"region" json:"region"`
-	PublicIP         string       `yaml:"publicIP" json:"publicIP"`
-	SSHPort          string       `yaml:"sshPort" json:"sshPort"`
-	PublicDNS        string       `yaml:"publicDNS" json:"publicDNS"`
-	PrivateIP        string       `yaml:"privateIP" json:"privateIP"`
-	PrivateDNS       string       `yaml:"privateDNS" json:"privateDNS"`
-	VMBootDisk       string       `yaml:"vmBootDisk" json:"vmBootDisk"`
-	VMBlockDisk      string       `yaml:"vmBlockDisk" json:"vmBlockDisk"`
-	ConnectionName   string       `yaml:"connectionName" json:"connectionName"`
-	SpecId           string       `yaml:"specId" json:"specId"`
-	ImageId          string       `yaml:"imageId" json:"imageId"`
-	VNetId           string       `yaml:"vNetId" json:"vNetId"`
-	SubnetId         string       `yaml:"subnetId" json:"subnetId"`
-	SecurityGroupIds []string     `yaml:"securityGroupIds" json:"securityGroupIds"`
-	SshKeyId         string       `yaml:"sshKeyId" json:"sshKeyId"`
-	VmUserAccount    string       `yaml:"vmUserAccount" json:"vmUserAccount"`
-	VmUserPassword   string       `yaml:"vmUserPassword" json:"vmUserPassword"`
-	CspViewVmDetail  SpiderVMInfo `yaml:"cspViewVmDetail" json:"cspViewVmDetail"`
+	Id               string      `yaml:"id" json:"id"`
+	Name             string      `yaml:"name" json:"name"`
+	VmGroupId        string      `yaml:"vmGroupId" json:"vmGroupId"`
+	Location         GeoLocation `yaml:"location" json:"location"`
+	Status           string      `yaml:"status" json:"status"`
+	TargetStatus     string      `yaml:"targetStatus" json:"targetStatus"`
+	TargetAction     string      `yaml:"targetAction" json:"targetAction"`
+	MonAgentStatus   string      `yaml:"monAgentStatus" json:"monAgentStatus"`
+	SystemMessage    string      `yaml:"systemMessage" json:"systemMessage"`
+	CreatedTime      string      `yaml:"createdTime" json:"createdTime"`
+	Label            string      `yaml:"label" json:"label"`
+	Description      string      `yaml:"description" json:"description"`
+	Region           RegionInfo  `yaml:"region" json:"region"`
+	PublicIP         string      `yaml:"publicIP" json:"publicIP"`
+	SSHPort          string      `yaml:"sshPort" json:"sshPort"`
+	PublicDNS        string      `yaml:"publicDNS" json:"publicDNS"`
+	PrivateIP        string      `yaml:"privateIP" json:"privateIP"`
+	PrivateDNS       string      `yaml:"privateDNS" json:"privateDNS"`
+	VMBootDisk       string      `yaml:"vmBootDisk" json:"vmBootDisk"`
+	VMBlockDisk      string      `yaml:"vmBlockDisk" json:"vmBlockDisk"`
+	ConnectionName   string      `yaml:"connectionName" json:"connectionName"`
+	SpecId           string      `yaml:"specId" json:"specId"`
+	ImageId          string      `yaml:"imageId" json:"imageId"`
+	VNetId           string      `yaml:"vNetId" json:"vNetId"`
+	SubnetId         string      `yaml:"subnetId" json:"subnetId"`
+	SecurityGroupIds []string    `yaml:"securityGroupIds" json:"securityGroupIds"`
+	SshKeyId         string      `yaml:"sshKeyId" json:"sshKeyId"`
+	VmUserAccount    string      `yaml:"vmUserAccount" json:"vmUserAccount"`
+	VmUserPassword   string      `yaml:"vmUserPassword" json:"vmUserPassword"`
+
+	// StartTime 필드가 공백일 경우 json 객체 복사할 때 time format parsing 에러 방지
+	// CspViewVmDetail  SpiderVMInfo `yaml:"cspViewVmDetail" json:"cspViewVmDetail"`
 }
 
 // GeoLocation - 위치 정보 구조 정의
