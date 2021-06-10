@@ -28,7 +28,7 @@
 			"description": "Tumblebug Demo",
 			"installMonAgent": "no",
 			"vm": [ {
-				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'-01",
+				"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-01",
 				"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"vmUserAccount": "cb-user",
 				"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'",

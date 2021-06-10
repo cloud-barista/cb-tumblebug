@@ -3024,7 +3024,7 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 		return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
 	}
 	if strings.Contains(mcisStatusTmp.Status, StatusSuspended) {
-		if strings.EqualFold(action, ActionResume) {
+		if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionSuspend) {
 			return nil
 		} else {
 			return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
@@ -3105,7 +3105,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 		wg.Add(1)
 
 		// Avoid concurrent requests to CSP.
-		time.Sleep(time.Duration(2) * time.Second)
+		time.Sleep(time.Duration(3) * time.Second)
 
 		go ControlVmAsync(&wg, nsId, mcisId, v, action, &results)
 	}
@@ -3696,7 +3696,10 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	}
 
 	numVm := len(mcisStatus.Vm)
-	proportionStr := "-(" + strconv.Itoa(tmpMax) + "/" + strconv.Itoa(numVm) + ")"
+	numUnNormalStatus := statusFlag[0] + statusFlag[9]
+	numNormalStatus := numVm - numUnNormalStatus
+
+	proportionStr := "-" + strconv.Itoa(tmpMax) + "(" + strconv.Itoa(numNormalStatus) + "/" + strconv.Itoa(numVm) + ")"
 	if tmpMax == numVm {
 		mcisStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
 	} else if tmpMax < numVm {
@@ -3704,13 +3707,16 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	} else {
 		mcisStatus.Status = statusFlagStr[9] + proportionStr
 	}
-	proportionStr = "-(" + strconv.Itoa(statusFlag[0]) + "/" + strconv.Itoa(numVm) + ")"
+	// for representing Failed status in front.
+
+	proportionStr = "-" + strconv.Itoa(statusFlag[0]) + "(" + strconv.Itoa(numNormalStatus) + "/" + strconv.Itoa(numVm) + ")"
 	if statusFlag[0] > 0 {
 		mcisStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
 		if statusFlag[0] == numVm {
 			mcisStatus.Status = statusFlagStr[0] + proportionStr
 		}
 	}
+
 	// proportionStr = "-(" + strconv.Itoa(statusFlag[9]) + "/" + strconv.Itoa(numVm) + ")"
 	// if statusFlag[9] > 0 {
 	// 	mcisStatus.Status = statusFlagStr[9] + proportionStr
@@ -3958,6 +3964,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		if statusResponseTmp.Status == StatusUndefined {
 			statusResponseTmp.Status = StatusCreating
 		}
+		if temp.Status == StatusFailed {
+			statusResponseTmp.Status = StatusFailed
+		}
 	}
 	if vmStatusTmp.TargetAction == ActionTerminate {
 		if statusResponseTmp.Status == StatusUndefined {
@@ -3974,7 +3983,6 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		if statusResponseTmp.Status == StatusCreating {
 			statusResponseTmp.Status = StatusResuming
 		}
-
 	}
 	// for action reboot, some csp's native status are suspending, suspended, creating, resuming
 	if vmStatusTmp.TargetAction == ActionReboot {
@@ -3987,10 +3995,13 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	}
 
 	// End of Temporal CODE.
-	if temp.Status == StatusFailed {
-		statusResponseTmp.Status = StatusFailed
-	}
+	//if temp.Status == StatusFailed {
+	//	statusResponseTmp.Status = StatusFailed
+	//}
 	if temp.Status == StatusTerminated {
+		statusResponseTmp.Status = StatusTerminated
+	}
+	if vmStatusTmp.TargetStatus == StatusTerminated {
 		statusResponseTmp.Status = StatusTerminated
 	}
 
@@ -4001,12 +4012,45 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 			vmStatusTmp.Status = StatusFailed
 		}
 	*/
+
+	// TODO: Alibaba Undefined status error is not resolved yet.
+	// (After Terminate action. "status": "Undefined", "targetStatus": "None", "targetAction": "None")
+
+	//fmt.Println("\n\n\n\n WATCH START")
 	//if TargetStatus == CurrentStatus, record to finialize the control operation
 	if vmStatusTmp.TargetStatus == vmStatusTmp.Status {
-		vmStatusTmp.TargetStatus = StatusComplete
-		vmStatusTmp.TargetAction = ActionComplete
-		vmStatusTmp.SystemMessage = ""
+		//fmt.Println("if vmStatusTmp.TargetStatus == vmStatusTmp.Status")
+		//common.PrintJsonPretty(vmStatusTmp)
+
+		if vmStatusTmp.TargetStatus != StatusTerminated {
+			//fmt.Println("if vmStatusTmp.TargetStatus != StatusTerminated")
+			//common.PrintJsonPretty(vmStatusTmp)
+
+			vmStatusTmp.SystemMessage = vmStatusTmp.TargetStatus + "==" + vmStatusTmp.Status
+			vmStatusTmp.TargetStatus = StatusComplete
+			vmStatusTmp.TargetAction = ActionComplete
+
+		} else {
+			//fmt.Println("if vmStatusTmp.TargetStatus == StatusTerminated")
+			//common.PrintJsonPretty(vmStatusTmp)
+
+			// Don't init TargetStatus if the TargetStatus is StatusTerminated. It is to finalize VM lifecycle if StatusTerminated.
+			vmStatusTmp.TargetStatus = StatusTerminated
+			vmStatusTmp.TargetAction = ActionTerminate
+			vmStatusTmp.SystemMessage = "This VM has been terminated. No action is acceptable except deletion"
+		}
 	}
+	//fmt.Println("result: vmStatusTmp")
+	//common.PrintJsonPretty(vmStatusTmp)
+	//fmt.Println("\nWATCH END\n\n\n\n ")
+
+	// Apply current status to vmInfo
+	temp.Status = vmStatusTmp.Status
+	temp.SystemMessage = vmStatusTmp.SystemMessage
+	temp.TargetAction = vmStatusTmp.TargetAction
+	temp.TargetStatus = vmStatusTmp.TargetStatus
+	temp.PublicIP = vmStatusTmp.PublicIp
+	UpdateVmInfo(nsId, mcisId, temp)
 
 	return vmStatusTmp, nil
 
