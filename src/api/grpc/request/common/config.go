@@ -84,14 +84,41 @@ func (r *UTILITYRequest) GetConfig() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// DeleteAllConfig - Config 전체 삭제
-func (r *UTILITYRequest) DeleteAllConfig() (string, error) {
+// InitConfig
+func (r *UTILITYRequest) InitConfig() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.ConfigQryRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
 
 	// 서버에 요청
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
-	resp, err := r.Client.DeleteAllConfig(ctx, &pb.Empty{})
+	resp, err := r.Client.InitConfig(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
+// InitAllConfig - Config 전체 삭제
+func (r *UTILITYRequest) InitAllConfig() (string, error) {
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.InitAllConfig(ctx, &pb.Empty{})
 	if err != nil {
 		return "", err
 	}

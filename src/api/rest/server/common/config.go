@@ -9,10 +9,33 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
-// Response structure for RestGetAllConfig
-type RestGetAllConfigResponse struct {
-	//Name string     `json:"name"`
-	Config []common.ConfigInfo `json:"config"`
+// RestInitConfig godoc
+// @Summary Init config
+// @Description Init config
+// @Tags [Admin] System environment
+// @Accept  json
+// @Produce  json
+// @Param configId path string true "Config ID"
+// @Success 200 {object} common.ConfigInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /config/{configId} [delete]
+func RestInitConfig(c echo.Context) error {
+	//id := c.Param("configId")
+	if err := Validate(c, []string{"configId"}); err != nil {
+		common.CBLog.Error(err)
+		return SendMessage(c, http.StatusBadRequest, err.Error())
+	}
+
+	err := common.InitConfig(c.Param("configId"))
+	if err != nil {
+		//mapA := common.SimpleMsg{"Failed to find the config " + id}
+		//return c.JSON(http.StatusNotFound, &mapA)
+		return SendMessage(c, http.StatusOK, "Failed to init the config "+c.Param("configId"))
+	} else {
+		//return c.JSON(http.StatusOK, &res)
+		return SendMessage(c, http.StatusOK, "The config "+c.Param("configId")+" has been initialized.")
+	}
 }
 
 // RestGetConfig godoc
@@ -42,6 +65,12 @@ func RestGetConfig(c echo.Context) error {
 		//return c.JSON(http.StatusOK, &res)
 		return Send(c, http.StatusOK, res)
 	}
+}
+
+// Response structure for RestGetAllConfig
+type RestGetAllConfigResponse struct {
+	//Name string     `json:"name"`
+	Config []common.ConfigInfo `json:"config"`
 }
 
 // RestGetAllConfig godoc
@@ -110,22 +139,22 @@ func RestPostConfig(c echo.Context) error {
 
 }
 
-// RestDelAllConfig godoc
-// @Summary Delete all configs
-// @Description Delete all configs
+// RestInitAllConfig godoc
+// @Summary Init all configs
+// @Description Init all configs
 // @Tags [Admin] System environment
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /config [delete]
-func RestDelAllConfig(c echo.Context) error {
+func RestInitAllConfig(c echo.Context) error {
 
-	err := common.DelAllConfig()
+	err := common.InitAllConfig()
 	if err != nil {
 		common.CBLog.Error(err)
 		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
-	return SendMessage(c, http.StatusOK, "All configs has been deleted")
+	return SendMessage(c, http.StatusOK, "All configs has been initialized.")
 }

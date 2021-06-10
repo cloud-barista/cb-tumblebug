@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function get_ns() {
+#function get_config() {
 
 
     TestSetFile=${4:-../testSet.env}
@@ -12,7 +12,7 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 0. Config: Get (option: spider-rest-url, dragonfly-rest-url, ...)"
+    echo "## 0. Config: Get (option: SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)"
     echo "####################################################################"
 
     VAR=${1}

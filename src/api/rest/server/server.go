@@ -119,7 +119,8 @@ func ApiServer() {
 	e.POST("/tumblebug/config", rest_common.RestPostConfig)
 	e.GET("/tumblebug/config/:configId", rest_common.RestGetConfig)
 	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
-	e.DELETE("/tumblebug/config", rest_common.RestDelAllConfig)
+	e.DELETE("/tumblebug/config/:configId", rest_common.RestInitConfig)
+	e.DELETE("/tumblebug/config", rest_common.RestInitAllConfig)
 
 	e.GET("/tumblebug/object", rest_common.RestGetObject)
 	e.GET("/tumblebug/objects", rest_common.RestGetObjects)

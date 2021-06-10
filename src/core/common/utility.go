@@ -43,6 +43,11 @@ func GenUuid() string {
 
 func CheckString(name string) error {
 
+	if name == "" {
+		err := fmt.Errorf("The provided name is empty.")
+		return err
+	}
+
 	r, _ := regexp.Compile("[a-z]([-a-z0-9]*[a-z0-9])?")
 	filtered := r.FindString(name)
 

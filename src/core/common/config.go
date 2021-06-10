@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
@@ -23,6 +24,12 @@ type ConfigInfo struct {
 
 func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 
+	if u.Name == "" {
+		temp := ConfigInfo{}
+		err := fmt.Errorf("The provided name is empty.")
+		return temp, err
+	}
+
 	content := ConfigInfo{}
 	content.Id = u.Name
 	content.Name = u.Name
@@ -41,12 +48,12 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 	fmt.Println("UpdateConfig(); Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
 	fmt.Println("UpdateConfig(); ===========================")
 
-	UpdateEnv(content.Id)
+	UpdateGlobalVariable(content.Id)
 
 	return content, nil
 }
 
-func UpdateEnv(id string) error {
+func UpdateGlobalVariable(id string) error {
 
 	/*
 		common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
@@ -87,6 +94,51 @@ func UpdateEnv(id string) error {
 		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
 	default:
 
+	}
+
+	return nil
+}
+
+func InitConfig(id string) error {
+
+	switch id {
+	case StrSPIDER_REST_URL:
+		SPIDER_REST_URL = NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
+		fmt.Println("<SPIDER_REST_URL> " + SPIDER_REST_URL)
+	case StrDRAGONFLY_REST_URL:
+		DRAGONFLY_REST_URL = NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+		fmt.Println("<DRAGONFLY_REST_URL> " + DRAGONFLY_REST_URL)
+	case StrDB_URL:
+		DB_URL = NVL(os.Getenv("DB_URL"), "localhost:3306")
+		fmt.Println("<DB_URL> " + DB_URL)
+	case StrDB_DATABASE:
+		DB_DATABASE = NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
+		fmt.Println("<DB_DATABASE> " + DB_DATABASE)
+	case StrDB_USER:
+		DB_USER = NVL(os.Getenv("DB_USER"), "cb_tumblebug")
+		fmt.Println("<DB_USER> " + DB_USER)
+	case StrDB_PASSWORD:
+		DB_PASSWORD = NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
+		fmt.Println("<DB_PASSWORD> " + DB_PASSWORD)
+	case StrAUTOCONTROL_DURATION_MS:
+		AUTOCONTROL_DURATION_MS = NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
+		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
+	default:
+
+	}
+
+	check, err := CheckConfig(id)
+
+	if check && err == nil {
+		fmt.Println("[Init config] " + id)
+		key := "/config/" + id
+		//fmt.Println(key)
+
+		CBStore.Delete(key)
+		// if err != nil {
+		// 	CBLog.Error(err)
+		// 	return err
+		// }
 	}
 
 	return nil
@@ -180,6 +232,7 @@ func ListConfigId() []string {
 
 }
 
+/*
 func DelAllConfig() error {
 	fmt.Printf("DelAllConfig() called;")
 
@@ -196,6 +249,18 @@ func DelAllConfig() error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+*/
+
+func InitAllConfig() error {
+	fmt.Printf("InitAllConfig() called;")
+
+	configIdList := ListConfigId()
+
+	for _, v := range configIdList {
+		InitConfig(v)
 	}
 	return nil
 }

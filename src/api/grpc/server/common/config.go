@@ -89,18 +89,33 @@ func (s *UTILITYService) GetConfig(ctx context.Context, req *pb.ConfigQryRequest
 	return resp, nil
 }
 
-// DeleteAllConfig - Config 전체 삭제
-func (s *UTILITYService) DeleteAllConfig(ctx context.Context, req *pb.Empty) (*pb.MessageResponse, error) {
+// InitConfig
+func (s *UTILITYService) InitConfig(ctx context.Context, req *pb.ConfigQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.DeleteAllConfig()")
+	logger.Debug("calling UTILITYService.InitConfig()")
 
-	err := common.DelAllConfig()
+	err := common.InitConfig(req.ConfigId)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.DeleteAllConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InitConfig()")
 	}
 
-	resp := &pb.MessageResponse{Message: "All configs has been deleted"}
+	resp := &pb.MessageResponse{Message: "The config " + req.ConfigId + " has been initialized."}
+	return resp, nil
+}
+
+// InitAllConfig - Config 전체 삭제
+func (s *UTILITYService) InitAllConfig(ctx context.Context, req *pb.Empty) (*pb.MessageResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling UTILITYService.InitAllConfig()")
+
+	err := common.InitAllConfig()
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InitAllConfig()")
+	}
+
+	resp := &pb.MessageResponse{Message: "All configs have been initialized."}
 	return resp, nil
 }
 

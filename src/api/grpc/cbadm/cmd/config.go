@@ -29,7 +29,8 @@ func NewConfigCmd() *cobra.Command {
 	configCmd.AddCommand(NewConfigCreateCmd())
 	configCmd.AddCommand(NewConfigListCmd())
 	configCmd.AddCommand(NewConfigGetCmd())
-	configCmd.AddCommand(NewConfigDeleteAllCmd())
+	configCmd.AddCommand(NewConfigInitCmd())
+	configCmd.AddCommand(NewConfigInitAllCmd())
 
 	return configCmd
 }
@@ -100,18 +101,42 @@ func NewConfigGetCmd() *cobra.Command {
 	return getCmd
 }
 
-// NewConfigDeleteAllCmd : "cbadm config delete-all"
-func NewConfigDeleteAllCmd() *cobra.Command {
+// NewConfigInitCmd : "cbadm config init"
+func NewConfigInitCmd() *cobra.Command {
 
-	deleteAllCmd := &cobra.Command{
-		Use:   "delete-all",
-		Short: "This is delete all command for config",
-		Long:  "This is delete all command for config",
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: "This is init command for config",
+		Long:  "This is init command for config",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if configId == "" {
+				logger.Error("failed to validate --id parameter")
+				return
+			}
+			logger.Debug("--id parameter value : ", configId)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	initCmd.PersistentFlags().StringVarP(&configId, "id", "", "", "config id")
+
+	return initCmd
+}
+
+// NewConfigInitAllCmd : "cbadm config init-all"
+func NewConfigInitAllCmd() *cobra.Command {
+
+	initAllCmd := &cobra.Command{
+		Use:   "init-all",
+		Short: "This is init all command for config",
+		Long:  "This is init all command for config",
 		Run: func(cmd *cobra.Command, args []string) {
 
 			SetupAndRun(cmd, args)
 		},
 	}
 
-	return deleteAllCmd
+	return initAllCmd
 }
