@@ -2,7 +2,6 @@ package restapiserver
 
 import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/webadmin"
 
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
@@ -109,11 +108,6 @@ func ApiServer() {
 	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
-
-	e.GET("/tumblebug/webadmin", webadmin.Mainpage)
-	e.GET("/tumblebug/webadmin/menu", webadmin.Menu)
-	e.GET("/tumblebug/webadmin/ns", webadmin.Ns)
-	e.GET("/tumblebug/webadmin/spec", webadmin.Spec)
 
 	// @Tags [Admin] System environment
 	e.POST("/tumblebug/config", rest_common.RestPostConfig)
