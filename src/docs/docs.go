@@ -1104,6 +1104,15 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "idOnly"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1318,6 +1327,15 @@ var doc = `{
                         "type": "string",
                         "description": "Action to MCIS",
                         "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "idOnly"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
                         "in": "query"
                     }
                 ],
@@ -2243,6 +2261,15 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "idOnly"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2535,6 +2562,15 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "idOnly"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2760,6 +2796,15 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "idOnly"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3057,6 +3102,15 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "idOnly"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3282,6 +3336,15 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "idOnly"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3821,6 +3884,58 @@ var doc = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/{nsId}/checkResource/{resourceType}/{resourceId}": {
+            "get": {
+                "description": "Check resources' existence",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Check resources' existence",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource Type",
+                        "name": "resourceType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
                         }

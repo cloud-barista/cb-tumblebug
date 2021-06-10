@@ -95,6 +95,33 @@ func (r *MCIRRequest) ListImage() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// ListImageId
+func (r *MCIRRequest) ListImageId() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.ResourceAllQryRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.ListImageId(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // GetImage - Image 조회
 func (r *MCIRRequest) GetImage() (string, error) {
 	// 입력데이터 검사

@@ -10,6 +10,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 )
 
+// Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelAllResources(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -29,6 +30,7 @@ func RestDelAllResources(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
+// Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelResource(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -51,87 +53,102 @@ func RestDelResource(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
+// Dummy functions for Swagger exist in [mcir/*.go]
 func RestGetAllResources(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	optionFlag := c.QueryParam("option")
+
 	resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
-	resourceList, err := mcir.ListResource(nsId, resourceType)
-	if err != nil {
-		mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
-		return c.JSON(http.StatusNotFound, &mapA)
+	if optionFlag == "idOnly" || optionFlag == "idList" || optionFlag == "idListOnly" {
+		var content struct {
+			IdList []string `json:"idList"`
+		}
+
+		content.IdList = mcir.ListResourceId(nsId, resourceType)
+
+		return c.JSON(http.StatusOK, &content)
+	} else {
+
+		resourceList, err := mcir.ListResource(nsId, resourceType)
+		if err != nil {
+			mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+
+		switch resourceType {
+		case common.StrImage:
+			var content struct {
+				Image []mcir.TbImageInfo `json:"image"`
+			}
+
+			if resourceList == nil {
+				return c.JSON(http.StatusOK, &content)
+			}
+
+			// When err == nil && resourceList != nil
+			content.Image = resourceList.([]mcir.TbImageInfo) // type assertion (interface{} -> array)
+			return c.JSON(http.StatusOK, &content)
+		case common.StrSecurityGroup:
+			var content struct {
+				SecurityGroup []mcir.TbSecurityGroupInfo `json:"securityGroup"`
+			}
+
+			if resourceList == nil {
+				return c.JSON(http.StatusOK, &content)
+			}
+
+			// When err == nil && resourceList != nil
+			content.SecurityGroup = resourceList.([]mcir.TbSecurityGroupInfo) // type assertion (interface{} -> array)
+			return c.JSON(http.StatusOK, &content)
+		case common.StrSpec:
+			var content struct {
+				Spec []mcir.TbSpecInfo `json:"spec"`
+			}
+
+			if resourceList == nil {
+				return c.JSON(http.StatusOK, &content)
+			}
+
+			// When err == nil && resourceList != nil
+			content.Spec = resourceList.([]mcir.TbSpecInfo) // type assertion (interface{} -> array)
+			return c.JSON(http.StatusOK, &content)
+		case common.StrSSHKey:
+			var content struct {
+				SshKey []mcir.TbSshKeyInfo `json:"sshKey"`
+			}
+
+			if resourceList == nil {
+				return c.JSON(http.StatusOK, &content)
+			}
+
+			// When err == nil && resourceList != nil
+			content.SshKey = resourceList.([]mcir.TbSshKeyInfo) // type assertion (interface{} -> array)
+			return c.JSON(http.StatusOK, &content)
+		case common.StrVNet:
+			var content struct {
+				VNet []mcir.TbVNetInfo `json:"vNet"`
+			}
+
+			if resourceList == nil {
+				return c.JSON(http.StatusOK, &content)
+			}
+
+			// When err == nil && resourceList != nil
+			content.VNet = resourceList.([]mcir.TbVNetInfo) // type assertion (interface{} -> array)
+			return c.JSON(http.StatusOK, &content)
+		default:
+			return c.JSON(http.StatusBadRequest, nil)
+
+		}
+		// return c.JSON(http.StatusBadRequest, nil)
 	}
-
-	switch resourceType {
-	case common.StrImage:
-		var content struct {
-			Image []mcir.TbImageInfo `json:"image"`
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.Image = resourceList.([]mcir.TbImageInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	case common.StrSecurityGroup:
-		var content struct {
-			SecurityGroup []mcir.TbSecurityGroupInfo `json:"securityGroup"`
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.SecurityGroup = resourceList.([]mcir.TbSecurityGroupInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	case common.StrSpec:
-		var content struct {
-			Spec []mcir.TbSpecInfo `json:"spec"`
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.Spec = resourceList.([]mcir.TbSpecInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	case common.StrSSHKey:
-		var content struct {
-			SshKey []mcir.TbSshKeyInfo `json:"sshKey"`
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.SshKey = resourceList.([]mcir.TbSshKeyInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	case common.StrVNet:
-		var content struct {
-			VNet []mcir.TbVNetInfo `json:"vNet"`
-		}
-
-		if resourceList == nil {
-			return c.JSON(http.StatusOK, &content)
-		}
-
-		// When err == nil && resourceList != nil
-		content.VNet = resourceList.([]mcir.TbVNetInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-	default:
-		return c.JSON(http.StatusOK, nil)
-
-	}
-	return c.JSON(http.StatusOK, nil)
 }
 
+// Dummy functions for Swagger exist in [mcir/*.go]
 func RestGetResource(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -150,6 +167,18 @@ func RestGetResource(c echo.Context) error {
 	}
 }
 
+// RestCheckResource godoc
+// @Summary Check resources' existence
+// @Description Check resources' existence
+// @Tags [Admin] System management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param resourceType path string true "Resource Type"
+// @Param resourceId path string true "Resource ID"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Router /{nsId}/checkResource/{resourceType}/{resourceId} [get]
 func RestCheckResource(c echo.Context) error {
 
 	nsId := c.Param("nsId")

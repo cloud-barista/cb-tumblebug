@@ -1384,6 +1384,41 @@ info:
   title: CB-Tumblebug REST API
   version: latest
 paths:
+  /{nsId}/checkResource/{resourceType}/{resourceId}:
+    get:
+      consumes:
+      - application/json
+      description: Check resources' existence
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Resource Type
+        in: path
+        name: resourceType
+        required: true
+        type: string
+      - description: Resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check resources' existence
+      tags:
+      - '[Admin] System management'
   /config:
     delete:
       consumes:
@@ -2126,6 +2161,12 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - idOnly
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
@@ -2240,6 +2281,12 @@ paths:
         - refine
         in: query
         name: action
+        type: string
+      - description: Option
+        enum:
+        - idOnly
+        in: query
+        name: option
         type: string
       produces:
       - application/json
@@ -2880,6 +2927,12 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - idOnly
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
@@ -3074,6 +3127,12 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - idOnly
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
@@ -3223,6 +3282,12 @@ paths:
         in: path
         name: nsId
         required: true
+        type: string
+      - description: Option
+        enum:
+        - idOnly
+        in: query
+        name: option
         type: string
       produces:
       - application/json
@@ -3422,6 +3487,12 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - idOnly
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
@@ -3571,6 +3642,12 @@ paths:
         in: path
         name: nsId
         required: true
+        type: string
+      - description: Option
+        enum:
+        - idOnly
+        in: query
+        name: option
         type: string
       produces:
       - application/json

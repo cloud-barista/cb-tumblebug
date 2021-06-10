@@ -66,6 +66,25 @@ func (s *MCIRService) ListSecurityGroup(ctx context.Context, req *pb.ResourceAll
 	return resp, nil
 }
 
+// ListSecurityGroupId
+func (s *MCIRService) ListSecurityGroupId(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListIdResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.ListSecurityGroupId()")
+
+	resourceList := mcir.ListResourceId(req.NsId, req.ResourceType)
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj []string
+	err := gc.CopySrcToDest(&resourceList, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSecurityGroupId()")
+	}
+
+	resp := &pb.ListIdResponse{IdList: grpcObj}
+	return resp, nil
+}
+
 // GetSecurityGroup - Security Group 조회
 func (s *MCIRService) GetSecurityGroup(ctx context.Context, req *pb.ResourceQryRequest) (*pb.TbSecurityGroupInfoResponse, error) {
 	logger := logger.NewLogger()

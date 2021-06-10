@@ -97,6 +97,25 @@ func (s *MCIRService) ListSpec(ctx context.Context, req *pb.ResourceAllQryReques
 	return resp, nil
 }
 
+// ListSpecId
+func (s *MCIRService) ListSpecId(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListIdResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.ListSpecId()")
+
+	resourceIdList := mcir.ListResourceId(req.NsId, req.ResourceType)
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj []string
+	err := gc.CopySrcToDest(&resourceIdList, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSpecId()")
+	}
+
+	resp := &pb.ListIdResponse{IdList: grpcObj}
+	return resp, nil
+}
+
 // GetSpec - Spec 조회
 func (s *MCIRService) GetSpec(ctx context.Context, req *pb.ResourceQryRequest) (*pb.TbSpecInfoResponse, error) {
 	logger := logger.NewLogger()

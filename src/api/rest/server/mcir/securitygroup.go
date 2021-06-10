@@ -94,6 +94,7 @@ type RestGetAllSecurityGroupResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
+// @Param option query string false "Option" Enums(idOnly)
 // @Success 200 {object} RestGetAllSecurityGroupResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

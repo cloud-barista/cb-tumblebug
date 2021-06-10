@@ -75,6 +75,7 @@ func RestTestListVmId(c echo.Context) error { // for debug
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
 // @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate, refine)
+// @Param option query string false "Option" Enums(idOnly)
 // @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[STATUS]=mcis.McisStatusInfo,[CONTROL]=common.SimpleMsg} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -86,8 +87,21 @@ func RestGetMcis(c echo.Context) error {
 	mcisId := c.Param("mcisId")
 
 	action := c.QueryParam("action")
+	option := c.QueryParam("option")
 
-	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
+	if option == "idOnly" || option == "idList" || option == "idListOnly" {
+		var content struct {
+			IdList []string `json:"idList"`
+		}
+		var err error
+		content.IdList, err = mcis.ListVmId(nsId, mcisId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusInternalServerError, &mapA)
+		}
+
+		return c.JSON(http.StatusOK, &content)
+	} else if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
 
 		result, err := mcis.HandleMcisAction(nsId, mcisId, action)
 		if err != nil {
@@ -150,6 +164,7 @@ type RestGetAllMcisStatusResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
+// @Param option query string false "Option" Enums(idOnly)
 // @Success 200 {object} RestGetAllMcisResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -160,7 +175,15 @@ func RestGetAllMcis(c echo.Context) error {
 	option := c.QueryParam("option")
 	fmt.Println("[Get MCIS List requested with option: " + option)
 
-	if option == "status" {
+	if option == "idOnly" || option == "idList" || option == "idListOnly" {
+		var content struct {
+			IdList []string `json:"idList"`
+		}
+
+		content.IdList = mcis.ListMcisId(nsId)
+
+		return c.JSON(http.StatusOK, &content)
+	} else if option == "status" {
 		result, err := mcis.GetMcisStatusAll(nsId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function list_vNet() {
+#function list_sshKey() {
 
 
     TestSetFile=${4:-../testSet.env}
@@ -12,11 +12,11 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 3. VPC: List"
+    echo "## 5. sshKey: List ID"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey?option=idOnly | jq ''
     echo ""
 #}
 
-#list_vNet
+#list_sshKey

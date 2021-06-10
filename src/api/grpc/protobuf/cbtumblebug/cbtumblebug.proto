@@ -105,45 +105,54 @@ service MCIR {
 	rpc CreateImageWithInfo (TbImageInfoRequest) returns (TbImageInfoResponse) {}
 	rpc CreateImageWithID (TbImageCreateRequest) returns (TbImageInfoResponse) {}
 	rpc ListImage (ResourceAllQryRequest) returns (ListTbImageInfoResponse) {}
+	rpc ListImageId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetImage (ResourceQryRequest) returns (TbImageInfoResponse) {}
-  rpc DeleteImage (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllImage (ResourceAllQryRequest) returns (MessageResponse) {}
-  rpc GetLookupImage (LookupImageQryRequest) returns (SpiderImageInfoResponse) {}
+	rpc DeleteImage (ResourceQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllImage (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc GetLookupImage (LookupImageQryRequest) returns (SpiderImageInfoResponse) {}
 	rpc ListLookupImage (LookupImageListQryRequest) returns (ListSpiderImageInfoResponse) {}
 	rpc FetchImage (FetchImageQryRequest) returns (MessageResponse) {}
 	rpc SearchImage (SearchImageQryRequest) returns (ListTbImageInfoResponse) {}
 
 	rpc CreateSshKey (TbSshKeyCreateRequest) returns (TbSshKeyInfoResponse) {}
 	rpc ListSshKey (ResourceAllQryRequest) returns (ListTbSshKeyInfoResponse) {}
+	rpc ListSshKeyId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetSshKey (ResourceQryRequest) returns (TbSshKeyInfoResponse) {}
-  rpc DeleteSshKey (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllSshKey (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteSshKey (ResourceQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllSshKey (ResourceAllQryRequest) returns (MessageResponse) {}
 
 	rpc CreateSpecWithInfo (TbSpecInfoRequest) returns (TbSpecInfoResponse) {}
 	rpc CreateSpecWithSpecName (TbSpecCreateRequest) returns (TbSpecInfoResponse) {}
 	rpc ListSpec (ResourceAllQryRequest) returns (ListTbSpecInfoResponse) {}
+	rpc ListSpecId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetSpec (ResourceQryRequest) returns (TbSpecInfoResponse) {}
-  rpc DeleteSpec (ResourceQryRequest) returns (MessageResponse) {}
+	rpc DeleteSpec (ResourceQryRequest) returns (MessageResponse) {}
 	rpc DeleteAllSpec (ResourceAllQryRequest) returns (MessageResponse) {}
 	rpc GetLookupSpec (LookupSpecQryRequest) returns (SpiderSpecInfoResponse) {}
 	rpc ListLookupSpec (LookupSpecListQryRequest) returns (ListSpiderSpecInfoResponse) {}
 	rpc FetchSpec (FetchSpecQryRequest) returns (MessageResponse) {}
-  rpc FilterSpec (TbSpecInfoRequest) returns (ListTbSpecInfoResponse) {}
-  rpc FilterSpecsByRange (FilterSpecsByRangeRequest) returns (ListTbSpecInfoResponse) {}
-  rpc SortSpecs (SortSpecsRequest) returns (ListTbSpecInfoResponse) {}
-  rpc UpdateSpec (TbSpecInfoRequest) returns (TbSpecInfoResponse) {}
+	rpc FilterSpec (TbSpecInfoRequest) returns (ListTbSpecInfoResponse) {}
+	rpc FilterSpecsByRange (FilterSpecsByRangeRequest) returns (ListTbSpecInfoResponse) {}
+	rpc SortSpecs (SortSpecsRequest) returns (ListTbSpecInfoResponse) {}
+	rpc UpdateSpec (TbSpecInfoRequest) returns (TbSpecInfoResponse) {}
 
 	rpc CreateSecurityGroup (TbSecurityGroupCreateRequest) returns (TbSecurityGroupInfoResponse) {}
 	rpc ListSecurityGroup (ResourceAllQryRequest) returns (ListTbSecurityGroupInfoResponse) {}
+	rpc ListSecurityGroupId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetSecurityGroup (ResourceQryRequest) returns (TbSecurityGroupInfoResponse) {}
-  rpc DeleteSecurityGroup (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllSecurityGroup (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteSecurityGroup (ResourceQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllSecurityGroup (ResourceAllQryRequest) returns (MessageResponse) {}
 
 	rpc CreateVNet (TbVNetCreateRequest) returns (TbVNetInfoResponse) {}
 	rpc ListVNet (ResourceAllQryRequest) returns (ListTbVNetInfoResponse) {}
+	rpc ListVNetId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetVNet (ResourceQryRequest) returns (TbVNetInfoResponse) {}
-  rpc DeleteVNet (ResourceQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllVNet (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteVNet (ResourceQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllVNet (ResourceAllQryRequest) returns (MessageResponse) {}
+}
+
+message ListIdResponse {
+	repeated string id_list = 1 [json_name="idList", (gogoproto.jsontag) = "idList", (gogoproto.moretags) = "yaml:\"idList\""];
 }
 
 //////////////////////////////////
@@ -555,19 +564,21 @@ message SpiderSubnetReqInfo {
 service MCIS {
 	rpc CreateMcis (TbMcisCreateRequest) returns (TbMcisInfoResponse) {}
 	rpc ListMcis (TbMcisAllQryRequest) returns (ListTbMcisInfoResponse) {}
+	rpc ListMcisId (TbMcisAllQryRequest) returns (ListIdResponse) {}
 	rpc ControlMcis (TbMcisActionRequest) returns (MessageResponse) {}
 	rpc ListMcisStatus (TbMcisAllQryRequest) returns (ListTbMcisStatusInfoResponse) {}
 	rpc GetMcisStatus (TbMcisQryRequest) returns (TbMcisStatusInfoResponse) {}
 	rpc GetMcisInfo (TbMcisQryRequest) returns (TbMcisInfoResponse) {}
-  rpc DeleteMcis (TbMcisQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllMcis (TbMcisAllQryRequest) returns (MessageResponse) {}
+	rpc ListMcisVmId (TbMcisQryRequest) returns (ListIdResponse) {}
+	rpc DeleteMcis (TbMcisQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllMcis (TbMcisAllQryRequest) returns (MessageResponse) {}
 
 	rpc CreateMcisVM (TbVmCreateRequest) returns (TbVmInfoResponse) {}
 	rpc CreateMcisVMGroup (TbVmGroupCreateRequest) returns (TbMcisInfoResponse) {}
 	rpc ControlMcisVM (TbVmActionRequest) returns (MessageResponse) {}
 	rpc GetMcisVMStatus (TbVmQryRequest) returns (TbVmStatusInfoesponse) {}
 	rpc GetMcisVMInfo (TbVmQryRequest) returns (TbVmInfoResponse) {}
-  rpc DeleteMcisVM (TbVmQryRequest) returns (MessageResponse) {}
+	rpc DeleteMcisVM (TbVmQryRequest) returns (MessageResponse) {}
 
 	rpc RecommendMcis (McisRecommendCreateRequest) returns (McisRecommendInfoResponse) {}
 	rpc RecommendVM (McisRecommendVmCreateRequest) returns (ListTbSpecInfoResponse) {}
@@ -581,14 +592,14 @@ service MCIS {
 	rpc InstallMonitorAgentToMcis(McisCmdCreateRequest) returns (ListAgentInstallResponse) {}
 	rpc GetMonitorData(MonitorQryRequest) returns (MonitorResultSimpleResponse) {}
 	
-  rpc CheckMcis (TbMcisQryRequest) returns (ExistsResponse) {}
+	rpc CheckMcis (TbMcisQryRequest) returns (ExistsResponse) {}
 	rpc CheckVm (TbVmQryRequest) returns (ExistsResponse) {}
 	
 	rpc CreateMcisPolicy (McisPolicyCreateRequest) returns (McisPolicyInfoResponse) {}
 	rpc ListMcisPolicy (McisPolicyAllQryRequest) returns (ListMcisPolicyInfoResponse) {}
 	rpc GetMcisPolicy (McisPolicyQryRequest) returns (McisPolicyInfoResponse) {}
-  rpc DeleteMcisPolicy (McisPolicyQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllMcisPolicy (McisPolicyAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteMcisPolicy (McisPolicyQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllMcisPolicy (McisPolicyAllQryRequest) returns (MessageResponse) {}
 }
 
 //////////////////////////////////

@@ -12,10 +12,10 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 3. VPC: List"
+    echo "## 3. VPC: List ID"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet | jq ''
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm network list-id --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID | jq ''
     echo ""
 #}
 

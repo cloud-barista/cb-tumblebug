@@ -68,6 +68,33 @@ func (r *MCISRequest) ListMcis() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// ListMcisId
+func (r *MCISRequest) ListMcisId() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.TbMcisAllQryRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.ListMcisId(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // ControlMcis - MCIS 제어
 func (r *MCISRequest) ControlMcis() (string, error) {
 	// 입력데이터 검사
@@ -174,6 +201,33 @@ func (r *MCISRequest) GetMcisInfo() (string, error) {
 
 	// 결과값 마샬링
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
+}
+
+// ListMcisVmId
+func (r *MCISRequest) ListMcisVmId() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.TbMcisQryRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.ListMcisVmId(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
 // DeleteMcis - MCIS 삭제

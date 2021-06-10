@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function list_vNet() {
+#function list_image() {
 
 
     TestSetFile=${4:-../testSet.env}
@@ -12,11 +12,11 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 3. VPC: List"
+    echo "## 6. image: List ID"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet | jq ''
-    echo ""
+
+    $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm image list-id --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o yaml --ns $NSID #| jq '' #|| return 1
 #}
 
-#list_vNet
+#list_image

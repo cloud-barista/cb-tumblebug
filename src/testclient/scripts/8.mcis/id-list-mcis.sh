@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#function list_vNet() {
+#function list_mcis() {
 
 
     TestSetFile=${4:-../testSet.env}
@@ -12,11 +12,11 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 3. VPC: List"
+    echo "## 8. MCIS: List ID"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet | jq ''
-    echo ""
+
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis?option=idOnly | jq ''
 #}
 
-#list_vNet
+#list_mcis
