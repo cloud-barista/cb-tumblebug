@@ -184,10 +184,7 @@ func NewObjectListCmd() *cobra.Command {
 		Long:  "This is list-obj command for tumblebug utility",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logger.NewLogger()
-			if objKey == "" {
-				logger.Error("failed to validate --key parameter")
-				return
-			}
+
 			logger.Debug("--key parameter value : ", objKey)
 
 			SetupAndRun(cmd, args)
