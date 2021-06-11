@@ -237,14 +237,14 @@ type RestGetAllImageResponse struct {
 }
 
 // RestGetAllImage godoc
-// @Summary List all images
-// @Description List all images
+// @Summary List all images or images' ID
+// @Description List all images or images' ID
 // @Tags [MCIR] Image management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param option query string false "Option" Enums(idOnly)
-// @Success 200 {object} RestGetAllImageResponse
+// @Param option query string false "Option" Enums(id)
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllImageResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image [get]

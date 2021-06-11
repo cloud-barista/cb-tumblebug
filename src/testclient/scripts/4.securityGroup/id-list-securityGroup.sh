@@ -16,7 +16,7 @@
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup?option=idOnly | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup?option=id | jq ''
 #}
 
 #list_securityGroup

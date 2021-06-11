@@ -67,16 +67,16 @@ func RestTestListVmId(c echo.Context) error { // for debug
 // Annotation for API documention Need to be revised.
 
 // RestGetMcis godoc
-// @Summary Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate, refine)
-// @Description Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate, refine)
+// @Summary Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID
+// @Description Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
 // @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate, refine)
-// @Param option query string false "Option" Enums(idOnly)
-// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[STATUS]=mcis.McisStatusInfo,[CONTROL]=common.SimpleMsg} "Different return structures by the given action param"
+// @Param option query string false "Option" Enums(id)
+// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[STATUS]=mcis.McisStatusInfo,[CONTROL]=common.SimpleMsg,[ID]=common.IdList} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [get]
@@ -89,10 +89,8 @@ func RestGetMcis(c echo.Context) error {
 	action := c.QueryParam("action")
 	option := c.QueryParam("option")
 
-	if option == "idOnly" || option == "idList" || option == "idListOnly" {
-		var content struct {
-			IdList []string `json:"idList"`
-		}
+	if option == "id" {
+		content := common.IdList{}
 		var err error
 		content.IdList, err = mcis.ListVmId(nsId, mcisId)
 		if err != nil {
@@ -158,14 +156,14 @@ type RestGetAllMcisStatusResponse struct {
 }
 
 // RestGetAllMcis godoc
-// @Summary List all MCISs
-// @Description List all MCISs
+// @Summary List all MCISs or MCISs' ID
+// @Description List all MCISs or MCISs' ID
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param option query string false "Option" Enums(idOnly)
-// @Success 200 {object} RestGetAllMcisResponse
+// @Param option query string false "Option" Enums(id)
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMcisResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis [get]
@@ -175,10 +173,8 @@ func RestGetAllMcis(c echo.Context) error {
 	option := c.QueryParam("option")
 	fmt.Println("[Get MCIS List requested with option: " + option)
 
-	if option == "idOnly" || option == "idList" || option == "idListOnly" {
-		var content struct {
-			IdList []string `json:"idList"`
-		}
+	if option == "id" {
+		content := common.IdList{}
 
 		content.IdList = mcis.ListMcisId(nsId)
 

@@ -16,7 +16,7 @@
     echo "####################################################################"
 
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?option=idOnly | jq '' #|| return 1
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?option=id | jq '' #|| return 1
 #}
 
 #list_image

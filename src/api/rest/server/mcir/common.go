@@ -10,6 +10,13 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 )
 
+// JSONResult's data field will be overridden by the specific type
+type JSONResult struct {
+	//Code    int          `json:"code" `
+	//Message string       `json:"message"`
+	//Data    interface{}  `json:"data"`
+}
+
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelAllResources(c echo.Context) error {
 
@@ -63,10 +70,8 @@ func RestGetAllResources(c echo.Context) error {
 	resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
-	if optionFlag == "idOnly" || optionFlag == "idList" || optionFlag == "idListOnly" {
-		var content struct {
-			IdList []string `json:"idList"`
-		}
+	if optionFlag == "id" {
+		content := common.IdList{}
 
 		content.IdList = mcir.ListResourceId(nsId, resourceType)
 

@@ -16,6 +16,10 @@ type KeyValue struct {
 	Value string
 }
 
+type IdList struct {
+	IdList []string `json:"idList"`
+}
+
 // CB-Store
 var CBLog *logrus.Logger
 var CBStore icbs.Store

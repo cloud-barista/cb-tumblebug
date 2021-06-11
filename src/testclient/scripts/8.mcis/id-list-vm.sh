@@ -29,7 +29,7 @@ fi
 
 echo "${MCISID}"
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=idOnly | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=id | jq ''
 
 
 #get_mcis
