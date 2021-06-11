@@ -68,6 +68,33 @@ func (r *MCIRRequest) ListSecurityGroup() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// ListSecurityGroupId
+func (r *MCIRRequest) ListSecurityGroupId() (string, error) {
+	// 입력데이터 검사
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// 입력데이터 언마샬링
+	var item pb.ResourceAllQryRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.ListSecurityGroupId(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // GetSecurityGroup - Security Group 조회
 func (r *MCIRRequest) GetSecurityGroup() (string, error) {
 	// 입력데이터 검사

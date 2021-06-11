@@ -67,6 +67,25 @@ func (s *MCIRService) ListSshKey(ctx context.Context, req *pb.ResourceAllQryRequ
 	return resp, nil
 }
 
+// ListSshKeyId
+func (s *MCIRService) ListSshKeyId(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListIdResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.ListSshKeyId()")
+
+	resourceList := mcir.ListResourceId(req.NsId, req.ResourceType)
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj []string
+	err := gc.CopySrcToDest(&resourceList, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSshKeyId()")
+	}
+
+	resp := &pb.ListIdResponse{IdList: grpcObj}
+	return resp, nil
+}
+
 // GetSshKey - KeyPair 조회
 func (s *MCIRService) GetSshKey(ctx context.Context, req *pb.ResourceQryRequest) (*pb.TbSshKeyInfoResponse, error) {
 	logger := logger.NewLogger()

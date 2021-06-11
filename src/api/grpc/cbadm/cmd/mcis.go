@@ -28,6 +28,7 @@ func NewMcisCmd() *cobra.Command {
 	//  Adds the commands for application.
 	mcisCmd.AddCommand(NewMcisCreateCmd())
 	mcisCmd.AddCommand(NewMcisListCmd())
+	mcisCmd.AddCommand(NewMcisListIdCmd())
 	mcisCmd.AddCommand(NewMcisGetCmd())
 	mcisCmd.AddCommand(NewMcisDeleteCmd())
 	mcisCmd.AddCommand(NewMcisDeleteAllCmd())
@@ -41,6 +42,7 @@ func NewMcisCmd() *cobra.Command {
 	mcisCmd.AddCommand(NewMcisVmAddCmd())
 	mcisCmd.AddCommand(NewMcisVmGroupCmd())
 	mcisCmd.AddCommand(NewMcisVmListCmd())
+	mcisCmd.AddCommand(NewMcisVmListIdCmd())
 	mcisCmd.AddCommand(NewMcisVmGetCmd())
 	mcisCmd.AddCommand(NewMcisVmDeleteCmd())
 	mcisCmd.AddCommand(NewMcisVmStatusCmd())
@@ -121,6 +123,30 @@ func NewMcisListCmd() *cobra.Command {
 	listCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return listCmd
+}
+
+// NewMcisListIdCmd : "cbadm mcis list-id"
+func NewMcisListIdCmd() *cobra.Command {
+
+	listIdCmd := &cobra.Command{
+		Use:   "list-id",
+		Short: "This is list-id command for mcis",
+		Long:  "This is list-id command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	listIdCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return listIdCmd
 }
 
 // NewMcisGetCmd : "cbadm mcis get"
@@ -463,6 +489,36 @@ func NewMcisVmListCmd() *cobra.Command {
 	vmListCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
 
 	return vmListCmd
+}
+
+// NewMcisVmListIdCmd : "cbadm mcis list-vm-id"
+func NewMcisVmListIdCmd() *cobra.Command {
+
+	vmListIdCmd := &cobra.Command{
+		Use:   "list-vm-id",
+		Short: "This is list-vm-id command for mcis",
+		Long:  "This is list-vm-id command for mcis",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			if mcisID == "" {
+				logger.Error("failed to validate --mcis parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+			logger.Debug("--mcis parameter value : ", mcisID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	vmListIdCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+	vmListIdCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
+
+	return vmListIdCmd
 }
 
 // NewMcisVmGetCmd : "cbadm mcis get-vm"

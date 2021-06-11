@@ -28,6 +28,7 @@ func NewKeypairCmd() *cobra.Command {
 	//  Adds the commands for application.
 	keypairCmd.AddCommand(NewKeypairCreateCmd())
 	keypairCmd.AddCommand(NewKeypairListCmd())
+	keypairCmd.AddCommand(NewKeypairListIdCmd())
 	keypairCmd.AddCommand(NewKeypairGetCmd())
 	keypairCmd.AddCommand(NewKeypairSaveCmd())
 	keypairCmd.AddCommand(NewKeypairDeleteCmd())
@@ -85,6 +86,30 @@ func NewKeypairListCmd() *cobra.Command {
 	listCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return listCmd
+}
+
+// NewKeypairListIdCmd : "cbadm keypair list-id"
+func NewKeypairListIdCmd() *cobra.Command {
+
+	listIdCmd := &cobra.Command{
+		Use:   "list-id",
+		Short: "This is list-id command for keypair",
+		Long:  "This is list-id command for keypair",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	listIdCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return listIdCmd
 }
 
 // NewKeypairGetCmd : "cbadm keypair get"

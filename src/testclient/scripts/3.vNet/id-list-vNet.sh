@@ -12,10 +12,10 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 3. VPC: List"
+    echo "## 3. VPC: List ID"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet?option=id | jq ''
     echo ""
 #}
 

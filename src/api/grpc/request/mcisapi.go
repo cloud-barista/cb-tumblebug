@@ -587,6 +587,31 @@ func (m *MCISApi) ListMcisByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
+// ListMcisId - MCIS 목록
+func (m *MCISApi) ListMcisId(doc string) (string, error) {
+	if m.requestMCIS == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIS.InData = doc
+	return m.requestMCIS.ListMcisId()
+}
+
+// ListMcisIdByParam - MCIS 목록
+func (m *MCISApi) ListMcisIdByParam(nameSpaceID string) (string, error) {
+	if m.requestMCIS == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIS.InData = `{"nsId":"` + nameSpaceID + `"}`
+	result, err := m.requestMCIS.ListMcisId()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
 // ControlMcis - MCIS 제어
 func (m *MCISApi) ControlMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
@@ -682,6 +707,31 @@ func (m *MCISApi) GetMcisInfoByParam(nameSpaceID string, mcisID string) (string,
 	m.SetInType("json")
 	m.requestMCIS.InData = `{"nsId":"` + nameSpaceID + `", "mcisId":"` + mcisID + `"}`
 	result, err := m.requestMCIS.GetMcisInfo()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
+// ListMcisVmId - MCIS 정보 조회
+func (m *MCISApi) ListMcisVmId(doc string) (string, error) {
+	if m.requestMCIS == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIS.InData = doc
+	return m.requestMCIS.ListMcisVmId()
+}
+
+// ListMcisVmIdByParam - MCIS 정보 조회
+func (m *MCISApi) ListMcisVmIdByParam(nameSpaceID string, mcisID string) (string, error) {
+	if m.requestMCIS == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIS.InData = `{"nsId":"` + nameSpaceID + `", "mcisId":"` + mcisID + `"}`
+	result, err := m.requestMCIS.ListMcisVmId()
 	m.SetInType(holdType)
 
 	return result, err

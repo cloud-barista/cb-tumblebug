@@ -29,6 +29,7 @@ func NewSecurityCmd() *cobra.Command {
 	//  Adds the commands for application.
 	securityCmd.AddCommand(NewSecurityCreateCmd())
 	securityCmd.AddCommand(NewSecurityListCmd())
+	securityCmd.AddCommand(NewSecurityListIdCmd())
 	securityCmd.AddCommand(NewSecurityGetCmd())
 	securityCmd.AddCommand(NewSecurityDeleteCmd())
 	securityCmd.AddCommand(NewSecurityDeleteAllCmd())
@@ -85,6 +86,30 @@ func NewSecurityListCmd() *cobra.Command {
 	listCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return listCmd
+}
+
+// NewSecurityListIdCmd : "cbadm securitygroup list-id"
+func NewSecurityListIdCmd() *cobra.Command {
+
+	listIdCmd := &cobra.Command{
+		Use:   "list-id",
+		Short: "This is list-id command for securitygroup",
+		Long:  "This is list-id command for securitygroup",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	listIdCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return listIdCmd
 }
 
 // NewSecurityGetCmd : "cbadm securitygroup get"

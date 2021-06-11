@@ -84,13 +84,14 @@ type RestGetAllSshKeyResponse struct {
 }
 
 // RestGetAllSshKey godoc
-// @Summary List all SSH Keys
-// @Description List all SSH Keys
+// @Summary List all SSH Keys or SSH Keys' ID
+// @Description List all SSH Keys or SSH Keys' ID
 // @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Success 200 {object} RestGetAllSshKeyResponse
+// @Param option query string false "Option" Enums(id)
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSshKeyResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [get]

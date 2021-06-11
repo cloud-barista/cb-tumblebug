@@ -67,6 +67,25 @@ func (s *MCIRService) ListVNet(ctx context.Context, req *pb.ResourceAllQryReques
 	return resp, nil
 }
 
+// ListVNetId
+func (s *MCIRService) ListVNetId(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListIdResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.ListVNetId()")
+
+	resourceList := mcir.ListResourceId(req.NsId, req.ResourceType)
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj []string
+	err := gc.CopySrcToDest(&resourceList, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListVNetId()")
+	}
+
+	resp := &pb.ListIdResponse{IdList: grpcObj}
+	return resp, nil
+}
+
 // GetVNet - VNet 조회
 func (s *MCIRService) GetVNet(ctx context.Context, req *pb.ResourceQryRequest) (*pb.TbVNetInfoResponse, error) {
 	logger := logger.NewLogger()

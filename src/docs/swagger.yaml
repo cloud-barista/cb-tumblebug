@@ -50,6 +50,13 @@ definitions:
         description: SystemID by CloudOS
         type: string
     type: object
+  common.IdList:
+    properties:
+      idList:
+        items:
+          type: string
+        type: array
+    type: object
   common.KeyValue:
     properties:
       key:
@@ -198,6 +205,8 @@ definitions:
         type: string
       storage_GiB:
         $ref: '#/definitions/mcir.Range'
+    type: object
+  mcir.JSONResult:
     type: object
   mcir.Range:
     properties:
@@ -1384,6 +1393,41 @@ info:
   title: CB-Tumblebug REST API
   version: latest
 paths:
+  /{nsId}/checkResource/{resourceType}/{resourceId}:
+    get:
+      consumes:
+      - application/json
+      description: Check resources' existence
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Resource Type
+        in: path
+        name: resourceType
+        required: true
+        type: string
+      - description: Resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check resources' existence
+      tags:
+      - '[Admin] System management'
   /config:
     delete:
       consumes:
@@ -2119,20 +2163,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: List all MCISs
+      description: List all MCISs or MCISs' ID
       parameters:
       - description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/mcis.RestGetAllMcisResponse'
+            allOf:
+            - $ref: '#/definitions/mcis.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcis.RestGetAllMcisResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -2141,7 +2198,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all MCISs
+      summary: List all MCISs or MCISs' ID
       tags:
       - '[MCIS] Provisioning management'
     post:
@@ -2217,8 +2274,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate,
-        refine)
+      description: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate,
+        refine), or Get VMs' ID
       parameters:
       - description: Namespace ID
         in: path
@@ -2241,6 +2298,12 @@ paths:
         in: query
         name: action
         type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
@@ -2254,6 +2317,8 @@ paths:
                   $ref: '#/definitions/common.SimpleMsg'
                 '[DEFAULT]':
                   $ref: '#/definitions/mcis.TbMcisInfo'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
                 '[STATUS]':
                   $ref: '#/definitions/mcis.McisStatusInfo'
               type: object
@@ -2265,8 +2330,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate,
-        refine)
+      summary: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate,
+        refine), or Get VMs' ID
       tags:
       - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
@@ -2873,20 +2938,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: List all images
+      description: List all images or images' ID
       parameters:
       - description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/mcir.RestGetAllImageResponse'
+            allOf:
+            - $ref: '#/definitions/mcir.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcir.RestGetAllImageResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -2895,7 +2973,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all images
+      summary: List all images or images' ID
       tags:
       - '[MCIR] Image management'
     post:
@@ -3067,20 +3145,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: List all Security Groups
+      description: List all Security Groups or Security Groups' ID
       parameters:
       - description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/mcir.RestGetAllSecurityGroupResponse'
+            allOf:
+            - $ref: '#/definitions/mcir.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcir.RestGetAllSecurityGroupResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -3089,7 +3180,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all Security Groups
+      summary: List all Security Groups or Security Groups' ID
       tags:
       - '[MCIR] Security group management'
     post:
@@ -3217,20 +3308,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: List all specs
+      description: List all specs or specs' ID
       parameters:
       - description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/mcir.RestGetAllSpecResponse'
+            allOf:
+            - $ref: '#/definitions/mcir.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcir.RestGetAllSpecResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -3239,7 +3343,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all specs
+      summary: List all specs or specs' ID
       tags:
       - '[MCIR] Spec management'
     post:
@@ -3415,20 +3519,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: List all SSH Keys
+      description: List all SSH Keys or SSH Keys' ID
       parameters:
       - description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/mcir.RestGetAllSshKeyResponse'
+            allOf:
+            - $ref: '#/definitions/mcir.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcir.RestGetAllSshKeyResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -3437,7 +3554,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all SSH Keys
+      summary: List all SSH Keys or SSH Keys' ID
       tags:
       - '[MCIR] Access key management'
     post:
@@ -3565,20 +3682,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: List all VNets
+      description: List all VNets or VNets' ID
       parameters:
       - description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/mcir.RestGetAllVNetResponse'
+            allOf:
+            - $ref: '#/definitions/mcir.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcir.RestGetAllVNetResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -3587,7 +3717,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all VNets
+      summary: List all VNets or VNets' ID
       tags:
       - '[MCIR] Network management'
     post:

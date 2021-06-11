@@ -513,6 +513,31 @@ func (m *MCIRApi) ListImageByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
+// ListImageId
+func (m *MCIRApi) ListImageId(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.ListImageId()
+}
+
+// ListImageIdByParam
+func (m *MCIRApi) ListImageIdByParam(nameSpaceID string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"image"}`
+	result, err := m.requestMCIR.ListImageId()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
 // GetImage - Image 조회
 func (m *MCIRApi) GetImage(doc string) (string, error) {
 	if m.requestMCIR == nil {
@@ -746,6 +771,31 @@ func (m *MCIRApi) ListSecurityGroupByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
+// ListSecurityGroupId
+func (m *MCIRApi) ListSecurityGroupId(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.ListSecurityGroupId()
+}
+
+// ListSecurityGroupIdByParam
+func (m *MCIRApi) ListSecurityGroupIdByParam(nameSpaceID string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"securityGroup"}`
+	result, err := m.requestMCIR.ListSecurityGroupId()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
 // GetSecurityGroup - Security Group 조회
 func (m *MCIRApi) GetSecurityGroup(doc string) (string, error) {
 	if m.requestMCIR == nil {
@@ -899,6 +949,31 @@ func (m *MCIRApi) ListSpecByParam(nameSpaceID string) (string, error) {
 	m.SetInType("json")
 	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"spec"}`
 	result, err := m.requestMCIR.ListSpec()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
+// ListSpecId - Spec 목록
+func (m *MCIRApi) ListSpecId(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.ListSpecId()
+}
+
+// ListSpecIdByParam - Spec 목록
+func (m *MCIRApi) ListSpecIdByParam(nameSpaceID string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"spec"}`
+	result, err := m.requestMCIR.ListSpecId()
 	m.SetInType(holdType)
 
 	return result, err
@@ -1148,6 +1223,31 @@ func (m *MCIRApi) ListSshKeyByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
+// ListSshKeyId
+func (m *MCIRApi) ListSshKeyId(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.ListSshKeyId()
+}
+
+// ListSshKeyIdByParam
+func (m *MCIRApi) ListSshKeyIdByParam(nameSpaceID string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"sshKey"}`
+	result, err := m.requestMCIR.ListSshKeyId()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
 // GetSshKey - KeyPair 조회
 func (m *MCIRApi) GetSshKey(doc string) (string, error) {
 	if m.requestMCIR == nil {
@@ -1272,6 +1372,31 @@ func (m *MCIRApi) ListVNetByParam(nameSpaceID string) (string, error) {
 	m.SetInType("json")
 	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"vNet"}`
 	result, err := m.requestMCIR.ListVNet()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
+// ListVNetId
+func (m *MCIRApi) ListVNetId(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.ListVNetId()
+}
+
+// ListVNetIdByParam
+func (m *MCIRApi) ListVNetIdByParam(nameSpaceID string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"vNet"}`
+	result, err := m.requestMCIR.ListVNetId()
 	m.SetInType(holdType)
 
 	return result, err

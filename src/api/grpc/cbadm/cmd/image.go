@@ -29,6 +29,7 @@ func NewImageCmd() *cobra.Command {
 	imageCmd.AddCommand(NewImageCreateWithInfoCmd())
 	imageCmd.AddCommand(NewImageCreateWithIdCmd())
 	imageCmd.AddCommand(NewImageListCmd())
+	imageCmd.AddCommand(NewImageListIdCmd())
 	imageCmd.AddCommand(NewImageListCspCmd())
 	imageCmd.AddCommand(NewImageGetCmd())
 	imageCmd.AddCommand(NewImageGetCspCmd())
@@ -116,6 +117,30 @@ func NewImageListCmd() *cobra.Command {
 	listCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return listCmd
+}
+
+// NewImageListIdCmd : "cbadm image list-id"
+func NewImageListIdCmd() *cobra.Command {
+
+	listIdCmd := &cobra.Command{
+		Use:   "list-id",
+		Short: "This is list-id command for image",
+		Long:  "This is list-id command for image",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	listIdCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return listIdCmd
 }
 
 // NewImageListCspCmd : "cbadm image list-csp"

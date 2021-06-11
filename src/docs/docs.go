@@ -1086,7 +1086,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis": {
             "get": {
-                "description": "List all MCISs",
+                "description": "List all MCISs or MCISs' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1096,7 +1096,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "List all MCISs",
+                "summary": "List all MCISs or MCISs' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -1104,13 +1104,37 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestGetAllMcisResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcis.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcis.RestGetAllMcisResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -1280,7 +1304,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
-                "description": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate, refine)",
+                "description": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1290,7 +1314,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "Get MCIS or Action to MCIS (status, suspend, resume, reboot, terminate, refine)",
+                "summary": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -1319,6 +1343,15 @@ var doc = `{
                         "description": "Action to MCIS",
                         "name": "action",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1337,6 +1370,9 @@ var doc = `{
                                         },
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbMcisInfo"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
                                         },
                                         "[STATUS]": {
                                             "$ref": "#/definitions/mcis.McisStatusInfo"
@@ -2225,7 +2261,7 @@ var doc = `{
         },
         "/ns/{nsId}/resources/image": {
             "get": {
-                "description": "List all images",
+                "description": "List all images or images' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2235,7 +2271,7 @@ var doc = `{
                 "tags": [
                     "[MCIR] Image management"
                 ],
-                "summary": "List all images",
+                "summary": "List all images or images' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -2243,13 +2279,37 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestGetAllImageResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcir.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcir.RestGetAllImageResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -2517,7 +2577,7 @@ var doc = `{
         },
         "/ns/{nsId}/resources/securityGroup": {
             "get": {
-                "description": "List all Security Groups",
+                "description": "List all Security Groups or Security Groups' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2527,7 +2587,7 @@ var doc = `{
                 "tags": [
                     "[MCIR] Security group management"
                 ],
-                "summary": "List all Security Groups",
+                "summary": "List all Security Groups or Security Groups' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -2535,13 +2595,37 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestGetAllSecurityGroupResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcir.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcir.RestGetAllSecurityGroupResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -2742,7 +2826,7 @@ var doc = `{
         },
         "/ns/{nsId}/resources/spec": {
             "get": {
-                "description": "List all specs",
+                "description": "List all specs or specs' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2752,7 +2836,7 @@ var doc = `{
                 "tags": [
                     "[MCIR] Spec management"
                 ],
-                "summary": "List all specs",
+                "summary": "List all specs or specs' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -2760,13 +2844,37 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestGetAllSpecResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcir.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcir.RestGetAllSpecResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -3039,7 +3147,7 @@ var doc = `{
         },
         "/ns/{nsId}/resources/sshKey": {
             "get": {
-                "description": "List all SSH Keys",
+                "description": "List all SSH Keys or SSH Keys' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -3049,7 +3157,7 @@ var doc = `{
                 "tags": [
                     "[MCIR] Access key management"
                 ],
-                "summary": "List all SSH Keys",
+                "summary": "List all SSH Keys or SSH Keys' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -3057,13 +3165,37 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestGetAllSshKeyResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcir.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcir.RestGetAllSshKeyResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -3264,7 +3396,7 @@ var doc = `{
         },
         "/ns/{nsId}/resources/vNet": {
             "get": {
-                "description": "List all VNets",
+                "description": "List all VNets or VNets' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -3274,7 +3406,7 @@ var doc = `{
                 "tags": [
                     "[MCIR] Network management"
                 ],
-                "summary": "List all VNets",
+                "summary": "List all VNets or VNets' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -3282,13 +3414,37 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestGetAllVNetResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcir.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcir.RestGetAllVNetResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -3827,6 +3983,58 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/{nsId}/checkResource/{resourceType}/{resourceId}": {
+            "get": {
+                "description": "Check resources' existence",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Check resources' existence",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource Type",
+                        "name": "resourceType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3901,6 +4109,17 @@ var doc = `{
                 "systemId": {
                     "description": "SystemID by CloudOS",
                     "type": "string"
+                }
+            }
+        },
+        "common.IdList": {
+            "type": "object",
+            "properties": {
+                "idList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -4127,6 +4346,9 @@ var doc = `{
                     "$ref": "#/definitions/mcir.Range"
                 }
             }
+        },
+        "mcir.JSONResult": {
+            "type": "object"
         },
         "mcir.Range": {
             "type": "object",

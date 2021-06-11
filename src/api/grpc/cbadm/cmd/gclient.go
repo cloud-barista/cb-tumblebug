@@ -255,6 +255,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.CreateImageWithID(inData)
 		case "list":
 			result, err = mcir.ListImageByParam(nameSpaceID)
+		case "list-id":
+			result, err = mcir.ListImageIdByParam(nameSpaceID)
 		case "get":
 			result, err = mcir.GetImageByParam(nameSpaceID, resourceID)
 		case "list-csp":
@@ -276,6 +278,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.CreateVNet(inData)
 		case "list":
 			result, err = mcir.ListVNetByParam(nameSpaceID)
+		case "list-id":
+			result, err = mcir.ListVNetIdByParam(nameSpaceID)
 		case "get":
 			result, err = mcir.GetVNetByParam(nameSpaceID, resourceID)
 		case "delete":
@@ -289,6 +293,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.CreateSecurityGroup(inData)
 		case "list":
 			result, err = mcir.ListSecurityGroupByParam(nameSpaceID)
+		case "list-id":
+			result, err = mcir.ListSecurityGroupIdByParam(nameSpaceID)
 		case "get":
 			result, err = mcir.GetSecurityGroupByParam(nameSpaceID, resourceID)
 		case "delete":
@@ -302,6 +308,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.CreateSshKey(inData)
 		case "list":
 			result, err = mcir.ListSshKeyByParam(nameSpaceID)
+		case "list-id":
+			result, err = mcir.ListSshKeyIdByParam(nameSpaceID)
 		case "get":
 			result, err = mcir.GetSshKeyByParam(nameSpaceID, resourceID)
 		case "save":
@@ -319,6 +327,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.CreateSpecWithSpecName(inData)
 		case "list":
 			result, err = mcir.ListSpecByParam(nameSpaceID)
+		case "list-id":
+			result, err = mcir.ListSpecIdByParam(nameSpaceID)
 		case "get":
 			result, err = mcir.GetSpecByParam(nameSpaceID, resourceID)
 		case "list-csp":
@@ -346,6 +356,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcis.CreateMcis(inData)
 		case "list":
 			result, err = mcis.ListMcisByParam(nameSpaceID)
+		case "list-id":
+			result, err = mcis.ListMcisIdByParam(nameSpaceID)
 		case "get":
 			result, err = mcis.GetMcisInfoByParam(nameSpaceID, mcisID)
 		case "delete":
@@ -370,6 +382,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcis.CreateMcisVMGroup(inData)
 		case "list-vm":
 			result, err = proc.ListMcisVM(mcis, nameSpaceID, mcisID)
+		case "list-vm-id":
+			result, err = mcis.ListMcisVmIdByParam(nameSpaceID, mcisID)
 		case "get-vm":
 			result, err = mcis.GetMcisVMInfoByParam(nameSpaceID, mcisID, vmID)
 		case "del-vm":

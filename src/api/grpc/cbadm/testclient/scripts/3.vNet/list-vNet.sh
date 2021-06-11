@@ -12,7 +12,7 @@
     source ../conf.env
     
     echo "####################################################################"
-    echo "## 1. VPC: Get"
+    echo "## 3. VPC: List"
     echo "####################################################################"
 
     $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/cbadm network list --config $CBTUMBLEBUG_ROOT/src/api/grpc/cbadm/grpc_conf.yaml -o json --ns $NSID | jq ''

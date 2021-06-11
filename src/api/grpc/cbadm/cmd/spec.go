@@ -29,6 +29,7 @@ func NewSpecCmd() *cobra.Command {
 	specCmd.AddCommand(NewSpecWithInfoCreateCmd())
 	specCmd.AddCommand(NewSpecWithIdCreateCmd())
 	specCmd.AddCommand(NewSpecListCmd())
+	specCmd.AddCommand(NewSpecListIdCmd())
 	specCmd.AddCommand(NewSpecListCspCmd())
 	specCmd.AddCommand(NewSpecGetCmd())
 	specCmd.AddCommand(NewSpecGetCspCmd())
@@ -119,6 +120,30 @@ func NewSpecListCmd() *cobra.Command {
 	listCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return listCmd
+}
+
+// NewSpecListIdCmd : "cbadm spec list-id"
+func NewSpecListIdCmd() *cobra.Command {
+
+	listIdCmd := &cobra.Command{
+		Use:   "list-id",
+		Short: "This is list-id command for spec",
+		Long:  "This is list-id command for spec",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	listIdCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return listIdCmd
 }
 
 // NewSpecListCspCmd : "cbadm spec list-csp"

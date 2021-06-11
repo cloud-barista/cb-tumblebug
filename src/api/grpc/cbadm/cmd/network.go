@@ -29,6 +29,7 @@ func NewNetworkCmd() *cobra.Command {
 	//  Adds the commands for application.
 	networkCmd.AddCommand(NewNetworkCreateCmd())
 	networkCmd.AddCommand(NewNetworkListCmd())
+	networkCmd.AddCommand(NewNetworkListIdCmd())
 	networkCmd.AddCommand(NewNetworkGetCmd())
 	networkCmd.AddCommand(NewNetworkDeleteCmd())
 	networkCmd.AddCommand(NewNetworkDeleteAllCmd())
@@ -85,6 +86,30 @@ func NewNetworkListCmd() *cobra.Command {
 	listCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 
 	return listCmd
+}
+
+// NewNetworkListIdCmd : "cbadm network list-id"
+func NewNetworkListIdCmd() *cobra.Command {
+
+	listIdCmd := &cobra.Command{
+		Use:   "list-id",
+		Short: "This is list-id command for network",
+		Long:  "This is list-id command for network",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := logger.NewLogger()
+			if nameSpaceID == "" {
+				logger.Error("failed to validate --ns parameter")
+				return
+			}
+			logger.Debug("--ns parameter value : ", nameSpaceID)
+
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	listIdCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
+
+	return listIdCmd
 }
 
 // NewNetworkGetCmd : "cbadm network get"
