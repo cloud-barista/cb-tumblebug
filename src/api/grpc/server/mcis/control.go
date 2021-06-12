@@ -74,11 +74,14 @@ func (s *MCISService) ListMcisId(ctx context.Context, req *pb.TbMcisAllQryReques
 
 	logger.Debug("calling MCISService.ListMcisId()")
 
-	result := mcis.ListMcisId(req.NsId)
+	result, err := mcis.ListMcisId(req.NsId)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.ListMcisId()")
+	}
 
 	// MCIS 객체에서 GRPC 메시지로 복사
 	var grpcObj []string
-	err := gc.CopySrcToDest(&result, &grpcObj)
+	err = gc.CopySrcToDest(&result, &grpcObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.ListMcisId()")
 	}
