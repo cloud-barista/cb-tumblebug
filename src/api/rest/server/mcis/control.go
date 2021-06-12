@@ -175,8 +175,12 @@ func RestGetAllMcis(c echo.Context) error {
 
 	if option == "id" {
 		content := common.IdList{}
-
-		content.IdList = mcis.ListMcisId(nsId)
+		var err error
+		content.IdList, err = mcis.ListMcisId(nsId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
 
 		return c.JSON(http.StatusOK, &content)
 	} else if option == "status" {

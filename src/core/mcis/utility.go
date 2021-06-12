@@ -296,7 +296,7 @@ func InspectVMs(connConfig string) (interface{}, error) {
 	var TbResourceList []resourceOnTumblebug
 	for _, ns := range nsList {
 
-		mcisListinNs := ListMcisId(ns)
+		mcisListinNs, _ := ListMcisId(ns)
 		if mcisListinNs == nil {
 			continue
 		}

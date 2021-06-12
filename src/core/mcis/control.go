@@ -1041,35 +1041,39 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	//fmt.Println("===========================")
 }
 
-func ListMcisId(nsId string) []string {
+func ListMcisId(nsId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return nil
+		return nil, err
 	}
 
-	fmt.Println("[Get MCIS ID list]")
-	key := "/ns/" + nsId + "/mcis"
-	//fmt.Println(key)
-
-	keyValue, _ := common.CBStore.GetList(key, true)
-
+	fmt.Println("[ListMcisId]")
 	var mcisList []string
+
+	// Check MCIS exists
+	key := common.GenMcisKey(nsId, "", "")
+	key += "/"
+
+	keyValue, err := common.CBStore.GetList(key, true)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
 	for _, v := range keyValue {
-		if !strings.Contains(v.Key, "vm") {
-			//fmt.Println(v.Key)
-			mcisList = append(mcisList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/mcis/"))
+		if strings.Contains(v.Key, "/mcis/") {
+			trimedString := strings.TrimPrefix(v.Key, (key + "mcis/"))
+			// prevent malformed key (if key for mcis id includes '/', the key does not represent MCIS ID)
+			if !strings.Contains(trimedString, "/") {
+				mcisList = append(mcisList, trimedString)
+			}
 		}
 	}
-	/*
-		for _, v := range mcisList {
-			fmt.Println("<" + v + "> \n")
-		}
-		fmt.Println("===============================================")
-	*/
-	return mcisList
 
+	return mcisList, nil
 }
 
 func ListVmId(nsId string, mcisId string) ([]string, error) {
@@ -1091,6 +1095,8 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 	// Check MCIS exists
 	key := common.GenMcisKey(nsId, mcisId, "")
+	key += "/"
+
 	_, err = common.CBStore.Get(key)
 	if err != nil {
 		fmt.Println("[Not found] " + mcisId)
@@ -1107,7 +1113,11 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/vm/") {
-			vmList = append(vmList, strings.TrimPrefix(v.Key, (key+"/vm/")))
+			trimedString := strings.TrimPrefix(v.Key, (key + "vm/"))
+			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
+			if !strings.Contains(trimedString, "/") {
+				vmList = append(vmList, trimedString)
+			}
 		}
 	}
 	/*
@@ -1137,6 +1147,8 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 
 	fmt.Println("[ListVmGroupId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
+	key += "/"
+
 	keyValue, err := common.CBStore.GetList(key, true)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1145,7 +1157,11 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 	var vmGroupList []string
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/vmgroup/") {
-			vmGroupList = append(vmGroupList, strings.TrimPrefix(v.Key, (key+"/vmgroup/")))
+			trimedString := strings.TrimPrefix(v.Key, (key + "vmgroup/"))
+			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
+			if !strings.Contains(trimedString, "/") {
+				vmGroupList = append(vmGroupList, trimedString)
+			}
 		}
 	}
 	return vmGroupList, nil
@@ -1596,7 +1612,11 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 	Mcis := []TbMcisInfo{}
 
-	mcisList := ListMcisId(nsId)
+	mcisList, err := ListMcisId(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	for _, v := range mcisList {
 
@@ -1678,7 +1698,11 @@ func CoreDelAllMcis(nsId string, option string) (string, error) {
 		return "", err
 	}
 
-	mcisList := ListMcisId(nsId)
+	mcisList, err := ListMcisId(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
 
 	if len(mcisList) == 0 {
 		//mapA := map[string]string{"message": "No MCIS to delete"}
@@ -3745,8 +3769,13 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
-	mcisList := ListMcisId(nsId)
 	mcisStatuslist := []McisStatusInfo{}
+	mcisList, err := ListMcisId(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return mcisStatuslist, err
+	}
+
 	for _, mcisId := range mcisList {
 		mcisStatus, err := GetMcisStatus(nsId, mcisId)
 		if err != nil {
