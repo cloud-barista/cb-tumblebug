@@ -103,11 +103,14 @@ func (s *MCIRService) ListSpecId(ctx context.Context, req *pb.ResourceAllQryRequ
 
 	logger.Debug("calling MCIRService.ListSpecId()")
 
-	resourceIdList := mcir.ListResourceId(req.NsId, req.ResourceType)
+	resourceIdList, err := mcir.ListResourceId(req.NsId, req.ResourceType)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSpecId()")
+	}
 
 	// MCIR 객체에서 GRPC 메시지로 복사
 	var grpcObj []string
-	err := gc.CopySrcToDest(&resourceIdList, &grpcObj)
+	err = gc.CopySrcToDest(&resourceIdList, &grpcObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSpecId()")
 	}
