@@ -77,7 +77,12 @@ type McisPolicyInfo struct {
 // OrchestrationController will be periodically involked by a time.NewTicker in main.go.
 func OrchestrationController() {
 
-	nsList := common.ListNsId()
+	nsList, err := common.ListNsId()
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
+		return
+	}
 
 	//fmt.Println("")
 	for _, nsId := range nsList {

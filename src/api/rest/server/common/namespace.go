@@ -124,6 +124,13 @@ func RestDelNs(c echo.Context) error {
 	return SendMessage(c, http.StatusOK, "The ns "+c.Param("nsId")+" has been deleted")
 }
 
+// JSONResult's data field will be overridden by the specific type
+type JSONResult struct {
+	//Code    int          `json:"code" `
+	//Message string       `json:"message"`
+	//Data    interface{}  `json:"data"`
+}
+
 // Response structure for RestGetAllNs
 type RestGetAllNsResponse struct {
 	//Name string     `json:"name"`
@@ -131,36 +138,51 @@ type RestGetAllNsResponse struct {
 }
 
 // RestGetAllNs godoc
-// @Summary List all namespaces
-// @Description List all namespaces
+// @Summary List all namespaces or namespaces' ID
+// @Description List all namespaces or namespaces' ID
 // @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} RestGetAllNsResponse
+// @Param option query string false "Option" Enums(id)
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNsResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns [get]
 func RestGetAllNs(c echo.Context) error {
 
+	optionFlag := c.QueryParam("option")
+
 	var content RestGetAllNsResponse
+	if optionFlag == "id" {
+		content := common.IdList{}
 
-	nsList, err := common.ListNs()
-	if err != nil {
-		//mapA := common.SimpleMsg{"Failed to list namespaces."}
-		//return c.JSON(http.StatusNotFound, &mapA)
-		return SendMessage(c, http.StatusOK, "Failed to list namespaces.")
-	}
+		var err error
+		content.IdList, err = common.ListNsId()
+		if err != nil {
+			//mapA := common.SimpleMsg{"Failed to list namespaces."}
+			//return c.JSON(http.StatusNotFound, &mapA)
+			return SendMessage(c, http.StatusOK, "Failed to list namespaces' ID: "+err.Error())
+		}
 
-	if nsList == nil {
+		return c.JSON(http.StatusOK, &content)
+	} else {
+		nsList, err := common.ListNs()
+		if err != nil {
+			//mapA := common.SimpleMsg{"Failed to list namespaces."}
+			//return c.JSON(http.StatusNotFound, &mapA)
+			return SendMessage(c, http.StatusOK, "Failed to list namespaces.")
+		}
+
+		if nsList == nil {
+			//return c.JSON(http.StatusOK, &content)
+			return Send(c, http.StatusOK, content)
+		}
+
+		// When err == nil && resourceList != nil
+		content.Ns = nsList
 		//return c.JSON(http.StatusOK, &content)
 		return Send(c, http.StatusOK, content)
 	}
-
-	// When err == nil && resourceList != nil
-	content.Ns = nsList
-	//return c.JSON(http.StatusOK, &content)
-	return Send(c, http.StatusOK, content)
-
 }
 
 // RestGetNs godoc

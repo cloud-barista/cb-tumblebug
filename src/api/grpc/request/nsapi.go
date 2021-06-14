@@ -303,6 +303,15 @@ func (ns *NSApi) ListNS() (string, error) {
 	return ns.requestNS.ListNS()
 }
 
+// ListNSId
+func (ns *NSApi) ListNSId() (string, error) {
+	if ns.requestNS == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	return ns.requestNS.ListNSId()
+}
+
 // GetNS - Namespace 조회
 func (ns *NSApi) GetNS(doc string) (string, error) {
 	if ns.requestNS == nil {

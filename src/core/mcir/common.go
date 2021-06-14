@@ -484,7 +484,12 @@ type resourceOnTumblebug struct {
 // InspectResources returns the state list of TB MCIR objects of given connConfig and resourceType
 func InspectResources(connConfig string, resourceType string) (interface{}, error) {
 
-	nsList := common.ListNsId()
+	nsList, err := common.ListNsId()
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
+		return nil, err
+	}
 	// var TbResourceList []string
 	var TbResourceList []resourceOnTumblebug
 	for _, ns := range nsList {

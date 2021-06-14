@@ -29,6 +29,7 @@ func NewNameSpaceCmd() *cobra.Command {
 	//  Adds the commands for application.
 	nameSpaceCmd.AddCommand(NewNameSpaceCreateCmd())
 	nameSpaceCmd.AddCommand(NewNameSpaceListCmd())
+	nameSpaceCmd.AddCommand(NewNameSpaceListIdCmd())
 	nameSpaceCmd.AddCommand(NewNameSpaceGetCmd())
 	nameSpaceCmd.AddCommand(NewNameSpaceDeleteCmd())
 	nameSpaceCmd.AddCommand(NewNameSpaceDeleteAllCmd())
@@ -77,6 +78,21 @@ func NewNameSpaceListCmd() *cobra.Command {
 	}
 
 	return listCmd
+}
+
+// NewNameSpaceListIdCmd : "cbadm namespace list-id"
+func NewNameSpaceListIdCmd() *cobra.Command {
+
+	listIdCmd := &cobra.Command{
+		Use:   "list-id",
+		Short: "This is list-id command for namespace",
+		Long:  "This is list-id command for namespace",
+		Run: func(cmd *cobra.Command, args []string) {
+			SetupAndRun(cmd, args)
+		},
+	}
+
+	return listIdCmd
 }
 
 // NewNameSpaceGetCmd : "cbadm namespace get"

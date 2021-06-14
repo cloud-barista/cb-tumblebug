@@ -55,11 +55,12 @@ message StatusResponse {
 service NS {
 	rpc CreateNS (NSCreateRequest) returns (NSInfoResponse) {}
 	rpc ListNS (Empty) returns (ListNSInfoResponse) {}
+	rpc ListNSId (Empty) returns (ListIdResponse) {}
 	rpc GetNS (NSQryRequest) returns (NSInfoResponse) {}
-  rpc DeleteNS (NSQryRequest) returns (MessageResponse) {}
-  rpc DeleteAllNS (Empty) returns (MessageResponse) {}
+	rpc DeleteNS (NSQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllNS (Empty) returns (MessageResponse) {}
 
-  rpc CheckNS (NSQryRequest) returns (ExistsResponse) {}
+	rpc CheckNS (NSQryRequest) returns (ExistsResponse) {}
 }
 
 //////////////////////////////////

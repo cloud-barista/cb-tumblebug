@@ -57,6 +57,22 @@ func (r *NSRequest) ListNS() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// ListNSId
+func (r *NSRequest) ListNSId() (string, error) {
+	// 서버에 요청
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.ListNSId(ctx, &pb.Empty{})
+
+	if err != nil {
+		return "", err
+	}
+
+	// 결과값 마샬링
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // GetNS - Namespace 조회
 func (r *NSRequest) GetNS() (string, error) {
 	// 입력데이터 검사

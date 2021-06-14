@@ -67,6 +67,28 @@ func (s *NSService) ListNS(ctx context.Context, req *pb.Empty) (*pb.ListNSInfoRe
 	return resp, nil
 }
 
+// ListNSId
+func (s *NSService) ListNSId(ctx context.Context, req *pb.Empty) (*pb.ListIdResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling NSService.ListNSId()")
+
+	nsList, err := common.ListNsId()
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "NSService.ListNSId()")
+	}
+
+	// NS 객체에서 GRPC 메시지로 복사
+	var grpcObj []string
+	err = gc.CopySrcToDest(&nsList, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "NSService.ListNSId()")
+	}
+
+	resp := &pb.ListIdResponse{IdList: grpcObj}
+	return resp, nil
+}
+
 // GetNS - Namespace 조회
 func (s *NSService) GetNS(ctx context.Context, req *pb.NSQryRequest) (*pb.NSInfoResponse, error) {
 	logger := logger.NewLogger()

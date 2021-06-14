@@ -57,6 +57,8 @@ definitions:
           type: string
         type: array
     type: object
+  common.JSONResult:
+    type: object
   common.KeyValue:
     properties:
       key:
@@ -1804,14 +1806,28 @@ paths:
     get:
       consumes:
       - application/json
-      description: List all namespaces
+      description: List all namespaces or namespaces' ID
+      parameters:
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/common.RestGetAllNsResponse'
+            allOf:
+            - $ref: '#/definitions/common.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/common.RestGetAllNsResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
@@ -1820,7 +1836,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: List all namespaces
+      summary: List all namespaces or namespaces' ID
       tags:
       - '[Namespace] Namespace management'
     post:
