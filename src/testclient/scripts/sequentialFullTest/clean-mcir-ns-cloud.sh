@@ -101,13 +101,13 @@ function clean_sequence() {
 
 	#../2.configureTumblebug/delete-ns.sh $CSP $REGION $POSTFIX
 
-	CNT=$(grep -c "${CSP}" ./executionStatus)
-	if [ "${CNT}" -ge 2 ]; then
-		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX leave $TestSetFile
-	else
-		echo "[No dependancy, this CSP can be removed.]"
-		../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX doit $TestSetFile
-	fi
+	# CNT=$(grep -c "${CSP}" ./executionStatus)
+	# if [ "${CNT}" -ge 2 ]; then
+	# 	../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX leave $TestSetFile
+	# else
+	# 	echo "[No dependancy, this CSP can be removed.]"
+	# 	../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX doit $TestSetFile
+	# fi
 
 	echo ""
 	echo "[Cleaning related commands in history file executionStatus]"
