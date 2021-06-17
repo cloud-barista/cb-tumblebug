@@ -571,7 +571,7 @@ var doc = `{
         },
         "/ns": {
             "get": {
-                "description": "List all namespaces",
+                "description": "List all namespaces or namespaces' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -581,12 +581,38 @@ var doc = `{
                 "tags": [
                     "[Namespace] Namespace management"
                 ],
-                "summary": "List all namespaces",
+                "summary": "List all namespaces or namespaces' ID",
+                "parameters": [
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/common.RestGetAllNsResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/common.RestGetAllNsResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -4122,6 +4148,9 @@ var doc = `{
                     }
                 }
             }
+        },
+        "common.JSONResult": {
+            "type": "object"
         },
         "common.KeyValue": {
             "type": "object",

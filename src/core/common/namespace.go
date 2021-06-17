@@ -172,29 +172,66 @@ func ListNs() ([]NsInfo, error) {
 	return nil, nil // When err == nil && keyValue == nil
 }
 
-func ListNsId() []string {
+func AppendIfMissing(slice []string, i string) []string {
+	for _, ele := range slice {
+		if ele == i {
+			return slice
+		}
+	}
+	return append(slice, i)
+}
+
+func ListNsId() ([]string, error) {
 
 	//fmt.Println("[List ns]")
 	key := "/ns"
 	//fmt.Println(key)
 
-	keyValue, _ := CBStore.GetList(key, true)
-
 	var nsList []string
-	for _, v := range keyValue {
-		//if !strings.Contains(v.Key, "vm") {
-		//nsList = append(nsList, strings.TrimPrefix(v.Key, "/ns/"))
-		//}
-		if !strings.Contains(v.Key, "mcis") && !strings.Contains(v.Key, "cpu") && !strings.Contains(v.Key, "resources") {
-			nsList = append(nsList, strings.TrimPrefix(v.Key, "/ns/"))
-		}
 
+	// Implementation Option 1
+	// keyValue, _ := CBStore.GetList(key, true)
+
+	// r, _ := regexp.Compile("/ns/[a-z]([-a-z0-9]*[a-z0-9])?$")
+
+	// for _, v := range keyValue {
+
+	// 	if v.Key == "" {
+	// 		continue
+	// 	}
+
+	// 	filtered := r.FindString(v.Key)
+
+	// 	if filtered != v.Key {
+	// 		continue
+	// 	} else {
+	// 		trimmedString := strings.TrimPrefix(v.Key, "/ns/")
+	// 		nsList = AppendIfMissing(nsList, trimmedString)
+	// 	}
+	// }
+	// EOF of Implementation Option 1
+
+	// Implementation Option 2
+	keyValue, err := CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+
+	if err != nil {
+		CBLog.Error(err)
+		return nil, err
 	}
+	if keyValue != nil {
+		for _, v := range keyValue {
+			trimmedString := strings.TrimPrefix(v.Key, "/ns/")
+			nsList = append(nsList, trimmedString)
+		}
+	}
+	// EOF of Implementation Option 2
+
 	//for _, v := range nsList {
 	//	fmt.Println("<" + v + "> \n")
 	//}
 	//fmt.Println("===============================================")
-	return nsList
+	return nsList, nil
 
 }
 
@@ -269,7 +306,10 @@ func DelNs(id string) error {
 func DelAllNs() error {
 	fmt.Printf("DelAllNs() called;")
 
-	nsIdList := ListNsId()
+	nsIdList, err := ListNsId()
+	if err != nil {
+		return err
+	}
 
 	if len(nsIdList) == 0 {
 		return nil

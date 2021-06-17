@@ -238,6 +238,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = ns.CreateNS(inData)
 		case "list":
 			result, err = ns.ListNS()
+		case "list-id":
+			result, err = ns.ListNSId()
 		case "get":
 			result, err = ns.GetNSByParam(nameSpaceID)
 		case "delete":

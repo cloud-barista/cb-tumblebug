@@ -291,7 +291,12 @@ type resourceOnTumblebug struct {
 // InspectVMs returns the state list of TB VM objects of given connConfig
 func InspectVMs(connConfig string) (interface{}, error) {
 
-	nsList := common.ListNsId()
+	nsList, err := common.ListNsId()
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
+		return nil, err
+	}
 	// var TbResourceList []string
 	var TbResourceList []resourceOnTumblebug
 	for _, ns := range nsList {
