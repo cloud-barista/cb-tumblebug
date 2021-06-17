@@ -40,7 +40,10 @@ func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 		return err
 	}
 
-	resourceIdList := ListResourceId(nsId, resourceType)
+	resourceIdList, err := ListResourceId(nsId, resourceType)
+	if err != nil {
+		return err
+	}
 
 	if len(resourceIdList) == 0 {
 		return nil
@@ -647,12 +650,12 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 }
 
 // ListResourceId returns the list of TB MCIR object IDs of given resourceType
-func ListResourceId(nsId string, resourceType string) []string {
+func ListResourceId(nsId string, resourceType string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return nil
+		return nil, err
 	}
 
 	if resourceType == common.StrImage ||
@@ -665,26 +668,30 @@ func ListResourceId(nsId string, resourceType string) []string {
 		resourceType == common.StrSecurityGroup {
 		// continue
 	} else {
-		return []string{"invalid resource type"}
+		err = fmt.Errorf("invalid resource type")
+		common.CBLog.Error(err)
+		return nil, err
 	}
 
-	fmt.Println("[Get " + resourceType + " list")
-	key := "/ns/" + nsId + "/resources/" + resourceType
+	fmt.Println("[ListResourceId] ns: " + nsId + ", type: " + resourceType)
+	key := "/ns/" + nsId + "/resources/"
 	fmt.Println(key)
 
 	keyValue, _ := common.CBStore.GetList(key, true)
 
 	var resourceList []string
 	for _, v := range keyValue {
-		//if !strings.Contains(v.Key, "vm") {
-		resourceList = append(resourceList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/"+resourceType+"/"))
-		//}
+		trimmedString := strings.TrimPrefix(v.Key, (key + resourceType + "/"))
+		// prevent malformed key (if key for resource id includes '/', the key does not represent resource ID)
+		if !strings.Contains(trimmedString, "/") {
+			resourceList = append(resourceList, trimmedString)
+		}
 	}
-	for _, v := range resourceList {
-		fmt.Println("<" + v + "> \n")
-	}
-	fmt.Println("===============================================")
-	return resourceList
+	// for _, v := range resourceList {
+	// 	fmt.Println("<" + v + "> \n")
+	// }
+	// fmt.Println("===============================================")
+	return resourceList, nil
 
 }
 

@@ -103,11 +103,14 @@ func (s *MCIRService) ListImageId(ctx context.Context, req *pb.ResourceAllQryReq
 
 	logger.Debug("calling MCIRService.ListImageId()")
 
-	resourceList := mcir.ListResourceId(req.NsId, req.ResourceType)
+	resourceList, err := mcir.ListResourceId(req.NsId, req.ResourceType)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListImageId()")
+	}
 
 	// MCIR 객체에서 GRPC 메시지로 복사
 	var grpcObj []string
-	err := gc.CopySrcToDest(&resourceList, &grpcObj)
+	err = gc.CopySrcToDest(&resourceList, &grpcObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListImageId()")
 	}

@@ -72,15 +72,19 @@ func RestGetAllResources(c echo.Context) error {
 
 	if optionFlag == "id" {
 		content := common.IdList{}
-
-		content.IdList = mcir.ListResourceId(nsId, resourceType)
+		var err error
+		content.IdList, err = mcir.ListResourceId(nsId, resourceType)
+		if err != nil {
+			mapA := map[string]string{"message": "Failed to list " + resourceType + "s' ID; " + err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
 
 		return c.JSON(http.StatusOK, &content)
 	} else {
 
 		resourceList, err := mcir.ListResource(nsId, resourceType)
 		if err != nil {
-			mapA := map[string]string{"message": "Failed to list " + resourceType + "s."}
+			mapA := map[string]string{"message": "Failed to list " + resourceType + "s; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
 		}
 

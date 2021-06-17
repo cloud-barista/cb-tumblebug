@@ -1065,10 +1065,10 @@ func ListMcisId(nsId string) ([]string, error) {
 
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/mcis/") {
-			trimedString := strings.TrimPrefix(v.Key, (key + "mcis/"))
+			trimmedString := strings.TrimPrefix(v.Key, (key + "mcis/"))
 			// prevent malformed key (if key for mcis id includes '/', the key does not represent MCIS ID)
-			if !strings.Contains(trimedString, "/") {
-				mcisList = append(mcisList, trimedString)
+			if !strings.Contains(trimmedString, "/") {
+				mcisList = append(mcisList, trimmedString)
 			}
 		}
 	}
@@ -1113,10 +1113,10 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/vm/") {
-			trimedString := strings.TrimPrefix(v.Key, (key + "vm/"))
+			trimmedString := strings.TrimPrefix(v.Key, (key + "vm/"))
 			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
-			if !strings.Contains(trimedString, "/") {
-				vmList = append(vmList, trimedString)
+			if !strings.Contains(trimmedString, "/") {
+				vmList = append(vmList, trimmedString)
 			}
 		}
 	}
@@ -1157,10 +1157,10 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 	var vmGroupList []string
 	for _, v := range keyValue {
 		if strings.Contains(v.Key, "/vmgroup/") {
-			trimedString := strings.TrimPrefix(v.Key, (key + "vmgroup/"))
+			trimmedString := strings.TrimPrefix(v.Key, (key + "vmgroup/"))
 			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
-			if !strings.Contains(trimedString, "/") {
-				vmGroupList = append(vmGroupList, trimedString)
+			if !strings.Contains(trimmedString, "/") {
+				vmGroupList = append(vmGroupList, trimmedString)
 			}
 		}
 	}

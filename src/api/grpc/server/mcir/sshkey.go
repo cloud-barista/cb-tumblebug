@@ -73,11 +73,14 @@ func (s *MCIRService) ListSshKeyId(ctx context.Context, req *pb.ResourceAllQryRe
 
 	logger.Debug("calling MCIRService.ListSshKeyId()")
 
-	resourceList := mcir.ListResourceId(req.NsId, req.ResourceType)
+	resourceList, err := mcir.ListResourceId(req.NsId, req.ResourceType)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSshKeyId()")
+	}
 
 	// MCIR 객체에서 GRPC 메시지로 복사
 	var grpcObj []string
-	err := gc.CopySrcToDest(&resourceList, &grpcObj)
+	err = gc.CopySrcToDest(&resourceList, &grpcObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSshKeyId()")
 	}
