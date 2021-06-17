@@ -102,9 +102,7 @@ cb-operator/src$ ./operator
 - 필요 패키지/도구 설치
   - Git, gcc, make 설치
     - `# apt update`
-    - `# apt install git`
-    - `# apt install make`
-    - `# apt install gcc`
+    - `# apt install make gcc git`
 
   - Go 설치
     - https://golang.org/dl/ 를 참고하여 Go v1.16 (Tumblebug 추천 개발 환경) 이상 설치 
