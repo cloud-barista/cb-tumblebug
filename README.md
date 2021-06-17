@@ -66,10 +66,10 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 - CB-Tumblebug 컨테이너 실행
 
 ```
-# docker run -p 1323:1323 \
+# docker run -p 1323:1323 -p 50252:50252 \
 -v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
 --name cb-tumblebug \
-cloudbaristaorg/cb-tumblebug:v0.3.x-yyyymmdd
+cloudbaristaorg/cb-tumblebug:0.3.xx
 ```
 
 ### (2) 소스 기반 실행
@@ -77,15 +77,12 @@ cloudbaristaorg/cb-tumblebug:v0.3.x-yyyymmdd
 - 필요 패키지/도구 설치
 - CB-Tumblebug 소스 다운로드 (Git clone CB-Tumblebug)
 - 환경 변수 설정
-- 의존 라이브러리 다운로드
-  - Cloud-Barista alliance 설치 (CB-Store, CB-Log, CB-Spider)
-  - 기타 라이브러리
-- CB-Tumblebug 빌드 (make) 및 실행 (make run)
+- CB-Tumblebug 빌드 (`make`) 및 실행 (`make run`)
   - `cb-tumblebug/src/` 에서 수행
 
 - Swagger API 문서 업데이트 필요시 `~/go/bin/swag init` 실행
   - API 문서 파일은 `cb-tumblebug/src/docs/swagger.yaml` 에 생성됨
-  - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (cb-tumblebug 구동 시 자동으로 제공)
+  - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
 
 ### (3) Cloud-Barista 시스템 통합 실행 참고 (cb-operator)
 ```
@@ -105,7 +102,7 @@ cb-operator/src$ ./operator
     - `# apt install make gcc git`
 
   - Go 설치
-    - https://golang.org/dl/ 를 참고하여 Go v1.16 (Tumblebug 추천 개발 환경) 이상 설치 
+    - https://golang.org/dl/ 를 참고하여 Go v1.16 (CB-Tumblebug 추천 개발 환경) 이상 설치 
     - 설치 예시
       - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
       - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
@@ -121,12 +118,12 @@ cb-operator/src$ ./operator
   - `# git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug`
 
 - CB-Tumblebug 실행에 필요한 환경변수 설정
-  - cb-tumblebug/conf/setup.env 내용 확인 및 설정 (CB-Tumblebug 기본 설정)
+  - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 기본 설정)
     - `source setup.env` 실행으로 시스템에 반영
-  - cb-tumblebug/conf 에 store_conf.yaml 내용 확인 및 설정 (CB-Store 설정)
+  - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 설정)
     - storetype 지정 (NUTSDB 또는 ETCD 지정)
-    - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 cb-tumblebug/meta_db/dat 에 파일로 추가됨)
-  - cb-tumblebug/conf 에 log_conf.yaml 내용 확인 및 설정 (CB-Log 설정)
+    - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 `cb-tumblebug/meta_db/dat` 에 파일로 추가됨)
+  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 설정)
 
 
 ### CB-Tumblebug 빌드
@@ -219,21 +216,21 @@ This may involve a vendored copy of golang.org/x/net/trace.”
 ```
 - 사용 예시
   - 생성 테스트
-    - ./create-all.sh aws 1 shson       # aws의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./create-all.sh aws 2 shson       # aws의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./create-all.sh aws 3 shson       # aws의 3번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./create-all.sh gcp 1 shson       # gcp의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./create-all.sh gcp 2 shson       # gcp의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./create-all.sh azure 1 shson     # azure의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./create-all.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 테스트 수행
   - 제거 테스트 (이미 수행이 진행된 클라우드타입/리전/개발자명 으로만 삭제 진행이 필요)
-    - ./clean-all.sh aws 1 shson       # aws의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - ./clean-all.sh aws 2 shson       # aws의 2번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - ./clean-all.sh aws 3 shson       # aws의 3번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - ./clean-all.sh gcp 1 shson       # gcp의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - ./clean-all.sh gcp 2 shson       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - ./clean-all.sh azure 1 shson     # azure의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - ./clean-all.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
 
 <details>
 <summary>입출력 예시 보기</summary>
