@@ -74,9 +74,9 @@ cloudbaristaorg/cb-tumblebug:v0.3.x-yyyymmdd
 
 ### (2) 소스 기반 실행
 
-- Go 설치 & Git 설치
-- 환경 변수 설정
+- 필요 패키지/도구 설치
 - CB-Tumblebug 소스 다운로드 (Git clone CB-Tumblebug)
+- 환경 변수 설정
 - 의존 라이브러리 다운로드
   - Cloud-Barista alliance 설치 (CB-Store, CB-Log, CB-Spider)
   - 기타 라이브러리
@@ -99,22 +99,25 @@ cb-operator/src$ ./operator
 
 ## [소스 기반 설치 & 실행 상세 정보]
 
-- Git 설치
-  - `# apt update`
-  - `# apt install git`
+- 필요 패키지/도구 설치
+  - Git, gcc, make 설치
+    - `# apt update`
+    - `# apt install git`
+    - `# apt install make`
+    - `# apt install gcc`
 
-- Go 설치
-  - https://golang.org/dl/ 를 참고하여 Go v1.16 (Tumblebug 추천 개발 환경) 이상 설치 
-  - 설치 예시
-    - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
-    - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
-    - `.bashrc` 파일 하단에 다음을 추가 
-    ```
-    export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-    export GOPATH=$HOME/go
-    ```
-    - `.bashrc` 에 기재한 내용을 적용하기 위해, 다음 중 하나를 수행
-      - `source ~/.bashrc`, `. ~/.bashrc`
+  - Go 설치
+    - https://golang.org/dl/ 를 참고하여 Go v1.16 (Tumblebug 추천 개발 환경) 이상 설치 
+    - 설치 예시
+      - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
+      - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
+      - `.bashrc` 파일 하단에 다음을 추가 
+      ```
+      export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+      export GOPATH=$HOME/go
+      ```
+      - `.bashrc` 에 기재한 내용을 적용하기 위해, 다음 중 하나를 수행
+        - `source ~/.bashrc`, `. ~/.bashrc`
 
 - CB-Tumblebug 소스 다운로드
   - `# git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug`
