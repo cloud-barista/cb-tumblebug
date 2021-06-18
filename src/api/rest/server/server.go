@@ -18,7 +18,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	// echo-swagger middleware
-	_ "github.com/cloud-barista/cb-tumblebug/src/docs"
+	_ "github.com/cloud-barista/cb-tumblebug/src/api/rest/docs"
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
