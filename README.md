@@ -80,7 +80,7 @@ cloudbaristaorg/cb-tumblebug:0.3.xx
 - CB-Tumblebug 빌드 (`make`) 및 실행 (`make run`)
   - `cb-tumblebug/src/` 에서 수행
 
-- Swagger API 문서 업데이트 필요시 `~/go/bin/swag init` 실행
+- Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
   - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
   - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
 
