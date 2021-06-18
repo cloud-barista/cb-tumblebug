@@ -46,22 +46,38 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 ```
 
 ***
-
-## [목차]
-
-1. [실행 환경](#실행-환경)
-2. [실행 방법](#실행-방법)
-3. [소스 기반 설치 & 실행 상세 정보](#소스-기반-설치--실행-상세-정보)
-
 ***
 
-## [실행 및 개발 환경]
+## 목차
+
+1. [CB-Tumblebug 실행 및 개발 환경](#cb-tumblebug-실행-및-개발-환경)
+2. [CB-Tumblebug 실행 방법](#cb-tumblebug-실행-방법)
+3. [CB-Tumblebug 소스 빌드 및 실행 방법 상세](#cb-tumblebug-소스-빌드-및-실행-방법-상세)
+4. [CB-Tumblebug 기능 사용 방법](#cb-tumblebug-기능-사용-방법)
+
+***
+***
+
+## CB-Tumblebug 실행 및 개발 환경
 - Linux (추천: Ubuntu v18.04)
 - Go (추천: v1.16)
 
-## [실행 방법]
+***
+***
 
-### (1) 컨테이너 기반 실행
+## CB-Tumblebug 실행 방법
+
+### (1) 소스 코드 기반 설치 및 실행
+
+- 개요
+  - 필요 패키지/도구 설치
+  - CB-Tumblebug 소스 다운로드 (Git clone CB-Tumblebug)
+  - CB-Tumblebug 환경 변수 설정
+  - CB-Tumblebug 빌드 및 실행 (`make` 및 `make run`)
+- [소스 빌드 및 실행 방법 상세](#cb-tumblebug-소스-빌드-및-실행-방법-상세)
+  
+### (2) 컨테이너 기반 실행
+
 - CB-Tumblebug 이미지 확인(https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
 - CB-Tumblebug 컨테이너 실행
 
@@ -72,37 +88,31 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 cloudbaristaorg/cb-tumblebug:0.3.xx
 ```
 
-### (2) 소스 기반 실행
+### (3) cb-operator 기반 Cloud-Barista 통합 실행
 
-- 필요 패키지/도구 설치
-- CB-Tumblebug 소스 다운로드 (Git clone CB-Tumblebug)
-- 환경 변수 설정
-- CB-Tumblebug 빌드 (`make`) 및 실행 (`make run`)
-  - `cb-tumblebug/src/` 에서 수행
+- [cb-operator](https://github.com/cloud-barista/cb-operator)를 통해 CB-TB를 포함한 Cloud-Barista 전체 FW를 통합 실행 가능
 
-- Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
-  - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
-  - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
-
-### (3) Cloud-Barista 시스템 통합 실행 참고 (cb-operator)
 ```
-https://github.com/cloud-barista/cb-operator 를 통해 Cloud-Barista 전체 FW를 통합 실행할 수 있음
-
 $ git clone https://github.com/cloud-barista/cb-operator.git
 $ cd cb-operator/src
 cb-operator/src$ make
 cb-operator/src$ ./operator
 ```
 
-## [소스 기반 설치 & 실행 상세 정보]
+***
+***
 
-- 필요 패키지/도구 설치
+## CB-Tumblebug 소스 빌드 및 실행 방법 상세
+
+### (1) CB-Tumblebug 빌드 환경 구성
+
+- 필요 패키지 또는 도구 설치
   - Git, gcc, make 설치
     - `# apt update`
     - `# apt install make gcc git`
 
   - Go 설치
-    - https://golang.org/dl/ 를 참고하여 Go v1.16 (CB-Tumblebug 추천 개발 환경) 이상 설치 
+    - https://golang.org/dl/ 를 참고하여 Go 설치 (버전 v1.16 이상: 추천 개발 환경)
     - 설치 예시
       - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
       - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
@@ -111,53 +121,86 @@ cb-operator/src$ ./operator
       export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
       export GOPATH=$HOME/go
       ```
-      - `.bashrc` 에 기재한 내용을 적용하기 위해, 다음 중 하나를 수행
-        - `source ~/.bashrc`, `. ~/.bashrc`
+      - `source ~/.bashrc` (`.bashrc` 변경 내용을 적용)
 
 - CB-Tumblebug 소스 다운로드
   - `# git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug`
 
 - CB-Tumblebug 실행에 필요한 환경변수 설정
-  - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 기본 설정)
+  - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 환경변수, 필요에 따라 변경)
     - `source setup.env` 실행으로 시스템에 반영
-  - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 설정)
+  - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 환경변수, 필요에 따라 변경)
     - storetype 지정 (NUTSDB 또는 ETCD 지정)
     - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 `cb-tumblebug/meta_db/dat` 에 파일로 추가됨)
-  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 설정)
+  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 환경변수, 필요에 따라 변경)
 
 
-### CB-Tumblebug 빌드
+### (2) CB-Tumblebug 빌드
 
+- 빌드 명령어
 ```Shell
 # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
 # export GO111MODULE=on
 # ./make
 ```
 
+- Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
+  - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
+  - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
 
-### CB-Tumblebug 실행
+### (3) CB-Tumblebug 실행
 
-- `# ./make run` (또는 `# go run *.go`)
-  - CB-Tumblebug API server가 실행됨
+- `# ./make run` (또는 `# go run *.go`) 
 
-``` 
-[NOTE]
-“panic: /debug/requests is already registered. 
-You may have two independent copies of golang.org/x/net/trace in your binary, 
-trying to maintain separate state. 
-This may involve a vendored copy of golang.org/x/net/trace.”
+  CB-Tumblebug 서버 실행 화면
+  ```
+    ██████╗██████╗    ████████╗██████╗      
+   ██╔════╝██╔══██╗   ╚══██╔══╝██╔══██╗     
+   ██║     ██████╔╝█████╗██║   ██████╔╝     
+   ██║     ██╔══██╗╚════╝██║   ██╔══██╗     
+   ╚██████╗██████╔╝      ██║   ██████╔╝     
+    ╚═════╝╚═════╝       ╚═╝   ╚═════╝      
 
-에러 발생 시, 다음을 실행하여 해결
-```
+   ██████╗ ███████╗ █████╗ ██████╗ ██╗   ██╗
+   ██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+   ██████╔╝█████╗  ███████║██║  ██║ ╚████╔╝ 
+   ██╔══██╗██╔══╝  ██╔══██║██║  ██║  ╚██╔╝  
+   ██║  ██║███████╗██║  ██║██████╔╝   ██║   
+   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝   
 
-```Shell
-# rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
-# ./make
-```
+   Multi-cloud infrastructure managemenet framework
+   ________________________________________________
 
-## [활용 예시]
+   https://github.com/cloud-barista/cb-tumblebug
 
-### CB-Tumblebug 및 CB-Spider의 REST API를 사용하여 테스트
+
+   Access to API dashboard (username: default / password: default)
+   http://xxx.xxx.xxx.xxx:1323/tumblebug/swagger/index.html?url=http://xxx.xxx.xxx.xxx:1323/tumblebug/swaggerActive
+
+  ⇨ http server started on [::]:1323
+  ⇨ grpc server started on [::]:50252
+  ```
+
+- 알려진 에러 및 해결 방법 
+  ``` 
+  panic: /debug/requests is already registered. 
+  You may have two independent copies of golang.org/x/net/trace in your binary, 
+  trying to maintain separate state. 
+  This may involve a vendored copy of golang.org/x/net/trace.
+  ```
+
+  에러 발생 시, 다음을 실행하여 해결
+  ```Shell
+  # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
+  # ./make
+  ```
+
+***
+***
+
+## CB-Tumblebug 기능 사용 방법
+
+### (1) CB-Tumblebug 및 CB-Spider의 REST API를 사용하여 테스트
 - CB-Spider API를 통해 클라우드 인프라 연동 정보 등록
    - https://cloud-barista.github.io/rest-api/v0.3.0/spider/ccim/
 - CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
@@ -172,7 +215,7 @@ This may involve a vendored copy of golang.org/x/net/trace.”
    - https://cloud-barista.github.io/cb-tumblebug-api-web/#/MCIS/post_ns__nsId__cmd_mcis__mcisId_
    - https://cloud-barista.github.io/cb-tumblebug-api-web/#/MCIS/delete_ns__nsId__mcis__mcisId_
 
-### CB-Tumblebug 스크립트를 통한 테스트 개요
+### (2) CB-Tumblebug 스크립트를 통한 테스트
 - `src/testclient/scripts/`
    - 클라우드 인증 정보, 테스트 기본 정보 입력
    - 클라우드정보, Namespace, MCIR, MCIS 등 개별 제어 시험 (개별 시험시, 오브젝트들의 의존성 고려 필요))
@@ -181,12 +224,12 @@ This may involve a vendored copy of golang.org/x/net/trace.”
 
 #### 0) 클라우드 인증 정보, 테스트 기본 정보 입력
 - `src/testclient/scripts/` 이동
-- `credentials.conf`  # Cloud 정보 등록을 위한 CSP별 인증정보 (사용자에 맞게 수정 필요)
-   - 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA)에 대해 템플릿 제공
-- `conf.env`  # CB-Spider 및 Tumblebug 서버 위치, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
-   - 특별한 상황이 아니면 수정이 불필요함. (CB-Spider와 CB-TB의 위치가 localhost가 아닌 경우 수정 필요)
-   - 클라우드 타입(CSP)별 약 1~3개의 기본 리전이 입력되어 있음
-     - 이미지와 스팩은 리전에 의존성이 있는 경우가 많으므로, 리전별로 지정이 필요
+- [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/master/src/testclient/scripts/credentials.conf.example)을 복사하여 `credentials.conf` 를 생성하고, `credentials.conf` 의 각 항목에 사용자의 클라우드 인증 정보 입력
+   - `credentials.conf` 는 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 인증 정보 템플릿 제공
+   - [CSP별 인증 정보 획득 방법 참고](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)
+- `conf.env` 설정
+   - CB-Spider 및 CB-Tumblebug 서버 엔드포인트, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
+   - 이미 많은 클라우드 타입에 대한 정보가 조사 및 입력되어 있으므로, 특별한 경우가 아니면 수정없이 사용 가능. 
 
 #### 1) 클라우드정보, Namespace, MCIR, MCIS 등 개별 제어 시험
 - 제어하고 싶은 리소스 오브젝트에 대해, 해당 디렉토리로 이동하여 필요한 시험 수행
@@ -500,44 +543,94 @@ Dozing for 1 : 1 (Back to work)
 
 #### 3) MCIS 응용 기반 최종 검증
 
+##### MCIS SSH 원격 커맨드
   - SSH 원격 커맨드 실행을 통해서 접속 여부 등을 확인 가능
     - command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
-    - 예시: command-mcis.sh aws 1 shson # aws의 1번 리전에 배치된 MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
-  - Nginx를 분산 배치하여, 웹서버 접속 시험이 가능
+    - 실행 예시
+      - `./create-all.sh all 1 shson ../testSet.env`  # testSet.env 에 구성된 정보를 기준으로 MCIS 생성
+      - `./command-mcis.sh all 1 shson ../testSet.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
+
+##### MCIS SSH 접속키 생성 및 접속
+  - 스크립트를 통해 MCIS의 VM에 각각 접속할 수 있는 SSH Key 및 주소를 생성
+    - gen-sshKey.sh  # MCIS에 구성된 모든 VM의 접속키 리턴
+    - 실행 예시
+      - `./create-all.sh all 1 shson ../testSetAws.env`  # testSetAws.env 에 구성된 정보를 기준으로 MCIS 생성
+      - `./gen-sshKey.sh all 1 shson ../testSetAws.env` # MCIS에 구성된 모든 VM의 접속키 리턴 
+        ```
+        son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./gen-sshKey.sh all 1 shson ../testSetAws.env 
+        ####################################################################
+        ## Generate SSH KEY (PEM, PPK)
+        ####################################################################
+        ...
+        [GENERATED PRIVATE KEY (PEM, PPK)]
+        [MCIS INFO: mc-shson]
+         [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
+         ./sshkey-tmp/aws-ap-se-1-shson.pem 
+         ./sshkey-tmp/aws-ap-se-1-shson.ppk
+         [VMIP]: 54.177.115.174   [MCISID]: mc-shson   [VMID]: aws-us-west-1-0
+         ./sshkey-tmp/aws-us-west-1-shson.pem 
+         ./sshkey-tmp/aws-us-west-1-shson.ppk
+         [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
+         ./sshkey-tmp/aws-ca-ct-1-shson.pem 
+         ./sshkey-tmp/aws-ca-ct-1-shson.ppk
+
+        [SSH COMMAND EXAMPLE]
+         [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
+         ssh -i ./sshkey-tmp/aws-ap-se-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
+         [VMIP]: 54.177.115.174   [MCISID]: mc-shson   [VMID]: aws-us-west-1-0
+         ssh -i ./sshkey-tmp/aws-us-west-1-shson.pem cb-user@54.177.115.174 -o StrictHostKeyChecking=no
+         [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
+         ssh -i ./sshkey-tmp/aws-ca-ct-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
+        ```
+
+
+##### MCIS Nginx 분산 배치
+- Nginx를 분산 배치하여, 웹서버 접속 시험 가능
     - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
-    - 예시: command-mcis.sh aws 1 shson # aws의 1번 리전에 배치된 MCIS의 모든 VM에 Nginx 및 웹페이지 설치 (접속 테스트 가능)
-      ```
-      ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
-      ####################################################################
-      ## Command (SSH) to MCIS 
-      ####################################################################
-      [Test for AWS]
-      {
-        "result_array" : [
-            {
-              "vmIp" : "35.173.215.4",
-              "vmId" : "aws-us-east-1-shson-01",
-              "result" : "WebServer is ready. Access http://35.173.215.4",
-              "mcisId" : "aws-us-east-1-shson"
-            },
-            {
-              "vmIp" : "18.206.13.233",
-              "vmId" : "aws-us-east-1-shson-02",
-              "result" : "WebServer is ready. Access http://18.206.13.233",
-              "mcisId" : "aws-us-east-1-shson"
-            },
-            {
-              "mcisId" : "aws-us-east-1-shson",
-              "result" : "WebServer is ready. Access http://18.232.53.134",
-              "vmId" : "aws-us-east-1-shson-03",
-              "vmIp" : "18.232.53.134"
-            }
-        ]
-      }
-      ```
+    - 실행 예시
+      - command-mcis.sh aws 1 shson # aws의 1번 리전에 배치된 MCIS의 모든 VM에 Nginx 및 웹페이지 설치 (접속 테스트 가능)
+        ```
+        ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
+        ####################################################################
+        ## Command (SSH) to MCIS 
+        ####################################################################
+        {
+          "result_array" : [
+              {
+                "vmIp" : "35.173.215.4",
+                "vmId" : "aws-us-east-1-shson-01",
+                "result" : "WebServer is ready. Access http://35.173.215.4",
+                "mcisId" : "aws-us-east-1-shson"
+              },
+              {
+                "vmIp" : "18.206.13.233",
+                "vmId" : "aws-us-east-1-shson-02",
+                "result" : "WebServer is ready. Access http://18.206.13.233",
+                "mcisId" : "aws-us-east-1-shson"
+              },
+              {
+                "mcisId" : "aws-us-east-1-shson",
+                "result" : "WebServer is ready. Access http://18.232.53.134",
+                "vmId" : "aws-us-east-1-shson-03",
+                "vmIp" : "18.232.53.134"
+              }
+          ]
+        }
+        ```
 
+##### MCIS Weave Scope 클러스터 모니터링 분산 배치
+  - [스크립트를 통해 MCIS에 Weave Scope 클러스터 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
 
-#### [테스트 코드 파일 트리 설명]
+##### MCIS Jitsi 영상 회의 배치
+  - [스크립트를 통해 MCIS에 Jitsi 영상회의 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Jitsi-deployment)
+
+##### MCIS Ansible 실행 환경 자동 구성
+  - [스크립트를 통해 MCIS에 Ansible 실행 환경 자동 구성](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
+
+##### MCIS 토이 게임 서버 배치
+  - [스크립트를 통해 MCIS에 토이 게임 서버 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-toy-game-deployment)
+
+#### 테스트 코드 파일 트리 설명
 
 <details>
 <summary>테스트 스크립트 디렉토리 전체 Tree 보기</summary>
@@ -737,6 +830,9 @@ Dozing for 1 : 1 (Back to work)
 
 </details>
 
+***
+***
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
@@ -777,5 +873,11 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 
+***
+***
+
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcloud-barista%2Fcb-tumblebug.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcloud-barista%2Fcb-tumblebug?ref=badge_large)
+
+
+***
