@@ -3822,13 +3822,13 @@ func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId strin
 
 func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
-	defer func() {
-		if runtimeErr := recover(); runtimeErr != nil {
-			myErr := fmt.Errorf("in GetVmStatus; mcisId: " + mcisId + ", vmId: " + vmId)
-			common.CBLog.Error(myErr)
-			common.CBLog.Error(runtimeErr)
-		}
-	}()
+	// defer func() {
+	// 	if runtimeErr := recover(); runtimeErr != nil {
+	// 		myErr := fmt.Errorf("in GetVmStatus; mcisId: " + mcisId + ", vmId: " + vmId)
+	// 		common.CBLog.Error(myErr)
+	// 		common.CBLog.Error(runtimeErr)
+	// 	}
+	// }()
 
 	fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
@@ -3856,6 +3856,20 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		return errorInfo, err
 	}
 
+	errorInfo.Id = temp.Id
+	errorInfo.Name = temp.Name
+	errorInfo.CspVmId = temp.CspViewVmDetail.IId.NameId
+	errorInfo.PublicIp = temp.PublicIP
+	errorInfo.SSHPort = temp.SSHPort
+	errorInfo.PrivateIp = temp.PrivateIP
+	errorInfo.NativeStatus = StatusUndefined
+	errorInfo.TargetAction = temp.TargetAction
+	errorInfo.TargetStatus = temp.TargetStatus
+	errorInfo.Location = temp.Location
+	errorInfo.MonAgentStatus = temp.MonAgentStatus
+	errorInfo.CreatedTime = temp.CreatedTime
+	errorInfo.SystemMessage = "Error in GetVmStatus"
+
 	fmt.Print("\n[Calling SPIDER] ")
 	cspVmId := temp.CspViewVmDetail.IId.NameId
 	fmt.Println("CspVmId: " + cspVmId)
@@ -3865,91 +3879,121 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	}
 	var statusResponseTmp statusResponse
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	if cspVmId != "" {
+		if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vmstatus/" + cspVmId
-		method := "GET"
+			url := common.SPIDER_REST_URL + "/vmstatus/" + cspVmId
+			method := "GET"
 
-		//fmt.Println("url: " + url)
+			//fmt.Println("url: " + url)
 
-		type VMStatusReqInfo struct {
-			ConnectionName string
+			type VMStatusReqInfo struct {
+				ConnectionName string
+			}
+			tempReq := VMStatusReqInfo{}
+			tempReq.ConnectionName = temp.ConnectionName
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+			//fmt.Println("payload: " + string(payload)) // for debug
+
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+			errorInfo.Status = StatusFailed
+
+			if err != nil {
+				fmt.Println(err)
+				return errorInfo, err
+			}
+			req.Header.Add("Content-Type", "application/json")
+
+			statusResponseTmp = statusResponse{}
+			statusResponseTmp.Status = ""
+
+			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
+			retrycheck := 3
+			for i := 0; i < retrycheck; i++ {
+				res, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					errorInfo.SystemMessage = err.Error()
+					//return errorInfo, err
+				} else {
+					body, err := ioutil.ReadAll(res.Body)
+					if err != nil {
+						fmt.Println(err)
+						errorInfo.SystemMessage = err.Error()
+						return errorInfo, err
+					}
+					err = json.Unmarshal(body, &statusResponseTmp)
+					if err != nil {
+						fmt.Println(err)
+						errorInfo.SystemMessage = err.Error()
+						return errorInfo, err
+					}
+					defer res.Body.Close()
+				}
+
+				if statusResponseTmp.Status != "" {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
+
+		} else {
+
+			// CCM API 설정
+			ccm := api.NewCloudResourceHandler()
+			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+			if err != nil {
+				common.CBLog.Error("ccm failed to set config : ", err)
+				return errorInfo, err
+			}
+			err = ccm.Open()
+			if err != nil {
+				common.CBLog.Error("ccm api open failed : ", err)
+				return errorInfo, err
+			}
+			defer ccm.Close()
+
+			statusResponseTmp = statusResponse{}
+			statusResponseTmp.Status = ""
+			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
+			retrycheck := 3
+			for i := 0; i < retrycheck; i++ {
+				result, err := ccm.GetVMStatusByParam(temp.ConnectionName, cspVmId)
+				if err != nil {
+					common.CBLog.Error(err)
+					errorInfo.SystemMessage = err.Error()
+					//return errorInfo, err
+				} else {
+					err = json.Unmarshal([]byte(result), &statusResponseTmp)
+					if err != nil {
+						common.CBLog.Error(err)
+						errorInfo.SystemMessage = err.Error()
+						return errorInfo, err
+					}
+				}
+
+				if statusResponseTmp.Status != "" {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
 		}
-		tempReq := VMStatusReqInfo{}
-		tempReq.ConnectionName = temp.ConnectionName
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		//fmt.Println("payload: " + string(payload)) // for debug
-
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-		errorInfo.Status = StatusFailed
-
-		if err != nil {
-			fmt.Println(err)
-			return errorInfo, err
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
-		//fmt.Println("Called CB-Spider API.")
-
-		if err != nil {
-			fmt.Println(err)
-			return errorInfo, err
-		}
-
-		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
-
-		statusResponseTmp = statusResponse{}
-
-		err2 := json.Unmarshal(body, &statusResponseTmp)
-		if err2 != nil {
-			fmt.Println(err2)
-			return errorInfo, err2
-		}
+		//UpdateVmPublicIp. update temp TbVmInfo{} with changed IP
+		UpdateVmPublicIp(nsId, mcisId, temp)
 
 	} else {
-
-		// CCM API 설정
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbVmStatusInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return TbVmStatusInfo{}, err
-		}
-		defer ccm.Close()
-
-		result, err := ccm.GetVMStatusByParam(temp.ConnectionName, cspVmId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbVmStatusInfo{}, err
-		}
-
-		statusResponseTmp = statusResponse{}
-		err2 := json.Unmarshal([]byte(result), &statusResponseTmp)
-		if err2 != nil {
-			common.CBLog.Error(err2)
-			return TbVmStatusInfo{}, err2
-		}
+		statusResponseTmp.Status = ""
 	}
 
-	//common.PrintJsonPretty(statusResponseTmp)
-	fmt.Println(statusResponseTmp)
-	//fmt.Println("[Calling SPIDER]END\n")
+	fmt.Println("[VM Native Status]" + temp.Id + ":" + statusResponseTmp.Status)
 
-	//UpdateVmPublicIp. update temp TbVmInfo{} with changed IP
-	UpdateVmPublicIp(nsId, mcisId, temp)
+	//fmt.Println("[Calling SPIDER]END\n")
 
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.Id = temp.Id
@@ -4030,12 +4074,12 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	//if temp.Status == StatusFailed {
 	//	statusResponseTmp.Status = StatusFailed
 	//}
-	if temp.Status == StatusTerminated {
+	if vmStatusTmp.Status == StatusTerminated {
 		statusResponseTmp.Status = StatusTerminated
 	}
-	if vmStatusTmp.TargetStatus == StatusTerminated {
-		statusResponseTmp.Status = StatusTerminated
-	}
+	//if vmStatusTmp.TargetStatus == StatusTerminated {
+	//	statusResponseTmp.Status = StatusTerminated
+	//}
 
 	vmStatusTmp.Status = statusResponseTmp.Status
 	/*
@@ -4069,6 +4113,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 			// Don't init TargetStatus if the TargetStatus is StatusTerminated. It is to finalize VM lifecycle if StatusTerminated.
 			vmStatusTmp.TargetStatus = StatusTerminated
 			vmStatusTmp.TargetAction = ActionTerminate
+			vmStatusTmp.Status = StatusTerminated
 			vmStatusTmp.SystemMessage = "This VM has been terminated. No action is acceptable except deletion"
 		}
 	}
@@ -4082,7 +4127,10 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	temp.TargetAction = vmStatusTmp.TargetAction
 	temp.TargetStatus = vmStatusTmp.TargetStatus
 	temp.PublicIP = vmStatusTmp.PublicIp
-	UpdateVmInfo(nsId, mcisId, temp)
+	if cspVmId != "" || temp.TargetStatus == StatusTerminated {
+		// don't update VM info, if cspVmId is empty
+		UpdateVmInfo(nsId, mcisId, temp)
+	}
 
 	return vmStatusTmp, nil
 
@@ -4110,9 +4158,14 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 	fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
+	errorInfo := TbVmStatusInfo{}
 	//fmt.Println(key)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil || keyValue == nil {
+		fmt.Println(err)
+		return errorInfo, err
+	}
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -4151,7 +4204,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 		}
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-		errorInfo := TbVmStatusInfo{}
 		errorInfo.Status = StatusFailed
 
 		if err != nil {
@@ -4186,26 +4238,26 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbVmStatusInfo{}, err
+			return errorInfo, err
 		}
 		err = ccm.Open()
 		if err != nil {
 			common.CBLog.Error("ccm api open failed : ", err)
-			return TbVmStatusInfo{}, err
+			return errorInfo, err
 		}
 		defer ccm.Close()
 
 		result, err := ccm.GetVMByParam(temp.ConnectionName, cspVmId)
 		if err != nil {
 			common.CBLog.Error(err)
-			return TbVmStatusInfo{}, err
+			return errorInfo, err
 		}
 
 		statusResponseTmp = statusResponse{}
 		err2 := json.Unmarshal([]byte(result), &statusResponseTmp)
 		if err2 != nil {
 			common.CBLog.Error(err2)
-			return TbVmStatusInfo{}, err2
+			return errorInfo, err2
 		}
 
 	}
