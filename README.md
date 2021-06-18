@@ -628,7 +628,7 @@ Dozing for 1 : 1 (Back to work)
   - [스크립트를 통해 MCIS에 Ansible 실행 환경 자동 구성](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
 
 ##### MCIS 토이 게임 서버 배치
-  - [스크립트를 통해 MCIS에 Ansible 실행 환경 자동 구성](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
+  - [스크립트를 통해 MCIS에 토이 게임 서버 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
 
 #### 테스트 코드 파일 트리 설명
 
