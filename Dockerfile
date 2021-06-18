@@ -66,7 +66,7 @@ ENV SELF_ENDPOINT localhost:1323
 ENV GOLANG_PROTOBUF_REGISTRATION_CONFLICT ignore
 
 # Swagger UI API document file path 
-ENV API_DOC_PATH /app/src/docs/swagger.json
+ENV API_DOC_PATH /app/src/api/rest/docs/swagger.json
 
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
 

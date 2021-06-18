@@ -1391,7 +1391,6 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
   title: CB-Tumblebug REST API
   version: latest
 paths:

@@ -22,7 +22,6 @@ import (
 // @title CB-Tumblebug REST API
 // @version latest
 // @description CB-Tumblebug REST API
-// @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
 // @contact.url http://cloud-barista.github.io
