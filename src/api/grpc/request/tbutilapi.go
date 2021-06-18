@@ -19,13 +19,13 @@ import (
 
 // ===== [ Types ] =====
 
-// UTILITYApi - UTILITY API 구조 정의
-type UTILITYApi struct {
+// UtilityApi - Utility API 구조 정의
+type UtilityApi struct {
 	gConf          *config.GrpcConfig
 	conn           *grpc.ClientConn
 	jaegerCloser   io.Closer
-	clientUTILITY  pb.UTILITYClient
-	requestUTILITY *common.UTILITYRequest
+	clientUtility  pb.UtilityClient
+	requestUtility *common.UtilityRequest
 	inType         string
 	outType        string
 }
@@ -39,7 +39,7 @@ type ConfigReq struct {
 // ===== [ Implementatiou ] =====
 
 // SetServerAddr - Tumblebug 서버 주소 설정
-func (u *UTILITYApi) SetServerAddr(addr string) error {
+func (u *UtilityApi) SetServerAddr(addr string) error {
 	if addr == "" {
 		return errors.New("parameter is empty")
 	}
@@ -49,12 +49,12 @@ func (u *UTILITYApi) SetServerAddr(addr string) error {
 }
 
 // GetServerAddr - Tumblebug 서버 주소 값 조회
-func (u *UTILITYApi) GetServerAddr() (string, error) {
+func (u *UtilityApi) GetServerAddr() (string, error) {
 	return u.gConf.GSL.TumblebugCli.ServerAddr, nil
 }
 
 // SetTLSCA - TLS CA 설정
-func (u *UTILITYApi) SetTLSCA(tlsCAFile string) error {
+func (u *UtilityApi) SetTLSCA(tlsCAFile string) error {
 	if tlsCAFile == "" {
 		return errors.New("parameter is empty")
 	}
@@ -68,7 +68,7 @@ func (u *UTILITYApi) SetTLSCA(tlsCAFile string) error {
 }
 
 // GetTLSCA - TLS CA 값 조회
-func (u *UTILITYApi) GetTLSCA() (string, error) {
+func (u *UtilityApi) GetTLSCA() (string, error) {
 	if u.gConf.GSL.TumblebugCli.TLS == nil {
 		return "", nil
 	}
@@ -77,18 +77,18 @@ func (u *UTILITYApi) GetTLSCA() (string, error) {
 }
 
 // SetTimeout - Timeout 설정
-func (u *UTILITYApi) SetTimeout(timeout time.Duration) error {
+func (u *UtilityApi) SetTimeout(timeout time.Duration) error {
 	u.gConf.GSL.TumblebugCli.Timeout = timeout
 	return nil
 }
 
 // GetTimeout - Timeout 값 조회
-func (u *UTILITYApi) GetTimeout() (time.Duration, error) {
+func (u *UtilityApi) GetTimeout() (time.Duration, error) {
 	return u.gConf.GSL.TumblebugCli.Timeout, nil
 }
 
 // SetJWTToken - JWT 인증 토큰 설정
-func (u *UTILITYApi) SetJWTToken(token string) error {
+func (u *UtilityApi) SetJWTToken(token string) error {
 	if token == "" {
 		return errors.New("parameter is empty")
 	}
@@ -106,7 +106,7 @@ func (u *UTILITYApi) SetJWTToken(token string) error {
 }
 
 // GetJWTToken - JWT 인증 토큰 값 조회
-func (u *UTILITYApi) GetJWTToken() (string, error) {
+func (u *UtilityApi) GetJWTToken() (string, error) {
 	if u.gConf.GSL.TumblebugCli.Interceptors == nil {
 		return "", nil
 	}
@@ -118,10 +118,10 @@ func (u *UTILITYApi) GetJWTToken() (string, error) {
 }
 
 // SetConfigPath - 환경설정 파일 설정
-func (u *UTILITYApi) SetConfigPath(configFile string) error {
+func (u *UtilityApi) SetConfigPath(configFile string) error {
 	logger := logger.NewLogger()
 
-	// Viper 를 사용하는 설정 파서 생성
+	// Make new config parser that uses Viper library
 	parser := config.MakeParser()
 
 	var (
@@ -181,7 +181,7 @@ func (u *UTILITYApi) SetConfigPath(configFile string) error {
 }
 
 // Open - 연결 설정
-func (u *UTILITYApi) Open() error {
+func (u *UtilityApi) Open() error {
 
 	tumblebugcli := u.gConf.GSL.TumblebugCli
 
@@ -198,16 +198,16 @@ func (u *UTILITYApi) Open() error {
 	u.conn = cbconn.Conn
 
 	// grpc 클라이언트 생성
-	u.clientUTILITY = pb.NewUTILITYClient(u.conn)
+	u.clientUtility = pb.NewUtilityClient(u.conn)
 
 	// grpc 호출 Wrapper
-	u.requestUTILITY = &common.UTILITYRequest{Client: u.clientUTILITY, Timeout: tumblebugcli.Timeout, InType: u.inType, OutType: u.outType}
+	u.requestUtility = &common.UtilityRequest{Client: u.clientUtility, Timeout: tumblebugcli.Timeout, InType: u.inType, OutType: u.outType}
 
 	return nil
 }
 
 // Close - 연결 종료
-func (u *UTILITYApi) Close() {
+func (u *UtilityApi) Close() {
 	if u.conn != nil {
 		u.conn.Close()
 	}
@@ -217,12 +217,12 @@ func (u *UTILITYApi) Close() {
 
 	u.jaegerCloser = nil
 	u.conn = nil
-	u.clientUTILITY = nil
-	u.requestUTILITY = nil
+	u.clientUtility = nil
+	u.requestUtility = nil
 }
 
 // SetInType - 입력 문서 타입 설정 (json/yaml)
-func (u *UTILITYApi) SetInType(in string) error {
+func (u *UtilityApi) SetInType(in string) error {
 	if in == "json" {
 		u.inType = in
 	} else if in == "yaml" {
@@ -231,20 +231,20 @@ func (u *UTILITYApi) SetInType(in string) error {
 		return errors.New("input type is not supported")
 	}
 
-	if u.requestUTILITY != nil {
-		u.requestUTILITY.InType = u.inType
+	if u.requestUtility != nil {
+		u.requestUtility.InType = u.inType
 	}
 
 	return nil
 }
 
 // GetInType - 입력 문서 타입 값 조회
-func (u *UTILITYApi) GetInType() (string, error) {
+func (u *UtilityApi) GetInType() (string, error) {
 	return u.inType, nil
 }
 
 // SetOutType - 출력 문서 타입 설정 (json/yaml)
-func (u *UTILITYApi) SetOutType(out string) error {
+func (u *UtilityApi) SetOutType(out string) error {
 	if out == "json" {
 		u.outType = out
 	} else if out == "yaml" {
@@ -253,99 +253,99 @@ func (u *UTILITYApi) SetOutType(out string) error {
 		return errors.New("output type is not supported")
 	}
 
-	if u.requestUTILITY != nil {
-		u.requestUTILITY.OutType = u.outType
+	if u.requestUtility != nil {
+		u.requestUtility.OutType = u.outType
 	}
 
 	return nil
 }
 
 // GetOutType - 출력 문서 타입 값 조회
-func (u *UTILITYApi) GetOutType() (string, error) {
+func (u *UtilityApi) GetOutType() (string, error) {
 	return u.outType, nil
 }
 
 // ListConnConfig - Connection Config 목록
-func (u *UTILITYApi) ListConnConfig() (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) ListConnConfig() (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	return u.requestUTILITY.ListConnConfig()
+	return u.requestUtility.ListConnConfig()
 }
 
 // GetConnConfig - Connection Config 조회
-func (u *UTILITYApi) GetConnConfig(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetConnConfig(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.GetConnConfig()
+	u.requestUtility.InData = doc
+	return u.requestUtility.GetConnConfig()
 }
 
 // GetConnConfigByParam - Connection Config 조회
-func (u *UTILITYApi) GetConnConfigByParam(connConfigName string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetConnConfigByParam(connConfigName string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"connConfigName":"` + connConfigName + `"}`
-	result, err := u.requestUTILITY.GetConnConfig()
+	u.requestUtility.InData = `{"connConfigName":"` + connConfigName + `"}`
+	result, err := u.requestUtility.GetConnConfig()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // ListRegion - Region 목록
-func (u *UTILITYApi) ListRegion() (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) ListRegion() (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	return u.requestUTILITY.ListRegion()
+	return u.requestUtility.ListRegion()
 }
 
 // GetRegion - Region 조회
-func (u *UTILITYApi) GetRegion(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetRegion(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.GetRegion()
+	u.requestUtility.InData = doc
+	return u.requestUtility.GetRegion()
 }
 
 // GetRegionByParam - Region 조회
-func (u *UTILITYApi) GetRegionByParam(regionName string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetRegionByParam(regionName string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"regionName":"` + regionName + `"}`
-	result, err := u.requestUTILITY.GetRegion()
+	u.requestUtility.InData = `{"regionName":"` + regionName + `"}`
+	result, err := u.requestUtility.GetRegion()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // CreateConfig - Config 생성
-func (u *UTILITYApi) CreateConfig(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) CreateConfig(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.CreateConfig()
+	u.requestUtility.InData = doc
+	return u.requestUtility.CreateConfig()
 }
 
 // CreateConfigByParam - Config 생성
-func (u *UTILITYApi) CreateConfigByParam(req *ConfigReq) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) CreateConfigByParam(req *ConfigReq) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
@@ -355,226 +355,226 @@ func (u *UTILITYApi) CreateConfigByParam(req *ConfigReq) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	u.requestUTILITY.InData = string(j)
-	result, err := u.requestUTILITY.CreateConfig()
+	u.requestUtility.InData = string(j)
+	result, err := u.requestUtility.CreateConfig()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // ListConfig - Config 목록
-func (u *UTILITYApi) ListConfig() (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) ListConfig() (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	return u.requestUTILITY.ListConfig()
+	return u.requestUtility.ListConfig()
 }
 
 // GetConfig - Config 조회
-func (u *UTILITYApi) GetConfig(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetConfig(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.GetConfig()
+	u.requestUtility.InData = doc
+	return u.requestUtility.GetConfig()
 }
 
 // GetConfigByParam - Config 조회
-func (u *UTILITYApi) GetConfigByParam(configId string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetConfigByParam(configId string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"configId":"` + configId + `"}`
-	result, err := u.requestUTILITY.GetConfig()
+	u.requestUtility.InData = `{"configId":"` + configId + `"}`
+	result, err := u.requestUtility.GetConfig()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // InitConfig - Config 조회
-func (u *UTILITYApi) InitConfig(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) InitConfig(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.InitConfig()
+	u.requestUtility.InData = doc
+	return u.requestUtility.InitConfig()
 }
 
 // InitConfigByParam - Config 조회
-func (u *UTILITYApi) InitConfigByParam(configId string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) InitConfigByParam(configId string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"configId":"` + configId + `"}`
-	result, err := u.requestUTILITY.InitConfig()
+	u.requestUtility.InData = `{"configId":"` + configId + `"}`
+	result, err := u.requestUtility.InitConfig()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // InitAllConfig - Config 전체 삭제
-func (u *UTILITYApi) InitAllConfig() (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) InitAllConfig() (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	return u.requestUTILITY.InitAllConfig()
+	return u.requestUtility.InitAllConfig()
 }
 
 // InspectMcirResources - MCIR 리소스 점검
-func (u *UTILITYApi) InspectMcirResources(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) InspectMcirResources(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.InspectMcirResources()
+	u.requestUtility.InData = doc
+	return u.requestUtility.InspectMcirResources()
 }
 
 // InspectMcirResourcesByParam - MCIR 리소스 점검
-func (u *UTILITYApi) InspectMcirResourcesByParam(connectionName string, mcirType string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) InspectMcirResourcesByParam(connectionName string, mcirType string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"connectionName":"` + connectionName + `", "type":"` + mcirType + `"}`
-	result, err := u.requestUTILITY.InspectMcirResources()
+	u.requestUtility.InData = `{"connectionName":"` + connectionName + `", "type":"` + mcirType + `"}`
+	result, err := u.requestUtility.InspectMcirResources()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // InspectVmResources - VM 리소스 점검
-func (u *UTILITYApi) InspectVmResources(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) InspectVmResources(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.InspectVmResources()
+	u.requestUtility.InData = doc
+	return u.requestUtility.InspectVmResources()
 }
 
 // InspectVmResourcesByParam - VM 리소스 점검
-func (u *UTILITYApi) InspectVmResourcesByParam(connectionName string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) InspectVmResourcesByParam(connectionName string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"connectionName":"` + connectionName + `"}`
-	result, err := u.requestUTILITY.InspectVmResources()
+	u.requestUtility.InData = `{"connectionName":"` + connectionName + `"}`
+	result, err := u.requestUtility.InspectVmResources()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // ListObject - 객체 목록
-func (u *UTILITYApi) ListObject(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) ListObject(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.ListObject()
+	u.requestUtility.InData = doc
+	return u.requestUtility.ListObject()
 }
 
 // ListObjectByParam - 객체 목록
-func (u *UTILITYApi) ListObjectByParam(key string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) ListObjectByParam(key string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"key":"` + key + `"}`
-	result, err := u.requestUTILITY.ListObject()
+	u.requestUtility.InData = `{"key":"` + key + `"}`
+	result, err := u.requestUtility.ListObject()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // GetObject - 객체 조회
-func (u *UTILITYApi) GetObject(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetObject(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.GetObject()
+	u.requestUtility.InData = doc
+	return u.requestUtility.GetObject()
 }
 
 // GetObjectByParam - 객체 조회
-func (u *UTILITYApi) GetObjectByParam(key string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) GetObjectByParam(key string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"key":"` + key + `"}`
-	result, err := u.requestUTILITY.GetObject()
+	u.requestUtility.InData = `{"key":"` + key + `"}`
+	result, err := u.requestUtility.GetObject()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // DeleteObject - 객체 삭제
-func (u *UTILITYApi) DeleteObject(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) DeleteObject(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.DeleteObject()
+	u.requestUtility.InData = doc
+	return u.requestUtility.DeleteObject()
 }
 
 // DeleteObjectByParam - 객체 삭제
-func (u *UTILITYApi) DeleteObjectByParam(key string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) DeleteObjectByParam(key string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"key":"` + key + `"}`
-	result, err := u.requestUTILITY.DeleteObject()
+	u.requestUtility.InData = `{"key":"` + key + `"}`
+	result, err := u.requestUtility.DeleteObject()
 	u.SetInType(holdType)
 
 	return result, err
 }
 
 // DeleteAllObject - 객체 전체 삭제
-func (u *UTILITYApi) DeleteAllObject(doc string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) DeleteAllObject(doc string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
-	u.requestUTILITY.InData = doc
-	return u.requestUTILITY.DeleteAllObject()
+	u.requestUtility.InData = doc
+	return u.requestUtility.DeleteAllObject()
 }
 
 // DeleteAllObjectByParam - 객체 전체 삭제
-func (u *UTILITYApi) DeleteAllObjectByParam(key string) (string, error) {
-	if u.requestUTILITY == nil {
+func (u *UtilityApi) DeleteAllObjectByParam(key string) (string, error) {
+	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := u.GetInType()
 	u.SetInType("json")
-	u.requestUTILITY.InData = `{"key":"` + key + `"}`
-	result, err := u.requestUTILITY.DeleteAllObject()
+	u.requestUtility.InData = `{"key":"` + key + `"}`
+	result, err := u.requestUtility.DeleteAllObject()
 	u.SetInType(holdType)
 
 	return result, err
@@ -584,17 +584,17 @@ func (u *UTILITYApi) DeleteAllObjectByParam(key string) (string, error) {
 
 // ===== [ Public Functiou ] =====
 
-// NewUTILITYManager - UTILITY API 객체 생성
-func NewUTILITYManager() (u *UTILITYApi) {
+// NewUtilityManager - Utility API 객체 생성
+func NewUtilityManager() (u *UtilityApi) {
 
-	u = &UTILITYApi{}
+	u = &UtilityApi{}
 	u.gConf = &config.GrpcConfig{}
 	u.gConf.GSL.TumblebugCli = &config.GrpcClientConfig{}
 
 	u.jaegerCloser = nil
 	u.conn = nil
-	u.clientUTILITY = nil
-	u.requestUTILITY = nil
+	u.clientUtility = nil
+	u.requestUtility = nil
 
 	u.inType = "json"
 	u.outType = "json"

@@ -1,4 +1,3 @@
-// Package cmd - 어플리케이션 실행을 위한 Cobra 기반의 CLI Commands 기능 제공
 package cmd
 
 import (

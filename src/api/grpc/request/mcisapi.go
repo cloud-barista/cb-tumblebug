@@ -389,7 +389,7 @@ func (m *MCISApi) GetJWTToken() (string, error) {
 func (m *MCISApi) SetConfigPath(configFile string) error {
 	logger := logger.NewLogger()
 
-	// Viper 를 사용하는 설정 파서 생성
+	// Make new config parser that uses Viper library
 	parser := config.MakeParser()
 
 	var (

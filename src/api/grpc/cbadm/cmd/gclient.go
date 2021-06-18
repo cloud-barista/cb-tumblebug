@@ -49,7 +49,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		ns     *tb_api.NSApi      = nil
 		mcir   *tb_api.MCIRApi    = nil
 		mcis   *tb_api.MCISApi    = nil
-		tbutil *tb_api.UTILITYApi = nil
+		tbutil *tb_api.UtilityApi = nil
 	)
 
 	// panic handling
@@ -125,7 +125,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 
 	if cmd.Parent().Name() == "util" || cmd.Parent().Name() == "config" {
 		// Utility API
-		tbutil = tb_api.NewUTILITYManager()
+		tbutil = tb_api.NewUtilityManager()
 		err = tbutil.SetConfigPath(configFile)
 		if err != nil {
 			logger.Error("failed to set config : ", err)
