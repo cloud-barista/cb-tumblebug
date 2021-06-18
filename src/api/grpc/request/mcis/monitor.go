@@ -14,21 +14,21 @@ import (
 
 // ===== [ Implementations ] =====
 
-// InstallMonitorAgentToMcis - MCIS Monitor Agent 설치
+// InstallMonitorAgentToMcis
 func (r *MCISRequest) InstallMonitorAgentToMcis() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.McisCmdCreateRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -37,25 +37,25 @@ func (r *MCISRequest) InstallMonitorAgentToMcis() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetMonitorData - MCIS Monitor 정보 조회
+// GetMonitorData
 func (r *MCISRequest) GetMonitorData() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.MonitorQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -64,7 +64,7 @@ func (r *MCISRequest) GetMonitorData() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 

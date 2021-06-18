@@ -15,20 +15,20 @@ import (
 // ===== [ Implementations ] =====
 
 // CreateConfig - Config 생성
-func (r *UTILITYRequest) CreateConfig() (string, error) {
-	// 입력데이터 검사
+func (r *UtilityRequest) CreateConfig() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ConfigReq
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -37,14 +37,14 @@ func (r *UTILITYRequest) CreateConfig() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
 // ListConfig - Config 목록
-func (r *UTILITYRequest) ListConfig() (string, error) {
+func (r *UtilityRequest) ListConfig() (string, error) {
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -53,25 +53,25 @@ func (r *UTILITYRequest) ListConfig() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
 // GetConfig - Config 조회
-func (r *UTILITYRequest) GetConfig() (string, error) {
-	// 입력데이터 검사
+func (r *UtilityRequest) GetConfig() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ConfigQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -80,25 +80,25 @@ func (r *UTILITYRequest) GetConfig() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
 // InitConfig
-func (r *UTILITYRequest) InitConfig() (string, error) {
-	// 입력데이터 검사
+func (r *UtilityRequest) InitConfig() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ConfigQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -107,14 +107,14 @@ func (r *UTILITYRequest) InitConfig() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
 // InitAllConfig - Config 전체 삭제
-func (r *UTILITYRequest) InitAllConfig() (string, error) {
+func (r *UtilityRequest) InitAllConfig() (string, error) {
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -123,7 +123,7 @@ func (r *UTILITYRequest) InitAllConfig() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 

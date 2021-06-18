@@ -121,7 +121,7 @@ func (ns *NSApi) GetJWTToken() (string, error) {
 func (ns *NSApi) SetConfigPath(configFile string) error {
 	logger := logger.NewLogger()
 
-	// Viper 를 사용하는 설정 파서 생성
+	// Make new config parser that uses Viper library
 	parser := config.MakeParser()
 
 	var (

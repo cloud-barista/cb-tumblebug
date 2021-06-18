@@ -14,21 +14,21 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateSecurityGroup - Security Group 생성
+// CreateSecurityGroup
 func (r *MCIRRequest) CreateSecurityGroup() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.TbSecurityGroupCreateRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -37,25 +37,25 @@ func (r *MCIRRequest) CreateSecurityGroup() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// ListSecurityGroup - Security Group 목록
+// ListSecurityGroup
 func (r *MCIRRequest) ListSecurityGroup() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceAllQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -64,25 +64,25 @@ func (r *MCIRRequest) ListSecurityGroup() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
 // ListSecurityGroupId
 func (r *MCIRRequest) ListSecurityGroupId() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceAllQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -91,25 +91,25 @@ func (r *MCIRRequest) ListSecurityGroupId() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetSecurityGroup - Security Group 조회
+// GetSecurityGroup
 func (r *MCIRRequest) GetSecurityGroup() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -118,25 +118,25 @@ func (r *MCIRRequest) GetSecurityGroup() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// DeleteSecurityGroup - Security Group 삭제
+// DeleteSecurityGroup
 func (r *MCIRRequest) DeleteSecurityGroup() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -145,25 +145,25 @@ func (r *MCIRRequest) DeleteSecurityGroup() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// DeleteAllSecurityGroup - Security Group 전체 삭제
+// DeleteAllSecurityGroup
 func (r *MCIRRequest) DeleteAllSecurityGroup() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceAllQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -172,7 +172,7 @@ func (r *MCIRRequest) DeleteAllSecurityGroup() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 

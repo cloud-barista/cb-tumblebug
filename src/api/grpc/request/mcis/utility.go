@@ -14,21 +14,21 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CheckMcis - MCIS 체크
+// CheckMcis - Check whether MCIS exists or not
 func (r *MCISRequest) CheckMcis() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.TbMcisQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -37,25 +37,25 @@ func (r *MCISRequest) CheckMcis() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// CheckVm - MCIS VM 체크
+// CheckVm - Check whether MCIS VM exists or not
 func (r *MCISRequest) CheckVm() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.TbVmQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -64,7 +64,7 @@ func (r *MCISRequest) CheckVm() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 

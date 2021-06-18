@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-// RunServer - GRPC 서버 구동
+// RunServer - Run gRPC server
 func RunServer() {
 	logger := logger.NewLogger()
 
@@ -47,7 +47,7 @@ func RunServer() {
 	}
 
 	gs := cbserver.Server
-	pb.RegisterUTILITYServer(gs, &grpc_common.UTILITYService{})
+	pb.RegisterUtilityServer(gs, &grpc_common.UtilityService{})
 	pb.RegisterNSServer(gs, &grpc_common.NSService{})
 	pb.RegisterMCIRServer(gs, &grpc_mcir.MCIRService{})
 	pb.RegisterMCISServer(gs, &grpc_mcis.MCISService{})
@@ -72,7 +72,7 @@ func RunServer() {
 func configLoad(cf string) (config.GrpcConfig, error) {
 	logger := logger.NewLogger()
 
-	// Viper 를 사용하는 설정 파서 생성
+	// Make new config parser that uses Viper library
 	parser := config.MakeParser()
 
 	var (
@@ -91,9 +91,9 @@ func configLoad(cf string) (config.GrpcConfig, error) {
 		return gConf, err
 	}
 
-	// Command line 에 지정된 옵션을 설정에 적용 (우선권)
+	// Apply command line params (which have higher priority)
 
-	// TUMBLEBUG 필수 입력 항목 체크
+	// Check if mandatory CB-Tumblebug params are set
 	tumblebugsrv := gConf.GSL.TumblebugSrv
 
 	if tumblebugsrv == nil {

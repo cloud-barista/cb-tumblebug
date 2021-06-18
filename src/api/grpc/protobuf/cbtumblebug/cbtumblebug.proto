@@ -5,51 +5,44 @@ import "gogoproto/gogo.proto";
 package cbtumblebug;
 
 //////////////////////////////////
-// 공통 메시지 정의
+// Commonly-used messages
 //////////////////////////////////
 
-// Empty 메시지 정의
 message Empty {}
 
-// KeyValue 메시지 정의
 message KeyValue {
 	string key = 1 [json_name="Key", (gogoproto.jsontag) = "Key", (gogoproto.moretags) = "yaml:\"Key\""];
 	string value = 2 [json_name="Value", (gogoproto.jsontag) = "Value", (gogoproto.moretags) = "yaml:\"Value\""];
 }
 
-// IID 메시지 정의
+// IID is defined & used by CB-Spider
 message IID {
 	string name_id = 1 [json_name="NameId", (gogoproto.jsontag) = "NameId", (gogoproto.moretags) = "yaml:\"NameId\""];
 	string system_id = 2 [json_name="SystemId", (gogoproto.jsontag) = "SystemId", (gogoproto.moretags) = "yaml:\"SystemId\""];
 }
 
-// Boolean 응답 메시지 정의
 message BooleanResponse {
 	bool result = 1 [json_name="Result", (gogoproto.jsontag) = "Result", (gogoproto.moretags) = "yaml:\"Result\""];
 }
 
-// Exists 응답 메시지 정의
 message ExistsResponse {
 	bool exists = 1 [json_name="exists", (gogoproto.jsontag) = "exists", (gogoproto.moretags) = "yaml:\"exists\""];
 }
 
-// StringResponse 응답 메시지 정의
 message StringResponse {
 	string result = 1 [json_name="Result", (gogoproto.jsontag) = "Result", (gogoproto.moretags) = "yaml:\"Result\""];
 }
 
-// MessageResponse 응답 메시지 정의
 message MessageResponse {
 	string message = 1 [json_name="message", (gogoproto.jsontag) = "message", (gogoproto.moretags) = "yaml:\"message\""];
 }
 
-// Status 응답 메시지 정의
 message StatusResponse {
 	string status = 1 [json_name="Status", (gogoproto.jsontag) = "Status", (gogoproto.moretags) = "yaml:\"Status\""];
 }
 
 //////////////////////////////////
-// NS GRPC 서비스 정의
+// Namespace-related gRPC services
 //////////////////////////////////
 
 service NS {
@@ -64,7 +57,7 @@ service NS {
 }
 
 //////////////////////////////////
-// Namespace 메시지 정의
+// Namespace-related messages
 //////////////////////////////////
 
 message NSInfoResponse {
@@ -97,7 +90,7 @@ message NSQryRequest {
 
 
 //////////////////////////////////
-// MCIR GRPC 서비스 정의
+// MCIR-related gRPC services
 //////////////////////////////////
 
 service MCIR {
@@ -157,7 +150,7 @@ message ListIdResponse {
 }
 
 //////////////////////////////////
-// Resource 메시지 정의
+// MCIR-related messages
 //////////////////////////////////
 
 message ResourceQryRequest {
@@ -174,7 +167,7 @@ message ResourceAllQryRequest {
 }
 
 //////////////////////////////////
-// Image 메시지 정의
+// Image-related messages
 //////////////////////////////////
 
 
@@ -253,7 +246,7 @@ message LookupImageQryRequest {
 }
 
 //////////////////////////////////
-// SSH Key 메시지 정의
+// SSH Key-related messages
 //////////////////////////////////
 
 message TbSshKeyInfoResponse {
@@ -292,7 +285,7 @@ message TbSshKeyReq {
 }
 
 //////////////////////////////////
-// Spec 메시지 정의
+// Spec-related messages
 //////////////////////////////////
 
 message TbSpecInfoRequest {
@@ -459,7 +452,7 @@ message UpdateSpecRequest {
 */
 
 //////////////////////////////////
-// Security Group 메시지 정의
+// Security Group-related messages
 //////////////////////////////////
 
 message TbSecurityGroupInfoResponse {
@@ -506,7 +499,7 @@ message TbSecurityGroupReq {
 }
 
 //////////////////////////////////
-// VNet 메시지 정의
+// VNet-related messages
 //////////////////////////////////
 
 message TbVNetInfoResponse {
@@ -559,7 +552,7 @@ message SpiderSubnetReqInfo {
 
 
 //////////////////////////////////
-// MCIS GRPC 서비스 정의
+// MCIS-related gRPC services
 //////////////////////////////////
 
 service MCIS {
@@ -604,7 +597,7 @@ service MCIS {
 }
 
 //////////////////////////////////
-// MCIS 메시지 정의
+// MCIS-related messages
 //////////////////////////////////
 
 message TbMcisInfoResponse {
@@ -792,7 +785,7 @@ message TbMcisQryRequest {
 }
 
 //////////////////////////////////
-// MCIS VM 메시지 정의
+// MCIS VM-related messages
 //////////////////////////////////
 
 message TbVmInfoResponse {
@@ -829,7 +822,7 @@ message TbVmActionRequest {
 }
 
 //////////////////////////////////
-// MCIS Recommend 메시지 정의
+// MCIS Recommend-related messages
 //////////////////////////////////
 
 message McisRecommendInfoResponse {
@@ -880,7 +873,7 @@ message TbVmRecommendReq {
 }
 
 //////////////////////////////////
-// MCIS Recommend VM 메시지 정의
+// MCIS Recommend VM-related messages
 //////////////////////////////////
 
 message McisRecommendVmCreateRequest {
@@ -924,7 +917,7 @@ message ParameterKeyVal {
 }
 
 //////////////////////////////////
-// MCIS CMD 메시지 정의
+// MCIS CMD-related messages
 //////////////////////////////////
 
 message ListCmdMcisResponse {
@@ -961,7 +954,7 @@ message McisCmdReq {
 }
 
 //////////////////////////////////
-// MCIS Agent 메시지 정의
+// MCIS Agent-related messages
 //////////////////////////////////
 
 message ListAgentInstallResponse {
@@ -969,7 +962,7 @@ message ListAgentInstallResponse {
 }
 
 //////////////////////////////////
-// MCIS Monitor 메시지 정의
+// MCIS Monitor-related messages
 //////////////////////////////////
 
 message MonitorResultSimpleResponse {
@@ -996,7 +989,7 @@ message MonitorQryRequest {
 }
 
 //////////////////////////////////
-// MCIS Benchmark 메시지 정의
+// MCIS Benchmark-related messages
 //////////////////////////////////
 
 message ListBenchmarkInfoResponse {
@@ -1030,7 +1023,7 @@ message BmReq {
 }
 
 //////////////////////////////////
-// MCIS POLICY 메시지 정의
+// MCIS Policy-related messages
 //////////////////////////////////
 
 message McisPolicyInfoResponse {
@@ -1086,10 +1079,10 @@ message McisPolicyQryRequest {
 }
 
 //////////////////////////////////
-// UTILITY GRPC 서비스 정의
+// Utility-related messages
 //////////////////////////////////
 
-service UTILITY {
+service Utility {
   rpc ListConnConfig (Empty) returns (ListConnConfigResponse) {}
   rpc GetConnConfig (ConnConfigQryRequest) returns (ConnConfigResponse) {}
   rpc ListRegion (Empty) returns (ListRegionResponse) {}
@@ -1111,7 +1104,7 @@ service UTILITY {
 }
 
 //////////////////////////////////
-// Connection Config 메시지 정의
+// Connection Config-related messages
 //////////////////////////////////
 
 message ConnConfigResponse {
@@ -1135,7 +1128,7 @@ message ConnConfigQryRequest {
 }
 
 //////////////////////////////////
-// Region 메시지 정의
+// Region-related messages
 //////////////////////////////////
 
 message RegionResponse {
@@ -1158,7 +1151,7 @@ message RegionQryRequest {
 
 
 //////////////////////////////////
-// Config 메시지 정의
+// Config-related messages
 //////////////////////////////////
 
 message ConfigInfoResponse {
@@ -1189,7 +1182,7 @@ message ConfigQryRequest {
 }
 
 //////////////////////////////////
-// InspectResources 메시지 정의
+// InspectResources-related messages
 //////////////////////////////////
 
 message InspectMcirInfoResponse {
@@ -1253,7 +1246,7 @@ message InspectQryRequest {
 }
 
 //////////////////////////////////
-// Object 메시지 정의
+// Object-related messages
 //////////////////////////////////
 
 message ObjectInfoResponse {

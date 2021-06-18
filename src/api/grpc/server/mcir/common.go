@@ -16,7 +16,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CheckResource - Resouce 체크
+// CheckResource - Resource 체크
 func (s *MCIRService) CheckResource(ctx context.Context, req *pb.ResourceQryRequest) (*pb.ExistsResponse, error) {
 	logger := logger.NewLogger()
 

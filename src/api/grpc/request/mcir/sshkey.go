@@ -14,21 +14,21 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateSshKey - KeyPair 생성
+// CreateSshKey
 func (r *MCIRRequest) CreateSshKey() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.TbSshKeyCreateRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -37,25 +37,25 @@ func (r *MCIRRequest) CreateSshKey() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// ListSshKey - KeyPair 목록
+// ListSshKey
 func (r *MCIRRequest) ListSshKey() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceAllQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -64,25 +64,25 @@ func (r *MCIRRequest) ListSshKey() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
 // ListSshKeyId
 func (r *MCIRRequest) ListSshKeyId() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceAllQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -91,25 +91,25 @@ func (r *MCIRRequest) ListSshKeyId() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetSshKey - KeyPair 조회
+// GetSshKey
 func (r *MCIRRequest) GetSshKey() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -118,25 +118,25 @@ func (r *MCIRRequest) GetSshKey() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// DeleteSshKey - KeyPair 삭제
+// DeleteSshKey
 func (r *MCIRRequest) DeleteSshKey() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -145,25 +145,25 @@ func (r *MCIRRequest) DeleteSshKey() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// DeleteAllSshKey - KeyPair 전체 삭제
+// DeleteAllSshKey
 func (r *MCIRRequest) DeleteAllSshKey() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceAllQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -172,7 +172,7 @@ func (r *MCIRRequest) DeleteAllSshKey() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 

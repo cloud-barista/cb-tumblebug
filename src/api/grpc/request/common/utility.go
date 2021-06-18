@@ -15,9 +15,9 @@ import (
 
 // ===== [ Implementations ] =====
 
-// ListConnConfig - Connection Config 목록
-func (r *UTILITYRequest) ListConnConfig() (string, error) {
-	// 서버에 요청
+// ListConnConfig
+func (r *UtilityRequest) ListConnConfig() (string, error) {
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -27,25 +27,25 @@ func (r *UTILITYRequest) ListConnConfig() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetConnConfig - Connection Config 조회
-func (r *UTILITYRequest) GetConnConfig() (string, error) {
-	// 입력데이터 검사
+// GetConnConfig
+func (r *UtilityRequest) GetConnConfig() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ConnConfigQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -54,13 +54,13 @@ func (r *UTILITYRequest) GetConnConfig() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// ListRegion - Region 목록
-func (r *UTILITYRequest) ListRegion() (string, error) {
-	// 서버에 요청
+// ListRegion
+func (r *UtilityRequest) ListRegion() (string, error) {
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -70,25 +70,25 @@ func (r *UTILITYRequest) ListRegion() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetRegion - Region 조회
-func (r *UTILITYRequest) GetRegion() (string, error) {
-	// 입력데이터 검사
+// GetRegion
+func (r *UtilityRequest) GetRegion() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.RegionQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -97,25 +97,25 @@ func (r *UTILITYRequest) GetRegion() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// InspectMcirResources - MCIR 리소스 점검
-func (r *UTILITYRequest) InspectMcirResources() (string, error) {
-	// 입력데이터 검사
+// InspectMcirResources
+func (r *UtilityRequest) InspectMcirResources() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.InspectQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -124,25 +124,25 @@ func (r *UTILITYRequest) InspectMcirResources() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// InspectVmResources - VM 리소스 점검
-func (r *UTILITYRequest) InspectVmResources() (string, error) {
-	// 입력데이터 검사
+// InspectVmResources
+func (r *UtilityRequest) InspectVmResources() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.InspectQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -151,25 +151,25 @@ func (r *UTILITYRequest) InspectVmResources() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// ListObject - 객체 목록
-func (r *UTILITYRequest) ListObject() (string, error) {
-	// 입력데이터 검사
+// ListObject
+func (r *UtilityRequest) ListObject() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ObjectQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -178,25 +178,25 @@ func (r *UTILITYRequest) ListObject() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetObject - 객체 조회
-func (r *UTILITYRequest) GetObject() (string, error) {
-	// 입력데이터 검사
+// GetObject
+func (r *UtilityRequest) GetObject() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ObjectQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -208,25 +208,25 @@ func (r *UTILITYRequest) GetObject() (string, error) {
 	var contentJSON map[string]interface{}
 	json.Unmarshal([]byte(resp.Item), &contentJSON)
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &contentJSON)
 }
 
-// DeleteObject - 객체 삭제
-func (r *UTILITYRequest) DeleteObject() (string, error) {
-	// 입력데이터 검사
+// DeleteObject
+func (r *UtilityRequest) DeleteObject() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ObjectQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -235,25 +235,25 @@ func (r *UTILITYRequest) DeleteObject() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// DeleteAllObject - 객체 전체 삭제
-func (r *UTILITYRequest) DeleteAllObject() (string, error) {
-	// 입력데이터 검사
+// DeleteAllObject
+func (r *UtilityRequest) DeleteAllObject() (string, error) {
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ObjectQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -262,7 +262,7 @@ func (r *UTILITYRequest) DeleteAllObject() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 

@@ -10,9 +10,9 @@ import (
 
 // ===== [ Types ] =====
 
-// UTILITYRequest - Utility 서비스 요청 구현
-type UTILITYRequest struct {
-	Client  pb.UTILITYClient
+// UtilityRequest
+type UtilityRequest struct {
+	Client  pb.UtilityClient
 	Timeout time.Duration
 
 	InType  string
@@ -20,7 +20,7 @@ type UTILITYRequest struct {
 	OutType string
 }
 
-// NSRequest - Namespace 서비스 요청 구현
+// NSRequest
 type NSRequest struct {
 	Client  pb.NSClient
 	Timeout time.Duration

@@ -16,73 +16,73 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateConfig - Config 생성
-func (s *UTILITYService) CreateConfig(ctx context.Context, req *pb.ConfigCreateRequest) (*pb.ConfigInfoResponse, error) {
+// CreateConfig
+func (s *UtilityService) CreateConfig(ctx context.Context, req *pb.ConfigCreateRequest) (*pb.ConfigInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.CreateConfig()")
+	logger.Debug("calling UtilityService.CreateConfig()")
 
-	// GRPC 메시지에서 COMMON 객체로 복사
+	// Copy gRPC message to 'common' object
 	var commObj common.ConfigReq
 	err := gc.CopySrcToDest(&req.Item, &commObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.CreateConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.CreateConfig()")
 	}
 
 	content, err := common.UpdateConfig(&commObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.CreateConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.CreateConfig()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.ConfigInfo
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.CreateConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.CreateConfig()")
 	}
 
 	resp := &pb.ConfigInfoResponse{Item: &grpcObj}
 	return resp, nil
 }
 
-// ListConfig - Config 목록
-func (s *UTILITYService) ListConfig(ctx context.Context, req *pb.Empty) (*pb.ListConfigInfoResponse, error) {
+// ListConfig
+func (s *UtilityService) ListConfig(ctx context.Context, req *pb.Empty) (*pb.ListConfigInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.ListConfig()")
+	logger.Debug("calling UtilityService.ListConfig()")
 
 	configList, err := common.ListConfig()
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.ListConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.ListConfig()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj []*pb.ConfigInfo
 	err = gc.CopySrcToDest(&configList, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.ListConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.ListConfig()")
 	}
 
 	resp := &pb.ListConfigInfoResponse{Items: grpcObj}
 	return resp, nil
 }
 
-// GetConfig - Config 조회
-func (s *UTILITYService) GetConfig(ctx context.Context, req *pb.ConfigQryRequest) (*pb.ConfigInfoResponse, error) {
+// GetConfig
+func (s *UtilityService) GetConfig(ctx context.Context, req *pb.ConfigQryRequest) (*pb.ConfigInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.GetConfig()")
+	logger.Debug("calling UtilityService.GetConfig()")
 
 	res, err := common.GetConfig(req.ConfigId)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.GetConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.GetConfig()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.ConfigInfo
 	err = gc.CopySrcToDest(&res, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.GetConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.GetConfig()")
 	}
 
 	resp := &pb.ConfigInfoResponse{Item: &grpcObj}
@@ -90,29 +90,29 @@ func (s *UTILITYService) GetConfig(ctx context.Context, req *pb.ConfigQryRequest
 }
 
 // InitConfig
-func (s *UTILITYService) InitConfig(ctx context.Context, req *pb.ConfigQryRequest) (*pb.MessageResponse, error) {
+func (s *UtilityService) InitConfig(ctx context.Context, req *pb.ConfigQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.InitConfig()")
+	logger.Debug("calling UtilityService.InitConfig()")
 
 	err := common.InitConfig(req.ConfigId)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InitConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InitConfig()")
 	}
 
 	resp := &pb.MessageResponse{Message: "The config " + req.ConfigId + " has been initialized."}
 	return resp, nil
 }
 
-// InitAllConfig - Config 전체 삭제
-func (s *UTILITYService) InitAllConfig(ctx context.Context, req *pb.Empty) (*pb.MessageResponse, error) {
+// InitAllConfig
+func (s *UtilityService) InitAllConfig(ctx context.Context, req *pb.Empty) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.InitAllConfig()")
+	logger.Debug("calling UtilityService.InitAllConfig()")
 
 	err := common.InitAllConfig()
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InitAllConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InitAllConfig()")
 	}
 
 	resp := &pb.MessageResponse{Message: "All configs have been initialized."}

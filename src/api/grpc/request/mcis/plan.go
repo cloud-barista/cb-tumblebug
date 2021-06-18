@@ -14,21 +14,21 @@ import (
 
 // ===== [ Implementations ] =====
 
-// RecommendVM - MCIS VM 추천
+// RecommendVM
 func (r *MCISRequest) RecommendVM() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.McisRecommendVmCreateRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -37,7 +37,7 @@ func (r *MCISRequest) RecommendVM() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp.Items)
 }
 

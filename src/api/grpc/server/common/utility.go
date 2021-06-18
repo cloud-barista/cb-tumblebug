@@ -17,141 +17,141 @@ import (
 
 // ===== [ Implementations ] =====
 
-// ListConnConfig - Connection Config 목록
-func (s *UTILITYService) ListConnConfig(ctx context.Context, req *pb.Empty) (*pb.ListConnConfigResponse, error) {
+// ListConnConfig
+func (s *UtilityService) ListConnConfig(ctx context.Context, req *pb.Empty) (*pb.ListConnConfigResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.ListConnConfig()")
+	logger.Debug("calling UtilityService.ListConnConfig()")
 
 	content, err := common.GetConnConfigList()
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.ListConnConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.ListConnConfig()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.ListConnConfigResponse
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.ListConnConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.ListConnConfig()")
 	}
 
 	return &grpcObj, nil
 }
 
-// GetConnConfig - Connection Config 조회
-func (s *UTILITYService) GetConnConfig(ctx context.Context, req *pb.ConnConfigQryRequest) (*pb.ConnConfigResponse, error) {
+// GetConnConfig
+func (s *UtilityService) GetConnConfig(ctx context.Context, req *pb.ConnConfigQryRequest) (*pb.ConnConfigResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.GetConnConfig()")
+	logger.Debug("calling UtilityService.GetConnConfig()")
 
 	content, err := common.GetConnConfig(req.ConnConfigName)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.GetConnConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.GetConnConfig()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.ConnConfig
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.GetConnConfig()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.GetConnConfig()")
 	}
 
 	resp := &pb.ConnConfigResponse{Item: &grpcObj}
 	return resp, nil
 }
 
-// ListRegion - Region 목록
-func (s *UTILITYService) ListRegion(ctx context.Context, req *pb.Empty) (*pb.ListRegionResponse, error) {
+// ListRegion
+func (s *UtilityService) ListRegion(ctx context.Context, req *pb.Empty) (*pb.ListRegionResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.ListRegion()")
+	logger.Debug("calling UtilityService.ListRegion()")
 
 	content, err := common.GetRegionList()
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.ListRegion()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.ListRegion()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.ListRegionResponse
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.ListRegion()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.ListRegion()")
 	}
 
 	return &grpcObj, nil
 }
 
-// GetRegion - Region 조회
-func (s *UTILITYService) GetRegion(ctx context.Context, req *pb.RegionQryRequest) (*pb.RegionResponse, error) {
+// GetRegion
+func (s *UtilityService) GetRegion(ctx context.Context, req *pb.RegionQryRequest) (*pb.RegionResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.GetRegion()")
+	logger.Debug("calling UtilityService.GetRegion()")
 
 	content, err := common.GetRegion(req.RegionName)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.GetRegion()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.GetRegion()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.Region
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.GetRegion()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.GetRegion()")
 	}
 
 	resp := &pb.RegionResponse{Item: &grpcObj}
 	return resp, nil
 }
 
-// InspectMcirResources - MCIR 리소스 점검
-func (s *UTILITYService) InspectMcirResources(ctx context.Context, req *pb.InspectQryRequest) (*pb.InspectMcirInfoResponse, error) {
+// InspectMcirResources
+func (s *UtilityService) InspectMcirResources(ctx context.Context, req *pb.InspectQryRequest) (*pb.InspectMcirInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.InspectMcirResources()")
+	logger.Debug("calling UtilityService.InspectMcirResources()")
 
 	content, err := mcir.InspectResources(req.ConnectionName, req.Type)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InspectMcirResources()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InspectMcirResources()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.InspectMcirInfo
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InspectMcirResources()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InspectMcirResources()")
 	}
 
 	resp := &pb.InspectMcirInfoResponse{Item: &grpcObj}
 	return resp, nil
 }
 
-// InspectVmResources - VM 리소스 점검
-func (s *UTILITYService) InspectVmResources(ctx context.Context, req *pb.InspectQryRequest) (*pb.InspectVmInfoResponse, error) {
+// InspectVmResources
+func (s *UtilityService) InspectVmResources(ctx context.Context, req *pb.InspectQryRequest) (*pb.InspectVmInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.InspectVmResources()")
+	logger.Debug("calling UtilityService.InspectVmResources()")
 
 	content, err := mcis.InspectVMs(req.ConnectionName)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InspectVmResources()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InspectVmResources()")
 	}
 
-	// COMMON 객체에서 GRPC 메시지로 복사
+	// Copy 'common' object to gRPC message
 	var grpcObj pb.InspectVmInfo
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.InspectVmResources()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InspectVmResources()")
 	}
 
 	resp := &pb.InspectVmInfoResponse{Item: &grpcObj}
 	return resp, nil
 }
 
-// ListObject - 객체 목록
-func (s *UTILITYService) ListObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.ListObjectInfoResponse, error) {
+// ListObject
+func (s *UtilityService) ListObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.ListObjectInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.ListObject()")
+	logger.Debug("calling UtilityService.ListObject()")
 
 	content := common.GetObjectList(req.Key)
 
@@ -159,26 +159,26 @@ func (s *UTILITYService) ListObject(ctx context.Context, req *pb.ObjectQryReques
 	return resp, nil
 }
 
-// GetObject - 객체 조회
-func (s *UTILITYService) GetObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.ObjectInfoResponse, error) {
+// GetObject
+func (s *UtilityService) GetObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.ObjectInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.GetObject()")
+	logger.Debug("calling UtilityService.GetObject()")
 
 	content, err := common.GetObjectValue(req.Key)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "UTILITYService.GetObject()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.GetObject()")
 	}
 
 	resp := &pb.ObjectInfoResponse{Item: content}
 	return resp, nil
 }
 
-// DeleteObject - 객체 삭제
-func (s *UTILITYService) DeleteObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.MessageResponse, error) {
+// DeleteObject
+func (s *UtilityService) DeleteObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.DeleteObject()")
+	logger.Debug("calling UtilityService.DeleteObject()")
 
 	content, err := common.GetObjectValue(req.Key)
 	if err != nil || content == "" {
@@ -196,11 +196,11 @@ func (s *UTILITYService) DeleteObject(ctx context.Context, req *pb.ObjectQryRequ
 	return resp, nil
 }
 
-// DeleteAllObject - 객체 전체 삭제
-func (s *UTILITYService) DeleteAllObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.MessageResponse, error) {
+// DeleteAllObject
+func (s *UtilityService) DeleteAllObject(ctx context.Context, req *pb.ObjectQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling UTILITYService.DeleteAllObject()")
+	logger.Debug("calling UtilityService.DeleteAllObject()")
 
 	err := common.DeleteObjects(req.Key)
 	if err != nil {

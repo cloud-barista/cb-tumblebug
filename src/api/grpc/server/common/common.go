@@ -4,11 +4,11 @@ package common
 
 // ===== [ Types ] =====
 
-// UTILITYService - Utility 서비스 구현
-type UTILITYService struct {
+// UtilityService
+type UtilityService struct {
 }
 
-// NSService - Namespace 서비스 구현
+// NSService
 type NSService struct {
 }
 

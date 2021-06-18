@@ -28,7 +28,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Empty 메시지 정의
 type Empty struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -68,7 +67,6 @@ func (m *Empty) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Empty proto.InternalMessageInfo
 
-// KeyValue 메시지 정의
 type KeyValue struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,json=Key,proto3" json:"Key" yaml:"Key"`
 	Value                string   `protobuf:"bytes,2,opt,name=value,json=Value,proto3" json:"Value" yaml:"Value"`
@@ -124,7 +122,7 @@ func (m *KeyValue) GetValue() string {
 	return ""
 }
 
-// IID 메시지 정의
+// IID is defined & used by CB-Spider
 type IID struct {
 	NameId               string   `protobuf:"bytes,1,opt,name=name_id,json=NameId,proto3" json:"NameId" yaml:"NameId"`
 	SystemId             string   `protobuf:"bytes,2,opt,name=system_id,json=SystemId,proto3" json:"SystemId" yaml:"SystemId"`
@@ -180,7 +178,6 @@ func (m *IID) GetSystemId() string {
 	return ""
 }
 
-// Boolean 응답 메시지 정의
 type BooleanResponse struct {
 	Result               bool     `protobuf:"varint,1,opt,name=result,json=Result,proto3" json:"Result" yaml:"Result"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -228,7 +225,6 @@ func (m *BooleanResponse) GetResult() bool {
 	return false
 }
 
-// Exists 응답 메시지 정의
 type ExistsResponse struct {
 	Exists               bool     `protobuf:"varint,1,opt,name=exists,proto3" json:"exists" yaml:"exists"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -276,7 +272,6 @@ func (m *ExistsResponse) GetExists() bool {
 	return false
 }
 
-// StringResponse 응답 메시지 정의
 type StringResponse struct {
 	Result               string   `protobuf:"bytes,1,opt,name=result,json=Result,proto3" json:"Result" yaml:"Result"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -324,7 +319,6 @@ func (m *StringResponse) GetResult() string {
 	return ""
 }
 
-// MessageResponse 응답 메시지 정의
 type MessageResponse struct {
 	Message              string   `protobuf:"bytes,1,opt,name=message,proto3" json:"message" yaml:"message"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -372,7 +366,6 @@ func (m *MessageResponse) GetMessage() string {
 	return ""
 }
 
-// Status 응답 메시지 정의
 type StatusResponse struct {
 	Status               string   `protobuf:"bytes,1,opt,name=status,json=Status,proto3" json:"Status" yaml:"Status"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -10597,7 +10590,7 @@ func init() {
 func init() { proto.RegisterFile("cbtumblebug/cbtumblebug.proto", fileDescriptor_d7122b45d641d698) }
 
 var fileDescriptor_d7122b45d641d698 = []byte{
-	// 9600 bytes of a gzipped FileDescriptorProto
+	// 9599 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x7d, 0x5b, 0x8c, 0x64, 0x47,
 	0x96, 0x90, 0x33, 0xeb, 0x7d, 0xea, 0x7d, 0xab, 0x1f, 0xd9, 0xdd, 0xee, 0x2e, 0x3b, 0x3c, 0x63,
 	0xcf, 0x30, 0xcb, 0xda, 0x6e, 0xf7, 0x8c, 0xdd, 0x6b, 0xaf, 0xc6, 0xd5, 0x55, 0xed, 0x72, 0x4d,
@@ -11183,21 +11176,21 @@ var fileDescriptor_d7122b45d641d698 = []byte{
 	0x8b, 0x4f, 0xde, 0x69, 0x6f, 0x5b, 0xc4, 0xc7, 0xa9, 0xca, 0x14, 0x25, 0xbc, 0xdc, 0xa6, 0x84,
 	0xb6, 0xb6, 0x57, 0x5b, 0xd6, 0x8f, 0x60, 0x41, 0xa9, 0xcf, 0xde, 0xb9, 0x77, 0x53, 0xa4, 0x9f,
 	0x48, 0x3f, 0x49, 0x2c, 0xc6, 0x7d, 0xf5, 0x4c, 0x37, 0x03, 0xf7, 0x1f, 0x4f, 0xc1, 0xc4, 0xa3,
-	0x87, 0x1b, 0xf7, 0x37, 0x1e, 0x7e, 0xec, 0xdc, 0xc3, 0xde, 0xd7, 0x0e, 0x30, 0xdb, 0xf6, 0xa4,
-	0xf2, 0x9a, 0x33, 0x7f, 0xe6, 0x9a, 0x77, 0x06, 0xeb, 0x67, 0x8d, 0xd7, 0xcb, 0x6d, 0xce, 0x5d,
-	0xb7, 0x35, 0x9a, 0xac, 0x6c, 0x57, 0xd1, 0xbe, 0x15, 0xe7, 0x56, 0x7b, 0xdb, 0x42, 0x34, 0x0f,
-	0xd0, 0xe2, 0xcc, 0x5a, 0x77, 0x25, 0x8f, 0xeb, 0x96, 0x03, 0xb4, 0x6d, 0xa7, 0x44, 0x8e, 0x55,
-	0x59, 0x9a, 0x35, 0xa2, 0x95, 0x2f, 0x59, 0x0e, 0x19, 0x76, 0xb2, 0x3e, 0xf2, 0x67, 0x35, 0xc9,
-	0x0b, 0xce, 0x3a, 0x36, 0xb2, 0xdf, 0x41, 0xc8, 0x33, 0xda, 0xe4, 0x0d, 0x15, 0x7c, 0xae, 0x5b,
-	0x0a, 0xee, 0xd4, 0xf9, 0x79, 0x76, 0xf7, 0x00, 0x36, 0x9a, 0x5e, 0x8f, 0xfc, 0xba, 0xef, 0x5d,
-	0xce, 0x32, 0x66, 0x2b, 0x8d, 0x46, 0x87, 0x76, 0x76, 0x63, 0xf2, 0x67, 0xe0, 0x82, 0x76, 0xd8,
-	0x4f, 0xfa, 0x78, 0x71, 0x46, 0x0f, 0xe7, 0x0e, 0x0b, 0x64, 0xb6, 0x3d, 0xda, 0x9c, 0x51, 0xe4,
-	0xbb, 0x8c, 0x4e, 0x7a, 0xfe, 0xa7, 0x77, 0xee, 0xa4, 0xfd, 0xe9, 0x23, 0x8d, 0x37, 0xc5, 0x51,
-	0xc6, 0xad, 0xf9, 0x4c, 0x6f, 0x66, 0xf7, 0xeb, 0x2d, 0x03, 0x9e, 0x3f, 0x1c, 0x90, 0x0e, 0x78,
-	0x6f, 0x2c, 0x97, 0x2d, 0xe8, 0x1c, 0x3b, 0x61, 0x10, 0xf6, 0xc6, 0xb1, 0xdb, 0x68, 0xed, 0x68,
-	0x3b, 0x13, 0x43, 0xe1, 0x78, 0x67, 0xe1, 0x0f, 0x7f, 0x7a, 0xa3, 0xf0, 0x47, 0x3f, 0xbd, 0x51,
-	0xf8, 0x4f, 0x3f, 0xbd, 0x51, 0xf8, 0x6b, 0xff, 0xf9, 0xc6, 0x0b, 0x7b, 0xe3, 0x61, 0x14, 0x24,
-	0xc1, 0x5b, 0xff, 0x37, 0x00, 0x00, 0xff, 0xff, 0xfa, 0x72, 0x79, 0x31, 0x63, 0xc3, 0x00, 0x00,
+	0xc4, 0x6b, 0x78, 0xc9, 0x91, 0x73, 0x0f, 0x7b, 0x5f, 0x3b, 0xc0, 0x6c, 0xdb, 0x93, 0xca, 0x6b,
+	0xce, 0xfc, 0x99, 0x6b, 0xde, 0x19, 0xac, 0x9f, 0x35, 0x5e, 0x2f, 0xb7, 0x39, 0x77, 0xdd, 0xd6,
+	0x68, 0xb2, 0xb2, 0x5d, 0x45, 0xfb, 0x56, 0x9c, 0x5b, 0xed, 0x6d, 0x0b, 0xd1, 0x3c, 0x40, 0x8b,
+	0x33, 0x6b, 0xdd, 0x95, 0x3c, 0xae, 0x5b, 0x0e, 0xd0, 0xb6, 0x9d, 0x12, 0x39, 0x56, 0x65, 0x69,
+	0xd6, 0x88, 0x56, 0xbe, 0x64, 0x39, 0x64, 0xd8, 0xc9, 0xfa, 0xc8, 0x9f, 0xd5, 0x24, 0x2f, 0x38,
+	0xeb, 0xd8, 0xc8, 0x7e, 0x07, 0x21, 0xcf, 0x68, 0x93, 0x37, 0x54, 0xf0, 0xb9, 0x6e, 0x29, 0xb8,
+	0x53, 0xe7, 0xe7, 0xd9, 0xdd, 0x03, 0xd8, 0x68, 0x7a, 0x3d, 0xf2, 0xeb, 0xbe, 0x77, 0x39, 0xcb,
+	0x98, 0xad, 0x34, 0x1a, 0x1d, 0xda, 0xd9, 0x8d, 0xc9, 0x9f, 0x81, 0x0b, 0xda, 0x61, 0x3f, 0xe9,
+	0xe3, 0xc5, 0x19, 0x3d, 0x9c, 0x3b, 0x2c, 0x90, 0xd9, 0xf6, 0x68, 0x73, 0x46, 0x91, 0xef, 0x32,
+	0x3a, 0xe9, 0xf9, 0x9f, 0xde, 0xb9, 0x93, 0xf6, 0xa7, 0x8f, 0x34, 0xde, 0x14, 0x47, 0x19, 0xb7,
+	0xe6, 0x33, 0xbd, 0x99, 0xdd, 0xaf, 0xb7, 0x0c, 0x78, 0xfe, 0x70, 0x40, 0x3a, 0xe0, 0xbd, 0xb1,
+	0x5c, 0xb6, 0xa0, 0x73, 0xec, 0x84, 0x41, 0xd8, 0x1b, 0xc7, 0x6e, 0xa3, 0xb5, 0xa3, 0xed, 0x4c,
+	0x0c, 0x85, 0xe3, 0x9d, 0x85, 0x3f, 0xfc, 0xe9, 0x8d, 0xc2, 0x1f, 0xfd, 0xf4, 0x46, 0xe1, 0x3f,
+	0xfd, 0xf4, 0x46, 0xe1, 0xaf, 0xfd, 0xe7, 0x1b, 0x2f, 0xec, 0x8d, 0x87, 0x51, 0x90, 0x04, 0x6f,
+	0xfd, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0xc0, 0x7c, 0x10, 0x95, 0x63, 0xc3, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -14304,10 +14297,10 @@ var _MCIS_serviceDesc = grpc.ServiceDesc{
 	Metadata: "cbtumblebug/cbtumblebug.proto",
 }
 
-// UTILITYClient is the client API for UTILITY service.
+// UtilityClient is the client API for Utility service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type UTILITYClient interface {
+type UtilityClient interface {
 	ListConnConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListConnConfigResponse, error)
 	GetConnConfig(ctx context.Context, in *ConnConfigQryRequest, opts ...grpc.CallOption) (*ConnConfigResponse, error)
 	ListRegion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListRegionResponse, error)
@@ -14325,151 +14318,151 @@ type UTILITYClient interface {
 	DeleteAllObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*MessageResponse, error)
 }
 
-type uTILITYClient struct {
+type utilityClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewUTILITYClient(cc *grpc.ClientConn) UTILITYClient {
-	return &uTILITYClient{cc}
+func NewUtilityClient(cc *grpc.ClientConn) UtilityClient {
+	return &utilityClient{cc}
 }
 
-func (c *uTILITYClient) ListConnConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListConnConfigResponse, error) {
+func (c *utilityClient) ListConnConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListConnConfigResponse, error) {
 	out := new(ListConnConfigResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/ListConnConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/ListConnConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) GetConnConfig(ctx context.Context, in *ConnConfigQryRequest, opts ...grpc.CallOption) (*ConnConfigResponse, error) {
+func (c *utilityClient) GetConnConfig(ctx context.Context, in *ConnConfigQryRequest, opts ...grpc.CallOption) (*ConnConfigResponse, error) {
 	out := new(ConnConfigResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/GetConnConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/GetConnConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) ListRegion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListRegionResponse, error) {
+func (c *utilityClient) ListRegion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListRegionResponse, error) {
 	out := new(ListRegionResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/ListRegion", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/ListRegion", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) GetRegion(ctx context.Context, in *RegionQryRequest, opts ...grpc.CallOption) (*RegionResponse, error) {
+func (c *utilityClient) GetRegion(ctx context.Context, in *RegionQryRequest, opts ...grpc.CallOption) (*RegionResponse, error) {
 	out := new(RegionResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/GetRegion", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/GetRegion", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) CreateConfig(ctx context.Context, in *ConfigCreateRequest, opts ...grpc.CallOption) (*ConfigInfoResponse, error) {
+func (c *utilityClient) CreateConfig(ctx context.Context, in *ConfigCreateRequest, opts ...grpc.CallOption) (*ConfigInfoResponse, error) {
 	out := new(ConfigInfoResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/CreateConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/CreateConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) ListConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListConfigInfoResponse, error) {
+func (c *utilityClient) ListConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListConfigInfoResponse, error) {
 	out := new(ListConfigInfoResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/ListConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/ListConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) GetConfig(ctx context.Context, in *ConfigQryRequest, opts ...grpc.CallOption) (*ConfigInfoResponse, error) {
+func (c *utilityClient) GetConfig(ctx context.Context, in *ConfigQryRequest, opts ...grpc.CallOption) (*ConfigInfoResponse, error) {
 	out := new(ConfigInfoResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/GetConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/GetConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) InitConfig(ctx context.Context, in *ConfigQryRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *utilityClient) InitConfig(ctx context.Context, in *ConfigQryRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
 	out := new(MessageResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/InitConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/InitConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) InitAllConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *utilityClient) InitAllConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*MessageResponse, error) {
 	out := new(MessageResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/InitAllConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/InitAllConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) InspectMcirResources(ctx context.Context, in *InspectQryRequest, opts ...grpc.CallOption) (*InspectMcirInfoResponse, error) {
+func (c *utilityClient) InspectMcirResources(ctx context.Context, in *InspectQryRequest, opts ...grpc.CallOption) (*InspectMcirInfoResponse, error) {
 	out := new(InspectMcirInfoResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/InspectMcirResources", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/InspectMcirResources", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) InspectVmResources(ctx context.Context, in *InspectQryRequest, opts ...grpc.CallOption) (*InspectVmInfoResponse, error) {
+func (c *utilityClient) InspectVmResources(ctx context.Context, in *InspectQryRequest, opts ...grpc.CallOption) (*InspectVmInfoResponse, error) {
 	out := new(InspectVmInfoResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/InspectVmResources", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/InspectVmResources", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) ListObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*ListObjectInfoResponse, error) {
+func (c *utilityClient) ListObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*ListObjectInfoResponse, error) {
 	out := new(ListObjectInfoResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/ListObject", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/ListObject", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) GetObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*ObjectInfoResponse, error) {
+func (c *utilityClient) GetObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*ObjectInfoResponse, error) {
 	out := new(ObjectInfoResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/GetObject", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/GetObject", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) DeleteObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *utilityClient) DeleteObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
 	out := new(MessageResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/DeleteObject", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/DeleteObject", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *uTILITYClient) DeleteAllObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *utilityClient) DeleteAllObject(ctx context.Context, in *ObjectQryRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
 	out := new(MessageResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.UTILITY/DeleteAllObject", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.Utility/DeleteAllObject", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// UTILITYServer is the server API for UTILITY service.
-type UTILITYServer interface {
+// UtilityServer is the server API for Utility service.
+type UtilityServer interface {
 	ListConnConfig(context.Context, *Empty) (*ListConnConfigResponse, error)
 	GetConnConfig(context.Context, *ConnConfigQryRequest) (*ConnConfigResponse, error)
 	ListRegion(context.Context, *Empty) (*ListRegionResponse, error)
@@ -14487,393 +14480,393 @@ type UTILITYServer interface {
 	DeleteAllObject(context.Context, *ObjectQryRequest) (*MessageResponse, error)
 }
 
-// UnimplementedUTILITYServer can be embedded to have forward compatible implementations.
-type UnimplementedUTILITYServer struct {
+// UnimplementedUtilityServer can be embedded to have forward compatible implementations.
+type UnimplementedUtilityServer struct {
 }
 
-func (*UnimplementedUTILITYServer) ListConnConfig(ctx context.Context, req *Empty) (*ListConnConfigResponse, error) {
+func (*UnimplementedUtilityServer) ListConnConfig(ctx context.Context, req *Empty) (*ListConnConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListConnConfig not implemented")
 }
-func (*UnimplementedUTILITYServer) GetConnConfig(ctx context.Context, req *ConnConfigQryRequest) (*ConnConfigResponse, error) {
+func (*UnimplementedUtilityServer) GetConnConfig(ctx context.Context, req *ConnConfigQryRequest) (*ConnConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConnConfig not implemented")
 }
-func (*UnimplementedUTILITYServer) ListRegion(ctx context.Context, req *Empty) (*ListRegionResponse, error) {
+func (*UnimplementedUtilityServer) ListRegion(ctx context.Context, req *Empty) (*ListRegionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRegion not implemented")
 }
-func (*UnimplementedUTILITYServer) GetRegion(ctx context.Context, req *RegionQryRequest) (*RegionResponse, error) {
+func (*UnimplementedUtilityServer) GetRegion(ctx context.Context, req *RegionQryRequest) (*RegionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRegion not implemented")
 }
-func (*UnimplementedUTILITYServer) CreateConfig(ctx context.Context, req *ConfigCreateRequest) (*ConfigInfoResponse, error) {
+func (*UnimplementedUtilityServer) CreateConfig(ctx context.Context, req *ConfigCreateRequest) (*ConfigInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateConfig not implemented")
 }
-func (*UnimplementedUTILITYServer) ListConfig(ctx context.Context, req *Empty) (*ListConfigInfoResponse, error) {
+func (*UnimplementedUtilityServer) ListConfig(ctx context.Context, req *Empty) (*ListConfigInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListConfig not implemented")
 }
-func (*UnimplementedUTILITYServer) GetConfig(ctx context.Context, req *ConfigQryRequest) (*ConfigInfoResponse, error) {
+func (*UnimplementedUtilityServer) GetConfig(ctx context.Context, req *ConfigQryRequest) (*ConfigInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
 }
-func (*UnimplementedUTILITYServer) InitConfig(ctx context.Context, req *ConfigQryRequest) (*MessageResponse, error) {
+func (*UnimplementedUtilityServer) InitConfig(ctx context.Context, req *ConfigQryRequest) (*MessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitConfig not implemented")
 }
-func (*UnimplementedUTILITYServer) InitAllConfig(ctx context.Context, req *Empty) (*MessageResponse, error) {
+func (*UnimplementedUtilityServer) InitAllConfig(ctx context.Context, req *Empty) (*MessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitAllConfig not implemented")
 }
-func (*UnimplementedUTILITYServer) InspectMcirResources(ctx context.Context, req *InspectQryRequest) (*InspectMcirInfoResponse, error) {
+func (*UnimplementedUtilityServer) InspectMcirResources(ctx context.Context, req *InspectQryRequest) (*InspectMcirInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InspectMcirResources not implemented")
 }
-func (*UnimplementedUTILITYServer) InspectVmResources(ctx context.Context, req *InspectQryRequest) (*InspectVmInfoResponse, error) {
+func (*UnimplementedUtilityServer) InspectVmResources(ctx context.Context, req *InspectQryRequest) (*InspectVmInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InspectVmResources not implemented")
 }
-func (*UnimplementedUTILITYServer) ListObject(ctx context.Context, req *ObjectQryRequest) (*ListObjectInfoResponse, error) {
+func (*UnimplementedUtilityServer) ListObject(ctx context.Context, req *ObjectQryRequest) (*ListObjectInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListObject not implemented")
 }
-func (*UnimplementedUTILITYServer) GetObject(ctx context.Context, req *ObjectQryRequest) (*ObjectInfoResponse, error) {
+func (*UnimplementedUtilityServer) GetObject(ctx context.Context, req *ObjectQryRequest) (*ObjectInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetObject not implemented")
 }
-func (*UnimplementedUTILITYServer) DeleteObject(ctx context.Context, req *ObjectQryRequest) (*MessageResponse, error) {
+func (*UnimplementedUtilityServer) DeleteObject(ctx context.Context, req *ObjectQryRequest) (*MessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteObject not implemented")
 }
-func (*UnimplementedUTILITYServer) DeleteAllObject(ctx context.Context, req *ObjectQryRequest) (*MessageResponse, error) {
+func (*UnimplementedUtilityServer) DeleteAllObject(ctx context.Context, req *ObjectQryRequest) (*MessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAllObject not implemented")
 }
 
-func RegisterUTILITYServer(s *grpc.Server, srv UTILITYServer) {
-	s.RegisterService(&_UTILITY_serviceDesc, srv)
+func RegisterUtilityServer(s *grpc.Server, srv UtilityServer) {
+	s.RegisterService(&_Utility_serviceDesc, srv)
 }
 
-func _UTILITY_ListConnConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_ListConnConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).ListConnConfig(ctx, in)
+		return srv.(UtilityServer).ListConnConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/ListConnConfig",
+		FullMethod: "/cbtumblebug.Utility/ListConnConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).ListConnConfig(ctx, req.(*Empty))
+		return srv.(UtilityServer).ListConnConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_GetConnConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_GetConnConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConnConfigQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).GetConnConfig(ctx, in)
+		return srv.(UtilityServer).GetConnConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/GetConnConfig",
+		FullMethod: "/cbtumblebug.Utility/GetConnConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).GetConnConfig(ctx, req.(*ConnConfigQryRequest))
+		return srv.(UtilityServer).GetConnConfig(ctx, req.(*ConnConfigQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_ListRegion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_ListRegion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).ListRegion(ctx, in)
+		return srv.(UtilityServer).ListRegion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/ListRegion",
+		FullMethod: "/cbtumblebug.Utility/ListRegion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).ListRegion(ctx, req.(*Empty))
+		return srv.(UtilityServer).ListRegion(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_GetRegion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_GetRegion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegionQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).GetRegion(ctx, in)
+		return srv.(UtilityServer).GetRegion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/GetRegion",
+		FullMethod: "/cbtumblebug.Utility/GetRegion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).GetRegion(ctx, req.(*RegionQryRequest))
+		return srv.(UtilityServer).GetRegion(ctx, req.(*RegionQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_CreateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_CreateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConfigCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).CreateConfig(ctx, in)
+		return srv.(UtilityServer).CreateConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/CreateConfig",
+		FullMethod: "/cbtumblebug.Utility/CreateConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).CreateConfig(ctx, req.(*ConfigCreateRequest))
+		return srv.(UtilityServer).CreateConfig(ctx, req.(*ConfigCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_ListConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_ListConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).ListConfig(ctx, in)
+		return srv.(UtilityServer).ListConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/ListConfig",
+		FullMethod: "/cbtumblebug.Utility/ListConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).ListConfig(ctx, req.(*Empty))
+		return srv.(UtilityServer).ListConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConfigQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).GetConfig(ctx, in)
+		return srv.(UtilityServer).GetConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/GetConfig",
+		FullMethod: "/cbtumblebug.Utility/GetConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).GetConfig(ctx, req.(*ConfigQryRequest))
+		return srv.(UtilityServer).GetConfig(ctx, req.(*ConfigQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_InitConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_InitConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConfigQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).InitConfig(ctx, in)
+		return srv.(UtilityServer).InitConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/InitConfig",
+		FullMethod: "/cbtumblebug.Utility/InitConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).InitConfig(ctx, req.(*ConfigQryRequest))
+		return srv.(UtilityServer).InitConfig(ctx, req.(*ConfigQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_InitAllConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_InitAllConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).InitAllConfig(ctx, in)
+		return srv.(UtilityServer).InitAllConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/InitAllConfig",
+		FullMethod: "/cbtumblebug.Utility/InitAllConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).InitAllConfig(ctx, req.(*Empty))
+		return srv.(UtilityServer).InitAllConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_InspectMcirResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_InspectMcirResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InspectQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).InspectMcirResources(ctx, in)
+		return srv.(UtilityServer).InspectMcirResources(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/InspectMcirResources",
+		FullMethod: "/cbtumblebug.Utility/InspectMcirResources",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).InspectMcirResources(ctx, req.(*InspectQryRequest))
+		return srv.(UtilityServer).InspectMcirResources(ctx, req.(*InspectQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_InspectVmResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_InspectVmResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InspectQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).InspectVmResources(ctx, in)
+		return srv.(UtilityServer).InspectVmResources(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/InspectVmResources",
+		FullMethod: "/cbtumblebug.Utility/InspectVmResources",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).InspectVmResources(ctx, req.(*InspectQryRequest))
+		return srv.(UtilityServer).InspectVmResources(ctx, req.(*InspectQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_ListObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_ListObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).ListObject(ctx, in)
+		return srv.(UtilityServer).ListObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/ListObject",
+		FullMethod: "/cbtumblebug.Utility/ListObject",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).ListObject(ctx, req.(*ObjectQryRequest))
+		return srv.(UtilityServer).ListObject(ctx, req.(*ObjectQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_GetObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_GetObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).GetObject(ctx, in)
+		return srv.(UtilityServer).GetObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/GetObject",
+		FullMethod: "/cbtumblebug.Utility/GetObject",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).GetObject(ctx, req.(*ObjectQryRequest))
+		return srv.(UtilityServer).GetObject(ctx, req.(*ObjectQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_DeleteObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_DeleteObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).DeleteObject(ctx, in)
+		return srv.(UtilityServer).DeleteObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/DeleteObject",
+		FullMethod: "/cbtumblebug.Utility/DeleteObject",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).DeleteObject(ctx, req.(*ObjectQryRequest))
+		return srv.(UtilityServer).DeleteObject(ctx, req.(*ObjectQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UTILITY_DeleteAllObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Utility_DeleteAllObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectQryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UTILITYServer).DeleteAllObject(ctx, in)
+		return srv.(UtilityServer).DeleteAllObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.UTILITY/DeleteAllObject",
+		FullMethod: "/cbtumblebug.Utility/DeleteAllObject",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UTILITYServer).DeleteAllObject(ctx, req.(*ObjectQryRequest))
+		return srv.(UtilityServer).DeleteAllObject(ctx, req.(*ObjectQryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _UTILITY_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "cbtumblebug.UTILITY",
-	HandlerType: (*UTILITYServer)(nil),
+var _Utility_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "cbtumblebug.Utility",
+	HandlerType: (*UtilityServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "ListConnConfig",
-			Handler:    _UTILITY_ListConnConfig_Handler,
+			Handler:    _Utility_ListConnConfig_Handler,
 		},
 		{
 			MethodName: "GetConnConfig",
-			Handler:    _UTILITY_GetConnConfig_Handler,
+			Handler:    _Utility_GetConnConfig_Handler,
 		},
 		{
 			MethodName: "ListRegion",
-			Handler:    _UTILITY_ListRegion_Handler,
+			Handler:    _Utility_ListRegion_Handler,
 		},
 		{
 			MethodName: "GetRegion",
-			Handler:    _UTILITY_GetRegion_Handler,
+			Handler:    _Utility_GetRegion_Handler,
 		},
 		{
 			MethodName: "CreateConfig",
-			Handler:    _UTILITY_CreateConfig_Handler,
+			Handler:    _Utility_CreateConfig_Handler,
 		},
 		{
 			MethodName: "ListConfig",
-			Handler:    _UTILITY_ListConfig_Handler,
+			Handler:    _Utility_ListConfig_Handler,
 		},
 		{
 			MethodName: "GetConfig",
-			Handler:    _UTILITY_GetConfig_Handler,
+			Handler:    _Utility_GetConfig_Handler,
 		},
 		{
 			MethodName: "InitConfig",
-			Handler:    _UTILITY_InitConfig_Handler,
+			Handler:    _Utility_InitConfig_Handler,
 		},
 		{
 			MethodName: "InitAllConfig",
-			Handler:    _UTILITY_InitAllConfig_Handler,
+			Handler:    _Utility_InitAllConfig_Handler,
 		},
 		{
 			MethodName: "InspectMcirResources",
-			Handler:    _UTILITY_InspectMcirResources_Handler,
+			Handler:    _Utility_InspectMcirResources_Handler,
 		},
 		{
 			MethodName: "InspectVmResources",
-			Handler:    _UTILITY_InspectVmResources_Handler,
+			Handler:    _Utility_InspectVmResources_Handler,
 		},
 		{
 			MethodName: "ListObject",
-			Handler:    _UTILITY_ListObject_Handler,
+			Handler:    _Utility_ListObject_Handler,
 		},
 		{
 			MethodName: "GetObject",
-			Handler:    _UTILITY_GetObject_Handler,
+			Handler:    _Utility_GetObject_Handler,
 		},
 		{
 			MethodName: "DeleteObject",
-			Handler:    _UTILITY_DeleteObject_Handler,
+			Handler:    _Utility_DeleteObject_Handler,
 		},
 		{
 			MethodName: "DeleteAllObject",
-			Handler:    _UTILITY_DeleteAllObject_Handler,
+			Handler:    _Utility_DeleteAllObject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

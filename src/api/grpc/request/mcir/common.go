@@ -14,21 +14,21 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CheckResource - Resouce 체크
+// CheckResource - Check whether Resource exists or not
 func (r *MCIRRequest) CheckResource() (string, error) {
-	// 입력데이터 검사
+	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
-	// 입력데이터 언마샬링
+	// Unmarshal (json/yaml -> Request Input)
 	var item pb.ResourceQryRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
 	}
 
-	// 서버에 요청
+	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
@@ -37,116 +37,8 @@ func (r *MCIRRequest) CheckResource() (string, error) {
 		return "", err
 	}
 
-	// 결과값 마샬링
+	// Marshal (Response -> json/yaml)
 	return gc.ConvertToOutput(r.OutType, &resp)
-}
-
-// ListLookupSpec - Spec 목록
-func (r *MCIRRequest) ListLookupSpec() (string, error) {
-	// 입력데이터 검사
-	if r.InData == "" {
-		return "", errors.New("input data required")
-	}
-
-	// 입력데이터 언마샬링
-	var item pb.LookupSpecListQryRequest
-	err := gc.ConvertToMessage(r.InType, r.InData, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 서버에 요청
-	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
-	defer cancel()
-
-	resp, err := r.Client.ListLookupSpec(ctx, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 결과값 마샬링
-	return gc.ConvertToOutput(r.OutType, &resp)
-}
-
-// GetLookupSpec - Spec 조회
-func (r *MCIRRequest) GetLookupSpec() (string, error) {
-	// 입력데이터 검사
-	if r.InData == "" {
-		return "", errors.New("input data required")
-	}
-
-	// 입력데이터 언마샬링
-	var item pb.LookupSpecQryRequest
-	err := gc.ConvertToMessage(r.InType, r.InData, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 서버에 요청
-	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
-	defer cancel()
-
-	resp, err := r.Client.GetLookupSpec(ctx, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 결과값 마샬링
-	return gc.ConvertToOutput(r.OutType, &resp.Item)
-}
-
-// ListLookupImage - Image 목록
-func (r *MCIRRequest) ListLookupImage() (string, error) {
-	// 입력데이터 검사
-	if r.InData == "" {
-		return "", errors.New("input data required")
-	}
-
-	// 입력데이터 언마샬링
-	var item pb.LookupImageListQryRequest
-	err := gc.ConvertToMessage(r.InType, r.InData, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 서버에 요청
-	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
-	defer cancel()
-
-	resp, err := r.Client.ListLookupImage(ctx, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 결과값 마샬링
-	return gc.ConvertToOutput(r.OutType, &resp)
-}
-
-// GetLookupImage - Image 조회
-func (r *MCIRRequest) GetLookupImage() (string, error) {
-	// 입력데이터 검사
-	if r.InData == "" {
-		return "", errors.New("input data required")
-	}
-
-	// 입력데이터 언마샬링
-	var item pb.LookupImageQryRequest
-	err := gc.ConvertToMessage(r.InType, r.InData, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 서버에 요청
-	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
-	defer cancel()
-
-	resp, err := r.Client.GetLookupImage(ctx, &item)
-	if err != nil {
-		return "", err
-	}
-
-	// 결과값 마샬링
-	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
 // ===== [ Private Functions ] =====
