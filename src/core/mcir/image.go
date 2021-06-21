@@ -73,7 +73,14 @@ func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInf
 
 	tumblebugImage := TbImageInfo{}
 	//tumblebugImage.Id = spiderImage.IId.NameId
-	tumblebugImage.Name = spiderImage.IId.NameId
+
+	spiderKeyValueListName := common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
+	if len(spiderKeyValueListName) > 0 {
+		tumblebugImage.Name = spiderKeyValueListName
+	} else {
+		tumblebugImage.Name = spiderImage.IId.NameId
+	}
+
 	tumblebugImage.CspImageId = spiderImage.IId.NameId
 	tumblebugImage.CspImageName = common.LookupKeyValueList(spiderImage.KeyValueList, "Name")
 	tumblebugImage.Description = common.LookupKeyValueList(spiderImage.KeyValueList, "Description")
@@ -464,6 +471,7 @@ func RefineImageName(specName string) string {
 	out = strings.ReplaceAll(out, ".", "-")
 	out = strings.ReplaceAll(out, "_", "-")
 	out = strings.ReplaceAll(out, ":", "-")
+	out = strings.ReplaceAll(out, "/", "-")
 
 	return out
 }
