@@ -2844,7 +2844,10 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		tempReq := SpiderVMReqInfoWrapper{}
 		tempReq.ConnectionName = vmInfoData.ConnectionName
 
-		tempReq.ReqInfo.Name = vmInfoData.Name
+		//generate VM ID(Name) to request to CSP(Spider)
+		//combination of nsId, mcidId, and vmName reqested from user
+		cspVmIdToRequest := nsId + "-" + mcisId + "-" + vmInfoData.Name
+		tempReq.ReqInfo.Name = cspVmIdToRequest
 
 		err = fmt.Errorf("")
 
