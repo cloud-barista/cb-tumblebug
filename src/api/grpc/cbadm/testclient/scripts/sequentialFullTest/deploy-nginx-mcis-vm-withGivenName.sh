@@ -29,7 +29,7 @@
 					\"mcisId\": \"${MCISID}\",
 					\"vmId\": \"${VMID}\",
 					\"cmd\": {
-						\"command\": \"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"
+						\"command\": \"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/assets/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"
 					}
 				}" | jq '' #|| return 1
 

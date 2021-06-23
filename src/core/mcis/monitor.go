@@ -245,7 +245,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 	content := AgentInstallContentWrapper{}
 
 	//install script
-	cmd := "/agent/install"
+	cmd := "/agent"
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {

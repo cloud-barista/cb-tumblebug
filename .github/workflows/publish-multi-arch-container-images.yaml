@@ -11,7 +11,7 @@ on:
   # The "push" event could replace "merged" event.
   push:
     branches:
-      - master
+      - main
     tags:
       - "v*.*.*"
     paths-ignore:

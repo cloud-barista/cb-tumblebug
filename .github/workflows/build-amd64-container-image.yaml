@@ -5,7 +5,7 @@ on:
   # On pull-request event with detailed condition below.
   pull_request:
     branches:
-      - master
+      - main
     paths-ignore:
       - '**.md'
       - '.all-contributorsrc'
