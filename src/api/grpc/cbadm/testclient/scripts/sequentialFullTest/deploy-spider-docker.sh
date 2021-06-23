@@ -35,7 +35,7 @@
 		\"nsId\":  \"${NSID}\",
 		\"mcisId\": \"${MCISID}\",
 		\"cmd\": {
-			\"command\": \"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setcbsp.sh -O ~/setcbtb.sh; chmod +x ~/setcbtb.sh; ~/setcbtb.sh\"
+			\"command\": \"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/assets/scripts/setcbsp.sh -O ~/setcbtb.sh; chmod +x ~/setcbtb.sh; ~/setcbtb.sh\"
 		}
 	}" | jq '' #|| return 1
 #}

@@ -24,7 +24,7 @@ if [ "${INDEX}" == "0" ]; then
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
 
-CMD="wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/master/assets/scripts/setgame.sh -O ~/setgame.sh; chmod +x ~/setgame.sh; sudo ~/setgame.sh"
+CMD="wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/assets/scripts/setgame.sh -O ~/setgame.sh; chmod +x ~/setgame.sh; sudo ~/setgame.sh"
 echo "CMD: $CMD"
 
 VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
