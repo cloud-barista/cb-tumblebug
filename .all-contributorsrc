@@ -123,6 +123,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "vlatte",
+      "name": "sunmi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/21170063?v=4",
+      "profile": "https://github.com/vlatte",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
