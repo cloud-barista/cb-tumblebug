@@ -782,16 +782,10 @@ definitions:
   mcis.McisCmdReq:
     properties:
       command:
-        type: string
-      ip:
-        type: string
-      mcisId:
-        type: string
-      sshKey:
+        example: sudo apt-get install ...
         type: string
       userName:
-        type: string
-      vmId:
+        example: cb-user
         type: string
     type: object
   mcis.McisPolicyInfo:

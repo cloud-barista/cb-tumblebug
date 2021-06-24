@@ -5243,22 +5243,12 @@ var doc = `{
             "type": "object",
             "properties": {
                 "command": {
-                    "type": "string"
-                },
-                "ip": {
-                    "type": "string"
-                },
-                "mcisId": {
-                    "type": "string"
-                },
-                "sshKey": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "sudo apt-get install ..."
                 },
                 "userName": {
-                    "type": "string"
-                },
-                "vmId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "cb-user"
                 }
             }
         },
