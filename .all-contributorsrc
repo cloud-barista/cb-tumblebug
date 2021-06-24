@@ -114,6 +114,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "pjini",
+      "name": "pjini",
+      "avatar_url": "https://avatars.githubusercontent.com/u/64886639?v=4",
+      "profile": "https://github.com/pjini",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
