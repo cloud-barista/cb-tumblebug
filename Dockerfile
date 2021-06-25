@@ -31,9 +31,9 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 WORKDIR /app/src
 
-COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/assets/* /app/assets/
+COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/assets/ /app/assets/
 
-COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/conf/* /app/conf/
+COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/conf/ /app/conf/
 
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumblebug /app/src/
 
