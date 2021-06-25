@@ -275,12 +275,8 @@ type TbVmStatusInfo struct {
 
 // McisCmdReq is remote command struct
 type McisCmdReq struct {
-	McisId   string `json:"mcisId"`
-	VmId     string `json:"vmId"`
-	Ip       string `json:"ip"`
-	UserName string `json:"userName"`
-	SshKey   string `json:"sshKey"`
-	Command  string `json:"command"`
+	UserName string `json:"userName" example:"cb-user" default:""`
+	Command  string `json:"command" example:"sudo apt-get install ..." default:""`
 }
 
 type McisRecommendReq struct {
@@ -1608,9 +1604,9 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 		return nil, err
 	}
 	for num := range vmList {
-		fmt.Println("[GetMcisInfo compare two VMs]")
-		common.PrintJsonPretty(mcisObj.Vm[num])
-		common.PrintJsonPretty(mcisStatus.Vm[num])
+		//fmt.Println("[GetMcisInfo compare two VMs]")
+		//common.PrintJsonPretty(mcisObj.Vm[num])
+		//common.PrintJsonPretty(mcisStatus.Vm[num])
 
 		mcisObj.Vm[num].Status = mcisStatus.Vm[num].Status
 		mcisObj.Vm[num].TargetStatus = mcisStatus.Vm[num].TargetStatus
@@ -2546,12 +2542,12 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 	}
 	UpdateMcisInfo(nsId, mcisTmp)
 
-	fmt.Println("\n[MCIS has been created]")
-	common.PrintJsonPretty(mcisTmp)
+	fmt.Println("[MCIS has been created]" + mcisId)
+	//common.PrintJsonPretty(mcisTmp)
 
 	// Install CB-Dragonfly monitoring agent
 
-	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisTmp.Id, req.InstallMonAgent)
+	fmt.Printf("[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisTmp.Id, req.InstallMonAgent)
 
 	mcisTmp.InstallMonAgent = req.InstallMonAgent
 	UpdateMcisInfo(nsId, mcisTmp)
@@ -2627,13 +2623,13 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	}
 
 	fmt.Printf("\n[AddVmToMcis Befor request vmInfoData]\n")
-	common.PrintJsonPretty(vmInfoData)
+	//common.PrintJsonPretty(vmInfoData)
 
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
 	err = CreateVm(nsId, mcisId, vmInfoData)
 
 	fmt.Printf("\n[AddVmToMcis After request vmInfoData]\n")
-	common.PrintJsonPretty(vmInfoData)
+	//common.PrintJsonPretty(vmInfoData)
 
 	if err != nil {
 		vmInfoData.Status = StatusFailed
@@ -4345,7 +4341,7 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 		SSHPort  string `json:"sshPort"`
 	}
 
-	fmt.Println("[GetVmIp]" + vmId)
+	fmt.Printf("[GetVmIp] " + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
@@ -4355,7 +4351,7 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	fmt.Printf("%+v\n", content.PublicIP)
+	fmt.Printf(" %+v\n", content.PublicIP)
 
 	return content.PublicIP, content.SSHPort
 }

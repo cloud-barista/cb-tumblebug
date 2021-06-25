@@ -39,42 +39,40 @@
     - 6.image  # MCIR image 등록 관련 스크립트 모음
     - 7.spec  # MCIR spec 등록 관련 스크립트 모음
     - 8.mcis  # MCIS 생성 및 제어 관련 스크립트 모음
+    - 9.monitoring  # CB-TB를 통해서 CB-DF 모니터링 에이전트 설치 및 모니터링 테스트 스크립트 모음
 
 ### (2) 한꺼번에 통합 시험 
-- sequentialFullTest 에 포함된 cleanAll-mcis-mcir-ns-cloud.sh 을 수행하면 모든 것을 한번에 테스트 가능
+- sequentialFullTest 에 포함된 clean-all.sh 을 수행하면 모든 것을 한번에 테스트 가능
 ```
 └── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
-    ├── cleanAll-mcis-mcir-ns-cloud.sh  # 모든 오브젝트 역으로 제어
+    ├── create-all.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
     ├── command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
     ├── deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
     ├── executionStatus  # 수행이 진행된 테스트 로그 (testAll 수행시 정보가 추가되며, cleanAll 수행시 정보가 제거됨)
-    ├── testAll-mcis-mcir-ns-cloud.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
-    ├── test-cloud.sh
-    ├── test-mcir-ns-cloud.sh
-    └── test-ns-cloud.sh
+    └── clean-all.sh  # 모든 오브젝트 역으로 제어
 ```
 - 사용 예시
-  - 생성 테스트 (./testAll-mcis-mcir-ns-cloud.sh "CloudType" "Region" "DeveloperName" "NumOfVMs")
-    - ./testAll-mcis-mcir-ns-cloud.sh all 1 shson 3      # 등록된 CSP 및 리전들을 활용한 MCIS 생성 (conf.env의 NumCSP, NumRegion 에 따라 VM 생성) shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson 3      # aws의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh aws 2 shson 3      # aws의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh aws 3 shson 3      # aws의 3번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh gcp 1 shson 3      # gcp의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh gcp 2 shson 3      # gcp의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh azure 1 shson 3    # azure의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - ./testAll-mcis-mcir-ns-cloud.sh alibaba 1 shson 3  # alibaba의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+  - 생성 테스트 (./create-all.sh "CloudType" "Region" "DeveloperName" "NumOfVMs")
+    - ./create-all.sh all 1 shson 3      # 등록된 CSP 및 리전들을 활용한 MCIS 생성 (conf.env의 NumCSP, NumRegion 에 따라 VM 생성) shson이라는 개발자명으로 테스트 수행
+    - ./create-all.sh aws 1 shson 3      # aws의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./create-all.sh aws 2 shson 3      # aws의 2번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./create-all.sh aws 3 shson 3      # aws의 3번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./create-all.sh gcp 1 shson 3      # gcp의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./create-all.sh gcp 2 shson 3      # gcp의 2번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./create-all.sh azure 1 shson 3    # azure의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - ./create-all.sh alibaba 1 shson 3  # alibaba의 1번 리전에 shson이라는 개발자명으로 테스트 수행
   - 제거 테스트 (이미 수행이 진행된 클라우드타입/리전/개발자명 으로만 삭제 진행이 필요)
-    - ./cleanAll-mcis-mcir-ns-cloud.sh all 1 shson       # all로 수행된 shson이라는 개발자명으로 제거 수행
-    - ./cleanAll-mcis-mcir-ns-cloud.sh aws 1 shson       # aws의 1번 리전에 shson이라는 개발자명으로 제거 수행
-    - ./cleanAll-mcis-mcir-ns-cloud.sh aws 2 shson       # aws의 2번 리전에 shson이라는 개발자명으로 제거 수행
-    - ./cleanAll-mcis-mcir-ns-cloud.sh aws 3 shson       # aws의 3번 리전에 shson이라는 개발자명으로 제거 수행
-    - ./cleanAll-mcis-mcir-ns-cloud.sh gcp 1 shson       # gcp의 1번 리전에 shson이라는 개발자명으로 제거 수행
-    - ./cleanAll-mcis-mcir-ns-cloud.sh gcp 2 shson       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 수행
-    - ./cleanAll-mcis-mcir-ns-cloud.sh azure 1 shson     # azure의 1번 리전에 shson이라는 개발자명으로 제거 수행
-    - ./cleanAll-mcis-mcir-ns-cloud.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh all 1 shson       # all로 수행된 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh aws 1 shson       # aws의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh aws 2 shson       # aws의 2번 리전에 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh aws 3 shson       # aws의 3번 리전에 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh gcp 1 shson       # gcp의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh gcp 2 shson       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh azure 1 shson     # azure의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - ./clean-all.sh alibaba 1 shson   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 수행
 
 ```
-~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./testAll-mcis-mcir-ns-cloud.sh aws 1 shson 3
+~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./create-all.sh aws 1 shson 3
 ####################################################################
 ## Create MCIS from Zero Base
 ####################################################################
@@ -324,9 +322,9 @@ Dozing for 1 : 1 (Back to work)
 [Logging to notify latest command history]
 
 [Executed Command List]
-[CMD] testAll-mcis-mcir-ns-cloud.sh gcp 1 shson
-[CMD] testAll-mcis-mcir-ns-cloud.sh alibaba 1 shson
-[CMD] testAll-mcis-mcir-ns-cloud.sh aws 1 shson
+[CMD] create-all.sh gcp 1 shson
+[CMD] create-all.sh alibaba 1 shson
+[CMD] create-all.sh aws 1 shson
 ```
 
 마지막의 [Executed Command List] 에는 수행한 커맨드의 히스토리가 포함됨. 
@@ -496,7 +494,7 @@ son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ t
 ├── README.md
 └── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
     ├── cb-demo-support
-    ├── cleanAll-mcis-mcir-ns-cloud.sh # 지정된 MCIS관련 모든 오브젝트 역으로 중지 및 삭제하여 정리
+    ├── clean-all.sh # 지정된 MCIS관련 모든 오브젝트 역으로 중지 및 삭제하여 정리
     ├── command-mcis-custom.sh
     ├── command-mcis.sh          # MCIS에 SSH 커맨드를 테스트
     ├── create-mcis-for-df.sh    # MCIS를 생성하고, CB-Dragonfly를 자동 배포
@@ -518,7 +516,7 @@ son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ t
     ├── get-object.sh      # CB-TB 오브젝트 데이터를 직접 조회
     ├── list-object.sh     # CB-TB 오브젝트 리스트 데이터를 직접 조회
     ├── sshkey-tmp         # sshKey 가 임시로 저장되는 디렉토리 (gitignore)
-    ├── testAll-mcis-mcir-ns-cloud.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
+    ├── create-all.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
     ├── test-cloud.sh
     ├── test-mcir-ns-cloud.sh
     └── test-ns-cloud.sh

@@ -123,7 +123,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 	url := common.DRAGONFLY_REST_URL + cmd
 	fmt.Println("\n[Calling DRAGONFLY] START")
-	fmt.Println("url: " + url + " method: " + method)
+	fmt.Println("VM:" + nsID + "_" + mcisID + "_" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType)
 
 	tempReq := MonAgentInstallReq{
 		NsId:     nsID,
@@ -148,7 +148,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	_ = writer.WriteField("port", sshPort)
 	_ = writer.WriteField("user_name", userName)
 	_ = writer.WriteField("ssh_key", privateKey)
-	_ = writer.WriteField("cspType", "test")
+	_ = writer.WriteField("cspType", vmInfoTmp.Location.CloudType)
 	err = writer.Close()
 
 	if err != nil {
@@ -347,7 +347,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 		// DF: Get vm on-demand monitoring metric info
 		// Path Para: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
 		cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
-		fmt.Println("[CMD] " + cmd)
+		//fmt.Println("[CMD] " + cmd)
 
 		go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, metric, cmd, &resultArray)
 
@@ -361,8 +361,8 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 		//fmt.Println("result from goroutin " + v)
 	}
 
-	//fmt.Printf("%+v\n", content)
-	common.PrintJsonPretty(content)
+	fmt.Printf("%+v\n", content)
+	//common.PrintJsonPretty(content)
 
 	return content, nil
 
@@ -373,15 +373,8 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	defer wg.Done() //goroutin sync done
 
 	url := common.DRAGONFLY_REST_URL + cmd
-	fmt.Println("\n[Calling DRAGONFLY] START")
-	fmt.Println("url: " + url + " method: " + method)
-
-	tempReq := MonAgentInstallReq{
-		McisId: mcisID,
-		VmId:   vmID,
-	}
-	fmt.Printf("\n[Request body to CB-DRAGONFLY]\n")
-	common.PrintJsonPretty(tempReq)
+	fmt.Print("[Call CB-DF] ")
+	fmt.Println("URL: " + url)
 
 	responseLimit := 8
 	client := &http.Client{
@@ -401,12 +394,12 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 
 	result := ""
 
-	fmt.Println("Called CB-DRAGONFLY API")
+	fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr = err.Error()
 	} else {
-		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+		//fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err1 := fmt.Errorf("HTTP Status: not in 200-399")
