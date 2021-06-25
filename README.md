@@ -19,31 +19,42 @@
 
 A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
 
+<details>
+<summary>Note for developing and using Cloud-Barista</summary>
+
+### Development stage of Cloud-Barista
 ```
-[NOTE] Development stage of CB-Tumblebug (CB-Tumblebug 개발 단계)
-CB-Tumblebug is currently under development. (the latest release is v0.3.0)
-So, we do not recommend using the current release in production.
-Please note that the functionalities of CB-Tumblebug are not stable and secure yet.
-If you have any difficulties in using CB-Tumblebug, please let us know.
-(Open an issue or Join the cloud-barista Slack)
+Cloud-Barista is currently under development. (not v1.0 yet)
+We welcome any new suggestions, issues, opinions, and controbutors !
+Please note that the functionalities of Cloud-Barista are not stable and secure yet.
+Becareful if you plan to use the current release in production.
+If you have any difficulties in using Cloud-Barista, please let us know.
+(Open an issue or Join the Cloud-Barista Slack)
 ```
 
+### Localization and Globalization of CB-Tumblebug (CB-Tumblebug의 현지화 및 세계화)
 ```
-[NOTE] Localization and Globalization of CB-Tumblebug (CB-Tumblebug의 현지화 및 세계화)
-As an opensource project initiated by Korean members, 
+[English] As an opensource project initiated by Korean members, 
 we would like to promote participation of Korean contributors during initial stage of this project. 
 So, CB-Tumblebug Repo will accept use of Korean language in its early stages.
 On the other hand, we hope this project flourishes regardless of contributor's country eventually.
 So, the maintainers recommend using English at least for the title of Issues, Pull Requests, and Commits, 
 while CB-Tumblebug Repo accommodates local languages in the contents of them.
+```
 
-CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서 
+```
+[한국어] CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서 
 프로젝트의 초기 단계에는 한국 기여자들의 참여를 촉진하고자 합니다. 
 따라서 초기 단계의 CB-Tumblebug는 한국어 사용을 받아 들일 것입니다.
 다른 한편으로, 이 프로젝트가 국가에 관계없이 번성하기를 희망합니다.
 따라서 개발 히스토리 관리를 위해 이슈, 풀 요청, 커밋 등의 
 제목에 대해서는 영어 사용을 권장하며, 내용에 대한 한국어 사용은 수용할 것입니다.
 ```
+
+</details>
+
+
+
 
 ***
 ***
@@ -224,7 +235,7 @@ cb-operator/src$ ./operator
 
 #### 0) 클라우드 인증 정보, 테스트 기본 정보 입력
 - `src/testclient/scripts/` 이동
-- [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)을 복사하여 `credentials.conf` 를 생성하고, `credentials.conf` 의 각 항목에 사용자의 클라우드 인증 정보 입력
+- [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)을 복사하여 `credentials.conf` 를 생성하고, `credentials.conf` 항목에 사용자의 클라우드 인증 정보 입력
    - `credentials.conf` 는 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 인증 정보 템플릿 제공
    - [CSP별 인증 정보 획득 방법 참고](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)
 - `conf.env` 설정
@@ -242,6 +253,7 @@ cb-operator/src$ ./operator
     - `6.image`  # MCIR image 등록 관련 스크립트 모음
     - `7.spec`  # MCIR spec 등록 관련 스크립트 모음
     - `8.mcis`  # MCIS 생성 및 제어, MCIS 원격 커맨드 등 스크립트 모음
+    - `9.monitoring`  # CB-TB를 통해서 CB-DF 모니터링 에이전트 설치 및 모니터링 테스트 스크립트 모음
 
 #### 2) 한꺼번에 통합 시험 (추천 테스트 방법)
 - `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 모든 것을 한번에 테스트 가능
@@ -259,21 +271,23 @@ cb-operator/src$ ./operator
 ```
 - 사용 예시
   - 생성 테스트
-    - `./create-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - `./create-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - `./create-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 테스트 수행
-    - `./create-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - `./create-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 테스트 수행
-    - `./create-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 테스트 수행
-    - `./create-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 테스트 수행
+    - `./create-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 생성 수행
+    - `./create-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 생성 수행
+    - `./create-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 생성 수행
+    - `./create-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 생성 수행
+    - `./create-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 생성 수행
+    - `./create-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 생성 수행
+    - `./create-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 생성 수행
+    - `./create-all.sh all 1 shson ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행 (`all 1` all 선택시 리전은 의미가 없으며, 임의로 지정하면 됨. 향후 개선 예정)
   - 제거 테스트 (이미 수행이 진행된 클라우드타입/리전/개발자명 으로만 삭제 진행이 필요)
-    - `./clean-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - `./clean-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - `./clean-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - `./clean-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - `./clean-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - `./clean-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
-    - `./clean-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 테스트 수행
+    - `./clean-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - `./clean-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 제거 수행
+    - `./clean-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 제거 수행
+    - `./clean-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - `./clean-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 수행
+    - `./clean-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - `./clean-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 수행
+    - `./create-all.sh all 1 shson ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 제거 수행
 
 <details>
 <summary>입출력 예시 보기</summary>
@@ -591,9 +605,6 @@ Dozing for 1 : 1 (Back to work)
       - command-mcis.sh aws 1 shson # aws의 1번 리전에 배치된 MCIS의 모든 VM에 Nginx 및 웹페이지 설치 (접속 테스트 가능)
         ```
         ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
-        ####################################################################
-        ## Command (SSH) to MCIS 
-        ####################################################################
         {
           "result_array" : [
               {
@@ -630,205 +641,6 @@ Dozing for 1 : 1 (Back to work)
 ##### MCIS 토이 게임 서버 배치
   - [스크립트를 통해 MCIS에 토이 게임 서버 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-toy-game-deployment)
 
-#### 테스트 코드 파일 트리 설명
-
-<details>
-<summary>테스트 스크립트 디렉토리 전체 Tree 보기</summary>
-
-```
-~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts$ tree
-.
-├── 1.configureSpider
-│   ├── get-cloud.sh
-│   ├── list-cloud.sh
-│   ├── register-cloud.sh
-│   └── unregister-cloud.sh
-├── 2.configureTumblebug
-│   ├── check-ns.sh
-│   ├── create-ns.sh
-│   ├── delete-all-ns.sh
-│   ├── delete-ns.sh
-│   ├── get-config.sh
-│   ├── get-ns.sh
-│   ├── init-all-config.sh
-│   ├── init-config.sh
-│   ├── list-config.sh
-│   ├── list-ns.sh
-│   └── update-config.sh
-├── 3.vNet
-│   ├── create-vNet.sh
-│   ├── delete-vNet.sh
-│   ├── get-vNet.sh
-│   ├── id-list-vNet.sh
-│   ├── inspect-vNet.sh
-│   ├── list-vNet.sh
-│   ├── spider-create-vNet.sh
-│   ├── spider-delete-vNet.sh
-│   ├── spider-get-vNet.sh
-│   ├── testAddAsso.sh
-│   ├── testDeleteAsso.sh
-│   └── testGetAssoCount.sh
-├── 4.securityGroup
-│   ├── create-securityGroup.sh
-│   ├── delete-securityGroup.sh
-│   ├── get-securityGroup.sh
-│   ├── id-list-securityGroup.sh
-│   ├── inspect-securityGroup.sh
-│   ├── list-securityGroup.sh
-│   ├── spider-delete-securityGroup.sh
-│   ├── spider-get-securityGroup.sh
-│   ├── testAddAsso.sh
-│   ├── testDeleteAsso.sh
-│   └── testGetAssoCount.sh
-├── 5.sshKey
-│   ├── create-sshKey.sh
-│   ├── delete-sshKey.sh
-│   ├── force-delete-sshKey.sh
-│   ├── get-sshKey.sh
-│   ├── id-list-sshKey.sh
-│   ├── inspect-sshKey.sh
-│   ├── list-sshKey.sh
-│   ├── spider-delete-sshKey.sh
-│   ├── spider-get-sshKey.sh
-│   ├── testAddAsso.sh
-│   ├── testDeleteAsso.sh
-│   └── testGetAssoCount.sh
-├── 6.image
-│   ├── fetch-images.sh
-│   ├── get-image.sh
-│   ├── id-list-image.sh
-│   ├── list-image.sh
-│   ├── lookupImage.sh
-│   ├── lookupImageList.sh
-│   ├── obsolete_registerImageWithInfo.sh
-│   ├── registerImageWithId.sh
-│   ├── spider-get-image.sh
-│   ├── spider-get-imagelist.sh
-│   ├── test-search-image.sh
-│   ├── testAddAsso.sh
-│   ├── testDeleteAsso.sh
-│   ├── testGetAssoCount.sh
-│   ├── unregister-all-images.sh
-│   └── unregister-image.sh
-├── 7.spec
-│   ├── fetch-specs.sh
-│   ├── filter-specs.sh
-│   ├── get-spec.sh
-│   ├── id-list-spec.sh
-│   ├── list-spec.sh
-│   ├── lookupSpec.sh
-│   ├── lookupSpecList.sh
-│   ├── range-filter-specs.sh
-│   ├── register-spec.sh
-│   ├── spider-get-spec.sh
-│   ├── spider-get-speclist.sh
-│   ├── test-sort-specs.sh
-│   ├── testAddAsso.sh
-│   ├── testDeleteAsso.sh
-│   ├── testGetAssoCount.sh
-│   ├── unregister-all-specs.sh
-│   ├── unregister-spec.sh
-│   └── update-spec.sh
-├── 8.mcis
-│   ├── add-vm-to-mcis.sh
-│   ├── add-vmgroup-to-mcis.sh
-│   ├── create-mcis-no-agent.sh
-│   ├── create-mcis-policy.sh
-│   ├── create-mcis.sh
-│   ├── create-single-vm-mcis.sh
-│   ├── delete-mcis-policy-all.sh
-│   ├── delete-mcis-policy.sh
-│   ├── delete-mcis.sh
-│   ├── get-mcis-policy.sh
-│   ├── get-mcis.sh
-│   ├── id-list-mcis.sh
-│   ├── id-list-vm.sh
-│   ├── inspect-vm.sh
-│   ├── list-mcis-policy.sh
-│   ├── list-mcis-status.sh
-│   ├── list-mcis.sh
-│   ├── reboot-mcis.sh
-│   ├── refine-mcis.sh
-│   ├── resume-mcis.sh
-│   ├── spider-create-vm.sh
-│   ├── spider-delete-vm.sh
-│   ├── spider-get-vm.sh
-│   ├── spider-get-vmstatus.sh
-│   ├── status-mcis.sh
-│   ├── suspend-mcis.sh
-│   └── terminate-mcis.sh
-├── 9.monitoring
-│   ├── get-monitoring-data.sh
-│   └── install-agent.sh
-├── README.md
-├── common-functions.sh
-├── conf.env
-├── credentials.conf.example
-├── credentials.conf.old
-├── demo-config
-│   ├── testSet01.env
-│   ├── testSet02.env
-│   ├── testSet03.env
-│   ├── testSet04.env
-│   ├── testSet05.env
-│   ├── testSet06.env
-│   ├── testSet07.env
-│   ├── testSet08ch.env
-│   └── testSetTesting.env
-├── misc
-│   ├── get-conn-config.sh
-│   ├── get-region.sh
-│   ├── list-conn-config.sh
-│   └── list-region.sh
-├── sequentialFullTest
-│   ├── ansibleAutoConf
-│   │   ├── README.md
-│   │   ├── add-key.yml
-│   │   ├── deploy-nginx-web-server.yml
-│   │   ├── helloworld.yml
-│   │   └── mcis-shson01-host-example
-│   ├── change-mcis-hostname.sh
-│   ├── clean-all.sh
-│   ├── clean-mcir-ns-cloud.sh
-│   ├── clean-mcis-only.sh
-│   ├── command-mcis-custom.sh
-│   ├── command-mcis-vm-custom.sh
-│   ├── command-mcis.sh
-│   ├── conf-ansible-env.sh
-│   ├── create-all.sh
-│   ├── create-mcir-ns-cloud.sh
-│   ├── create-mcis-for-df.sh
-│   ├── create-mcis-for-ws.sh
-│   ├── create-mcis-only.sh
-│   ├── delete-object.sh
-│   ├── delete-objects-becareful.sh
-│   ├── deploy-dragonfly-docker.sh
-│   ├── deploy-jitsi-to-mcis.sh
-│   ├── deploy-loadMaker-to-mcis.sh
-│   ├── deploy-nginx-mcis-vm-withGivenName.sh
-│   ├── deploy-nginx-mcis-with-loadmaker.sh
-│   ├── deploy-nginx-mcis.sh
-│   ├── deploy-spider-docker.sh
-│   ├── deploy-tumblebug.sh
-│   ├── deploy-weavescope-to-mcis.sh
-│   ├── deploy-weavescope-to-multi-mcis-update-noinstall.sh
-│   ├── deploy-weavescope-to-multi-mcis-update.sh
-│   ├── deploy-weavescope-to-multi-mcis.sh
-│   ├── expand-mcis.sh
-│   ├── gen-sshKey-withGivenMcisName.sh
-│   ├── gen-sshKey.sh
-│   ├── get-object.sh
-│   ├── list-object.sh
-│   ├── sshkey-tmp
-│   ├── start-weavescope-mcis.sh
-│   ├── stop-weavescope-mcis.sh
-│   └── update-dns-for-mcis-ip.sh
-└── testSet.env
-
-14 directories, 172 files
-```
-
-</details>
 
 ***
 ***
