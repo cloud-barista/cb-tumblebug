@@ -36,7 +36,10 @@ Ref) [Supported cloud service providers](https://github.com/cloud-barista/cb-tum
 - Fix list object key parsing bug [#607](https://github.com/cloud-barista/cb-tumblebug/pull/607)
 - Patch gRPC API [#536](https://github.com/cloud-barista/cb-tumblebug/pull/536)
 
+### Note
+- Default development environment: Go v1.16 
 
+***
 
 # v0.3.0-espresso (2020.12.03.)
 
@@ -56,7 +59,7 @@ Ref) [Supported cloud service providers](https://github.com/cloud-barista/cb-tum
 ### Bug Fix
 - MCIS 종료시 런타임 오류 수정
 
-
+***
 
 # v0.2.0-cappuccino (2020.06.02.)
 
@@ -78,7 +81,7 @@ Ref) [Supported cloud service providers](https://github.com/cloud-barista/cb-tum
 ### Bug Fix
 - MCIS 라이프사이클 오류 개선
 
-
+***
 
 # v0.1.0-americano (2019.12.23.)
 
