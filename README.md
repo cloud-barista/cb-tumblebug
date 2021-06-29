@@ -160,7 +160,8 @@ cb-operator/src$ ./operator
   - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
 
 ### (3) CB-Tumblebug 실행
-
+- [CB-Spider](https://github.com/cloud-barista/cb-spider) 실행 (다른 탭에서)
+- `# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src`
 - `# ./make run` (또는 `# go run *.go`) 
 
   CB-Tumblebug 서버 실행 화면
@@ -574,18 +575,13 @@ Dozing for 1 : 1 (Back to work)
       - `./gen-sshKey.sh all 1 shson ../testSetAws.env` # MCIS에 구성된 모든 VM의 접속키 리턴 
         ```
         son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./gen-sshKey.sh all 1 shson ../testSetAws.env 
-        ####################################################################
-        ## Generate SSH KEY (PEM, PPK)
-        ####################################################################
         ...
         [GENERATED PRIVATE KEY (PEM, PPK)]
         [MCIS INFO: mc-shson]
          [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
          ./sshkey-tmp/aws-ap-se-1-shson.pem 
          ./sshkey-tmp/aws-ap-se-1-shson.ppk
-         [VMIP]: 54.177.115.174   [MCISID]: mc-shson   [VMID]: aws-us-west-1-0
-         ./sshkey-tmp/aws-us-west-1-shson.pem 
-         ./sshkey-tmp/aws-us-west-1-shson.ppk
+         ...
          [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
          ./sshkey-tmp/aws-ca-ct-1-shson.pem 
          ./sshkey-tmp/aws-ca-ct-1-shson.ppk
@@ -593,8 +589,7 @@ Dozing for 1 : 1 (Back to work)
         [SSH COMMAND EXAMPLE]
          [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
          ssh -i ./sshkey-tmp/aws-ap-se-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
-         [VMIP]: 54.177.115.174   [MCISID]: mc-shson   [VMID]: aws-us-west-1-0
-         ssh -i ./sshkey-tmp/aws-us-west-1-shson.pem cb-user@54.177.115.174 -o StrictHostKeyChecking=no
+         ...
          [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
          ssh -i ./sshkey-tmp/aws-ca-ct-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
         ```
@@ -604,9 +599,9 @@ Dozing for 1 : 1 (Back to work)
 - Nginx를 분산 배치하여, 웹서버 접속 시험 가능
     - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
     - 실행 예시
-      - command-mcis.sh aws 1 shson # aws의 1번 리전에 배치된 MCIS의 모든 VM에 Nginx 및 웹페이지 설치 (접속 테스트 가능)
+      - deploy-nginx-mcis.sh all 1 shson ../testSetAws.env # testSetAws.env 에 구성된 정보를 기준으로 MCIS의 모든 VM에 Nginx 및 웹페이지 설치
         ```
-        ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./deploy-nginx-mcis.sh aws 1 shson
+        ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./deploy-nginx-mcis.sh all 1 shson ../testSetAws.env
         {
           "result_array" : [
               {
@@ -615,12 +610,7 @@ Dozing for 1 : 1 (Back to work)
                 "result" : "WebServer is ready. Access http://35.173.215.4",
                 "mcisId" : "aws-us-east-1-shson"
               },
-              {
-                "vmIp" : "18.206.13.233",
-                "vmId" : "aws-us-east-1-shson-02",
-                "result" : "WebServer is ready. Access http://18.206.13.233",
-                "mcisId" : "aws-us-east-1-shson"
-              },
+              ...
               {
                 "mcisId" : "aws-us-east-1-shson",
                 "result" : "WebServer is ready. Access http://18.232.53.134",
