@@ -555,7 +555,7 @@ Dozing for 1 : 1 (Back to work)
       
 </details>
 
-#### 3) MCIS 응용 기반 최종 검증
+#### 3) 멀티 클라우드 인프라 유스케이스
 
 ##### MCIS SSH 원격 커맨드
   - SSH 원격 커맨드 실행을 통해서 접속 여부 등을 확인 가능
