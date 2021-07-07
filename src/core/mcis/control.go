@@ -3925,19 +3925,19 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 					return http.ErrUseLastResponse
 				},
 			}
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-			errorInfo.Status = StatusFailed
-
-			if err != nil {
-				fmt.Println(err)
-				return errorInfo, err
-			}
-			req.Header.Add("Content-Type", "application/json")
 
 			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
 			retrycheck := 2
 			for i := 0; i < retrycheck; i++ {
+
+				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+				errorInfo.Status = StatusFailed
+				if err != nil {
+					fmt.Println(err)
+					return errorInfo, err
+				}
+				req.Header.Add("Content-Type", "application/json")
+
 				res, err := client.Do(req)
 				if err != nil {
 					fmt.Println(err)

@@ -244,7 +244,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		fmt.Println("url: " + url)
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
@@ -563,7 +563,7 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 		}
 	}
 
-	client := resty.New()
+	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
 	// Create Req body

@@ -132,7 +132,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 		client.SetAllowGetMethodPayload(true)
 
 		resp, err := client.R().
@@ -220,7 +220,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 		client.SetAllowGetMethodPayload(true)
 
 		resp, err := client.R().
