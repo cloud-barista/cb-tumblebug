@@ -119,7 +119,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 		url := common.SPIDER_REST_URL + "/securitygroup"
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").

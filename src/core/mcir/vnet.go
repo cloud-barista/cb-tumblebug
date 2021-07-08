@@ -114,7 +114,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 		url := common.SPIDER_REST_URL + "/vpc"
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").

@@ -315,7 +315,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 		client.SetAllowGetMethodPayload(true)
 
 		resp, err := client.R().
@@ -402,7 +402,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 		client.SetAllowGetMethodPayload(true)
 
 		resp, err := client.R().

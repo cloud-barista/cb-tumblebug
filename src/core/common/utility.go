@@ -227,7 +227,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 		url := SPIDER_REST_URL + "/connectionconfig/" + ConnConfigName
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetResult(&ConnConfig{}).
@@ -300,7 +300,7 @@ func GetRegionInfo(RegionName string) (RegionInfo, error) {
 
 		url := SPIDER_REST_URL + "/region/" + RegionName
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetResult(&RegionInfo{}).
@@ -349,7 +349,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 		url := SPIDER_REST_URL + "/connectionconfig"
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetResult(&ConnConfigList{}).
@@ -422,7 +422,7 @@ func GetRegion(RegionName string) (Region, error) {
 
 		url := SPIDER_REST_URL + "/region/" + RegionName
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetResult(&Region{}).
@@ -495,7 +495,7 @@ func GetRegionList() (RegionList, error) {
 
 		url := SPIDER_REST_URL + "/region"
 
-		client := resty.New()
+		client := resty.New().SetCloseConnection(true)
 
 		resp, err := client.R().
 			SetResult(&RegionList{}).

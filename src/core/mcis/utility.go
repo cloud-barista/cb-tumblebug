@@ -340,7 +340,7 @@ func InspectVMs(connConfig string) (interface{}, error) {
 		}
 	}
 
-	client := resty.New()
+	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
 	// Create Req body
