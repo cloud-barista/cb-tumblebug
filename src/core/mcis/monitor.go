@@ -27,15 +27,16 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
-const MonMetricAll string = "all"
-const MonMetricCpu string = "cpu"
-const MonMetricCpufreq string = "cpufreq"
-const MonMetricMem string = "mem"
-const MonMetricNet string = "net"
-const MonMetricSwap string = "swap"
-const MonMetricDisk string = "disk"
-const MonMetricDiskio string = "diskio"
+const monMetricAll string = "all"
+const monMetricCpu string = "cpu"
+const monMetricCpufreq string = "cpufreq"
+const monMetricMem string = "mem"
+const monMetricNet string = "net"
+const monMetricSwap string = "swap"
+const monMetricDisk string = "disk"
+const monMetricDiskio string = "diskio"
 
+// MonAgentInstallReq struct
 type MonAgentInstallReq struct {
 	NsId     string `json:"nsId,omitempty"`
 	McisId   string `json:"mcisId,omitempty"`
@@ -415,16 +416,16 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		}
 
 		switch {
-		case metric == MonMetricCpu:
+		case metric == monMetricCpu:
 			value := gjson.Get(string(body), "values.cpu_utilization")
 			result = value.String()
-		case metric == MonMetricMem:
+		case metric == monMetricMem:
 			value := gjson.Get(string(body), "values.mem_utilization")
 			result = value.String()
-		case metric == MonMetricDisk:
+		case metric == monMetricDisk:
 			value := gjson.Get(string(body), "values.disk_utilization")
 			result = value.String()
-		case metric == MonMetricNet:
+		case metric == monMetricNet:
 			value := gjson.Get(string(body), "values.bytes_out")
 			result = value.String()
 		default:

@@ -32,33 +32,65 @@ import (
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
+// const ActionCreate
 const ActionCreate string = "Create"
+
+// const ActionTerminate
 const ActionTerminate string = "Terminate"
+
+// const ActionSuspend
 const ActionSuspend string = "Suspend"
+
+// const ActionResume
 const ActionResume string = "Resume"
+
+// const ActionReboot
 const ActionReboot string = "Reboot"
+
+// const ActionComplete
 const ActionComplete string = "None"
 
+// const StatusRunning
 const StatusRunning string = "Running"
+
+// const StatusSuspended
 const StatusSuspended string = "Suspended"
+
+// const StatusFailed
 const StatusFailed string = "Failed"
+
+// const StatusTerminated
 const StatusTerminated string = "Terminated"
+
+// const StatusCreating
 const StatusCreating string = "Creating"
+
+// const StatusSuspending
 const StatusSuspending string = "Suspending"
+
+// const StatusResuming
 const StatusResuming string = "Resuming"
+
+// const StatusRebooting
 const StatusRebooting string = "Rebooting"
+
+// const StatusTerminating
 const StatusTerminating string = "Terminating"
+
+// const StatusUndefined
 const StatusUndefined string = "Undefined"
+
+// const StatusComplete
 const StatusComplete string = "None"
 
 const milkywayPort string = ":1324/milkyway/"
 
-const SshDefaultUserName01 string = "cb-user"
-const SshDefaultUserName02 string = "ubuntu"
-const SshDefaultUserName03 string = "root"
-const SshDefaultUserName04 string = "ec2-user"
+const sshDefaultUserName01 string = "cb-user"
+const sshDefaultUserName02 string = "ubuntu"
+const sshDefaultUserName03 string = "root"
+const sshDefaultUserName04 string = "ec2-user"
 
-const LabelAutoGen string = "AutoGen"
+const labelAutoGen string = "AutoGen"
 
 // Structs for REST API
 
@@ -331,10 +363,10 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	userNames := []string{
 		userName,
 		givenUserName,
-		SshDefaultUserName01,
-		SshDefaultUserName02,
-		SshDefaultUserName03,
-		SshDefaultUserName04,
+		sshDefaultUserName01,
+		sshDefaultUserName02,
+		sshDefaultUserName03,
+		sshDefaultUserName04,
 	}
 
 	theUserName := ""
@@ -1015,7 +1047,7 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 
 	key := common.GenMcisKey(nsId, mcisInfoData.Id, "")
 
-	// Check existance of the key. If no key, no update.
+	// Check existence of the key. If no key, no update.
 	keyValue, err := common.CBStore.Get(key)
 	if keyValue == nil || err != nil {
 		return
@@ -1040,7 +1072,7 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 
-	// Check existance of the key. If no key, no update.
+	// Check existence of the key. If no key, no update.
 	keyValue, err := common.CBStore.Get(key)
 	if keyValue == nil || err != nil {
 		return
