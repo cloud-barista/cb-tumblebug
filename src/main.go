@@ -59,7 +59,13 @@ func main() {
 	//Setup database (meta_db/dat/cbtumblebug.s3db)
 	fmt.Println("")
 	fmt.Println("[Setup SQL Database]")
-	err := common.OpenSQL("../meta_db/dat/cbtumblebug.s3db")
+
+	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db")
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
