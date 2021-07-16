@@ -11,7 +11,6 @@ import (
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/go-resty/resty/v2"
-	"github.com/xwb1989/sqlparser"
 
 	// CB-Store
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
@@ -126,19 +125,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
-			sql := "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-			fmt.Println("sql: " + sql)
-			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-			_, err = sqlparser.Parse(sql)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-
-			stmt, err := common.MYDB.Prepare(sql)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			_, err = stmt.Exec()
+			// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
+			_, err = common.ORM.Delete(&TbImageInfo{Namespace: nsId, Id: resourceId})
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -172,19 +160,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
-			sql := "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-			fmt.Println("sql: " + sql)
-			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-			_, err = sqlparser.Parse(sql)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-
-			stmt, err := common.MYDB.Prepare(sql)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			_, err = stmt.Exec()
+			// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
+			_, err = common.ORM.Delete(&TbSpecInfo{Namespace: nsId, Id: resourceId})
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -323,19 +300,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
-			sql := "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-			fmt.Println("sql: " + sql)
-			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-			_, err = sqlparser.Parse(sql)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-
-			stmt, err := common.MYDB.Prepare(sql)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			_, err = stmt.Exec()
+			// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
+			_, err = common.ORM.Delete(&TbImageInfo{Namespace: nsId, Id: resourceId})
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -368,24 +334,14 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
-			sql := "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-			fmt.Println("sql: " + sql)
-			// https://stackoverflow.com/questions/42486032/golang-sql-query-syntax-validator
-			_, err = sqlparser.Parse(sql)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-
-			stmt, err := common.MYDB.Prepare(sql)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			_, err = stmt.Exec()
+			// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
+			_, err = common.ORM.Delete(&TbSpecInfo{Namespace: nsId, Id: resourceId})
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
 				fmt.Println("Data deleted successfully..")
 			}
+
 			return nil
 
 		case common.StrSSHKey:

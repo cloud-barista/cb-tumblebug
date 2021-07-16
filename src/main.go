@@ -11,10 +11,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 
 	grpcserver "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server"
 	restapiserver "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
+
+	"xorm.io/xorm"
+	"xorm.io/xorm/names"
 )
 
 // Main Body
@@ -65,12 +69,16 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db")
+	//err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db") // commented out to move to use XORM
+	common.ORM, err = xorm.NewEngine("sqlite3", "../meta_db/dat/cbtumblebug.s3db")
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
 		fmt.Println("Database access info set successfully")
 	}
+	//common.ORM.SetMapper(names.SameMapper{})
+	common.ORM.SetTableMapper(names.SameMapper{})
+	common.ORM.SetColumnMapper(names.SameMapper{})
 
 	/* // Required if using MySQL // Not required if using SQLite
 	err = common.SelectDatabase(common.DB_DATABASE)
@@ -81,14 +89,18 @@ func main() {
 	}
 	*/
 
-	err = common.CreateSpecTable()
+	// "CREATE Table IF NOT EXISTS spec(...)"
+	//err = common.CreateSpecTable() // commented out to move to use XORM
+	err = common.ORM.Sync2(new(mcir.TbSpecInfo))
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
 		fmt.Println("Table spec set successfully..")
 	}
 
-	err = common.CreateImageTable()
+	// "CREATE Table IF NOT EXISTS image(...)"
+	//err = common.CreateImageTable() // commented out to move to use XORM
+	err = common.ORM.Sync2(new(mcir.TbImageInfo))
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {

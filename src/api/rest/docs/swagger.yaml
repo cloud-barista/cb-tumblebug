@@ -420,6 +420,9 @@ definitions:
         type: array
       name:
         type: string
+      namespace:
+        description: required to save in RDB
+        type: string
       status:
         description: available, unavailable
         type: string
@@ -536,6 +539,9 @@ definitions:
       mem_GiB:
         type: integer
       name:
+        type: string
+      namespace:
+        description: required to save in RDB
         type: string
       net_bw_Gbps:
         type: integer
