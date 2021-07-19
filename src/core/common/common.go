@@ -2,13 +2,13 @@ package common
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
 	cbstore "github.com/cloud-barista/cb-store"
 	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"github.com/sirupsen/logrus"
+	"xorm.io/xorm"
 )
 
 type KeyValue struct {
@@ -33,6 +33,7 @@ var DB_PASSWORD string
 var AUTOCONTROL_DURATION_MS string
 var MYDB *sql.DB
 var err error
+var ORM *xorm.Engine
 
 const (
 	StrSPIDER_REST_URL            string = "SPIDER_REST_URL"
@@ -91,6 +92,7 @@ func SelectDatabase(database string) error {
 	return err
 }
 
+/*
 func CreateSpecTable() error {
 	stmt, err := MYDB.Prepare("CREATE Table IF NOT EXISTS spec(" +
 		"namespace varchar(50) NOT NULL," +
@@ -155,3 +157,4 @@ func CreateImageTable() error {
 
 	return err
 }
+*/

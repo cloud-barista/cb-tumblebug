@@ -4697,6 +4697,10 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "namespace": {
+                    "description": "required to save in RDB",
+                    "type": "string"
+                },
                 "status": {
                     "description": "available, unavailable",
                     "type": "string"
@@ -4872,6 +4876,10 @@ var doc = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "required to save in RDB",
                     "type": "string"
                 },
                 "net_bw_Gbps": {

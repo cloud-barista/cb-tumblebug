@@ -4682,6 +4682,10 @@
                 "name": {
                     "type": "string"
                 },
+                "namespace": {
+                    "description": "required to save in RDB",
+                    "type": "string"
+                },
                 "status": {
                     "description": "available, unavailable",
                     "type": "string"
@@ -4857,6 +4861,10 @@
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "required to save in RDB",
                     "type": "string"
                 },
                 "net_bw_Gbps": {
