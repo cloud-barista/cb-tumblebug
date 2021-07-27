@@ -31,7 +31,7 @@
         {
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cidrBlock": "192.168.0.0/16",
+			"cidrBlock": "192.168.${CIDRDiff}.0/24",
 			"subnetInfoList": [ {
 				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 				"IPv4_CIDR": "192.168.${CIDRDiff}.0/24"
