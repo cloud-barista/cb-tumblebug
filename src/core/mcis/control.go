@@ -2629,7 +2629,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	}
 
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
-	regionTmp, _ := common.GetRegionInfo(configTmp.RegionName)
+	regionTmp, _ := common.GetRegion(configTmp.RegionName)
 
 	nativeRegion := ""
 	for _, v := range regionTmp.KeyValueInfoList {
