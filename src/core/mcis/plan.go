@@ -273,7 +273,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 // getDistance func get geographical distance between given coordinate and connectionConfig
 func getDistance(latitude float64, longitude float64, ConnectionName string) (float64, error) {
 	configTmp, _ := common.GetConnConfig(ConnectionName)
-	regionTmp, _ := common.GetRegionInfo(configTmp.RegionName)
+	regionTmp, _ := common.GetRegion(configTmp.RegionName)
 
 	nativeRegion := ""
 	for _, v := range regionTmp.KeyValueInfoList {

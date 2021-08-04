@@ -287,58 +287,6 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	}
 }
 
-type RegionInfo struct { // Spider
-	RegionName       string     // ex) "region01"
-	ProviderName     string     // ex) "GCP"
-	KeyValueInfoList []KeyValue // ex) { {region, us-east1},
-	//	 {zone, us-east1-c},
-}
-
-func GetRegionInfo(RegionName string) (RegionInfo, error) {
-
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
-		url := SPIDER_REST_URL + "/region/" + RegionName
-
-		client := resty.New().SetCloseConnection(true)
-
-		resp, err := client.R().
-			SetResult(&RegionInfo{}).
-			//SetError(&SimpleMsg{}).
-			Get(url)
-
-		if err != nil {
-			CBLog.Error(err)
-			content := RegionInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println(string(resp.Body())) // for debug
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			CBLog.Error(err)
-			content := RegionInfo{}
-			return content, err
-		}
-
-		temp, _ := resp.Result().(*RegionInfo)
-		return *temp, nil
-
-	} else {
-		// needs GRPC code
-
-		CBLog.Error(err)
-		content := RegionInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider: needs GRPC code")
-		return content, err
-
-	}
-}
-
 type ConnConfigList struct { // Spider
 	Connectionconfig []ConnConfig `json:"connectionconfig"`
 }
@@ -411,9 +359,9 @@ func GetConnConfigList() (ConnConfigList, error) {
 }
 
 type Region struct { // Spider
-	RegionName       string
-	ProviderName     string
-	KeyValueInfoList []KeyValue
+	RegionName       string     // ex) "region01"
+	ProviderName     string     // ex) "GCP"
+	KeyValueInfoList []KeyValue // ex) { {region, us-east1}, {zone, us-east1-c} }
 }
 
 func GetRegion(RegionName string) (Region, error) {
