@@ -4194,15 +4194,18 @@ var doc = `{
             "type": "object",
             "properties": {
                 "keyValueInfoList": {
+                    "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/common.KeyValue"
                     }
                 },
                 "providerName": {
+                    "description": "ex) \"GCP\"",
                     "type": "string"
                 },
                 "regionName": {
+                    "description": "ex) \"region01\"",
                     "type": "string"
                 }
             }

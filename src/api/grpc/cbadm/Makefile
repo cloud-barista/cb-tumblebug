@@ -1,5 +1,5 @@
 default:
-	        go build -o cbadm
+	        go build -mod=mod -o cbadm
 run:
 	        ./cbadm
 clean:

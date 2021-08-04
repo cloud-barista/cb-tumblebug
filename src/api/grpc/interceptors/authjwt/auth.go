@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/logger"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"

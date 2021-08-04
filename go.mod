@@ -3,7 +3,7 @@ module github.com/cloud-barista/cb-tumblebug
 go 1.16
 
 replace (
-	//	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.3
+	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.3
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 )
@@ -15,13 +15,14 @@ require (
 	github.com/cloud-barista/cb-log v0.4.0
 	github.com/cloud-barista/cb-spider v0.4.5
 	github.com/cloud-barista/cb-store v0.4.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/coreos/bbolt v1.3.4 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.3 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogo/protobuf v1.3.2
+	github.com/golang-jwt/jwt/v4 v4.0.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
