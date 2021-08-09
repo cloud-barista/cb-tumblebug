@@ -50,7 +50,8 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 
     getCloudIndexGeneral $cloudType
 
-    ChangeHostCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${connectionName}-${publicIP}; sudo hostname -f"
+    # ChangeHostCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${connectionName}-${publicIP}; sudo hostname -f"
+    ChangeHostCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${VMID}; sudo hostname -f"
     ./command-mcis-vm-custom.sh "${1}" "${2}" "${3}" "${4}" "${VMID}" "${ChangeHostCMD}" &
 done
 wait

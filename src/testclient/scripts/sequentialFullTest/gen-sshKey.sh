@@ -85,6 +85,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 
 	id=$(_jq '.id')
 	ip=$(_jq '.publicIp')
+	privIp=$(_jq '.privateIp')
 
 	VMINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vm/${id})
 	VMKEYID=$(jq -r '.sshKeyId' <<<"$VMINFO")
@@ -97,7 +98,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 
 	echo ""
 	# USERNAME="ubuntu"
-	printf ' [VMIP]: %s   [MCISID]: %s   [VMID]: %s\n' "$ip" "$MCISID" "$id"
+	printf ' [VMIP]: %s (priv: %s)   [MCISID]: %s   [VMID]: %s\n' "$ip" "$privIp" "$MCISID" "$id"
 	printf ' ssh -i ./sshkey-tmp/%s.pem %s@%s -o StrictHostKeyChecking=no\n' "$KEYFILENAME" "$USERNAME" "$ip"
 done
 
