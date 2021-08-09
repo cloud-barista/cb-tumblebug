@@ -12,6 +12,8 @@ import (
 	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf/cbtumblebug"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/request/mcis"
 
+	core_mcis "github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+
 	"google.golang.org/grpc"
 )
 
@@ -32,36 +34,36 @@ type MCISApi struct {
 
 // TbMcisCreateRequest - MCIS 생성 요청 구조 Wrapper 정의
 type TbMcisCreateRequest struct {
-	NsId string    `yaml:"nsId" json:"nsId"`
-	Item TbMcisReq `yaml:"mcis" json:"mcis"`
+	NsId string              `yaml:"nsId" json:"nsId"`
+	Item core_mcis.TbMcisReq `yaml:"mcis" json:"mcis"`
 }
 
 // TbMcisReq - MCIS 생성 요청 구조 정의
-type TbMcisReq struct {
-	Name            string    `yaml:"name" json:"name"`
-	InstallMonAgent string    `yaml:"installMonAgent" json:"installMonAgent"`
-	Label           string    `yaml:"label" json:"label"`
-	PlacementAlgo   string    `yaml:"placementAlgo" json:"placementAlgo"`
-	Description     string    `yaml:"description" json:"description"`
-	Vm              []TbVmReq `yaml:"vm" json:"vm"`
-}
+// type TbMcisReq struct {
+// 	Name            string    `yaml:"name" json:"name"`
+// 	InstallMonAgent string    `yaml:"installMonAgent" json:"installMonAgent"`
+// 	Label           string    `yaml:"label" json:"label"`
+// 	PlacementAlgo   string    `yaml:"placementAlgo" json:"placementAlgo"`
+// 	Description     string    `yaml:"description" json:"description"`
+// 	Vm              []TbVmReq `yaml:"vm" json:"vm"`
+// }
 
 // TbVmReq - MCIS VM 생성 요청 구조 정의
-type TbVmReq struct {
-	Name             string   `yaml:"name" json:"name"`
-	VmGroupSize      string   `yaml:"vmGroupSize" json:"vmGroupSize"`
-	Label            string   `yaml:"label" json:"label"`
-	Description      string   `yaml:"description" json:"description"`
-	ConnectionName   string   `yaml:"connectionName" json:"connectionName"`
-	SpecId           string   `yaml:"specId" json:"specId"`
-	ImageId          string   `yaml:"imageId" json:"imageId"`
-	VNetId           string   `yaml:"vNetId" json:"vNetId"`
-	SubnetId         string   `yaml:"subnetId" json:"subnetId"`
-	SecurityGroupIds []string `yaml:"securityGroupIds" json:"securityGroupIds"`
-	SshKeyId         string   `yaml:"sshKeyId" json:"sshKeyId"`
-	VmUserAccount    string   `yaml:"vmUserAccount" json:"vmUserAccount"`
-	VmUserPassword   string   `yaml:"vmUserPassword" json:"vmUserPassword"`
-}
+// type TbVmReq struct {
+// 	Name             string   `yaml:"name" json:"name"`
+// 	VmGroupSize      string   `yaml:"vmGroupSize" json:"vmGroupSize"`
+// 	Label            string   `yaml:"label" json:"label"`
+// 	Description      string   `yaml:"description" json:"description"`
+// 	ConnectionName   string   `yaml:"connectionName" json:"connectionName"`
+// 	SpecId           string   `yaml:"specId" json:"specId"`
+// 	ImageId          string   `yaml:"imageId" json:"imageId"`
+// 	VNetId           string   `yaml:"vNetId" json:"vNetId"`
+// 	SubnetId         string   `yaml:"subnetId" json:"subnetId"`
+// 	SecurityGroupIds []string `yaml:"securityGroupIds" json:"securityGroupIds"`
+// 	SshKeyId         string   `yaml:"sshKeyId" json:"sshKeyId"`
+// 	VmUserAccount    string   `yaml:"vmUserAccount" json:"vmUserAccount"`
+// 	VmUserPassword   string   `yaml:"vmUserPassword" json:"vmUserPassword"`
+// }
 
 // TbVmCreateRequest - MCIS VM 생성 요청 구조 Wrapper 정의
 type TbVmCreateRequest struct {
@@ -72,237 +74,237 @@ type TbVmCreateRequest struct {
 
 // TbVmGroupCreateRequest - MCIS VM 그룹 생성 요청 구조 Wrapper 정의
 type TbVmGroupCreateRequest struct {
-	NsId   string  `yaml:"nsId" json:"nsId"`
-	McisId string  `yaml:"mcisId" json:"mcisId"`
-	Item   TbVmReq `yaml:"groupvm" json:"groupvm"`
+	NsId   string            `yaml:"nsId" json:"nsId"`
+	McisId string            `yaml:"mcisId" json:"mcisId"`
+	Item   core_mcis.TbVmReq `yaml:"groupvm" json:"groupvm"`
 }
 
 // TbVmInfo - MCIS VM 구조 정의
 type TbVmInfo struct {
-	Id               string      `yaml:"id" json:"id"`
-	Name             string      `yaml:"name" json:"name"`
-	VmGroupId        string      `yaml:"vmGroupId" json:"vmGroupId"`
-	Location         GeoLocation `yaml:"location" json:"location"`
-	Status           string      `yaml:"status" json:"status"`
-	TargetStatus     string      `yaml:"targetStatus" json:"targetStatus"`
-	TargetAction     string      `yaml:"targetAction" json:"targetAction"`
-	MonAgentStatus   string      `yaml:"monAgentStatus" json:"monAgentStatus"`
-	SystemMessage    string      `yaml:"systemMessage" json:"systemMessage"`
-	CreatedTime      string      `yaml:"createdTime" json:"createdTime"`
-	Label            string      `yaml:"label" json:"label"`
-	Description      string      `yaml:"description" json:"description"`
-	Region           RegionInfo  `yaml:"region" json:"region"`
-	PublicIP         string      `yaml:"publicIP" json:"publicIP"`
-	SSHPort          string      `yaml:"sshPort" json:"sshPort"`
-	PublicDNS        string      `yaml:"publicDNS" json:"publicDNS"`
-	PrivateIP        string      `yaml:"privateIP" json:"privateIP"`
-	PrivateDNS       string      `yaml:"privateDNS" json:"privateDNS"`
-	VMBootDisk       string      `yaml:"vmBootDisk" json:"vmBootDisk"`
-	VMBlockDisk      string      `yaml:"vmBlockDisk" json:"vmBlockDisk"`
-	ConnectionName   string      `yaml:"connectionName" json:"connectionName"`
-	SpecId           string      `yaml:"specId" json:"specId"`
-	ImageId          string      `yaml:"imageId" json:"imageId"`
-	VNetId           string      `yaml:"vNetId" json:"vNetId"`
-	SubnetId         string      `yaml:"subnetId" json:"subnetId"`
-	SecurityGroupIds []string    `yaml:"securityGroupIds" json:"securityGroupIds"`
-	SshKeyId         string      `yaml:"sshKeyId" json:"sshKeyId"`
-	VmUserAccount    string      `yaml:"vmUserAccount" json:"vmUserAccount"`
-	VmUserPassword   string      `yaml:"vmUserPassword" json:"vmUserPassword"`
+	Id               string                `yaml:"id" json:"id"`
+	Name             string                `yaml:"name" json:"name"`
+	VmGroupId        string                `yaml:"vmGroupId" json:"vmGroupId"`
+	Location         core_mcis.GeoLocation `yaml:"location" json:"location"`
+	Status           string                `yaml:"status" json:"status"`
+	TargetStatus     string                `yaml:"targetStatus" json:"targetStatus"`
+	TargetAction     string                `yaml:"targetAction" json:"targetAction"`
+	MonAgentStatus   string                `yaml:"monAgentStatus" json:"monAgentStatus"`
+	SystemMessage    string                `yaml:"systemMessage" json:"systemMessage"`
+	CreatedTime      string                `yaml:"createdTime" json:"createdTime"`
+	Label            string                `yaml:"label" json:"label"`
+	Description      string                `yaml:"description" json:"description"`
+	Region           core_mcis.RegionInfo  `yaml:"region" json:"region"`
+	PublicIP         string                `yaml:"publicIP" json:"publicIP"`
+	SSHPort          string                `yaml:"sshPort" json:"sshPort"`
+	PublicDNS        string                `yaml:"publicDNS" json:"publicDNS"`
+	PrivateIP        string                `yaml:"privateIP" json:"privateIP"`
+	PrivateDNS       string                `yaml:"privateDNS" json:"privateDNS"`
+	VMBootDisk       string                `yaml:"vmBootDisk" json:"vmBootDisk"`
+	VMBlockDisk      string                `yaml:"vmBlockDisk" json:"vmBlockDisk"`
+	ConnectionName   string                `yaml:"connectionName" json:"connectionName"`
+	SpecId           string                `yaml:"specId" json:"specId"`
+	ImageId          string                `yaml:"imageId" json:"imageId"`
+	VNetId           string                `yaml:"vNetId" json:"vNetId"`
+	SubnetId         string                `yaml:"subnetId" json:"subnetId"`
+	SecurityGroupIds []string              `yaml:"securityGroupIds" json:"securityGroupIds"`
+	SshKeyId         string                `yaml:"sshKeyId" json:"sshKeyId"`
+	VmUserAccount    string                `yaml:"vmUserAccount" json:"vmUserAccount"`
+	VmUserPassword   string                `yaml:"vmUserPassword" json:"vmUserPassword"`
 
 	// StartTime 필드가 공백일 경우 json 객체 복사할 때 time format parsing 에러 방지
 	// CspViewVmDetail  SpiderVMInfo `yaml:"cspViewVmDetail" json:"cspViewVmDetail"`
 }
 
 // GeoLocation - 위치 정보 구조 정의
-type GeoLocation struct {
-	Latitude     string `yaml:"latitude" json:"latitude"`
-	Longitude    string `yaml:"longitude" json:"longitude"`
-	BriefAddr    string `yaml:"briefAddr" json:"briefAddr"`
-	CloudType    string `yaml:"cloudType" json:"cloudType"`
-	NativeRegion string `yaml:"nativeRegion" json:"nativeRegion"`
-}
+// type GeoLocation struct {
+// 	Latitude     string `yaml:"latitude" json:"latitude"`
+// 	Longitude    string `yaml:"longitude" json:"longitude"`
+// 	BriefAddr    string `yaml:"briefAddr" json:"briefAddr"`
+// 	CloudType    string `yaml:"cloudType" json:"cloudType"`
+// 	NativeRegion string `yaml:"nativeRegion" json:"nativeRegion"`
+// }
 
 // RegionInfo - Region 정보 구조 정의
-type RegionInfo struct { // Spider
-	Region string `yaml:"Region" json:"Region"`
-	Zone   string `yaml:"Zone" json:"Zone"`
-}
+// type RegionInfo struct { // Spider
+// 	Region string `yaml:"Region" json:"Region"`
+// 	Zone   string `yaml:"Zone" json:"Zone"`
+// }
 
 // SpiderVMInfo - VM 정보 구조 정의
-type SpiderVMInfo struct { // Spider
-	// Fields for request
-	Name               string   `yaml:"Name" json:"Name"`
-	ImageName          string   `yaml:"ImageName" json:"ImageName"`
-	VPCName            string   `yaml:"VPCName" json:"VPCName"`
-	SubnetName         string   `yaml:"SubnetName" json:"SubnetName"`
-	SecurityGroupNames []string `yaml:"SecurityGroupNames" json:"SecurityGroupNames"`
-	KeyPairName        string   `yaml:"KeyPairName" json:"KeyPairName"`
+// type SpiderVMInfo struct { // Spider
+// 	// Fields for request
+// 	Name               string   `yaml:"Name" json:"Name"`
+// 	ImageName          string   `yaml:"ImageName" json:"ImageName"`
+// 	VPCName            string   `yaml:"VPCName" json:"VPCName"`
+// 	SubnetName         string   `yaml:"SubnetName" json:"SubnetName"`
+// 	SecurityGroupNames []string `yaml:"SecurityGroupNames" json:"SecurityGroupNames"`
+// 	KeyPairName        string   `yaml:"KeyPairName" json:"KeyPairName"`
 
-	// Fields for both request and response
-	VMSpecName   string `yaml:"VMSpecName" json:"VMSpecName"`
-	VMUserId     string `yaml:"VMUserId" json:"VMUserId"`
-	VMUserPasswd string `yaml:"VMUserPasswd" json:"VMUserPasswd"`
+// 	// Fields for both request and response
+// 	VMSpecName   string `yaml:"VMSpecName" json:"VMSpecName"`
+// 	VMUserId     string `yaml:"VMUserId" json:"VMUserId"`
+// 	VMUserPasswd string `yaml:"VMUserPasswd" json:"VMUserPasswd"`
 
-	// Fields for response
-	IId               IID        `yaml:"IId" json:"IId"`
-	ImageIId          IID        `yaml:"ImageIId" json:"ImageIId"`
-	VpcIID            IID        `yaml:"VpcIID" json:"VpcIID"`
-	SubnetIID         IID        `yaml:"SubnetIID" json:"SubnetIID"`
-	SecurityGroupIIds []IID      `yaml:"SecurityGroupIIds" json:"SecurityGroupIIds"`
-	KeyPairIId        IID        `yaml:"KeyPairIId" json:"KeyPairIId"`
-	StartTime         string     `yaml:"StartTime" json:"StartTime"`
-	Region            RegionInfo `yaml:"Region" json:"Region"`
-	NetworkInterface  string     `yaml:"NetworkInterface" json:"NetworkInterface"`
-	PublicIP          string     `yaml:"PublicIP" json:"PublicIP"`
-	PublicDNS         string     `yaml:"PublicDNS" json:"PublicDNS"`
-	PrivateIP         string     `yaml:"PrivateIP" json:"PrivateIP"`
-	PrivateDNS        string     `yaml:"PrivateDNS" json:"PrivateDNS"`
-	VMBootDisk        string     `yaml:"VMBootDisk" json:"VMBootDisk"`
-	VMBlockDisk       string     `yaml:"VMBlockDisk" json:"VMBlockDisk"`
-	SSHAccessPoint    string     `yaml:"SSHAccessPoint" json:"SSHAccessPoint"`
-	KeyValueList      []KeyValue `yaml:"KeyValueList" json:"KeyValueList"`
-}
+// 	// Fields for response
+// 	IId               IID        `yaml:"IId" json:"IId"`
+// 	ImageIId          IID        `yaml:"ImageIId" json:"ImageIId"`
+// 	VpcIID            IID        `yaml:"VpcIID" json:"VpcIID"`
+// 	SubnetIID         IID        `yaml:"SubnetIID" json:"SubnetIID"`
+// 	SecurityGroupIIds []IID      `yaml:"SecurityGroupIIds" json:"SecurityGroupIIds"`
+// 	KeyPairIId        IID        `yaml:"KeyPairIId" json:"KeyPairIId"`
+// 	StartTime         string     `yaml:"StartTime" json:"StartTime"`
+// 	Region            RegionInfo `yaml:"Region" json:"Region"`
+// 	NetworkInterface  string     `yaml:"NetworkInterface" json:"NetworkInterface"`
+// 	PublicIP          string     `yaml:"PublicIP" json:"PublicIP"`
+// 	PublicDNS         string     `yaml:"PublicDNS" json:"PublicDNS"`
+// 	PrivateIP         string     `yaml:"PrivateIP" json:"PrivateIP"`
+// 	PrivateDNS        string     `yaml:"PrivateDNS" json:"PrivateDNS"`
+// 	VMBootDisk        string     `yaml:"VMBootDisk" json:"VMBootDisk"`
+// 	VMBlockDisk       string     `yaml:"VMBlockDisk" json:"VMBlockDisk"`
+// 	SSHAccessPoint    string     `yaml:"SSHAccessPoint" json:"SSHAccessPoint"`
+// 	KeyValueList      []KeyValue `yaml:"KeyValueList" json:"KeyValueList"`
+// }
 
 // McisRecommendCreateRequest - MCIS 추천 요청 구조 Wrapper 정의
 type McisRecommendCreateRequest struct {
-	NsId string           `yaml:"nsId" json:"nsId"`
-	Item McisRecommendReq `yaml:"recommend" json:"recommend"`
+	NsId string                     `yaml:"nsId" json:"nsId"`
+	Item core_mcis.McisRecommendReq `yaml:"recommend" json:"recommend"`
 }
 
 // McisRecommendReq - MCIS 추천 요청 구조 정의
-type McisRecommendReq struct {
-	VmReq          []TbVmRecommendReq `yaml:"vmReq" json:"vmReq"`
-	PlacementAlgo  string             `yaml:"placementAlgo" json:"placementAlgo"`
-	PlacementParam []KeyValue         `yaml:"placementParam" json:"placementParam"`
-	MaxResultNum   string             `yaml:"maxResultNum" json:"maxResultNum"`
-}
+// type McisRecommendReq struct {
+// 	VmReq          []TbVmRecommendReq `yaml:"vmReq" json:"vmReq"`
+// 	PlacementAlgo  string             `yaml:"placementAlgo" json:"placementAlgo"`
+// 	PlacementParam []KeyValue         `yaml:"placementParam" json:"placementParam"`
+// 	MaxResultNum   string             `yaml:"maxResultNum" json:"maxResultNum"`
+// }
 
 // McisRecommendReq - MCIS VM 추천 요청 구조 정의
-type TbVmRecommendReq struct {
-	RequestName  string `yaml:"requestName" json:"requestName"`
-	MaxResultNum string `yaml:"maxResultNum" json:"maxResultNum"`
+// type TbVmRecommendReq struct {
+// 	RequestName  string `yaml:"requestName" json:"requestName"`
+// 	MaxResultNum string `yaml:"maxResultNum" json:"maxResultNum"`
 
-	VcpuSize   string `yaml:"vcpuSize" json:"vcpuSize"`
-	MemorySize string `yaml:"memorySize" json:"memorySize"`
-	DiskSize   string `yaml:"diskSize" json:"diskSize"`
+// 	VcpuSize   string `yaml:"vcpuSize" json:"vcpuSize"`
+// 	MemorySize string `yaml:"memorySize" json:"memorySize"`
+// 	DiskSize   string `yaml:"diskSize" json:"diskSize"`
 
-	PlacementAlgo  string     `yaml:"placementAlgo" json:"placementAlgo"`
-	PlacementParam []KeyValue `yaml:"placementParam" json:"placementParam"`
-}
+// 	PlacementAlgo  string     `yaml:"placementAlgo" json:"placementAlgo"`
+// 	PlacementParam []KeyValue `yaml:"placementParam" json:"placementParam"`
+// }
 
 // McisCmdCreateRequest - MCIS 명령 실행 요청 구조 Wrapper 정의
 type McisCmdCreateRequest struct {
-	NsId   string     `yaml:"nsId" json:"nsId"`
-	McisId string     `yaml:"mcisId" json:"mcisId"`
-	Item   McisCmdReq `yaml:"cmd" json:"cmd"`
+	NsId   string               `yaml:"nsId" json:"nsId"`
+	McisId string               `yaml:"mcisId" json:"mcisId"`
+	Item   core_mcis.McisCmdReq `yaml:"cmd" json:"cmd"`
 }
 
 // McisCmdReq - MCIS 명령 실행 요청 구조 정의
-type McisCmdReq struct {
-	McisId   string `yaml:"mcisId" json:"mcisId"`
-	VmId     string `yaml:"vmId" json:"vmId"`
-	Ip       string `yaml:"ip" json:"ip"`
-	UserName string `yaml:"userName" json:"userName"`
-	SshKey   string `yaml:"sshKey" json:"sshKey"`
-	Command  string `yaml:"command" json:"command"`
-}
+// type McisCmdReq struct {
+// 	McisId   string `yaml:"mcisId" json:"mcisId"`
+// 	VmId     string `yaml:"vmId" json:"vmId"`
+// 	Ip       string `yaml:"ip" json:"ip"`
+// 	UserName string `yaml:"userName" json:"userName"`
+// 	SshKey   string `yaml:"sshKey" json:"sshKey"`
+// 	Command  string `yaml:"command" json:"command"`
+// }
 
 // McisCmdVmCreateRequest - MCIS VM 명령 실행 요청 구조 Wrapper 정의
 type McisCmdVmCreateRequest struct {
-	NsId   string     `yaml:"nsId" json:"nsId"`
-	McisId string     `yaml:"mcisId" json:"mcisId"`
-	VmId   string     `yaml:"vmId" json:"vmId"`
-	Item   McisCmdReq `yaml:"cmd" json:"cmd"`
+	NsId   string               `yaml:"nsId" json:"nsId"`
+	McisId string               `yaml:"mcisId" json:"mcisId"`
+	VmId   string               `yaml:"vmId" json:"vmId"`
+	Item   core_mcis.McisCmdReq `yaml:"cmd" json:"cmd"`
 }
 
 // McisPolicyCreateRequest - MCIS Policy 생성 요청 구조 Wrapper 정의
 type McisPolicyCreateRequest struct {
-	NsId   string         `yaml:"nsId" json:"nsId"`
-	McisId string         `yaml:"mcisId" json:"mcisId"`
-	Item   McisPolicyInfo `yaml:"ReqInfo" json:"ReqInfo"`
+	NsId   string                   `yaml:"nsId" json:"nsId"`
+	McisId string                   `yaml:"mcisId" json:"mcisId"`
+	Item   core_mcis.McisPolicyInfo `yaml:"ReqInfo" json:"ReqInfo"`
 }
 
 // AutoCondition - MCIS AutoCondition 요청 구조 정의
-type AutoCondition struct {
-	Metric           string   `yaml:"metric" json:"metric"`
-	Operator         string   `yaml:"operator" json:"operator"`
-	Operand          string   `yaml:"operand" json:"operand"`
-	EvaluationPeriod string   `yaml:"evaluationPeriod" json:"evaluationPeriod"`
-	EvaluationValue  []string `yaml:"evaluationValue" json:"evaluationValue"`
-}
+// type AutoCondition struct {
+// 	Metric           string   `yaml:"metric" json:"metric"`
+// 	Operator         string   `yaml:"operator" json:"operator"`
+// 	Operand          string   `yaml:"operand" json:"operand"`
+// 	EvaluationPeriod string   `yaml:"evaluationPeriod" json:"evaluationPeriod"`
+// 	EvaluationValue  []string `yaml:"evaluationValue" json:"evaluationValue"`
+// }
 
 // AutoAction - MCIS AutoAction 요청 구조 정의
-type AutoAction struct {
-	ActionType    string     `yaml:"actionType" json:"actionType"`
-	Vm            TbVmInfo   `yaml:"vm" json:"vm"`
-	PostCommand   McisCmdReq `yaml:"postCommand" json:"postCommand"`
-	PlacementAlgo string     `yaml:"placementAlgo" json:"placementAlgo"`
-}
+// type AutoAction struct {
+// 	ActionType    string     `yaml:"actionType" json:"actionType"`
+// 	Vm            TbVmInfo   `yaml:"vm" json:"vm"`
+// 	PostCommand   McisCmdReq `yaml:"postCommand" json:"postCommand"`
+// 	PlacementAlgo string     `yaml:"placementAlgo" json:"placementAlgo"`
+// }
 
 // Policy - MCIS Policy 요청 구조 정의
-type Policy struct {
-	AutoCondition AutoCondition `yaml:"autoCondition" json:"autoCondition"`
-	AutoAction    AutoAction    `yaml:"autoAction" json:"autoAction"`
-	Status        string        `yaml:"status" json:"status"`
-}
+// type Policy struct {
+// 	AutoCondition AutoCondition `yaml:"autoCondition" json:"autoCondition"`
+// 	AutoAction    AutoAction    `yaml:"autoAction" json:"autoAction"`
+// 	Status        string        `yaml:"status" json:"status"`
+// }
 
 // McisPolicyInfo - MCIS Policy 정보 구조 정의
-type McisPolicyInfo struct {
-	Name   string   `yaml:"Name" json:"Name"`
-	Id     string   `yaml:"Id" json:"Id"`
-	Policy []Policy `yaml:"policy" json:"policy"`
+// type McisPolicyInfo struct {
+// 	Name   string   `yaml:"Name" json:"Name"`
+// 	Id     string   `yaml:"Id" json:"Id"`
+// 	Policy []Policy `yaml:"policy" json:"policy"`
 
-	ActionLog   string `yaml:"actionLog" json:"actionLog"`
-	Description string `yaml:"description" json:"description"`
-}
+// 	ActionLog   string `yaml:"actionLog" json:"actionLog"`
+// 	Description string `yaml:"description" json:"description"`
+// }
 
 // McisRecommendVmCreateRequest - MCIS VM 추천 요청 구조 Wrapper 정의
 type McisRecommendVmCreateRequest struct {
-	NsId string         `yaml:"nsId" json:"nsId"`
-	Item DeploymentPlan `yaml:"plan" json:"plan"`
+	NsId string                   `yaml:"nsId" json:"nsId"`
+	Item core_mcis.DeploymentPlan `yaml:"plan" json:"plan"`
 }
 
 // DeploymentPlan - DeploymentPlan 요청 구조 정의
-type DeploymentPlan struct {
-	Filter   FilterInfo   `yaml:"filter" json:"filter"`
-	Priority PriorityInfo `yaml:"priority" json:"priority"`
-	Limit    string       `yaml:"limit" json:"limit"`
-}
+// type DeploymentPlan struct {
+// 	Filter   FilterInfo   `yaml:"filter" json:"filter"`
+// 	Priority PriorityInfo `yaml:"priority" json:"priority"`
+// 	Limit    string       `yaml:"limit" json:"limit"`
+// }
 
 // FilterInfo - FilterInfo 요청 구조 정의
-type FilterInfo struct {
-	Policy []FilterCondition `yaml:"policy" json:"policy"`
-}
+// type FilterInfo struct {
+// 	Policy []FilterCondition `yaml:"policy" json:"policy"`
+// }
 
 // FilterCondition - FilterCondition 요청 구조 정의
-type FilterCondition struct {
-	Metric    string      `yaml:"metric" json:"metric"`
-	Condition []Operation `yaml:"condition" json:"condition"`
-}
+// type FilterCondition struct {
+// 	Metric    string      `yaml:"metric" json:"metric"`
+// 	Condition []Operation `yaml:"condition" json:"condition"`
+// }
 
 // Operation - Operation 요청 구조 정의
-type Operation struct {
-	Operator string `yaml:"operator" json:"operator"`
-	Operand  string `yaml:"operand" json:"operand"`
-}
+// type Operation struct {
+// 	Operator string `yaml:"operator" json:"operator"`
+// 	Operand  string `yaml:"operand" json:"operand"`
+// }
 
 // PriorityInfo - PriorityInfo 요청 구조 정의
-type PriorityInfo struct {
-	Policy []PriorityCondition `yaml:"policy" json:"policy"`
-}
+// type PriorityInfo struct {
+// 	Policy []PriorityCondition `yaml:"policy" json:"policy"`
+// }
 
 // PriorityCondition - PriorityCondition 요청 구조 정의
-type PriorityCondition struct {
-	Metric    string            `yaml:"metric" json:"metric"`
-	Weight    string            `yaml:"weight" json:"weight"`
-	Parameter []ParameterKeyVal `yaml:"parameter" json:"parameter"`
-}
+// type PriorityCondition struct {
+// 	Metric    string            `yaml:"metric" json:"metric"`
+// 	Weight    string            `yaml:"weight" json:"weight"`
+// 	Parameter []ParameterKeyVal `yaml:"parameter" json:"parameter"`
+// }
 
 // ParameterKeyVal - ParameterKeyVal 요청 구조 정의
-type ParameterKeyVal struct {
-	Key string   `yaml:"key" json:"key"`
-	Val []string `yaml:"val" json:"val"`
-}
+// type ParameterKeyVal struct {
+// 	Key string   `yaml:"key" json:"key"`
+// 	Val []string `yaml:"val" json:"val"`
+// }
 
 // ===== [ Implementatiom ] =====
 
