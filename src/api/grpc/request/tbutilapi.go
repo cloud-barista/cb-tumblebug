@@ -12,6 +12,8 @@ import (
 	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf/cbtumblebug"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/request/common"
 
+	core_common "github.com/cloud-barista/cb-tumblebug/src/core/common"
+
 	"google.golang.org/grpc"
 )
 
@@ -31,10 +33,10 @@ type UtilityApi struct {
 }
 
 // ConfigReq - Config 정보 생성 요청 구조 정의
-type ConfigReq struct {
-	Name  string `yaml:"name" json:"name"`
-	Value string `yaml:"value" json:"value"`
-}
+// type ConfigReq struct {
+// 	Name  string `yaml:"name" json:"name"`
+// 	Value string `yaml:"value" json:"value"`
+// }
 
 // ===== [ Implementatiou ] =====
 
@@ -344,7 +346,7 @@ func (u *UtilityApi) CreateConfig(doc string) (string, error) {
 }
 
 // CreateConfigByParam - Config 생성
-func (u *UtilityApi) CreateConfigByParam(req *ConfigReq) (string, error) {
+func (u *UtilityApi) CreateConfigByParam(req *core_common.ConfigReq) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
 	}

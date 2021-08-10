@@ -12,6 +12,8 @@ import (
 	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf/cbtumblebug"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/request/common"
 
+	core_common "github.com/cloud-barista/cb-tumblebug/src/core/common"
+
 	"google.golang.org/grpc"
 )
 
@@ -31,10 +33,10 @@ type NSApi struct {
 }
 
 // NsReq - Namespace 정보 생성 요청 구조 정의
-type NsReq struct {
-	Name        string `yaml:"name" json:"name"`
-	Description string `yaml:"description" json:"description"`
-}
+// type NsReq struct {
+// 	Name        string `yaml:"name" json:"name"`
+// 	Description string `yaml:"description" json:"description"`
+// }
 
 // ===== [ Implementations ] =====
 
@@ -276,7 +278,7 @@ func (ns *NSApi) CreateNS(doc string) (string, error) {
 }
 
 // CreateNSByParam - Namespace 생성
-func (ns *NSApi) CreateNSByParam(req *NsReq) (string, error) {
+func (ns *NSApi) CreateNSByParam(req *core_common.NsReq) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
