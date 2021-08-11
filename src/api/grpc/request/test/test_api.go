@@ -7,6 +7,10 @@ import (
 	sp_api "github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/logger"
 	tb_api "github.com/cloud-barista/cb-tumblebug/src/api/grpc/request"
+
+	core_common "github.com/cloud-barista/cb-tumblebug/src/core/common"
+	core_mcir "github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	core_mcis "github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 )
 
 func main() {
@@ -387,7 +391,7 @@ func CreateNSApiTest() {
 		logger.Fatal(err)
 	}
 
-	reqNs := &tb_api.NsReq{
+	reqNs := &core_common.NsReq{
 		Name:        "ns-test",
 		Description: "NameSpace for General Testing",
 	}
@@ -422,15 +426,15 @@ func CreateMCIRApiTest() {
 
 	reqTbVNet := &tb_api.TbVNetCreateRequest{
 		NsId: "ns-test",
-		Item: tb_api.TbVNetReq{
+		Item: core_mcir.TbVNetReq{
 			Name:           "openstack-config01-test",
 			ConnectionName: "openstack-config01",
 			CidrBlock:      "192.168.0.0/16",
-			SubnetInfoList: []tb_api.SpiderSubnetReqInfo{
-				tb_api.SpiderSubnetReqInfo{
+			SubnetInfoList: []core_mcir.SpiderSubnetReqInfo{
+				core_mcir.SpiderSubnetReqInfo{
 					Name:         "openstack-config01-test",
 					IPv4_CIDR:    "192.168.1.0/24",
-					KeyValueList: []tb_api.KeyValue{},
+					KeyValueList: []core_common.KeyValue{},
 				},
 			},
 			Description: "",
@@ -445,7 +449,7 @@ func CreateMCIRApiTest() {
 
 	reqTbImage := &tb_api.TbImageInfoRequest{
 		NsId: "ns-test",
-		Item: tb_api.TbImageInfo{
+		Item: core_mcir.TbImageInfo{
 			Id:             "",
 			Name:           "openstack-config01-test",
 			ConnectionName: "openstack-config01",
@@ -455,7 +459,7 @@ func CreateMCIRApiTest() {
 			CreationDate:   "",
 			GuestOS:        "cirros",
 			Status:         "",
-			KeyValueList:   []tb_api.KeyValue{},
+			KeyValueList:   []core_common.KeyValue{},
 		},
 	}
 	result, err = mcir.CreateImageWithInfoByParam(reqTbImage)
@@ -467,13 +471,13 @@ func CreateMCIRApiTest() {
 
 	reqTbSecurityGroup := &tb_api.TbSecurityGroupCreateRequest{
 		NsId: "ns-test",
-		Item: tb_api.TbSecurityGroupReq{
+		Item: core_mcir.TbSecurityGroupReq{
 			Name:           "openstack-config01-test",
 			ConnectionName: "openstack-config01",
 			VNetId:         "openstack-config01-test",
 			Description:    "test description",
-			FirewallRules: &[]tb_api.SpiderSecurityRuleInfo{
-				tb_api.SpiderSecurityRuleInfo{
+			FirewallRules: &[]core_mcir.SpiderSecurityRuleInfo{
+				core_mcir.SpiderSecurityRuleInfo{
 					FromPort:   "1",
 					ToPort:     "65535",
 					IPProtocol: "tcp",
@@ -492,7 +496,7 @@ func CreateMCIRApiTest() {
 
 	reqTbSpecInfo := &tb_api.TbSpecInfoRequest{
 		NsId: "ns-test",
-		Item: tb_api.TbSpecInfo{
+		Item: core_mcir.TbSpecInfo{
 			Id:                    "",
 			Name:                  "openstack-config01-test",
 			ConnectionName:        "openstack-config01",
@@ -536,7 +540,7 @@ func CreateMCIRApiTest() {
 
 	reqTbSshKey := &tb_api.TbSshKeyCreateRequest{
 		NsId: "ns-test",
-		Item: tb_api.TbSshKeyReq{
+		Item: core_mcir.TbSshKeyReq{
 			Name:           "openstack-config01-test",
 			ConnectionName: "openstack-config01",
 			Description:    "",
@@ -573,14 +577,14 @@ func CreateMCISApiTest() {
 
 	reqTbMcis := &tb_api.TbMcisCreateRequest{
 		NsId: "ns-test",
-		Item: tb_api.TbMcisReq{
+		Item: core_mcis.TbMcisReq{
 			Name:            "mcis-01",
 			PlacementAlgo:   "",
 			InstallMonAgent: "no",
 			Description:     "",
 			Label:           "",
-			Vm: []tb_api.TbVmReq{
-				tb_api.TbVmReq{
+			Vm: []core_mcis.TbVmReq{
+				core_mcis.TbVmReq{
 					VmGroupSize:    "0",
 					Name:           "openstack-config01-test-01",
 					ConnectionName: "openstack-config01",
@@ -597,7 +601,7 @@ func CreateMCISApiTest() {
 					Description:    "description",
 					Label:          "label",
 				},
-				tb_api.TbVmReq{
+				core_mcis.TbVmReq{
 					VmGroupSize:    "0",
 					Name:           "openstack-config01-test-02",
 					ConnectionName: "openstack-config01",
@@ -647,7 +651,12 @@ func DeleteMCISApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err := mcis.DeleteMcisByParam("ns-test", "mcis-01")
+	result, err := mcis.ControlMcisByParam("ns-test", "mcis-01", "terminate")
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	result, err = mcis.DeleteMcisByParam("ns-test", "mcis-01")
 	if err != nil {
 		logger.Fatal(err)
 	}
