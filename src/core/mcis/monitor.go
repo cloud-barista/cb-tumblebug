@@ -4,6 +4,7 @@ import (
 
 	//"encoding/json"
 
+	"os"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -23,6 +24,9 @@ import (
 	"net/http"
 
 	"sync"
+
+	df_pb "github.com/cloud-barista/cb-dragonfly/pkg/api/grpc/protobuf/cbdragonfly"
+	df_api "github.com/cloud-barista/cb-dragonfly/pkg/api/grpc/request"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
@@ -75,33 +79,49 @@ type MonResultSimpleResponse struct {
 
 // Module for checking CB-Dragonfly endpoint (call get config)
 func CheckDragonflyEndpoint() error {
-	cmd := "/config"
+	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
+		cmd := "/config"
 
-	url := common.DRAGONFLY_REST_URL + cmd
-	method := "GET"
+		url := common.DRAGONFLY_REST_URL + cmd
+		method := "GET"
 
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, nil)
+		client := &http.Client{}
+		req, err := http.NewRequest(method, url, nil)
 
-	if err != nil {
-		fmt.Println(err)
-		return err
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		defer res.Body.Close()
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		fmt.Println(string(body))
+		return nil
+	} else {
+		monApi := df_api.InitMonitoringAPI()
+		err := monApi.Open()
+		if err != nil {
+			common.CBLog.Error("failed to initialize grpc client, %s", err.Error())
+		}
+		defer monApi.Close()
+
+		result, err := monApi.GetMonitoringConfig()
+		if err != nil {
+			return err
+		}
+		fmt.Println(result)
+		return nil
 	}
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	fmt.Println(string(body))
-	return nil
 }
 
 func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, givenUserName string, method string, cmd string, returnResult *[]SshCmdResult) {
@@ -373,33 +393,39 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 
 	defer wg.Done() //goroutin sync done
 
-	url := common.DRAGONFLY_REST_URL + cmd
 	fmt.Print("[Call CB-DF] ")
-	fmt.Println("URL: " + url)
 
-	responseLimit := 8
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-		Timeout: time.Duration(responseLimit) * time.Minute,
-	}
-	req, err := http.NewRequest(method, url, nil)
-	errStr := ""
-	if err != nil {
-		common.CBLog.Error(err)
-		errStr = err.Error()
-	}
+	var response string
+	var errStr string
+	var result string
+	var err error
+	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
+		url := common.DRAGONFLY_REST_URL + cmd
+		fmt.Println("URL: " + url)
 
-	res, err := client.Do(req)
+		responseLimit := 8
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+			Timeout: time.Duration(responseLimit) * time.Minute,
+		}
+		req, err := http.NewRequest(method, url, nil)
+		// errStr := ""
+		if err != nil {
+			common.CBLog.Error(err)
+			errStr = err.Error()
+		}
 
-	result := ""
+		res, err := client.Do(req)
 
-	fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
-	if err != nil {
-		common.CBLog.Error(err)
-		errStr = err.Error()
-	} else {
+		// result := ""
+
+		fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
+		if err != nil {
+			common.CBLog.Error(err)
+			errStr = err.Error()
+		}
 		//fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
@@ -414,24 +440,45 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 			common.CBLog.Error(err2)
 			errStr = err2.Error()
 		}
-
-		switch {
-		case metric == monMetricCpu:
-			value := gjson.Get(string(body), "values.cpu_utilization")
-			result = value.String()
-		case metric == monMetricMem:
-			value := gjson.Get(string(body), "values.mem_utilization")
-			result = value.String()
-		case metric == monMetricDisk:
-			value := gjson.Get(string(body), "values.disk_utilization")
-			result = value.String()
-		case metric == monMetricNet:
-			value := gjson.Get(string(body), "values.bytes_out")
-			result = value.String()
-		default:
-			result = string(body)
+		response = string(body)
+	} else {
+		reqParams := df_pb.VMOnDemandMonQryRequest{
+			NsId:    nsID,
+			McisId:  mcisID,
+			VmId:    vmID,
+			AgentIp: vmIP,
 		}
 
+		monApi := df_api.InitMonitoringAPI()
+		err := monApi.Open()
+		if err != nil {
+			common.CBLog.Error("failed to initialize grpc client, %s", err.Error())
+		}
+		defer monApi.Close()
+
+		result, err := monApi.GetVMOnDemandMonInfo(metric, reqParams)
+		if err != nil {
+			common.CBLog.Error(err)
+		}
+		fmt.Println(result) // for debug
+		response = result
+	}
+
+	switch {
+	case metric == monMetricCpu:
+		value := gjson.Get(response, "values.cpu_utilization")
+		result = value.String()
+	case metric == monMetricMem:
+		value := gjson.Get(response, "values.mem_utilization")
+		result = value.String()
+	case metric == monMetricDisk:
+		value := gjson.Get(response, "values.disk_utilization")
+		result = value.String()
+	case metric == monMetricNet:
+		value := gjson.Get(response, "values.bytes_out")
+		result = value.String()
+	default:
+		result = response
 	}
 
 	//wg.Done() //goroutin sync done

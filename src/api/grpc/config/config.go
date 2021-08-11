@@ -27,8 +27,9 @@ type GrpcConfig struct {
 // GrpcServiceList - CB-GRPC 서비스 목록
 type GrpcServiceList struct {
 	TumblebugSrv *GrpcServerConfig `mapstructure:"tumblebugsrv"`
-	TumblebugCli *GrpcClientConfig `mapstructure:"tumblebugcli"`
 	SpiderCli    *GrpcClientConfig `mapstructure:"spidercli"`
+	TumblebugCli *GrpcClientConfig `mapstructure:"tumblebugcli"`
+	// DragonflyCli *GrpcClientConfig `mapstructure:"dragonflycli"`
 }
 
 // GrpcServerConfig - CB-GRPC 서버 설정 구조
@@ -138,6 +139,35 @@ func (gConf *GrpcConfig) initGlobalParams() {
 		}
 	}
 
+	if gConf.GSL.SpiderCli != nil {
+
+		if gConf.GSL.SpiderCli.Timeout == 0 {
+			gConf.GSL.SpiderCli.Timeout = 90 * time.Second
+		}
+
+		if gConf.GSL.SpiderCli.TLS != nil {
+			if gConf.GSL.SpiderCli.TLS.TLSCA != "" {
+				gConf.GSL.SpiderCli.TLS.TLSCA = ReplaceEnvPath(gConf.GSL.SpiderCli.TLS.TLSCA)
+			}
+		}
+
+		if gConf.GSL.SpiderCli.Interceptors != nil {
+			if gConf.GSL.SpiderCli.Interceptors.Opentracing != nil {
+				if gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger != nil {
+
+					if gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.ServiceName == "" {
+						gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.ServiceName = "spider grpc client"
+					}
+
+					if gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.SampleRate == 0 {
+						gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.SampleRate = 1
+					}
+
+				}
+			}
+		}
+	}
+
 	if gConf.GSL.TumblebugCli != nil {
 
 		if gConf.GSL.TumblebugCli.Timeout == 0 {
@@ -167,34 +197,36 @@ func (gConf *GrpcConfig) initGlobalParams() {
 		}
 	}
 
-	if gConf.GSL.SpiderCli != nil {
+	/*
+		if gConf.GSL.DragonflyCli != nil {
 
-		if gConf.GSL.SpiderCli.Timeout == 0 {
-			gConf.GSL.SpiderCli.Timeout = 90 * time.Second
-		}
-
-		if gConf.GSL.SpiderCli.TLS != nil {
-			if gConf.GSL.SpiderCli.TLS.TLSCA != "" {
-				gConf.GSL.SpiderCli.TLS.TLSCA = ReplaceEnvPath(gConf.GSL.SpiderCli.TLS.TLSCA)
+			if gConf.GSL.DragonflyCli.Timeout == 0 {
+				gConf.GSL.DragonflyCli.Timeout = 90 * time.Second
 			}
-		}
 
-		if gConf.GSL.SpiderCli.Interceptors != nil {
-			if gConf.GSL.SpiderCli.Interceptors.Opentracing != nil {
-				if gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger != nil {
+			if gConf.GSL.DragonflyCli.TLS != nil {
+				if gConf.GSL.DragonflyCli.TLS.TLSCA != "" {
+					gConf.GSL.DragonflyCli.TLS.TLSCA = ReplaceEnvPath(gConf.GSL.DragonflyCli.TLS.TLSCA)
+				}
+			}
 
-					if gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.ServiceName == "" {
-						gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.ServiceName = "grpc spider client"
+			if gConf.GSL.DragonflyCli.Interceptors != nil {
+				if gConf.GSL.DragonflyCli.Interceptors.Opentracing != nil {
+					if gConf.GSL.DragonflyCli.Interceptors.Opentracing.Jaeger != nil {
+
+						if gConf.GSL.DragonflyCli.Interceptors.Opentracing.Jaeger.ServiceName == "" {
+							gConf.GSL.DragonflyCli.Interceptors.Opentracing.Jaeger.ServiceName = "dragonfly grpc client"
+						}
+
+						if gConf.GSL.DragonflyCli.Interceptors.Opentracing.Jaeger.SampleRate == 0 {
+							gConf.GSL.DragonflyCli.Interceptors.Opentracing.Jaeger.SampleRate = 1
+						}
+
 					}
-
-					if gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.SampleRate == 0 {
-						gConf.GSL.SpiderCli.Interceptors.Opentracing.Jaeger.SampleRate = 1
-					}
-
 				}
 			}
 		}
-	}
+	*/
 
 }
 
