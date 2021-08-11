@@ -96,7 +96,7 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 # docker run -p 1323:1323 -p 50252:50252 \
 -v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
 --name cb-tumblebug \
-cloudbaristaorg/cb-tumblebug:0.3.xx
+cloudbaristaorg/cb-tumblebug:0.4.xx
 ```
 
 ### (3) cb-operator 기반 Cloud-Barista 통합 실행
@@ -214,7 +214,7 @@ cb-operator/src$ ./operator
 
 ### (1) CB-Tumblebug 및 CB-Spider의 REST API를 사용하여 테스트
 - CB-Spider API를 통해 클라우드 인프라 연동 정보 등록
-   - https://cloud-barista.github.io/rest-api/v0.3.0/spider/ccim/
+   - https://cloud-barista.github.io/rest-api/v0.4.0/spider/ccim/
 - CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
    - [Namespace 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BNamespace%5D%20Namespace%20management/post_ns)
 - CB-Tumblebug 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
