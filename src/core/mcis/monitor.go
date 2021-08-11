@@ -27,6 +27,7 @@ import (
 
 	df_pb "github.com/cloud-barista/cb-dragonfly/pkg/api/grpc/protobuf/cbdragonfly"
 	df_api "github.com/cloud-barista/cb-dragonfly/pkg/api/grpc/request"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
@@ -114,7 +115,6 @@ func CheckDragonflyEndpoint() error {
 		}
 		defer monApi.Close()
 
-		monApi = df_api.GetMonitoringAPI()
 		result, err := monApi.GetMonitoringConfig()
 		if err != nil {
 			return err
@@ -456,7 +456,6 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		}
 		defer monApi.Close()
 
-		monApi = df_api.GetMonitoringAPI()
 		result, err := monApi.GetVMOnDemandMonInfo(metric, reqParams)
 		if err != nil {
 			common.CBLog.Error(err)
