@@ -132,6 +132,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "limsg1234",
+      "name": "sglim",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53066410?v=4",
+      "profile": "https://github.com/limsg1234",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
