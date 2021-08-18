@@ -212,40 +212,42 @@ cb-operator/src$ ./operator
 
 ## CB-Tumblebug 기능 사용 방법
 
-### (1) CB-Tumblebug 및 CB-Spider의 REST API를 사용하여 테스트
-- CB-Spider API를 통해 클라우드 인프라 연동 정보 등록
-   - https://cloud-barista.github.io/rest-api/v0.4.0/spider/ccim/
-- CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
-   - [Namespace 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BNamespace%5D%20Namespace%20management/post_ns)
-- CB-Tumblebug 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
-   - [VM spec object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Spec%20management/post_ns__nsId__resources_spec)
-   - [VM image object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Image%20management/post_ns__nsId__resources_image)
-   - [Virtual network object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Network%20management/post_ns__nsId__resources_vNet)
-   - [Security group object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
-   - [VM 접속 ssh key object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Access%20key%20management/post_ns__nsId__resources_sshKey)
-- CB-Tumblebug 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 원격명령수행, 종료 및 삭제
-   - [MCIS 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/post_ns__nsId__mcis)
-   - [MCIS 원격 커맨드](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Remote%20command/post_ns__nsId__cmd_mcis__mcisId_)
-   - [MCIS 조회 및 제어](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/get_ns__nsId__mcis__mcisId_)
-   - [MCIS 삭제(MCIS 종료 상태에서만 동작 가능)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/delete_ns__nsId__mcis)
+1. [CB-Tumblebug 스크립트 사용](#cb-tumblebug-스크립트-사용)
+1. [CB-Tumblebug REST API 사용](#cb-tumblebug-rest-api-사용)
 
-### (2) CB-Tumblebug 스크립트를 통한 테스트
-- `src/testclient/scripts/`
-   - 클라우드 인증 정보, 테스트 기본 정보 입력
-   - 클라우드정보, Namespace, MCIR, MCIS 등 개별 제어 시험 (개별 시험시, 오브젝트들의 의존성 고려 필요))
-   - 한꺼번에 통합 시험 (추천 테스트 방법)
-     - `src/testclient/scripts/sequentialFullTest/`
 
-#### 0) 클라우드 인증 정보, 테스트 기본 정보 입력
-- `src/testclient/scripts/` 이동
-- [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)을 복사하여 `credentials.conf` 를 생성하고, `credentials.conf` 항목에 사용자의 클라우드 인증 정보 입력
+### CB-Tumblebug 스크립트 사용
+[`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/)는 복잡한 단계가 필요한 MCIS (MC-Infra) 프로비저닝 절차를 간소화 및 자동화시킨 Bash shell 기반 스크립트를 제공.
+ - 1 단계: [클라우드 인증 정보 및 테스트 기본 정보 입력](클라우드-인증-정보-및-테스트-기본-정보-입력)
+ - 2 단계: Namespace, MCIR, MCIS 등 프로비저닝 (통합 제어 / 개별 제어 중 선택)
+   - [개별 제어 시험](개별-제어-시험) (Namespace, MCIR, MCIS 등 개별 시험시, 오브젝트들의 의존성 고려 필수)
+   - [통합 제어 시험](통합-제어-시험) (추천 테스트 방법) `src/testclient/scripts/sequentialFullTest/`
+ - 3 단계: [멀티 클라우드 인프라 유스케이스 자동 배포](멀티-클라우드-인프라-유스케이스)
+
+
+#### 클라우드 인증 정보 및 테스트 기본 정보 입력
+1. [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts) 이동
+2. `credentials.conf` 생성 
    - `credentials.conf` 는 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 인증 정보 템플릿 제공
+   - [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)를 참조하여 항목에 사용자의 클라우드 인증 정보 입력
    - [CSP별 인증 정보 획득 방법 참고](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)
-- `conf.env` 설정
+3. [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env) 설정
    - CB-Spider 및 CB-Tumblebug 서버 엔드포인트, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
-   - 이미 많은 클라우드 타입에 대한 정보가 조사 및 입력되어 있으므로, 특별한 경우가 아니면 수정없이 사용 가능. 
+   - 이미 많은 클라우드 타입에 대한 정보가 조사 및 입력되어 있으므로, 수정없이 사용 가능. (단, 지정된 Spec에 따라 과금이 발생할 수 있으므로 확인 필요)
+     - 테스트용 VM 이미지 수정 방식: [`IMAGE_NAME[$IX,$IY]=ami-061eb2b23f9f8839c`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L49)
+     - 테스트용 VM 스펙 수정 방식: [`SPEC_NAME[$IX,$IY]=m4.4xlarge`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L50)   
+4. [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env) 설정
+   - MCIS 프로비저닝에 사용될, 클라우드 및 리전 구성을 파일로 설정 (기존의 `testSet.env` 를 변경해도 되고, 복사하여 활용도 가능)
+   - 조합할 CSP 종류 지정
+     - 조합할 총 CSP 개수 지정 ([NumCSP=](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L9) 에 숫자를 변경)
+     - 조합할 CSP 종류는 [L15-L24](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L15)의 라인 상 순서를 변경하여 지정 (NumCSP에 지정된 개수까지 활용)
+     - 예: aws, alibaba 로 조합하고 싶은 경우: [NumCSP=2](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L9) 로 변경하고, `IndexAWS=$((++IX))`, `IndexAlibaba=$((++IX))` 순으로 재정렬
+   - 조합할 CSP의 리전 지정
+     - 각 CSP 설정 항목으로 이동 [`# AWS (Total: 21 Regions)`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L44) 
+     - `NumRegion[$IndexAWS]=2` 에서 구성하고 싶은 리전의 수를 지정 (예시에서는 2로 지정)
+     - 리전 리스트의 라인 순서를 변경하여 원하는 리전으로 셋팅 (`NumRegion[$IndexAWS]=2` 인 경우 가장 위에 나열된 2개의 리전이 선택)
 
-#### 1) 클라우드정보, Namespace, MCIR, MCIS 등 개별 제어 시험
+#### 개별 제어 시험
 - 제어하고 싶은 리소스 오브젝트에 대해, 해당 디렉토리로 이동하여 필요한 시험 수행
   - 오브젝트는 서로 의존성이 있으므로, 번호를 참고하여 오름차순으로 수행하는 것이 바람직함
     - `1.configureSpider`  # 클라우드 정보 등록 관련 스크립트 모음
@@ -258,8 +260,8 @@ cb-operator/src$ ./operator
     - `8.mcis`  # MCIS 생성 및 제어, MCIS 원격 커맨드 등 스크립트 모음
     - `9.monitoring`  # CB-TB를 통해서 CB-DF 모니터링 에이전트 설치 및 모니터링 테스트 스크립트 모음
 
-#### 2) 한꺼번에 통합 시험 (추천 테스트 방법)
-- `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 모든 것을 한번에 테스트 가능
+#### 통합 제어 시험
+- `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 전체 과정을 한번에 테스트 가능
 ```
 └── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
     ├── create-all.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
@@ -274,29 +276,15 @@ cb-operator/src$ ./operator
 ```
 - 사용 예시
   - 생성 테스트
-    - `./create-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 생성 수행
-    - `./create-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 생성 수행
-    - `./create-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 생성 수행
-    - `./create-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 생성 수행
-    - `./create-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 생성 수행
-    - `./create-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 생성 수행
-    - `./create-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 생성 수행
-    - `./create-all.sh all 1 shson ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행 (`all 1` all 선택시 리전은 의미가 없으며, 임의로 지정하면 됨. 향후 개선 예정)
-  - 제거 테스트 (이미 수행이 진행된 클라우드타입/리전/개발자명 으로만 삭제 진행이 필요)
-    - `./clean-all.sh aws 1 shson`       # aws의 1번 리전에 shson이라는 개발자명으로 제거 수행
-    - `./clean-all.sh aws 2 shson`       # aws의 2번 리전에 shson이라는 개발자명으로 제거 수행
-    - `./clean-all.sh aws 3 shson`       # aws의 3번 리전에 shson이라는 개발자명으로 제거 수행
-    - `./clean-all.sh gcp 1 shson`       # gcp의 1번 리전에 shson이라는 개발자명으로 제거 수행
-    - `./clean-all.sh gcp 2 shson`       # gcp의 2번 리전에 shson이라는 개발자명으로 제거 수행
-    - `./clean-all.sh azure 1 shson`     # azure의 1번 리전에 shson이라는 개발자명으로 제거 수행
-    - `./clean-all.sh alibaba 1 shson`   # alibaba의 1번 리전에 shson이라는 개발자명으로 제거 수행
-    - `./create-all.sh all 1 shson ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 제거 수행
+    - `./create-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행
+  - 제거 테스트 (생성에서 활용한 입력 파라미터로 삭제 필요)
+    - `./clean-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 제거 수행
 
 <details>
 <summary>입출력 예시 보기</summary>
 
 ```
-~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./create-all.sh aws 1 shson
+~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ `./create-all.sh -n shson -f ../testSetCustom.env`
 ####################################################################
 ## Create MCIS from Zero Base
 ####################################################################
@@ -374,7 +362,7 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
 ..............
    "id" : "aws-us-east-1-shson",
    "description" : "",
-   "privateKey" : "-----BEGIN RSA PRIVATE KEY-----\nMIIEogIBAAKCAQEAopGlO3dUrB4AMcBr4XZg0OVrveecA9Hv0/a9GmxgXU5dx42YV4DwW7oq/+Dq\nPaCSXvGGtdVHuL0hoOKdGYOx89qzi+nUgNQup+pKLbQw4aU2gVbV1/3/ejt7tYRUeWNU9c4b7m7E\nfs3A0xgfmak90eoQen+TJYhkfdWcSwkmJSH61bEFRbdeyijEODCu0TAGDrtRZzdCRUzbA/N7FjsC\ns0a1C...LpszE9J0bfhLOqgmkYNGSw4oR+gPRIsipUK6SzaRH7nFnOSw=\n-----END RSA PRIVATE KEY-----",
+   "privateKey" : "-----BEGIN RSA PRIVATE KEY-----\nMIIEogIBAAKCAQ\ KEY-----",
    "username" : ""
 }
 ####################################################################
@@ -558,23 +546,23 @@ Dozing for 1 : 1 (Back to work)
       
 </details>
 
-#### 3) 멀티 클라우드 인프라 유스케이스
+#### 멀티 클라우드 인프라 유스케이스
 
 ##### MCIS SSH 원격 커맨드
   - SSH 원격 커맨드 실행을 통해서 접속 여부 등을 확인 가능
     - command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
     - 실행 예시
-      - `./create-all.sh all 1 shson ../testSet.env`  # testSet.env 에 구성된 정보를 기준으로 MCIS 생성
-      - `./command-mcis.sh all 1 shson ../testSet.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
+      - `./create-all.sh -n shson -f ../testSet.env`  # testSet.env 에 구성된 정보를 기준으로 MCIS 생성
+      - `./command-mcis.sh -n shson -f ../testSet.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
 ##### MCIS SSH 접속키 생성 및 접속
   - 스크립트를 통해 MCIS의 VM에 각각 접속할 수 있는 SSH Key 및 주소를 생성
     - gen-sshKey.sh  # MCIS에 구성된 모든 VM의 접속키 리턴
     - 실행 예시
-      - `./create-all.sh all 1 shson ../testSetAws.env`  # testSetAws.env 에 구성된 정보를 기준으로 MCIS 생성
-      - `./gen-sshKey.sh all 1 shson ../testSetAws.env` # MCIS에 구성된 모든 VM의 접속키 리턴 
+      - `./create-all.sh -n shson -f ../testSetAws.env`  # testSetAws.env 에 구성된 정보를 기준으로 MCIS 생성
+      - `./gen-sshKey.sh -n  shson -f ../testSetAws.env` # MCIS에 구성된 모든 VM의 접속키 리턴 
         ```
-        son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./gen-sshKey.sh all 1 shson ../testSetAws.env 
+        son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./gen-sshKey.sh -n shson -f ../testSetAws.env 
         ...
         [GENERATED PRIVATE KEY (PEM, PPK)]
         [MCIS INFO: mc-shson]
@@ -582,9 +570,6 @@ Dozing for 1 : 1 (Back to work)
          ./sshkey-tmp/aws-ap-se-1-shson.pem 
          ./sshkey-tmp/aws-ap-se-1-shson.ppk
          ...
-         [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
-         ./sshkey-tmp/aws-ca-ct-1-shson.pem 
-         ./sshkey-tmp/aws-ca-ct-1-shson.ppk
 
         [SSH COMMAND EXAMPLE]
          [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
@@ -599,27 +584,7 @@ Dozing for 1 : 1 (Back to work)
 - Nginx를 분산 배치하여, 웹서버 접속 시험 가능
     - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
     - 실행 예시
-      - deploy-nginx-mcis.sh all 1 shson ../testSetAws.env # testSetAws.env 에 구성된 정보를 기준으로 MCIS의 모든 VM에 Nginx 및 웹페이지 설치
-        ```
-        ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./deploy-nginx-mcis.sh all 1 shson ../testSetAws.env
-        {
-          "result_array" : [
-              {
-                "vmIp" : "35.173.215.4",
-                "vmId" : "aws-us-east-1-shson-01",
-                "result" : "WebServer is ready. Access http://35.173.215.4",
-                "mcisId" : "aws-us-east-1-shson"
-              },
-              ...
-              {
-                "mcisId" : "aws-us-east-1-shson",
-                "result" : "WebServer is ready. Access http://18.232.53.134",
-                "vmId" : "aws-us-east-1-shson-03",
-                "vmIp" : "18.232.53.134"
-              }
-          ]
-        }
-        ```
+      - deploy-nginx-mcis.sh -n shson -f ../testSetAws.env # testSetAws.env 에 구성된 정보를 기준으로 MCIS의 모든 VM에 Nginx 및 웹페이지 설치
 
 ##### MCIS Weave Scope 클러스터 모니터링 분산 배치
   - [스크립트를 통해 MCIS에 Weave Scope 클러스터 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
@@ -633,6 +598,24 @@ Dozing for 1 : 1 (Back to work)
 ##### MCIS 토이 게임 서버 배치
   - [스크립트를 통해 MCIS에 토이 게임 서버 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-toy-game-deployment)
 
+
+
+### CB-Tumblebug REST API 사용
+1. CB-Spider API를 통해 클라우드 인프라 연동 정보 등록
+   - https://cloud-barista.github.io/rest-api/v0.4.0/spider/ccim/
+2. CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
+   - [Namespace 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BNamespace%5D%20Namespace%20management/post_ns)
+3. CB-Tumblebug 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
+   - [VM spec object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Spec%20management/post_ns__nsId__resources_spec)
+   - [VM image object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Image%20management/post_ns__nsId__resources_image)
+   - [Virtual network object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Network%20management/post_ns__nsId__resources_vNet)
+   - [Security group object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
+   - [VM 접속 ssh key object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Access%20key%20management/post_ns__nsId__resources_sshKey)
+4. CB-Tumblebug 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 원격명령수행, 종료 및 삭제
+   - [MCIS 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/post_ns__nsId__mcis)
+   - [MCIS 원격 커맨드](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Remote%20command/post_ns__nsId__cmd_mcis__mcisId_)
+   - [MCIS 조회 및 제어](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/get_ns__nsId__mcis__mcisId_)
+   - [MCIS 삭제(MCIS 종료 상태에서만 동작 가능)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/delete_ns__nsId__mcis)
 
 ***
 ***
