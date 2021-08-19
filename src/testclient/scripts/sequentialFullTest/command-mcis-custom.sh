@@ -1,44 +1,36 @@
 #!/bin/bash
 
-#function command_mcis_custom() {
-
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
 echo "####################################################################"
-echo "## Command (SSH) to MCIS "
+echo "## Command (SSH) to MCIS with a user command"
 echo "####################################################################"
 
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
+source ../init.sh
 
-source ../common-functions.sh
-getCloudIndex $CSP
+USERCMD=$OPTION01
+VMID=$OPTION02
 
-USERCMD=${5}
-
-MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-
-if [ "${INDEX}" == "0" ]; then
-	# MCISPREFIX=avengers
-	MCISID=${MCISPREFIX}-${POSTFIX}
+if [ -z "$USERCMD" ]; then
+	USERCMD="echo -n [Public IP: ; curl https://api.ipify.org ; echo -n ], [Hostname: ; hostname ; echo -n ]"
 fi
 
-VAR1=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+if [ -z "$VMID" ]; then
+
+	VAR1=$(
+		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
 	"command"        : "${USERCMD}"
 	} 
 EOF
-)
+	)
+else
+	VAR1=$(
+		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${USERCMD}"
+	} 
+EOF
+	)
+
+fi
+
 echo "${VAR1}" | jq ''
-
-#}
-
-#command_mcis_custom

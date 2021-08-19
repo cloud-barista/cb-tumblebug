@@ -76,50 +76,31 @@ function test_sequence_allcsp_mcir() {
 	printElapsed $CSP $REGION $POSTFIX $TestSetFile $MCIRRegionName
 
 }
-
 SECONDS=0
 
-FILE=../credentials.conf
-if [ ! -f "$FILE" ]; then
-	echo "$FILE does not exist."
-	exit
-fi
-
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-source ../credentials.conf
-
 echo "####################################################################"
-echo "## Create MCIS from Zero Base"
+echo "## Create mcir-ns-cloud from Zero Base"
 echo "####################################################################"
 
-# CSP=${1}
-# REGION=${2:-1}
-# POSTFIX=${3:-developer}
-NUMVM=${5:-1}
+source ../init.sh
 
-source ../common-functions.sh
-readParameters "$@"
-getCloudIndex $CSP
+NUMVM=${OPTION01:-1}
+
 
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel excution for all CSP regions]"
 
 	INDEXX=${NumCSP}
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do
-		#echo $i
+		echo $i
 		INDEXY=${NumRegion[$cspi]}
 		CSP=${CSPType[$cspi]}
 		for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-			#echo $j
+			echo $j
 			REGION=$cspj
-			#echo $CSP
-			#echo $REGION
+			echo $CSP
+			echo $REGION
+			echo ${RegionName[1,1]}
 			MCIRRegionName=${RegionName[$cspi,$cspj]}
 			echo "- Create MCIR in ${MCIRRegionName}"		
 

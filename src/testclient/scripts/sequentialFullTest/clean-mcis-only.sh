@@ -23,31 +23,11 @@ function clean_mcis_sequence() {
 
 SECONDS=0
 
-FILE=../credentials.conf
-if [ ! -f "$FILE" ]; then
-	echo "$FILE does not exist."
-	exit
-fi
-
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-source ../credentials.conf
-
 echo "####################################################################"
 echo "## Remove MCIS only"
 echo "####################################################################"
 
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-source ../common-functions.sh
-getCloudIndex $CSP
+source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel excution for all CSP regions]"

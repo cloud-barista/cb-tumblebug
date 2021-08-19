@@ -2,29 +2,11 @@
 
 SECONDS=0
 
-echo "[Check jq package (if not, install)]"
-if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
-
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
 echo "####################################################################"
-echo "## Command (SSH) to MCIS "
+echo "## Command (SSH) to MCIS (deploy-weavescope-to-mcis)"
 echo "####################################################################"
 
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-source ../common-functions.sh
-getCloudIndex $CSP
-
-MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
