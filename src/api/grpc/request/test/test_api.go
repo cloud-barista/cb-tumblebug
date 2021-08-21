@@ -431,9 +431,9 @@ func CreateMCIRApiTest() {
 			ConnectionName: "openstack-config01",
 			CidrBlock:      "192.168.0.0/16",
 			SubnetInfoList: []core_mcir.SpiderSubnetReqInfo{
-				core_mcir.SpiderSubnetReqInfo{
+				{
 					Name:         "openstack-config01-test",
-					IPv4_CIDR:    "192.168.1.0/24",
+					IPv4CIDR:     "192.168.1.0/24",
 					KeyValueList: []core_common.KeyValue{},
 				},
 			},

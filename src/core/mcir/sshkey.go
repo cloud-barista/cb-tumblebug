@@ -99,7 +99,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/keypair"
+		url := common.SpiderRestUrl + "/keypair"
 
 		client := resty.New().SetCloseConnection(true)
 

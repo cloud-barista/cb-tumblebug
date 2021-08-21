@@ -374,7 +374,7 @@ func (s *MCISService) RecommendMcis(ctx context.Context, req *pb.McisRecommendCr
 	}
 
 	content := rest_mcis.RestPostMcisRecommendResponse{}
-	content.Vm_recommend = result
+	content.VmRecommend = result
 	content.PlacementAlgo = mcisObj.PlacementAlgo
 	content.PlacementParam = mcisObj.PlacementParam
 

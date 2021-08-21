@@ -225,7 +225,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/connectionconfig/" + ConnConfigName
+		url := SpiderRestUrl + "/connectionconfig/" + ConnConfigName
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -295,7 +295,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/connectionconfig"
+		url := SpiderRestUrl + "/connectionconfig"
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -368,7 +368,7 @@ func GetRegion(RegionName string) (Region, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/region/" + RegionName
+		url := SpiderRestUrl + "/region/" + RegionName
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -441,7 +441,7 @@ func GetRegionList() (RegionList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/region"
+		url := SpiderRestUrl + "/region"
 
 		client := resty.New().SetCloseConnection(true)
 

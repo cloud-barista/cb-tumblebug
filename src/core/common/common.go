@@ -24,25 +24,25 @@ type IdList struct {
 var CBLog *logrus.Logger
 var CBStore icbs.Store
 
-var SPIDER_REST_URL string
-var DRAGONFLY_REST_URL string
-var DB_URL string
-var DB_DATABASE string
-var DB_USER string
-var DB_PASSWORD string
-var AUTOCONTROL_DURATION_MS string
-var MYDB *sql.DB
+var SpiderRestUrl string
+var DragonflyRestUrl string
+var DBUrl string
+var DBDatabase string
+var DBUser string
+var DBPassword string
+var AutocontrolDurationMs string
+var MyDB *sql.DB
 var err error
 var ORM *xorm.Engine
 
 const (
-	StrSPIDER_REST_URL            string = "SPIDER_REST_URL"
-	StrDRAGONFLY_REST_URL         string = "DRAGONFLY_REST_URL"
-	StrDB_URL                     string = "DB_URL"
-	StrDB_DATABASE                string = "DB_DATABASE"
-	StrDB_USER                    string = "DB_USER"
-	StrDB_PASSWORD                string = "DB_PASSWORD"
-	StrAUTOCONTROL_DURATION_MS    string = "AUTOCONTROL_DURATION_MS"
+	StrSpiderRestUrl              string = "SPIDER_REST_URL"
+	StrDragonflyRestUrl           string = "DRAGONFLY_REST_URL"
+	StrDBUrl                      string = "DB_URL"
+	StrDBDatabase                 string = "DB_DATABASE"
+	StrDBUser                     string = "DB_USER"
+	StrDBPassword                 string = "DB_PASSWORD"
+	StrAutocontrolDurationMs      string = "AUTOCONTROL_DURATION_MS"
 	CbStoreKeyNotFoundErrorString string = "key not found"
 	StrAdd                        string = "add"
 	StrDelete                     string = "delete"
@@ -82,13 +82,13 @@ func OpenSQL(path string) error {
 	*/
 
 	fullPathString := "file:" + path
-	MYDB, err = sql.Open("sqlite3", fullPathString)
+	MyDB, err = sql.Open("sqlite3", fullPathString)
 	return err
 }
 
 func SelectDatabase(database string) error {
 	query := "USE " + database + ";"
-	_, err = MYDB.Exec(query)
+	_, err = MyDB.Exec(query)
 	return err
 }
 

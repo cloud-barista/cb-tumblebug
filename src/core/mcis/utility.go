@@ -235,16 +235,16 @@ func TrimIP(sshAccessPoint string) (string, error) {
 		err := fmt.Errorf("In TrimIP(), sshAccessPoint does not seem 8.8.8.8:22 form.")
 		return strconv.Itoa(0), err
 	}
-	port_string := splitted[1]
-	port, err := strconv.Atoi(port_string)
+	portString := splitted[1]
+	port, err := strconv.Atoi(portString)
 	if err != nil {
 		err := fmt.Errorf("In TrimIP(), strconv.Atoi returned an error.")
 		return strconv.Itoa(0), err
 	}
 	if port >= 1 && port <= 65535 { // valid port number
-		return port_string, nil
+		return portString, nil
 	} else {
-		err := fmt.Errorf("In TrimIP(), detected port number seems wrong: " + port_string)
+		err := fmt.Errorf("In TrimIP(), detected port number seems wrong: " + portString)
 		return strconv.Itoa(0), err
 	}
 }
@@ -350,7 +350,7 @@ func InspectVMs(connConfig string) (interface{}, error) {
 	tempReq := JsonTemplate{}
 	tempReq.ConnectionName = connConfig
 
-	spiderRequestURL := common.SPIDER_REST_URL + "/allvm"
+	spiderRequestURL := common.SpiderRestUrl + "/allvm"
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").

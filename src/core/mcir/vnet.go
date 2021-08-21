@@ -20,27 +20,27 @@ type SpiderVPCReqInfoWrapper struct { // Spider
 
 type SpiderVPCReqInfo struct { // Spider
 	Name           string
-	IPv4_CIDR      string
+	IPv4CIDR       string
 	SubnetInfoList []SpiderSubnetReqInfo
 	//SubnetInfoList []SpiderSubnetInfo
 }
 
 type SpiderSubnetReqInfo struct { // Spider
 	Name         string
-	IPv4_CIDR    string
+	IPv4CIDR     string
 	KeyValueList []common.KeyValue
 }
 
 type SpiderVPCInfo struct { // Spider
 	IId            common.IID // {NameId, SystemId}
-	IPv4_CIDR      string
+	IPv4CIDR       string
 	SubnetInfoList []SpiderSubnetInfo
 	KeyValueList   []common.KeyValue
 }
 
 type SpiderSubnetInfo struct { // Spider
 	IId          common.IID // {NameId, SystemId}
-	IPv4_CIDR    string
+	IPv4CIDR     string
 	KeyValueList []common.KeyValue
 }
 
@@ -105,14 +105,14 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	tempReq := SpiderVPCReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
 	tempReq.ReqInfo.Name = u.Name
-	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
+	tempReq.ReqInfo.IPv4CIDR = u.CidrBlock
 	tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
 
 	var tempSpiderVPCInfo *SpiderVPCInfo
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vpc"
+		url := common.SpiderRestUrl + "/vpc"
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -182,7 +182,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	content.ConnectionName = u.ConnectionName
 	content.CspVNetId = tempSpiderVPCInfo.IId.SystemId
 	content.CspVNetName = tempSpiderVPCInfo.IId.NameId
-	content.CidrBlock = tempSpiderVPCInfo.IPv4_CIDR
+	content.CidrBlock = tempSpiderVPCInfo.IPv4CIDR
 	content.SubnetInfoList = tempSpiderVPCInfo.SubnetInfoList
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderVPCInfo.KeyValueList

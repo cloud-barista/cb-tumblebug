@@ -454,7 +454,7 @@ type SshCmdResult struct { // Tumblebug
 
 // AgentInstallContentWrapper ...
 type AgentInstallContentWrapper struct {
-	Result_array []AgentInstallContent `json:"result_array"`
+	ResultArray []AgentInstallContent `json:"resultArray"`
 }
 
 // AgentInstallContent ...
@@ -549,7 +549,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
-		content.Result_array = append(content.Result_array, resultTmp)
+		content.ResultArray = append(content.ResultArray, resultTmp)
 		//fmt.Println("result from goroutin " + v)
 	}
 
@@ -1798,7 +1798,7 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 	//content.PlacementAlgo = req.PlacementAlgo
 	//content.PlacementParam = req.PlacementParam
 
-	Vm_recommend := []TbVmRecommendInfo{}
+	VmRecommend := []TbVmRecommendInfo{}
 
 	vmList := req.VmReq
 
@@ -1819,10 +1819,10 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 			return nil, fmt.Errorf("Failed to recommend MCIS")
 		}
 
-		Vm_recommend = append(Vm_recommend, vmTmp)
+		VmRecommend = append(VmRecommend, vmTmp)
 	}
 
-	return Vm_recommend, nil
+	return VmRecommend, nil
 }
 
 func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
@@ -2757,7 +2757,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vm"
+		url := common.SpiderRestUrl + "/vm"
 
 		method := "POST"
 
@@ -3281,7 +3281,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 					temp.TargetStatus = StatusTerminated
 					temp.Status = StatusTerminating
 
-					url = common.SPIDER_REST_URL + "/vm/" + cspVmId
+					url = common.SpiderRestUrl + "/vm/" + cspVmId
 					method = "DELETE"
 				case ActionReboot:
 
@@ -3289,7 +3289,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 					temp.TargetStatus = StatusRunning
 					temp.Status = StatusRebooting
 
-					url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=reboot"
+					url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
 					method = "GET"
 				case ActionSuspend:
 
@@ -3297,7 +3297,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 					temp.TargetStatus = StatusSuspended
 					temp.Status = StatusSuspending
 
-					url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=suspend"
+					url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
 					method = "GET"
 				case ActionResume:
 
@@ -3305,7 +3305,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 					temp.TargetStatus = StatusRunning
 					temp.Status = StatusResuming
 
-					url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=resume"
+					url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
 					method = "GET"
 				default:
 					return errors.New(action + "is invalid actionType")
@@ -3508,7 +3508,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusTerminated
 			temp.Status = StatusTerminating
 
-			url = common.SPIDER_REST_URL + "/vm/" + cspVmId
+			url = common.SpiderRestUrl + "/vm/" + cspVmId
 			method = "DELETE"
 		case ActionReboot:
 
@@ -3516,7 +3516,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusRunning
 			temp.Status = StatusRebooting
 
-			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=reboot"
+			url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
 			method = "GET"
 		case ActionSuspend:
 
@@ -3524,7 +3524,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusSuspended
 			temp.Status = StatusSuspending
 
-			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=suspend"
+			url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
 			method = "GET"
 		case ActionResume:
 
@@ -3532,7 +3532,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 			temp.TargetStatus = StatusRunning
 			temp.Status = StatusResuming
 
-			url = common.SPIDER_REST_URL + "/controlvm/" + cspVmId + "?action=resume"
+			url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
 			method = "GET"
 		default:
 			return errors.New(action + "is invalid actionType")
@@ -3941,7 +3941,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		fmt.Println("CspVmId: " + cspVmId)
 		if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-			url := common.SPIDER_REST_URL + "/vmstatus/" + cspVmId
+			url := common.SpiderRestUrl + "/vmstatus/" + cspVmId
 			method := "GET"
 
 			type VMStatusReqInfo struct {
@@ -4220,7 +4220,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vm/" + cspVmId
+		url := common.SpiderRestUrl + "/vm/" + cspVmId
 		method := "GET"
 
 		type VMStatusReqInfo struct {

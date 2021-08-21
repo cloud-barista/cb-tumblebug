@@ -282,7 +282,7 @@ func RestDelAllMcis(c echo.Context) error {
 
 type RestPostMcisRecommendResponse struct {
 	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-	Vm_recommend   []mcis.TbVmRecommendInfo `json:"vm_recommend"`
+	VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
 	PlacementAlgo  string                   `json:"placementAlgo"`
 	PlacementParam []common.KeyValue        `json:"placementParam"`
 }
@@ -316,7 +316,7 @@ func RestPostMcisRecommend(c echo.Context) error {
 	}
 
 	content := RestPostMcisRecommendResponse{}
-	content.Vm_recommend = result
+	content.VmRecommend = result
 	content.PlacementAlgo = req.PlacementAlgo
 	content.PlacementParam = req.PlacementParam
 

@@ -87,11 +87,11 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
 				switch metric {
 				case "num_vCPU":
-					u.Num_vCPU.Max = operand
+					u.NumvCPU.Max = operand
 				case "mem_GiB":
-					u.Mem_GiB.Max = operand
+					u.MemGiB.Max = operand
 				case "Cost_per_hour":
-					u.Cost_per_hour.Max = operand
+					u.CostPerHour.Max = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
 				}
@@ -100,11 +100,11 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
 				switch metric {
 				case "num_vCPU":
-					u.Num_vCPU.Min = operand
+					u.NumvCPU.Min = operand
 				case "mem_GiB":
-					u.Mem_GiB.Min = operand
+					u.MemGiB.Min = operand
 				case "Cost_per_hour":
-					u.Cost_per_hour.Min = operand
+					u.CostPerHour.Min = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
 				}
@@ -113,14 +113,14 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
 				switch metric {
 				case "num_vCPU":
-					u.Num_vCPU.Max = operand
-					u.Num_vCPU.Min = operand
+					u.NumvCPU.Max = operand
+					u.NumvCPU.Min = operand
 				case "mem_GiB":
-					u.Mem_GiB.Max = operand
-					u.Mem_GiB.Min = operand
+					u.MemGiB.Max = operand
+					u.MemGiB.Min = operand
 				case "Cost_per_hour":
-					u.Cost_per_hour.Max = operand
-					u.Cost_per_hour.Min = operand
+					u.CostPerHour.Max = operand
+					u.CostPerHour.Min = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
 				}
@@ -238,8 +238,8 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				// update OrderInFilteredResult based on calculated priorityIndex
 				(*specList)[distances[i].index].OrderInFilteredResult = uint16(distances[i].priorityIndex)
 				// assign nomalized priorityIdex value to EvaluationScore_01
-				(*specList)[distances[i].index].EvaluationScore_01 = float32(1 - (float32(distances[i].priorityIndex) / float32(len(*specList))))
-				(*specList)[distances[i].index].EvaluationScore_02 = float32(distances[i].distance)
+				(*specList)[distances[i].index].EvaluationScore01 = float32(1 - (float32(distances[i].priorityIndex) / float32(len(*specList))))
+				(*specList)[distances[i].index].EvaluationScore02 = float32(distances[i].distance)
 			}
 			fmt.Printf("\n distances : %v \n", distances)
 
