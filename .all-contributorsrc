@@ -141,6 +141,24 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "jangh-lee",
+      "name": "jangh-lee",
+      "avatar_url": "https://avatars.githubusercontent.com/u/72970232?v=4",
+      "profile": "https://github.com/jangh-lee",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "leedohun",
+      "name": "이도훈",
+      "avatar_url": "https://avatars.githubusercontent.com/u/33706689?v=4",
+      "profile": "https://github.com/leedohun",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
