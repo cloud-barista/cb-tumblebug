@@ -152,7 +152,7 @@ cb-operator/src$ ./operator
 ```Shell
 # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
 # export GO111MODULE=on
-# ./make
+# make
 ```
 
 - Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
@@ -162,7 +162,7 @@ cb-operator/src$ ./operator
 ### (3) CB-Tumblebug 실행
 - [CB-Spider](https://github.com/cloud-barista/cb-spider) 실행 (다른 탭에서)
 - `# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src`
-- `# ./make run` (또는 `# go run *.go`) 
+- `# make run` (또는 `# go run *.go`) 
 
   CB-Tumblebug 서버 실행 화면
   ```
@@ -204,7 +204,7 @@ cb-operator/src$ ./operator
   에러 발생 시, 다음을 실행하여 해결
   ```Shell
   # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
-  # ./make
+  # make
   ```
 
 ***
