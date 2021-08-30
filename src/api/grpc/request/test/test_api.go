@@ -327,11 +327,11 @@ func CreateCIMApiTest() {
 		CredentialName: "openstack-credential01",
 		ProviderName:   "OPENSTACK",
 		KeyValueInfoList: []sp_api.KeyValue{
-			sp_api.KeyValue{Key: "IdentityEndpoint", Value: "http://192.168.201.208:5000/v3"},
-			sp_api.KeyValue{Key: "Username", Value: "demo"},
-			sp_api.KeyValue{Key: "Password", Value: "openstack"},
-			sp_api.KeyValue{Key: "DomainName", Value: "Default"},
-			sp_api.KeyValue{Key: "ProjectID", Value: "b31474c562184bcbaf3496e08f5a6a4c"},
+			{Key: "IdentityEndpoint", Value: "http://192.168.201.208:5000/v3"},
+			{Key: "Username", Value: "demo"},
+			{Key: "Password", Value: "openstack"},
+			{Key: "DomainName", Value: "Default"},
+			{Key: "ProjectID", Value: "b31474c562184bcbaf3496e08f5a6a4c"},
 		},
 	}
 	result, err = cim.CreateCredentialByParam(reqCredential)
@@ -345,7 +345,7 @@ func CreateCIMApiTest() {
 		RegionName:   "openstack-region01",
 		ProviderName: "OPENSTACK",
 		KeyValueInfoList: []sp_api.KeyValue{
-			sp_api.KeyValue{Key: "Region", Value: "RegionOne"},
+			{Key: "Region", Value: "RegionOne"},
 		},
 	}
 	result, err = cim.CreateRegionByParam(reqRegion)
@@ -431,7 +431,7 @@ func CreateMCIRApiTest() {
 			ConnectionName: "openstack-config01",
 			CidrBlock:      "192.168.0.0/16",
 			SubnetInfoList: []core_mcir.SpiderSubnetReqInfo{
-				core_mcir.SpiderSubnetReqInfo{
+				{
 					Name:         "openstack-config01-test",
 					IPv4_CIDR:    "192.168.1.0/24",
 					KeyValueList: []core_common.KeyValue{},
@@ -477,7 +477,7 @@ func CreateMCIRApiTest() {
 			VNetId:         "openstack-config01-test",
 			Description:    "test description",
 			FirewallRules: &[]core_mcir.SpiderSecurityRuleInfo{
-				core_mcir.SpiderSecurityRuleInfo{
+				{
 					FromPort:   "1",
 					ToPort:     "65535",
 					IPProtocol: "tcp",
@@ -584,7 +584,7 @@ func CreateMCISApiTest() {
 			Description:     "",
 			Label:           "",
 			Vm: []core_mcis.TbVmReq{
-				core_mcis.TbVmReq{
+				{
 					VmGroupSize:    "0",
 					Name:           "openstack-config01-test-01",
 					ConnectionName: "openstack-config01",
@@ -601,7 +601,7 @@ func CreateMCISApiTest() {
 					Description:    "description",
 					Label:          "label",
 				},
-				core_mcis.TbVmReq{
+				{
 					VmGroupSize:    "0",
 					Name:           "openstack-config01-test-02",
 					ConnectionName: "openstack-config01",
