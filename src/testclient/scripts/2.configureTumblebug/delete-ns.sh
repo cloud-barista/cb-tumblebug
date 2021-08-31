@@ -1,24 +1,11 @@
 #!/bin/bash
 
-#function delete_ns() {
+echo "####################################################################"
+echo "## 0. Namespace: Delete (need input parameter: [-x namespace])"
+echo "####################################################################"
+source ../init.sh
 
+NSID=${OPTION01:-tb01}
 
-    TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-    
-    echo "####################################################################"
-    echo "## 0. Namespace: Delete"
-    echo "####################################################################"
-
-    INDEX=${1}
-
-    curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID | jq ''
-    echo ""
-#}
-
-#delete_ns
+curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID | jq ''
+echo ""

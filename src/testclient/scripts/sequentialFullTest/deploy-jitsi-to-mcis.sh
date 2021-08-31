@@ -1,36 +1,16 @@
 #!/bin/bash
 
+
+echo "####################################################################"
+echo "## deploy-jitsi-to-mcis (parameters: -x EMAIL -y PublicDNS)"
+echo "####################################################################"
+
 SECONDS=0
 
-echo "[Check jq package (if not, install)]"
-if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
+source ../init.sh
 
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
-echo "####################################################################"
-echo "## deploy-jitsi-to-mcis "
-echo "####################################################################"
-
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-source ../common-functions.sh
-getCloudIndex $CSP
-
-MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-
-EMAIL=${5}
-PublicDNS=${6}
-
-
-
+EMAIL=${OPTION01}
+PublicDNS=${OPTION02}
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
@@ -38,13 +18,13 @@ if [ "${INDEX}" == "0" ]; then
 fi
 
 if [ -z "$EMAIL" ]; then
-	echo "[Warning] Provide your E-MAIL (ex: xxx@cloudbarista.org) to 5th parameter"
+	echo "[Warning] Provide your E-MAIL (ex: xxx@cloudbarista.org) to -x parameter"
 	echo "E-MAIL address will be used to issue a Certificate (https) for JITSI"
 	exit
 fi
 
 if [ -z "$PublicDNS" ]; then
-	echo "[Warning] Provide your PublicDNS-RecordName (ex: xxx.cloud-barista.org) to 6th parameter"
+	echo "[Warning] Provide your PublicDNS-RecordName (ex: xxx.cloud-barista.org) to -y parameter"
 	echo "PublicDNS-RecordName will be access point for JITSI Server"
 	exit
 fi

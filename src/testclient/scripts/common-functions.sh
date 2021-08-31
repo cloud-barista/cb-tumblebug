@@ -157,10 +157,8 @@ function readParametersByName() {
 		exit 0
 	fi
 
-	echo "[Input parameters]"
-	echo "[POSTFIX: $POSTFIX] | [TestSetFile: $TestSetFile] | [CSP: $CSP] | [REGION: $REGION]"
-	echo "[OPTION01: $OPTION01] | [OPTION02: $OPTION02] | [OPTION03: $OPTION03]"
-
+	echo "Input parameters: (POSTFIX: $POSTFIX) (TestSetFile: $TestSetFile) (CSP: $CSP) (REGION: $REGION) (OPTION01: $OPTION01) (OPTION02: $OPTION02) (OPTION03: $OPTION03)"
+	echo ""
 }
 
 function printElapsed() {

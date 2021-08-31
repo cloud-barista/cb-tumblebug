@@ -21,5 +21,6 @@ source ../credentials.conf
 getCloudIndex $CSP
 MCISID=${MCISPREFIX}-${POSTFIX}
 
-echo "[Check jq package (if not, install)]"
-if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
+#install jq and puttygen
+if ! dpkg-query -W -f='${Status}' jq | grep "ok installed" > /dev/null; then echo "install jq package"; sudo apt install -y jq; fi
+if ! dpkg-query -W -f='${Status}' putty-tools | grep "ok installed" > /dev/null; then echo "install putty-tools package"; sudo apt install -y putty-tools; fi
