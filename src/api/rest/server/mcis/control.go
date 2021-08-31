@@ -282,7 +282,7 @@ func RestDelAllMcis(c echo.Context) error {
 
 type RestPostMcisRecommendResponse struct {
 	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-	Vm_recommend   []mcis.TbVmRecommendInfo `json:"vm_recommend"`
+	VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
 	PlacementAlgo  string                   `json:"placementAlgo"`
 	PlacementParam []common.KeyValue        `json:"placementParam"`
 }
@@ -316,7 +316,7 @@ func RestPostMcisRecommend(c echo.Context) error {
 	}
 
 	content := RestPostMcisRecommendResponse{}
-	content.Vm_recommend = result
+	content.VmRecommend = result
 	content.PlacementAlgo = req.PlacementAlgo
 	content.PlacementParam = req.PlacementParam
 
@@ -373,7 +373,7 @@ type RestPostCmdMcisResponse struct {
 }
 
 type RestPostCmdMcisResponseWrapper struct {
-	Result_array []RestPostCmdMcisResponse `json:"result_array"`
+	ResultArray []RestPostCmdMcisResponse `json:"resultArray"`
 }
 
 // RestPostCmdMcis godoc
@@ -414,7 +414,7 @@ func RestPostCmdMcis(c echo.Context) error {
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
-		content.Result_array = append(content.Result_array, resultTmp)
+		content.ResultArray = append(content.ResultArray, resultTmp)
 		//fmt.Println("result from goroutin " + v)
 	}
 

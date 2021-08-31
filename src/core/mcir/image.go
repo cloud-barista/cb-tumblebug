@@ -245,7 +245,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vmimage"
+		url := common.SpiderRestUrl + "/vmimage"
 
 		// Create Req body
 		tempReq := common.SpiderConnectionName{}
@@ -332,7 +332,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vmimage/" + url.QueryEscape(imageId)
+		url := common.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
 
 		// Create Req body
 		tempReq := common.SpiderConnectionName{}

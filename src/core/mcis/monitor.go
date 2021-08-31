@@ -49,7 +49,7 @@ type MonAgentInstallReq struct {
 	Port     string `json:"port,omitempty"`
 	UserName string `json:"userName,omitempty"`
 	SshKey   string `json:"sshKey,omitempty"`
-	Csp_type string `json:"cspType,omitempty"`
+	CspType  string `json:"cspType,omitempty"`
 }
 
 /*
@@ -82,7 +82,7 @@ func CheckDragonflyEndpoint() error {
 	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
 		cmd := "/config"
 
-		url := common.DRAGONFLY_REST_URL + cmd
+		url := common.DragonflyRestUrl + cmd
 		method := "GET"
 
 		client := &http.Client{}
@@ -142,7 +142,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	vmInfoTmp.MonAgentStatus = "installing"
 	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
 
-	url := common.DRAGONFLY_REST_URL + cmd
+	url := common.DragonflyRestUrl + cmd
 	fmt.Println("\n[Calling DRAGONFLY] START")
 	fmt.Println("VM:" + nsID + "_" + mcisID + "_" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType)
 
@@ -309,7 +309,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
-		content.Result_array = append(content.Result_array, resultTmp)
+		content.ResultArray = append(content.ResultArray, resultTmp)
 		//fmt.Println("result from goroutin " + v)
 	}
 
@@ -400,7 +400,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	var result string
 	var err error
 	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
-		url := common.DRAGONFLY_REST_URL + cmd
+		url := common.DragonflyRestUrl + cmd
 		fmt.Println("URL: " + url)
 
 		responseLimit := 8

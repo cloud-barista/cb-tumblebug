@@ -21,14 +21,14 @@
           \"nsId\":  \"${NSID}\",
 		  \"filter\": {
               \"connectionName\": \"gcp\",
-			    \"num_vCPU\": {
+			    \"numvCPU\": {
                     \"min\": 2,
                     \"max\": 4
                 }, 
-                \"mem_GiB\": {
+                \"memGiB\": {
                     \"min\": 4
                 },
-                \"storage_GiB\": {
+                \"storageGiB\": {
                     \"max\": 400
                 }
 		    }

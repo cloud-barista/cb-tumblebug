@@ -117,7 +117,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/securitygroup"
+		url := common.SpiderRestUrl + "/securitygroup"
 
 		client := resty.New().SetCloseConnection(true)
 

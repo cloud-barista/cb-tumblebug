@@ -154,7 +154,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			//delete related recommend spec
-			err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+			err = DelRecommendSpec(nsId, resourceId, content.NumvCPU, content.MemGiB, content.StorageGiB)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -178,7 +178,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/keypair/" + temp.Name
+			url = common.SpiderRestUrl + "/keypair/" + temp.Name
 		case common.StrVNet:
 			temp := TbVNetInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -187,7 +187,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/vpc/" + temp.Name
+			url = common.SpiderRestUrl + "/vpc/" + temp.Name
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -196,7 +196,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/securitygroup/" + temp.Name
+			url = common.SpiderRestUrl + "/securitygroup/" + temp.Name
 		/*
 			case "subnet":
 				temp := subnetInfo{}
@@ -328,7 +328,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			//delete related recommend spec
-			err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+			err = DelRecommendSpec(nsId, resourceId, content.NumvCPU, content.MemGiB, content.StorageGiB)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -532,11 +532,11 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 	var spiderRequestURL string
 	switch resourceType {
 	case common.StrVNet:
-		spiderRequestURL = common.SPIDER_REST_URL + "/allvpc"
+		spiderRequestURL = common.SpiderRestUrl + "/allvpc"
 	case common.StrSecurityGroup:
-		spiderRequestURL = common.SPIDER_REST_URL + "/allsecuritygroup"
+		spiderRequestURL = common.SpiderRestUrl + "/allsecuritygroup"
 	case common.StrSSHKey:
-		spiderRequestURL = common.SPIDER_REST_URL + "/allkeypair"
+		spiderRequestURL = common.SpiderRestUrl + "/allkeypair"
 	}
 
 	resp, err := client.R().
@@ -970,18 +970,18 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			var anyJson map[string]interface{}
 			json.Unmarshal([]byte(keyValue.Value), &anyJson)
 			if anyJson["associatedObjectList"] == nil {
-				array_to_be := []string{objectKey}
+				arrayToBe := []string{objectKey}
 				// fmt.Println("array_to_be: ", array_to_be) // for debug
 
-				anyJson["associatedObjectList"] = array_to_be
+				anyJson["associatedObjectList"] = arrayToBe
 			} else { // anyJson["associatedObjectList"] != nil
-				array_as_is := anyJson["associatedObjectList"].([]interface{})
+				arrayAsIs := anyJson["associatedObjectList"].([]interface{})
 				// fmt.Println("array_as_is: ", array_as_is) // for debug
 
-				array_to_be := append(array_as_is, objectKey)
+				arrayToBe := append(arrayAsIs, objectKey)
 				// fmt.Println("array_to_be: ", array_to_be) // for debug
 
-				anyJson["associatedObjectList"] = array_to_be
+				anyJson["associatedObjectList"] = arrayToBe
 			}
 			updatedJson, _ := json.Marshal(anyJson)
 			// fmt.Println(string(updatedJson)) // for debug

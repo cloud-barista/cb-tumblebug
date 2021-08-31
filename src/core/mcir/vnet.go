@@ -112,7 +112,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/vpc"
+		url := common.SpiderRestUrl + "/vpc"
 
 		client := resty.New().SetCloseConnection(true)
 
