@@ -406,7 +406,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	tempFloat64, _ := strconv.ParseFloat(res.Mem, 32)
 	content.MemGiB = uint16(tempFloat64 / 1024)
 
-	//content.Storage_GiB = res.Storage_GiB
+	//content.StorageGiB = res.StorageGiB
 	//content.Description = res.Description
 
 	// cb-store
@@ -1022,7 +1022,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 	var err error = nil
 
 	sort.Slice(specList, func(i, j int) bool {
-		if orderBy == "num_vCPU" {
+		if orderBy == "numvCPU" {
 			if direction == "descending" {
 				return specList[i].NumvCPU > specList[j].NumvCPU
 			} else if direction == "ascending" {
@@ -1031,7 +1031,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "mem_GiB" {
+		} else if orderBy == "memGiB" {
 			if direction == "descending" {
 				return specList[i].MemGiB > specList[j].MemGiB
 			} else if direction == "ascending" {
@@ -1040,7 +1040,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "storage_GiB" {
+		} else if orderBy == "storageGiB" {
 			if direction == "descending" {
 				return specList[i].StorageGiB > specList[j].StorageGiB
 			} else if direction == "ascending" {
@@ -1140,7 +1140,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				return true
 			}
 		} else {
-			err = fmt.Errorf("'orderBy' should one of these: num_vCPU, mem_GiB, storage_GiB")
+			err = fmt.Errorf("'orderBy' should one of these: numvCPU, memGiB, storageGiB")
 			return true
 		}
 	})

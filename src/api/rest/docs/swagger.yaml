@@ -760,10 +760,10 @@ definitions:
         type: array
       metric:
         enum:
-        - num_vCPU
-        - mem_GiB
-        - Cost_per_hour
-        example: num_vCPU
+        - numvCPU
+        - memGiB
+        - CostPerHour
+        example: numvCPU
         type: string
     type: object
   mcis.FilterInfo:

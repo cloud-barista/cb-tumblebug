@@ -5342,11 +5342,11 @@ var doc = `{
                 "metric": {
                     "type": "string",
                     "enum": [
-                        "num_vCPU",
-                        "mem_GiB",
-                        "Cost_per_hour"
+                        "numvCPU",
+                        "memGiB",
+                        "CostPerHour"
                     ],
-                    "example": "num_vCPU"
+                    "example": "numvCPU"
                 }
             }
         },
