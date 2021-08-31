@@ -373,7 +373,7 @@ type RestPostCmdMcisResponse struct {
 }
 
 type RestPostCmdMcisResponseWrapper struct {
-	Result_array []RestPostCmdMcisResponse `json:"result_array"`
+	ResultArray []RestPostCmdMcisResponse `json:"resultArray"`
 }
 
 // RestPostCmdMcis godoc
@@ -414,7 +414,7 @@ func RestPostCmdMcis(c echo.Context) error {
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
-		content.Result_array = append(content.Result_array, resultTmp)
+		content.ResultArray = append(content.ResultArray, resultTmp)
 		//fmt.Println("result from goroutin " + v)
 	}
 

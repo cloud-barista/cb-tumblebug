@@ -100,7 +100,7 @@ func CreateSpecTable() error {
 		"connectionName varchar(50) NOT NULL," +
 		"cspSpecName varchar(50) NOT NULL," +
 		"name varchar(50)," +
-		"os_type varchar(50)," +
+		"osType varchar(50)," +
 		"num_vCPU SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"num_core SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"mem_GiB SMALLINT," + // SMALLINT: -32768 ~ 32767
@@ -118,16 +118,16 @@ func CreateSpecTable() error {
 		"gpu_p2p varchar(50)," +
 		"orderInFilteredResult SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"evaluationStatus varchar(50)," +
-		"evaluationScore_01 FLOAT," +
-		"evaluationScore_02 FLOAT," +
-		"evaluationScore_03 FLOAT," +
-		"evaluationScore_04 FLOAT," +
-		"evaluationScore_05 FLOAT," +
-		"evaluationScore_06 FLOAT," +
-		"evaluationScore_07 FLOAT," +
-		"evaluationScore_08 FLOAT," +
-		"evaluationScore_09 FLOAT," +
-		"evaluationScore_10 FLOAT," +
+		"evaluationScore01 FLOAT," +
+		"evaluationScore02 FLOAT," +
+		"evaluationScore03 FLOAT," +
+		"evaluationScore04 FLOAT," +
+		"evaluationScore05 FLOAT," +
+		"evaluationScore06 FLOAT," +
+		"evaluationScore07 FLOAT," +
+		"evaluationScore08 FLOAT," +
+		"evaluationScore09 FLOAT," +
+		"evaluationScore10 FLOAT," +
 		"CONSTRAINT PK_Spec PRIMARY KEY (namespace, id));")
 	if err != nil {
 		fmt.Println(err.Error())

@@ -1788,7 +1788,7 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 	/*
 		var content struct {
 			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-			Vm_recommend    []mcis.TbVmRecommendInfo `json:"vm_recommend"`
+			VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
 			PlacementAlgo  string                   `json:"placementAlgo"`
 			PlacementParam []common.KeyValue        `json:"placementParam"`
 		}
@@ -1909,7 +1909,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 			Result  string `json:"result"`
 		}
 		var content struct {
-			Result_array []contentSub `json:"result_array"`
+			ResultArray []contentSub `json:"resultArray"`
 		}
 	*/
 	//content := RestPostCmdMcisResponseWrapper{}

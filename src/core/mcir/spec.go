@@ -65,7 +65,7 @@ type TbSpecInfo struct { // Tumblebug
 	CostPerHour           float32  `json:"costPerHour"`
 	NumStorage            uint8    `json:"numStorage"`
 	MaxNumStorage         uint8    `json:"maxNumStorage"`
-	MaxTotalStorageTiB    uint16   `json:"maxTotalStorage_TiB"`
+	MaxTotalStorageTiB    uint16   `json:"maxTotalStorageTiB"`
 	NetBwGbps             uint16   `json:"netBwGbps"`
 	EbsBwMbps             uint32   `json:"ebsBwMbps"`
 	GpuModel              string   `json:"gpuModel"`
@@ -585,26 +585,26 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+filter.CspSpecName+"%")
 	}
 	if filter.OsType != "" {
-		//sqlQuery += " AND `os_type` LIKE '%" + filter.Os_type + "%'"
+		//sqlQuery += " AND `osType` LIKE '%" + filter.OsType + "%'"
 		filter.OsType = RefineSpecName(filter.OsType)
-		sqlQuery = sqlQuery.And("Os_type LIKE ?", "%"+filter.OsType+"%")
+		sqlQuery = sqlQuery.And("OsType LIKE ?", "%"+filter.OsType+"%")
 	}
 
 	if filter.NumvCPU > 0 {
-		//sqlQuery += " AND `num_vCPU`=" + strconv.Itoa(int(filter.Num_vCPU))
-		sqlQuery = sqlQuery.And("Num_vCPU = ?", filter.NumvCPU)
+		//sqlQuery += " AND `numvCPU`=" + strconv.Itoa(int(filter.NumvCPU))
+		sqlQuery = sqlQuery.And("NumvCPU = ?", filter.NumvCPU)
 	}
 	if filter.NumCore > 0 {
-		//sqlQuery += " AND `num_core`=" + strconv.Itoa(int(filter.Num_core))
-		sqlQuery = sqlQuery.And("Num_core = ?", filter.NumCore)
+		//sqlQuery += " AND `numCore`=" + strconv.Itoa(int(filter.NumCore))
+		sqlQuery = sqlQuery.And("NumCore = ?", filter.NumCore)
 	}
 	if filter.MemGiB > 0 {
-		//sqlQuery += " AND `mem_GiB`=" + strconv.Itoa(int(filter.Mem_GiB))
-		sqlQuery = sqlQuery.And("Mem_GiB = ?", filter.MemGiB)
+		//sqlQuery += " AND `memGiB`=" + strconv.Itoa(int(filter.MemGiB))
+		sqlQuery = sqlQuery.And("MemGiB = ?", filter.MemGiB)
 	}
 	if filter.StorageGiB > 0 {
-		//sqlQuery += " AND `storage_GiB`=" + strconv.Itoa(int(filter.Storage_GiB))
-		sqlQuery = sqlQuery.And("Storage_GiB = ?", filter.StorageGiB)
+		//sqlQuery += " AND `storageGiB`=" + strconv.Itoa(int(filter.StorageGiB))
+		sqlQuery = sqlQuery.And("StorageGiB = ?", filter.StorageGiB)
 	}
 	if filter.Description != "" {
 		//sqlQuery += " AND `description` LIKE '%" + filter.Description + "%'"
@@ -612,46 +612,46 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery = sqlQuery.And("Description LIKE ?", "%"+filter.Description+"%")
 	}
 	if filter.CostPerHour > 0 {
-		//sqlQuery += " AND `cost_per_hour`=" + fmt.Sprintf("%.6f", filter.Cost_per_hour)
-		sqlQuery = sqlQuery.And("Cost_per_hour = ?", filter.CostPerHour)
+		//sqlQuery += " AND `costPerHour`=" + fmt.Sprintf("%.6f", filter.CostPerHour)
+		sqlQuery = sqlQuery.And("CostPerHour = ?", filter.CostPerHour)
 	}
 	if filter.NumStorage > 0 {
-		//sqlQuery += " AND `num_storage`=" + strconv.Itoa(int(filter.Num_storage))
-		sqlQuery = sqlQuery.And("Num_storage = ?", filter.NumStorage)
+		//sqlQuery += " AND `numStorage`=" + strconv.Itoa(int(filter.NumStorage))
+		sqlQuery = sqlQuery.And("NumStorage = ?", filter.NumStorage)
 	}
 	if filter.MaxNumStorage > 0 {
-		//sqlQuery += " AND `max_num_storage`=" + strconv.Itoa(int(filter.Max_num_storage))
-		sqlQuery = sqlQuery.And("Max_num_storage = ?", filter.MaxNumStorage)
+		//sqlQuery += " AND `maxNumStorage`=" + strconv.Itoa(int(filter.MaxNumStorage))
+		sqlQuery = sqlQuery.And("MaxNumStorage = ?", filter.MaxNumStorage)
 	}
 	if filter.MaxTotalStorageTiB > 0 {
-		//sqlQuery += " AND `max_total_storage_TiB`=" + strconv.Itoa(int(filter.Max_total_storage_TiB))
-		sqlQuery = sqlQuery.And("Max_total_storage_TiB = ?", filter.MaxTotalStorageTiB)
+		//sqlQuery += " AND `maxTotalStorageTiB`=" + strconv.Itoa(int(filter.MaxTotalStorageTiB))
+		sqlQuery = sqlQuery.And("MaxTotalStorageTiB = ?", filter.MaxTotalStorageTiB)
 	}
 	if filter.NetBwGbps > 0 {
-		//sqlQuery += " AND `net_bw_Gbps`=" + strconv.Itoa(int(filter.Net_bw_Gbps))
-		sqlQuery = sqlQuery.And("Net_bw_Gbps = ?", filter.NetBwGbps)
+		//sqlQuery += " AND `netBwGbps`=" + strconv.Itoa(int(filter.NetBwGbps))
+		sqlQuery = sqlQuery.And("NetBwGbps = ?", filter.NetBwGbps)
 	}
 	if filter.EbsBwMbps > 0 {
-		//sqlQuery += " AND `ebs_bw_Mbps`=" + strconv.Itoa(int(filter.Ebs_bw_Mbps))
-		sqlQuery = sqlQuery.And("Ebs_bw_Mbps = ?", filter.EbsBwMbps)
+		//sqlQuery += " AND `ebsBwMbps`=" + strconv.Itoa(int(filter.EbsBwMbps))
+		sqlQuery = sqlQuery.And("EbsBwMbps = ?", filter.EbsBwMbps)
 	}
 	if filter.GpuModel != "" {
-		//sqlQuery += " AND `gpu_model` LIKE '%" + filter.Gpu_model + "%'"
+		//sqlQuery += " AND `gpuModel` LIKE '%" + filter.GpuModel + "%'"
 		filter.GpuModel = RefineSpecName(filter.GpuModel)
-		sqlQuery = sqlQuery.And("Gpu_model LIKE ?", "%"+filter.GpuModel+"%")
+		sqlQuery = sqlQuery.And("GpuModel LIKE ?", "%"+filter.GpuModel+"%")
 	}
 	if filter.NumGpu > 0 {
-		//sqlQuery += " AND `num_gpu`=" + strconv.Itoa(int(filter.Num_gpu))
-		sqlQuery = sqlQuery.And("Num_gpu = ?", filter.NumGpu)
+		//sqlQuery += " AND `numGpu`=" + strconv.Itoa(int(filter.NumGpu))
+		sqlQuery = sqlQuery.And("NumGpu = ?", filter.NumGpu)
 	}
 	if filter.GpuMemGiB > 0 {
-		//sqlQuery += " AND `gpumem_GiB`=" + strconv.Itoa(int(filter.Gpumem_GiB))
-		sqlQuery = sqlQuery.And("Gpumem_GiB = ?", filter.GpuMemGiB)
+		//sqlQuery += " AND `gpuMemGiB`=" + strconv.Itoa(int(filter.GpuMemGiB))
+		sqlQuery = sqlQuery.And("GpuMemGiB = ?", filter.GpuMemGiB)
 	}
 	if filter.GpuP2p != "" {
-		//sqlQuery += " AND `gpu_p2p` LIKE '%" + filter.Gpu_p2p + "%'"
+		//sqlQuery += " AND `gpuP2p` LIKE '%" + filter.GpuP2p + "%'"
 		filter.GpuP2p = RefineSpecName(filter.GpuP2p)
-		sqlQuery = sqlQuery.And("Gpu_p2p LIKE ?", "%"+filter.GpuP2p+"%")
+		sqlQuery = sqlQuery.And("GpuP2p LIKE ?", "%"+filter.GpuP2p+"%")
 	}
 	if filter.EvaluationStatus != "" {
 		//sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
@@ -659,44 +659,44 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		sqlQuery = sqlQuery.And("EvaluationStatus LIKE ?", "%"+filter.EvaluationStatus+"%")
 	}
 	if filter.EvaluationScore01 > 0 {
-		//sqlQuery += " AND `evaluationScore_01`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_01)
-		sqlQuery = sqlQuery.And("EvaluationScore_01 = ?", filter.EvaluationScore01)
+		//sqlQuery += " AND `evaluationScore01`=" + fmt.Sprintf("%.6f", filter.EvaluationScore01)
+		sqlQuery = sqlQuery.And("EvaluationScore01 = ?", filter.EvaluationScore01)
 	}
 	if filter.EvaluationScore02 > 0 {
-		//sqlQuery += " AND `evaluationScore_02`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_02)
-		sqlQuery = sqlQuery.And("EvaluationScore_02 = ?", filter.EvaluationScore02)
+		//sqlQuery += " AND `evaluationScore02`=" + fmt.Sprintf("%.6f", filter.EvaluationScore02)
+		sqlQuery = sqlQuery.And("EvaluationScore02 = ?", filter.EvaluationScore02)
 	}
 	if filter.EvaluationScore03 > 0 {
-		//sqlQuery += " AND `evaluationScore_03`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_03)
-		sqlQuery = sqlQuery.And("EvaluationScore_03 = ?", filter.EvaluationScore03)
+		//sqlQuery += " AND `evaluationScore03`=" + fmt.Sprintf("%.6f", filter.EvaluationScore03)
+		sqlQuery = sqlQuery.And("EvaluationScore03 = ?", filter.EvaluationScore03)
 	}
 	if filter.EvaluationScore04 > 0 {
-		//sqlQuery += " AND `evaluationScore_04`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_04)
-		sqlQuery = sqlQuery.And("EvaluationScore_04 = ?", filter.EvaluationScore04)
+		//sqlQuery += " AND `evaluationScore04`=" + fmt.Sprintf("%.6f", filter.EvaluationScore04)
+		sqlQuery = sqlQuery.And("EvaluationScore04 = ?", filter.EvaluationScore04)
 	}
 	if filter.EvaluationScore05 > 0 {
-		//sqlQuery += " AND `evaluationScore_05`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_05)
-		sqlQuery = sqlQuery.And("EvaluationScore_05 = ?", filter.EvaluationScore05)
+		//sqlQuery += " AND `evaluationScore05`=" + fmt.Sprintf("%.6f", filter.EvaluationScore05)
+		sqlQuery = sqlQuery.And("EvaluationScore05 = ?", filter.EvaluationScore05)
 	}
 	if filter.EvaluationScore06 > 0 {
-		//sqlQuery += " AND `evaluationScore_06`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_06)
-		sqlQuery = sqlQuery.And("EvaluationScore_06 = ?", filter.EvaluationScore06)
+		//sqlQuery += " AND `evaluationScore06`=" + fmt.Sprintf("%.6f", filter.EvaluationScore06)
+		sqlQuery = sqlQuery.And("EvaluationScore06 = ?", filter.EvaluationScore06)
 	}
 	if filter.EvaluationScore07 > 0 {
-		//sqlQuery += " AND `evaluationScore_07`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_07)
-		sqlQuery = sqlQuery.And("EvaluationScore_07 = ?", filter.EvaluationScore07)
+		//sqlQuery += " AND `evaluationScore07`=" + fmt.Sprintf("%.6f", filter.EvaluationScore07)
+		sqlQuery = sqlQuery.And("EvaluationScore07 = ?", filter.EvaluationScore07)
 	}
 	if filter.EvaluationScore08 > 0 {
-		//sqlQuery += " AND `evaluationScore_08`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_08)
-		sqlQuery = sqlQuery.And("EvaluationScore_08 = ?", filter.EvaluationScore08)
+		//sqlQuery += " AND `evaluationScore08`=" + fmt.Sprintf("%.6f", filter.EvaluationScore08)
+		sqlQuery = sqlQuery.And("EvaluationScore08 = ?", filter.EvaluationScore08)
 	}
 	if filter.EvaluationScore09 > 0 {
-		//sqlQuery += " AND `evaluationScore_09`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_09)
-		sqlQuery = sqlQuery.And("EvaluationScore_09 = ?", filter.EvaluationScore09)
+		//sqlQuery += " AND `evaluationScore09`=" + fmt.Sprintf("%.6f", filter.EvaluationScore09)
+		sqlQuery = sqlQuery.And("EvaluationScore09 = ?", filter.EvaluationScore09)
 	}
 	if filter.EvaluationScore10 > 0 {
-		//sqlQuery += " AND `evaluationScore_10`=" + fmt.Sprintf("%.6f", filter.EvaluationScore_10)
-		sqlQuery = sqlQuery.And("EvaluationScore_10 = ?", filter.EvaluationScore10)
+		//sqlQuery += " AND `evaluationScore10`=" + fmt.Sprintf("%.6f", filter.EvaluationScore10)
+		sqlQuery = sqlQuery.And("EvaluationScore10 = ?", filter.EvaluationScore10)
 	}
 
 	err = sqlQuery.Find(&tempList)
@@ -717,33 +717,33 @@ type FilterSpecsByRangeRequest struct {
 	Name               string `json:"name"`
 	ConnectionName     string `json:"connectionName"`
 	CspSpecName        string `json:"cspSpecName"`
-	OsType             string `json:"os_type"`
-	NumvCPU            Range  `json:"num_vCPU"`
-	NumCore            Range  `json:"num_core"`
-	MemGiB             Range  `json:"mem_GiB"`
-	StorageGiB         Range  `json:"storage_GiB"`
+	OsType             string `json:"osType"`
+	NumvCPU            Range  `json:"numvCPU"`
+	NumCore            Range  `json:"numcore"`
+	MemGiB             Range  `json:"memGiB"`
+	StorageGiB         Range  `json:"storageGiB"`
 	Description        string `json:"description"`
-	CostPerHour        Range  `json:"cost_per_hour"`
-	NumStorage         Range  `json:"num_storage"`
-	MaxNumStorage      Range  `json:"max_num_storage"`
-	MaxTotalStorageTiB Range  `json:"max_total_storage_TiB"`
-	NetBwGbps          Range  `json:"net_bw_Gbps"`
-	EbsBwMbps          Range  `json:"ebs_bw_Mbps"`
-	GpuModel           string `json:"gpu_model"`
-	NumGpu             Range  `json:"num_gpu"`
-	GpuMemGiB          Range  `json:"gpumem_GiB"`
-	GpuP2p             string `json:"gpu_p2p"`
+	CostPerHour        Range  `json:"costPerHour"`
+	NumStorage         Range  `json:"numStorage"`
+	MaxNumStorage      Range  `json:"maxNumStorage"`
+	MaxTotalStorageTiB Range  `json:"maxTotalStorageTiB"`
+	NetBwGbps          Range  `json:"netBwGbps"`
+	EbsBwMbps          Range  `json:"ebsBwMbps"`
+	GpuModel           string `json:"gpuModel"`
+	NumGpu             Range  `json:"numGpu"`
+	GpuMemGiB          Range  `json:"gpuMemGiB"`
+	GpuP2p             string `json:"gpuP2p"`
 	EvaluationStatus   string `json:"evaluationStatus"`
-	EvaluationScore01  Range  `json:"evaluationScore_01"`
-	EvaluationScore02  Range  `json:"evaluationScore_02"`
-	EvaluationScore03  Range  `json:"evaluationScore_03"`
-	EvaluationScore04  Range  `json:"evaluationScore_04"`
-	EvaluationScore05  Range  `json:"evaluationScore_05"`
-	EvaluationScore06  Range  `json:"evaluationScore_06"`
-	EvaluationScore07  Range  `json:"evaluationScore_07"`
-	EvaluationScore08  Range  `json:"evaluationScore_08"`
-	EvaluationScore09  Range  `json:"evaluationScore_09"`
-	EvaluationScore10  Range  `json:"evaluationScore_10"`
+	EvaluationScore01  Range  `json:"evaluationScore01"`
+	EvaluationScore02  Range  `json:"evaluationScore02"`
+	EvaluationScore03  Range  `json:"evaluationScore03"`
+	EvaluationScore04  Range  `json:"evaluationScore04"`
+	EvaluationScore05  Range  `json:"evaluationScore05"`
+	EvaluationScore06  Range  `json:"evaluationScore06"`
+	EvaluationScore07  Range  `json:"evaluationScore07"`
+	EvaluationScore08  Range  `json:"evaluationScore08"`
+	EvaluationScore09  Range  `json:"evaluationScore09"`
+	EvaluationScore10  Range  `json:"evaluationScore10"`
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
@@ -781,44 +781,44 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+filter.CspSpecName+"%")
 	}
 	if filter.OsType != "" {
-		//sqlQuery += " AND `os_type` LIKE '%" + filter.Os_type + "%'"
+		//sqlQuery += " AND `osType` LIKE '%" + filter.OsType + "%'"
 		filter.OsType = RefineSpecName(filter.OsType)
 		sqlQuery = sqlQuery.And("OsType LIKE ?", "%"+filter.OsType+"%")
 	}
 
 	if filter.NumvCPU.Min > 0 {
-		//sqlQuery += " AND `num_vCPU`>=" + fmt.Sprintf("%.6f", filter.Num_vCPU.Min)
+		//sqlQuery += " AND `NumvCPU`>=" + fmt.Sprintf("%.6f", filter.NumvCPU.Min)
 		sqlQuery = sqlQuery.And("NumvCPU >= ?", filter.NumvCPU.Min)
 	}
 	if filter.NumvCPU.Max > 0 {
-		//sqlQuery += " AND `num_vCPU`<=" + fmt.Sprintf("%.6f", filter.Num_vCPU.Max)
+		//sqlQuery += " AND `NumvCPU`<=" + fmt.Sprintf("%.6f", filter.NumvCPU.Max)
 		sqlQuery = sqlQuery.And("NumvCPU <= ?", filter.NumvCPU.Max)
 	}
 
 	if filter.NumCore.Min > 0 {
-		//sqlQuery += " AND `num_core`>=" + fmt.Sprintf("%.6f", filter.Num_core.Min)
+		//sqlQuery += " AND `NumCore`>=" + fmt.Sprintf("%.6f", filter.NumCore.Min)
 		sqlQuery = sqlQuery.And("NumCore >= ?", filter.NumCore.Min)
 	}
 	if filter.NumCore.Max > 0 {
-		//sqlQuery += " AND `num_core`<=" + fmt.Sprintf("%.6f", filter.Num_core.Max)
+		//sqlQuery += " AND `NumCore`<=" + fmt.Sprintf("%.6f", filter.NumCore.Max)
 		sqlQuery = sqlQuery.And("NumCore <= ?", filter.NumCore.Max)
 	}
 
 	if filter.MemGiB.Min > 0 {
-		//sqlQuery += " AND `mem_GiB`>=" + fmt.Sprintf("%.6f", filter.Mem_GiB.Min)
+		//sqlQuery += " AND `MemGiB`>=" + fmt.Sprintf("%.6f", filter.MemGiB.Min)
 		sqlQuery = sqlQuery.And("MemGiB >= ?", filter.MemGiB.Min)
 	}
 	if filter.MemGiB.Max > 0 {
-		//sqlQuery += " AND `mem_GiB`<=" + fmt.Sprintf("%.6f", filter.Mem_GiB.Max)
+		//sqlQuery += " AND `MemGiB`<=" + fmt.Sprintf("%.6f", filter.MemGiB.Max)
 		sqlQuery = sqlQuery.And("MemGiB <= ?", filter.MemGiB.Max)
 	}
 
 	if filter.StorageGiB.Min > 0 {
-		//sqlQuery += " AND `storage_GiB`>=" + fmt.Sprintf("%.6f", filter.Storage_GiB.Min)
+		//sqlQuery += " AND `StorageGiB`>=" + fmt.Sprintf("%.6f", filter.StorageGiB.Min)
 		sqlQuery = sqlQuery.And("StorageGiB >= ?", filter.StorageGiB.Min)
 	}
 	if filter.StorageGiB.Max > 0 {
-		//sqlQuery += " AND `storage_GiB`<=" + fmt.Sprintf("%.6f", filter.Storage_GiB.Max)
+		//sqlQuery += " AND `StorageGiB`<=" + fmt.Sprintf("%.6f", filter.StorageGiB.Max)
 		sqlQuery = sqlQuery.And("StorageGiB <= ?", filter.StorageGiB.Max)
 	}
 
@@ -829,11 +829,11 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	}
 
 	if filter.CostPerHour.Min > 0 {
-		//sqlQuery += " AND `cost_per_hour`>=" + fmt.Sprintf("%.6f", filter.Cost_per_hour.Min)
+		//sqlQuery += " AND `CostPerHour`>=" + fmt.Sprintf("%.6f", filter.CostPerHour.Min)
 		sqlQuery = sqlQuery.And("CostPerHour >= ?", filter.CostPerHour.Min)
 	}
 	if filter.CostPerHour.Max > 0 {
-		//sqlQuery += " AND `cost_per_hour`<=" + fmt.Sprintf("%.6f", filter.Cost_per_hour.Max)
+		//sqlQuery += " AND `CostPerHour`<=" + fmt.Sprintf("%.6f", filter.CostPerHour.Max)
 		sqlQuery = sqlQuery.And("CostPerHour <= ?", filter.CostPerHour.Max)
 	}
 
@@ -842,72 +842,72 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		sqlQuery = sqlQuery.And("NumStorage >= ?", filter.NumStorage.Min)
 	}
 	if filter.NumStorage.Max > 0 {
-		//sqlQuery += " AND `num_storage`<=" + fmt.Sprintf("%.6f", filter.Num_storage.Max)
+		//sqlQuery += " AND `NumStorage`<=" + fmt.Sprintf("%.6f", filter.NumStorage.Max)
 		sqlQuery = sqlQuery.And("NumStorage <= ?", filter.NumStorage.Max)
 	}
 
 	if filter.MaxNumStorage.Min > 0 {
-		//sqlQuery += " AND `max_num_storage`>=" + fmt.Sprintf("%.6f", filter.Max_num_storage.Min)
+		//sqlQuery += " AND `MaxNumStorage`>=" + fmt.Sprintf("%.6f", filter.MaxNumStorage.Min)
 		sqlQuery = sqlQuery.And("MaxNumStorage >= ?", filter.MaxNumStorage.Min)
 	}
 	if filter.MaxNumStorage.Max > 0 {
-		//sqlQuery += " AND `max_num_storage`<=" + fmt.Sprintf("%.6f", filter.Max_num_storage.Max)
+		//sqlQuery += " AND `MaxNumStorage`<=" + fmt.Sprintf("%.6f", filter.MaxNumStorage.Max)
 		sqlQuery = sqlQuery.And("MaxNumStorage <= ?", filter.MaxNumStorage.Max)
 	}
 
 	if filter.MaxTotalStorageTiB.Min > 0 {
-		//sqlQuery += " AND `max_total_storage_TiB`>=" + fmt.Sprintf("%.6f", filter.Max_total_storage_TiB.Min)
+		//sqlQuery += " AND `MaxTotalStorageTiB`>=" + fmt.Sprintf("%.6f", filter.MaxTotalStorageTiB.Min)
 		sqlQuery = sqlQuery.And("MaxTotalStorageTiB >= ?", filter.MaxTotalStorageTiB.Min)
 	}
 	if filter.MaxTotalStorageTiB.Max > 0 {
-		//sqlQuery += " AND `max_total_storage_TiB`<=" + fmt.Sprintf("%.6f", filter.Max_total_storage_TiB.Max)
+		//sqlQuery += " AND `MaxTotalStorageTiB`<=" + fmt.Sprintf("%.6f", filter.MaxTotalStorageTiB.Max)
 		sqlQuery = sqlQuery.And("MaxTotalStorageTiB <= ?", filter.MaxTotalStorageTiB.Max)
 	}
 
 	if filter.NetBwGbps.Min > 0 {
-		//sqlQuery += " AND `net_bw_Gbps`>=" + fmt.Sprintf("%.6f", filter.Net_bw_Gbps.Min)
+		//sqlQuery += " AND `NetBwGbps`>=" + fmt.Sprintf("%.6f", filter.NetBwGbps.Min)
 		sqlQuery = sqlQuery.And("NetBwGbps >= ?", filter.NetBwGbps.Min)
 	}
 	if filter.NetBwGbps.Max > 0 {
-		//sqlQuery += " AND `net_bw_Gbps`<=" + fmt.Sprintf("%.6f", filter.Net_bw_Gbps.Max)
+		//sqlQuery += " AND `NetBwGbps`<=" + fmt.Sprintf("%.6f", filter.NetBwGbps.Max)
 		sqlQuery = sqlQuery.And("NetBwGbps <= ?", filter.NetBwGbps.Max)
 	}
 
 	if filter.EbsBwMbps.Min > 0 {
-		//sqlQuery += " AND `ebs_bw_Mbps`>=" + fmt.Sprintf("%.6f", filter.Ebs_bw_Mbps.Min)
+		//sqlQuery += " AND `EbsBwMbps`>=" + fmt.Sprintf("%.6f", filter.EbsBwMbps.Min)
 		sqlQuery = sqlQuery.And("EbsBwMbps >= ?", filter.EbsBwMbps.Min)
 	}
 	if filter.EbsBwMbps.Max > 0 {
-		//sqlQuery += " AND `ebs_bw_Mbps`<=" + fmt.Sprintf("%.6f", filter.Ebs_bw_Mbps.Max)
+		//sqlQuery += " AND `EbsBwMbps`<=" + fmt.Sprintf("%.6f", filter.EbsBwMbps.Max)
 		sqlQuery = sqlQuery.And("EbsBwMbps <= ?", filter.EbsBwMbps.Max)
 	}
 
 	if filter.GpuModel != "" {
-		//sqlQuery += " AND `gpu_model` LIKE '%" + filter.Gpu_model + "%'"
+		//sqlQuery += " AND `GpuModel` LIKE '%" + filter.GpuModel + "%'"
 		filter.GpuModel = RefineSpecName(filter.GpuModel)
 		sqlQuery = sqlQuery.And("GpuModel LIKE ?", "%"+filter.GpuModel+"%")
 	}
 
 	if filter.NumGpu.Min > 0 {
-		//sqlQuery += " AND `num_gpu`>=" + fmt.Sprintf("%.6f", filter.Num_gpu.Min)
+		//sqlQuery += " AND `NumGpu`>=" + fmt.Sprintf("%.6f", filter.NumGpu.Min)
 		sqlQuery = sqlQuery.And("NumGpu >= ?", filter.NumGpu.Min)
 	}
 	if filter.NumGpu.Max > 0 {
-		//sqlQuery += " AND `num_gpu`<=" + fmt.Sprintf("%.6f", filter.Num_gpu.Max)
+		//sqlQuery += " AND `NumGpu`<=" + fmt.Sprintf("%.6f", filter.NumGpu.Max)
 		sqlQuery = sqlQuery.And("NumGpu <= ?", filter.NumGpu.Max)
 	}
 
 	if filter.GpuMemGiB.Min > 0 {
-		//sqlQuery += " AND `gpumem_GiB`>=" + fmt.Sprintf("%.6f", filter.Gpumem_GiB.Min)
+		//sqlQuery += " AND `GpuMemGiB`>=" + fmt.Sprintf("%.6f", filter.GpuMemGiB.Min)
 		sqlQuery = sqlQuery.And("GpuMemGiB >= ?", filter.GpuMemGiB.Min)
 	}
 	if filter.GpuMemGiB.Max > 0 {
-		//sqlQuery += " AND `gpumem_GiB`<=" + fmt.Sprintf("%.6f", filter.Gpumem_GiB.Max)
+		//sqlQuery += " AND `GpuMemGiB`<=" + fmt.Sprintf("%.6f", filter.GpuMemGiB.Max)
 		sqlQuery = sqlQuery.And("GpuMemGiB <= ?", filter.GpuMemGiB.Max)
 	}
 
 	if filter.GpuP2p != "" {
-		//sqlQuery += " AND `gpu_p2p` LIKE '%" + filter.Gpu_p2p + "%'"
+		//sqlQuery += " AND `GpuP2p` LIKE '%" + filter.GpuP2p + "%'"
 		filter.GpuP2p = RefineSpecName(filter.GpuP2p)
 		sqlQuery = sqlQuery.And("GpuP2p LIKE ?", "%"+filter.GpuP2p+"%")
 	}
@@ -918,92 +918,92 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	}
 
 	if filter.EvaluationScore01.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_01`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_01.Min)
+		//sqlQuery += " AND `evaluationScore01`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore01.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore01 >= ?", filter.EvaluationScore01.Min)
 	}
 	if filter.EvaluationScore01.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_01`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_01.Max)
+		//sqlQuery += " AND `evaluationScore01`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore01.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore01 <= ?", filter.EvaluationScore01.Max)
 	}
 
 	if filter.EvaluationScore02.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_02`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_02.Min)
+		//sqlQuery += " AND `evaluationScore02`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore02.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore02 >= ?", filter.EvaluationScore02.Min)
 	}
 	if filter.EvaluationScore02.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_02`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_02.Max)
+		//sqlQuery += " AND `evaluationScore02`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore02.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore02 <= ?", filter.EvaluationScore02.Max)
 	}
 
 	if filter.EvaluationScore03.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_03`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_03.Min)
+		//sqlQuery += " AND `evaluationScore03`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore03.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore03 >= ?", filter.EvaluationScore03.Min)
 	}
 	if filter.EvaluationScore03.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_03`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_03.Max)
+		//sqlQuery += " AND `evaluationScore03`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore03.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore03 <= ?", filter.EvaluationScore03.Max)
 	}
 
 	if filter.EvaluationScore04.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_04`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_04.Min)
+		//sqlQuery += " AND `evaluationScore04`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore04.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore04 >= ?", filter.EvaluationScore04.Min)
 	}
 	if filter.EvaluationScore04.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_04`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_04.Max)
+		//sqlQuery += " AND `evaluationScore04`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore04.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore04 <= ?", filter.EvaluationScore04.Max)
 	}
 
 	if filter.EvaluationScore05.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_05`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_05.Min)
+		//sqlQuery += " AND `evaluationScore05`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore05.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore05 >= ?", filter.EvaluationScore05.Min)
 	}
 	if filter.EvaluationScore05.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_05`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_05.Max)
+		//sqlQuery += " AND `evaluationScore05`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore05.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore05 <= ?", filter.EvaluationScore05.Max)
 	}
 
 	if filter.EvaluationScore06.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_06`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_06.Min)
+		//sqlQuery += " AND `evaluationScore06`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore06.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore06 >= ?", filter.EvaluationScore06.Min)
 	}
 	if filter.EvaluationScore06.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_06`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_06.Max)
+		//sqlQuery += " AND `evaluationScore06`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore06.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore06 <= ?", filter.EvaluationScore06.Max)
 	}
 
 	if filter.EvaluationScore07.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_07`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_07.Min)
+		//sqlQuery += " AND `evaluationScore07`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore07.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore07 >= ?", filter.EvaluationScore07.Min)
 	}
 	if filter.EvaluationScore07.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_07`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_07.Max)
+		//sqlQuery += " AND `evaluationScore07`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore07.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore07 <= ?", filter.EvaluationScore07.Max)
 	}
 
 	if filter.EvaluationScore08.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_08`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_08.Min)
+		//sqlQuery += " AND `evaluationScore08`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore08.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore08 >= ?", filter.EvaluationScore08.Min)
 	}
 	if filter.EvaluationScore08.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_08`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_08.Max)
+		//sqlQuery += " AND `evaluationScore08`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore08.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore08 <= ?", filter.EvaluationScore08.Max)
 	}
 
 	if filter.EvaluationScore09.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_09`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_09.Min)
+		//sqlQuery += " AND `evaluationScore09`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore09.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore09 >= ?", filter.EvaluationScore09.Min)
 	}
 	if filter.EvaluationScore09.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_09`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_09.Max)
+		//sqlQuery += " AND `evaluationScore09`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore09.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore09 <= ?", filter.EvaluationScore09.Max)
 	}
 
 	if filter.EvaluationScore10.Min > 0 {
-		//sqlQuery += " AND `evaluationScore_10`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore_10.Min)
+		//sqlQuery += " AND `evaluationScore10`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore10.Min)
 		sqlQuery = sqlQuery.And("EvaluationScore10 >= ?", filter.EvaluationScore10.Min)
 	}
 	if filter.EvaluationScore10.Max > 0 {
-		//sqlQuery += " AND `evaluationScore_10`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore_10.Max)
+		//sqlQuery += " AND `evaluationScore10`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore10.Max)
 		sqlQuery = sqlQuery.And("EvaluationScore10 <= ?", filter.EvaluationScore10.Max)
 	}
 
@@ -1049,7 +1049,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_01" {
+		} else if orderBy == "evaluationScore01" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore01 > specList[j].EvaluationScore01
 			} else if direction == "ascending" {
@@ -1058,7 +1058,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_02" {
+		} else if orderBy == "evaluationScore02" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore02 > specList[j].EvaluationScore02
 			} else if direction == "ascending" {
@@ -1067,7 +1067,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_03" {
+		} else if orderBy == "evaluationScore03" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore03 > specList[j].EvaluationScore03
 			} else if direction == "ascending" {
@@ -1076,7 +1076,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_04" {
+		} else if orderBy == "evaluationScore04" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore04 > specList[j].EvaluationScore04
 			} else if direction == "ascending" {
@@ -1085,7 +1085,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_05" {
+		} else if orderBy == "evaluationScore05" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore05 > specList[j].EvaluationScore05
 			} else if direction == "ascending" {
@@ -1094,7 +1094,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_06" {
+		} else if orderBy == "evaluationScore06" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore06 > specList[j].EvaluationScore06
 			} else if direction == "ascending" {
@@ -1103,7 +1103,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_07" {
+		} else if orderBy == "evaluationScore07" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore07 > specList[j].EvaluationScore07
 			} else if direction == "ascending" {
@@ -1112,7 +1112,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_08" {
+		} else if orderBy == "evaluationScore08" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore08 > specList[j].EvaluationScore08
 			} else if direction == "ascending" {
@@ -1121,7 +1121,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_09" {
+		} else if orderBy == "evaluationScore09" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore09 > specList[j].EvaluationScore09
 			} else if direction == "ascending" {
@@ -1130,7 +1130,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "evaluationScore_10" {
+		} else if orderBy == "evaluationScore10" {
 			if direction == "descending" {
 				return specList[i].EvaluationScore10 > specList[j].EvaluationScore10
 			} else if direction == "ascending" {

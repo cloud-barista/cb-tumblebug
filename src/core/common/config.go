@@ -55,15 +55,6 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 
 func UpdateGlobalVariable(id string) error {
 
-	/*
-		common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-		common.DRAGONFLY_REST_URL = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-		common.DB_URL = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
-		common.DB_DATABASE = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-		common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-		common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-	*/
-
 	configInfo, err := GetConfig(id)
 	if err != nil {
 		//CBLog.Error(err)

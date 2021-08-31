@@ -237,7 +237,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			for i := range *specList {
 				// update OrderInFilteredResult based on calculated priorityIndex
 				(*specList)[distances[i].index].OrderInFilteredResult = uint16(distances[i].priorityIndex)
-				// assign nomalized priorityIdex value to EvaluationScore_01
+				// assign nomalized priorityIdex value to EvaluationScore01
 				(*specList)[distances[i].index].EvaluationScore01 = float32(1 - (float32(distances[i].priorityIndex) / float32(len(*specList))))
 				(*specList)[distances[i].index].EvaluationScore02 = float32(distances[i].distance)
 			}

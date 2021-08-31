@@ -43,12 +43,12 @@ func TestImage(t *testing.T) {
 		fmt.Println("DB selected successfully..")
 	}
 
-	err = common.CreateImageTable()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Table image created successfully..")
-	}
+	// err = common.CreateImageTable()
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// } else {
+	// 	fmt.Println("Table image created successfully..")
+	// }
 
 	imageName := "tb-unit-test"
 
