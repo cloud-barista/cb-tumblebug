@@ -20,8 +20,8 @@
 	    "{
             \"nsId\":  \"${NSID}\",
 		    \"spec\": {
-			    \"num_vCPU\": 1, 
-			    \"mem_GiB\": 2
+			    \"numvCPU\": 1, 
+			    \"memGiB\": 2
 		    }
 	    }" 
     ); echo ${resp} | jq ''

@@ -146,7 +146,7 @@ EOF
 )
 # echo "${VAR1}"
 
-for row in $(echo "${VAR1}" | jq '.result_array' | jq -r '.[] | @base64'); do
+for row in $(echo "${VAR1}" | jq '.resultArray' | jq -r '.[] | @base64'); do
 	_jq() {
 		echo ${row} | base64 --decode | jq -r ${1}
 	}
@@ -175,7 +175,7 @@ EOF
 echo ""
 echo "[Ping to all nodes in MC-Infra (CMD: $LAUNCHCMD)]"
 
-for row in $(echo "${VAR1}" | jq '.result_array' | jq -r '.[] | @base64'); do
+for row in $(echo "${VAR1}" | jq '.resultArray' | jq -r '.[] | @base64'); do
 	_jq() {
 		echo ${row} | base64 --decode | jq -r ${1}
 	}
