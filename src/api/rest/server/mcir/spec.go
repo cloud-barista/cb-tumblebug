@@ -314,7 +314,7 @@ func RestTestSortSpecs(c echo.Context) error {
 		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
 	}
 
-	content, err = mcir.SortSpecs(content, "mem_GiB", "descending")
+	content, err = mcir.SortSpecs(content, "memGiB", "descending")
 	if err != nil {
 		common.CBLog.Error(err)
 		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))

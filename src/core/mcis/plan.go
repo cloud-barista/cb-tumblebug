@@ -25,7 +25,7 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric" example:"num_vCPU" enums:"num_vCPU,mem_GiB,Cost_per_hour"`
+	Metric    string      `json:"metric" example:"numvCPU" enums:"numvCPU,memGiB,CostPerHour"`
 	Condition []Operation `json:"condition"`
 }
 
@@ -86,11 +86,11 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case "<=":
 
 				switch metric {
-				case "num_vCPU":
+				case "numvCPU":
 					u.NumvCPU.Max = operand
-				case "mem_GiB":
+				case "memGiB":
 					u.MemGiB.Max = operand
-				case "Cost_per_hour":
+				case "CostPerHour":
 					u.CostPerHour.Max = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
@@ -99,11 +99,11 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case ">=":
 
 				switch metric {
-				case "num_vCPU":
+				case "numvCPU":
 					u.NumvCPU.Min = operand
-				case "mem_GiB":
+				case "memGiB":
 					u.MemGiB.Min = operand
-				case "Cost_per_hour":
+				case "CostPerHour":
 					u.CostPerHour.Min = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
@@ -112,13 +112,13 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case "==":
 
 				switch metric {
-				case "num_vCPU":
+				case "numvCPU":
 					u.NumvCPU.Max = operand
 					u.NumvCPU.Min = operand
-				case "mem_GiB":
+				case "memGiB":
 					u.MemGiB.Max = operand
 					u.MemGiB.Min = operand
-				case "Cost_per_hour":
+				case "CostPerHour":
 					u.CostPerHour.Max = operand
 					u.CostPerHour.Min = operand
 				default:
@@ -266,7 +266,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 	fmt.Printf("\n result : %v \n", result)
 
 	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
-	// content, err = mcir.SortSpecs(*specList, "mem_GiB", "descending")
+	// content, err = mcir.SortSpecs(*specList, "memGiB", "descending")
 	return result, nil
 }
 

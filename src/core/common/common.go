@@ -101,21 +101,21 @@ func CreateSpecTable() error {
 		"cspSpecName varchar(50) NOT NULL," +
 		"name varchar(50)," +
 		"osType varchar(50)," +
-		"num_vCPU SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"num_core SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"mem_GiB SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"storage_GiB MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
+		"numvCPU SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"numcore SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"memGiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"storageGiB MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
 		"description varchar(50)," +
-		"cost_per_hour FLOAT," +
-		"num_storage SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"max_num_storage SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"max_total_storage_TiB SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"net_bw_Gbps SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"ebs_bw_Mbps MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
-		"gpu_model varchar(50)," +
-		"num_gpu SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"gpumem_GiB SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"gpu_p2p varchar(50)," +
+		"costPerHour FLOAT," +
+		"numAtorage SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"maxNumStorage SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"maxTotalStorage_TiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"netBwGbps SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"ebsBwMbps MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
+		"gpuModel varchar(50)," +
+		"numGpu SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"gpumemGiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"gpuP2p varchar(50)," +
 		"orderInFilteredResult SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"evaluationStatus varchar(50)," +
 		"evaluationScore01 FLOAT," +
