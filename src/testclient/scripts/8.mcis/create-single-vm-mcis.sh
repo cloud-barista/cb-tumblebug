@@ -2,29 +2,13 @@
 
 #function create_mcis() {
 
-
-	TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	
 	echo "####################################################################"
 	echo "## 8. Create MCIS with a single VM"
 	echo "####################################################################"
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
+	source ../init.sh
 
-	NUMVM=${5:-3}
-
-	MCISID=${MCISPREFIX}-${POSTFIX}
-
-	source ../common-functions.sh
-	getCloudIndex $CSP
+	NUMVM=${OPTION01:-1}
 
 	echo "####################"
 	echo " AgentInstallOn: $AgentInstallOn"

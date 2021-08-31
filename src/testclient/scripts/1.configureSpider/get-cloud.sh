@@ -30,8 +30,6 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-    RESTSERVER=localhost
-
     # for Cloud Connection Config Info
     curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | jq ''
     echo ""

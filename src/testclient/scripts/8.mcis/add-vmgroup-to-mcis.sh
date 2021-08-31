@@ -2,29 +2,13 @@
 
 #function add-vm-to-mcis() {
 
-
-	TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	
 	echo "####################################################################"
 	echo "## 8. vm: Create MCIS"
 	echo "####################################################################"
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
-	NUMVM=${5:-3}
+	source ../init.sh
 
-	MCISID=${MCISPREFIX}-${POSTFIX}
-
-	source ../common-functions.sh
-	getCloudIndex $CSP
-
+	NUMVM=${OPTION01:-1}
 	
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vmgroup -H 'Content-Type: application/json' -d \
 		'{

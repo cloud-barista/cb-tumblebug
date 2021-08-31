@@ -2107,6 +2107,99 @@ paths:
       summary: Send a command to specified VM
       tags:
       - '[MCIS] Remote command'
+  /ns/{nsId}/control/mcis/{mcisId}:
+    get:
+      consumes:
+      - application/json
+      description: Control the lifecycle of MCIS
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Action to MCIS
+        enum:
+        - status
+        - suspend
+        - resume
+        - reboot
+        - terminate
+        in: query
+        name: action
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Control the lifecycle of MCIS
+      tags:
+      - '[MCIS] Control lifecycle'
+  /ns/{nsId}/control/mcis/{mcisId}/vm/{vmId}:
+    get:
+      consumes:
+      - application/json
+      description: Control the lifecycle of VM
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Action to MCIS
+        enum:
+        - status
+        - suspend
+        - resume
+        - reboot
+        - terminate
+        in: query
+        name: action
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Control the lifecycle of VM
+      tags:
+      - '[MCIS] Control lifecycle'
   /ns/{nsId}/install/mcis/{mcisId}:
     post:
       consumes:
