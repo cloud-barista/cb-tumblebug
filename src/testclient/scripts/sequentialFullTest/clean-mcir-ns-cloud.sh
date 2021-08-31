@@ -6,11 +6,11 @@ function clean_sequence() {
 	local POSTFIX=$3
 	local TestSetFile=$4
 
-	../7.spec/unregister-spec.sh $CSP $REGION $POSTFIX $TestSetFile
-	../6.image/unregister-image.sh $CSP $REGION $POSTFIX $TestSetFile
+	../7.spec/unregister-spec.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../6.image/unregister-image.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	echo '## 5. sshKey: Delete'
-	OUTPUT=$(../5.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile)
+	OUTPUT=$(../5.sshKey/delete-sshKey.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 
@@ -21,7 +21,7 @@ function clean_sequence() {
 			echo "Trial: ${c}. Sleep 5 before retry sshKey: Delete"
 			dozing 5
 			# retry sshKey: Delete
-			OUTPUT2=$(../5.sshKey/delete-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile)
+			OUTPUT2=$(../5.sshKey/delete-sshKey.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 			echo "${OUTPUT2}"
 			OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 			echo "${OUTPUT2}"
@@ -40,7 +40,7 @@ function clean_sequence() {
 	fi
 
 	echo '## 4. SecurityGroup: Delete'
-	OUTPUT=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile)
+	OUTPUT=$(../4.securityGroup/delete-securityGroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 	echo "${OUTPUT}"
@@ -51,7 +51,7 @@ function clean_sequence() {
 			echo "Trial: ${c}. Sleep 5 before retry SecurityGroup: Delete"
 			dozing 5
 			# retry SecurityGroup: Delete
-			OUTPUT2=$(../4.securityGroup/delete-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile)
+			OUTPUT2=$(../4.securityGroup/delete-securityGroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 			echo "${OUTPUT2}"
 			OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 			echo "${OUTPUT2}"
@@ -70,7 +70,7 @@ function clean_sequence() {
 	fi
 
 	echo '## 3. vNet: Delete'
-	OUTPUT=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX $TestSetFile)
+	OUTPUT=$(../3.vNet/delete-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT=$(echo "${OUTPUT}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 	echo "${OUTPUT}"
@@ -81,7 +81,7 @@ function clean_sequence() {
 			echo "Trial: ${c}. Sleep 5 before retry delete-vNet"
 			dozing 5
 			# retry delete-vNet
-			OUTPUT2=$(../3.vNet/delete-vNet.sh $CSP $REGION $POSTFIX $TestSetFile)
+			OUTPUT2=$(../3.vNet/delete-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 			echo "${OUTPUT2}"
 			OUTPUT2=$(echo "${OUTPUT2}" | grep -c -e 'Error' -e 'error' -e 'dependency' -e 'dependent' -e 'DependencyViolation')
 			echo "${OUTPUT2}"
@@ -133,7 +133,7 @@ source ../init.sh
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel excution for all CSP regions]"
 
-	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	INDEXX=${NumCSP}
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do

@@ -1034,6 +1034,141 @@
                 }
             }
         },
+        "/ns/{nsId}/control/mcis/{mcisId}": {
+            "get": {
+                "description": "Control the lifecycle of MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MCIS] Control lifecycle"
+                ],
+                "summary": "Control the lifecycle of MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "status",
+                            "suspend",
+                            "resume",
+                            "reboot",
+                            "terminate"
+                        ],
+                        "type": "string",
+                        "description": "Action to MCIS",
+                        "name": "action",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/control/mcis/{mcisId}/vm/{vmId}": {
+            "get": {
+                "description": "Control the lifecycle of VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MCIS] Control lifecycle"
+                ],
+                "summary": "Control the lifecycle of VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "status",
+                            "suspend",
+                            "resume",
+                            "reboot",
+                            "terminate"
+                        ],
+                        "type": "string",
+                        "description": "Action to MCIS",
+                        "name": "action",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/install/mcis/{mcisId}": {
             "post": {
                 "description": "Install the benchmark agent to specified MCIS",

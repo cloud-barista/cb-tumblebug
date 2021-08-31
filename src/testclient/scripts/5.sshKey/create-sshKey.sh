@@ -1,26 +1,7 @@
 #!/bin/bash
 
-#function create_sshKey() {
-
-
-	TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	
-	echo "####################################################################"
-	echo "## 5. sshKey: Create"
-	echo "####################################################################"
-
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
-
-	source ../common-functions.sh
-	getCloudIndex $CSP
+function CallTB() {
+	echo "- Create sshKey in ${MCIRRegionName}"
 
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey -H 'Content-Type: application/json' -d \
 		'{ 
@@ -28,6 +9,51 @@
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
 			"username": "ubuntu"
 		}' | jq '.message'
+}
+
+#function create_sshKey() {
+
+	echo "####################################################################"
+	echo "## 5. sshKey: Create"
+	echo "####################################################################"
+
+	source ../init.sh
+
+	if [ "${INDEX}" == "0" ]; then
+		echo "[Parallel excution for all CSP regions]"
+
+		INDEXX=${NumCSP}
+		for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+			echo $i
+			INDEXY=${NumRegion[$cspi]}
+			CSP=${CSPType[$cspi]}
+			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+				# INDEX=$(($INDEX+1))
+
+				echo $j
+				INDEX=$cspi
+				REGION=$cspj
+				echo $CSP
+				echo $REGION
+				echo ${RegionName[$cspi,$cspj]}
+				MCIRRegionName=${RegionName[$cspi,$cspj]}
+
+				CallTB
+
+			done
+
+		done
+		wait
+
+	else
+		echo ""
+		
+		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+
+		CallTB
+
+	fi
+	
 #}
 
 #create_sshKey

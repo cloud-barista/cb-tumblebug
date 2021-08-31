@@ -153,6 +153,9 @@ func ApiServer() {
 
 	g.POST("/:nsId/testRecommendVm", rest_mcis.RestRecommendVm)
 
+	g.GET("/:nsId/control/mcis/:mcisId", rest_mcis.RestGetControlMcis)
+	g.GET("/:nsId/control/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetControlMcisVm)
+
 	g.POST("/:nsId/cmd/mcis/:mcisId", rest_mcis.RestPostCmdMcis)
 	g.POST("/:nsId/cmd/mcis/:mcisId/vm/:vmId", rest_mcis.RestPostCmdMcisVm)
 	g.POST("/:nsId/install/mcis/:mcisId", rest_mcis.RestPostInstallAgentToMcis)

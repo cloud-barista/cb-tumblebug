@@ -2,28 +2,11 @@
 
 #function terminate_and_delete_mcis() {
 
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
 echo "####################################################################"
 echo "## 8. VM: Delete MCIS"
 echo "####################################################################"
 
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-OPTION=${5:-notforce}
-
-source ../common-functions.sh
-getCloudIndex $CSP
-
-
+source ../init.sh
 
 MCISID=TBD
 if [ "${INDEX}" == "0" ]; then
@@ -33,7 +16,6 @@ else
 fi
 
 echo "${INDEX} ${REGION} ${MCISID}"
-
 
 echo ""
 echo "Delete [MCIS: $MCISID]"

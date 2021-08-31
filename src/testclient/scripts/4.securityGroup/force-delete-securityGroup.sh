@@ -1,15 +1,15 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Delete vNet in ${MCIRRegionName}"
+	echo "- Delete securityGroup in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true | jq ''
 }
 
-#function delete_vNet() {
-	
+#function delete_securityGroup() {
+
 	echo "####################################################################"
-	echo "## 3. vNet: Delete"
+	echo "## 4. SecurityGroup: Delete"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -48,7 +48,7 @@ function CallTB() {
 		CallTB
 
 	fi
-
+	
 #}
 
-#delete_vNet
+#delete_securityGroup

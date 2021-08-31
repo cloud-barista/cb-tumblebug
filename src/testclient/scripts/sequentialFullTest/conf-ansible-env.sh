@@ -48,7 +48,7 @@ echo ""
 echo "[CHECK REMOTE COMMAND BY CB-TB API]"
 echo " This will retrieve verified SSH username"
 
-./command-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+./command-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)
 VMARRAY=$(jq '.status.vm' <<<"$MCISINFO")

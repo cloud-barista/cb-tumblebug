@@ -7,7 +7,7 @@ function clean_mcis_sequence() {
 	local TestSetFile=$4
 
 	echo '## 8. MCIS: Terminate'
-	OUTPUT=$(../8.mcis/terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile)
+	OUTPUT=$(../8.mcis/terminate-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
@@ -18,7 +18,7 @@ function clean_mcis_sequence() {
 		dozing 30
 	fi
 
-	../8.mcis/delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	../8.mcis/delete-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 }
 
 SECONDS=0
