@@ -159,6 +159,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "computerphilosopher",
+      "name": "Park Beomsu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26251856?v=4",
+      "profile": "https://velog.io/@skynet",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
