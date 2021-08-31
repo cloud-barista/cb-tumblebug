@@ -1,9 +1,15 @@
 #!/bin/bash
 
+echo "####################################################################"
+echo "## update-dns-for-mcis-ip (parameters: -x HostedZoneID -y RecordName)"
+echo "####################################################################"
+
 SECONDS=0
 
-echo "[Check jq package (if not, install)]"
-if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
+source ../init.sh
+
+HostedZoneID=${OPTION01}
+RecordName=${OPTION02:-conf.cloud-barista.org}
 
 COMMAND=aws
 if ! command -v $COMMAND &> /dev/null
@@ -15,40 +21,14 @@ then
     exit
 fi
 
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
-echo "####################################################################"
-echo "## update-dns-for-mcis-ip "
-echo "####################################################################"
-
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-source ../common-functions.sh
-getCloudIndex $CSP
-
-MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-
-HostedZoneID=${5}
-
-RecordName=${6:-conf.cloud-barista.org}
-
 if [ "${INDEX}" == "0" ]; then
-	# MCISPREFIX=avengers
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
 
 if [ -z "$HostedZoneID" ]; then
-	echo "[Warning] Provide your HostedZones.Id (ex: /hostedzone/XXXX9210PL5XXXOY9B7T) to 5th parameter"
+	echo "[Warning] Provide your HostedZones.Id (ex: /hostedzone/XXXX9210PL5XXXOY9B7T) to -x parameter"
 	echo "Please retrieve HostedZones.Id from AWS Routh 53"
-	echo "You can provide RecordName to 6th parameter"
+	echo "You can provide RecordName to -x parameter"
 	echo `aws route53 list-hosted-zones` | jq ''
 	exit
 fi
