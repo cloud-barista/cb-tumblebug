@@ -849,7 +849,6 @@ definitions:
       name:
         type: string
       status:
-        description: Vm_num string         `json:"vm_num"`
         type: string
       targetAction:
         type: string
