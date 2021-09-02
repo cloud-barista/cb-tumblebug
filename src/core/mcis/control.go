@@ -263,7 +263,6 @@ type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 
-	//Vm_num string         `json:"vm_num"`
 	Status       string `json:"status"`
 	TargetStatus string `json:"targetStatus"`
 	TargetAction string `json:"targetAction"`
