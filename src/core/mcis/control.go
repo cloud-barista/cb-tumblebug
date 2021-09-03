@@ -32,63 +32,75 @@ import (
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
-// const ActionCreate
-const ActionCreate string = "Create"
+const (
+	// ActionCreate is const for Create
+	ActionCreate string = "Create"
 
-// const ActionTerminate
-const ActionTerminate string = "Terminate"
+	// ActionTerminate is const for Terminate
+	ActionTerminate string = "Terminate"
 
-// const ActionSuspend
-const ActionSuspend string = "Suspend"
+	// ActionSuspend is const for Suspend
+	ActionSuspend string = "Suspend"
 
-// const ActionResume
-const ActionResume string = "Resume"
+	// ActionResume is const for Resume
+	ActionResume string = "Resume"
 
-// const ActionReboot
-const ActionReboot string = "Reboot"
+	// ActionReboot is const for Reboot
+	ActionReboot string = "Reboot"
 
-// const ActionComplete
-const ActionComplete string = "None"
+	// ActionComplete is const for Complete
+	ActionComplete string = "None"
+)
+const (
+	// StatusRunning is const for Running
+	StatusRunning string = "Running"
 
-// const StatusRunning
-const StatusRunning string = "Running"
+	// StatusSuspended is const for Suspended
+	StatusSuspended string = "Suspended"
 
-// const StatusSuspended
-const StatusSuspended string = "Suspended"
+	// StatusFailed is const for Failed
+	StatusFailed string = "Failed"
 
-// const StatusFailed
-const StatusFailed string = "Failed"
+	// StatusTerminated is const for Terminated
+	StatusTerminated string = "Terminated"
 
-// const StatusTerminated
-const StatusTerminated string = "Terminated"
+	// StatusCreating is const for Creating
+	StatusCreating string = "Creating"
 
-// const StatusCreating
-const StatusCreating string = "Creating"
+	// StatusSuspending is const for Suspending
+	StatusSuspending string = "Suspending"
 
-// const StatusSuspending
-const StatusSuspending string = "Suspending"
+	// StatusResuming is const for Resuming
+	StatusResuming string = "Resuming"
 
-// const StatusResuming
-const StatusResuming string = "Resuming"
+	// StatusRebooting is const for Rebooting
+	StatusRebooting string = "Rebooting"
 
-// const StatusRebooting
-const StatusRebooting string = "Rebooting"
+	// StatusTerminating is const for Terminating
+	StatusTerminating string = "Terminating"
 
-// const StatusTerminating
-const StatusTerminating string = "Terminating"
+	// StatusUndefined is const for Undefined
+	StatusUndefined string = "Undefined"
 
-// const StatusUndefined
-const StatusUndefined string = "Undefined"
-
-// const StatusComplete
-const StatusComplete string = "None"
+	// StatusComplete is const for Complete
+	StatusComplete string = "None"
+)
 
 const milkywayPort string = ":1324/milkyway/"
 
-const sshDefaultUserName01 string = "cb-user"
-const sshDefaultUserName02 string = "ubuntu"
-const sshDefaultUserName03 string = "root"
-const sshDefaultUserName04 string = "ec2-user"
+const (
+	//sshDefaultUserName01 const for UserName01
+	sshDefaultUserName01 string = "cb-user"
+
+	//sshDefaultUserName02 const for UserName02
+	sshDefaultUserName02 string = "ubuntu"
+
+	//sshDefaultUserName03 const for UserName03
+	sshDefaultUserName03 string = "root"
+
+	//sshDefaultUserName04 const for UserName04
+	sshDefaultUserName04 string = "ec2-user"
+)
 
 const labelAutoGen string = "AutoGen"
 
