@@ -89,16 +89,9 @@ const (
 const milkywayPort string = ":1324/milkyway/"
 
 const (
-	//sshDefaultUserName01 const for UserName01
 	sshDefaultUserName01 string = "cb-user"
-
-	//sshDefaultUserName02 const for UserName02
 	sshDefaultUserName02 string = "ubuntu"
-
-	//sshDefaultUserName03 const for UserName03
 	sshDefaultUserName03 string = "root"
-
-	//sshDefaultUserName04 const for UserName04
 	sshDefaultUserName04 string = "ec2-user"
 )
 

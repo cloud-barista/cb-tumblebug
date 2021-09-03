@@ -32,29 +32,14 @@ import (
 )
 
 const (
-	// monMetricAll const to monitor all
-	monMetricAll string = "all"
-
-	// monMetricCpu const to monitor cpu
-	monMetricCpu string = "cpu"
-
-	// monMetricCpufreq const to monitor cpufreq
+	monMetricAll     string = "all"
+	monMetricCpu     string = "cpu"
 	monMetricCpufreq string = "cpufreq"
-
-	// monMetricMem const to monitor memory
-	monMetricMem string = "mem"
-
-	// monMetricNet const to monitor net
-	monMetricNet string = "net"
-
-	// monMetricSwap const to monitor swap memory
-	monMetricSwap string = "swap"
-
-	// monMetricDisk const to monitor disk
-	monMetricDisk string = "disk"
-
-	// monMetricDiskio const to monitor diskio
-	monMetricDiskio string = "diskio"
+	monMetricMem     string = "mem"
+	monMetricNet     string = "net"
+	monMetricSwap    string = "swap"
+	monMetricDisk    string = "disk"
+	monMetricDiskio  string = "diskio"
 )
 
 // MonAgentInstallReq struct
