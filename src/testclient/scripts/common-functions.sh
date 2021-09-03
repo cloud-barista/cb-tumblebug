@@ -10,55 +10,6 @@ function dozing() {
 	echo "(Finish dozing. Back to work)"
 }
 
-function readParametersByName() {
-	CSP="all"
-	REGION="1"
-	POSTFIX="user"
-	TestSetFile="../testSet.env"
-	OPTION01=""
-	OPTION02=""
-	OPTION03=""
-
-	# Update values for network parameters by named input parameters (i, c)
-	while getopts ":f:n:x:y:z:h:" opt; do
-		case $opt in
-		f)
-			TestSetFile="$OPTARG"
-			;;
-		n)
-			POSTFIX="$OPTARG"
-			;;
-		x)
-			OPTION01="$OPTARG"
-			;;
-		y)
-			OPTION02="$OPTARG"
-			;;
-		z)
-			OPTION03="$OPTARG"
-			;;
-		h)
-			echo "How to use '-h' (ex: ./${0##*/} -c ../testSet.env -n myname)"
-			exit 0
-			;;
-		\?)
-			echo "Invalid option -$OPTARG (Use: -i for NETWORK_INTERFACE, -c for POD_NETWORK_CIDR)" >&2
-			exit 0
-			;;
-		esac
-	done
-
-	echo "[Input parameters]"
-	echo "CSP: $CSP"
-	echo "REGION: $REGION"
-	echo "POSTFIX: $POSTFIX"
-	echo "OPTION01: $OPTION01"
-	echo "OPTION02: $OPTION02"
-	echo "OPTION03: $OPTION03"
-
-
-}
-
 function readParameters() {
 	CSP=${1}
 	REGION=${2:-1}
@@ -157,8 +108,8 @@ function readParametersByName() {
 		exit 0
 	fi
 
-	echo "Input parameters: (POSTFIX: $POSTFIX) (TestSetFile: $TestSetFile) (CSP: $CSP) (REGION: $REGION) (OPTION01: $OPTION01) (OPTION02: $OPTION02) (OPTION03: $OPTION03)"
-	echo ""
+	echo "Input parameters"
+	echo "// POSTFIX:$POSTFIX // TestSetFile:$TestSetFile // CSP:$CSP // REGION:$REGION // OPTION01:$OPTION01 // OPTION02:$OPTION02 // OPTION03:$OPTION03"
 }
 
 function printElapsed() {
