@@ -13,18 +13,25 @@ import (
 const (
 	// AutoStatusReady is const for "Ready" status.
 	AutoStatusReady string = "Ready"
+
 	// AutoStatusChecking is const for "Checking" status.
 	AutoStatusChecking string = "Checking"
+
 	// AutoStatusDetected is const for "Detected" status.
 	AutoStatusDetected string = "Detected"
+
 	// AutoStatusOperating is const for "Operating" status.
 	AutoStatusOperating string = "Operating"
+
 	// AutoStatusStabilizing is const for "Stabilizing" status.
 	AutoStatusStabilizing string = "Stabilizing"
+
 	// AutoStatusTimeout is const for "Timeout" status.
 	AutoStatusTimeout string = "Timeout"
+
 	// AutoStatusError is const for "Failed" status.
 	AutoStatusError string = "Failed"
+
 	// AutoStatusSuspended is const for "Suspended" status.
 	AutoStatusSuspended string = "Suspended"
 )
@@ -33,6 +40,7 @@ const (
 const (
 	// AutoActionScaleOut is const for "ScaleOut" action.
 	AutoActionScaleOut string = "ScaleOut"
+	
 	// AutoActionScaleIn is const for "ScaleIn" action.
 	AutoActionScaleIn string = "ScaleIn"
 )

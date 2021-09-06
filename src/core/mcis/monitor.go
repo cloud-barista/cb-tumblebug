@@ -31,14 +31,16 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
-const monMetricAll string = "all"
-const monMetricCpu string = "cpu"
-const monMetricCpufreq string = "cpufreq"
-const monMetricMem string = "mem"
-const monMetricNet string = "net"
-const monMetricSwap string = "swap"
-const monMetricDisk string = "disk"
-const monMetricDiskio string = "diskio"
+const (
+	monMetricAll     string = "all"
+	monMetricCpu     string = "cpu"
+	monMetricCpufreq string = "cpufreq"
+	monMetricMem     string = "mem"
+	monMetricNet     string = "net"
+	monMetricSwap    string = "swap"
+	monMetricDisk    string = "disk"
+	monMetricDiskio  string = "diskio"
+)
 
 // MonAgentInstallReq struct
 type MonAgentInstallReq struct {
