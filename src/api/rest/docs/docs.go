@@ -5881,6 +5881,7 @@ var doc = `{
                     "example": "yes"
                 },
                 "label": {
+                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
                     "type": "string"
                 },
                 "name": {
@@ -5923,7 +5924,10 @@ var doc = `{
                     "example": "yes"
                 },
                 "label": {
-                    "type": "string"
+                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
+                    "type": "string",
+                    "default": "no",
+                    "example": "custom tag"
                 },
                 "name": {
                     "type": "string"
