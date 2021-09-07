@@ -150,7 +150,8 @@ type TbMcisReq struct {
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
-	Label string `json:"label"`
+	// Label is for describing the mcis in a keyword (any string can be used)
+	Label string `json:"label" example:"custom tag" default:"no"`
 
 	PlacementAlgo string `json:"placementAlgo"`
 	Description   string `json:"description"`
@@ -168,6 +169,7 @@ type TbMcisInfo struct {
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
+	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label"`
 
 	PlacementAlgo string     `json:"placementAlgo"`
@@ -2447,7 +2449,8 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		"status":          StatusCreating,
 		"targetAction":    targetAction,
 		"targetStatus":    targetStatus,
-		"InstallMonAgent": req.InstallMonAgent,
+		"installMonAgent": req.InstallMonAgent,
+		"label":           req.Label,
 	}
 	val, err := json.Marshal(mapA)
 	if err != nil {
