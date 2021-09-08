@@ -440,6 +440,10 @@ definitions:
         type: string
       name:
         type: string
+    required:
+    - connectionName
+    - cspImageId
+    - name
     type: object
   mcir.TbSecurityGroupInfo:
     properties:

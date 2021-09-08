@@ -4847,6 +4847,11 @@ var doc = `{
         },
         "mcir.TbImageReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "cspImageId",
+                "name"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"
