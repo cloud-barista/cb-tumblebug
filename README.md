@@ -263,6 +263,7 @@ cb-operator/src$ ./operator
 - `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 전체 과정을 한번에 테스트 가능
 ```
 └── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
+    ├── check-test-config.sh  # 현재 testSet에 지정된 멀티 클라우드 인프라 구성을 확인
     ├── create-all.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
     ├── gen-sshKey.sh  # 수행이 진행된 테스트 로그 (MCIS에 접속 가능한 SSH키 파일 생성)  
     ├── command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
@@ -274,6 +275,8 @@ cb-operator/src$ ./operator
 
 ```
 - 사용 예시
+  - 테스트 형상 확인
+    - `./check-test-config.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 조합을 미리 확인 (사용되는 CSP, region, image, spec 등)
   - 생성 테스트
     - `./create-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행
   - 제거 테스트 (생성에서 활용한 입력 파라미터로 삭제 필요)
