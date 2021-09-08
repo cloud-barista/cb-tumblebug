@@ -16,6 +16,10 @@ import (
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
+
+	"reflect"
+
+	validator "github.com/go-playground/validator/v10"
 )
 
 // CB-Store
@@ -24,10 +28,29 @@ import (
 
 //var SPIDER_REST_URL string
 
+// use a single instance of Validate, it caches struct info
+var validate *validator.Validate
+
 func init() {
 	//cblog = config.Cblogger
 	//store = cbstore.GetStore()
 	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
+
+	validate = validator.New()
+
+	// register function to get tag name from json tags.
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+
+	// register validation for 'TbImageReq'
+	// NOTE: only have to register a non-pointer type for 'TbImageReq', validator
+	// internally dereferences during it's type checks.
+	validate.RegisterStructValidation(TbImageReqStructLevelValidation, TbImageReq{})
 }
 
 // DelAllResources deletes all TB MCIR object of given resourceType
