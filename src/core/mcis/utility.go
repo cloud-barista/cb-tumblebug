@@ -21,6 +21,10 @@ import (
 	//"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
 	"github.com/go-resty/resty/v2"
+
+	"reflect"
+
+	validator "github.com/go-playground/validator/v10"
 )
 
 // CB-Store
@@ -29,10 +33,39 @@ import (
 
 //var SPIDER_REST_URL string
 
+// use a single instance of Validate, it caches struct info
+var validate *validator.Validate
+
 func init() {
 	//cblog = config.Cblogger
 	//store = cbstore.GetStore()
 	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
+
+	validate = validator.New()
+
+	// register function to get tag name from json tags.
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+
+	// register validation for 'Tb*Req'
+	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
+	// internally dereferences during it's type checks.
+
+	validate.RegisterStructValidation(TbMcisReqStructLevelValidation, TbMcisReq{})
+	validate.RegisterStructValidation(TbVmReqStructLevelValidation, TbVmReq{})
+	validate.RegisterStructValidation(TbMcisCmdReqStructLevelValidation, McisCmdReq{})
+	// validate.RegisterStructValidation(TbMcisRecommendReqStructLevelValidation, McisRecommendReq{})
+	// validate.RegisterStructValidation(TbVmRecommendReqStructLevelValidation, TbVmRecommendReq{})
+	// validate.RegisterStructValidation(TbBenchmarkReqStructLevelValidation, BenchmarkReq{})
+	// validate.RegisterStructValidation(TbMultihostBenchmarkReqStructLevelValidation, MultihostBenchmarkReq{})
+
+	validate.RegisterStructValidation(DFMonAgentInstallReqStructLevelValidation, MonAgentInstallReq{})
+
 }
 
 /*

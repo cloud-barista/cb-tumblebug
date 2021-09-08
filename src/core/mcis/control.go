@@ -28,6 +28,7 @@ import (
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	validator "github.com/go-playground/validator/v10"
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
@@ -145,7 +146,7 @@ type RegionInfo struct { // Spider
 }
 
 type TbMcisReq struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
@@ -156,7 +157,18 @@ type TbMcisReq struct {
 	PlacementAlgo string `json:"placementAlgo"`
 	Description   string `json:"description"`
 
-	Vm []TbVmReq `json:"vm"`
+	Vm []TbVmReq `json:"vm" validate:"required"`
+}
+
+func TbMcisReqStructLevelValidation(sl validator.StructLevel) {
+
+	u := sl.Current().Interface().(TbMcisReq)
+
+	err := common.CheckString(u.Name)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.Name, "name", "Name", "NotObeyingNamingConvention", "")
+	}
 }
 
 type TbMcisInfo struct {
@@ -180,7 +192,7 @@ type TbMcisInfo struct {
 // struct TbVmReq is to get requirements to create a new server instance.
 type TbVmReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
 
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
@@ -189,15 +201,26 @@ type TbVmReq struct {
 
 	Description string `json:"description"`
 
-	ConnectionName   string   `json:"connectionName"`
-	SpecId           string   `json:"specId"`
-	ImageId          string   `json:"imageId"`
-	VNetId           string   `json:"vNetId"`
+	ConnectionName   string   `json:"connectionName" validate:"required"`
+	SpecId           string   `json:"specId" validate:"required"`
+	ImageId          string   `json:"imageId" validate:"required"`
+	VNetId           string   `json:"vNetId" validate:"required"`
 	SubnetId         string   `json:"subnetId"`
-	SecurityGroupIds []string `json:"securityGroupIds"`
-	SshKeyId         string   `json:"sshKeyId"`
+	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
+	SshKeyId         string   `json:"sshKeyId" validate:"required"`
 	VmUserAccount    string   `json:"vmUserAccount"`
 	VmUserPassword   string   `json:"vmUserPassword"`
+}
+
+func TbVmReqStructLevelValidation(sl validator.StructLevel) {
+
+	u := sl.Current().Interface().(TbVmReq)
+
+	err := common.CheckString(u.Name)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.Name, "name", "Name", "NotObeyingNamingConvention", "")
+	}
 }
 
 // struct TbVmGroupInfo is to define an object that includes homogeneous VMs.
@@ -314,7 +337,18 @@ type TbVmStatusInfo struct {
 // McisCmdReq is remote command struct
 type McisCmdReq struct {
 	UserName string `json:"userName" example:"cb-user" default:""`
-	Command  string `json:"command" example:"sudo apt-get install ..." default:""`
+	Command  string `json:"command" validate:"required" example:"sudo apt-get install ..."`
+}
+
+func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
+
+	u := sl.Current().Interface().(McisCmdReq)
+
+	err := common.CheckString(u.Command)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.Command, "command", "Command", "NotObeyingNamingConvention", "")
+	}
 }
 
 type McisRecommendReq struct {
@@ -1850,6 +1884,37 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 		common.CBLog.Error(err)
 		return "", err
 	}
+
+	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	err = validate.Struct(req)
+	if err != nil {
+
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return "", err
+		}
+
+		// for _, err := range err.(validator.ValidationErrors) {
+
+		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
+		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
+		// 	fmt.Println(err.StructNamespace())
+		// 	fmt.Println(err.StructField())
+		// 	fmt.Println(err.Tag())
+		// 	fmt.Println(err.ActualTag())
+		// 	fmt.Println(err.Kind())
+		// 	fmt.Println(err.Type())
+		// 	fmt.Println(err.Value())
+		// 	fmt.Println(err.Param())
+		// 	fmt.Println()
+		// }
+
+		return "", err
+	}
+
 	check, _ := CheckVm(nsId, mcisId, vmId)
 
 	if !check {
@@ -1899,6 +1964,39 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 		common.CBLog.Error(err)
 		return nil, err
 	}
+
+	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	err = validate.Struct(req)
+	if err != nil {
+
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			temp := []SshCmdResult{}
+			return temp, err
+		}
+
+		// for _, err := range err.(validator.ValidationErrors) {
+
+		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
+		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
+		// 	fmt.Println(err.StructNamespace())
+		// 	fmt.Println(err.StructField())
+		// 	fmt.Println(err.Tag())
+		// 	fmt.Println(err.ActualTag())
+		// 	fmt.Println(err.Kind())
+		// 	fmt.Println(err.Type())
+		// 	fmt.Println(err.Value())
+		// 	fmt.Println(err.Param())
+		// 	fmt.Println()
+		// }
+
+		temp := []SshCmdResult{}
+		return temp, err
+	}
+
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
@@ -2065,6 +2163,50 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 // CorePostMcisGroupVm function is a wrapper for CreateMcisGroupVm
 func CorePostMcisGroupVm(nsId string, mcisId string, vmReq *TbVmReq) (*TbMcisInfo, error) {
 
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := &TbMcisInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
+	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	err = validate.Struct(vmReq)
+	if err != nil {
+
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return nil, err
+		}
+
+		// for _, err := range err.(validator.ValidationErrors) {
+
+		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
+		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
+		// 	fmt.Println(err.StructNamespace())
+		// 	fmt.Println(err.StructField())
+		// 	fmt.Println(err.Tag())
+		// 	fmt.Println(err.ActualTag())
+		// 	fmt.Println(err.Kind())
+		// 	fmt.Println(err.Type())
+		// 	fmt.Println(err.Value())
+		// 	fmt.Println(err.Param())
+		// 	fmt.Println()
+		// }
+
+		return nil, err
+	}
+
 	content, err := CreateMcisGroupVm(nsId, mcisId, vmReq)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -2088,11 +2230,35 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	err = common.CheckString(vmRequest.Name)
+
+	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	err = validate.Struct(vmRequest)
 	if err != nil {
-		temp := &TbMcisInfo{}
-		common.CBLog.Error(err)
-		return temp, err
+
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return nil, err
+		}
+
+		// for _, err := range err.(validator.ValidationErrors) {
+
+		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
+		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
+		// 	fmt.Println(err.StructNamespace())
+		// 	fmt.Println(err.StructField())
+		// 	fmt.Println(err.Tag())
+		// 	fmt.Println(err.ActualTag())
+		// 	fmt.Println(err.Kind())
+		// 	fmt.Println(err.Type())
+		// 	fmt.Println(err.Value())
+		// 	fmt.Println(err.Param())
+		// 	fmt.Println()
+		// }
+
+		return nil, err
 	}
 
 	mcisTmp, err := GetMcisObject(nsId, mcisId)
@@ -2422,12 +2588,37 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	err = common.CheckString(req.Name)
+
+	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	err = validate.Struct(req)
 	if err != nil {
-		temp := &TbMcisInfo{}
-		common.CBLog.Error(err)
-		return temp, err
+
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return nil, err
+		}
+
+		// for _, err := range err.(validator.ValidationErrors) {
+
+		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
+		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
+		// 	fmt.Println(err.StructNamespace())
+		// 	fmt.Println(err.StructField())
+		// 	fmt.Println(err.Tag())
+		// 	fmt.Println(err.ActualTag())
+		// 	fmt.Println(err.Kind())
+		// 	fmt.Println(err.Type())
+		// 	fmt.Println(err.Value())
+		// 	fmt.Println(err.Param())
+		// 	fmt.Println()
+		// }
+
+		return nil, err
 	}
+
 	check, _ := CheckMcis(nsId, req.Name)
 	if check {
 		err := fmt.Errorf("The mcis " + req.Name + " already exists.")

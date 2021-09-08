@@ -117,13 +117,6 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 		return temp, err
 	}
 
-	// err = common.CheckString(u.Name)
-	// if err != nil {
-	// 	temp := TbImageInfo{}
-	// 	common.CBLog.Error(err)
-	// 	return temp, err
-	// }
-
 	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
 	err = validate.Struct(u)
 	if err != nil {

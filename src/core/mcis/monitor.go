@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	validator "github.com/go-playground/validator/v10"
 	"github.com/tidwall/gjson"
 
 	"fmt"
@@ -52,6 +53,29 @@ type MonAgentInstallReq struct {
 	UserName string `json:"userName,omitempty"`
 	SshKey   string `json:"sshKey,omitempty"`
 	CspType  string `json:"cspType,omitempty"`
+}
+
+func DFMonAgentInstallReqStructLevelValidation(sl validator.StructLevel) {
+
+	u := sl.Current().Interface().(MonAgentInstallReq)
+
+	err := common.CheckString(u.NsId)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.NsId, "nsId", "NsId", "NotObeyingNamingConvention", "")
+	}
+
+	err = common.CheckString(u.McisId)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.McisId, "mcisId", "McisId", "NotObeyingNamingConvention", "")
+	}
+
+	err = common.CheckString(u.VmId)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.VmId, "vmId", "VmId", "NotObeyingNamingConvention", "")
+	}
 }
 
 /*
