@@ -30,9 +30,9 @@ echo "####################################################################"
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	echo "[Parallel excution for all CSP regions]"
+	echo "[Parallel execution for all CSP regions]"
 else
-	echo "[Single excution for a CSP region]"
+	echo "[Single execution for a CSP region]"
 fi
 clean_mcis_sequence $CSP $REGION $POSTFIX $TestSetFile
 

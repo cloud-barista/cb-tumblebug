@@ -68,7 +68,7 @@ function test_sequence()
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-	echo "[Single excution for a CSP region]"
+	echo "[Single execution for a CSP region]"
 	test_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
 
 	echo "[Deploy CB-Dragonfly Docker]"
