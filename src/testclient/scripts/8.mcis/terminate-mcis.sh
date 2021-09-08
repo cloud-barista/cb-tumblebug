@@ -8,11 +8,11 @@ echo "####################################################################"
 
 source ../init.sh
 
-if [ "${INDEX}" == "0" ]; then
-	MCISID=${MCISPREFIX}-${POSTFIX}
-else
-	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-fi
+# if [ "${INDEX}" == "0" ]; then
+# 	MCISID=${MCISPREFIX}-${POSTFIX}
+# else
+# 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+# fi
 
 echo "${MCISID}"
 
