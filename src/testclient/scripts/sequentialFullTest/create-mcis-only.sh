@@ -73,7 +73,7 @@ NUMVM=${OPTION01:-1}
 
 
 if [ "${INDEX}" == "0" ]; then
-	echo "[Parallel excution for all CSP regions]"
+	echo "[Parallel execution for all CSP regions]"
 
 	INDEXX=${NumCSP}
 

@@ -131,7 +131,7 @@ source ../init.sh
 
 
 if [ "${INDEX}" == "0" ]; then
-	echo "[Parallel excution for all CSP regions]"
+	echo "[Parallel execution for all CSP regions]"
 
 	../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
@@ -155,7 +155,7 @@ if [ "${INDEX}" == "0" ]; then
 
 else
 
-	echo "[Single excution for a CSP region]"
+	echo "[Single execution for a CSP region]"
 
 	clean_sequence $CSP $REGION $POSTFIX $TestSetFile ${0##*/}
 

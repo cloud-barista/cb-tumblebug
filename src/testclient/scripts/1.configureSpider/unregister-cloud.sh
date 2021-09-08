@@ -35,7 +35,7 @@ function CallSpider() {
 	fi
 	
 	if [ "${INDEX}" == "0" ]; then
-        echo "[Parallel excution for all CSP regions]"
+        echo "[Parallel execution for all CSP regions]"
         INDEXX=${NumCSP}
         for ((cspi = 1; cspi <= INDEXX; cspi++)); do
             INDEXY=${NumRegion[$cspi]}
