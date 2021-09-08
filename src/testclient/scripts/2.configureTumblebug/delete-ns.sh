@@ -3,6 +3,7 @@
 echo "####################################################################"
 echo "## 0. Namespace: Delete (need input parameter: [-x namespace])"
 echo "####################################################################"
+
 source ../init.sh
 
 NSID=${OPTION01:-tb01}

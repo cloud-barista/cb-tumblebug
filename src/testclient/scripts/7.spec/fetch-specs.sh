@@ -1,34 +1,7 @@
 #!/bin/bash
 
-#function fetch_specs() {
-
-SECONDS=0
-
-TestSetFile=${4:-../testSet.env}
-
-FILE=$TestSetFile
-if [ ! -f "$FILE" ]; then
-	echo "$FILE does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
-echo "####################################################################"
-echo "## 7. spec: Fetch"
-echo "####################################################################"
-
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-if [ "$CSP" == '' ]; then #|| [ "$CSP" == "all" ]
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/fetchSpecs | jq '' #|| return 1
-
-else
-	source ../common-functions.sh
-	getCloudIndex $CSP
-
+function CallTB() {
+	echo "- Fetch specs in ${MCIRRegionName}"
 
 	resp=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/fetchSpecs -H 'Content-Type: application/json' -d @- <<EOF
@@ -38,12 +11,50 @@ else
 EOF
 	); echo ${resp} | jq ''
 	echo ""
+}
 
-fi
+SECONDS=0
 
-#}
+	echo "####################################################################"
+	echo "## 7. spec: Fetch"
+	echo "####################################################################"
+
+	source ../init.sh
+
+	if [ "${INDEX}" == "0" ]; then
+		echo "[Parallel excution for all CSP regions]"
+
+		INDEXX=${NumCSP}
+		for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+			echo $i
+			INDEXY=${NumRegion[$cspi]}
+			CSP=${CSPType[$cspi]}
+			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+				# INDEX=$(($INDEX+1))
+
+				echo $j
+				INDEX=$cspi
+				REGION=$cspj
+				echo $CSP
+				echo $REGION
+				echo ${RegionName[$cspi,$cspj]}
+				MCIRRegionName=${RegionName[$cspi,$cspj]}
+
+				CallTB
+
+			done
+
+		done
+		wait
+
+	else
+		echo ""
+		
+		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+
+		CallTB
+
+	fi
 
 source ../common-functions.sh
 printElapsed $@
-#fetch_specs
-

@@ -6,6 +6,8 @@ echo "####################################################################"
 
 source ../init.sh
 
+NSID=${OPTION01:-tb01}
+
 resp=$(
     curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns -H 'Content-Type: application/json' -d @- <<EOF
         {

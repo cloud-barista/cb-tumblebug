@@ -1,26 +1,7 @@
 #!/bin/bash
 
-#function lookup_spec_list() {
-
-
-	TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	
-	echo "####################################################################"
-	echo "## 7. spec: Lookup Spec List"
-	echo "####################################################################"
-
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
-
-	source ../common-functions.sh
-	getCloudIndex $CSP
+function CallTB() {
+	echo "- Lookup images in ${MCIRRegionName}"
 
 	resp=$(
         curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupImages -H 'Content-Type: application/json' -d @- <<EOF
@@ -30,6 +11,51 @@
 EOF
     ); echo ${resp} | jq ''
     echo ""
+}
+
+#function lookup_spec_list() {
+
+	echo "####################################################################"
+	echo "## 6. image: Lookup Image List"
+	echo "####################################################################"
+
+	source ../init.sh
+
+	if [ "${INDEX}" == "0" ]; then
+		echo "[Parallel excution for all CSP regions]"
+
+		INDEXX=${NumCSP}
+		for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+			echo $i
+			INDEXY=${NumRegion[$cspi]}
+			CSP=${CSPType[$cspi]}
+			for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+				# INDEX=$(($INDEX+1))
+
+				echo $j
+				INDEX=$cspi
+				REGION=$cspj
+				echo $CSP
+				echo $REGION
+				echo ${RegionName[$cspi,$cspj]}
+				MCIRRegionName=${RegionName[$cspi,$cspj]}
+
+				CallTB
+
+			done
+
+		done
+		wait
+
+	else
+		echo ""
+		
+		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+
+		CallTB
+
+	fi
+	
 #}
 
 #lookup_spec_list
