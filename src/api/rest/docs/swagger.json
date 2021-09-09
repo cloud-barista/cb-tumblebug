@@ -4901,6 +4901,12 @@
         },
         "mcir.TbSecurityGroupReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "firewallRules",
+                "name",
+                "vNetId"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"
@@ -5038,6 +5044,11 @@
         },
         "mcir.TbSpecReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "cspSpecName",
+                "name"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"
@@ -5105,6 +5116,10 @@
         },
         "mcir.TbSshKeyReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "name"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"
@@ -5169,6 +5184,10 @@
         },
         "mcir.TbVNetReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "name"
+            ],
             "properties": {
                 "cidrBlock": {
                     "type": "string"
@@ -5377,6 +5396,9 @@
         },
         "mcis.McisCmdReq": {
             "type": "object",
+            "required": [
+                "command"
+            ],
             "properties": {
                 "command": {
                     "type": "string",
@@ -5899,6 +5921,10 @@
         },
         "mcis.TbMcisReq": {
             "type": "object",
+            "required": [
+                "name",
+                "vm"
+            ],
             "properties": {
                 "description": {
                     "type": "string"
@@ -6106,6 +6132,15 @@
         },
         "mcis.TbVmReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "imageId",
+                "name",
+                "securityGroupIds",
+                "specId",
+                "sshKeyId",
+                "vNetId"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"

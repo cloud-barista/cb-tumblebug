@@ -4916,6 +4916,12 @@ var doc = `{
         },
         "mcir.TbSecurityGroupReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "firewallRules",
+                "name",
+                "vNetId"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"
@@ -5053,6 +5059,11 @@ var doc = `{
         },
         "mcir.TbSpecReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "cspSpecName",
+                "name"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"
@@ -5120,6 +5131,10 @@ var doc = `{
         },
         "mcir.TbSshKeyReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "name"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"
@@ -5184,6 +5199,10 @@ var doc = `{
         },
         "mcir.TbVNetReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "name"
+            ],
             "properties": {
                 "cidrBlock": {
                     "type": "string"
@@ -5392,6 +5411,9 @@ var doc = `{
         },
         "mcis.McisCmdReq": {
             "type": "object",
+            "required": [
+                "command"
+            ],
             "properties": {
                 "command": {
                     "type": "string",
@@ -5914,6 +5936,10 @@ var doc = `{
         },
         "mcis.TbMcisReq": {
             "type": "object",
+            "required": [
+                "name",
+                "vm"
+            ],
             "properties": {
                 "description": {
                     "type": "string"
@@ -6121,6 +6147,15 @@ var doc = `{
         },
         "mcis.TbVmReq": {
             "type": "object",
+            "required": [
+                "connectionName",
+                "imageId",
+                "name",
+                "securityGroupIds",
+                "specId",
+                "sshKeyId",
+                "vNetId"
+            ],
             "properties": {
                 "connectionName": {
                     "type": "string"

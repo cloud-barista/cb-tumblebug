@@ -490,6 +490,11 @@ definitions:
         type: string
       vNetId:
         type: string
+    required:
+    - connectionName
+    - firewallRules
+    - name
+    - vNetId
     type: object
   mcir.TbSpecInfo:
     properties:
@@ -577,6 +582,10 @@ definitions:
         type: string
       name:
         type: string
+    required:
+    - connectionName
+    - cspSpecName
+    - name
     type: object
   mcir.TbSshKeyInfo:
     properties:
@@ -619,6 +628,9 @@ definitions:
         type: string
       name:
         type: string
+    required:
+    - connectionName
+    - name
     type: object
   mcir.TbVNetInfo:
     properties:
@@ -667,6 +679,9 @@ definitions:
         items:
           $ref: '#/definitions/mcir.SpiderSubnetReqInfo'
         type: array
+    required:
+    - connectionName
+    - name
     type: object
   mcis.AgentInstallContent:
     properties:
@@ -800,6 +815,8 @@ definitions:
       userName:
         example: cb-user
         type: string
+    required:
+    - command
     type: object
   mcis.McisPolicyInfo:
     properties:
@@ -1181,6 +1198,9 @@ definitions:
         items:
           $ref: '#/definitions/mcis.TbVmReq'
         type: array
+    required:
+    - name
+    - vm
     type: object
   mcis.TbVmInfo:
     properties:
@@ -1333,6 +1353,14 @@ definitions:
         type: string
       vmUserPassword:
         type: string
+    required:
+    - connectionName
+    - imageId
+    - name
+    - securityGroupIds
+    - specId
+    - sshKeyId
+    - vNetId
     type: object
   mcis.TbVmStatusInfo:
     properties:

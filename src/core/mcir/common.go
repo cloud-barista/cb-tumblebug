@@ -47,10 +47,14 @@ func init() {
 		return name
 	})
 
-	// register validation for 'TbImageReq'
-	// NOTE: only have to register a non-pointer type for 'TbImageReq', validator
+	// register validation for 'Tb*Req'
+	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
 	// internally dereferences during it's type checks.
 	validate.RegisterStructValidation(TbImageReqStructLevelValidation, TbImageReq{})
+	validate.RegisterStructValidation(TbSecurityGroupReqStructLevelValidation, TbSecurityGroupReq{})
+	validate.RegisterStructValidation(TbSpecReqStructLevelValidation, TbSpecReq{})
+	validate.RegisterStructValidation(TbSshKeyReqStructLevelValidation, TbSshKeyReq{})
+	validate.RegisterStructValidation(TbVNetReqStructLevelValidation, TbVNetReq{})
 }
 
 // DelAllResources deletes all TB MCIR object of given resourceType
