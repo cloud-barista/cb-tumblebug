@@ -11,7 +11,7 @@ import (
 // ===== [ Constants and Variables ] =====
 
 const (
-	// ConfigVersion - version of config structs
+	// ConfigVersion is for version of config structs
 	ConfigVersion = 1
 )
 

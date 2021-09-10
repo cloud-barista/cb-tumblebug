@@ -21,7 +21,7 @@ var (
 
 // ===== [ Public Functions ] =====
 
-// UnaryServerInterceptor - authentication 을 처리하는 Unary 서버 인터셉터
+// UnaryServerInterceptor is to authentication 을 처리하는 Unary 서버 인터셉터
 func UnaryServerInterceptor(key string) grpc.UnaryServerInterceptor {
 	jwtKey = key
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -38,7 +38,7 @@ func UnaryServerInterceptor(key string) grpc.UnaryServerInterceptor {
 	}
 }
 
-// StreamServerInterceptor - authentication 을 처리하는 Stream 서버 인터셉터
+// StreamServerInterceptor is to authentication 을 처리하는 Stream 서버 인터셉터
 func StreamServerInterceptor(key string) grpc.StreamServerInterceptor {
 	jwtKey = key
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {

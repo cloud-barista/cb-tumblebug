@@ -16,7 +16,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateVNet - VNet 생성
+// CreateVNet is to VNet 생성
 func (s *MCIRService) CreateVNet(ctx context.Context, req *pb.TbVNetCreateRequest) (*pb.TbVNetInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -45,7 +45,7 @@ func (s *MCIRService) CreateVNet(ctx context.Context, req *pb.TbVNetCreateReques
 	return resp, nil
 }
 
-// ListVNet - VNet 목록
+// ListVNet is to VNet 목록
 func (s *MCIRService) ListVNet(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListTbVNetInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -67,7 +67,7 @@ func (s *MCIRService) ListVNet(ctx context.Context, req *pb.ResourceAllQryReques
 	return resp, nil
 }
 
-// ListVNetId
+// ListVNetId is to list vNet IDs
 func (s *MCIRService) ListVNetId(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListIdResponse, error) {
 	logger := logger.NewLogger()
 
@@ -89,7 +89,7 @@ func (s *MCIRService) ListVNetId(ctx context.Context, req *pb.ResourceAllQryRequ
 	return resp, nil
 }
 
-// GetVNet - VNet 조회
+// GetVNet is to VNet 조회
 func (s *MCIRService) GetVNet(ctx context.Context, req *pb.ResourceQryRequest) (*pb.TbVNetInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -111,7 +111,7 @@ func (s *MCIRService) GetVNet(ctx context.Context, req *pb.ResourceQryRequest) (
 	return resp, nil
 }
 
-// DeleteVNet - VNet 삭제
+// DeleteVNet is to VNet 삭제
 func (s *MCIRService) DeleteVNet(ctx context.Context, req *pb.ResourceQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -126,7 +126,7 @@ func (s *MCIRService) DeleteVNet(ctx context.Context, req *pb.ResourceQryRequest
 	return resp, nil
 }
 
-// DeleteAllVNet - VNet 전체 삭제
+// DeleteAllVNet is to VNet 전체 삭제
 func (s *MCIRService) DeleteAllVNet(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 

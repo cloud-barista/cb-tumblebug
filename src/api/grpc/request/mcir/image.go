@@ -257,7 +257,7 @@ func (r *MCIRRequest) SearchImage() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// ListLookupImage - LookupImages
+// ListLookupImage is to LookupImages
 func (r *MCIRRequest) ListLookupImage() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -284,7 +284,7 @@ func (r *MCIRRequest) ListLookupImage() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetLookupImage - LookupImage
+// GetLookupImage is to LookupImage
 func (r *MCIRRequest) GetLookupImage() (string, error) {
 	// Check input data
 	if r.InData == "" {

@@ -17,7 +17,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateMcis - MCIS 생성
+// CreateMcis is to MCIS 생성
 func (s *MCISService) CreateMcis(ctx context.Context, req *pb.TbMcisCreateRequest) (*pb.TbMcisInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -46,7 +46,7 @@ func (s *MCISService) CreateMcis(ctx context.Context, req *pb.TbMcisCreateReques
 	return resp, nil
 }
 
-// ListMcis - MCIS 목록
+// ListMcis is to MCIS 목록
 func (s *MCISService) ListMcis(ctx context.Context, req *pb.TbMcisAllQryRequest) (*pb.ListTbMcisInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -90,7 +90,7 @@ func (s *MCISService) ListMcisId(ctx context.Context, req *pb.TbMcisAllQryReques
 	return resp, nil
 }
 
-// ControlMcis - MCIS 제어
+// ControlMcis is to MCIS 제어
 func (s *MCISService) ControlMcis(ctx context.Context, req *pb.TbMcisActionRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -105,7 +105,7 @@ func (s *MCISService) ControlMcis(ctx context.Context, req *pb.TbMcisActionReque
 	return resp, nil
 }
 
-// ListMcisStatus - MCIS 상태 목록
+// ListMcisStatus is to MCIS 상태 목록
 func (s *MCISService) ListMcisStatus(ctx context.Context, req *pb.TbMcisAllQryRequest) (*pb.ListTbMcisStatusInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -127,7 +127,7 @@ func (s *MCISService) ListMcisStatus(ctx context.Context, req *pb.TbMcisAllQryRe
 	return resp, nil
 }
 
-// GetMcisStatus - MCIS 상태 조회
+// GetMcisStatus is to MCIS 상태 조회
 func (s *MCISService) GetMcisStatus(ctx context.Context, req *pb.TbMcisQryRequest) (*pb.TbMcisStatusInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -149,7 +149,7 @@ func (s *MCISService) GetMcisStatus(ctx context.Context, req *pb.TbMcisQryReques
 	return resp, nil
 }
 
-// GetMcisInfo - MCIS 정보 조회
+// GetMcisInfo is to MCIS 정보 조회
 func (s *MCISService) GetMcisInfo(ctx context.Context, req *pb.TbMcisQryRequest) (*pb.TbMcisInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -193,7 +193,7 @@ func (s *MCISService) ListMcisVmId(ctx context.Context, req *pb.TbMcisQryRequest
 	return resp, nil
 }
 
-// DeleteMcis - MCIS 삭제
+// DeleteMcis is to MCIS 삭제
 func (s *MCISService) DeleteMcis(ctx context.Context, req *pb.TbMcisQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -208,7 +208,7 @@ func (s *MCISService) DeleteMcis(ctx context.Context, req *pb.TbMcisQryRequest) 
 	return resp, nil
 }
 
-// DeleteAllMcis - MCIS 전체 삭제
+// DeleteAllMcis is to MCIS 전체 삭제
 func (s *MCISService) DeleteAllMcis(ctx context.Context, req *pb.TbMcisAllQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -223,7 +223,7 @@ func (s *MCISService) DeleteAllMcis(ctx context.Context, req *pb.TbMcisAllQryReq
 	return resp, nil
 }
 
-// CreateMcisVM - MCIS VM 생성
+// CreateMcisVM is to MCIS VM 생성
 func (s *MCISService) CreateMcisVM(ctx context.Context, req *pb.TbVmCreateRequest) (*pb.TbVmInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -252,7 +252,7 @@ func (s *MCISService) CreateMcisVM(ctx context.Context, req *pb.TbVmCreateReques
 	return resp, nil
 }
 
-// CreateMcisVMGroup - MCIS VM 그룹 생성
+// CreateMcisVMGroup is to MCIS VM 그룹 생성
 func (s *MCISService) CreateMcisVMGroup(ctx context.Context, req *pb.TbVmGroupCreateRequest) (*pb.TbMcisInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -281,7 +281,7 @@ func (s *MCISService) CreateMcisVMGroup(ctx context.Context, req *pb.TbVmGroupCr
 	return resp, nil
 }
 
-// ControlMcisVM - MCIS VM 제어
+// ControlMcisVM is to MCIS VM 제어
 func (s *MCISService) ControlMcisVM(ctx context.Context, req *pb.TbVmActionRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -296,7 +296,7 @@ func (s *MCISService) ControlMcisVM(ctx context.Context, req *pb.TbVmActionReque
 	return resp, nil
 }
 
-// GetMcisVMStatus - MCIS VM 상태 조회
+// GetMcisVMStatus is to MCIS VM 상태 조회
 func (s *MCISService) GetMcisVMStatus(ctx context.Context, req *pb.TbVmQryRequest) (*pb.TbVmStatusInfoesponse, error) {
 	logger := logger.NewLogger()
 
@@ -318,7 +318,7 @@ func (s *MCISService) GetMcisVMStatus(ctx context.Context, req *pb.TbVmQryReques
 	return resp, nil
 }
 
-// GetMcisVMInfo - MCIS VM 정보 조회
+// GetMcisVMInfo is to MCIS VM 정보 조회
 func (s *MCISService) GetMcisVMInfo(ctx context.Context, req *pb.TbVmQryRequest) (*pb.TbVmInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -340,7 +340,7 @@ func (s *MCISService) GetMcisVMInfo(ctx context.Context, req *pb.TbVmQryRequest)
 	return resp, nil
 }
 
-// DeleteMcisVM - MCIS VM 삭제
+// DeleteMcisVM is to MCIS VM 삭제
 func (s *MCISService) DeleteMcisVM(ctx context.Context, req *pb.TbVmQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -355,7 +355,7 @@ func (s *MCISService) DeleteMcisVM(ctx context.Context, req *pb.TbVmQryRequest) 
 	return resp, nil
 }
 
-// RecommendMcis - MCIS 추천
+// RecommendMcis is to MCIS 추천
 func (s *MCISService) RecommendMcis(ctx context.Context, req *pb.McisRecommendCreateRequest) (*pb.McisRecommendInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -389,7 +389,7 @@ func (s *MCISService) RecommendMcis(ctx context.Context, req *pb.McisRecommendCr
 	return resp, nil
 }
 
-// CmdMcis - MCIS 명령 실행
+// CmdMcis is to MCIS 명령 실행
 func (s *MCISService) CmdMcis(ctx context.Context, req *pb.McisCmdCreateRequest) (*pb.ListCmdMcisResponse, error) {
 	logger := logger.NewLogger()
 
@@ -422,7 +422,7 @@ func (s *MCISService) CmdMcis(ctx context.Context, req *pb.McisCmdCreateRequest)
 	return resp, nil
 }
 
-// CmdMcisVm - MCIS VM 명령 실행
+// CmdMcisVm is to MCIS VM 명령 실행
 func (s *MCISService) CmdMcisVm(ctx context.Context, req *pb.McisCmdVmCreateRequest) (*pb.StringResponse, error) {
 	logger := logger.NewLogger()
 
@@ -444,7 +444,7 @@ func (s *MCISService) CmdMcisVm(ctx context.Context, req *pb.McisCmdVmCreateRequ
 	return resp, nil
 }
 
-// InstallAgentToMcis - MCIS Agent 설치
+// InstallAgentToMcis is to MCIS Agent 설치
 func (s *MCISService) InstallAgentToMcis(ctx context.Context, req *pb.McisCmdCreateRequest) (*pb.ListAgentInstallResponse, error) {
 	logger := logger.NewLogger()
 
@@ -472,7 +472,7 @@ func (s *MCISService) InstallAgentToMcis(ctx context.Context, req *pb.McisCmdCre
 	return &grpcObj, nil
 }
 
-// GetBenchmark - Benchmark 조회
+// GetBenchmark is to Benchmark 조회
 func (s *MCISService) GetBenchmark(ctx context.Context, req *pb.BmQryRequest) (*pb.ListBenchmarkInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -500,7 +500,7 @@ func (s *MCISService) GetBenchmark(ctx context.Context, req *pb.BmQryRequest) (*
 	return &grpcObj, nil
 }
 
-// GetAllBenchmark - Benchmark 목록
+// GetAllBenchmark is to Benchmark 목록
 func (s *MCISService) GetAllBenchmark(ctx context.Context, req *pb.BmQryAllRequest) (*pb.ListBenchmarkInfoResponse, error) {
 	logger := logger.NewLogger()
 

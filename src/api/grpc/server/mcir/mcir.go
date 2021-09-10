@@ -4,7 +4,7 @@ package mcir
 
 // ===== [ Types ] =====
 
-// MCIRService - MCIR 서비스 구현
+// MCIRService is to MCIR 서비스 구현
 type MCIRService struct {
 }
 

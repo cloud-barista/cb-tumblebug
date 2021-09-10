@@ -14,7 +14,7 @@ import (
 
 // ===== [ Private Functions ] =====
 
-// main - Entrypoint
+// main is for Entrypoint
 func main() {
 	rootCmd := cmd.NewRootCmd()
 	if err := rootCmd.Execute(); err != nil {

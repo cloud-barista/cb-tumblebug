@@ -16,7 +16,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// RecommendVM - MCIS VM 추천
+// RecommendVM is to MCIS VM 추천
 func (s *MCISService) RecommendVM(ctx context.Context, req *pb.McisRecommendVmCreateRequest) (*pb.ListTbSpecInfoResponse, error) {
 	logger := logger.NewLogger()
 

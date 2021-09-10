@@ -16,7 +16,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// InstallMonitorAgentToMcis - MCIS Monitor Agent 설치
+// InstallMonitorAgentToMcis is to MCIS Monitor Agent 설치
 func (s *MCISService) InstallMonitorAgentToMcis(ctx context.Context, req *pb.McisCmdCreateRequest) (*pb.ListAgentInstallResponse, error) {
 	logger := logger.NewLogger()
 
@@ -44,7 +44,7 @@ func (s *MCISService) InstallMonitorAgentToMcis(ctx context.Context, req *pb.Mci
 	return &grpcObj, nil
 }
 
-// GetMonitorData - MCIS Monitor 정보 조회
+// GetMonitorData is to MCIS Monitor 정보 조회
 func (s *MCISService) GetMonitorData(ctx context.Context, req *pb.MonitorQryRequest) (*pb.MonitorResultSimpleResponse, error) {
 	logger := logger.NewLogger()
 

@@ -17,7 +17,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// ConvGrpcStatusErr - GRPC 상태 코드 에러로 변환
+// ConvGrpcStatusErr is to GRPC 상태 코드 에러로 변환
 func ConvGrpcStatusErr(err error, tag string, method string) error {
 	logger := logger.NewLogger()
 
@@ -33,7 +33,7 @@ func ConvGrpcStatusErr(err error, tag string, method string) error {
 	return nil
 }
 
-// NewGrpcStatusErr - GRPC 상태 코드 에러 생성
+// NewGrpcStatusErr is to GRPC 상태 코드 에러 생성
 func NewGrpcStatusErr(msg string, tag string, method string) error {
 	logger := logger.NewLogger()
 

@@ -14,7 +14,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CheckResource - Check whether Resource exists or not
+// CheckResource is to Check whether Resource exists or not
 func (r *MCIRRequest) CheckResource() (string, error) {
 	// Check input data
 	if r.InData == "" {

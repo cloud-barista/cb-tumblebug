@@ -4,7 +4,7 @@ package mcis
 
 // ===== [ Types ] =====
 
-// MCISService - MCIS 서비스 구현
+// MCISService is to MCIS 서비스 구현
 type MCISService struct {
 }
 

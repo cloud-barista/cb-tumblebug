@@ -20,7 +20,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// UnaryServerInterceptor - rpc unary receive 정보를 기록하는 서버 인터셉터
+// UnaryServerInterceptor is to rpc unary receive 정보를 기록하는 서버 인터셉터
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		startTime := time.Now()
@@ -39,7 +39,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-// StreamServerInterceptor - rpc stream receive 정보를 기록하는 서버 인터셉터
+// StreamServerInterceptor is to rpc stream receive 정보를 기록하는 서버 인터셉터
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		startTime := time.Now()

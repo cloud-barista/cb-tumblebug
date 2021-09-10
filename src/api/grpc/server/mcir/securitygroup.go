@@ -15,7 +15,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateSecurityGroup - Security Group 생성
+// CreateSecurityGroup is to Security Group 생성
 func (s *MCIRService) CreateSecurityGroup(ctx context.Context, req *pb.TbSecurityGroupCreateRequest) (*pb.TbSecurityGroupInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -44,7 +44,7 @@ func (s *MCIRService) CreateSecurityGroup(ctx context.Context, req *pb.TbSecurit
 	return resp, nil
 }
 
-// ListSecurityGroup - Security Group 목록
+// ListSecurityGroup is to Security Group 목록
 func (s *MCIRService) ListSecurityGroup(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListTbSecurityGroupInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -66,7 +66,7 @@ func (s *MCIRService) ListSecurityGroup(ctx context.Context, req *pb.ResourceAll
 	return resp, nil
 }
 
-// ListSecurityGroupId
+// ListSecurityGroupId is to list security group IDs
 func (s *MCIRService) ListSecurityGroupId(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.ListIdResponse, error) {
 	logger := logger.NewLogger()
 
@@ -88,7 +88,7 @@ func (s *MCIRService) ListSecurityGroupId(ctx context.Context, req *pb.ResourceA
 	return resp, nil
 }
 
-// GetSecurityGroup - Security Group 조회
+// GetSecurityGroup is to Security Group 조회
 func (s *MCIRService) GetSecurityGroup(ctx context.Context, req *pb.ResourceQryRequest) (*pb.TbSecurityGroupInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -110,7 +110,7 @@ func (s *MCIRService) GetSecurityGroup(ctx context.Context, req *pb.ResourceQryR
 	return resp, nil
 }
 
-// DeleteSecurityGroup - Security Group 삭제
+// DeleteSecurityGroup is to Security Group 삭제
 func (s *MCIRService) DeleteSecurityGroup(ctx context.Context, req *pb.ResourceQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -125,7 +125,7 @@ func (s *MCIRService) DeleteSecurityGroup(ctx context.Context, req *pb.ResourceQ
 	return resp, nil
 }
 
-// DeleteAllSecurityGroup - Security Group 전체 삭제
+// DeleteAllSecurityGroup is to Security Group 전체 삭제
 func (s *MCIRService) DeleteAllSecurityGroup(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
