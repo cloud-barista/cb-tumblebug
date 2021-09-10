@@ -19,7 +19,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// UnaryClientInterceptor - rpc unary call 정보를 기록하는 클라이언트 인터셉터
+// UnaryClientInterceptor is to rpc unary call 정보를 기록하는 클라이언트 인터셉터
 func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		startTime := time.Now()
@@ -33,7 +33,7 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 	}
 }
 
-// StreamClientInterceptor - rpc stream call 정보를 기록하는 클라이언트 인터셉터
+// StreamClientInterceptor is to rpc stream call 정보를 기록하는 클라이언트 인터셉터
 func StreamClientInterceptor() grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		startTime := time.Now()

@@ -21,7 +21,7 @@ import (
 
 // ===== [ Types ] =====
 
-// NSApi - NS API 구조 정의
+// NSApi is for NS API 구조 정의
 type NSApi struct {
 	gConf        *config.GrpcConfig
 	conn         *grpc.ClientConn
@@ -32,7 +32,7 @@ type NSApi struct {
 	outType      string
 }
 
-// NsReq - Namespace 정보 생성 요청 구조 정의
+// NsReq is for Namespace 정보 생성 요청 구조 정의
 // type NsReq struct {
 // 	Name        string `yaml:"name" json:"name"`
 // 	Description string `yaml:"description" json:"description"`
@@ -40,7 +40,7 @@ type NSApi struct {
 
 // ===== [ Implementations ] =====
 
-// SetServerAddr - Tumblebug 서버 주소 설정
+// SetServerAddr is to Tumblebug 서버 주소 설정
 func (ns *NSApi) SetServerAddr(addr string) error {
 	if addr == "" {
 		return errors.New("parameter is empty")
@@ -50,12 +50,12 @@ func (ns *NSApi) SetServerAddr(addr string) error {
 	return nil
 }
 
-// GetServerAddr - Tumblebug 서버 주소 값 조회
+// GetServerAddr is to Tumblebug 서버 주소 값 조회
 func (ns *NSApi) GetServerAddr() (string, error) {
 	return ns.gConf.GSL.TumblebugCli.ServerAddr, nil
 }
 
-// SetTLSCA - TLS CA 설정
+// SetTLSCA is to TLS CA 설정
 func (ns *NSApi) SetTLSCA(tlsCAFile string) error {
 	if tlsCAFile == "" {
 		return errors.New("parameter is empty")
@@ -69,7 +69,7 @@ func (ns *NSApi) SetTLSCA(tlsCAFile string) error {
 	return nil
 }
 
-// GetTLSCA - TLS CA 값 조회
+// GetTLSCA is to TLS CA 값 조회
 func (ns *NSApi) GetTLSCA() (string, error) {
 	if ns.gConf.GSL.TumblebugCli.TLS == nil {
 		return "", nil
@@ -78,18 +78,18 @@ func (ns *NSApi) GetTLSCA() (string, error) {
 	return ns.gConf.GSL.TumblebugCli.TLS.TLSCA, nil
 }
 
-// SetTimeout - Timeout 설정
+// SetTimeout is to Timeout 설정
 func (ns *NSApi) SetTimeout(timeout time.Duration) error {
 	ns.gConf.GSL.TumblebugCli.Timeout = timeout
 	return nil
 }
 
-// GetTimeout - Timeout 값 조회
+// GetTimeout is to Timeout 값 조회
 func (ns *NSApi) GetTimeout() (time.Duration, error) {
 	return ns.gConf.GSL.TumblebugCli.Timeout, nil
 }
 
-// SetJWTToken - JWT 인증 토큰 설정
+// SetJWTToken is to JWT 인증 토큰 설정
 func (ns *NSApi) SetJWTToken(token string) error {
 	if token == "" {
 		return errors.New("parameter is empty")
@@ -107,7 +107,7 @@ func (ns *NSApi) SetJWTToken(token string) error {
 	return nil
 }
 
-// GetJWTToken - JWT 인증 토큰 값 조회
+// GetJWTToken is to JWT 인증 토큰 값 조회
 func (ns *NSApi) GetJWTToken() (string, error) {
 	if ns.gConf.GSL.TumblebugCli.Interceptors == nil {
 		return "", nil
@@ -119,7 +119,7 @@ func (ns *NSApi) GetJWTToken() (string, error) {
 	return ns.gConf.GSL.TumblebugCli.Interceptors.AuthJWT.JWTToken, nil
 }
 
-// SetConfigPath - 환경설정 파일 설정
+// SetConfigPath is to 환경설정 파일 설정
 func (ns *NSApi) SetConfigPath(configFile string) error {
 	logger := logger.NewLogger()
 
@@ -182,7 +182,7 @@ func (ns *NSApi) SetConfigPath(configFile string) error {
 	return nil
 }
 
-// Open - 연결 설정
+// Open is to 연결 설정
 func (ns *NSApi) Open() error {
 
 	tumblebugcli := ns.gConf.GSL.TumblebugCli
@@ -208,7 +208,7 @@ func (ns *NSApi) Open() error {
 	return nil
 }
 
-// Close - 연결 종료
+// Close is to 연결 종료
 func (ns *NSApi) Close() {
 	if ns.conn != nil {
 		ns.conn.Close()
@@ -223,7 +223,7 @@ func (ns *NSApi) Close() {
 	ns.requestNS = nil
 }
 
-// SetInType - 입력 문서 타입 설정 (json/yaml)
+// SetInType is to 입력 문서 타입 설정 (json/yaml)
 func (ns *NSApi) SetInType(in string) error {
 	if in == "json" {
 		ns.inType = in
@@ -240,12 +240,12 @@ func (ns *NSApi) SetInType(in string) error {
 	return nil
 }
 
-// GetInType - 입력 문서 타입 값 조회
+// GetInType is to 입력 문서 타입 값 조회
 func (ns *NSApi) GetInType() (string, error) {
 	return ns.inType, nil
 }
 
-// SetOutType - 출력 문서 타입 설정 (json/yaml)
+// SetOutType is to 출력 문서 타입 설정 (json/yaml)
 func (ns *NSApi) SetOutType(out string) error {
 	if out == "json" {
 		ns.outType = out
@@ -262,12 +262,12 @@ func (ns *NSApi) SetOutType(out string) error {
 	return nil
 }
 
-// GetOutType - 출력 문서 타입 값 조회
+// GetOutType is to 출력 문서 타입 값 조회
 func (ns *NSApi) GetOutType() (string, error) {
 	return ns.outType, nil
 }
 
-// CreateNS - Namespace 생성
+// CreateNS is to Namespace 생성
 func (ns *NSApi) CreateNS(doc string) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -277,7 +277,7 @@ func (ns *NSApi) CreateNS(doc string) (string, error) {
 	return ns.requestNS.CreateNS()
 }
 
-// CreateNSByParam - Namespace 생성
+// CreateNSByParam is to Namespace 생성
 func (ns *NSApi) CreateNSByParam(req *core_common.NsReq) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -296,7 +296,7 @@ func (ns *NSApi) CreateNSByParam(req *core_common.NsReq) (string, error) {
 	return result, err
 }
 
-// ListNS - Namespace 목록
+// ListNS is to Namespace 목록
 func (ns *NSApi) ListNS() (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -305,7 +305,7 @@ func (ns *NSApi) ListNS() (string, error) {
 	return ns.requestNS.ListNS()
 }
 
-// ListNSId
+// ListNSId is list Namespace IDs
 func (ns *NSApi) ListNSId() (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -314,7 +314,7 @@ func (ns *NSApi) ListNSId() (string, error) {
 	return ns.requestNS.ListNSId()
 }
 
-// GetNS - Namespace 조회
+// GetNS is to Namespace 조회
 func (ns *NSApi) GetNS(doc string) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -324,7 +324,7 @@ func (ns *NSApi) GetNS(doc string) (string, error) {
 	return ns.requestNS.GetNS()
 }
 
-// GetNSByParam - Namespace 조회
+// GetNSByParam is to Namespace 조회
 func (ns *NSApi) GetNSByParam(nameSpaceID string) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -339,7 +339,7 @@ func (ns *NSApi) GetNSByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
-// DeleteNS - Namespace 삭제
+// DeleteNS is to Namespace 삭제
 func (ns *NSApi) DeleteNS(doc string) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -349,7 +349,7 @@ func (ns *NSApi) DeleteNS(doc string) (string, error) {
 	return ns.requestNS.DeleteNS()
 }
 
-// DeleteNSByParam - Namespace 삭제
+// DeleteNSByParam is to Namespace 삭제
 func (ns *NSApi) DeleteNSByParam(nameSpaceID string) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -364,7 +364,7 @@ func (ns *NSApi) DeleteNSByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
-// DeleteAllNS - Namespace 전체 삭제
+// DeleteAllNS is to Namespace 전체 삭제
 func (ns *NSApi) DeleteAllNS() (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -373,7 +373,7 @@ func (ns *NSApi) DeleteAllNS() (string, error) {
 	return ns.requestNS.DeleteAllNS()
 }
 
-// CheckNS - Namespace 체크
+// CheckNS is to Namespace 체크
 func (ns *NSApi) CheckNS(doc string) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -383,7 +383,7 @@ func (ns *NSApi) CheckNS(doc string) (string, error) {
 	return ns.requestNS.CheckNS()
 }
 
-// CheckNSByParam - Namespace 체크
+// CheckNSByParam is to Namespace 체크
 func (ns *NSApi) CheckNSByParam(nameSpaceID string) (string, error) {
 	if ns.requestNS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -402,7 +402,7 @@ func (ns *NSApi) CheckNSByParam(nameSpaceID string) (string, error) {
 
 // ===== [ Public Functions ] =====
 
-// NewNSManager - NS API 객체 생성
+// NewNSManager is to NS API 객체 생성
 func NewNSManager() (ns *NSApi) {
 
 	ns = &NSApi{}

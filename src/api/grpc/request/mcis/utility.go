@@ -14,7 +14,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CheckMcis - Check whether MCIS exists or not
+// CheckMcis is to Check whether MCIS exists or not
 func (r *MCISRequest) CheckMcis() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -41,7 +41,7 @@ func (r *MCISRequest) CheckMcis() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// CheckVm - Check whether MCIS VM exists or not
+// CheckVm is to Check whether MCIS VM exists or not
 func (r *MCISRequest) CheckVm() (string, error) {
 	// Check input data
 	if r.InData == "" {

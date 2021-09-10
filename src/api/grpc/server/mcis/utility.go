@@ -15,7 +15,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CheckMcis - MCIS 체크
+// CheckMcis is to MCIS 체크
 func (s *MCISService) CheckMcis(ctx context.Context, req *pb.TbMcisQryRequest) (*pb.ExistsResponse, error) {
 	logger := logger.NewLogger()
 
@@ -30,7 +30,7 @@ func (s *MCISService) CheckMcis(ctx context.Context, req *pb.TbMcisQryRequest) (
 	return resp, nil
 }
 
-// CheckVm - MCIS VM 체크
+// CheckVm is to MCIS VM 체크
 func (s *MCISService) CheckVm(ctx context.Context, req *pb.TbVmQryRequest) (*pb.ExistsResponse, error) {
 	logger := logger.NewLogger()
 

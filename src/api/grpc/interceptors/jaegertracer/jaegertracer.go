@@ -11,7 +11,7 @@ import (
 	grpcconfig "github.com/cloud-barista/cb-tumblebug/src/api/grpc/config"
 )
 
-// InitJaeger - Jaeger Tracer 초기화
+// InitJaeger is to Jaeger Tracer 초기화
 func InitJaeger(jcConf *grpcconfig.JaegerClientConfig) (opentracing.Tracer, io.Closer) {
 	cfg := &config.Configuration{
 		Sampler: &config.SamplerConfig{

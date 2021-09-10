@@ -16,7 +16,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateNS - Namespace 생성
+// CreateNS is to Namespace 생성
 func (s *NSService) CreateNS(ctx context.Context, req *pb.NSCreateRequest) (*pb.NSInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -45,7 +45,7 @@ func (s *NSService) CreateNS(ctx context.Context, req *pb.NSCreateRequest) (*pb.
 	return resp, nil
 }
 
-// ListNS - Namespace 목록
+// ListNS is to Namespace 목록
 func (s *NSService) ListNS(ctx context.Context, req *pb.Empty) (*pb.ListNSInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -89,7 +89,7 @@ func (s *NSService) ListNSId(ctx context.Context, req *pb.Empty) (*pb.ListIdResp
 	return resp, nil
 }
 
-// GetNS - Namespace 조회
+// GetNS is to Namespace 조회
 func (s *NSService) GetNS(ctx context.Context, req *pb.NSQryRequest) (*pb.NSInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -111,7 +111,7 @@ func (s *NSService) GetNS(ctx context.Context, req *pb.NSQryRequest) (*pb.NSInfo
 	return resp, nil
 }
 
-// DeleteNS - Namespace 삭제
+// DeleteNS is to Namespace 삭제
 func (s *NSService) DeleteNS(ctx context.Context, req *pb.NSQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -126,7 +126,7 @@ func (s *NSService) DeleteNS(ctx context.Context, req *pb.NSQryRequest) (*pb.Mes
 	return resp, nil
 }
 
-// DeleteAllNS - Namespace 전체 삭제
+// DeleteAllNS is to Namespace 전체 삭제
 func (s *NSService) DeleteAllNS(ctx context.Context, req *pb.Empty) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -141,7 +141,7 @@ func (s *NSService) DeleteAllNS(ctx context.Context, req *pb.Empty) (*pb.Message
 	return resp, nil
 }
 
-// CheckNS - Namespace 체크
+// CheckNS is to Namespace 체크
 func (s *NSService) CheckNS(ctx context.Context, req *pb.NSQryRequest) (*pb.ExistsResponse, error) {
 	logger := logger.NewLogger()
 

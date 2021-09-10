@@ -31,7 +31,7 @@ import (
 
 // ===== [ Types ] =====
 
-// CBServer - CB-GRPC에서 사용하는 grpc 서버를 위한 Wrapper 구조
+// CBServer is for CB-GRPC에서 사용하는 grpc 서버를 위한 Wrapper 구조
 type CBServer struct {
 	Server *grpc.Server
 }
@@ -42,7 +42,7 @@ type CBServer struct {
 
 // ===== [ Public Functions ] =====
 
-// NewCBServer - 초기화된 grpc 서버의 인스턴스 생성
+// NewCBServer is to 초기화된 grpc 서버의 인스턴스 생성
 func NewCBServer(gConf *config.GrpcServerConfig) (*CBServer, io.Closer, error) {
 
 	var (

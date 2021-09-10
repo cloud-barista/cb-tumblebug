@@ -10,7 +10,7 @@ import (
 
 // ===== [ Types ] =====
 
-// MCISRequest - MCIS 서비스 요청 구현
+// MCISRequest is for MCIS 서비스 요청 구현
 type MCISRequest struct {
 	Client  pb.MCISClient
 	Timeout time.Duration

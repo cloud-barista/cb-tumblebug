@@ -14,7 +14,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateConfig - Config 생성
+// CreateConfig is to Config 생성
 func (r *UtilityRequest) CreateConfig() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -41,7 +41,7 @@ func (r *UtilityRequest) CreateConfig() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// ListConfig - Config 목록
+// ListConfig is to Config 목록
 func (r *UtilityRequest) ListConfig() (string, error) {
 
 	// Request to server
@@ -57,7 +57,7 @@ func (r *UtilityRequest) ListConfig() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetConfig - Config 조회
+// GetConfig is to Config 조회
 func (r *UtilityRequest) GetConfig() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -111,7 +111,7 @@ func (r *UtilityRequest) InitConfig() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// InitAllConfig - Config 전체 삭제
+// InitAllConfig is to Config 전체 삭제
 func (r *UtilityRequest) InitAllConfig() (string, error) {
 
 	// Request to server

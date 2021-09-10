@@ -14,7 +14,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateNS - Namespace 생성
+// CreateNS is to Namespace 생성
 func (r *NSRequest) CreateNS() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -41,7 +41,7 @@ func (r *NSRequest) CreateNS() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// ListNS - Namespace 목록
+// ListNS is to Namespace 목록
 func (r *NSRequest) ListNS() (string, error) {
 	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
@@ -73,7 +73,7 @@ func (r *NSRequest) ListNSId() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetNS - Namespace 조회
+// GetNS is to Namespace 조회
 func (r *NSRequest) GetNS() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -100,7 +100,7 @@ func (r *NSRequest) GetNS() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// DeleteNS - Namespace 삭제
+// DeleteNS is to Namespace 삭제
 func (r *NSRequest) DeleteNS() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -127,7 +127,7 @@ func (r *NSRequest) DeleteNS() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// DeleteAllNS - Namespace 전체 삭제
+// DeleteAllNS is to Namespace 전체 삭제
 func (r *NSRequest) DeleteAllNS() (string, error) {
 	// Request to server
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
@@ -143,7 +143,7 @@ func (r *NSRequest) DeleteAllNS() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// CheckNS - Namespace 체크
+// CheckNS is to Namespace 체크
 func (r *NSRequest) CheckNS() (string, error) {
 	// Check input data
 	if r.InData == "" {

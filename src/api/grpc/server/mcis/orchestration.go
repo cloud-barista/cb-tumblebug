@@ -16,7 +16,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CreateMcisPolicy - Policy 생성
+// CreateMcisPolicy is to Policy 생성
 func (s *MCISService) CreateMcisPolicy(ctx context.Context, req *pb.McisPolicyCreateRequest) (*pb.McisPolicyInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -45,7 +45,7 @@ func (s *MCISService) CreateMcisPolicy(ctx context.Context, req *pb.McisPolicyCr
 	return resp, nil
 }
 
-// ListMcisPolicy - Policy 목록
+// ListMcisPolicy is to Policy 목록
 func (s *MCISService) ListMcisPolicy(ctx context.Context, req *pb.McisPolicyAllQryRequest) (*pb.ListMcisPolicyInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -67,7 +67,7 @@ func (s *MCISService) ListMcisPolicy(ctx context.Context, req *pb.McisPolicyAllQ
 	return resp, nil
 }
 
-// GetMcisPolicy - Policy 조회
+// GetMcisPolicy is to Policy 조회
 func (s *MCISService) GetMcisPolicy(ctx context.Context, req *pb.McisPolicyQryRequest) (*pb.McisPolicyInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -93,7 +93,7 @@ func (s *MCISService) GetMcisPolicy(ctx context.Context, req *pb.McisPolicyQryRe
 	return resp, nil
 }
 
-// DeleteMcisPolicy - Policy 삭제
+// DeleteMcisPolicy is to Policy 삭제
 func (s *MCISService) DeleteMcisPolicy(ctx context.Context, req *pb.McisPolicyQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 
@@ -108,7 +108,7 @@ func (s *MCISService) DeleteMcisPolicy(ctx context.Context, req *pb.McisPolicyQr
 	return resp, nil
 }
 
-// DeleteAllMcisPolicy - Policy 전체 삭제
+// DeleteAllMcisPolicy is to Policy 전체 삭제
 func (s *MCISService) DeleteAllMcisPolicy(ctx context.Context, req *pb.McisPolicyAllQryRequest) (*pb.MessageResponse, error) {
 	logger := logger.NewLogger()
 

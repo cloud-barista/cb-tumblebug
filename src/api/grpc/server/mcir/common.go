@@ -16,7 +16,7 @@ import (
 
 // ===== [ Implementations ] =====
 
-// CheckResource - Resource 체크
+// CheckResource is to Resource 체크
 func (s *MCIRService) CheckResource(ctx context.Context, req *pb.ResourceQryRequest) (*pb.ExistsResponse, error) {
 	logger := logger.NewLogger()
 
@@ -32,7 +32,7 @@ func (s *MCIRService) CheckResource(ctx context.Context, req *pb.ResourceQryRequ
 	return resp, nil
 }
 
-// ListLookupSpec - Spec 목록
+// ListLookupSpec is to Spec 목록
 func (s *MCIRService) ListLookupSpec(ctx context.Context, req *pb.LookupSpecListQryRequest) (*pb.ListSpiderSpecInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -53,7 +53,7 @@ func (s *MCIRService) ListLookupSpec(ctx context.Context, req *pb.LookupSpecList
 	return &grpcObj, nil
 }
 
-// GetLookupSpec - Spec 조회
+// GetLookupSpec is to Spec 조회
 func (s *MCIRService) GetLookupSpec(ctx context.Context, req *pb.LookupSpecQryRequest) (*pb.SpiderSpecInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -75,7 +75,7 @@ func (s *MCIRService) GetLookupSpec(ctx context.Context, req *pb.LookupSpecQryRe
 	return resp, nil
 }
 
-// ListLookupImage - Image 목록
+// ListLookupImage is to Image 목록
 func (s *MCIRService) ListLookupImage(ctx context.Context, req *pb.LookupImageListQryRequest) (*pb.ListSpiderImageInfoResponse, error) {
 	logger := logger.NewLogger()
 
@@ -96,7 +96,7 @@ func (s *MCIRService) ListLookupImage(ctx context.Context, req *pb.LookupImageLi
 	return &grpcObj, nil
 }
 
-// GetLookupImage - Image 조회
+// GetLookupImage is to Image 조회
 func (s *MCIRService) GetLookupImage(ctx context.Context, req *pb.LookupImageQryRequest) (*pb.SpiderImageInfoResponse, error) {
 	logger := logger.NewLogger()
 
