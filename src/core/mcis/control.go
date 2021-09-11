@@ -91,16 +91,16 @@ const milkywayPort string = ":1324/milkyway/"
 
 const labelAutoGen string = "AutoGen"
 
+// sshDefaultUserName is array for temporal constants
 var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 
-// Structs for REST API
-
-// 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
+// SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMInfo
 type SpiderVMReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderVMInfo
 }
 
+// SpiderVMInfo is struct from CB-Spider for VM information
 type SpiderVMInfo struct { // Spider
 	// Fields for request
 	Name               string
@@ -135,11 +135,13 @@ type SpiderVMInfo struct { // Spider
 	KeyValueList      []common.KeyValue
 }
 
-type RegionInfo struct { // Spider
+// RegionInfo is struct from CB-Spider for region information
+type RegionInfo struct { 
 	Region string
 	Zone   string
 }
 
+// TbMcisReq is sturct for requirements to create MCIS
 type TbMcisReq struct {
 	Name string `json:"name" validate:"required"`
 
@@ -155,6 +157,7 @@ type TbMcisReq struct {
 	Vm []TbVmReq `json:"vm" validate:"required"`
 }
 
+// TbMcisReqStructLevelValidation is func to validate fields in TbMcisReqStruct
 func TbMcisReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbMcisReq)
@@ -166,6 +169,7 @@ func TbMcisReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbMcisInfo is struct for MCIS info
 type TbMcisInfo struct {
 	Id           string `json:"id"`
 	Name         string `json:"name"`
@@ -184,7 +188,7 @@ type TbMcisInfo struct {
 	Vm            []TbVmInfo `json:"vm"`
 }
 
-// struct TbVmReq is to get requirements to create a new server instance.
+// TbVmReq is struct to get requirements to create a new server instance
 type TbVmReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
 	Name string `json:"name" validate:"required"`
@@ -207,6 +211,7 @@ type TbVmReq struct {
 	VmUserPassword   string   `json:"vmUserPassword"`
 }
 
+// TbVmReqStructLevelValidation is func to validate fields in TbVmReqStruct
 func TbVmReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbVmReq)
@@ -218,7 +223,7 @@ func TbVmReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// struct TbVmGroupInfo is to define an object that includes homogeneous VMs.
+// TbVmGroupInfo is struct to define an object that includes homogeneous VMs
 type TbVmGroupInfo struct {
 	Id          string   `json:"id"`
 	Name        string   `json:"name"`
@@ -226,7 +231,7 @@ type TbVmGroupInfo struct {
 	VmGroupSize string   `json:"vmGroupSize"`
 }
 
-// struct TbVmGroupInfo is to define a server instance object
+// TbVmInfo is struct to define a server instance object
 type TbVmInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
@@ -275,6 +280,7 @@ type TbVmInfo struct {
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
 
+// GeoLocation is struct for geographical location
 type GeoLocation struct {
 	Latitude     string `json:"latitude"`
 	Longitude    string `json:"longitude"`
@@ -283,7 +289,7 @@ type GeoLocation struct {
 	NativeRegion string `json:"nativeRegion"`
 }
 
-// struct McisStatusInfo is to define simple information of MCIS with updated status of all VMs
+// McisStatusInfo is struct to define simple information of MCIS with updated status of all VMs
 type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
@@ -329,12 +335,13 @@ type TbVmStatusInfo struct {
 	Location GeoLocation `json:"location"`
 }
 
-// McisCmdReq is remote command struct
+// McisCmdReq is struct for remote command 
 type McisCmdReq struct {
 	UserName string `json:"userName" example:"cb-user" default:""`
 	Command  string `json:"command" validate:"required" example:"sudo apt-get install ..."`
 }
 
+// TbMcisCmdReqStructLevelValidation is func to validate fields in McisCmdReq
 func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(McisCmdReq)
@@ -346,6 +353,7 @@ func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// McisRecommendReq is struct for McisRecommendReq
 type McisRecommendReq struct {
 	VmReq          []TbVmRecommendReq `json:"vmReq"`
 	PlacementAlgo  string             `json:"placementAlgo"`
@@ -353,6 +361,7 @@ type McisRecommendReq struct {
 	MaxResultNum   string             `json:"maxResultNum"`
 }
 
+// TbVmRecommendReq is struct for TbVmRecommendReq
 type TbVmRecommendReq struct {
 	RequestName  string `json:"requestName"`
 	MaxResultNum string `json:"maxResultNum"`
@@ -366,11 +375,13 @@ type TbVmRecommendReq struct {
 	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
+// TbVmPriority is struct for TbVmPriority
 type TbVmPriority struct {
 	Priority string          `json:"priority"`
 	VmSpec   mcir.TbSpecInfo `json:"vmSpec"`
 }
 
+// TbVmRecommendInfo is struct for TbVmRecommendInfo
 type TbVmRecommendInfo struct {
 	VmReq          TbVmRecommendReq  `json:"vmReq"`
 	VmPriority     []TbVmPriority    `json:"vmPriority"`
@@ -378,6 +389,7 @@ type TbVmRecommendInfo struct {
 	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
+// VerifySshUserName is func to verify SSH username
 func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
 
 	// verify if vm is running with a public ip.
@@ -479,6 +491,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	return theUserName, privateKey, nil
 }
 
+// SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
 	McisId string `json:"mcisId"`
 	VmId   string `json:"vmId"`
@@ -500,6 +513,7 @@ type AgentInstallContent struct {
 	Result string `json:"result"`
 }
 
+// InstallAgentToMcis is func to install milkyway agents in MCIS
 func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
 	err := common.CheckString(nsId)
@@ -595,6 +609,7 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 
 }
 
+// SpecBenchmarkInfo is struct for SpecBenchmarkInfo
 type SpecBenchmarkInfo struct {
 	SpecId     string `json:"specid"`
 	Cpus       string `json:"cpus"`
@@ -609,6 +624,7 @@ type SpecBenchmarkInfo struct {
 	EvaledTime string `json:"evaledTime"`
 }
 
+// BenchmarkInfo is struct for BenchmarkInfo
 type BenchmarkInfo struct {
 	Result      string          `json:"result"`
 	Unit        string          `json:"unit"`
@@ -618,19 +634,23 @@ type BenchmarkInfo struct {
 	ResultArray []BenchmarkInfo `json:"resultarray"` // struct-element cycle ?
 }
 
+// BenchmarkInfoArray is struct for BenchmarkInfoArray
 type BenchmarkInfoArray struct {
 	ResultArray []BenchmarkInfo `json:"resultarray"`
 }
 
+// BenchmarkReq is struct for BenchmarkReq
 type BenchmarkReq struct {
 	Host string `json:"host"`
 	Spec string `json:"spec"`
 }
 
+// MultihostBenchmarkReq is struct for MultihostBenchmarkReq
 type MultihostBenchmarkReq struct {
 	Multihost []BenchmarkReq `json:"multihost"`
 }
 
+// CallMilkyway is func to call milkyway agents
 func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId string, vmId string, vmIp string, action string, option string, results *BenchmarkInfoArray) {
 	defer wg.Done() //goroutine sync done
 
@@ -710,6 +730,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	results.ResultArray = append(results.ResultArray, resultTmp)
 }
 
+// CoreGetAllBenchmark is func to get alls Benchmarks
 func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
 
 	var err error
@@ -868,6 +889,7 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 	return &content, nil
 }
 
+// CoreGetBenchmark is func to get Benchmark
 func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*BenchmarkInfoArray, error) {
 
 	var err error
@@ -922,6 +944,7 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 	return &content, nil
 }
 
+// BenchmarkAction is func to action Benchmark
 func BenchmarkAction(nsId string, mcisId string, action string, option string) (BenchmarkInfoArray, error) {
 
 	var results BenchmarkInfoArray
@@ -1058,24 +1081,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 
 // MCIS Information Managemenet
 
-/*
-func AddVmInfoToMcis(nsId string, mcisId string, vmInfoData TbVmInfo) {
-
-	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-	val, _ := json.Marshal(vmInfoData)
-	err := common.CBStore.Put(string(key), string(val))
-	if err != nil {
-		common.CBLog.Error(err)
-	}
-	//fmt.Println("===========================")
-	//vmkeyValue, _ := common.CBStore.Get(string(key))
-	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
-	//fmt.Println("===========================")
-
-}
-*/
-
-// UpdateMcisInfo func Update MCIS Info (without VM info in MCIS)
+// UpdateMcisInfo is func to update MCIS Info (without VM info in MCIS)
 func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 
 	mcisInfoData.Vm = nil
@@ -1104,6 +1110,7 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 	//fmt.Println("===========================")
 }
 
+// UpdateVmInfo is func to update VM Info 
 func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 
@@ -1130,6 +1137,7 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	//fmt.Println("===========================")
 }
 
+// ListMcisId is func to list MCIS ID 
 func ListMcisId(nsId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
@@ -1165,6 +1173,7 @@ func ListMcisId(nsId string) ([]string, error) {
 	return mcisList, nil
 }
 
+// ListVmId is func to list VM IDs
 func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
@@ -1209,17 +1218,12 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 			}
 		}
 	}
-	/*
-		for _, v := range vmList {
-			fmt.Println("<" + v + ">")
-		}
-		fmt.Println("===============================================")
-	*/
+
 	return vmList, nil
 
 }
 
-// func ListVmGroupId returns list of VmGroups in a given MCIS.
+// ListVmGroupId is func to return list of VmGroups in a given MCIS
 func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
@@ -1256,6 +1260,7 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 	return vmGroupList, nil
 }
 
+// DelMcis is func to delete MCIS object
 func DelMcis(nsId string, mcisId string, option string) error {
 
 	err := common.CheckString(nsId)
@@ -1372,6 +1377,7 @@ func DelMcis(nsId string, mcisId string, option string) error {
 	return nil
 }
 
+// DelMcisVm is func to delete VM object
 func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 
 	err := common.CheckString(nsId)
@@ -1437,7 +1443,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 	return nil
 }
 
-//// Info manage for MCIS recommendation
+// GetRecommendList is func to get recommendation list
 func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
 
 	fmt.Println("GetRecommendList")
@@ -1493,6 +1499,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 // MCIS Control
 
+// HandleMcisAction is func to handle actions to MCIS
 func HandleMcisAction(nsId string, mcisId string, action string) (string, error) {
 
 	err := common.CheckString(nsId)
@@ -1624,7 +1631,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 	}
 }
 
-// GetMcisInfo func returns MCIS information with the current status update
+// GetMcisInfo is func to return MCIS information with the current status update
 func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -1683,6 +1690,7 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 	return &mcisObj, nil
 }
 
+// CoreGetAllMcis is func to get all MCIS objects
 func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -1779,6 +1787,7 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 	return Mcis, nil
 }
 
+// CoreDelAllMcis is func to delete all MCIS objects
 func CoreDelAllMcis(nsId string, option string) (string, error) {
 
 	err := common.CheckString(nsId)
@@ -1812,6 +1821,7 @@ func CoreDelAllMcis(nsId string, option string) (string, error) {
 	return "All MCISs has been deleted", nil
 }
 
+// CorePostMcisRecommend is func to post MCIS recommendation
 func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -1860,6 +1870,7 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 	return VmRecommend, nil
 }
 
+// CorePostCmdMcisVm is func to post CmdMcisVm
 func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
 
 	err := common.CheckString(nsId)
@@ -1946,6 +1957,7 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	}
 }
 
+// CorePostCmdMcis is func to post CmdMcis
 func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
@@ -2064,6 +2076,7 @@ func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResul
 	return resultArray, nil
 }
 
+// CorePostMcisVm is func to post (create) McisVm
 func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -2155,7 +2168,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	return vmInfoData, nil
 }
 
-// CorePostMcisGroupVm function is a wrapper for CreateMcisGroupVm
+// CorePostMcisGroupVm is func for a wrapper for CreateMcisGroupVm
 func CorePostMcisGroupVm(nsId string, mcisId string, vmReq *TbVmReq) (*TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -2210,6 +2223,7 @@ func CorePostMcisGroupVm(nsId string, mcisId string, vmReq *TbVmReq) (*TbMcisInf
 	return content, nil
 }
 
+// CreateMcisGroupVm is func to create MCIS groupVM
 func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -2397,6 +2411,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 
 }
 
+// CoreGetMcisVmAction is func to Get McisVm Action
 func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string) (string, error) {
 
 	err := common.CheckString(nsId)
@@ -2461,6 +2476,7 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 	}
 }
 
+// CoreGetMcisVmStatus is func to Get McisVm Status
 func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -2513,6 +2529,7 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 	return &vmStatusResponse, nil
 }
 
+// CoreGetMcisVmInfo is func to Get McisVm Info
 func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -2574,7 +2591,7 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 	return &vmTmp, nil
 }
 
-// CreateMcis function create MCIS obeject and deploy requested VMs.
+// CreateMcis is func to create MCIS obeject and deploy requested VMs
 func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -2810,6 +2827,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 	return &mcisTmp, nil
 }
 
+// AddVmToMcis is func to add VM to MCIS
 func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	fmt.Printf("\n[AddVmToMcis]\n")
 	//goroutin
@@ -2895,6 +2913,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 }
 
+// CreateVm is func to create VM
 func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	fmt.Printf("\n\n[CreateVm(vmInfoData *TbVmInfo)]\n\n")
@@ -2936,15 +2955,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	}
 
-	//prettyJSON, err := json.MarshalIndent(vmInfoData, "", "    ")
-	//if err != nil {
-	//log.Fatal("Failed to generate json")
-	//}
-	//fmt.Printf("%s\n", string(prettyJSON))
-
-	//common.PrintJsonPretty(vmInfoData)
-
-	//fmt.Printf("%+v\n", vmInfoData.CspVmId)
 
 	var tempSpiderVMInfo SpiderVMInfo
 
@@ -3245,6 +3255,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	return nil
 }
 
+// ControlMcis is func to control MCIS
 func ControlMcis(nsId string, mcisId string, action string) error {
 
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -3277,6 +3288,7 @@ func ControlMcis(nsId string, mcisId string, action string) error {
 
 }
 
+// CheckAllowedTransition is func to check status transition is acceptable
 func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 
 	fmt.Println("[CheckAllowedTransition]" + mcisId + " to " + action)
@@ -3313,6 +3325,7 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 	return nil
 }
 
+// ControlMcisAsync is func to control MCIS async
 func ControlMcisAsync(nsId string, mcisId string, action string) error {
 
 	checkError := CheckAllowedTransition(nsId, mcisId, action)
@@ -3409,15 +3422,19 @@ func ControlMcisAsync(nsId string, mcisId string, action string) error {
 
 }
 
+// ControlVmResult is struct for result of VM control
 type ControlVmResult struct {
 	VmId   string `json:"vmId"`
 	Status string `json:"Status"`
 	Error  error  `json:"Error"`
 }
+
+// ControlVmResultWrapper is struct for array of results of VM control
 type ControlVmResultWrapper struct {
 	ResultArray []ControlVmResult `json:"resultarray"`
 }
 
+// ControlVmAsync is func to control VM async
 func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, action string, results *ControlVmResultWrapper) error {
 	defer wg.Done() //goroutine sync done
 
@@ -3651,6 +3668,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 }
 
+// ControlVm is func to control VM
 func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	var content struct {
@@ -3842,7 +3860,7 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	}
 }
 
-// GetMcisObject func retrieve MCIS object from database (no current status update)
+// GetMcisObject is func to retrieve MCIS object from database (no current status update)
 func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	fmt.Println("[GetMcisObject]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
@@ -3872,6 +3890,7 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	return mcisTmp, nil
 }
 
+// GetMcisStatus is func to Get Mcis Status
 func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -4023,6 +4042,7 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 }
 
+// GetMcisStatusAll is func to get MCIS status all
 func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
 	mcisStatuslist := []McisStatusInfo{}
@@ -4046,6 +4066,7 @@ func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
 }
 
+// GetVmObject is func to get VM object
 func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	//fmt.Println("[GetVmObject] mcisId: " + mcisId + ", vmId: " + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
@@ -4059,6 +4080,7 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	return vmTmp, nil
 }
 
+// GetVmStatusAsync is func to get VM status async
 func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, results *McisStatusInfo) error {
 	defer wg.Done() //goroutine sync done
 
@@ -4073,6 +4095,7 @@ func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId strin
 	return nil
 }
 
+// GetVmStatus is func to get VM status
 func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
 	// defer func() {
@@ -4366,6 +4389,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	return vmStatusTmp, nil
 }
 
+// UpdateVmPublicIp is func to update VM public IP
 func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 
 	vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mcisId, vmInfoData.Id)
@@ -4381,6 +4405,7 @@ func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 	return nil
 }
 
+// GetVmCurrentPublicIp is func to get VM public IP
 func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
 	fmt.Println("[GetVmStatus]" + vmId)
@@ -4501,6 +4526,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 }
 
+// GetVmSshKey is func to get VM SShKey
 func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, string) {
 
 	var content struct {
@@ -4531,7 +4557,7 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 	return keyContent.Username, keyContent.VerifiedUsername, keyContent.PrivateKey
 }
 
-// func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo)
+// UpdateVmSshKey is func to update VM SShKey
 func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName string) error {
 
 	var content struct {
@@ -4559,6 +4585,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	return nil
 }
 
+// GetVmIp is func to get VM IP
 func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 
 	var content struct {
@@ -4581,6 +4608,7 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 	return content.PublicIP, content.SSHPort
 }
 
+// GetVmSpecId is func to get VM SpecId
 func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 
 	var content struct {
@@ -4599,6 +4627,7 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 	return content.SpecId
 }
 
+// GetVmListByLabel is func to list VM by label
 func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error) {
 
 	fmt.Println("[GetVmListByLabel]" + mcisId + " by " + label)
@@ -4632,6 +4661,7 @@ func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error
 
 }
 
+// GetVmTemplate is func to get VM template
 func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 
 	fmt.Println("[GetVmTemplate]" + mcisId + " by algo: " + algo)
@@ -4672,7 +4702,7 @@ func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 
 }
 
-// GetCloudLocation. (need error handling)
+// GetCloudLocation is to get location of clouds (need error handling)
 func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 
 	location := GeoLocation{}
