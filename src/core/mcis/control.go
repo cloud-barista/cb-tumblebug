@@ -89,14 +89,9 @@ const (
 
 const milkywayPort string = ":1324/milkyway/"
 
-const (
-	sshDefaultUserName01 string = "cb-user"
-	sshDefaultUserName02 string = "ubuntu"
-	sshDefaultUserName03 string = "root"
-	sshDefaultUserName04 string = "ec2-user"
-)
-
 const labelAutoGen string = "AutoGen"
+
+var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 
 // Structs for REST API
 
@@ -403,10 +398,10 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	userNames := []string{
 		userName,
 		givenUserName,
-		sshDefaultUserName01,
-		sshDefaultUserName02,
-		sshDefaultUserName03,
-		sshDefaultUserName04,
+		sshDefaultUserName[0],
+		sshDefaultUserName[1],
+		sshDefaultUserName[2],
+		sshDefaultUserName[3],
 	}
 
 	theUserName := ""
