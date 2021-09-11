@@ -89,9 +89,9 @@ const (
 
 const milkywayPort string = ":1324/milkyway/"
 
-var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
-
 const labelAutoGen string = "AutoGen"
+
+var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 
 // Structs for REST API
 
