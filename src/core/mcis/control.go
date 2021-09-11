@@ -344,13 +344,13 @@ type McisCmdReq struct {
 // TbMcisCmdReqStructLevelValidation is func to validate fields in McisCmdReq
 func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
 
-	u := sl.Current().Interface().(McisCmdReq)
+	// u := sl.Current().Interface().(McisCmdReq)
 
-	err := common.CheckString(u.Command)
-	if err != nil {
-		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.Command, "command", "Command", "NotObeyingNamingConvention", "")
-	}
+	// err := common.CheckString(u.Command)
+	// if err != nil {
+	// 	// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+	// 	sl.ReportError(u.Command, "command", "Command", "NotObeyingNamingConvention", "")
+	// }
 }
 
 // McisRecommendReq is struct for McisRecommendReq
