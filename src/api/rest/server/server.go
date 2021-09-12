@@ -147,8 +147,6 @@ func ApiServer() {
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
 	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 
-	g.GET("/:nsId/mcis/:mcisId/testListVmId", rest_mcis.RestTestListVmId) // for debug
-
 	g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommend)
 
 	g.POST("/:nsId/testRecommendVm", rest_mcis.RestRecommendVm)
