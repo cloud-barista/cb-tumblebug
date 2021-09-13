@@ -147,8 +147,8 @@ type RestGetAllMcisStatusResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param option query string false "Option" Enums(id)
-// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMcisResponse,[ID]=common.IdList} "Different return structures by the given option param"
+// @Param option query string false "Option" Enums(id, simple, status)
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMcisResponse,[SIMPLE]=RestGetAllMcisResponse,[ID]=common.IdList,[STATUS]=RestGetAllMcisStatusResponse} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis [get]
@@ -159,6 +159,7 @@ func RestGetAllMcis(c echo.Context) error {
 	fmt.Println("[Get MCIS List requested with option: " + option)
 
 	if option == "id" {
+		// return MCIS IDs
 		content := common.IdList{}
 		var err error
 		content.IdList, err = mcis.ListMcisId(nsId)
@@ -169,6 +170,7 @@ func RestGetAllMcis(c echo.Context) error {
 
 		return c.JSON(http.StatusOK, &content)
 	} else if option == "status" {
+		// return MCIS Status objects (diffent with MCIS objects)
 		result, err := mcis.GetMcisStatusAll(nsId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
@@ -178,11 +180,20 @@ func RestGetAllMcis(c echo.Context) error {
 		content.Mcis = result
 		common.PrintJsonPretty(content)
 		return c.JSON(http.StatusOK, &content)
+	} else if option == "simple" {
+		// MCIS in simple (without VM information)
+		result, err := mcis.CoreGetAllMcis(nsId, option)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+		content := RestGetAllMcisResponse{}
+		content.Mcis = result
+		common.PrintJsonPretty(content)
+		return c.JSON(http.StatusOK, &content)
 	} else {
-		// mcis in detail (with status information)
-		detail := "status"
-
-		result, err := mcis.CoreGetAllMcis(nsId, detail)
+		// MCIS in detail (with status information)
+		result, err := mcis.CoreGetAllMcis(nsId, "status")
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -192,6 +203,7 @@ func RestGetAllMcis(c echo.Context) error {
 		common.PrintJsonPretty(content)
 		return c.JSON(http.StatusOK, &content)
 	}
+
 }
 
 /* function RestPutMcis not yet implemented
