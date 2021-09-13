@@ -62,9 +62,10 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 ## 목차
 
 1. [CB-Tumblebug 실행 및 개발 환경](#cb-tumblebug-실행-및-개발-환경)
-2. [CB-Tumblebug 실행 방법](#cb-tumblebug-실행-방법)
-3. [CB-Tumblebug 소스 빌드 및 실행 방법 상세](#cb-tumblebug-소스-빌드-및-실행-방법-상세)
-4. [CB-Tumblebug 기능 사용 방법](#cb-tumblebug-기능-사용-방법)
+2. [CB-Tumblebug 기여 방법](#cb-tumblebug-기여-방법)
+3. [CB-Tumblebug 실행 방법](#cb-tumblebug-실행-방법)
+4. [CB-Tumblebug 소스 빌드 및 실행 방법 상세](#cb-tumblebug-소스-빌드-및-실행-방법-상세)
+5. [CB-Tumblebug 기능 사용 방법](#cb-tumblebug-기능-사용-방법)
 
 ***
 ***
@@ -72,6 +73,30 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 ## CB-Tumblebug 실행 및 개발 환경
 - Linux (추천: Ubuntu v18.04)
 - Go (추천: v1.16)
+
+***
+***
+
+## CB-Tumblebug 기여 방법
+
+CB-Tumblebug welcomes improvements from all contributors, new and experienced!
+
+### (1) 기여의 종류
+
+- Issue 오픈
+  - Bug report, Enhancement request, Feature request, ...
+- PR (Pull-Request) 오픈
+  - Documentation, Source code, ...
+  
+### (2) 기여 가이드
+
+- Overview
+  - [Cloud-Barista Contribution Overview](https://github.com/cloud-barista/docs/blob/master/CONTRIBUTING.md#how-to-contribute)
+  - [Cloud-Barista Code of Conduct](https://github.com/cloud-barista/docs/blob/master/contributing/CODE_OF_CONDUCT.md)
+- In detail
+  - [Open and update a PR](https://github.com/cloud-barista/docs/blob/master/contributing/how_to_open_a_pull_request-ko.md)
+  - [Test requirement for developers](https://github.com/cloud-barista/cb-tumblebug/wiki/Basic-testing-guide-before-a-contribution)
+  - [Coding convention for developers](https://github.com/cloud-barista/cb-tumblebug/wiki/Coding-Convention)
 
 ***
 ***
