@@ -136,7 +136,7 @@ type SpiderVMInfo struct { // Spider
 }
 
 // RegionInfo is struct from CB-Spider for region information
-type RegionInfo struct { 
+type RegionInfo struct {
 	Region string
 	Zone   string
 }
@@ -335,7 +335,7 @@ type TbVmStatusInfo struct {
 	Location GeoLocation `json:"location"`
 }
 
-// McisCmdReq is struct for remote command 
+// McisCmdReq is struct for remote command
 type McisCmdReq struct {
 	UserName string `json:"userName" example:"cb-user" default:""`
 	Command  string `json:"command" validate:"required" example:"sudo apt-get install ..."`
@@ -1110,7 +1110,7 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 	//fmt.Println("===========================")
 }
 
-// UpdateVmInfo is func to update VM Info 
+// UpdateVmInfo is func to update VM Info
 func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 
@@ -1137,7 +1137,7 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	//fmt.Println("===========================")
 }
 
-// ListMcisId is func to list MCIS ID 
+// ListMcisId is func to list MCIS ID
 func ListMcisId(nsId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
@@ -1731,7 +1731,7 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 		mcisId := v
 		mcisTmp.Id = mcisId
 
-		if option == "status" {
+		if option == "status" || option == "simple" {
 			//get current mcis status
 			mcisStatus, err := GetMcisStatus(nsId, mcisId)
 			if err != nil {
@@ -1744,44 +1744,45 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 			mcisTmp.Status = ""
 		}
 
-		vmList, err := ListVmId(nsId, mcisId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return nil, err
-		}
-
-		for _, v1 := range vmList {
-			vmKey := common.GenMcisKey(nsId, mcisId, v1)
-			//fmt.Println(vmKey)
-			vmKeyValue, _ := common.CBStore.Get(vmKey)
-			if vmKeyValue == nil {
-				//mapA := map[string]string{"message": "Cannot find " + key}
-				//return c.JSON(http.StatusOK, &mapA)
-				return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
+		if option != "simple" {
+			vmList, err := ListVmId(nsId, mcisId)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
 			}
-			//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-			//vmTmp := vmOverview{}
-			vmTmp := TbVmInfo{}
-			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-			vmTmp.Id = v1
 
-			if option == "status" {
-				//get current vm status
-				vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v1)
-				if err != nil {
-					common.CBLog.Error(err)
+			for _, v1 := range vmList {
+				vmKey := common.GenMcisKey(nsId, mcisId, v1)
+				//fmt.Println(vmKey)
+				vmKeyValue, _ := common.CBStore.Get(vmKey)
+				if vmKeyValue == nil {
+					//mapA := map[string]string{"message": "Cannot find " + key}
+					//return c.JSON(http.StatusOK, &mapA)
+					return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
 				}
-				vmTmp.Status = vmStatusInfoTmp.Status
-			} else {
-				//Set current vm status with NullStr
-				vmTmp.Status = ""
-			}
+				//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+				//vmTmp := vmOverview{}
+				vmTmp := TbVmInfo{}
+				json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+				vmTmp.Id = v1
 
-			mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
+				if option == "status" {
+					//get current vm status
+					vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v1)
+					if err != nil {
+						common.CBLog.Error(err)
+					}
+					vmTmp.Status = vmStatusInfoTmp.Status
+				} else {
+					//Set current vm status with NullStr
+					vmTmp.Status = ""
+				}
+
+				mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
+			}
 		}
 
 		Mcis = append(Mcis, mcisTmp)
-
 	}
 
 	return Mcis, nil
@@ -2954,7 +2955,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	default:
 
 	}
-
 
 	var tempSpiderVMInfo SpiderVMInfo
 
