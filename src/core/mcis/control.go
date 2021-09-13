@@ -1744,6 +1744,7 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 			mcisTmp.Status = ""
 		}
 
+		// The cases with id, status, or others. except simple
 		if option != "simple" {
 			vmList, err := ListVmId(nsId, mcisId)
 			if err != nil {
