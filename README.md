@@ -95,6 +95,11 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   - [Cloud-Barista Code of Conduct](https://github.com/cloud-barista/docs/blob/master/contributing/CODE_OF_CONDUCT.md)
 - In detail
   - [Open and update a PR](https://github.com/cloud-barista/docs/blob/master/contributing/how_to_open_a_pull_request-ko.md)
+    - **Be careful!** 
+      - Contributors should not push files related to their personal credencials (e.g., credentials.conf) to remote repository.
+      - The credential file for CSPs (`src/testclient/scripts/credentials.conf`) is in the [.gitignore](https://github.com/cloud-barista/cb-tumblebug/blob/ed250835a1357784afd4c857d6bd56e0d78cd219/.gitignore#L36) condition.
+      - So, `credentials.conf` will not be staged for a commit.
+      - Anyway, please be careful.
   - [Test requirement for developers](https://github.com/cloud-barista/cb-tumblebug/wiki/Basic-testing-guide-before-a-contribution)
   - [Coding convention for developers](https://github.com/cloud-barista/cb-tumblebug/wiki/Coding-Convention)
 
@@ -270,6 +275,11 @@ cb-operator/src$ ./operator
      - 각 CSP 설정 항목으로 이동 [`# AWS (Total: 21 Regions)`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L44) 
      - `NumRegion[$IndexAWS]=2` 에서 구성하고 싶은 리전의 수를 지정 (예시에서는 2로 지정)
      - 리전 리스트의 라인 순서를 변경하여 원하는 리전으로 셋팅 (`NumRegion[$IndexAWS]=2` 인 경우 가장 위에 나열된 2개의 리전이 선택)
+   - **Be aware!** 
+     - Be aware that creating VMs on public CSPs such as AWS, GCP, Azure, etc. may be billed.
+     - With the default setting of [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env), TestClouds (`TestCloud01`, `TestCloud02`, `TestCloud03`) will be used to create mock VMs.
+     - `TestCloud01`, `TestCloud02`, `TestCloud03` are not real CSPs. It is used for testing purpose. (not support SSH into VM)
+     - Anyway, please be aware cloud usage cost when you use public CSPs.
 
 #### 개별 제어 시험
 - 제어하고 싶은 리소스 오브젝트에 대해, 해당 디렉토리로 이동하여 필요한 시험 수행
@@ -306,6 +316,10 @@ cb-operator/src$ ./operator
     - `./create-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행
   - 제거 테스트 (생성에서 활용한 입력 파라미터로 삭제 필요)
     - `./clean-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 제거 수행
+    - **Be aware!** 
+      - If you created MCIS (VMs) for testing in public clouds, the VMs may be charged.
+      - You need to termiate MCIS by using `clean-all` to avoid unexpected billing.
+      - Anyway, please be aware cloud usage cost when you use public CSPs.
 
 <details>
 <summary>입출력 예시 보기</summary>
