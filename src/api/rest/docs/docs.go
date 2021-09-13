@@ -1267,7 +1267,9 @@ var doc = `{
                     },
                     {
                         "enum": [
-                            "id"
+                            "id",
+                            "simple",
+                            "status"
                         ],
                         "type": "string",
                         "description": "Option",
@@ -1291,6 +1293,12 @@ var doc = `{
                                         },
                                         "[ID]": {
                                             "$ref": "#/definitions/common.IdList"
+                                        },
+                                        "[SIMPLE]": {
+                                            "$ref": "#/definitions/mcis.RestGetAllMcisResponse"
+                                        },
+                                        "[STATUS]": {
+                                            "$ref": "#/definitions/mcis.RestGetAllMcisStatusResponse"
                                         }
                                     }
                                 }
@@ -5692,6 +5700,17 @@ var doc = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbMcisInfo"
+                    }
+                }
+            }
+        },
+        "mcis.RestGetAllMcisStatusResponse": {
+            "type": "object",
+            "properties": {
+                "mcis": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.McisStatusInfo"
                     }
                 }
             }

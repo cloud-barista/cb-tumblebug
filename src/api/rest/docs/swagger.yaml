@@ -1004,6 +1004,13 @@ definitions:
           $ref: '#/definitions/mcis.TbMcisInfo'
         type: array
     type: object
+  mcis.RestGetAllMcisStatusResponse:
+    properties:
+      mcis:
+        items:
+          $ref: '#/definitions/mcis.McisStatusInfo'
+        type: array
+    type: object
   mcis.RestGetBenchmarkRequest:
     properties:
       host:
@@ -2321,6 +2328,8 @@ paths:
       - description: Option
         enum:
         - id
+        - simple
+        - status
         in: query
         name: option
         type: string
@@ -2337,6 +2346,10 @@ paths:
                   $ref: '#/definitions/mcis.RestGetAllMcisResponse'
                 '[ID]':
                   $ref: '#/definitions/common.IdList'
+                '[SIMPLE]':
+                  $ref: '#/definitions/mcis.RestGetAllMcisResponse'
+                '[STATUS]':
+                  $ref: '#/definitions/mcis.RestGetAllMcisStatusResponse'
               type: object
         "404":
           description: Not Found
