@@ -171,11 +171,12 @@ func TbMcisReqStructLevelValidation(sl validator.StructLevel) {
 
 // TbMcisInfo is struct for MCIS info
 type TbMcisInfo struct {
-	Id           string `json:"id"`
-	Name         string `json:"name"`
-	Status       string `json:"status"`
-	TargetStatus string `json:"targetStatus"`
-	TargetAction string `json:"targetAction"`
+	Id           string          `json:"id"`
+	Name         string          `json:"name"`
+	Status       string          `json:"status"`
+	StatusCount  StatusCountInfo `json:"statusCount"`
+	TargetStatus string          `json:"targetStatus"`
+	TargetAction string          `json:"targetAction"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
@@ -289,14 +290,52 @@ type GeoLocation struct {
 	NativeRegion string `json:"nativeRegion"`
 }
 
+// StatusCountInfo is struct to count the number of VMs in each status. ex: Running=4, Suspended=8.
+type StatusCountInfo struct {
+
+	// CountTotal is for Total VMs
+	CountTotal int `json:"countTotal"`
+
+	// CountCreating is for counting Creating
+	CountCreating int `json:"countCreating"`
+
+	// CountRunning is for counting Running
+	CountRunning int `json:"countRunning"`
+
+	// CountFailed is for counting Failed
+	CountFailed int `json:"countFailed"`
+
+	// CountSuspended is for counting Suspended
+	CountSuspended int `json:"countSuspended"`
+
+	// CountRebooting is for counting Rebooting
+	CountRebooting int `json:"countRebooting"`
+
+	// CountTerminated is for counting Terminated
+	CountTerminated int `json:"countTerminated"`
+
+	// CountSuspending is for counting Suspending
+	CountSuspending int `json:"countSuspending"`
+
+	// CountResuming is for counting Resuming
+	CountResuming int `json:"countResuming"`
+
+	// CountTerminating is for counting Terminating
+	CountTerminating int `json:"countTerminating"`
+
+	// CountUndefined is for counting Undefined
+	CountUndefined int `json:"countUndefined"`
+}
+
 // McisStatusInfo is struct to define simple information of MCIS with updated status of all VMs
 type McisStatusInfo struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 
-	Status       string `json:"status"`
-	TargetStatus string `json:"targetStatus"`
-	TargetAction string `json:"targetAction"`
+	Status       string          `json:"status"`
+	StatusCount  StatusCountInfo `json:"statusCount"`
+	TargetStatus string          `json:"targetStatus"`
+	TargetAction string          `json:"targetAction"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
@@ -1671,6 +1710,7 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 	// common.PrintJsonPretty(mcisStatus)
 
 	mcisObj.Status = mcisStatus.Status
+	mcisObj.StatusCount = mcisStatus.StatusCount
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
@@ -4022,6 +4062,19 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	// 	mcisStatus.Status = statusFlagStr[9] + proportionStr
 	// }
 
+	// Set mcisStatus.StatusCount
+	mcisStatus.StatusCount.CountTotal = numVm
+	mcisStatus.StatusCount.CountFailed = statusFlag[0]
+	mcisStatus.StatusCount.CountSuspended = statusFlag[1]
+	mcisStatus.StatusCount.CountRunning = statusFlag[2]
+	mcisStatus.StatusCount.CountTerminated = statusFlag[3]
+	mcisStatus.StatusCount.CountCreating = statusFlag[4]
+	mcisStatus.StatusCount.CountSuspending = statusFlag[5]
+	mcisStatus.StatusCount.CountResuming = statusFlag[6]
+	mcisStatus.StatusCount.CountRebooting = statusFlag[7]
+	mcisStatus.StatusCount.CountTerminating = statusFlag[8]
+	mcisStatus.StatusCount.CountUndefined = statusFlag[9]
+
 	var isDone bool
 	isDone = true
 	for _, v := range mcisStatus.Vm {
@@ -4034,6 +4087,7 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 		mcisStatus.TargetStatus = StatusComplete
 		mcisTmp.TargetAction = ActionComplete
 		mcisTmp.TargetStatus = StatusComplete
+		mcisTmp.StatusCount = mcisStatus.StatusCount
 		UpdateMcisInfo(nsId, mcisTmp)
 	}
 

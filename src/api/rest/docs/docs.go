@@ -5509,6 +5509,9 @@ var doc = `{
                 "status": {
                     "type": "string"
                 },
+                "statusCount": {
+                    "$ref": "#/definitions/mcis.StatusCountInfo"
+                },
                 "targetAction": {
                     "type": "string"
                 },
@@ -5883,6 +5886,55 @@ var doc = `{
                 }
             }
         },
+        "mcis.StatusCountInfo": {
+            "type": "object",
+            "properties": {
+                "countCreating": {
+                    "description": "CountCreating is for counting Creating",
+                    "type": "integer"
+                },
+                "countFailed": {
+                    "description": "CountFailed is for counting Failed",
+                    "type": "integer"
+                },
+                "countRebooting": {
+                    "description": "CountRebooting is for counting Rebooting",
+                    "type": "integer"
+                },
+                "countResuming": {
+                    "description": "CountResuming is for counting Resuming",
+                    "type": "integer"
+                },
+                "countRunning": {
+                    "description": "CountRunning is for counting Running",
+                    "type": "integer"
+                },
+                "countSuspended": {
+                    "description": "CountSuspended is for counting Suspended",
+                    "type": "integer"
+                },
+                "countSuspending": {
+                    "description": "CountSuspending is for counting Suspending",
+                    "type": "integer"
+                },
+                "countTerminated": {
+                    "description": "CountTerminated is for counting Terminated",
+                    "type": "integer"
+                },
+                "countTerminating": {
+                    "description": "CountTerminating is for counting Terminating",
+                    "type": "integer"
+                },
+                "countTotal": {
+                    "description": "CountTotal is for Total VMs",
+                    "type": "integer"
+                },
+                "countUndefined": {
+                    "description": "CountUndefined is for counting Undefined",
+                    "type": "integer"
+                }
+            }
+        },
         "mcis.TbInspectResourcesResponse": {
             "type": "object",
             "properties": {
@@ -5938,6 +5990,9 @@ var doc = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "statusCount": {
+                    "$ref": "#/definitions/mcis.StatusCountInfo"
                 },
                 "targetAction": {
                     "type": "string"
