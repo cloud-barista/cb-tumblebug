@@ -6,11 +6,25 @@
   "commit": false,
   "contributors": [
     {
+      "login": "seokho-son",
+      "name": "Seokho Son",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/5966944?v=4",
+      "profile": "https://seokho-son.github.io/",
+      "contributions": [
+        "maintenance",
+        "ideas",
+        "code",
+        "review"
+      ]
+    },
+    {
       "login": "jihoon-seo",
       "name": "Jihoon Seo",
       "avatar_url": "https://avatars1.githubusercontent.com/u/46767780?v=4",
       "profile": "https://jihoon-seo.github.io",
       "contributions": [
+        "maintenance",
+        "ideas",
         "code",
         "review"
       ]
@@ -21,17 +35,9 @@
       "avatar_url": "https://avatars2.githubusercontent.com/u/7975459?v=4",
       "profile": "https://github.com/hermitkim1",
       "contributions": [
+        "ideas",
         "code",
         "review"
-      ]
-    },
-    {
-      "login": "seokho-son",
-      "name": "Seokho Son",
-      "avatar_url": "https://avatars3.githubusercontent.com/u/5966944?v=4",
-      "profile": "https://seokho-son.github.io/",
-      "contributions": [
-        "maintenance"
       ]
     },
     {
@@ -40,7 +46,8 @@
       "avatar_url": "https://avatars3.githubusercontent.com/u/64775292?v=4",
       "profile": "https://github.com/jmleefree",
       "contributions": [
-        "code"
+        "code",
+        "review"
       ]
     },
     {
@@ -58,7 +65,8 @@
       "avatar_url": "https://avatars3.githubusercontent.com/u/25163268?v=4",
       "profile": "https://github.com/sykim-etri",
       "contributions": [
-        "bug"
+        "bug",
+        "ideas"
       ]
     },
     {
