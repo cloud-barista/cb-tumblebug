@@ -1751,7 +1751,7 @@ paths:
       tags:
       - '[Admin] Cloud environment management'
   /lookupImage:
-    get:
+    post:
       consumes:
       - application/json
       description: Lookup image
@@ -1781,7 +1781,7 @@ paths:
       tags:
       - '[Admin] Cloud environment management'
   /lookupImages:
-    get:
+    post:
       consumes:
       - application/json
       description: Lookup image list
@@ -1811,7 +1811,7 @@ paths:
       tags:
       - '[Admin] Cloud environment management'
   /lookupSpec:
-    get:
+    post:
       consumes:
       - application/json
       description: Lookup spec
@@ -1841,7 +1841,7 @@ paths:
       tags:
       - '[Admin] Cloud environment management'
   /lookupSpecs:
-    get:
+    post:
       consumes:
       - application/json
       description: Lookup spec list

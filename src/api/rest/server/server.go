@@ -101,11 +101,11 @@ func ApiServer() {
 	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
 	e.GET("/tumblebug/region/:regionName", rest_common.RestGetRegion)
 
-	e.GET("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)
-	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpec)
+	e.POST("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)
+	e.POST("/tumblebug/lookupSpec", rest_mcir.RestLookupSpec)
 
-	e.GET("/tumblebug/lookupImages", rest_mcir.RestLookupImageList)
-	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
+	e.POST("/tumblebug/lookupImages", rest_mcir.RestLookupImageList)
+	e.POST("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
 

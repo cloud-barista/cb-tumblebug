@@ -126,7 +126,7 @@ type RestLookupSpecRequest struct {
 // @Success 200 {object} mcir.SpiderSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupSpec [get]
+// @Router /lookupSpec [post]
 func RestLookupSpec(c echo.Context) error {
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
@@ -154,7 +154,7 @@ func RestLookupSpec(c echo.Context) error {
 // @Success 200 {object} mcir.SpiderSpecList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupSpecs [get]
+// @Router /lookupSpecs [post]
 func RestLookupSpecList(c echo.Context) error {
 
 	//type JsonTemplate struct {

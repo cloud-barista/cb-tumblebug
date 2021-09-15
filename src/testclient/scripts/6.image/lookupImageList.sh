@@ -4,7 +4,7 @@ function CallTB() {
 	echo "- Lookup images in ${MCIRRegionName}"
 
 	resp=$(
-        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupImages -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/lookupImages -H 'Content-Type: application/json' -d @- <<EOF
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
 		}
