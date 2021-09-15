@@ -2,6 +2,11 @@
 
 SECONDS=0
 
+source ../conf.env
+source ../common-functions.sh
+
+checkPrerequisite
+
 ./check-test-config.sh "$@"
 
 while true; do
@@ -25,7 +30,7 @@ done
 
 duration=$SECONDS
 
-source ../common-functions.sh
+
 printElapsed $@
 echo "" >>./executionStatus.history
 

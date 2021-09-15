@@ -91,20 +91,20 @@ function readParametersByName() {
 	done
 
 	if [ -z "$FlagNamedPram" ]; then
-			echo "[Warrning] Invalid option [$@]"
-			echo ""
-			echo "[Usage] ./${0##*/} -param value -param value"
-			echo "[Example] ./${0##*/} -n myname01 -f ../testSet.env"
-			echo ""
-			echo " -n [postfix of resources to generate and retrieve] (ex: -n myname01, default: $POSTFIX)"
-			echo " -f [file path to describe a cloud test set] (ex: -f ../testSet01.env, default: $TestSetFile)"
-			echo ""
-			echo " -c [specific cloud type] (ex: -c aws, optional)"
-			echo " -r [index of a specific zone of the cloud type] (ex: -r 3, optional)"
-			echo ""
-			echo " -x [any value passed to a parameter of the command] (ex: -x vmid01, optional)"
-			echo " -y [any value passed to a parameter of the command] (ex: -y 3, optional)"
-			echo " -z [any value passed to a parameter of the command] (ex: -z file, optional)"
+		echo "[Warrning] Invalid option [$@]"
+		echo ""
+		echo "[Usage] ./${0##*/} -param value -param value"
+		echo "[Example] ./${0##*/} -n myname01 -f ../testSet.env"
+		echo ""
+		echo " -n [postfix of resources to generate and retrieve] (ex: -n myname01, default: $POSTFIX)"
+		echo " -f [file path to describe a cloud test set] (ex: -f ../testSet01.env, default: $TestSetFile)"
+		echo ""
+		echo " -c [specific cloud type] (ex: -c aws, optional)"
+		echo " -r [index of a specific zone of the cloud type] (ex: -r 3, optional)"
+		echo ""
+		echo " -x [any value passed to a parameter of the command] (ex: -x vmid01, optional)"
+		echo " -y [any value passed to a parameter of the command] (ex: -y 3, optional)"
+		echo " -z [any value passed to a parameter of the command] (ex: -z file, optional)"
 		exit 0
 	fi
 
@@ -121,3 +121,27 @@ function printElapsed() {
 	echo "${NowHist} ${ElapsedHist} ${CommandHist}" >>./executionStatus.history
 }
 
+function checkPrerequisite() {
+	# echo "Check http://$TumblebugServer/tumblebug is accessible."
+	HTTP_CODE=0
+	HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/health" --silent)
+	if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
+		 echo "[CB-Tumblebug is READY]"	
+	else
+		echo "[Warning] CB-Tumblebug is not Ready"
+		echo "[Warning] Please run CB-Tumblebug and check http://$TumblebugServer/tumblebug is accessible"
+		exit 1
+	fi
+
+	# echo "Check http://$SpiderServer/spider is accessible."
+	HTTP_CODE=0
+	HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$SpiderServer/spider/driver" --silent)
+	if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
+		 echo "[CB-Spider is READY]"	
+	else
+		echo "[Warning] CB-Spider is not Ready"
+		echo "[Warning] Please run CB-Spider and check http://$SpiderServer/spider is accessible"
+		exit 1
+	fi
+
+}
