@@ -1,24 +1,40 @@
 #!/bin/bash
 
 function CallSpider() {
-    # for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | jq ''
-    echo ""
-
-
     # for Cloud Region Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | jq ''
+    echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} |
+    jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+    column -t
+    echo ""
     echo ""
 
 
     # for Cloud Credential Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[$INDEX]} | jq ''
+    echo "[Cloud Credential] ${CredentialName[$INDEX]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[$INDEX]} |
+    jq -r '(["CredentialName","ProviderName"] | (., map(length*"-"))), ([.CredentialName, .ProviderName]) | @tsv' |
+    column -t
+    echo ""
     echo ""
 
     
     # for Cloud Driver Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[$INDEX]} | jq ''
+    echo "[Cloud Driver] ${DriverName[$INDEX]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[$INDEX]} |
+    jq -r '(["DriverName","ProviderName","DriverLibFileName"] | (., map(length*"-"))), ([.DriverName, .ProviderName, .DriverLibFileName]) | @tsv' |
+    column -t
     echo ""
+    echo ""
+
+
+    # for Cloud Connection Config Info
+    echo "[Cloud Connection Config] ${CONN_CONFIG[$INDEX,$REGION]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} |
+    jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
+    column -t
+    echo ""
+
 }
 
 #function get_cloud() {
