@@ -107,7 +107,7 @@ type RestLookupImageRequest struct {
 // @Success 200 {object} mcir.SpiderImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupImage [get]
+// @Router /lookupImage [post]
 func RestLookupImage(c echo.Context) error {
 
 	u := &RestLookupImageRequest{}
@@ -136,7 +136,7 @@ func RestLookupImage(c echo.Context) error {
 // @Success 200 {object} mcir.SpiderImageList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /lookupImages [get]
+// @Router /lookupImages [post]
 func RestLookupImageList(c echo.Context) error {
 
 	//type JsonTemplate struct {

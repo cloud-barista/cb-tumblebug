@@ -4,7 +4,7 @@ function CallTB() {
 	echo "- Lookup spec in ${MCIRRegionName}"
 
 	resp=$(
-        curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/lookupSpec -H 'Content-Type: application/json' -d @- <<EOF
 		{ 
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
 			"cspSpecName": "${SPEC_NAME[$INDEX,$REGION]}"
