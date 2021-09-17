@@ -122,23 +122,23 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 - CB-Tumblebug 이미지 확인(https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
 - CB-Tumblebug 컨테이너 실행
 
-```
-# docker run -p 1323:1323 -p 50252:50252 \
--v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
---name cb-tumblebug \
-cloudbaristaorg/cb-tumblebug:0.4.xx
-```
+  ```
+  # docker run -p 1323:1323 -p 50252:50252 \
+  -v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
+  --name cb-tumblebug \
+  cloudbaristaorg/cb-tumblebug:0.4.xx
+  ```
 
 ### (3) cb-operator 기반 Cloud-Barista 통합 실행
 
 - [cb-operator](https://github.com/cloud-barista/cb-operator)를 통해 CB-TB를 포함한 Cloud-Barista 전체 FW를 통합 실행 가능
 
-```
-$ git clone https://github.com/cloud-barista/cb-operator.git
-$ cd cb-operator/src
-cb-operator/src$ make
-cb-operator/src$ ./operator
-```
+  ```
+  $ git clone https://github.com/cloud-barista/cb-operator.git
+  $ cd cb-operator/src
+  cb-operator/src$ make
+  cb-operator/src$ ./operator
+  ```
 
 ***
 ***
@@ -179,11 +179,11 @@ cb-operator/src$ ./operator
 ### (2) CB-Tumblebug 빌드
 
 - 빌드 명령어
-```Shell
-# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
-# export GO111MODULE=on
-# make
-```
+  ```Shell
+  # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
+  # export GO111MODULE=on
+  # make
+  ```
 
 - Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
   - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
@@ -296,30 +296,68 @@ cb-operator/src$ ./operator
 
 #### 통합 제어 시험
 - `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 전체 과정을 한번에 테스트 가능
-```
-└── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
-    ├── check-test-config.sh  # 현재 testSet에 지정된 멀티 클라우드 인프라 구성을 확인
-    ├── create-all.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
-    ├── gen-sshKey.sh  # 수행이 진행된 테스트 로그 (MCIS에 접속 가능한 SSH키 파일 생성)  
-    ├── command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
-    ├── deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포  
-    ├── create-mcis-for-df.sh  # CB-Dragonfly 호스팅을 위한 MCIS 생성        
-    ├── deploy-dragonfly-docker.sh  # MCIS에 CB-Dragonfly 자동 배포 및 환경 자동 설정      
-    ├── clean-all.sh  # 모든 오브젝트를 생성의 역순으로 삭제
-    └── executionStatus  # 수행이 진행된 테스트 로그 (testAll 수행시 정보가 추가되며, cleanAll 수행시 정보가 제거됨. 진행중인 작업 확인 가능)
+  ```
+  └── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
+      ├── check-test-config.sh  # 현재 testSet에 지정된 멀티 클라우드 인프라 구성을 확인
+      ├── create-all.sh  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
+      ├── gen-sshKey.sh  # 수행이 진행된 테스트 로그 (MCIS에 접속 가능한 SSH키 파일 생성)  
+      ├── command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
+      ├── deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포  
+      ├── create-mcis-for-df.sh  # CB-Dragonfly 호스팅을 위한 MCIS 생성        
+      ├── deploy-dragonfly-docker.sh  # MCIS에 CB-Dragonfly 자동 배포 및 환경 자동 설정      
+      ├── clean-all.sh  # 모든 오브젝트를 생성의 역순으로 삭제
+      └── executionStatus  # 수행이 진행된 테스트 로그 (testAll 수행시 정보가 추가되며, cleanAll 수행시 정보가 제거됨. 진행중인 작업 확인 가능)
 
-```
+  ```
 - 사용 예시
-  - 테스트 형상 확인
-    - `./check-test-config.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 조합을 미리 확인 (사용되는 CSP, region, image, spec 등)
-  - 생성 테스트
+  - MCIS생성 테스트
     - `./create-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행
-  - 제거 테스트 (생성에서 활용한 입력 파라미터로 삭제 필요)
+    - ../testSetCustom.env에 구성된 MCIS 생성 형상을 확인하는 절차가 자동으로 진행됨
+    - 실행 결과 예시
+      ```
+      Table: All VMs in the MCIS : cb-shson
+
+      ID              Status   PublicIP       PrivateIP      CloudType  CloudRegion     CreatedTime
+      --              ------   --------       ---------      ---------  -----------     -----------
+      aws-ap-se-1-0   Running  xx.250.xx.73   192.168.2.180  aws        ap-southeast-1  2021-09-17   14:59:30
+      aws-ca-ct-1-0   Running  x.97.xx.230    192.168.4.98   aws        ca-central-1    2021-09-17   14:59:58
+      gcp-as-east1-0  Running  xx.229.xxx.26  192.168.3.2    gcp        asia-east1      2021-09-17   14:59:42
+
+      [DATE: 17/09/2021 15:00:00] [ElapsedTime: 49s (0m:49s)] [Command: ./create-mcis-only.sh all 1 shson ../testSetCustom.env 1]
+
+      [Executed Command List]
+      [MCIR:aws-ap-southeast-1(28s)] create-mcir-ns-cloud.sh (MCIR) aws 1 shson ../testSetCustom.env
+      [MCIR:aws-ca-central-1(34s)] create-mcir-ns-cloud.sh (MCIR) aws 2 shson ../testSetCustom.env
+      [MCIR:gcp-asia-east1(93s)] create-mcir-ns-cloud.sh (MCIR) gcp 1 shson ../testSetCustom.env
+      [MCIS:cb-shsonvm4(19s+More)] create-mcis-only.sh (MCIS) all 1 shson ../testSetCustom.env
+
+      [DATE: 17/09/2021 15:00:00] [ElapsedTime: 149s (2m:29s)] [Command: ./create-all.sh -n shson -f ../testSetCustom.env -x 1]
+      ```
+  - MCIS제거 테스트 (생성에서 활용한 입력 파라미터로 삭제 필요)
     - `./clean-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 제거 수행
     - **Be aware!** 
       - If you created MCIS (VMs) for testing in public clouds, the VMs may be charged.
       - You need to termiate MCIS by using `clean-all` to avoid unexpected billing.
       - Anyway, please be aware cloud usage cost when you use public CSPs.
+  - MCIS SSH 접속키 생성 및 각 VM에 접속
+    - `./gen-sshKey.sh -n shson -f ../testSetCustom.env`  # MCIS에 구성된 모든 VM의 접속키 리턴
+    - 실행 결과예시
+      ```
+      ...
+      [GENERATED PRIVATE KEY (PEM, PPK)]
+      [MCIS INFO: mc-shson]
+       [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
+       ./sshkey-tmp/aws-ap-se-1-shson.pem 
+       ./sshkey-tmp/aws-ap-se-1-shson.ppk
+       ...
+       
+      [SSH COMMAND EXAMPLE]
+       [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
+       ssh -i ./sshkey-tmp/aws-ap-se-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
+       ...
+       [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
+       ssh -i ./sshkey-tmp/aws-ca-ct-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
+      ```
 
 <details>
 <summary>입출력 예시 보기</summary>
@@ -595,31 +633,6 @@ Dozing for 1 : 1 (Back to work)
     - 실행 예시
       - `./create-all.sh -n shson -f ../testSet.env`  # testSet.env 에 구성된 정보를 기준으로 MCIS 생성
       - `./command-mcis.sh -n shson -f ../testSet.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
-
-##### MCIS SSH 접속키 생성 및 접속
-  - 스크립트를 통해 MCIS의 VM에 각각 접속할 수 있는 SSH Key 및 주소를 생성
-    - gen-sshKey.sh  # MCIS에 구성된 모든 VM의 접속키 리턴
-    - 실행 예시
-      - `./create-all.sh -n shson -f ../testSetAws.env`  # testSetAws.env 에 구성된 정보를 기준으로 MCIS 생성
-      - `./gen-sshKey.sh -n  shson -f ../testSetAws.env` # MCIS에 구성된 모든 VM의 접속키 리턴 
-        ```
-        son@son:~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ ./gen-sshKey.sh -n shson -f ../testSetAws.env 
-        ...
-        [GENERATED PRIVATE KEY (PEM, PPK)]
-        [MCIS INFO: mc-shson]
-         [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
-         ./sshkey-tmp/aws-ap-se-1-shson.pem 
-         ./sshkey-tmp/aws-ap-se-1-shson.ppk
-         ...
-
-        [SSH COMMAND EXAMPLE]
-         [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
-         ssh -i ./sshkey-tmp/aws-ap-se-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
-         ...
-         [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
-         ssh -i ./sshkey-tmp/aws-ca-ct-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
-        ```
-
 
 ##### MCIS Nginx 분산 배치
 - Nginx를 분산 배치하여, 웹서버 접속 시험 가능
