@@ -40,7 +40,7 @@ const (
 const (
 	// AutoActionScaleOut is const for "ScaleOut" action.
 	AutoActionScaleOut string = "ScaleOut"
-	
+
 	// AutoActionScaleIn is const for "ScaleIn" action.
 	AutoActionScaleIn string = "ScaleIn"
 )
