@@ -213,6 +213,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "ChobobDev",
+      "name": "Seongbin Bernie Cho",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32432141?v=4",
+      "profile": "https://github.com/ChobobDev",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
