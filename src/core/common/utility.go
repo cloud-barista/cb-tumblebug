@@ -22,7 +22,7 @@ import (
 
 // MCIS utilities
 
-// SimpleMsg is struct for JSON Simple message 
+// SimpleMsg is struct for JSON Simple message
 type SimpleMsg struct {
 	Message string `json:"message" example:"Any message"`
 }
@@ -74,7 +74,7 @@ func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 }
 
-// GenMcisVmGroupKey is func to generate a key from vmGroupId used in keyValue store 
+// GenMcisVmGroupKey is func to generate a key from vmGroupId used in keyValue store
 func GenMcisVmGroupKey(nsId string, mcisId string, groupId string) string {
 
 	return "/ns/" + nsId + "/mcis/" + mcisId + "/vmgroup/" + groupId
@@ -359,7 +359,6 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	}
 }
-
 
 // Region is struct for containing region struct of CB-Spider
 type Region struct {
