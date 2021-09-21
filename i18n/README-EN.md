@@ -55,41 +55,39 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 
 
 
+***
+***
+
+## Table of Contents
+
+1. [CB-Tumblebug Execution and Development Environment](#cb-tumblebug-execution-and-development-environment)
+2. [How to contribute on CB-Tumblebug](#How-to-contribute-on-CB-Tumblebug)
+3. [How To Run CB-Tumblebug ](#how-to-run-cb-tumblebug)
+4. [CB-Tumblebug build and Execution based on Source Code in detail](#cb-tumblebug-build-and-execution-based-on-source-code-in-detail)
+5. [How to use CB-Tumblebug functions](#how-to-use-cb-tumblebug-functions)
 
 ***
 ***
 
-[[WIP]English](i18n/README-EN.md)
-## 목차
-
-1. [CB-Tumblebug 실행 및 개발 환경](#cb-tumblebug-실행-및-개발-환경)
-2. [CB-Tumblebug 기여 방법](#cb-tumblebug-기여-방법)
-3. [CB-Tumblebug 실행 방법](#cb-tumblebug-실행-방법)
-4. [CB-Tumblebug 소스 빌드 및 실행 방법 상세](#cb-tumblebug-소스-빌드-및-실행-방법-상세)
-5. [CB-Tumblebug 기능 사용 방법](#cb-tumblebug-기능-사용-방법)
+## CB-Tumblebug Execution and Development Environment
+- Linux (Recommended: Ubuntu v18.04)
+- Go (Recommended: v1.16)
 
 ***
 ***
 
-## CB-Tumblebug 실행 및 개발 환경
-- Linux (추천: Ubuntu v18.04)
-- Go (추천: v1.16)
-
-***
-***
-
-## CB-Tumblebug 기여 방법
+## How to contribute on CB-Tumblebug
 
 CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
-### (1) 기여의 종류
+### (1) Types of Contribution
 
-- Issue 오픈
+- Open an Issue
   - Bug report, Enhancement request, Feature request, ...
-- PR (Pull-Request) 오픈
+- Open PR (Pull-Request) 
   - Documentation, Source code, ...
   
-### (2) 기여 가이드
+### (2) Contribution Guide
 
 - Overview
   - [Cloud-Barista Contribution Overview](https://github.com/cloud-barista/docs/blob/master/CONTRIBUTING.md#how-to-contribute)
@@ -107,21 +105,21 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 ***
 ***
 
-## CB-Tumblebug 실행 방법
+## How To Run CB-Tumblebug 
 
-### (1) 소스 코드 기반 설치 및 실행
+### (1) Source Code based Installation and Execution
 
 - 개요
-  - 필요 패키지/도구 설치
-  - CB-Tumblebug 소스 다운로드 (Git clone CB-Tumblebug)
-  - CB-Tumblebug 환경 변수 설정
-  - CB-Tumblebug 빌드 및 실행 (`make` 및 `make run`)
-- [소스 빌드 및 실행 방법 상세](#cb-tumblebug-소스-빌드-및-실행-방법-상세)
+  - Inatall tools and packages required
+  - Clone CB-Tumblebug 
+  - Set CB-Tumblebug Environmental Variable
+  - Build CB-Tumblebug and Execute (`make` and `make run`)
+- [CB-Tumblebug build and Execution based on Source Code in detail](#cb-tumblebug-build-and-execution-based-on-source-code-in-detail)
   
-### (2) 컨테이너 기반 실행
+### (2) Container based Installation and Execution
 
-- CB-Tumblebug 이미지 확인(https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
-- CB-Tumblebug 컨테이너 실행
+- Check out CB-Tumblebug image from (https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
+- Execute CB-Tumblebug Container
 
   ```
   # docker run -p 1323:1323 -p 50252:50252 \
@@ -130,9 +128,9 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   cloudbaristaorg/cb-tumblebug:0.4.xx
   ```
 
-### (3) cb-operator 기반 Cloud-Barista 통합 실행
+### (3) cb-operator based Cloud-Barista Combined Execution
 
-- [cb-operator](https://github.com/cloud-barista/cb-operator)를 통해 CB-TB를 포함한 Cloud-Barista 전체 FW를 통합 실행 가능
+- Through [cb-operator](https://github.com/cloud-barista/cb-operator), we can run Cloud-Barista's entire FW including CB-TB at once.
 
   ```
   $ git clone https://github.com/cloud-barista/cb-operator.git
@@ -144,31 +142,31 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 ***
 ***
 
-## CB-Tumblebug 소스 빌드 및 실행 방법 상세
+## CB-Tumblebug build and Execution based on Source Code in detail
 
-### (1) CB-Tumblebug 빌드 환경 구성
+### (1) Configure CB-Tumblebug Build Environment
 
-- 필요 패키지 또는 도구 설치
-  - Git, gcc, make 설치
+- Inatall tools and packages required
+  - Install Git, gcc and make 
     - `# apt update`
     - `# apt install make gcc git`
 
-  - Go 설치
-    - https://golang.org/dl/ 를 참고하여 Go 설치 (버전 v1.16 이상: 추천 개발 환경)
-    - 설치 예시
+  - Inatall Go 
+    - Install Go by referencing https://golang.org/dl/ (Version v1.16 or upper: recommened environment)
+    - Installation Example
       - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
       - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
-      - `.bashrc` 파일 하단에 다음을 추가 
+      - add followings on the bottom of `.bashrc`
       ```
       export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
       export GOPATH=$HOME/go
       ```
-      - `source ~/.bashrc` (`.bashrc` 변경 내용을 적용)
+      - `source ~/.bashrc` (apply the changes to `.bashrc`)
 
-- CB-Tumblebug 소스 다운로드
+- Clone CB-Tumblebug 
   - `# git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug`
 
-- CB-Tumblebug 실행에 필요한 환경변수 설정
+- Setting Environmentla Variable for executing CB-Tumblebug
   - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 환경변수, 필요에 따라 변경)
     - `source setup.env` 실행으로 시스템에 반영
   - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 환경변수, 필요에 따라 변경)
@@ -177,25 +175,25 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 환경변수, 필요에 따라 변경)
 
 
-### (2) CB-Tumblebug 빌드
+### (2) Build CB-Tumblebug 
 
-- 빌드 명령어
+- Build Command
   ```Shell
   # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
   # export GO111MODULE=on
   # make
   ```
 
-- Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
-  - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
-  - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
+- If Swagger API Document needs to be upadated run `make swag` at `cb-tumblebug/src/` directory.
+  - API cdouemtn file is created at  `cb-tumblebug/src/api/rest/docs/swagger.yaml` directory.
+  - Following API docunent can be checked on http://localhost:1323/tumblebug/swagger/index.html through web browser. (Automatically provided when CB-Tumblebug is executed)
 
-### (3) CB-Tumblebug 실행
-- [CB-Spider](https://github.com/cloud-barista/cb-spider) 실행 (다른 탭에서)
+### (3) Run CB-Tumblebug 
+- Run [CB-Spider](https://github.com/cloud-barista/cb-spider) in another tab
 - `# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src`
-- `# make run` (또는 `# go run *.go`) 
+- `# make run` (or `# go run *.go`) 
 
-  CB-Tumblebug 서버 실행 화면
+  CB-Tumblebug server execution screen
   ```
     ██████╗██████╗    ████████╗██████╗      
    ██╔════╝██╔══██╗   ╚══██╔══╝██╔══██╗     
@@ -224,7 +222,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   ⇨ grpc server started on [::]:50252
   ```
 
-- 알려진 에러 및 해결 방법 
+- Known Errors and Trubleshooting
   ``` 
   panic: /debug/requests is already registered. 
   You may have two independent copies of golang.org/x/net/trace in your binary, 
@@ -232,7 +230,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   This may involve a vendored copy of golang.org/x/net/trace.
   ```
 
-  에러 발생 시, 다음을 실행하여 해결
+  run following to reslove if error occurs.
   ```Shell
   # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
   # make
@@ -241,13 +239,13 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 ***
 ***
 
-## CB-Tumblebug 기능 사용 방법
+## How to use CB-Tumblebug functions
 
-1. [CB-Tumblebug 스크립트 사용](#cb-tumblebug-스크립트-사용)
-1. [CB-Tumblebug REST API 사용](#cb-tumblebug-rest-api-사용)
+1. [Using CB-Tumblebug Script](#using-cb-tumblebug-script)
+2. [Use CB-Tumblebug REST API](#use-cb-tumblebug-rest-api)
 
 
-### CB-Tumblebug 스크립트 사용
+### Using CB-Tumblebug Script
 [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/)는 복잡한 단계가 필요한 MCIS (MC-Infra) 프로비저닝 절차를 간소화 및 자동화시킨 Bash shell 기반 스크립트를 제공.
  - 1 단계: [클라우드 인증 정보 및 테스트 기본 정보 입력](#클라우드-인증-정보-및-테스트-기본-정보-입력)
  - 2 단계: Namespace, MCIR, MCIS 등 프로비저닝 (통합 제어 / 개별 제어 중 선택)
@@ -282,8 +280,8 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
      - `TestCloud01`, `TestCloud02`, `TestCloud03` are not real CSPs. It is used for testing purpose. (not support SSH into VM)
      - Anyway, please be aware cloud usage cost when you use public CSPs.
 
-#### 개별 제어 시험
-- 제어하고 싶은 리소스 오브젝트에 대해, 해당 디렉토리로 이동하여 필요한 시험 수행
+#### Individual Control Test
+- For resource that you want to control, go to following directory to run the test needed
   - 오브젝트는 서로 의존성이 있으므로, 번호를 참고하여 오름차순으로 수행하는 것이 바람직함
     - `1.configureSpider`  # 클라우드 정보 등록 관련 스크립트 모음
     - `2.configureTumblebug`  # 네임스페이스 및 동적 환경 설정 관련 스크립트 모음
@@ -295,8 +293,9 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
     - `8.mcis`  # MCIS 생성 및 제어, MCIS 원격 커맨드 등 스크립트 모음
     - `9.monitoring`  # CB-TB를 통해서 CB-DF 모니터링 에이전트 설치 및 모니터링 테스트 스크립트 모음
 
-#### 통합 제어 시험
+#### Integrated Control Test
 - `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 전체 과정을 한번에 테스트 가능
+- By running `create-all.sh` and `clean-all.sh` in `src/testclient/scripts/sequentialFullTest/` dritectory, 
   ```
   └── sequentialFullTest  # Cloud 정보 등록, NS 생성, MCIR 생성, MCIS 생성까지 한번에 자동 테스트
       ├── check-test-config.sh  # 현재 testSet에 지정된 멀티 클라우드 인프라 구성을 확인
@@ -310,7 +309,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
       └── executionStatus  # 수행이 진행된 테스트 로그 (testAll 수행시 정보가 추가되며, cleanAll 수행시 정보가 제거됨. 진행중인 작업 확인 가능)
 
   ```
-- 사용 예시
+- Usage Example
   - MCIS생성 테스트
     - `./create-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행
     - ../testSetCustom.env에 구성된 MCIS 생성 형상을 확인하는 절차가 자동으로 진행됨
@@ -342,7 +341,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
       - Anyway, please be aware cloud usage cost when you use public CSPs.
   - MCIS SSH 접속키 생성 및 각 VM에 접속
     - `./gen-sshKey.sh -n shson -f ../testSetCustom.env`  # MCIS에 구성된 모든 VM의 접속키 리턴
-    - 실행 결과예시
+    - Executuon Result Example
       ```
       ...
       [GENERATED PRIVATE KEY (PEM, PPK)]
@@ -361,7 +360,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
       ```
 
 <details>
-<summary>입출력 예시 보기</summary>
+<summary>I/O Examples</summary>
 
 ```
 ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ `./create-all.sh -n shson -f ../testSetCustom.env`
@@ -626,36 +625,36 @@ Dozing for 1 : 1 (Back to work)
       
 </details>
 
-#### 멀티 클라우드 인프라 유스케이스
+#### Multi Cloud Infrastructure usecase
 
-##### MCIS SSH 원격 커맨드
+##### MCIS SSH Remote Commands
   - SSH 원격 커맨드 실행을 통해서 접속 여부 등을 확인 가능
     - command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
-    - 실행 예시
+    - Execution Example
       - `./create-all.sh -n shson -f ../testSet.env`  # testSet.env 에 구성된 정보를 기준으로 MCIS 생성
       - `./command-mcis.sh -n shson -f ../testSet.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
-##### MCIS Nginx 분산 배치
+##### MCIS Nginx Distributed Deployment
 - Nginx를 분산 배치하여, 웹서버 접속 시험 가능
     - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
     - 실행 예시
       - deploy-nginx-mcis.sh -n shson -f ../testSetAws.env # testSetAws.env 에 구성된 정보를 기준으로 MCIS의 모든 VM에 Nginx 및 웹페이지 설치
 
-##### MCIS Weave Scope 클러스터 모니터링 분산 배치
-  - [스크립트를 통해 MCIS에 Weave Scope 클러스터 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
+##### MCIS Weave Scope Cluster Monitoring Distributed Deployment
+  - [Deploying Weave Scope Cluster on MCIS through Scripts](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
 
-##### MCIS Jitsi 영상 회의 배치
-  - [스크립트를 통해 MCIS에 Jitsi 영상회의 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Jitsi-deployment)
+##### MCIS Jitsi Videoconferencing Deployment
+  - [Deploying Jitsi Videoconferencing on MCIS throgh Scripts](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Jitsi-deployment)
 
-##### MCIS Ansible 실행 환경 자동 구성
-  - [스크립트를 통해 MCIS에 Ansible 실행 환경 자동 구성](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
+##### MCIS Ansible Execution Envioronement Atutomatic Configuration
+  - [Ansible Execution Envioronement Atutomatic Configuration on MCIS through Scripts](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
 
-##### MCIS 토이 게임 서버 배치
-  - [스크립트를 통해 MCIS에 토이 게임 서버 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-toy-game-deployment)
+##### MCIS Toy Game Server Deployment
+  - [Deploying Toy Game on MCIS Through Scripts](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-toy-game-deployment)
 
 
 
-### CB-Tumblebug REST API 사용
+### Use CB-Tumblebug REST API
 1. CB-Spider API를 통해 클라우드 인프라 연동 정보 등록
    - https://cloud-barista.github.io/rest-api/v0.4.0/spider/ccim/
 2. CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
