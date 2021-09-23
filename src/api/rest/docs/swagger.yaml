@@ -2214,6 +2214,7 @@ paths:
         - resume
         - reboot
         - terminate
+        - refine
         in: query
         name: action
         type: string
@@ -2475,8 +2476,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate,
-        refine), or Get VMs' ID
+      description: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate),
+        or Get VMs' ID
       parameters:
       - description: Namespace ID
         in: path
@@ -2495,7 +2496,6 @@ paths:
         - resume
         - reboot
         - terminate
-        - refine
         in: query
         name: action
         type: string
@@ -2531,8 +2531,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate,
-        refine), or Get VMs' ID
+      summary: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate),
+        or Get VMs' ID
       tags:
       - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:

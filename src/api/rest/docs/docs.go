@@ -1082,7 +1082,8 @@ var doc = `{
                             "suspend",
                             "resume",
                             "reboot",
-                            "terminate"
+                            "terminate",
+                            "refine"
                         ],
                         "type": "string",
                         "description": "Action to MCIS",
@@ -1471,7 +1472,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
-                "description": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID",
+                "description": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate), or Get VMs' ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1481,7 +1482,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID",
+                "summary": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate), or Get VMs' ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -1503,8 +1504,7 @@ var doc = `{
                             "suspend",
                             "resume",
                             "reboot",
-                            "terminate",
-                            "refine"
+                            "terminate"
                         ],
                         "type": "string",
                         "description": "Action to MCIS",
