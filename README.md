@@ -252,7 +252,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
  - 2 단계: Namespace, MCIR, MCIS 등 프로비저닝 (통합 제어 / 개별 제어 중 선택)
    - [개별 제어 시험](개별-제어-시험) (Namespace, MCIR, MCIS 등 개별 시험시, 오브젝트들의 의존성 고려 필수)
    - [통합 제어 시험](통합-제어-시험) (추천 테스트 방법) `src/testclient/scripts/sequentialFullTest/`
- - 3 단계: [멀티 클라우드 인프라 유스케이스 자동 배포](#멀티-클라우드-인프라-유스케이스
+ - 3 단계: [멀티 클라우드 인프라 유스케이스 자동 배포](#멀티-클라우드-인프라-유스케이스)
 
 #### 클라우드 인증 정보 및 테스트 기본 정보 입력
 1. [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts) 이동
