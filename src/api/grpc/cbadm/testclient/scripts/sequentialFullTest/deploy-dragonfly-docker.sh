@@ -39,7 +39,7 @@
 		\"nsId\":  \"${NSID}\",
 		\"mcisId\": \"${MCISID}\",
 		\"cmd\": {
-			\"command\": \"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/assets/scripts/setcbdf.sh -O ~/setcbdf.sh; chmod +x ~/setcbdf.sh; ~/setcbdf.sh\"
+			\"command\": \"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setcbdf.sh -O ~/setcbdf.sh; chmod +x ~/setcbdf.sh; ~/setcbdf.sh\"
 		}
 	}" | jq '' #|| return 1
 
