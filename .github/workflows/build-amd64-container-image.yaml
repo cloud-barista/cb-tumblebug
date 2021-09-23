@@ -13,7 +13,8 @@ on:
       - 'LICENSE'
       - 'CODEOWNERS'
       - 'assets/**'
-      - 'test/**'
+      - 'scripts/**'
+      - 'src/testclient/scripts/**'
 
 jobs:
   # The job key is "building"
