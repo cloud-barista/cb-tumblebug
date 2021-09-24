@@ -350,10 +350,10 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
       └── executionStatus  # 수행이 진행된 테스트 로그 (testAll 수행시 정보가 추가되며, cleanAll 수행시 정보가 제거됨. 진행중인 작업 확인 가능)
 
   ```
-- 사용 예시
-  - MCIS생성 테스트
+- 사용 방식
+  - MCIS 생성 테스트
     - `./create-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 MCIS 생성 수행
-    - ../testSetCustom.env에 구성된 MCIS 생성 형상을 확인하는 절차가 자동으로 진행됨
+    - ../testSetCustom.env에 구성된 MCIS 생성 형상을 확인하는 절차 자동으로 진행
     - 실행 결과 예시
       ```
       Table: All VMs in the MCIS : cb-shson
@@ -374,15 +374,17 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
       [DATE: 17/09/2021 15:00:00] [ElapsedTime: 149s (2m:29s)] [Command: ./create-all.sh -n shson -f ../testSetCustom.env -x 1]
       ```
-  - MCIS제거 테스트 (생성에서 활용한 입력 파라미터로 삭제 필요)
+      
+  - MCIS 제거 테스트 (생성에서 활용한 입력 파라미터로 삭제 필요)
     - `./clean-all.sh -n shson -f ../testSetCustom.env`   # ../testSetCustom.env 에 구성된 클라우드 조합으로 제거 수행
     - **Be aware!** 
       - If you created MCIS (VMs) for testing in public clouds, the VMs may be charged.
       - You need to termiate MCIS by using `clean-all` to avoid unexpected billing.
       - Anyway, please be aware cloud usage cost when you use public CSPs.
+      
   - MCIS SSH 접속키 생성 및 각 VM에 접속
     - `./gen-sshKey.sh -n shson -f ../testSetCustom.env`  # MCIS에 구성된 모든 VM의 접속키 리턴
-    - 실행 결과예시
+    - 실행 결과 예시
       ```
       ...
       [GENERATED PRIVATE KEY (PEM, PPK)]
@@ -400,6 +402,22 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
        ssh -i ./sshkey-tmp/aws-ca-ct-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
       ```
 
+  - MCIS SSH 원격 커맨드 실행을 통해 VM 통합 커맨드 확인
+    - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
+
+  - CB-MapUI 를 통해 MCIS 형상 확인 및 제어 가능
+    - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
+
+- CB-MapUI 를 통해 MCIS 형상 확인 및 제어 가능
+  - CB-Tumblebug은 지도 형태로 MCIS 배포 형상 확인을 위해 [CB-MapUI](https://github.com/cloud-barista/cb-mapui)를 활용
+  - (추천 실행 방법) CB-TB 스크립트를 통한 CB-MapUI 컨테이너 실행
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
+    ./scripts/runMapUI.sh
+    ```
+  - 웹브라우저에서 http://{HostIP}:1324 주소 접속
+    
 <details>
 <summary>입출력 예시 보기</summary>
 
@@ -668,18 +686,9 @@ Dozing for 1 : 1 (Back to work)
 
 #### 멀티 클라우드 인프라 유스케이스
 
-##### MCIS SSH 원격 커맨드
-  - SSH 원격 커맨드 실행을 통해서 접속 여부 등을 확인 가능
-    - command-mcis.sh  # 생성된 MCIS(다중VM)에 원격 명령 수행
-    - 실행 예시
-      - `./create-all.sh -n shson -f ../testSet.env`  # testSet.env 에 구성된 정보를 기준으로 MCIS 생성
-      - `./command-mcis.sh -n shson -f ../testSet.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
-
-##### MCIS Nginx 분산 배치
-- Nginx를 분산 배치하여, 웹서버 접속 시험 가능
-    - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
-    - 실행 예시
-      - deploy-nginx-mcis.sh -n shson -f ../testSetAws.env # testSetAws.env 에 구성된 정보를 기준으로 MCIS의 모든 VM에 Nginx 및 웹페이지 설치
+##### 스크립트를 통해 MCIS에 Nginx 분산 배치
+  - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
+    - deploy-nginx-mcis.sh -n shson -f ../testSetAws.env # testSetAws.env 에 구성된 정보를 기준으로 MCIS의 모든 VM에 Nginx 및 웹페이지 설치
 
 ##### MCIS Weave Scope 클러스터 모니터링 분산 배치
   - [스크립트를 통해 MCIS에 Weave Scope 클러스터 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
