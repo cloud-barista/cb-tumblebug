@@ -200,24 +200,35 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
 ### (3) CB-Tumblebug 실행
 
-- CB-Tumblebug 실행에 필요한 환경변수 설정
-  - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 환경변수, 필요에 따라 변경)
-    - 환경변수를 시스템에 반영 
-      ```bash
-      source conf/setup.env
-      ```
-  - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 환경변수, 필요에 따라 변경)
-    - storetype 지정 (NUTSDB 또는 ETCD 지정)
-    - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 `cb-tumblebug/meta_db/dat` 에 파일로 추가됨)
-  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 환경변수, 필요에 따라 변경)
-
-- CB-Spider 실행 (다른 창에서)
-  - (추천) CB-TB 스크립트를 통한 CB-Spider 컨테이너 실행 방법
+- CB-Spider 실행 
+  - CB-Tumblebug은 클라우드 제어를 위해서 CB-Spider를 활용(필수 구동)
+  - (추천 실행 방법) CB-TB 스크립트를 통한 CB-Spider 컨테이너 실행
     ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug/
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
     ./scripts/runSpider.sh
     ```
   - 상세 설치 방법은 [CB-Spider](https://github.com/cloud-barista/cb-spider) 참고
+ 
+- CB-Tumblebug 실행에 필요한 환경변수 설정 (다른 탭에서)
+  - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 환경변수, 필요에 따라 변경)
+    - 환경변수를 시스템에 반영 
+      ```bash
+      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+      cat conf/setup.env
+      source conf/setup.env
+      ```
+    - 필요에 따라 SELF_ENDPOINT 환경변수(외부에서 접속 가능한 주소)를 스크립트를 통해 자동으로 지정 
+      - CB-Tumblebug을 실행하면 Swagger API Dashboard가 활성화되며, 외부에서 Dashboard에 접속 및 제어하려는 경우에 필요
+      ```bash
+      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+      source ./scripts/setPublicIP.sh
+      ```
+  - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 환경변수, 필요에 따라 변경)
+      - storetype 지정 (NUTSDB 또는 ETCD 지정)
+      - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 `cb-tumblebug/meta_db/dat` 에 파일로 추가됨)
+  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 환경변수, 필요에 따라 변경)
+ 
 - CB-Tumblebug 실행
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
