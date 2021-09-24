@@ -180,6 +180,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 - CB-Tumblebug 소스 다운로드
   ```bash
   git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug
   ```
 
 
