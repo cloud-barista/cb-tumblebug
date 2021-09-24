@@ -146,6 +146,9 @@ echo
 
 echo
 echo ==========================================================
+echo "- To get a shell from container:"
+echo -e "  [${RED} sudo docker exec -it $CONTAINER_NAME /bin/bash ${NC}]"
+echo
 echo "- To stop container:"
 echo -e "  [${RED} Ctrl+C ${NC}] or [${RED} sudo docker stop $CONTAINER_NAME ${NC}]"
 echo
