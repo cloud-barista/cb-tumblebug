@@ -40,8 +40,7 @@ while true; do
         ;;
     [Nn]*)
         echo
-        echo "Stop [Command: $0]"
-        echo "See you soon.. :)"
+        echo "Stop $0 See you soon :)"
         exit 1
         ;;
     *)
