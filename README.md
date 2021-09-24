@@ -168,12 +168,13 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
         ```
       - `.bashrc` 파일 하단에 다음을 추가 
         ```bash
-        export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-        export GOPATH=$HOME/go
+        echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
+        echo 'export GOPATH=$HOME/go' >> ~/.bashrc
         ```
       - `.bashrc` 변경 내용을 적용
         ```bash
         source ~/.bashrc
+        echo $GOPATH
         ```
 
 - CB-Tumblebug 소스 다운로드
