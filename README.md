@@ -123,11 +123,15 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 - CB-Tumblebug 이미지 확인(https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
 - CB-Tumblebug 컨테이너 실행
 
-  ```
-  # docker run -p 1323:1323 -p 50252:50252 \
+  ```bash
+  docker run -p 1323:1323 -p 50252:50252 \
   -v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
   --name cb-tumblebug \
   cloudbaristaorg/cb-tumblebug:0.4.xx
+  ```
+  or
+  ```bash
+  scripts/runTumblebug.sh
   ```
 
 ### (3) cb-operator 기반 Cloud-Barista 통합 실행
@@ -150,40 +154,41 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
 - 필요 패키지 또는 도구 설치
   - Git, gcc, make 설치
-    - `# apt update`
-    - `# apt install make gcc git`
-
+    ```bash
+    sudo apt update
+    sudo apt install make gcc git
+    ```
   - Go 설치
     - https://golang.org/dl/ 를 참고하여 Go 설치 (버전 v1.16 이상: 추천 개발 환경)
     - 설치 예시
-      - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
-      - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
+      - Go 다운로드 및 압축 해제 
+        ```bash
+        wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz
+        sudo tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz
+        ```
       - `.bashrc` 파일 하단에 다음을 추가 
-      ```
-      export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-      export GOPATH=$HOME/go
-      ```
-      - `source ~/.bashrc` (`.bashrc` 변경 내용을 적용)
+        ```bash
+        export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+        export GOPATH=$HOME/go
+        ```
+      - `.bashrc` 변경 내용을 적용
+        ```bash
+        source ~/.bashrc
+        ```
 
 - CB-Tumblebug 소스 다운로드
-  - `# git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug`
-
-- CB-Tumblebug 실행에 필요한 환경변수 설정
-  - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 환경변수, 필요에 따라 변경)
-    - `source setup.env` 실행으로 시스템에 반영
-  - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 환경변수, 필요에 따라 변경)
-    - storetype 지정 (NUTSDB 또는 ETCD 지정)
-    - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 `cb-tumblebug/meta_db/dat` 에 파일로 추가됨)
-  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 환경변수, 필요에 따라 변경)
+  ```bash
+  git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
+  ```
 
 
 ### (2) CB-Tumblebug 빌드
 
 - 빌드 명령어
-  ```Shell
-  # cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
-  # export GO111MODULE=on
-  # make
+  ```bash
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
+  export GO111MODULE=on
+  make
   ```
 
 - Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
@@ -191,9 +196,30 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/index.html 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
 
 ### (3) CB-Tumblebug 실행
-- [CB-Spider](https://github.com/cloud-barista/cb-spider) 실행 (다른 탭에서)
-- `# cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src`
-- `# make run` (또는 `# go run *.go`) 
+
+- CB-Tumblebug 실행에 필요한 환경변수 설정
+  - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 환경변수, 필요에 따라 변경)
+    - 환경변수를 시스템에 반영 
+      ```bash
+      source conf/setup.env
+      ```
+  - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 환경변수, 필요에 따라 변경)
+    - storetype 지정 (NUTSDB 또는 ETCD 지정)
+    - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 `cb-tumblebug/meta_db/dat` 에 파일로 추가됨)
+  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 환경변수, 필요에 따라 변경)
+
+- CB-Spider 실행 (다른 창에서)
+  - (추천) CB-TB 스크립트를 통한 CB-Spider 컨테이너 실행 방법
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug/
+    ./scripts/runSpider.sh
+    ```
+  - 상세 설치 방법은 [CB-Spider](https://github.com/cloud-barista/cb-spider) 참고
+- CB-Tumblebug 실행
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
+    make run
+    ```
 
   CB-Tumblebug 서버 실행 화면
   ```
@@ -233,9 +259,9 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   ```
 
   에러 발생 시, 다음을 실행하여 해결
-  ```Shell
-  # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
-  # make
+  ```bash
+  rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
+  make
   ```
 
 ***
@@ -363,7 +389,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 <details>
 <summary>입출력 예시 보기</summary>
 
-```
+```bash
 ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts/sequentialFullTest$ `./create-all.sh -n shson -f ../testSetCustom.env`
 ####################################################################
 ## Create MCIS from Zero Base
