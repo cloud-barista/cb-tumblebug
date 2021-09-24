@@ -1,11 +1,22 @@
 #!/bin/bash
 
+RED='\033[0;31m'
+LGREEN='\033[1;32m'
+NC='\033[0m' # No Color
+
 CONTAINER_NAME_READ=$1
 CONTAINER_VERSION=$2
 CONTAINER_PORT=$3
 CONTAINER_DATA_PATH=$4
+CONTAINER_ENV=$5
+
 CONTAINER_NAME=`echo $CONTAINER_NAME_READ | tr [:upper:] [:lower:]`
 CONTAINER_VOLUME_PATH="$CBTUMBLEBUG_ROOT/meta_db/${CONTAINER_NAME}-container"
+CONTAINER_VOLUME_OPTION="-v $CONTAINER_VOLUME_PATH:$CONTAINER_DATA_PATH"
+# If CONTAINER_DATA_PATH is not used, disable -v option 
+if [ -z "$CONTAINER_DATA_PATH" ]; then
+    CONTAINER_VOLUME_OPTION=""
+fi
 
 echo
 echo ==========================================================
@@ -14,10 +25,11 @@ echo ==========================================================
 echo "This script runs a $CONTAINER_NAME_READ docker container."
 echo "(If $CONTAINER_NAME_READ is running already, no need to continue.)"
 echo
-echo "- Container Name: $CONTAINER_NAME_READ"
-echo "- Container Version: $CONTAINER_VERSION"
-echo "- Container Port Option: $CONTAINER_PORT"
-echo "- Container Data Path: $CONTAINER_DATA_PATH"
+echo -e "- Container Name: ${LGREEN} $CONTAINER_NAME_READ ${NC}"
+echo -e "- Container Version: ${LGREEN} $CONTAINER_VERSION ${NC} (you can change)"
+echo -e "- Container Port Option: ${LGREEN} $CONTAINER_PORT ${NC}"
+echo -e "- Container Volume Option: ${LGREEN} $CONTAINER_VOLUME_OPTION ${NC}"
+echo -e "- Container Environment Option: ${LGREEN} $CONTAINER_ENV ${NC}"
 echo
 
 while true; do
@@ -28,7 +40,8 @@ while true; do
         ;;
     [Nn]*)
         echo
-        echo "[Command: $0 $@] has been cancelled. See you soon. :)"
+        echo "Stop [Command: $0]"
+        echo "See you soon.. :)"
         exit 1
         ;;
     *)
@@ -74,13 +87,14 @@ echo
 echo ==========================================================
 echo "[Check the command to run $CONTAINER_NAME_READ container]"
 echo ==========================================================
-echo
+echo -e "${LGREEN}"
 RUNCMD="sudo docker run --rm $CONTAINER_PORT \\
-                -v $CONTAINER_VOLUME_PATH:$CONTAINER_DATA_PATH \\
+                $CONTAINER_VOLUME_OPTION \\
+                $CONTAINER_ENV \\
                 --name $CONTAINER_NAME \\
                 cloudbaristaorg/$CONTAINER_NAME:"
 echo "${RUNCMD}${CONTAINER_VERSION}"
-echo
+echo -e "${NC}"
 echo
 
 echo ==========================================================
@@ -98,18 +112,19 @@ while true; do
                 echo 
                 echo ==========================================================
                 echo "[List of all version tags in hub.docker]"
-                echo
+                echo -e "${LGREEN}"
                 curl -s https://registry.hub.docker.com/v1/repositories/cloudbaristaorg/$CONTAINER_NAME/tags | \
                         grep -oP '(?<="name": ")[^"]+' | sort -r
+                echo -e "${NC}"
                 read -p "Please specify $CONTAINER_NAME_READ version you want (latest / $CONTAINER_VERSION / ...): " CONTAINER_VERSION
                 echo
                 echo
                 echo ==========================================================
                 echo "[Check the command to run $CONTAINER_NAME_READ container]"
                 echo ==========================================================
-                echo
+                echo -e "${LGREEN}"
                 echo "${RUNCMD}${CONTAINER_VERSION}"
-                echo
+                echo -e "${NC}"
                 break
                 ;;
             [Nn]*)
@@ -133,14 +148,15 @@ echo
 echo
 echo ==========================================================
 echo "- To stop container:"
-echo "  [Ctrl+C] or [sudo docker stop $CONTAINER_NAME]"
+echo -e "  [${RED} Ctrl+C ${NC}] or [${RED} sudo docker stop $CONTAINER_NAME ${NC}]"
 echo
 echo "- To delete container volume:"
-echo "  [sudo rm -rf $CONTAINER_VOLUME_PATH]"
+echo -e "  [${RED} sudo rm -rf $CONTAINER_VOLUME_PATH ${NC}]"
 echo ==========================================================
 echo
-sleep 2
+sleep 3
 sudo docker run --rm $CONTAINER_PORT \
-    -v $CONTAINER_VOLUME_PATH:$CONTAINER_DATA_PATH \
+    $CONTAINER_VOLUME_OPTION \
+    $CONTAINER_ENV \
     --name $CONTAINER_NAME \
     cloudbaristaorg/$CONTAINER_NAME:$CONTAINER_VERSION
