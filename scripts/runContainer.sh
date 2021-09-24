@@ -11,7 +11,7 @@ CONTAINER_DATA_PATH=$4
 CONTAINER_ENV=$5
 
 CONTAINER_NAME=`echo $CONTAINER_NAME_READ | tr [:upper:] [:lower:]`
-CONTAINER_VOLUME_PATH="$CBTUMBLEBUG_ROOT/meta_db/${CONTAINER_NAME}-container"
+CONTAINER_VOLUME_PATH="$CBTUMBLEBUG_ROOT/container-volume/${CONTAINER_NAME}-container"
 CONTAINER_VOLUME_OPTION="-v $CONTAINER_VOLUME_PATH:$CONTAINER_DATA_PATH"
 # If CONTAINER_DATA_PATH is not used, disable -v option 
 if [ -z "$CONTAINER_DATA_PATH" ]; then
@@ -69,13 +69,17 @@ echo ==========================================================
 echo "[Check docker is running]"
 echo ==========================================================
 if ! sudo docker -v 2>&1; then
+    echo
     echo "Docker isn't running. Please install or start Docker!"
-    echo "Check https://github.com/cloud-barista/cb-coffeehouse/tree/main/scripts/docker-setup"
+    echo "Installation Ref: https://github.com/cloud-barista/cb-coffeehouse/tree/main/scripts/docker-setup"
+    echo "Installation Ref: https://docs.docker.com/engine/install/ubuntu/#installation-methods"
+    echo
     exit 1
 fi
 
 # Stop and remove running cotainer to prevent duplication.
 echo
+echo ==========================================================
 echo "[Stop existing $CONTAINER_NAME_READ container to prevent duplication]"
 echo ==========================================================
 sudo docker stop $CONTAINER_NAME
