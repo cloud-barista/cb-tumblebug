@@ -224,6 +224,15 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "gbnam",
+      "name": "Gibaek Nam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17192707?v=4",
+      "profile": "https://github.com/gbnam",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
