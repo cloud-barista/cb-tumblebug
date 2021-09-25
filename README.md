@@ -178,11 +178,18 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
         ```
 
 - CB-Tumblebug 소스 다운로드
-  ```bash
-  git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
-  cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-  ```
-
+  - CB-Tumblebug 저장소 클론
+    ```bash
+    git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    ```
+  - CB-Tumblebug 디렉토리 이동 alias 등록 (편의를 위한 선택 사항. cdtb, cbtbsrc, cdtbtest 키워드로 디렉토리 이동)
+    ```bash
+    echo "alias cdtb='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug'" >> ~/.bashrc
+    echo "alias cdtbsrc='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug/src'" >> ~/.bashrc
+    echo "alias cdtbtest='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts'" >> ~/.bashrc
+    source ~/.bashrc
+    ```
 
 ### (2) CB-Tumblebug 빌드
 
