@@ -304,10 +304,17 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
 #### 클라우드 인증 정보 및 테스트 기본 정보 입력
 1. [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts) 이동
+
 2. `credentials.conf` 생성 
    - `credentials.conf` 는 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 인증 정보 템플릿 제공
    - [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)를 참조하여 항목에 사용자의 클라우드 인증 정보 입력
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts
+    cp ./credentials.conf.example credentials.conf
+    ls credentials.conf
+    ```
    - [CSP별 인증 정보 획득 방법 참고](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)
+
 3. [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env) 설정
    - CB-Spider 및 CB-Tumblebug 서버 엔드포인트, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
    - 이미 많은 클라우드 타입에 대한 정보가 조사 및 입력되어 있으므로, 수정없이 사용 가능. (단, 지정된 Spec에 따라 과금이 발생할 수 있으므로 확인 필요)
