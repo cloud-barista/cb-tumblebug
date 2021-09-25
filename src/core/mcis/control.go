@@ -480,11 +480,11 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 		result, err := RunSSH(vmIp, sshPort, verifiedUserName, privateKey, cmd)
 		if err != nil {
 			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
-			return "", "", fmt.Errorf("Cannot do ssh, with" + verifiedUserName + ", " + err.Error())
+			return "", "", fmt.Errorf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
 		}
 		if err == nil {
 			theUserName = verifiedUserName
-			fmt.Println("[RST] " + *result + "[Username] " + verifiedUserName)
+			fmt.Printf("[RST] %s [Username] %s\n", *result, verifiedUserName)
 			return theUserName, privateKey, nil
 		}
 	}
@@ -504,14 +504,14 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	fmt.Println("[Retrieve ssh username from the given list]")
 	for _, v := range userNames {
 		if v != "" {
-			fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + v)
+			fmt.Printf("[SSH] (%s) with userName: %s\n", vmIp, v)
 			result, err := RunSSH(vmIp, sshPort, v, privateKey, cmd)
 			if err != nil {
-				fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
+				fmt.Printf("[ERR: result] [ERR: err] %s\n", err.Error())
 			}
 			if err == nil {
 				theUserName = v
-				fmt.Println("[RST] " + *result + "[Username] " + v)
+				fmt.Printf("[RST] %s [Username] %s\n", *result, v)
 				break
 			}
 			time.Sleep(2 * time.Second)
@@ -520,7 +520,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	if theUserName != "" {
 		err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
 		if err != nil {
-			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
+			fmt.Printf("[ERR: result] [ERR: err] %s\n", err.Error())
 			return "", "", err
 		}
 	} else {
