@@ -433,6 +433,7 @@ type SpiderNameIdSystemId struct {
 	SystemId string
 }
 
+// SpiderAllListWrapper is struct for wrapping SpiderAllList struct from CB-Spider response.
 type SpiderAllListWrapper struct {
 	AllList SpiderAllList
 }
