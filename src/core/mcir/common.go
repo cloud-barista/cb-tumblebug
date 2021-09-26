@@ -428,6 +428,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 }
 
+// SpiderNameIdSystemId is struct for mapping NameID and System ID from CB-Spider response
 type SpiderNameIdSystemId struct {
 	NameId   string
 	SystemId string
