@@ -438,6 +438,7 @@ type SpiderAllListWrapper struct {
 	AllList SpiderAllList
 }
 
+// SpiderAllList is struct for OnlyCSPList, OnlySpiderList MappedList from CB-Spider response.
 type SpiderAllList struct {
 	MappedList     []SpiderNameIdSystemId
 	OnlySpiderList []SpiderNameIdSystemId
