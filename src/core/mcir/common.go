@@ -428,6 +428,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 }
 
+// SpiderNameIdSystemId is struct for mapping NameID and System ID from CB-Spider response
 type SpiderNameIdSystemId struct {
 	NameId   string
 	SystemId string
@@ -438,13 +439,14 @@ type SpiderAllListWrapper struct {
 	AllList SpiderAllList
 }
 
+// SpiderAllList is struct for OnlyCSPList, OnlySpiderList MappedList from CB-Spider response.
 type SpiderAllList struct {
 	MappedList     []SpiderNameIdSystemId
 	OnlySpiderList []SpiderNameIdSystemId
 	OnlyCSPList    []SpiderNameIdSystemId
 }
 
-// Response struct for InspectResources
+// TbInspectResourcesResponse is struct for response of InspectResources request
 type TbInspectResourcesResponse struct {
 	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
 	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
