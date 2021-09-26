@@ -444,7 +444,7 @@ type SpiderAllList struct {
 	OnlyCSPList    []SpiderNameIdSystemId
 }
 
-// Response struct for InspectResources
+// TbInspectResourcesResponse is struct for response of InspectResources request
 type TbInspectResourcesResponse struct {
 	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
 	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
