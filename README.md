@@ -14,7 +14,7 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-25-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-26-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
@@ -777,6 +777,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/ChobobDev"><img src="https://avatars.githubusercontent.com/u/32432141?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Seongbin Bernie Cho</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=ChobobDev" title="Code">💻</a> <a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=ChobobDev" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/gbnam"><img src="https://avatars.githubusercontent.com/u/17192707?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gibaek Nam</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=gbnam" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/betelgeuse-7"><img src="https://avatars.githubusercontent.com/u/71967052?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Abidin Durdu</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=betelgeuse-7" title="Code">💻</a></td>
+    <td align="center"><a href="https://sysgongbu.tistory.com/"><img src="https://avatars.githubusercontent.com/u/46469385?v=4?s=100" width="100px;" alt=""/><br /><sub><b>soyeon Park</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=sypark9646" title="Code">💻</a></td>
   </tr>
 </table>
 
