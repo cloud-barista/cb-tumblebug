@@ -148,7 +148,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/53066410?v=4",
       "profile": "https://github.com/limsg1234",
       "contributions": [
-        "doc"
+        "doc",
+        "code"
       ]
     },
     {
@@ -157,7 +158,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/72970232?v=4",
       "profile": "https://github.com/jangh-lee",
       "contributions": [
-        "doc"
+        "doc",
+        "code"
       ]
     },
     {
@@ -219,6 +221,25 @@
       "name": "Seongbin Bernie Cho",
       "avatar_url": "https://avatars.githubusercontent.com/u/32432141?v=4",
       "profile": "https://github.com/ChobobDev",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "gbnam",
+      "name": "Gibaek Nam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17192707?v=4",
+      "profile": "https://github.com/gbnam",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "betelgeuse-7",
+      "name": "Abidin Durdu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/71967052?v=4",
+      "profile": "https://github.com/betelgeuse-7",
       "contributions": [
         "code"
       ]

@@ -177,7 +177,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 
 	} else {
 
-		// CCM API 설정
+		// Set CCM gRPC API
 		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
@@ -265,7 +265,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
 	} else {
 
-		// CCM API 설정
+		// Set CCM gRPC API
 		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {

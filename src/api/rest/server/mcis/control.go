@@ -53,14 +53,14 @@ type JSONResult struct {
 // Annotation for API documention Need to be revised.
 
 // RestGetMcis godoc
-// @Summary Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID
-// @Description Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate, refine), or Get VMs' ID
+// @Summary Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate), or Get VMs' ID
+// @Description Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate), or Get VMs' ID
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
-// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate, refine)
+// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
 // @Param option query string false "Option" Enums(id)
 // @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[STATUS]=mcis.McisStatusInfo,[CONTROL]=common.SimpleMsg,[ID]=common.IdList} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
@@ -84,7 +84,7 @@ func RestGetMcis(c echo.Context) error {
 		}
 
 		return c.JSON(http.StatusOK, &content)
-	} else if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
+	} else if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
 		result, err := mcis.HandleMcisAction(nsId, mcisId, action)
 		if err != nil {
@@ -331,7 +331,7 @@ func RestPostMcisRecommend(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
-// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
+// @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate, refine)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -342,7 +342,7 @@ func RestGetControlMcis(c echo.Context) error {
 
 	action := c.QueryParam("action")
 
-	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
+	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
 
 		result, err := mcis.HandleMcisAction(nsId, mcisId, action)
 		if err != nil {
@@ -354,7 +354,7 @@ func RestGetControlMcis(c echo.Context) error {
 		return c.JSON(http.StatusOK, &mapA)
 
 	} else {
-		mapA := map[string]string{"message": "'action' should be one of these: suspend, resume, reboot, terminate"}
+		mapA := map[string]string{"message": "'action' should be one of these: suspend, resume, reboot, terminate, refine"}
 		return c.JSON(http.StatusBadRequest, &mapA)
 	}
 }
