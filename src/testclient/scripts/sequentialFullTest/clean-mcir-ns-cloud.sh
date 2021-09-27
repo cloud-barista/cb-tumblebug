@@ -109,9 +109,11 @@ function clean_sequence() {
 	# 	../1.configureSpider/unregister-cloud.sh $CSP $REGION $POSTFIX doit $TestSetFile
 	# fi
 
-	echo ""
+	echo -e "${BOLD}"
 	echo "[Cleaning related commands in history file executionStatus]"
-	echo "Remove [MCIR-NS-CLOUD] ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+	echo -e ""
+	echo -e "${NC}${BLUE}- Removing [MCIR-NS-CLOUD] ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+	echo -e "${NC}"
 	sed -i "/(MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 	echo ""
 	echo "[Executed Command List]"

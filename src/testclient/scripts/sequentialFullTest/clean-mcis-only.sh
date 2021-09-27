@@ -36,9 +36,11 @@ else
 fi
 clean_mcis_sequence $CSP $REGION $POSTFIX $TestSetFile
 
-echo ""
+echo -e "${BOLD}"
 echo "[Cleaning related commands in history file executionStatus]"
-echo "Remove (MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+echo -e ""
+echo -e "${NC}${BLUE}- Removing  (MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+echo -e "${NC}"
 sed -i "/(MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 echo ""
 echo "[Executed Command List]"
