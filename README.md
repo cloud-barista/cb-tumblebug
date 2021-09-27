@@ -125,7 +125,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
   ```bash
   docker run -p 1323:1323 -p 50252:50252 \
-  -v /root/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
+  -v ${HOME}/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
   --name cb-tumblebug \
   cloudbaristaorg/cb-tumblebug:0.4.xx
   ```
