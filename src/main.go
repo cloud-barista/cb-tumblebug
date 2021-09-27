@@ -46,6 +46,23 @@ func main() {
 	port := flag.String("port", "1323", "port number for the restapiserver to listen to")
 	flag.Parse()
 
+	// validate arguments from flag
+	validationFlag := true
+	// validation: port
+	// set validationFlag to false if your number is not in [1-65535] range
+	if portInt, err := strconv.Atoi(*port); err == nil {
+		if portInt < 1 || portInt > 65535 {
+			validationFlag = false
+		}
+	} else {
+		validationFlag = false
+	}
+	if !validationFlag {
+		fmt.Printf("%s is not a valid port number.\n", *port)
+		fmt.Printf("Please retry with a valid port number (ex: -port=[1-65535]).\n")
+		os.Exit(1)
+	}
+
 	common.SpiderRestUrl = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
 	common.DragonflyRestUrl = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 	common.DBUrl = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
