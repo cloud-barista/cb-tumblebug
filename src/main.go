@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -39,8 +40,11 @@ import (
 
 // @securityDefinitions.basic BasicAuth
 func main() {
-
 	fmt.Println("")
+
+	// giving a default value of "1323"
+	port := flag.String("port", "1323", "port number for the restapiserver to listen to")
+	flag.Parse()
 
 	common.SpiderRestUrl = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
 	common.DragonflyRestUrl = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
@@ -131,7 +135,7 @@ func main() {
 
 	// Start REST Server
 	go func() {
-		restapiserver.ApiServer()
+		restapiserver.ApiServer(*port)
 		wg.Done()
 	}()
 
