@@ -1,5 +1,19 @@
 #!/bin/bash
 
+NC='\033[0m'
+BOLD='\033[1m'
+BLINK='\033[5m'
+
+WHITE='\033[0;30m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+GRAY='\033[0;37m'
+
+
 function dozing() {
 	duration=$1
 	printf "Dozing for %s : " $duration
@@ -108,8 +122,8 @@ function readParametersByName() {
 		exit 0
 	fi
 
-	echo "Input parameters"
-	echo "// POSTFIX:$POSTFIX // TestSetFile:$TestSetFile // CSP:$CSP // REGION:$REGION // OPTION01:$OPTION01 // OPTION02:$OPTION02 // OPTION03:$OPTION03"
+	# echo "Input parameters"
+	# echo "// POSTFIX:$POSTFIX // TestSetFile:$TestSetFile // CSP:$CSP // REGION:$REGION // OPTION01:$OPTION01 // OPTION02:$OPTION02 // OPTION03:$OPTION03"
 }
 
 function printElapsed() {
