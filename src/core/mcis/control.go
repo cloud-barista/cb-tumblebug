@@ -428,108 +428,6 @@ type TbVmRecommendInfo struct {
 	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
-// VerifySshUserName is func to verify SSH username
-func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
-
-	// verify if vm is running with a public ip.
-	if vmIp == "" {
-		return "", "", fmt.Errorf("Cannot do ssh, VM IP is null")
-	}
-	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return "", "", err
-	}
-	if vmStatusInfoTmp.Status != StatusRunning || vmIp == "" {
-		return "", "", fmt.Errorf("Cannot do ssh, VM IP is not Running")
-	}
-
-	// find vaild username
-	userName, _, privateKey := GetVmSshKey(nsId, mcisId, vmId)
-	userNames := []string{
-		userName,
-		givenUserName,
-		sshDefaultUserName[0],
-		sshDefaultUserName[1],
-		sshDefaultUserName[2],
-		sshDefaultUserName[3],
-	}
-
-	theUserName := ""
-	cmd := "ls"
-
-	_, verifiedUserName, _ := GetVmSshKey(nsId, mcisId, vmId)
-
-	if verifiedUserName != "" {
-		fmt.Println("[SSH] " + "(" + vmIp + ")" + "with userName:" + verifiedUserName)
-		fmt.Println("[CMD] " + cmd)
-
-		retrycheck := 10
-		for i := 0; i < retrycheck; i++ {
-			conerr := CheckConnectivity(vmIp, sshPort)
-			if conerr == nil {
-				fmt.Println("[ERR: CheckConnectivity] nil. break")
-				break
-			}
-			if i == retrycheck-1 {
-				return "", "", fmt.Errorf("Cannot do ssh, the port is not opened (10 trials)")
-			}
-			time.Sleep(2 * time.Second)
-		}
-
-		result, err := RunSSH(vmIp, sshPort, verifiedUserName, privateKey, cmd)
-		if err != nil {
-			fmt.Println("[ERR: result] " + "[ERR: err] " + err.Error())
-			return "", "", fmt.Errorf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
-		}
-		if err == nil {
-			theUserName = verifiedUserName
-			fmt.Printf("[RST] %s [Username] %s\n", *result, verifiedUserName)
-			return theUserName, privateKey, nil
-		}
-	}
-
-	retrycheck := 10
-	for i := 0; i < retrycheck; i++ {
-		conerr := CheckConnectivity(vmIp, sshPort)
-		if conerr == nil {
-			//fmt.Println("[ERR: conerr] nil. break")
-			break
-		}
-		if i == retrycheck-1 {
-			return "", "", fmt.Errorf("Cannot do ssh, the port is not opened (10 trials)")
-		}
-		time.Sleep(2 * time.Second)
-	}
-	fmt.Println("[Retrieve ssh username from the given list]")
-	for _, v := range userNames {
-		if v != "" {
-			fmt.Printf("[SSH] (%s) with userName: %s\n", vmIp, v)
-			result, err := RunSSH(vmIp, sshPort, v, privateKey, cmd)
-			if err != nil {
-				fmt.Printf("[ERR: result] [ERR: err] %s\n", err.Error())
-			}
-			if err == nil {
-				theUserName = v
-				fmt.Printf("[RST] %s [Username] %s\n", *result, v)
-				break
-			}
-			time.Sleep(2 * time.Second)
-		}
-	}
-	if theUserName != "" {
-		err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
-		if err != nil {
-			fmt.Printf("[ERR: result] [ERR: err] %s\n", err.Error())
-			return "", "", err
-		}
-	} else {
-		return "", "", fmt.Errorf("Could not find username")
-	}
-
-	return theUserName, privateKey, nil
-}
-
 // SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
 	McisId string `json:"mcisId"`
@@ -610,8 +508,10 @@ func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInsta
 		// find vaild username
 		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
 
-		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
+		fmt.Println("")
+		fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName:" + userName)
 		fmt.Println("[CMD] " + cmd)
+		fmt.Println("")
 
 		// Avoid RunSSH to not ready VM
 		if err != nil {
@@ -1912,7 +1812,7 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 	return VmRecommend, nil
 }
 
-// RemoteCommandToMcisVm is func to command to a VM in MCIS with SSH
+// RemoteCommandToMcisVm is func to command to a VM in MCIS by SSH
 func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
 
 	err := common.CheckString(nsId)
@@ -1984,8 +1884,10 @@ func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmd
 		return "", fmt.Errorf("Not found: valid ssh username, " + err.Error())
 	}
 
-	fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
+	fmt.Println("")
+	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName:" + userName)
 	fmt.Println("[CMD] " + cmd)
+	fmt.Println("")
 
 	if result, err := RunSSH(vmIp, sshPort, userName, sshKey, cmd); err != nil {
 		//return c.JSON(http.StatusInternalServerError, err)
@@ -1999,7 +1901,7 @@ func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmd
 	}
 }
 
-// RemoteCommandToMcis is func to post CmdMcis
+// RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
 func RemoteCommandToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
@@ -2094,23 +1996,19 @@ func RemoteCommandToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdR
 		// }
 		// find vaild username
 		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
-
-		fmt.Println("[SSH] " + mcisId + "/" + vmId + "(" + vmIp + ")" + "with userName:" + userName)
-		fmt.Println("[CMD] " + cmd)
-
-		// Avoid RunSSH to not ready VM
+		// Eventhough VerifySshUserName is not complete, Try RunSSH
+		// With RunSSH, error will be checked again
 		if err == nil {
-			wg.Add(1)
-			go RunSSHAsync(&wg, vmId, vmIp, sshPort, userName, sshKey, cmd, &resultArray)
-		} else {
-			common.CBLog.Error(err)
-			sshResultTmp := SshCmdResult{}
-			sshResultTmp.McisId = mcisId
-			sshResultTmp.VmId = vmId
-			sshResultTmp.VmIp = vmIp
-			sshResultTmp.Result = err.Error()
-			sshResultTmp.Err = err
+			// Just logging the error (but it is net a faultal )
+			common.CBLog.Info(err)
 		}
+		fmt.Println("")
+		fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName:" + userName)
+		fmt.Println("[CMD] " + cmd)
+		fmt.Println("")
+
+		wg.Add(1)
+		go RunSSHAsync(&wg, vmId, vmIp, sshPort, userName, sshKey, cmd, &resultArray)
 
 	}
 	wg.Wait() //goroutine sync wg

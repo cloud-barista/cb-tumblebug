@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	//"fmt"
 	//"net/http"
@@ -206,59 +205,6 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
-
-}
-
-func RunSSH(vmIP string, sshPort string, userName string, privateKey string, cmd string) (*string, error) {
-
-	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
-	sshInfo := SSHInfo{
-		ServerPort: serverEndpoint,
-		UserName:   userName,
-		PrivateKey: []byte(privateKey),
-	}
-
-	// VM SSH 명령어 실행
-	if result, err := SSHRun(sshInfo, cmd); err != nil {
-		return nil, err
-	} else {
-		return &result, nil
-	}
-}
-
-func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
-
-	defer wg.Done() //goroutin sync done
-
-	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
-	sshInfo := SSHInfo{
-		ServerPort: serverEndpoint,
-		UserName:   userName,
-		PrivateKey: []byte(privateKey),
-	}
-
-	// VM SSH 명령어 실행
-	result, err := SSHRun(sshInfo, cmd)
-
-	//wg.Done() //goroutin sync done
-
-	sshResultTmp := SshCmdResult{}
-	sshResultTmp.McisId = ""
-	sshResultTmp.VmId = vmID
-	sshResultTmp.VmIp = vmIP
-
-	if err != nil {
-		sshResultTmp.Result = err.Error()
-		sshResultTmp.Err = err
-		*returnResult = append(*returnResult, sshResultTmp)
-	} else {
-		fmt.Println("cmd result " + result)
-		sshResultTmp.Result = result
-		sshResultTmp.Err = nil
-		*returnResult = append(*returnResult, sshResultTmp)
-	}
 
 }
 

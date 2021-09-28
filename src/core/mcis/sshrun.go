@@ -18,6 +18,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bramvdbogaerde/go-scp"
@@ -185,20 +186,154 @@ func SSHCopyByKeyPath(sshInfo SSHKeyPathInfo, sourcePath string, remotePath stri
 }
 
 // CheckConnectivity func checks if given port is open and ready.
-// For instance, ready for ssh port can be checkek.
 func CheckConnectivity(host string, port string) error {
 
-	deadline := 10
-	timeout := time.Second * time.Duration(deadline)
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+	// retry: 5 times, sleep: 5 seconds. timeout for each Dial: 20 seconds
+	retrycheck := 5
+	timeout := time.Second * time.Duration(20)
+	for i := 0; i < retrycheck; i++ {
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
+		conn.Close()
+
+		fmt.Println("[Check SSH Port]", host, ":", port)
+
+		if err != nil {
+			fmt.Println("SSH Port is NOT accessible yet. retry after 5 seconds sleep ", err)
+		} else {
+			// port is opened. return nil for error.
+			fmt.Println("SSH Port is accessible")
+			return nil
+		}
+		time.Sleep(5 * time.Second)
+	}
+	return fmt.Errorf("SSH Port is NOT not accessible (5 trials)")
+}
+
+// VerifySshUserName is func to verify SSH username
+func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
+
+	fmt.Println("")
+	fmt.Println("[Start SSH checking squence]")
+
+	// verify if vm is running with a public ip.
+	if vmIp == "" {
+		return "", "", fmt.Errorf("Cannot ssh, VM IP is null")
+	}
+	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
 	if err != nil {
-		fmt.Println("[CheckConnectivity]", host, ":", port, ". ERR:", err)
-		return err
+		common.CBLog.Error(err)
+		return "", "", err
 	}
-	if conn != nil {
-		defer conn.Close()
-		fmt.Println("[CheckConnectivity]", host, ":", port, ". Opened")
-		return nil
+	if vmStatusInfoTmp.Status != StatusRunning || vmIp == "" {
+		return "", "", fmt.Errorf("Cannot ssh, VM is not Running")
 	}
-	return nil
+
+	// CheckConnectivity func checks if given port is open and ready.
+	// retry: 5 times, sleep: 5 seconds. timeout for each Dial: 20 seconds
+	conErr := CheckConnectivity(vmIp, sshPort)
+	if conErr != nil {
+		return "", "", conErr
+	}
+
+	// find vaild username
+	userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
+	userNames := []string{
+		sshDefaultUserName[0],
+		userName,
+		givenUserName,
+		sshDefaultUserName[1],
+		sshDefaultUserName[2],
+		sshDefaultUserName[3],
+	}
+
+	theUserName := ""
+	cmd := "sudo ls"
+
+	if verifiedUserName != "" {
+		/* Code for strict check in advance with real SSH (but slow down speed)
+		fmt.Printf("\n[Check SSH] (%s) with userName: %s\n", vmIp, verifiedUserName)
+		_, err := RunSSH(vmIp, sshPort, verifiedUserName, privateKey, cmd)
+		if err != nil {
+			return "", "", fmt.Errorf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
+		}*/
+		theUserName = verifiedUserName
+		fmt.Printf("[%s] is a valid UserName\n", theUserName)
+		return theUserName, privateKey, nil
+	}
+
+	// If we have a varified username, Retrieve ssh username from the given list will not be executed
+	fmt.Println("[Retrieve ssh username from the given list]")
+	for _, v := range userNames {
+		if v != "" {
+			fmt.Printf("[Check SSH] (%s) with userName: %s\n", vmIp, v)
+			_, err := RunSSH(vmIp, sshPort, v, privateKey, cmd)
+			if err != nil {
+				fmt.Printf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
+			} else {
+				theUserName = v
+				fmt.Printf("[%s] is a valid UserName\n", theUserName)
+				break
+			}
+			time.Sleep(3 * time.Second)
+		}
+	}
+	if theUserName != "" {
+		err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
+		if err != nil {
+			common.CBLog.Error(err)
+			return "", "", err
+		}
+	} else {
+		return "", "", fmt.Errorf("Could not find a valid username")
+	}
+
+	return theUserName, privateKey, nil
+}
+
+// RunSSH is func to execute a SSH command to a VM (sync call)
+func RunSSH(vmIP string, sshPort string, userName string, privateKey string, cmd string) (*string, error) {
+
+	// Set VM SSH config (serverEndpoint, userName, Private Key)
+	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
+	sshInfo := SSHInfo{
+		ServerPort: serverEndpoint,
+		UserName:   userName,
+		PrivateKey: []byte(privateKey),
+	}
+
+	// Execute SSH
+	if result, err := SSHRun(sshInfo, cmd); err != nil {
+		return nil, err
+	} else {
+		return &result, nil
+	}
+}
+
+// RunSSHAsync is func to execute a SSH command to a VM (async call)
+func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
+
+	defer wg.Done() //goroutin sync done
+
+	// RunSSH
+	result, err := RunSSH(vmIP, sshPort, userName, privateKey, cmd)
+
+	sshResultTmp := SshCmdResult{}
+	sshResultTmp.McisId = ""
+	sshResultTmp.VmId = vmID
+	sshResultTmp.VmIp = vmIP
+
+	if err != nil {
+		sshResultTmp.Result = err.Error()
+		sshResultTmp.Err = err
+		*returnResult = append(*returnResult, sshResultTmp)
+	} else {
+		fmt.Println("[Begin] SSH Output")
+		fmt.Println(*result)
+		fmt.Println("[end] SSH Output")
+
+		sshResultTmp.Result = *result
+		sshResultTmp.Err = nil
+		*returnResult = append(*returnResult, sshResultTmp)
+	}
+
 }
