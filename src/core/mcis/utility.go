@@ -1,3 +1,17 @@
+/*
+Copyright 2019 The Cloud-Barista Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// package to manage multi-cloud infra service
 package mcis
 
 import (
@@ -6,7 +20,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	//"fmt"
 	//"net/http"
@@ -206,59 +219,6 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
-
-}
-
-func RunSSH(vmIP string, sshPort string, userName string, privateKey string, cmd string) (*string, error) {
-
-	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
-	sshInfo := SSHInfo{
-		ServerPort: serverEndpoint,
-		UserName:   userName,
-		PrivateKey: []byte(privateKey),
-	}
-
-	// VM SSH 명령어 실행
-	if result, err := SSHRun(sshInfo, cmd); err != nil {
-		return nil, err
-	} else {
-		return &result, nil
-	}
-}
-
-func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
-
-	defer wg.Done() //goroutin sync done
-
-	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
-	sshInfo := SSHInfo{
-		ServerPort: serverEndpoint,
-		UserName:   userName,
-		PrivateKey: []byte(privateKey),
-	}
-
-	// VM SSH 명령어 실행
-	result, err := SSHRun(sshInfo, cmd)
-
-	//wg.Done() //goroutin sync done
-
-	sshResultTmp := SshCmdResult{}
-	sshResultTmp.McisId = ""
-	sshResultTmp.VmId = vmID
-	sshResultTmp.VmIp = vmIP
-
-	if err != nil {
-		sshResultTmp.Result = err.Error()
-		sshResultTmp.Err = err
-		*returnResult = append(*returnResult, sshResultTmp)
-	} else {
-		fmt.Println("cmd result " + result)
-		sshResultTmp.Result = result
-		sshResultTmp.Err = nil
-		*returnResult = append(*returnResult, sshResultTmp)
-	}
 
 }
 

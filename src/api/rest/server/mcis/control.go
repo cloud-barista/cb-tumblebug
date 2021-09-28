@@ -427,7 +427,7 @@ func RestPostCmdMcisVm(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.CorePostCmdMcisVm(nsId, mcisId, vmId, req)
+	result, err := mcis.RemoteCommandToMcisVm(nsId, mcisId, vmId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
@@ -471,7 +471,7 @@ func RestPostCmdMcis(c echo.Context) error {
 		return err
 	}
 
-	resultArray, err := mcis.CorePostCmdMcis(nsId, mcisId, req)
+	resultArray, err := mcis.RemoteCommandToMcis(nsId, mcisId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
