@@ -402,7 +402,7 @@ func (s *MCISService) CmdMcis(ctx context.Context, req *pb.McisCmdCreateRequest)
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CmdMcis()")
 	}
 
-	result, err := mcis.CorePostCmdMcis(req.NsId, req.McisId, &mcisObj)
+	result, err := mcis.RemoteCommandToMcis(req.NsId, req.McisId, &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CmdMcis()")
 	}
@@ -435,7 +435,7 @@ func (s *MCISService) CmdMcisVm(ctx context.Context, req *pb.McisCmdVmCreateRequ
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CmdMcisVm()")
 	}
 
-	result, err := mcis.CorePostCmdMcisVm(req.NsId, req.McisId, req.VmId, &mcisObj)
+	result, err := mcis.RemoteCommandToMcisVm(req.NsId, req.McisId, req.VmId, &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CmdMcisVm()")
 	}

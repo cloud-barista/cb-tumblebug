@@ -1863,7 +1863,7 @@ func CoreDelAllMcis(nsId string, option string) (string, error) {
 	return "All MCISs has been deleted", nil
 }
 
-// CorePostMcisRecommend is func to post MCIS recommendation
+// CorePostMcisRecommend is func to command to all VMs in MCIS with SSH
 func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
 
 	err := common.CheckString(nsId)
@@ -1912,8 +1912,8 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 	return VmRecommend, nil
 }
 
-// CorePostCmdMcisVm is func to post CmdMcisVm
-func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
+// RemoteCommandToMcisVm is func to command to a VM in MCIS with SSH
+func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1999,8 +1999,8 @@ func CorePostCmdMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq)
 	}
 }
 
-// CorePostCmdMcis is func to post CmdMcis
-func CorePostCmdMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
+// RemoteCommandToMcis is func to post CmdMcis
+func RemoteCommandToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
