@@ -419,8 +419,6 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   - MCIS SSH 원격 커맨드 실행을 통해 VM 통합 커맨드 확인
     - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
-  - CB-MapUI 를 통해 MCIS 형상 확인 및 제어 가능
-    - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
 - CB-MapUI 를 통해 MCIS 형상 확인 및 제어 가능
   - CB-Tumblebug은 지도 형태로 MCIS 배포 형상 확인을 위해 [CB-MapUI](https://github.com/cloud-barista/cb-mapui)를 활용
