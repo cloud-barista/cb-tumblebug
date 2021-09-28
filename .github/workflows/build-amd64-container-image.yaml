@@ -15,6 +15,7 @@ on:
       - 'assets/**'
       - 'scripts/**'
       - 'src/testclient/scripts/**'
+      - 'docs/**'
 
 jobs:
   # The job key is "building"
