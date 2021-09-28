@@ -125,8 +125,9 @@ done
 
 echo ""
 
+LAUNCHCMD="fping -e $VMLIST"
 #LAUNCHCMD="fping -e $PRIVIPLIST"
-LAUNCHCMD="fping -e $IPLIST"
+#LAUNCHCMD="fping -e $IPLIST"
 #LAUNCHCMD="fping -e $IPCOMBLIST"
 # LAUNCHCMD="fping $PRIVIPLIST -q -n -c 10"
 
