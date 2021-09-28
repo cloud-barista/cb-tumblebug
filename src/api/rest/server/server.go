@@ -50,11 +50,15 @@ const (
  ██║  ██║███████╗██║  ██║██████╔╝   ██║   
  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝   
 
- Multi-cloud infrastructure managemenet framework
+ Multi-cloud infrastructure management framework
  ________________________________________________`
 )
 
-func ApiServer() {
+/*
+	port is the port that the ApiServer will listen to.
+	port is passed without a ':' (colon).
+*/
+func ApiServer(port string) {
 
 	e := echo.New()
 
@@ -258,5 +262,6 @@ func ApiServer() {
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
-	e.Logger.Fatal(e.Start(":1323"))
+	port = fmt.Sprintf(":%s", port)
+	e.Logger.Fatal(e.Start(port))
 }

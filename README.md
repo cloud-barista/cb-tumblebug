@@ -25,9 +25,9 @@ A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastr
 ### Development stage of Cloud-Barista
 ```
 Cloud-Barista is currently under development. (not v1.0 yet)
-We welcome any new suggestions, issues, opinions, and controbutors !
+We welcome any new suggestions, issues, opinions, and contributors !
 Please note that the functionalities of Cloud-Barista are not stable and secure yet.
-Becareful if you plan to use the current release in production.
+Be careful if you plan to use the current release in production.
 If you have any difficulties in using Cloud-Barista, please let us know.
 (Open an issue or Join the Cloud-Barista Slack)
 ```
