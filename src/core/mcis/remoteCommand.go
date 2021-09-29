@@ -131,26 +131,26 @@ func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmd
 
 	// find vaild username
 	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
-
-	if err != nil || userName == "" {
-		return "", fmt.Errorf("Not found: valid ssh username, " + err.Error())
+	// Eventhough VerifySshUserName is not complete, Try RunRemoteCommand
+	// With RunRemoteCommand, error will be checked again
+	if err == nil {
+		// Just logging the error (but it is net a faultal )
+		common.CBLog.Info(err)
 	}
 
 	fmt.Println("")
-	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName:" + userName)
+	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName: " + userName)
 	fmt.Println("[CMD] " + cmd)
 	fmt.Println("")
 
-	if result, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, cmd); err != nil {
+	result, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, cmd)
+	if err != nil {
 		//return c.JSON(http.StatusInternalServerError, err)
-		return "", err
-	} else {
-		//response := echo.Map{}
-		//response["result"] = *result
-		//response := RestPostCmdMcisVmResponse{Result: *result}
-		//return c.JSON(http.StatusOK, response)
-		return *result, nil
+		//return "", errors.New(err.Error() + *result)
+		return ("[ERROR: " + err.Error() + "]\n " + *result), nil
 	}
+	return *result, nil
+
 }
 
 // RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
@@ -255,7 +255,7 @@ func RemoteCommandToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdR
 			common.CBLog.Info(err)
 		}
 		fmt.Println("")
-		fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName:" + userName)
+		fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName: " + userName)
 		fmt.Println("[CMD] " + cmd)
 		fmt.Println("")
 
@@ -282,7 +282,7 @@ func RunRemoteCommand(vmIP string, sshPort string, userName string, privateKey s
 	// Execute SSH
 	result, err := runSSH(sshInfo, cmd)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 	return &result, nil
 
@@ -302,7 +302,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort
 	sshResultTmp.VmIp = vmIP
 
 	if err != nil {
-		sshResultTmp.Result = err.Error()
+		sshResultTmp.Result = ("[ERROR: " + err.Error() + "]\n " + *result)
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
 	} else {
