@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// package to manage multi-cloud infra service
+// Package mcis is to manage multi-cloud infra service
 package mcis
 
 import (
@@ -330,7 +330,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		// Request agent installation (skip if in installing or installed status)
 		if vmObjTmp.MonAgentStatus != "installed" && vmObjTmp.MonAgentStatus != "installing" {
 
-			// Avoid RunSSH to not ready VM
+			// Avoid RunRemoteCommand to not ready VM
 			if err == nil {
 				wg.Add(1)
 				go CallMonitoringAsync(&wg, nsId, mcisId, v, req.UserName, method, cmd, &resultArray)
