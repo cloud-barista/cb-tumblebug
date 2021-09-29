@@ -336,12 +336,14 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 		return "", "", fmt.Errorf("Cannot ssh, VM is not Running")
 	}
 
+	/* Code to check endpoint and port connectivity. (disabled for better speed)
 	// CheckConnectivity func checks if given port is open and ready.
 	// retry: 5 times, sleep: 5 seconds. timeout for each Dial: 20 seconds
 	conErr := CheckConnectivity(vmIp, sshPort)
 	if conErr != nil {
 		return "", "", conErr
 	}
+	*/
 
 	// find vaild username
 	userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
