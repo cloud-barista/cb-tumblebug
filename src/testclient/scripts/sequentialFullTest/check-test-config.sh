@@ -24,9 +24,9 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	CSP=${CSPType[$cspi]}
 	echo -e "${GREEN}${BOLD} - [$cspi] Cloud : $CSP (enabled regions : $INDEXY)${NC}"
 	for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-		echo -e "${YELLOW}   [$cspi,$cspj] Region : ${RegionLocation[$IX,$IY]} (${RegionName[$cspi,$cspj]})" 
-		echo -e "    - VM SPEC : ${SPEC_NAME[$cspi,$cspj]}"
-		echo -e "    - VM IMAGE : ${IMAGE_TYPE[$cspi,$cspj]} (${IMAGE_NAME[$cspi,$cspj]}) ${NC}"
+		echo -e "${BLUE}${BOLD}   [$cspi,$cspj] Region : ${RegionName[$cspi,$cspj]} (${RegionLocation[$cspi,$cspj]}) ${NC}" 
+		echo -e "    - VM SPEC : ${SPEC_NAME[$cspi,$cspj]} "
+		echo -e "    - VM IMAGE : ${IMAGE_TYPE[$cspi,$cspj]} (${IMAGE_NAME[$cspi,$cspj]}) "
 	done
 	echo ""
 done
@@ -48,7 +48,7 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	INDEXY=${NumRegion[$cspi]}
 	CSP=${CSPType[$cspi]}
 	RegionVM=$((1 * INDEXY * NUMVM))
-	echo -e "   - ${YELLOW}[$cspi] VMs($RegionVM) = $CSP(1) * Region($INDEXY) * Replication($NUMVM)${NC}"
+	echo -e "   - ${BLUE}${BOLD}[$cspi] VMs($RegionVM) = $CSP($INDEXY) * Replica($NUMVM)${NC}"
 done
 
 echo ""
