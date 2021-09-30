@@ -1,35 +1,15 @@
 #!/bin/bash
 
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
 echo "####################################################################"
 echo "## Generate SSH KEY (PEM, PPK)"
 echo "####################################################################"
 
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-source ../common-functions.sh
-getCloudIndex $CSP
-
-MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
 	MCISID=${MCISPREFIX}-${POSTFIX}
 fi
-
-#install jq and puttygen
-echo "[Check jq and putty-tools package (if not, install)]"
-if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
-if ! dpkg-query -W -f='${Status}' putty-tools | grep "ok installed"; then sudo apt install -y putty-tools; fi
 
 # curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$MCIRID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCISID.pem
 # chmod 600 ./sshkey-tmp/$MCISID.pem
@@ -39,7 +19,7 @@ echo ""
 echo "[CHECK REMOTE COMMAND BY CB-TB API]"
 echo " This will retrieve verified SSH username"
 
-./command-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+./command-mcis.sh -n $POSTFIX -f $TestSetFile
 
 MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)
 VMARRAY=$(jq '.status.vm' <<<"$MCISINFO")

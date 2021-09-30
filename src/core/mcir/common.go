@@ -16,6 +16,10 @@ import (
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
+
+	"reflect"
+
+	validator "github.com/go-playground/validator/v10"
 )
 
 // CB-Store
@@ -24,10 +28,33 @@ import (
 
 //var SPIDER_REST_URL string
 
+// use a single instance of Validate, it caches struct info
+var validate *validator.Validate
+
 func init() {
 	//cblog = config.Cblogger
 	//store = cbstore.GetStore()
 	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
+
+	validate = validator.New()
+
+	// register function to get tag name from json tags.
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+
+	// register validation for 'Tb*Req'
+	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
+	// internally dereferences during it's type checks.
+	validate.RegisterStructValidation(TbImageReqStructLevelValidation, TbImageReq{})
+	validate.RegisterStructValidation(TbSecurityGroupReqStructLevelValidation, TbSecurityGroupReq{})
+	validate.RegisterStructValidation(TbSpecReqStructLevelValidation, TbSpecReq{})
+	validate.RegisterStructValidation(TbSshKeyReqStructLevelValidation, TbSshKeyReq{})
+	validate.RegisterStructValidation(TbVNetReqStructLevelValidation, TbVNetReq{})
 }
 
 // DelAllResources deletes all TB MCIR object of given resourceType
@@ -154,7 +181,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			//delete related recommend spec
-			err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+			err = DelRecommendSpec(nsId, resourceId, content.NumvCPU, content.MemGiB, content.StorageGiB)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -178,7 +205,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/keypair/" + temp.Name
+			url = common.SpiderRestUrl + "/keypair/" + temp.Name
 		case common.StrVNet:
 			temp := TbVNetInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -187,7 +214,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/vpc/" + temp.Name
+			url = common.SpiderRestUrl + "/vpc/" + temp.Name
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -196,7 +223,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/securitygroup/" + temp.Name
+			url = common.SpiderRestUrl + "/securitygroup/" + temp.Name
 		/*
 			case "subnet":
 				temp := subnetInfo{}
@@ -276,7 +303,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	} else {
 
-		// CCM API 설정
+		// Set CCM gRPC API
 		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
@@ -328,7 +355,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			//delete related recommend spec
-			err = DelRecommendSpec(nsId, resourceId, content.Num_vCPU, content.Mem_GiB, content.Storage_GiB)
+			err = DelRecommendSpec(nsId, resourceId, content.NumvCPU, content.MemGiB, content.StorageGiB)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -401,22 +428,25 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 }
 
+// SpiderNameIdSystemId is struct for mapping NameID and System ID from CB-Spider response
 type SpiderNameIdSystemId struct {
 	NameId   string
 	SystemId string
 }
 
+// SpiderAllListWrapper is struct for wrapping SpiderAllList struct from CB-Spider response.
 type SpiderAllListWrapper struct {
 	AllList SpiderAllList
 }
 
+// SpiderAllList is struct for OnlyCSPList, OnlySpiderList MappedList from CB-Spider response.
 type SpiderAllList struct {
 	MappedList     []SpiderNameIdSystemId
 	OnlySpiderList []SpiderNameIdSystemId
 	OnlyCSPList    []SpiderNameIdSystemId
 }
 
-// Response struct for InspectResources
+// TbInspectResourcesResponse is struct for response of InspectResources request
 type TbInspectResourcesResponse struct {
 	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
 	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
@@ -532,11 +562,11 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 	var spiderRequestURL string
 	switch resourceType {
 	case common.StrVNet:
-		spiderRequestURL = common.SPIDER_REST_URL + "/allvpc"
+		spiderRequestURL = common.SpiderRestUrl + "/allvpc"
 	case common.StrSecurityGroup:
-		spiderRequestURL = common.SPIDER_REST_URL + "/allsecuritygroup"
+		spiderRequestURL = common.SpiderRestUrl + "/allsecuritygroup"
 	case common.StrSSHKey:
-		spiderRequestURL = common.SPIDER_REST_URL + "/allkeypair"
+		spiderRequestURL = common.SpiderRestUrl + "/allkeypair"
 	}
 
 	resp, err := client.R().
@@ -970,18 +1000,18 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			var anyJson map[string]interface{}
 			json.Unmarshal([]byte(keyValue.Value), &anyJson)
 			if anyJson["associatedObjectList"] == nil {
-				array_to_be := []string{objectKey}
+				arrayToBe := []string{objectKey}
 				// fmt.Println("array_to_be: ", array_to_be) // for debug
 
-				anyJson["associatedObjectList"] = array_to_be
+				anyJson["associatedObjectList"] = arrayToBe
 			} else { // anyJson["associatedObjectList"] != nil
-				array_as_is := anyJson["associatedObjectList"].([]interface{})
+				arrayAsIs := anyJson["associatedObjectList"].([]interface{})
 				// fmt.Println("array_as_is: ", array_as_is) // for debug
 
-				array_to_be := append(array_as_is, objectKey)
+				arrayToBe := append(arrayAsIs, objectKey)
 				// fmt.Println("array_to_be: ", array_to_be) // for debug
 
-				anyJson["associatedObjectList"] = array_to_be
+				anyJson["associatedObjectList"] = arrayToBe
 			}
 			updatedJson, _ := json.Marshal(anyJson)
 			// fmt.Println(string(updatedJson)) // for debug

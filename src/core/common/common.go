@@ -24,25 +24,25 @@ type IdList struct {
 var CBLog *logrus.Logger
 var CBStore icbs.Store
 
-var SPIDER_REST_URL string
-var DRAGONFLY_REST_URL string
-var DB_URL string
-var DB_DATABASE string
-var DB_USER string
-var DB_PASSWORD string
-var AUTOCONTROL_DURATION_MS string
-var MYDB *sql.DB
+var SpiderRestUrl string
+var DragonflyRestUrl string
+var DBUrl string
+var DBDatabase string
+var DBUser string
+var DBPassword string
+var AutocontrolDurationMs string
+var MyDB *sql.DB
 var err error
 var ORM *xorm.Engine
 
 const (
-	StrSPIDER_REST_URL            string = "SPIDER_REST_URL"
-	StrDRAGONFLY_REST_URL         string = "DRAGONFLY_REST_URL"
-	StrDB_URL                     string = "DB_URL"
-	StrDB_DATABASE                string = "DB_DATABASE"
-	StrDB_USER                    string = "DB_USER"
-	StrDB_PASSWORD                string = "DB_PASSWORD"
-	StrAUTOCONTROL_DURATION_MS    string = "AUTOCONTROL_DURATION_MS"
+	StrSpiderRestUrl              string = "SPIDER_REST_URL"
+	StrDragonflyRestUrl           string = "DRAGONFLY_REST_URL"
+	StrDBUrl                      string = "DB_URL"
+	StrDBDatabase                 string = "DB_DATABASE"
+	StrDBUser                     string = "DB_USER"
+	StrDBPassword                 string = "DB_PASSWORD"
+	StrAutocontrolDurationMs      string = "AUTOCONTROL_DURATION_MS"
 	CbStoreKeyNotFoundErrorString string = "key not found"
 	StrAdd                        string = "add"
 	StrDelete                     string = "delete"
@@ -82,13 +82,13 @@ func OpenSQL(path string) error {
 	*/
 
 	fullPathString := "file:" + path
-	MYDB, err = sql.Open("sqlite3", fullPathString)
+	MyDB, err = sql.Open("sqlite3", fullPathString)
 	return err
 }
 
 func SelectDatabase(database string) error {
 	query := "USE " + database + ";"
-	_, err = MYDB.Exec(query)
+	_, err = MyDB.Exec(query)
 	return err
 }
 
@@ -100,34 +100,34 @@ func CreateSpecTable() error {
 		"connectionName varchar(50) NOT NULL," +
 		"cspSpecName varchar(50) NOT NULL," +
 		"name varchar(50)," +
-		"os_type varchar(50)," +
-		"num_vCPU SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"num_core SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"mem_GiB SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"storage_GiB MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
+		"osType varchar(50)," +
+		"numvCPU SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"numcore SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"memGiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"storageGiB MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
 		"description varchar(50)," +
-		"cost_per_hour FLOAT," +
-		"num_storage SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"max_num_storage SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"max_total_storage_TiB SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"net_bw_Gbps SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"ebs_bw_Mbps MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
-		"gpu_model varchar(50)," +
-		"num_gpu SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"gpumem_GiB SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"gpu_p2p varchar(50)," +
+		"costPerHour FLOAT," +
+		"numAtorage SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"maxNumStorage SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"maxTotalStorage_TiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"netBwGbps SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"ebsBwMbps MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
+		"gpuModel varchar(50)," +
+		"numGpu SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"gpumemGiB SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"gpuP2p varchar(50)," +
 		"orderInFilteredResult SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"evaluationStatus varchar(50)," +
-		"evaluationScore_01 FLOAT," +
-		"evaluationScore_02 FLOAT," +
-		"evaluationScore_03 FLOAT," +
-		"evaluationScore_04 FLOAT," +
-		"evaluationScore_05 FLOAT," +
-		"evaluationScore_06 FLOAT," +
-		"evaluationScore_07 FLOAT," +
-		"evaluationScore_08 FLOAT," +
-		"evaluationScore_09 FLOAT," +
-		"evaluationScore_10 FLOAT," +
+		"evaluationScore01 FLOAT," +
+		"evaluationScore02 FLOAT," +
+		"evaluationScore03 FLOAT," +
+		"evaluationScore04 FLOAT," +
+		"evaluationScore05 FLOAT," +
+		"evaluationScore06 FLOAT," +
+		"evaluationScore07 FLOAT," +
+		"evaluationScore08 FLOAT," +
+		"evaluationScore09 FLOAT," +
+		"evaluationScore10 FLOAT," +
 		"CONSTRAINT PK_Spec PRIMARY KEY (namespace, id));")
 	if err != nil {
 		fmt.Println(err.Error())

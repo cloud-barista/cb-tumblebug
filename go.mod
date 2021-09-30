@@ -19,6 +19,7 @@ require (
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.3 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
+	github.com/go-playground/validator/v10 v10.9.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogo/protobuf v1.3.2
@@ -39,7 +40,7 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/echo-swagger v1.1.0
-	github.com/swaggo/swag v1.7.0
+	github.com/swaggo/swag v1.7.1
 	github.com/tidwall/gjson v1.8.0
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.1.7

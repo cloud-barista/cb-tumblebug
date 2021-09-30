@@ -1,35 +1,7 @@
 #!/bin/bash
 
-SECONDS=0
-
-TestSetFile=${4:-../testSet.env}
-
-FILE=$TestSetFile
-if [ ! -f "$FILE" ]; then
-    echo "$FILE does not exist."
-    exit
-fi
-source $TestSetFile
-source ../conf.env
-
-echo "####################################################################"
-echo "## 6. image: Fetch"
-echo "####################################################################"
-
-# curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/fetchImages | jq ''
-# echo ""
-
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-if [ "$CSP" == '' ]; then #|| [ "$CSP" == "all" ]
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/fetchImages | jq '' #|| return 1
-
-else
-	source ../common-functions.sh
-	getCloudIndex $CSP
-
+function CallTB() {
+	echo "- Fetch images in ${MCIRRegionName}"
 
 	resp=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/fetchImages -H 'Content-Type: application/json' -d @- <<EOF
@@ -39,8 +11,43 @@ else
 EOF
 	); echo ${resp} | jq ''
 	echo ""
+}
 
-fi
+SECONDS=0
+
+	echo "####################################################################"
+	echo "## 6. image: Fetch"
+	echo "####################################################################"
+
+	source ../init.sh
+
+	if [ "${INDEX}" == "0" ]; then
+        echo "[Parallel execution for all CSP regions]"
+        INDEXX=${NumCSP}
+        for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+            INDEXY=${NumRegion[$cspi]}
+            CSP=${CSPType[$cspi]}
+            echo "[$cspi] $CSP details"
+            for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+
+				MCIRRegionName=${RegionName[$cspi,$cspj]}
+
+				CallTB
+
+			done
+
+		done
+		wait
+
+	else
+		echo ""
+		
+		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+
+		CallTB
+
+	fi
 
 source ../common-functions.sh
 printElapsed $@

@@ -1,39 +1,19 @@
 #!/bin/bash
 
-#function deploy_nginx_to_mcis() {
+echo "####################################################################"
+echo "## deploy-tumblebug-mcis (source build) "
+echo "####################################################################"
 
+source ../init.sh
 
-	TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	
-	echo "####################################################################"
-	echo "## Command (SSH) to MCIS "
-	echo "####################################################################"
+CMD="wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setcbtb.sh -O ~/setcbtb.sh; chmod +x ~/setcbtb.sh; ~/setcbtb.sh"
+echo "CMD: $CMD"
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
-
-	source ../common-functions.sh
-	getCloudIndex $CSP
-
-
-	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-
-	if [ "${INDEX}" == "0" ]; then
-		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
-	fi
-
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \
-		'{
-			"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/assets/scripts/setcbtb.sh -O ~/setcbtb.sh; chmod +x ~/setcbtb.sh; ~/setcbtb.sh"
-		}' | jq '' #|| return 1
-#}
-
-#deploy_nginx_to_mcis
+VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${CMD}"
+	}
+EOF
+)
+echo "${VAR1}" | jq ''
+echo ""

@@ -1,36 +1,16 @@
 #!/bin/bash
 
+
+echo "####################################################################"
+echo "## deploy-jitsi-to-mcis (parameters: -x EMAIL -y PublicDNS)"
+echo "####################################################################"
+
 SECONDS=0
 
-echo "[Check jq package (if not, install)]"
-if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
+source ../init.sh
 
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
-echo "####################################################################"
-echo "## deploy-jitsi-to-mcis "
-echo "####################################################################"
-
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
-
-source ../common-functions.sh
-getCloudIndex $CSP
-
-MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-
-EMAIL=${5}
-PublicDNS=${6}
-
-
-
+EMAIL=${OPTION01}
+PublicDNS=${OPTION02}
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
@@ -38,13 +18,13 @@ if [ "${INDEX}" == "0" ]; then
 fi
 
 if [ -z "$EMAIL" ]; then
-	echo "[Warning] Provide your E-MAIL (ex: xxx@cloudbarista.org) to 5th parameter"
+	echo "[Warning] Provide your E-MAIL (ex: xxx@cloudbarista.org) to -x parameter"
 	echo "E-MAIL address will be used to issue a Certificate (https) for JITSI"
 	exit
 fi
 
 if [ -z "$PublicDNS" ]; then
-	echo "[Warning] Provide your PublicDNS-RecordName (ex: xxx.cloud-barista.org) to 6th parameter"
+	echo "[Warning] Provide your PublicDNS-RecordName (ex: xxx.cloud-barista.org) to -y parameter"
 	echo "PublicDNS-RecordName will be access point for JITSI Server"
 	exit
 fi
@@ -67,6 +47,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	VMID=$(_jq '.id')
 	PublicIP=$(_jq '.publicIp')
 
+	# Set Hostname
 	SetHostCMD="sudo -- sh -c \\\"echo $PublicIP $PublicDNS >> /etc/hosts\\\"; sudo hostnamectl set-hostname $PublicDNS; hostname -f"
 	echo "SetHostCMD: $SetHostCMD"
 
@@ -76,11 +57,37 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	}
 EOF
 	)
-	echo "${VAR1}" | jq ''
+	echo "${VAR1}" | jq . | sed 's/\\n/\n\t - /g'
 	echo ""
 
+	# Remove (if) existing packages to initialize jitsi
+	CMD="sudo sudo apt autoremove -y jigasi jitsi-meet jitsi-meet-web-config jitsi-meet-prosody jitsi-meet-turnserver jitsi-meet-web jicofo jitsi-videobridge2"
+	echo "CMD: $CMD"
 
-	InstallJitsiDependencyCMD="sudo sh -c \\\"echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list\\\"; sudo wget -qO -  https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -; sudo apt-get update > /dev/null; sudo apt-get -y install apt-utils; sudo DEBIAN_FRONTEND=noninteractive apt-get -y install openjdk-8-jre-headless libssl1.1"
+	VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${CMD}"
+	}
+EOF
+	)
+	echo "${VAR1}" | jq . | sed 's/\\n/\n\t - /g'
+	echo ""
+
+	# Set prosody
+	InstallJitsiCMD="echo deb http://packages.prosody.im/debian $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list; wget https://prosody.im/files/prosody-debian-packages.key -O- | sudo apt-key add -"
+	echo "InstallJitsiCMD: $InstallJitsiCMD"
+
+	VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
+	{
+	"command"        : "${InstallJitsiCMD}"
+	}
+EOF
+	)
+	echo "${VAR1}" | jq . | sed 's/\\n/\n\t - /g'
+	echo ""
+
+	# InstallJitsiDependencyCMD
+	InstallJitsiDependencyCMD="sudo sh -c \\\"echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list\\\"; sudo wget -qO -  https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -; sudo apt-add-repository universe; sudo apt-get update > /dev/null; sudo apt-get -y install apt-utils; sudo apt-get -y install apt-transport-https; sudo DEBIAN_FRONTEND=noninteractive apt-get -y install openjdk-8-jre-headless libssl1.1"
 	echo "InstallJitsiDependencyCMD: $InstallJitsiDependencyCMD"
 
 	VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
@@ -89,9 +96,10 @@ EOF
 	}
 EOF
 	)
-	echo "${VAR1}" | jq ''
+	echo "${VAR1}" | jq . | sed 's/\\n/\n\t - /g'
 	echo ""
 
+	# InstallJitsiCMD
 	InstallJitsiCMD="sudo echo \\\"jitsi-videobridge jitsi-videobridge/jvb-hostname string $PublicDNS\\\" | sudo debconf-set-selections; sudo echo \\\"jitsi-meet-web-config jitsi-meet/cert-choice select 'Generate a new self-signed certificate (You will later get a chance to obtain a Let's encrypt certificate)'\\\" | sudo debconf-set-selections; sudo DEBIAN_FRONTEND=noninteractive apt-get --option=Dpkg::Options::=--force-confold --option=Dpkg::options::=--force-unsafe-io --assume-yes --quiet install jitsi-meet"
 	echo "InstallJitsiCMD: $InstallJitsiCMD"
 
@@ -101,10 +109,10 @@ EOF
 	}
 EOF
 	)
-	echo "${VAR1}" | jq ''
+	echo "${VAR1}" | jq . | sed 's/\\n/\n\t - /g'
 	echo ""
 
-	# ConfigJitsiCMD="sudo echo $EMAIL | sudo /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh; sudo -- sh -c \\\"echo DefaultLimitNOFILE=65000 >> /etc/systemd/system.conf\\\"; sudo -- sh -c \\\"echo DefaultLimitNPROC=65000 >> /etc/systemd/system.conf\\\"; sudo -- sh -c \\\"echo DefaultTasksMax=65000 >> /etc/systemd/system.conf\\\"; sudo cat /etc/systemd/system.conf; sudo systemctl daemon-reload; sudo systemctl restart prosody; sudo systemctl restart jicofo; sudo systemctl restart jitsi-videobridge2; sudo cat /proc/`sudo cat /var/run/jitsi-videobridge/jitsi-videobridge.pid`/limits"
+	# CertJitsiCMD for letsencrypt-certificate (will need actual DNS record)
 	CertJitsiCMD="sudo echo $EMAIL | sudo DEBIAN_FRONTEND=noninteractive /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh"
 	echo "CertJitsiCMD: $CertJitsiCMD"
 
@@ -114,9 +122,10 @@ EOF
 	}
 EOF
 	)
-	echo "${VAR1}" | jq ''
+	echo "${VAR1}" | jq . | sed 's/\\n/\n\t - /g'
 	echo ""
 
+	# ConfigJitsiCMD 
 	ConfigJitsiCMD="sudo -- sh -c \\\"echo DefaultLimitNOFILE=65000 >> /etc/systemd/system.conf\\\"; sudo -- sh -c \\\"echo DefaultLimitNPROC=65000 >> /etc/systemd/system.conf\\\"; sudo -- sh -c \\\"echo DefaultTasksMax=65000 >> /etc/systemd/system.conf\\\"; sudo cat /etc/systemd/system.conf; sudo systemctl daemon-reload; sudo systemctl restart prosody; sudo systemctl restart jicofo; sudo systemctl restart jitsi-videobridge2; sudo cat /proc/\`sudo cat /var/run/jitsi-videobridge/jitsi-videobridge.pid\`/limits"
 	echo "ConfigJitsiCMD: $ConfigJitsiCMD"
 
@@ -126,7 +135,7 @@ EOF
 	}
 EOF
 	)
-	echo "${VAR1}" | jq ''
+	echo "${VAR1}" | jq . | sed 's/\\n/\n\t - /g'
 	echo ""
 
 done

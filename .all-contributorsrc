@@ -6,11 +6,25 @@
   "commit": false,
   "contributors": [
     {
+      "login": "seokho-son",
+      "name": "Seokho Son",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/5966944?v=4",
+      "profile": "https://seokho-son.github.io/",
+      "contributions": [
+        "maintenance",
+        "ideas",
+        "code",
+        "review"
+      ]
+    },
+    {
       "login": "jihoon-seo",
       "name": "Jihoon Seo",
       "avatar_url": "https://avatars1.githubusercontent.com/u/46767780?v=4",
       "profile": "https://jihoon-seo.github.io",
       "contributions": [
+        "maintenance",
+        "ideas",
         "code",
         "review"
       ]
@@ -21,17 +35,9 @@
       "avatar_url": "https://avatars2.githubusercontent.com/u/7975459?v=4",
       "profile": "https://github.com/hermitkim1",
       "contributions": [
+        "ideas",
         "code",
         "review"
-      ]
-    },
-    {
-      "login": "seokho-son",
-      "name": "Seokho Son",
-      "avatar_url": "https://avatars3.githubusercontent.com/u/5966944?v=4",
-      "profile": "https://seokho-son.github.io/",
-      "contributions": [
-        "maintenance"
       ]
     },
     {
@@ -40,7 +46,8 @@
       "avatar_url": "https://avatars3.githubusercontent.com/u/64775292?v=4",
       "profile": "https://github.com/jmleefree",
       "contributions": [
-        "code"
+        "code",
+        "review"
       ]
     },
     {
@@ -58,7 +65,8 @@
       "avatar_url": "https://avatars3.githubusercontent.com/u/25163268?v=4",
       "profile": "https://github.com/sykim-etri",
       "contributions": [
-        "bug"
+        "bug",
+        "ideas"
       ]
     },
     {
@@ -94,7 +102,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/78469943?v=4",
       "profile": "https://github.com/MZC-CSC",
       "contributions": [
-        "bug"
+        "bug",
+        "ideas"
       ]
     },
     {
@@ -139,7 +148,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/53066410?v=4",
       "profile": "https://github.com/limsg1234",
       "contributions": [
-        "doc"
+        "doc",
+        "code"
       ]
     },
     {
@@ -148,7 +158,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/72970232?v=4",
       "profile": "https://github.com/jangh-lee",
       "contributions": [
-        "doc"
+        "doc",
+        "code"
       ]
     },
     {
@@ -156,6 +167,107 @@
       "name": "이도훈",
       "avatar_url": "https://avatars.githubusercontent.com/u/33706689?v=4",
       "profile": "https://github.com/leedohun",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "computerphilosopher",
+      "name": "Park Beomsu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26251856?v=4",
+      "profile": "https://velog.io/@skynet",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "HassanAlsamahi",
+      "name": "Hassan Alsamahi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/42076287?v=4",
+      "profile": "https://github.com/HassanAlsamahi",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "atg0831",
+      "name": "Taegeon An",
+      "avatar_url": "https://avatars.githubusercontent.com/u/44899448?v=4",
+      "profile": "https://github.com/atg0831",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "PARKINHYO",
+      "name": "INHYO",
+      "avatar_url": "https://avatars.githubusercontent.com/u/47745785?v=4",
+      "profile": "http://ihp001.tistory.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Modney",
+      "name": "Modney",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46340193?v=4",
+      "profile": "https://github.com/Modney",
+      "contributions": [
+        "doc",
+        "code"
+      ]
+    },
+    {
+      "login": "ChobobDev",
+      "name": "Seongbin Bernie Cho",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32432141?v=4",
+      "profile": "https://github.com/ChobobDev",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
+      "login": "gbnam",
+      "name": "Gibaek Nam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17192707?v=4",
+      "profile": "https://github.com/gbnam",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "betelgeuse-7",
+      "name": "Abidin Durdu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/71967052?v=4",
+      "profile": "https://github.com/betelgeuse-7",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "sypark9646",
+      "name": "soyeon Park",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46469385?v=4",
+      "profile": "https://sysgongbu.tistory.com/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Jayita10",
+      "name": "Jayita Pramanik",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85472715?v=4",
+      "profile": "https://github.com/Jayita10",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "MukulKolpe",
+      "name": "Mukul Kolpe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78664749?v=4",
+      "profile": "https://github.com/MukulKolpe",
       "contributions": [
         "doc"
       ]

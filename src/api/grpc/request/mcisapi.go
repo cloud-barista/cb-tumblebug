@@ -21,7 +21,7 @@ import (
 
 // ===== [ Types ] =====
 
-// MCISApi - MCIS API 구조 정의
+// MCISApi is for MCIS API 구조 정의
 type MCISApi struct {
 	gConf        *config.GrpcConfig
 	conn         *grpc.ClientConn
@@ -32,13 +32,13 @@ type MCISApi struct {
 	outType      string
 }
 
-// TbMcisCreateRequest - MCIS 생성 요청 구조 Wrapper 정의
+// TbMcisCreateRequest is for MCIS 생성 요청 구조 Wrapper 정의
 type TbMcisCreateRequest struct {
 	NsId string              `yaml:"nsId" json:"nsId"`
 	Item core_mcis.TbMcisReq `yaml:"mcis" json:"mcis"`
 }
 
-// TbMcisReq - MCIS 생성 요청 구조 정의
+// TbMcisReq is for MCIS 생성 요청 구조 정의
 // type TbMcisReq struct {
 // 	Name            string    `yaml:"name" json:"name"`
 // 	InstallMonAgent string    `yaml:"installMonAgent" json:"installMonAgent"`
@@ -48,7 +48,7 @@ type TbMcisCreateRequest struct {
 // 	Vm              []TbVmReq `yaml:"vm" json:"vm"`
 // }
 
-// TbVmReq - MCIS VM 생성 요청 구조 정의
+// TbVmReq is for MCIS VM 생성 요청 구조 정의
 // type TbVmReq struct {
 // 	Name             string   `yaml:"name" json:"name"`
 // 	VmGroupSize      string   `yaml:"vmGroupSize" json:"vmGroupSize"`
@@ -65,21 +65,21 @@ type TbMcisCreateRequest struct {
 // 	VmUserPassword   string   `yaml:"vmUserPassword" json:"vmUserPassword"`
 // }
 
-// TbVmCreateRequest - MCIS VM 생성 요청 구조 Wrapper 정의
+// TbVmCreateRequest is for MCIS VM 생성 요청 구조 Wrapper 정의
 type TbVmCreateRequest struct {
 	NsId   string   `yaml:"nsId" json:"nsId"`
 	McisId string   `yaml:"mcisId" json:"mcisId"`
 	Item   TbVmInfo `yaml:"mcisvm" json:"mcisvm"`
 }
 
-// TbVmGroupCreateRequest - MCIS VM 그룹 생성 요청 구조 Wrapper 정의
+// TbVmGroupCreateRequest is for MCIS VM 그룹 생성 요청 구조 Wrapper 정의
 type TbVmGroupCreateRequest struct {
 	NsId   string            `yaml:"nsId" json:"nsId"`
 	McisId string            `yaml:"mcisId" json:"mcisId"`
 	Item   core_mcis.TbVmReq `yaml:"groupvm" json:"groupvm"`
 }
 
-// TbVmInfo - MCIS VM 구조 정의
+// TbVmInfo is for MCIS VM 구조 정의
 type TbVmInfo struct {
 	Id               string                `yaml:"id" json:"id"`
 	Name             string                `yaml:"name" json:"name"`
@@ -115,7 +115,7 @@ type TbVmInfo struct {
 	// CspViewVmDetail  SpiderVMInfo `yaml:"cspViewVmDetail" json:"cspViewVmDetail"`
 }
 
-// GeoLocation - 위치 정보 구조 정의
+// GeoLocation is for 위치 정보 구조 정의
 // type GeoLocation struct {
 // 	Latitude     string `yaml:"latitude" json:"latitude"`
 // 	Longitude    string `yaml:"longitude" json:"longitude"`
@@ -124,13 +124,13 @@ type TbVmInfo struct {
 // 	NativeRegion string `yaml:"nativeRegion" json:"nativeRegion"`
 // }
 
-// RegionInfo - Region 정보 구조 정의
+// RegionInfo is for Region 정보 구조 정의
 // type RegionInfo struct { // Spider
 // 	Region string `yaml:"Region" json:"Region"`
 // 	Zone   string `yaml:"Zone" json:"Zone"`
 // }
 
-// SpiderVMInfo - VM 정보 구조 정의
+// SpiderVMInfo is for VM 정보 구조 정의
 // type SpiderVMInfo struct { // Spider
 // 	// Fields for request
 // 	Name               string   `yaml:"Name" json:"Name"`
@@ -165,13 +165,13 @@ type TbVmInfo struct {
 // 	KeyValueList      []KeyValue `yaml:"KeyValueList" json:"KeyValueList"`
 // }
 
-// McisRecommendCreateRequest - MCIS 추천 요청 구조 Wrapper 정의
+// McisRecommendCreateRequest is for MCIS 추천 요청 구조 Wrapper 정의
 type McisRecommendCreateRequest struct {
 	NsId string                     `yaml:"nsId" json:"nsId"`
 	Item core_mcis.McisRecommendReq `yaml:"recommend" json:"recommend"`
 }
 
-// McisRecommendReq - MCIS 추천 요청 구조 정의
+// McisRecommendReq is for MCIS 추천 요청 구조 정의
 // type McisRecommendReq struct {
 // 	VmReq          []TbVmRecommendReq `yaml:"vmReq" json:"vmReq"`
 // 	PlacementAlgo  string             `yaml:"placementAlgo" json:"placementAlgo"`
@@ -179,7 +179,7 @@ type McisRecommendCreateRequest struct {
 // 	MaxResultNum   string             `yaml:"maxResultNum" json:"maxResultNum"`
 // }
 
-// McisRecommendReq - MCIS VM 추천 요청 구조 정의
+// McisRecommendReq is for MCIS VM 추천 요청 구조 정의
 // type TbVmRecommendReq struct {
 // 	RequestName  string `yaml:"requestName" json:"requestName"`
 // 	MaxResultNum string `yaml:"maxResultNum" json:"maxResultNum"`
@@ -192,14 +192,14 @@ type McisRecommendCreateRequest struct {
 // 	PlacementParam []KeyValue `yaml:"placementParam" json:"placementParam"`
 // }
 
-// McisCmdCreateRequest - MCIS 명령 실행 요청 구조 Wrapper 정의
+// McisCmdCreateRequest is for MCIS 명령 실행 요청 구조 Wrapper 정의
 type McisCmdCreateRequest struct {
 	NsId   string               `yaml:"nsId" json:"nsId"`
 	McisId string               `yaml:"mcisId" json:"mcisId"`
 	Item   core_mcis.McisCmdReq `yaml:"cmd" json:"cmd"`
 }
 
-// McisCmdReq - MCIS 명령 실행 요청 구조 정의
+// McisCmdReq is for MCIS 명령 실행 요청 구조 정의
 // type McisCmdReq struct {
 // 	McisId   string `yaml:"mcisId" json:"mcisId"`
 // 	VmId     string `yaml:"vmId" json:"vmId"`
@@ -209,7 +209,7 @@ type McisCmdCreateRequest struct {
 // 	Command  string `yaml:"command" json:"command"`
 // }
 
-// McisCmdVmCreateRequest - MCIS VM 명령 실행 요청 구조 Wrapper 정의
+// McisCmdVmCreateRequest is for MCIS VM 명령 실행 요청 구조 Wrapper 정의
 type McisCmdVmCreateRequest struct {
 	NsId   string               `yaml:"nsId" json:"nsId"`
 	McisId string               `yaml:"mcisId" json:"mcisId"`
@@ -217,14 +217,14 @@ type McisCmdVmCreateRequest struct {
 	Item   core_mcis.McisCmdReq `yaml:"cmd" json:"cmd"`
 }
 
-// McisPolicyCreateRequest - MCIS Policy 생성 요청 구조 Wrapper 정의
+// McisPolicyCreateRequest is for MCIS Policy 생성 요청 구조 Wrapper 정의
 type McisPolicyCreateRequest struct {
 	NsId   string                   `yaml:"nsId" json:"nsId"`
 	McisId string                   `yaml:"mcisId" json:"mcisId"`
 	Item   core_mcis.McisPolicyInfo `yaml:"ReqInfo" json:"ReqInfo"`
 }
 
-// AutoCondition - MCIS AutoCondition 요청 구조 정의
+// AutoCondition is for MCIS AutoCondition 요청 구조 정의
 // type AutoCondition struct {
 // 	Metric           string   `yaml:"metric" json:"metric"`
 // 	Operator         string   `yaml:"operator" json:"operator"`
@@ -233,7 +233,7 @@ type McisPolicyCreateRequest struct {
 // 	EvaluationValue  []string `yaml:"evaluationValue" json:"evaluationValue"`
 // }
 
-// AutoAction - MCIS AutoAction 요청 구조 정의
+// AutoAction is for MCIS AutoAction 요청 구조 정의
 // type AutoAction struct {
 // 	ActionType    string     `yaml:"actionType" json:"actionType"`
 // 	Vm            TbVmInfo   `yaml:"vm" json:"vm"`
@@ -241,14 +241,14 @@ type McisPolicyCreateRequest struct {
 // 	PlacementAlgo string     `yaml:"placementAlgo" json:"placementAlgo"`
 // }
 
-// Policy - MCIS Policy 요청 구조 정의
+// Policy is for MCIS Policy 요청 구조 정의
 // type Policy struct {
 // 	AutoCondition AutoCondition `yaml:"autoCondition" json:"autoCondition"`
 // 	AutoAction    AutoAction    `yaml:"autoAction" json:"autoAction"`
 // 	Status        string        `yaml:"status" json:"status"`
 // }
 
-// McisPolicyInfo - MCIS Policy 정보 구조 정의
+// McisPolicyInfo is for MCIS Policy 정보 구조 정의
 // type McisPolicyInfo struct {
 // 	Name   string   `yaml:"Name" json:"Name"`
 // 	Id     string   `yaml:"Id" json:"Id"`
@@ -258,49 +258,49 @@ type McisPolicyCreateRequest struct {
 // 	Description string `yaml:"description" json:"description"`
 // }
 
-// McisRecommendVmCreateRequest - MCIS VM 추천 요청 구조 Wrapper 정의
+// McisRecommendVmCreateRequest is for MCIS VM 추천 요청 구조 Wrapper 정의
 type McisRecommendVmCreateRequest struct {
 	NsId string                   `yaml:"nsId" json:"nsId"`
 	Item core_mcis.DeploymentPlan `yaml:"plan" json:"plan"`
 }
 
-// DeploymentPlan - DeploymentPlan 요청 구조 정의
+// DeploymentPlan is for DeploymentPlan 요청 구조 정의
 // type DeploymentPlan struct {
 // 	Filter   FilterInfo   `yaml:"filter" json:"filter"`
 // 	Priority PriorityInfo `yaml:"priority" json:"priority"`
 // 	Limit    string       `yaml:"limit" json:"limit"`
 // }
 
-// FilterInfo - FilterInfo 요청 구조 정의
+// FilterInfo is for FilterInfo 요청 구조 정의
 // type FilterInfo struct {
 // 	Policy []FilterCondition `yaml:"policy" json:"policy"`
 // }
 
-// FilterCondition - FilterCondition 요청 구조 정의
+// FilterCondition is for FilterCondition 요청 구조 정의
 // type FilterCondition struct {
 // 	Metric    string      `yaml:"metric" json:"metric"`
 // 	Condition []Operation `yaml:"condition" json:"condition"`
 // }
 
-// Operation - Operation 요청 구조 정의
+// Operation is for Operation 요청 구조 정의
 // type Operation struct {
 // 	Operator string `yaml:"operator" json:"operator"`
 // 	Operand  string `yaml:"operand" json:"operand"`
 // }
 
-// PriorityInfo - PriorityInfo 요청 구조 정의
+// PriorityInfo is for PriorityInfo 요청 구조 정의
 // type PriorityInfo struct {
 // 	Policy []PriorityCondition `yaml:"policy" json:"policy"`
 // }
 
-// PriorityCondition - PriorityCondition 요청 구조 정의
+// PriorityCondition is for PriorityCondition 요청 구조 정의
 // type PriorityCondition struct {
 // 	Metric    string            `yaml:"metric" json:"metric"`
 // 	Weight    string            `yaml:"weight" json:"weight"`
 // 	Parameter []ParameterKeyVal `yaml:"parameter" json:"parameter"`
 // }
 
-// ParameterKeyVal - ParameterKeyVal 요청 구조 정의
+// ParameterKeyVal is for ParameterKeyVal 요청 구조 정의
 // type ParameterKeyVal struct {
 // 	Key string   `yaml:"key" json:"key"`
 // 	Val []string `yaml:"val" json:"val"`
@@ -308,7 +308,7 @@ type McisRecommendVmCreateRequest struct {
 
 // ===== [ Implementatiom ] =====
 
-// SetServerAddr - Tumblebug 서버 주소 설정
+// SetServerAddr is to Tumblebug 서버 주소 설정
 func (m *MCISApi) SetServerAddr(addr string) error {
 	if addr == "" {
 		return errors.New("parameter is empty")
@@ -318,12 +318,12 @@ func (m *MCISApi) SetServerAddr(addr string) error {
 	return nil
 }
 
-// GetServerAddr - Tumblebug 서버 주소 값 조회
+// GetServerAddr is to Tumblebug 서버 주소 값 조회
 func (m *MCISApi) GetServerAddr() (string, error) {
 	return m.gConf.GSL.TumblebugCli.ServerAddr, nil
 }
 
-// SetTLSCA - TLS CA 설정
+// SetTLSCA is to TLS CA 설정
 func (m *MCISApi) SetTLSCA(tlsCAFile string) error {
 	if tlsCAFile == "" {
 		return errors.New("parameter is empty")
@@ -337,7 +337,7 @@ func (m *MCISApi) SetTLSCA(tlsCAFile string) error {
 	return nil
 }
 
-// GetTLSCA - TLS CA 값 조회
+// GetTLSCA is to TLS CA 값 조회
 func (m *MCISApi) GetTLSCA() (string, error) {
 	if m.gConf.GSL.TumblebugCli.TLS == nil {
 		return "", nil
@@ -346,18 +346,18 @@ func (m *MCISApi) GetTLSCA() (string, error) {
 	return m.gConf.GSL.TumblebugCli.TLS.TLSCA, nil
 }
 
-// SetTimeout - Timeout 설정
+// SetTimeout is to Timeout 설정
 func (m *MCISApi) SetTimeout(timeout time.Duration) error {
 	m.gConf.GSL.TumblebugCli.Timeout = timeout
 	return nil
 }
 
-// GetTimeout - Timeout 값 조회
+// GetTimeout is to Timeout 값 조회
 func (m *MCISApi) GetTimeout() (time.Duration, error) {
 	return m.gConf.GSL.TumblebugCli.Timeout, nil
 }
 
-// SetJWTToken - JWT 인증 토큰 설정
+// SetJWTToken is to JWT 인증 토큰 설정
 func (m *MCISApi) SetJWTToken(token string) error {
 	if token == "" {
 		return errors.New("parameter is empty")
@@ -375,7 +375,7 @@ func (m *MCISApi) SetJWTToken(token string) error {
 	return nil
 }
 
-// GetJWTToken - JWT 인증 토큰 값 조회
+// GetJWTToken is to JWT 인증 토큰 값 조회
 func (m *MCISApi) GetJWTToken() (string, error) {
 	if m.gConf.GSL.TumblebugCli.Interceptors == nil {
 		return "", nil
@@ -387,7 +387,7 @@ func (m *MCISApi) GetJWTToken() (string, error) {
 	return m.gConf.GSL.TumblebugCli.Interceptors.AuthJWT.JWTToken, nil
 }
 
-// SetConfigPath - 환경설정 파일 설정
+// SetConfigPath is to 환경설정 파일 설정
 func (m *MCISApi) SetConfigPath(configFile string) error {
 	logger := logger.NewLogger()
 
@@ -450,7 +450,7 @@ func (m *MCISApi) SetConfigPath(configFile string) error {
 	return nil
 }
 
-// Open - 연결 설정
+// Open is to 연결 설정
 func (m *MCISApi) Open() error {
 
 	tumblebugcli := m.gConf.GSL.TumblebugCli
@@ -476,7 +476,7 @@ func (m *MCISApi) Open() error {
 	return nil
 }
 
-// Close - 연결 종료
+// Close is to 연결 종료
 func (m *MCISApi) Close() {
 	if m.conn != nil {
 		m.conn.Close()
@@ -491,7 +491,7 @@ func (m *MCISApi) Close() {
 	m.requestMCIS = nil
 }
 
-// SetInType - 입력 문서 타입 설정 (json/yaml)
+// SetInType is to 입력 문서 타입 설정 (json/yaml)
 func (m *MCISApi) SetInType(in string) error {
 	if in == "json" {
 		m.inType = in
@@ -508,12 +508,12 @@ func (m *MCISApi) SetInType(in string) error {
 	return nil
 }
 
-// GetInType - 입력 문서 타입 값 조회
+// GetInType is to 입력 문서 타입 값 조회
 func (m *MCISApi) GetInType() (string, error) {
 	return m.inType, nil
 }
 
-// SetOutType - 출력 문서 타입 설정 (json/yaml)
+// SetOutType is to 출력 문서 타입 설정 (json/yaml)
 func (m *MCISApi) SetOutType(out string) error {
 	if out == "json" {
 		m.outType = out
@@ -530,12 +530,12 @@ func (m *MCISApi) SetOutType(out string) error {
 	return nil
 }
 
-// GetOutType - 출력 문서 타입 값 조회
+// GetOutType is to 출력 문서 타입 값 조회
 func (m *MCISApi) GetOutType() (string, error) {
 	return m.outType, nil
 }
 
-// CreateMcis - MCIS 생성
+// CreateMcis is to MCIS 생성
 func (m *MCISApi) CreateMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -545,7 +545,7 @@ func (m *MCISApi) CreateMcis(doc string) (string, error) {
 	return m.requestMCIS.CreateMcis()
 }
 
-// CreateMcisByParam - MCIS 생성
+// CreateMcisByParam is to MCIS 생성
 func (m *MCISApi) CreateMcisByParam(req *TbMcisCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -564,7 +564,7 @@ func (m *MCISApi) CreateMcisByParam(req *TbMcisCreateRequest) (string, error) {
 	return result, err
 }
 
-// ListMcis - MCIS 목록
+// ListMcis is to MCIS 목록
 func (m *MCISApi) ListMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -574,7 +574,7 @@ func (m *MCISApi) ListMcis(doc string) (string, error) {
 	return m.requestMCIS.ListMcis()
 }
 
-// ListMcisByParam - MCIS 목록
+// ListMcisByParam is to MCIS 목록
 func (m *MCISApi) ListMcisByParam(nameSpaceID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -589,7 +589,7 @@ func (m *MCISApi) ListMcisByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
-// ListMcisId - MCIS 목록
+// ListMcisId is to MCIS 목록
 func (m *MCISApi) ListMcisId(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -599,7 +599,7 @@ func (m *MCISApi) ListMcisId(doc string) (string, error) {
 	return m.requestMCIS.ListMcisId()
 }
 
-// ListMcisIdByParam - MCIS 목록
+// ListMcisIdByParam is to MCIS 목록
 func (m *MCISApi) ListMcisIdByParam(nameSpaceID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -614,7 +614,7 @@ func (m *MCISApi) ListMcisIdByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
-// ControlMcis - MCIS 제어
+// ControlMcis is to MCIS 제어
 func (m *MCISApi) ControlMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -624,7 +624,7 @@ func (m *MCISApi) ControlMcis(doc string) (string, error) {
 	return m.requestMCIS.ControlMcis()
 }
 
-// ControlMcisByParam - MCIS 제어
+// ControlMcisByParam is to MCIS 제어
 func (m *MCISApi) ControlMcisByParam(nameSpaceID string, mcisID string, action string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -639,7 +639,7 @@ func (m *MCISApi) ControlMcisByParam(nameSpaceID string, mcisID string, action s
 	return result, err
 }
 
-// ListMcisStatus - MCIS 상태 목록
+// ListMcisStatus is to MCIS 상태 목록
 func (m *MCISApi) ListMcisStatus(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -649,7 +649,7 @@ func (m *MCISApi) ListMcisStatus(doc string) (string, error) {
 	return m.requestMCIS.ListMcisStatus()
 }
 
-// ListMcisStatusByParam - MCIS 상태 목록
+// ListMcisStatusByParam is to MCIS 상태 목록
 func (m *MCISApi) ListMcisStatusByParam(nameSpaceID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -664,7 +664,7 @@ func (m *MCISApi) ListMcisStatusByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
-// GetMcisStatus - MCIS 상태 조회
+// GetMcisStatus is to MCIS 상태 조회
 func (m *MCISApi) GetMcisStatus(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -674,7 +674,7 @@ func (m *MCISApi) GetMcisStatus(doc string) (string, error) {
 	return m.requestMCIS.GetMcisStatus()
 }
 
-// GetMcisStatusByParam - MCIS 상태 조회
+// GetMcisStatusByParam is to MCIS 상태 조회
 func (m *MCISApi) GetMcisStatusByParam(nameSpaceID string, mcisID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -689,7 +689,7 @@ func (m *MCISApi) GetMcisStatusByParam(nameSpaceID string, mcisID string) (strin
 	return result, err
 }
 
-// GetMcisInfo - MCIS 정보 조회
+// GetMcisInfo is to MCIS 정보 조회
 func (m *MCISApi) GetMcisInfo(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -699,7 +699,7 @@ func (m *MCISApi) GetMcisInfo(doc string) (string, error) {
 	return m.requestMCIS.GetMcisInfo()
 }
 
-// GetMcisInfoByParam - MCIS 정보 조회
+// GetMcisInfoByParam is to MCIS 정보 조회
 func (m *MCISApi) GetMcisInfoByParam(nameSpaceID string, mcisID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -714,7 +714,7 @@ func (m *MCISApi) GetMcisInfoByParam(nameSpaceID string, mcisID string) (string,
 	return result, err
 }
 
-// ListMcisVmId - MCIS 정보 조회
+// ListMcisVmId is to MCIS 정보 조회
 func (m *MCISApi) ListMcisVmId(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -724,7 +724,7 @@ func (m *MCISApi) ListMcisVmId(doc string) (string, error) {
 	return m.requestMCIS.ListMcisVmId()
 }
 
-// ListMcisVmIdByParam - MCIS 정보 조회
+// ListMcisVmIdByParam is to MCIS 정보 조회
 func (m *MCISApi) ListMcisVmIdByParam(nameSpaceID string, mcisID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -739,7 +739,7 @@ func (m *MCISApi) ListMcisVmIdByParam(nameSpaceID string, mcisID string) (string
 	return result, err
 }
 
-// DeleteMcis - MCIS 삭제
+// DeleteMcis is to MCIS 삭제
 func (m *MCISApi) DeleteMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -749,7 +749,7 @@ func (m *MCISApi) DeleteMcis(doc string) (string, error) {
 	return m.requestMCIS.DeleteMcis()
 }
 
-// DeleteMcisByParam - MCIS 삭제
+// DeleteMcisByParam is to MCIS 삭제
 func (m *MCISApi) DeleteMcisByParam(nameSpaceID string, mcisID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -764,7 +764,7 @@ func (m *MCISApi) DeleteMcisByParam(nameSpaceID string, mcisID string) (string, 
 	return result, err
 }
 
-// DeleteAllMcis - MCIS 전체 삭제
+// DeleteAllMcis is to MCIS 전체 삭제
 func (m *MCISApi) DeleteAllMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -774,7 +774,7 @@ func (m *MCISApi) DeleteAllMcis(doc string) (string, error) {
 	return m.requestMCIS.DeleteAllMcis()
 }
 
-// DeleteAllMcisByParam - MCIS 전체 삭제
+// DeleteAllMcisByParam is to MCIS 전체 삭제
 func (m *MCISApi) DeleteAllMcisByParam(nameSpaceID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -789,7 +789,7 @@ func (m *MCISApi) DeleteAllMcisByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
-// CreateMcisVM - MCIS VM 생성
+// CreateMcisVM is to MCIS VM 생성
 func (m *MCISApi) CreateMcisVM(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -799,7 +799,7 @@ func (m *MCISApi) CreateMcisVM(doc string) (string, error) {
 	return m.requestMCIS.CreateMcisVM()
 }
 
-// CreateMcisVMByParam - MCIS VM 생성
+// CreateMcisVMByParam is to MCIS VM 생성
 func (m *MCISApi) CreateMcisVMByParam(req *TbVmCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -818,7 +818,7 @@ func (m *MCISApi) CreateMcisVMByParam(req *TbVmCreateRequest) (string, error) {
 	return result, err
 }
 
-// CreateMcisVMGroup - MCIS VM 그룹 생성
+// CreateMcisVMGroup is to MCIS VM 그룹 생성
 func (m *MCISApi) CreateMcisVMGroup(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -828,7 +828,7 @@ func (m *MCISApi) CreateMcisVMGroup(doc string) (string, error) {
 	return m.requestMCIS.CreateMcisVMGroup()
 }
 
-// CreateMcisVMGroupByParam - MCIS VM 생성
+// CreateMcisVMGroupByParam is to MCIS VM 생성
 func (m *MCISApi) CreateMcisVMGroupByParam(req *TbVmGroupCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -847,7 +847,7 @@ func (m *MCISApi) CreateMcisVMGroupByParam(req *TbVmGroupCreateRequest) (string,
 	return result, err
 }
 
-// ControlMcisVM - MCIS VM 제어
+// ControlMcisVM is to MCIS VM 제어
 func (m *MCISApi) ControlMcisVM(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -857,7 +857,7 @@ func (m *MCISApi) ControlMcisVM(doc string) (string, error) {
 	return m.requestMCIS.ControlMcisVM()
 }
 
-// ControlMcisVMByParam - MCIS VM 제어
+// ControlMcisVMByParam is to MCIS VM 제어
 func (m *MCISApi) ControlMcisVMByParam(nameSpaceID string, mcisID string, vmID string, action string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -872,7 +872,7 @@ func (m *MCISApi) ControlMcisVMByParam(nameSpaceID string, mcisID string, vmID s
 	return result, err
 }
 
-// GetMcisVMStatus - MCIS VM 상태 조회
+// GetMcisVMStatus is to MCIS VM 상태 조회
 func (m *MCISApi) GetMcisVMStatus(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -882,7 +882,7 @@ func (m *MCISApi) GetMcisVMStatus(doc string) (string, error) {
 	return m.requestMCIS.GetMcisVMStatus()
 }
 
-// GetMcisVMStatusByParam - MCIS VM 상태 조회
+// GetMcisVMStatusByParam is to MCIS VM 상태 조회
 func (m *MCISApi) GetMcisVMStatusByParam(nameSpaceID string, mcisID string, vmID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -897,7 +897,7 @@ func (m *MCISApi) GetMcisVMStatusByParam(nameSpaceID string, mcisID string, vmID
 	return result, err
 }
 
-// GetMcisVMInfo - MCIS VM 정보 조회
+// GetMcisVMInfo is to MCIS VM 정보 조회
 func (m *MCISApi) GetMcisVMInfo(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -907,7 +907,7 @@ func (m *MCISApi) GetMcisVMInfo(doc string) (string, error) {
 	return m.requestMCIS.GetMcisVMInfo()
 }
 
-// GetMcisVMInfoByParam - MCIS VM 정보 조회
+// GetMcisVMInfoByParam is to MCIS VM 정보 조회
 func (m *MCISApi) GetMcisVMInfoByParam(nameSpaceID string, mcisID string, vmID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -922,7 +922,7 @@ func (m *MCISApi) GetMcisVMInfoByParam(nameSpaceID string, mcisID string, vmID s
 	return result, err
 }
 
-// DeleteMcisVM - MCIS VM 삭제
+// DeleteMcisVM is to MCIS VM 삭제
 func (m *MCISApi) DeleteMcisVM(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -932,7 +932,7 @@ func (m *MCISApi) DeleteMcisVM(doc string) (string, error) {
 	return m.requestMCIS.DeleteMcisVM()
 }
 
-// DeleteMcisVMByParam - MCIS VM 삭제
+// DeleteMcisVMByParam is to MCIS VM 삭제
 func (m *MCISApi) DeleteMcisVMByParam(nameSpaceID string, mcisID string, vmID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -947,7 +947,7 @@ func (m *MCISApi) DeleteMcisVMByParam(nameSpaceID string, mcisID string, vmID st
 	return result, err
 }
 
-// RecommendMcis - MCIS 추천
+// RecommendMcis is to MCIS 추천
 func (m *MCISApi) RecommendMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -957,7 +957,7 @@ func (m *MCISApi) RecommendMcis(doc string) (string, error) {
 	return m.requestMCIS.RecommendMcis()
 }
 
-// RecommendMcisByParam - MCIS 추천
+// RecommendMcisByParam is to MCIS 추천
 func (m *MCISApi) RecommendMcisByParam(req *McisRecommendCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -976,7 +976,7 @@ func (m *MCISApi) RecommendMcisByParam(req *McisRecommendCreateRequest) (string,
 	return result, err
 }
 
-// RecommendVM - MCIS VM 추천
+// RecommendVM is to MCIS VM 추천
 func (m *MCISApi) RecommendVM(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -986,7 +986,7 @@ func (m *MCISApi) RecommendVM(doc string) (string, error) {
 	return m.requestMCIS.RecommendVM()
 }
 
-// RecommendVMByParam - MCIS VM 추천
+// RecommendVMByParam is to MCIS VM 추천
 func (m *MCISApi) RecommendVMByParam(req *McisRecommendVmCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1005,7 +1005,7 @@ func (m *MCISApi) RecommendVMByParam(req *McisRecommendVmCreateRequest) (string,
 	return result, err
 }
 
-// CmdMcis - MCIS 명령 실행
+// CmdMcis is to MCIS 명령 실행
 func (m *MCISApi) CmdMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1015,7 +1015,7 @@ func (m *MCISApi) CmdMcis(doc string) (string, error) {
 	return m.requestMCIS.CmdMcis()
 }
 
-// CmdMcisByParam - MCIS 명령 실행
+// CmdMcisByParam is to MCIS 명령 실행
 func (m *MCISApi) CmdMcisByParam(req *McisCmdCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1034,7 +1034,7 @@ func (m *MCISApi) CmdMcisByParam(req *McisCmdCreateRequest) (string, error) {
 	return result, err
 }
 
-// CmdMcisVm - MCIS VM 명령 실행
+// CmdMcisVm is to MCIS VM 명령 실행
 func (m *MCISApi) CmdMcisVm(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1044,7 +1044,7 @@ func (m *MCISApi) CmdMcisVm(doc string) (string, error) {
 	return m.requestMCIS.CmdMcisVm()
 }
 
-// CmdMcisVmByParam - MCIS VM 명령 실행
+// CmdMcisVmByParam is to MCIS VM 명령 실행
 func (m *MCISApi) CmdMcisVmByParam(req *McisCmdVmCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1063,7 +1063,7 @@ func (m *MCISApi) CmdMcisVmByParam(req *McisCmdVmCreateRequest) (string, error) 
 	return result, err
 }
 
-// InstallAgentToMcis -  MCIS Agent 설치
+// InstallAgentToMcis is to  MCIS Agent 설치
 func (m *MCISApi) InstallAgentToMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1073,7 +1073,7 @@ func (m *MCISApi) InstallAgentToMcis(doc string) (string, error) {
 	return m.requestMCIS.InstallAgentToMcis()
 }
 
-// InstallAgentToMcisByParam - MCIS Agent 설치
+// InstallAgentToMcisByParam is to MCIS Agent 설치
 func (m *MCISApi) InstallAgentToMcisByParam(req *McisCmdCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1092,7 +1092,7 @@ func (m *MCISApi) InstallAgentToMcisByParam(req *McisCmdCreateRequest) (string, 
 	return result, err
 }
 
-// InstallMonitorAgentToMcis - MCIS Monitor Agent 설치
+// InstallMonitorAgentToMcis is to MCIS Monitor Agent 설치
 func (m *MCISApi) InstallMonitorAgentToMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1102,7 +1102,7 @@ func (m *MCISApi) InstallMonitorAgentToMcis(doc string) (string, error) {
 	return m.requestMCIS.InstallMonitorAgentToMcis()
 }
 
-// InstallMonitorAgentToMcisByParam - MCIS Monitor Agent 설치
+// InstallMonitorAgentToMcisByParam is to MCIS Monitor Agent 설치
 func (m *MCISApi) InstallMonitorAgentToMcisByParam(req *McisCmdCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1121,7 +1121,7 @@ func (m *MCISApi) InstallMonitorAgentToMcisByParam(req *McisCmdCreateRequest) (s
 	return result, err
 }
 
-// GetMonitorData - MCIS Monitor 정보 조회
+// GetMonitorData is to MCIS Monitor 정보 조회
 func (m *MCISApi) GetMonitorData(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1131,7 +1131,7 @@ func (m *MCISApi) GetMonitorData(doc string) (string, error) {
 	return m.requestMCIS.GetMonitorData()
 }
 
-// GetMonitorDataByParam - MCIS Monitor 정보 조회
+// GetMonitorDataByParam is to MCIS Monitor 정보 조회
 func (m *MCISApi) GetMonitorDataByParam(nameSpaceID string, mcisID string, metric string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1146,7 +1146,7 @@ func (m *MCISApi) GetMonitorDataByParam(nameSpaceID string, mcisID string, metri
 	return result, err
 }
 
-// GetBenchmark - Benchmark 조회
+// GetBenchmark is to Benchmark 조회
 func (m *MCISApi) GetBenchmark(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1156,7 +1156,7 @@ func (m *MCISApi) GetBenchmark(doc string) (string, error) {
 	return m.requestMCIS.GetBenchmark()
 }
 
-// GetBenchmarkByParam - Benchmark 조회
+// GetBenchmarkByParam is to Benchmark 조회
 func (m *MCISApi) GetBenchmarkByParam(nameSpaceID string, mcisID string, action string, host string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1171,7 +1171,7 @@ func (m *MCISApi) GetBenchmarkByParam(nameSpaceID string, mcisID string, action 
 	return result, err
 }
 
-// GetAllBenchmark - Benchmark 목록
+// GetAllBenchmark is to Benchmark 목록
 func (m *MCISApi) GetAllBenchmark(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1181,7 +1181,7 @@ func (m *MCISApi) GetAllBenchmark(doc string) (string, error) {
 	return m.requestMCIS.GetAllBenchmark()
 }
 
-// GetAllBenchmarkByParam - Benchmark 목록
+// GetAllBenchmarkByParam is to Benchmark 목록
 func (m *MCISApi) GetAllBenchmarkByParam(nameSpaceID string, mcisID string, host string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1196,7 +1196,7 @@ func (m *MCISApi) GetAllBenchmarkByParam(nameSpaceID string, mcisID string, host
 	return result, err
 }
 
-// CheckMcis - MCIS 체크
+// CheckMcis is to MCIS 체크
 func (m *MCISApi) CheckMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1206,7 +1206,7 @@ func (m *MCISApi) CheckMcis(doc string) (string, error) {
 	return m.requestMCIS.CheckMcis()
 }
 
-// CheckMcisByParam - MCIS 체크
+// CheckMcisByParam is to MCIS 체크
 func (m *MCISApi) CheckMcisByParam(nameSpaceID string, mcisID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1221,7 +1221,7 @@ func (m *MCISApi) CheckMcisByParam(nameSpaceID string, mcisID string) (string, e
 	return result, err
 }
 
-// CheckVm - MCIS VM 체크
+// CheckVm is to MCIS VM 체크
 func (m *MCISApi) CheckVm(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1231,7 +1231,7 @@ func (m *MCISApi) CheckVm(doc string) (string, error) {
 	return m.requestMCIS.CheckVm()
 }
 
-// CheckVmByParam - MCIS VM 체크
+// CheckVmByParam is to MCIS VM 체크
 func (m *MCISApi) CheckVmByParam(nameSpaceID string, mcisID string, vmID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1246,7 +1246,7 @@ func (m *MCISApi) CheckVmByParam(nameSpaceID string, mcisID string, vmID string)
 	return result, err
 }
 
-// CreateMcisPolicy - Policy 생성
+// CreateMcisPolicy is to Policy 생성
 func (m *MCISApi) CreateMcisPolicy(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1256,7 +1256,7 @@ func (m *MCISApi) CreateMcisPolicy(doc string) (string, error) {
 	return m.requestMCIS.CreateMcisPolicy()
 }
 
-// CreateMcisPolicyByParam - Policy 생성
+// CreateMcisPolicyByParam is to Policy 생성
 func (m *MCISApi) CreateMcisPolicyByParam(req *McisPolicyCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1275,7 +1275,7 @@ func (m *MCISApi) CreateMcisPolicyByParam(req *McisPolicyCreateRequest) (string,
 	return result, err
 }
 
-// ListMcisPolicy - Policy 목록
+// ListMcisPolicy is to Policy 목록
 func (m *MCISApi) ListMcisPolicy(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1285,7 +1285,7 @@ func (m *MCISApi) ListMcisPolicy(doc string) (string, error) {
 	return m.requestMCIS.ListMcisPolicy()
 }
 
-// ListMcisPolicyByParam - Policy 목록
+// ListMcisPolicyByParam is to Policy 목록
 func (m *MCISApi) ListMcisPolicyByParam(nameSpaceID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1300,7 +1300,7 @@ func (m *MCISApi) ListMcisPolicyByParam(nameSpaceID string) (string, error) {
 	return result, err
 }
 
-// GetMcisPolicy - Policy 조회
+// GetMcisPolicy is to Policy 조회
 func (m *MCISApi) GetMcisPolicy(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1310,7 +1310,7 @@ func (m *MCISApi) GetMcisPolicy(doc string) (string, error) {
 	return m.requestMCIS.GetMcisPolicy()
 }
 
-// GetMcisPolicyByParam - Policy 조회
+// GetMcisPolicyByParam is to Policy 조회
 func (m *MCISApi) GetMcisPolicyByParam(nameSpaceID string, mcisID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1325,7 +1325,7 @@ func (m *MCISApi) GetMcisPolicyByParam(nameSpaceID string, mcisID string) (strin
 	return result, err
 }
 
-// DeleteMcisPolicy - Policy 삭제
+// DeleteMcisPolicy is to Policy 삭제
 func (m *MCISApi) DeleteMcisPolicy(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1335,7 +1335,7 @@ func (m *MCISApi) DeleteMcisPolicy(doc string) (string, error) {
 	return m.requestMCIS.DeleteMcisPolicy()
 }
 
-// DeleteMcisPolicyByParam - Policy 삭제
+// DeleteMcisPolicyByParam is to Policy 삭제
 func (m *MCISApi) DeleteMcisPolicyByParam(nameSpaceID string, mcisID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1350,7 +1350,7 @@ func (m *MCISApi) DeleteMcisPolicyByParam(nameSpaceID string, mcisID string) (st
 	return result, err
 }
 
-// DeleteAllMcisPolicy - Policy 전체 삭제
+// DeleteAllMcisPolicy is to Policy 전체 삭제
 func (m *MCISApi) DeleteAllMcisPolicy(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1360,7 +1360,7 @@ func (m *MCISApi) DeleteAllMcisPolicy(doc string) (string, error) {
 	return m.requestMCIS.DeleteAllMcisPolicy()
 }
 
-// DeleteAllMcisPolicyByParam - Policy 전체 삭제
+// DeleteAllMcisPolicyByParam is to Policy 전체 삭제
 func (m *MCISApi) DeleteAllMcisPolicyByParam(nameSpaceID string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
@@ -1379,7 +1379,7 @@ func (m *MCISApi) DeleteAllMcisPolicyByParam(nameSpaceID string) (string, error)
 
 // ===== [ Public Functiom ] =====
 
-// NewMCISManager - MCIS API 객체 생성
+// NewMCISManager is to MCIS API 객체 생성
 func NewMCISManager() (m *MCISApi) {
 
 	m = &MCISApi{}

@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	//"encoding/json"
-
 	"github.com/cloud-barista/cb-spider/interface/api"
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	uuid "github.com/google/uuid"
@@ -16,35 +14,29 @@ import (
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 
-	// CB-Store
-	//"github.com/cloud-barista/cb-grpc-project/pkg/logging"
-
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
-
 	"encoding/json"
 	"fmt"
 
-	//"net/http"
-	//"io/ioutil"
-	//"strconv"
 	"github.com/go-resty/resty/v2"
 )
 
 // MCIS utilities
 
-// JSON Simple message struct
+// SimpleMsg is struct for JSON Simple message
 type SimpleMsg struct {
 	Message string `json:"message" example:"Any message"`
 }
 
+// GenUuid is func to return a UUID string
 func GenUuid() string {
 	return uuid.New().String()
 }
 
+// CheckString is func to check string by the given rule `[a-z]([-a-z0-9]*[a-z0-9])?`
 func CheckString(name string) error {
 
 	if name == "" {
-		err := fmt.Errorf("The provided name is empty.")
+		err := fmt.Errorf("The provided name is empty")
 		return err
 	}
 
@@ -59,7 +51,7 @@ func CheckString(name string) error {
 	return nil
 }
 
-// To be deprecated
+// ToLower is func to change strings (_ to -, " " to -, to lower string ) (deprecated soon)
 func ToLower(name string) string {
 	out := strings.ReplaceAll(name, "_", "-")
 	out = strings.ReplaceAll(out, " ", "-")
@@ -67,6 +59,7 @@ func ToLower(name string) string {
 	return out
 }
 
+// GenMcisKey is func to generate a key used in keyValue store
 func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 	if vmId != "" {
@@ -81,13 +74,14 @@ func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 }
 
+// GenMcisVmGroupKey is func to generate a key from vmGroupId used in keyValue store
 func GenMcisVmGroupKey(nsId string, mcisId string, groupId string) string {
 
 	return "/ns/" + nsId + "/mcis/" + mcisId + "/vmgroup/" + groupId
 
 }
 
-// Generate Mcis policy key
+// GenMcisPolicyKey is func to generate Mcis policy key
 func GenMcisPolicyKey(nsId string, mcisId string, vmId string) string {
 	if vmId != "" {
 		return "/ns/" + nsId + "/policy/mcis/" + mcisId + "/vm/" + vmId
@@ -100,6 +94,7 @@ func GenMcisPolicyKey(nsId string, mcisId string, vmId string) string {
 	}
 }
 
+// LookupKeyValueList is func to lookup KeyValue list
 func LookupKeyValueList(kvl []KeyValue, key string) string {
 	for _, v := range kvl {
 		if v.Key == key {
@@ -109,6 +104,7 @@ func LookupKeyValueList(kvl []KeyValue, key string) string {
 	return ""
 }
 
+// PrintJsonPretty is func to print JSON pretty with indent
 func PrintJsonPretty(v interface{}) {
 	prettyJSON, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
@@ -118,6 +114,7 @@ func PrintJsonPretty(v interface{}) {
 	}
 }
 
+// GenResourceKey is func to generate a key from resource type and id
 func GenResourceKey(nsId string, resourceType string, resourceId string) string {
 
 	if resourceType == StrImage ||
@@ -134,6 +131,7 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 	}
 }
 
+// mcirIds is struct for containing id and name of each MCIR type
 type mcirIds struct { // Tumblebug
 	CspImageId           string
 	CspImageName         string
@@ -151,6 +149,7 @@ type mcirIds struct { // Tumblebug
 	ConnectionName string
 }
 
+// GetCspResourceId is func to retrieve CSP native resource ID
 func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
 	key := GenResourceKey(nsId, resourceType, resourceId)
 	if key == "/invalidKey" {
@@ -210,9 +209,9 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	default:
 		return "", fmt.Errorf("invalid resourceType")
 	}
-	//}
 }
 
+// ConnConfig is struct for containing a CB-Spider struct for connection config
 type ConnConfig struct { // Spider
 	ConfigName     string
 	ProviderName   string
@@ -221,11 +220,12 @@ type ConnConfig struct { // Spider
 	RegionName     string
 }
 
+// GetConnConfig is func to get connection config from CB-Spider
 func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/connectionconfig/" + ConnConfigName
+		url := SpiderRestUrl + "/connectionconfig/" + ConnConfigName
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -257,7 +257,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
 	} else {
 
-		// CIM API 설정
+		// CIM API init
 		cim := api.NewCloudInfoManager()
 		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
@@ -287,15 +287,17 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	}
 }
 
+// ConnConfigList is struct for containing a CB-Spider struct for connection config list
 type ConnConfigList struct { // Spider
 	Connectionconfig []ConnConfig `json:"connectionconfig"`
 }
 
+// GetConnConfigList is func to list connection configs from CB-Spider
 func GetConnConfigList() (ConnConfigList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/connectionconfig"
+		url := SpiderRestUrl + "/connectionconfig"
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -327,7 +329,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	} else {
 
-		// CIM API 설정
+		// CIM API init
 		cim := api.NewCloudInfoManager()
 		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
@@ -358,17 +360,19 @@ func GetConnConfigList() (ConnConfigList, error) {
 	}
 }
 
-type Region struct { // Spider
+// Region is struct for containing region struct of CB-Spider
+type Region struct {
 	RegionName       string     // ex) "region01"
 	ProviderName     string     // ex) "GCP"
 	KeyValueInfoList []KeyValue // ex) { {region, us-east1}, {zone, us-east1-c} }
 }
 
+// GetRegion is func to get region from CB-Spider
 func GetRegion(RegionName string) (Region, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/region/" + RegionName
+		url := SpiderRestUrl + "/region/" + RegionName
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -400,7 +404,7 @@ func GetRegion(RegionName string) (Region, error) {
 
 	} else {
 
-		// CIM API 설정
+		// CIM API init
 		cim := api.NewCloudInfoManager()
 		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
@@ -436,12 +440,12 @@ type RegionList struct {
 	Region []Region `json:"region"`
 }
 
-// GetRegionList retrieves region list
+// GetRegionList is func to retrieve region list
 func GetRegionList() (RegionList, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := SPIDER_REST_URL + "/region"
+		url := SpiderRestUrl + "/region"
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -473,7 +477,7 @@ func GetRegionList() (RegionList, error) {
 
 	} else {
 
-		// CIM API 설정
+		// CIM API init
 		cim := api.NewCloudInfoManager()
 		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
@@ -504,7 +508,7 @@ func GetRegionList() (RegionList, error) {
 	}
 }
 
-// ConvertToMessage - 입력 데이터를 grpc 메시지로 변환
+// ConvertToMessage is func to change input data to gRPC message
 func ConvertToMessage(inType string, inData string, obj interface{}) error {
 	//logger := logging.NewLogger()
 
@@ -527,25 +531,25 @@ func ConvertToMessage(inType string, inData string, obj interface{}) error {
 	return nil
 }
 
-// ConvertToOutput - grpc 메시지를 출력포맷으로 변환
+// ConvertToOutput is func to convert gRPC message to print format
 func ConvertToOutput(outType string, obj interface{}) (string, error) {
 	//logger := logging.NewLogger()
 
 	if outType == "yaml" {
-		// 메시지 포맷에서 불필요한 필드(XXX_로 시작하는 필드)를 제거하기 위해 json 태그를 이용하여 마샬링
+		// marshal using JSON to remove fields with XXX prefix
 		j, err := json.Marshal(obj)
 		if err != nil {
 			return "", err
 		}
 
-		// 필드를 소팅하지 않고 지정된 순서대로 출력하기 위해 MapSlice 이용
+		// use MapSlice to avoid sorting fields
 		jsonObj := yaml.MapSlice{}
 		err2 := yaml.Unmarshal(j, &jsonObj)
 		if err2 != nil {
 			return "", err2
 		}
 
-		// yaml 마샬링
+		// yaml marshal
 		y, err3 := yaml.Marshal(jsonObj)
 		if err3 != nil {
 			return "", err3
@@ -568,7 +572,7 @@ func ConvertToOutput(outType string, obj interface{}) (string, error) {
 	return "", nil
 }
 
-// CopySrcToDest - 소스에서 타켓으로 데이터 복사
+// CopySrcToDest is func to copy data from source to target
 func CopySrcToDest(src interface{}, dest interface{}) error {
 	//logger := logging.NewLogger()
 
@@ -592,7 +596,7 @@ func CopySrcToDest(src interface{}, dest interface{}) error {
 	return nil
 }
 
-// ConvGrpcStatusErr - GRPC 상태 코드 에러로 변환
+// ConvGrpcStatusErr is func to convert error code into GRPC status code
 func ConvGrpcStatusErr(err error, tag string, method string) error {
 	//logger := logging.NewLogger()
 
@@ -610,7 +614,7 @@ func ConvGrpcStatusErr(err error, tag string, method string) error {
 	return nil
 }
 
-// NewGrpcStatusErr - GRPC 상태 코드 에러 생성
+// NewGrpcStatusErr is func to generate GRPC status error code
 func NewGrpcStatusErr(msg string, tag string, method string) error {
 	//logger := logging.NewLogger()
 
@@ -620,7 +624,7 @@ func NewGrpcStatusErr(msg string, tag string, method string) error {
 	return status.Errorf(codes.Internal, "%s error while calling %s method: %s ", tag, method, msg)
 }
 
-// NVL is null value logic
+// NVL is func for null value logic
 func NVL(str string, def string) string {
 	if len(str) == 0 {
 		return def
@@ -628,6 +632,7 @@ func NVL(str string, def string) string {
 	return str
 }
 
+// GetChildIdList is func to get child id list from given key
 func GetChildIdList(key string) []string {
 
 	keyValue, _ := CBStore.GetList(key, true)
@@ -646,7 +651,7 @@ func GetChildIdList(key string) []string {
 
 }
 
-// func GetObjectList returns IDs of each child objects that has the same key.
+// GetObjectList is func to return IDs of each child objects that has the same key
 func GetObjectList(key string) []string {
 
 	keyValue, _ := CBStore.GetList(key, true)
@@ -661,7 +666,7 @@ func GetObjectList(key string) []string {
 
 }
 
-// func GetObjectValue returns the object value.
+// GetObjectValue is func to return the object value
 func GetObjectValue(key string) (string, error) {
 
 	keyValue, err := CBStore.Get(key)
@@ -675,7 +680,7 @@ func GetObjectValue(key string) (string, error) {
 	return keyValue.Value, nil
 }
 
-// func DeleteObject delete the object.
+// DeleteObject is func to delete the object
 func DeleteObject(key string) error {
 
 	err := CBStore.Delete(key)
@@ -686,7 +691,7 @@ func DeleteObject(key string) error {
 	return nil
 }
 
-// func DeleteObjects delete objects.
+// DeleteObjects is func to delete objects
 func DeleteObjects(key string) error {
 	keyValue, _ := CBStore.GetList(key, true)
 	for _, v := range keyValue {

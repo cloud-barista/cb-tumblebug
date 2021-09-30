@@ -102,7 +102,7 @@ func SimpleNSApiTest() {
 	ns.Close()
 }
 
-// ConfigNSApiTest - Call NS API using env config file
+// ConfigNSApiTest is to Call NS API using env config file
 func ConfigNSApiTest() {
 
 	fmt.Print("\n\n============= ConfigNSApiTest() =============\n")
@@ -131,7 +131,7 @@ func ConfigNSApiTest() {
 	ns.Close()
 }
 
-// DocTypeNSApiTest - Call NS API using input/output
+// DocTypeNSApiTest is to Call NS API using input/output
 func DocTypeNSApiTest() {
 
 	fmt.Print("\n\n============= DocTypeNSApiTest() =============\n")
@@ -234,7 +234,7 @@ nsId: ns-test
 	ns.Close()
 }
 
-// ConfigMCIRApiTest - Call MCIR API using env config file
+// ConfigMCIRApiTest is to Call MCIR API using env config file
 func ConfigMCIRApiTest() {
 
 	fmt.Print("\n\n============= ConfigMCIRApiTest() =============\n")
@@ -263,7 +263,7 @@ func ConfigMCIRApiTest() {
 	mcir.Close()
 }
 
-// ConfigMCISApiTest - Call MCIS API using env config file
+// ConfigMCISApiTest is to Call MCIS API using env config file
 func ConfigMCISApiTest() {
 
 	fmt.Print("\n\n============= ConfigMCISApiTest() =============\n")
@@ -292,7 +292,7 @@ func ConfigMCISApiTest() {
 	mcis.Close()
 }
 
-// CreateCIMApiTest - Call Create CIM API using parameter
+// CreateCIMApiTest is to Call Create CIM API using parameter
 func CreateCIMApiTest() {
 
 	fmt.Print("\n\n============= CreateCIMApiTest() =============\n")
@@ -372,7 +372,7 @@ func CreateCIMApiTest() {
 	cim.Close()
 }
 
-// CreateNSApiTest - Call Create NS API using parameter
+// CreateNSApiTest is to Call Create NS API using parameter
 func CreateNSApiTest() {
 
 	fmt.Print("\n\n============= CreateNSApiTest() =============\n")
@@ -405,7 +405,7 @@ func CreateNSApiTest() {
 	ns.Close()
 }
 
-// CreateMCIRApiTest - Call Create MCIR API using parameter
+// CreateMCIRApiTest is to Call Create MCIR API using parameter
 func CreateMCIRApiTest() {
 
 	fmt.Print("\n\n============= CreateMCIRApiTest() =============\n")
@@ -501,34 +501,34 @@ func CreateMCIRApiTest() {
 			Name:                  "openstack-config01-test",
 			ConnectionName:        "openstack-config01",
 			CspSpecName:           "m1.tiny",
-			Os_type:               "",
-			Num_vCPU:              0,
-			Num_core:              0,
-			Mem_GiB:               0,
-			Storage_GiB:           0,
+			OsType:                "",
+			NumvCPU:               0,
+			NumCore:               0,
+			MemGiB:                0,
+			StorageGiB:            0,
 			Description:           "",
-			Cost_per_hour:         0,
-			Num_storage:           0,
-			Max_num_storage:       0,
-			Max_total_storage_TiB: 0,
-			Net_bw_Gbps:           0,
-			Ebs_bw_Mbps:           0,
-			Gpu_model:             "",
-			Num_gpu:               0,
-			Gpumem_GiB:            0,
-			Gpu_p2p:               "",
+			CostPerHour:           0,
+			NumStorage:            0,
+			MaxNumStorage:         0,
+			MaxTotalStorageTiB:    0,
+			NetBwGbps:             0,
+			EbsBwMbps:             0,
+			GpuModel:              "",
+			NumGpu:                0,
+			GpuMemGiB:             0,
+			GpuP2p:                "",
 			OrderInFilteredResult: 0,
 			EvaluationStatus:      "",
-			EvaluationScore_01:    0.0,
-			EvaluationScore_02:    0.0,
-			EvaluationScore_03:    0.0,
-			EvaluationScore_04:    0.0,
-			EvaluationScore_05:    0.0,
-			EvaluationScore_06:    0.0,
-			EvaluationScore_07:    0.0,
-			EvaluationScore_08:    0.0,
-			EvaluationScore_09:    0.0,
-			EvaluationScore_10:    0.0,
+			EvaluationScore01:     0.0,
+			EvaluationScore02:     0.0,
+			EvaluationScore03:     0.0,
+			EvaluationScore04:     0.0,
+			EvaluationScore05:     0.0,
+			EvaluationScore06:     0.0,
+			EvaluationScore07:     0.0,
+			EvaluationScore08:     0.0,
+			EvaluationScore09:     0.0,
+			EvaluationScore10:     0.0,
 		},
 	}
 	result, err = mcir.CreateSpecWithInfoByParam(reqTbSpecInfo)
@@ -556,7 +556,7 @@ func CreateMCIRApiTest() {
 	mcir.Close()
 }
 
-// CreateMCISApiTest - Call Create MCIS API using parameter
+// CreateMCISApiTest is to Call Create MCIS API using parameter
 func CreateMCISApiTest() {
 
 	fmt.Print("\n\n============= CreateMCISApiTest() =============\n")
@@ -632,7 +632,7 @@ func CreateMCISApiTest() {
 	mcis.Close()
 }
 
-// DeleteMCISApiTest - Call Delete MCIS API using parameter
+// DeleteMCISApiTest is to Call Delete MCIS API using parameter
 func DeleteMCISApiTest() {
 
 	fmt.Print("\n\n============= DeleteMCISApiTest() =============\n")
@@ -666,7 +666,7 @@ func DeleteMCISApiTest() {
 	mcis.Close()
 }
 
-// DeleteMCIRApiTest - Call Delete MCIR API using parameter
+// DeleteMCIRApiTest is to Call Delete MCIR API using parameter
 func DeleteMCIRApiTest() {
 
 	fmt.Print("\n\n============= DeleteMCIRApiTest() =============\n")
@@ -723,7 +723,7 @@ func DeleteMCIRApiTest() {
 	mcir.Close()
 }
 
-// DeleteNSApiTest - Call Delete NS API using parameter
+// DeleteNSApiTest is to Call Delete NS API using parameter
 func DeleteNSApiTest() {
 
 	fmt.Print("\n\n============= DeleteNSApiTest() =============\n")
@@ -752,7 +752,7 @@ func DeleteNSApiTest() {
 	ns.Close()
 }
 
-// DeleteCIMApiTest - Call Delete CIM API using parameter
+// DeleteCIMApiTest is to Call Delete CIM API using parameter
 func DeleteCIMApiTest() {
 
 	fmt.Print("\n\n============= DeleteCIMApiTest() =============\n")

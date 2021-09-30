@@ -7,7 +7,7 @@ function clean_mcis_sequence() {
 	local TestSetFile=$4
 
 	echo '## 8. MCIS: Terminate'
-	OUTPUT=$(../8.mcis/terminate-mcis.sh $CSP $REGION $POSTFIX $TestSetFile)
+	OUTPUT=$(../8.mcis/terminate-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 	echo "${OUTPUT}"
 	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
 	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
@@ -18,7 +18,7 @@ function clean_mcis_sequence() {
 		dozing 30
 	fi
 
-	../8.mcis/delete-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	../8.mcis/delete-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 }
 
 SECONDS=0
@@ -30,15 +30,17 @@ echo "####################################################################"
 source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	echo "[Parallel excution for all CSP regions]"
+	echo "[Parallel execution for all CSP regions]"
 else
-	echo "[Single excution for a CSP region]"
+	echo "[Single execution for a CSP region]"
 fi
 clean_mcis_sequence $CSP $REGION $POSTFIX $TestSetFile
 
-echo ""
+echo -e "${BOLD}"
 echo "[Cleaning related commands in history file executionStatus]"
-echo "Remove (MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+echo -e ""
+echo -e "${NC}${BLUE}- Removing  (MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}"
+echo -e "${NC}"
 sed -i "/(MCIS) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile//\//\\/}/d" ./executionStatus
 echo ""
 echo "[Executed Command List]"

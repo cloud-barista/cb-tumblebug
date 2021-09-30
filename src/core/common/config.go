@@ -55,15 +55,6 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 
 func UpdateGlobalVariable(id string) error {
 
-	/*
-		common.SPIDER_REST_URL = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-		common.DRAGONFLY_REST_URL = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-		common.DB_URL = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
-		common.DB_DATABASE = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-		common.DB_USER = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-		common.DB_PASSWORD = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-	*/
-
 	configInfo, err := GetConfig(id)
 	if err != nil {
 		//CBLog.Error(err)
@@ -71,27 +62,27 @@ func UpdateGlobalVariable(id string) error {
 	}
 
 	switch id {
-	case StrSPIDER_REST_URL:
-		SPIDER_REST_URL = configInfo.Value
-		fmt.Println("<SPIDER_REST_URL> " + SPIDER_REST_URL)
-	case StrDRAGONFLY_REST_URL:
-		DRAGONFLY_REST_URL = configInfo.Value
-		fmt.Println("<DRAGONFLY_REST_URL> " + DRAGONFLY_REST_URL)
-	case StrDB_URL:
-		DB_URL = configInfo.Value
-		fmt.Println("<DB_URL> " + DB_URL)
-	case StrDB_DATABASE:
-		DB_DATABASE = configInfo.Value
-		fmt.Println("<DB_DATABASE> " + DB_DATABASE)
-	case StrDB_USER:
-		DB_USER = configInfo.Value
-		fmt.Println("<DB_USER> " + DB_USER)
-	case StrDB_PASSWORD:
-		DB_PASSWORD = configInfo.Value
-		fmt.Println("<DB_PASSWORD> " + DB_PASSWORD)
-	case StrAUTOCONTROL_DURATION_MS:
-		AUTOCONTROL_DURATION_MS = configInfo.Value
-		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
+	case StrSpiderRestUrl:
+		SpiderRestUrl = configInfo.Value
+		fmt.Println("<SPIDER_REST_URL> " + SpiderRestUrl)
+	case StrDragonflyRestUrl:
+		DragonflyRestUrl = configInfo.Value
+		fmt.Println("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+	case StrDBUrl:
+		DBUrl = configInfo.Value
+		fmt.Println("<DB_URL> " + DBUrl)
+	case StrDBDatabase:
+		DBDatabase = configInfo.Value
+		fmt.Println("<DB_DATABASE> " + DBDatabase)
+	case StrDBUser:
+		DBUser = configInfo.Value
+		fmt.Println("<DB_USER> " + DBUser)
+	case StrDBPassword:
+		DBPassword = configInfo.Value
+		fmt.Println("<DB_PASSWORD> " + DBPassword)
+	case StrAutocontrolDurationMs:
+		AutocontrolDurationMs = configInfo.Value
+		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
 	default:
 
 	}
@@ -102,27 +93,27 @@ func UpdateGlobalVariable(id string) error {
 func InitConfig(id string) error {
 
 	switch id {
-	case StrSPIDER_REST_URL:
-		SPIDER_REST_URL = NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-		fmt.Println("<SPIDER_REST_URL> " + SPIDER_REST_URL)
-	case StrDRAGONFLY_REST_URL:
-		DRAGONFLY_REST_URL = NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-		fmt.Println("<DRAGONFLY_REST_URL> " + DRAGONFLY_REST_URL)
-	case StrDB_URL:
-		DB_URL = NVL(os.Getenv("DB_URL"), "localhost:3306")
-		fmt.Println("<DB_URL> " + DB_URL)
-	case StrDB_DATABASE:
-		DB_DATABASE = NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-		fmt.Println("<DB_DATABASE> " + DB_DATABASE)
-	case StrDB_USER:
-		DB_USER = NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-		fmt.Println("<DB_USER> " + DB_USER)
-	case StrDB_PASSWORD:
-		DB_PASSWORD = NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-		fmt.Println("<DB_PASSWORD> " + DB_PASSWORD)
-	case StrAUTOCONTROL_DURATION_MS:
-		AUTOCONTROL_DURATION_MS = NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
-		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AUTOCONTROL_DURATION_MS)
+	case StrSpiderRestUrl:
+		SpiderRestUrl = NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
+		fmt.Println("<SPIDER_REST_URL> " + SpiderRestUrl)
+	case StrDragonflyRestUrl:
+		DragonflyRestUrl = NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+		fmt.Println("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+	case StrDBUrl:
+		DBUrl = NVL(os.Getenv("DB_URL"), "localhost:3306")
+		fmt.Println("<DB_URL> " + DBUrl)
+	case StrDBDatabase:
+		DBDatabase = NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
+		fmt.Println("<DB_DATABASE> " + DBDatabase)
+	case StrDBUser:
+		DBUser = NVL(os.Getenv("DB_USER"), "cb_tumblebug")
+		fmt.Println("<DB_USER> " + DBUser)
+	case StrDBPassword:
+		DBPassword = NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
+		fmt.Println("<DB_PASSWORD> " + DBPassword)
+	case StrAutocontrolDurationMs:
+		AutocontrolDurationMs = NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
+		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
 	default:
 
 	}

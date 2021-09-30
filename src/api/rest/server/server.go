@@ -1,4 +1,18 @@
-package restapiserver
+/*
+Copyright 2019 The Cloud-Barista Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package restapi is to handle REST API
+package restapi
 
 import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -50,11 +64,15 @@ const (
  ██║  ██║███████╗██║  ██║██████╔╝   ██║   
  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝   
 
- Multi-cloud infrastructure managemenet framework
+ Multi-cloud infrastructure management framework
  ________________________________________________`
 )
 
-func ApiServer() {
+/*
+	port is the port that the ApiServer will listen to.
+	port is passed without a ':' (colon).
+*/
+func ApiServer(port string) {
 
 	e := echo.New()
 
@@ -101,11 +119,11 @@ func ApiServer() {
 	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
 	e.GET("/tumblebug/region/:regionName", rest_common.RestGetRegion)
 
-	e.GET("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)
-	e.GET("/tumblebug/lookupSpec", rest_mcir.RestLookupSpec)
+	e.POST("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)
+	e.POST("/tumblebug/lookupSpec", rest_mcir.RestLookupSpec)
 
-	e.GET("/tumblebug/lookupImages", rest_mcir.RestLookupImageList)
-	e.GET("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
+	e.POST("/tumblebug/lookupImages", rest_mcir.RestLookupImageList)
+	e.POST("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
 
@@ -147,11 +165,12 @@ func ApiServer() {
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
 	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 
-	g.GET("/:nsId/mcis/:mcisId/testListVmId", rest_mcis.RestTestListVmId) // for debug
-
 	g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommend)
 
 	g.POST("/:nsId/testRecommendVm", rest_mcis.RestRecommendVm)
+
+	g.GET("/:nsId/control/mcis/:mcisId", rest_mcis.RestGetControlMcis)
+	g.GET("/:nsId/control/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetControlMcisVm)
 
 	g.POST("/:nsId/cmd/mcis/:mcisId", rest_mcis.RestPostCmdMcis)
 	g.POST("/:nsId/cmd/mcis/:mcisId/vm/:vmId", rest_mcis.RestPostCmdMcisVm)
@@ -257,5 +276,6 @@ func ApiServer() {
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
-	e.Logger.Fatal(e.Start(":1323"))
+	port = fmt.Sprintf(":%s", port)
+	e.Logger.Fatal(e.Start(port))
 }

@@ -95,7 +95,7 @@ func (r *MCISRequest) ListMcisId() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// ControlMcis - Control MCIS's lifecycle
+// ControlMcis is to Control MCIS's lifecycle
 func (r *MCISRequest) ControlMcis() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -338,7 +338,7 @@ func (r *MCISRequest) CreateMcisVMGroup() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// ControlMcisVM - Control MCIS VM's lifecycle
+// ControlMcisVM is to Control MCIS VM's lifecycle
 func (r *MCISRequest) ControlMcisVM() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -473,7 +473,7 @@ func (r *MCISRequest) RecommendMcis() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// CmdMcis - Send a command to execute to MCIS
+// CmdMcis is to Send a command to execute to MCIS
 func (r *MCISRequest) CmdMcis() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -500,7 +500,7 @@ func (r *MCISRequest) CmdMcis() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// CmdMcisVm - Send a command to execute to MCIS VM
+// CmdMcisVm is to Send a command to execute to MCIS VM
 func (r *MCISRequest) CmdMcisVm() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -527,7 +527,7 @@ func (r *MCISRequest) CmdMcisVm() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// InstallAgentToMcis - Install CB-Tumblebug benchmarking agent (cb-milkyway), which will be deprecated
+// InstallAgentToMcis is to Install CB-Tumblebug benchmarking agent (cb-milkyway), which will be deprecated
 func (r *MCISRequest) InstallAgentToMcis() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -554,7 +554,7 @@ func (r *MCISRequest) InstallAgentToMcis() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetBenchmark - Get benchmark result
+// GetBenchmark is to Get benchmark result
 func (r *MCISRequest) GetBenchmark() (string, error) {
 	// Check input data
 	if r.InData == "" {
@@ -581,7 +581,7 @@ func (r *MCISRequest) GetBenchmark() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// GetAllBenchmark - List benchmark results
+// GetAllBenchmark is to List benchmark results
 func (r *MCISRequest) GetAllBenchmark() (string, error) {
 	// Check input data
 	if r.InData == "" {

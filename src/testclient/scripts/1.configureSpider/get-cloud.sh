@@ -1,55 +1,83 @@
 #!/bin/bash
 
-#function get_cloud() {
-
-
-    FILE=../credentials.conf
-    if [ ! -f "$FILE" ]; then
-        echo "$FILE does not exist."
-        exit
-    fi
-
-
-    TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-    source ../credentials.conf
-    
-    echo "####################################################################"
-    echo "## 0. Get Cloud Connction Config"
-    echo "####################################################################"
-
-    CSP=${1}
-    REGION=${2:-1}
-    POSTFIX=${3:-developer}
-    
-	source ../common-functions.sh
-	getCloudIndex $CSP
-
-    RESTSERVER=localhost
-
-    # for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} | jq ''
-    echo ""
-
-
+function CallSpider() {
     # for Cloud Region Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | jq ''
+    echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} |
+    jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+    column -t
+    echo ""
     echo ""
 
 
     # for Cloud Credential Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[$INDEX]} | jq ''
+    echo "[Cloud Credential] ${CredentialName[$INDEX]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential/${CredentialName[$INDEX]} |
+    jq -r '(["CredentialName","ProviderName"] | (., map(length*"-"))), ([.CredentialName, .ProviderName]) | @tsv' |
+    column -t
+    echo ""
     echo ""
 
     
     # for Cloud Driver Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[$INDEX]} | jq ''
+    echo "[Cloud Driver] ${DriverName[$INDEX]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver/${DriverName[$INDEX]} |
+    jq -r '(["DriverName","ProviderName","DriverLibFileName"] | (., map(length*"-"))), ([.DriverName, .ProviderName, .DriverLibFileName]) | @tsv' |
+    column -t
     echo ""
+    echo ""
+
+
+    # for Cloud Connection Config Info
+    echo "[Cloud Connection Config] ${CONN_CONFIG[$INDEX,$REGION]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} |
+    jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
+    column -t
+    echo ""
+
+}
+
+#function get_cloud() {
+
+    echo "####################################################################"
+    echo "## 0. Get Cloud Connction Config"
+    echo "####################################################################"
+
+    source ../init.sh
+
+    echo "AUTH: $AUTH"
+    echo "TumblebugServer: $TumblebugServer"
+    echo "NSID: $NSID"
+    echo "INDEX: $INDEX"
+    echo "REGION: $REGION"
+    echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
+    echo "POSTFIX: $POSTFIX"
+    echo ""
+
+    if [ "${INDEX}" == "0" ]; then
+        echo "[Parallel execution for all CSP regions]"
+        INDEXX=${NumCSP}
+        for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+            INDEXY=${NumRegion[$cspi]}
+            CSP=${CSPType[$cspi]}
+            echo "[$cspi] $CSP details"
+            for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                
+                CallSpider
+
+            done
+
+        done
+        wait
+
+    else
+        echo ""
+        
+        CallSpider
+
+    fi
+
 #}
 
 #get_cloud

@@ -19,7 +19,7 @@ import (
 
 // ===== [ Public Functions ] =====
 
-// ConvertToMessage - 입력 데이터를 grpc 메시지로 변환
+// ConvertToMessage is to 입력 데이터를 grpc 메시지로 변환
 func ConvertToMessage(inType string, inData string, obj interface{}) error {
 	logger := logger.NewLogger()
 
@@ -42,7 +42,7 @@ func ConvertToMessage(inType string, inData string, obj interface{}) error {
 	return nil
 }
 
-// ConvertToOutput - grpc 메시지를 출력포맷으로 변환
+// ConvertToOutput is to grpc 메시지를 출력포맷으로 변환
 func ConvertToOutput(outType string, obj interface{}) (string, error) {
 	logger := logger.NewLogger()
 
@@ -113,7 +113,7 @@ func ConvertToOutput(outType string, obj interface{}) (string, error) {
 	return "", nil
 }
 
-// CopySrcToDest - 소스에서 타켓으로 데이터 복사
+// CopySrcToDest is to 소스에서 타켓으로 데이터 복사
 func CopySrcToDest(src interface{}, dest interface{}) error {
 	logger := logger.NewLogger()
 

@@ -22,7 +22,7 @@ import (
 
 // ===== [ Types ] =====
 
-// CBConnection - CB-GRPC에서 사용하는 grpc 클라이언트를 위한 Wrapper 구조
+// CBConnection is for CB-GRPC에서 사용하는 grpc 클라이언트를 위한 Wrapper 구조
 type CBConnection struct {
 	Conn *grpc.ClientConn
 }
@@ -33,7 +33,7 @@ type CBConnection struct {
 
 // ===== [ Public Functions ] =====
 
-// NewCBConnection - 초기화된 grpc 클라이언트의 인스턴스 생성
+// NewCBConnection is for 초기화된 grpc 클라이언트의 인스턴스 생성
 func NewCBConnection(gConf *config.GrpcClientConfig) (*CBConnection, io.Closer, error) {
 
 	var (

@@ -22,7 +22,7 @@ var (
 
 // ===== [ Public Functions ] =====
 
-// UnaryClientInterceptor - JWT 토큰을 전달하는 Unary 클라이언트 인터셉터
+// UnaryClientInterceptor is to JWT 토큰을 전달하는 Unary 클라이언트 인터셉터
 func UnaryClientInterceptor(token string) grpc.UnaryClientInterceptor {
 	jwtToken = token
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
@@ -37,7 +37,7 @@ func UnaryClientInterceptor(token string) grpc.UnaryClientInterceptor {
 	}
 }
 
-// StreamClientInterceptor - JWT 토큰을 전달하는 Stream 클라이언트 인터셉터
+// StreamClientInterceptor is to JWT 토큰을 전달하는 Stream 클라이언트 인터셉터
 func StreamClientInterceptor(token string) grpc.StreamClientInterceptor {
 	jwtToken = token
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {

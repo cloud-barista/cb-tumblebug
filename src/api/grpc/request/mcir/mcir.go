@@ -10,7 +10,7 @@ import (
 
 // ===== [ Types ] =====
 
-// MCIRRequest - MCIR 서비스 요청 구현
+// MCIRRequest is for MCIR 서비스 요청 구현
 type MCIRRequest struct {
 	Client  pb.MCIRClient
 	Timeout time.Duration

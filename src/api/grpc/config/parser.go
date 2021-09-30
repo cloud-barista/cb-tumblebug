@@ -13,14 +13,14 @@ import (
 
 // ===== [ Types ] =====
 
-// Parser - Viper lib를 활용하기 위한 Parser 정의 구조 형식
+// Parser is for Viper lib를 활용하기 위한 Parser 정의 구조 형식
 type Parser struct {
 	viper *viper.Viper
 }
 
 // ===== [ Implementations ] =====
 
-// GrpcParse - Viper lib를 이용해서 지정된 CB-GRPC configuration 정보 파싱
+// GrpcParse is to Viper lib를 이용해서 지정된 CB-GRPC configuration 정보 파싱
 func (p Parser) GrpcParse(configFile string) (GrpcConfig, error) {
 	p.viper.SetConfigFile(configFile)
 	p.viper.AutomaticEnv()
@@ -45,7 +45,7 @@ func (p Parser) GrpcParse(configFile string) (GrpcConfig, error) {
 
 // ===== [ Private Functions ] =====
 
-// checkErr - Viper lib 처리에서 발생한 오류 반환 (Nested call)
+// checkErr is to Viper lib 처리에서 발생한 오류 반환 (Nested call)
 func checkErr(err error, configFile string) error {
 	switch e := err.(type) {
 	case viper.ConfigParseError:
@@ -63,7 +63,7 @@ func checkErr(err error, configFile string) error {
 
 // ===== [ Public Functions ] =====
 
-// CheckErr - 검증된 오류 정보 반환
+// CheckErr is to 검증된 오류 정보 반환
 func CheckErr(err error, configFile string) error {
 	switch e := err.(type) {
 	case *os.PathError:
@@ -73,7 +73,7 @@ func CheckErr(err error, configFile string) error {
 	}
 }
 
-// MakeParser - Viber lib를 활용하는 설정 Parser 생성
+// MakeParser is to Viber lib를 활용하는 설정 Parser 생성
 func MakeParser() Parser {
 	return Parser{viper.New()}
 }

@@ -1,24 +1,12 @@
 #!/bin/bash
 
-#function get_ns() {
+echo "####################################################################"
+echo "## 0. Namespace: Get (need input parameter: [-x namespace])"
+echo "####################################################################"
 
+source ../init.sh
 
-    TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-    
-    echo "####################################################################"
-    echo "## 0. Namespace: Get"
-    echo "####################################################################"
+NSID=${OPTION01:-tb01}
 
-    INDEX=${1}
-
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID | jq ''
-    echo ""
-#}
-
-#get_ns
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID | jq ''
+echo ""

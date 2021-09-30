@@ -43,12 +43,12 @@ func TestSpec(t *testing.T) {
 		fmt.Println("DB selected successfully..")
 	}
 
-	err = common.CreateSpecTable()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Table spec created successfully..")
-	}
+	// err = common.CreateSpecTable()
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// } else {
+	// 	fmt.Println("Table spec created successfully..")
+	// }
 
 	specName := "tb-unit-test"
 

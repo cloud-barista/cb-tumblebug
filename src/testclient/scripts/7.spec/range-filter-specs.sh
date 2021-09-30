@@ -1,38 +1,27 @@
 #!/bin/bash
 
-#function filter_specs() {
+echo "####################################################################"
+echo "## 7. spec: filter"
+echo "####################################################################"
 
+source ../init.sh
 
-    TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-    
-    echo "####################################################################"
-    echo "## 7. spec: filter"
-    echo "####################################################################"
-
-    resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/filterSpecsByRange -H 'Content-Type: application/json' -d @- <<EOF
+resp=$(
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/filterSpecsByRange -H 'Content-Type: application/json' -d @- <<EOF
 	    { 
 		"connectionName": "aws",
-		    "num_vCPU": {
+		    "numvCPU": {
 			    "min": 2,
 			    "max": 2
 		    }, 
-		    "mem_GiB": {
+		    "memGiB": {
 			    "min": 4
 		    },
-		    "storage_GiB": {
+		    "storageGiB": {
 			    "max": 400
 		    }
 	    }
 EOF
-    ); echo ${resp} | jq ''
-    echo ""
-#}
-
-#filter_specs
+)
+echo ${resp} | jq ''
+echo ""

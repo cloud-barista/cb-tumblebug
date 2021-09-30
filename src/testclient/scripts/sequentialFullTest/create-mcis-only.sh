@@ -9,9 +9,9 @@ function test_sequence() {
 	local NUMVM=$5
 	local CMDPATH=$6
 
-	../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $NUMVM 
+	../8.mcis/create-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
 	dozing 1
-	../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
@@ -37,9 +37,9 @@ function test_sequence_allcsp_mcis() {
 
 	_self=$CMDPATH
 
-	../8.mcis/create-single-vm-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $NUMVM
+	../8.mcis/create-single-vm-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM
 	#dozing 1
-	#../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $MCISPREFIX
+	#../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCISPREFIX
 	echo ""
 	echo "[Logging to notify latest command history]"
 	echo "[MCIS:${MCISID}(${SECONDS}s+More)] ${_self} (MCIS) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
@@ -58,7 +58,7 @@ function test_sequence_allcsp_mcis_vm() {
 	local TestSetFile=$4
 	local NUMVM=$5
 
-	../8.mcis/add-vmgroup-to-mcis.sh $CSP $REGION $POSTFIX $TestSetFile $NUMVM 
+	../8.mcis/add-vmgroup-to-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
 
 }
 SECONDS=0
@@ -73,7 +73,7 @@ NUMVM=${OPTION01:-1}
 
 
 if [ "${INDEX}" == "0" ]; then
-	echo "[Parallel excution for all CSP regions]"
+	echo "[Parallel execution for all CSP regions]"
 
 	INDEXX=${NumCSP}
 
@@ -129,7 +129,7 @@ if [ "${INDEX}" == "0" ]; then
 	done
 	wait
 
-	../8.mcis/status-mcis.sh "$@"
+	../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 else
 	echo ""

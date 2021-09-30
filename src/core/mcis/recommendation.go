@@ -1,6 +1,21 @@
+/*
+Copyright 2019 The Cloud-Barista Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package mcis is to manage multi-cloud infra service
 package mcis
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
@@ -9,6 +24,8 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+
+	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
 // DeploymentPlan is struct for .
@@ -25,7 +42,7 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric" example:"num_vCPU" enums:"num_vCPU,mem_GiB,Cost_per_hour"`
+	Metric    string      `json:"metric" example:"numvCPU" enums:"numvCPU,memGiB,CostPerHour"`
 	Condition []Operation `json:"condition"`
 }
 
@@ -86,12 +103,12 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case "<=":
 
 				switch metric {
-				case "num_vCPU":
-					u.Num_vCPU.Max = operand
-				case "mem_GiB":
-					u.Mem_GiB.Max = operand
-				case "Cost_per_hour":
-					u.Cost_per_hour.Max = operand
+				case "numvCPU":
+					u.NumvCPU.Max = operand
+				case "memGiB":
+					u.MemGiB.Max = operand
+				case "CostPerHour":
+					u.CostPerHour.Max = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
 				}
@@ -99,12 +116,12 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case ">=":
 
 				switch metric {
-				case "num_vCPU":
-					u.Num_vCPU.Min = operand
-				case "mem_GiB":
-					u.Mem_GiB.Min = operand
-				case "Cost_per_hour":
-					u.Cost_per_hour.Min = operand
+				case "numvCPU":
+					u.NumvCPU.Min = operand
+				case "memGiB":
+					u.MemGiB.Min = operand
+				case "CostPerHour":
+					u.CostPerHour.Min = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
 				}
@@ -112,15 +129,15 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case "==":
 
 				switch metric {
-				case "num_vCPU":
-					u.Num_vCPU.Max = operand
-					u.Num_vCPU.Min = operand
-				case "mem_GiB":
-					u.Mem_GiB.Max = operand
-					u.Mem_GiB.Min = operand
-				case "Cost_per_hour":
-					u.Cost_per_hour.Max = operand
-					u.Cost_per_hour.Min = operand
+				case "numvCPU":
+					u.NumvCPU.Max = operand
+					u.NumvCPU.Min = operand
+				case "memGiB":
+					u.MemGiB.Max = operand
+					u.MemGiB.Min = operand
+				case "CostPerHour":
+					u.CostPerHour.Max = operand
+					u.CostPerHour.Min = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
 				}
@@ -237,9 +254,9 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			for i := range *specList {
 				// update OrderInFilteredResult based on calculated priorityIndex
 				(*specList)[distances[i].index].OrderInFilteredResult = uint16(distances[i].priorityIndex)
-				// assign nomalized priorityIdex value to EvaluationScore_01
-				(*specList)[distances[i].index].EvaluationScore_01 = float32(1 - (float32(distances[i].priorityIndex) / float32(len(*specList))))
-				(*specList)[distances[i].index].EvaluationScore_02 = float32(distances[i].distance)
+				// assign nomalized priorityIdex value to EvaluationScore01
+				(*specList)[distances[i].index].EvaluationScore01 = float32(1 - (float32(distances[i].priorityIndex) / float32(len(*specList))))
+				(*specList)[distances[i].index].EvaluationScore02 = float32(distances[i].distance)
 			}
 			fmt.Printf("\n distances : %v \n", distances)
 
@@ -266,7 +283,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 	fmt.Printf("\n result : %v \n", result)
 
 	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
-	// content, err = mcir.SortSpecs(*specList, "mem_GiB", "descending")
+	// content, err = mcir.SortSpecs(*specList, "memGiB", "descending")
 	return result, nil
 }
 
@@ -313,4 +330,107 @@ func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (dista
 
 	earthRadius := float64(6371)
 	return (earthRadius * c)
+}
+
+// GetRecommendList is func to get recommendation list
+func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
+
+	fmt.Println("GetRecommendList")
+
+	var content struct {
+		Id             string
+		Price          string
+		ConnectionName string
+	}
+	//fmt.Println("[Get MCISs")
+	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
+	fmt.Println(key)
+	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return []TbVmPriority{}, err
+	}
+
+	var vmPriorityList []TbVmPriority
+
+	for cnt, v := range keyValue {
+		fmt.Println("getRecommendList1: " + v.Key)
+		err = json.Unmarshal([]byte(v.Value), &content)
+		if err != nil {
+			common.CBLog.Error(err)
+			return []TbVmPriority{}, err
+		}
+
+		content2 := mcir.TbSpecInfo{}
+		key2 := common.GenResourceKey(nsId, common.StrSpec, content.Id)
+
+		keyValue2, err := common.CBStore.Get(key2)
+		if err != nil {
+			common.CBLog.Error(err)
+			return []TbVmPriority{}, err
+		}
+		json.Unmarshal([]byte(keyValue2.Value), &content2)
+		content2.Id = content.Id
+
+		vmPriorityTmp := TbVmPriority{}
+		vmPriorityTmp.Priority = strconv.Itoa(cnt)
+		vmPriorityTmp.VmSpec = content2
+		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
+	}
+
+	fmt.Println("===============================================")
+	return vmPriorityList, err
+
+	//requires error handling
+
+}
+
+// CorePostMcisRecommend is func to command to all VMs in MCIS with SSH
+func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	/*
+		var content struct {
+			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
+			VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
+			PlacementAlgo  string                   `json:"placementAlgo"`
+			PlacementParam []common.KeyValue        `json:"placementParam"`
+		}
+	*/
+	//content := RestPostMcisRecommendResponse{}
+	//content.VmReq = req.VmReq
+	//content.PlacementAlgo = req.PlacementAlgo
+	//content.PlacementParam = req.PlacementParam
+
+	VmRecommend := []TbVmRecommendInfo{}
+
+	vmList := req.VmReq
+
+	for i, v := range vmList {
+		vmTmp := TbVmRecommendInfo{}
+		//vmTmp.RequestName = v.RequestName
+		vmTmp.VmReq = req.VmReq[i]
+		vmTmp.PlacementAlgo = v.PlacementAlgo
+		vmTmp.PlacementParam = v.PlacementParam
+
+		var err error
+		vmTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			//mapA := map[string]string{"message": "Failed to recommend MCIS"}
+			//return c.JSON(http.StatusFailedDependency, &mapA)
+			return nil, fmt.Errorf("Failed to recommend MCIS")
+		}
+
+		VmRecommend = append(VmRecommend, vmTmp)
+	}
+
+	return VmRecommend, nil
 }

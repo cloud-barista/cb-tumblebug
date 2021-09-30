@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -38,9 +39,20 @@ type SpiderKeyPairInfo struct { // Spider
 }
 
 type TbSshKeyReq struct {
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
+	Name           string `json:"name" validate:"required"`
+	ConnectionName string `json:"connectionName" validate:"required"`
 	Description    string `json:"description"`
+}
+
+func TbSshKeyReqStructLevelValidation(sl validator.StructLevel) {
+
+	u := sl.Current().Interface().(TbSshKeyReq)
+
+	err := common.CheckString(u.Name)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.Name, "name", "Name", "NotObeyingNamingConvention", "")
+	}
 }
 
 type TbSshKeyInfo struct {
@@ -70,12 +82,39 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	err = common.CheckString(u.Name)
+
+	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	err = validate.Struct(u)
 	if err != nil {
+
+		// this check is only needed when your code could produce
+		// an invalid value for validation such as interface with nil
+		// value most including myself do not usually have code like this.
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			temp := TbSshKeyInfo{}
+			return temp, err
+		}
+
+		// for _, err := range err.(validator.ValidationErrors) {
+
+		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
+		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
+		// 	fmt.Println(err.StructNamespace())
+		// 	fmt.Println(err.StructField())
+		// 	fmt.Println(err.Tag())
+		// 	fmt.Println(err.ActualTag())
+		// 	fmt.Println(err.Kind())
+		// 	fmt.Println(err.Type())
+		// 	fmt.Println(err.Value())
+		// 	fmt.Println(err.Param())
+		// 	fmt.Println()
+		// }
+
 		temp := TbSshKeyInfo{}
-		common.CBLog.Error(err)
 		return temp, err
 	}
+
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
@@ -99,7 +138,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SPIDER_REST_URL + "/keypair"
+		url := common.SpiderRestUrl + "/keypair"
 
 		client := resty.New().SetCloseConnection(true)
 
@@ -131,7 +170,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	} else {
 
-		// CCM API 설정
+		// Set CCM gRPC API
 		ccm := api.NewCloudResourceHandler()
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {

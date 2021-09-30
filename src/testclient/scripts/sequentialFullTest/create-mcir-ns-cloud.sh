@@ -10,22 +10,22 @@ function test_sequence() {
 
 	local CMDPATH=$6
 
-	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
-	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX $TestSetFile
-	../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX $TestSetFile
+	../1.configureSpider/register-cloud.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../2.configureTumblebug/create-ns.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../3.vNet/create-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 10
 	if [ "${CSP}" == "gcp" ]; then
 		echo "[Test for GCP needs more preparation time]"
 		dozing 20
 	fi
-	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile
+	../4.securityGroup/create-securityGroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 10
-	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile
-	../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX $TestSetFile
-	../7.spec/register-spec.sh $CSP $REGION $POSTFIX $TestSetFile
+	../5.sshKey/create-sshKey.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../6.image/registerImageWithId.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../7.spec/register-spec.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	# ../8.mcis/create-mcis.sh $CSP $REGION $POSTFIX $NUMVM $TestSetFile
 	# dozing 1
-	# ../8.mcis/status-mcis.sh $CSP $REGION $POSTFIX $TestSetFile
+	# ../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
@@ -47,19 +47,19 @@ function test_sequence_allcsp_mcir() {
 	local TestSetFile=$4
 	local CMDPATH=$5
 
-	../1.configureSpider/register-cloud.sh $CSP $REGION $POSTFIX $TestSetFile
-	../2.configureTumblebug/create-ns.sh $CSP $REGION $POSTFIX $TestSetFile
-	../3.vNet/create-vNet.sh $CSP $REGION $POSTFIX $TestSetFile
+	../1.configureSpider/register-cloud.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../2.configureTumblebug/create-ns.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../3.vNet/create-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 10
 	if [ "${CSP}" == "gcp" ]; then
 		echo "[Test for GCP needs more preparation time]"
 		dozing 20
 	fi
-	../4.securityGroup/create-securityGroup.sh $CSP $REGION $POSTFIX $TestSetFile
+	../4.securityGroup/create-securityGroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 10
-	../5.sshKey/create-sshKey.sh $CSP $REGION $POSTFIX $TestSetFile
-	../6.image/registerImageWithId.sh $CSP $REGION $POSTFIX $TestSetFile
-	../7.spec/register-spec.sh $CSP $REGION $POSTFIX $TestSetFile
+	../5.sshKey/create-sshKey.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../6.image/registerImageWithId.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../7.spec/register-spec.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
@@ -88,7 +88,7 @@ NUMVM=${OPTION01:-1}
 
 
 if [ "${INDEX}" == "0" ]; then
-	echo "[Parallel excution for all CSP regions]"
+	echo "[Parallel execution for all CSP regions]"
 
 	INDEXX=${NumCSP}
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do

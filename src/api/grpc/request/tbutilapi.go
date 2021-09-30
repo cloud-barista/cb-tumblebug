@@ -21,7 +21,7 @@ import (
 
 // ===== [ Types ] =====
 
-// UtilityApi - Utility API 구조 정의
+// UtilityApi is for Utility API 구조 정의
 type UtilityApi struct {
 	gConf          *config.GrpcConfig
 	conn           *grpc.ClientConn
@@ -32,7 +32,7 @@ type UtilityApi struct {
 	outType        string
 }
 
-// ConfigReq - Config 정보 생성 요청 구조 정의
+// ConfigReq is for Config 정보 생성 요청 구조 정의
 // type ConfigReq struct {
 // 	Name  string `yaml:"name" json:"name"`
 // 	Value string `yaml:"value" json:"value"`
@@ -40,7 +40,7 @@ type UtilityApi struct {
 
 // ===== [ Implementatiou ] =====
 
-// SetServerAddr - Tumblebug 서버 주소 설정
+// SetServerAddr is to Tumblebug 서버 주소 설정
 func (u *UtilityApi) SetServerAddr(addr string) error {
 	if addr == "" {
 		return errors.New("parameter is empty")
@@ -50,12 +50,12 @@ func (u *UtilityApi) SetServerAddr(addr string) error {
 	return nil
 }
 
-// GetServerAddr - Tumblebug 서버 주소 값 조회
+// GetServerAddr is to Tumblebug 서버 주소 값 조회
 func (u *UtilityApi) GetServerAddr() (string, error) {
 	return u.gConf.GSL.TumblebugCli.ServerAddr, nil
 }
 
-// SetTLSCA - TLS CA 설정
+// SetTLSCA is to TLS CA 설정
 func (u *UtilityApi) SetTLSCA(tlsCAFile string) error {
 	if tlsCAFile == "" {
 		return errors.New("parameter is empty")
@@ -69,7 +69,7 @@ func (u *UtilityApi) SetTLSCA(tlsCAFile string) error {
 	return nil
 }
 
-// GetTLSCA - TLS CA 값 조회
+// GetTLSCA is to TLS CA 값 조회
 func (u *UtilityApi) GetTLSCA() (string, error) {
 	if u.gConf.GSL.TumblebugCli.TLS == nil {
 		return "", nil
@@ -78,18 +78,18 @@ func (u *UtilityApi) GetTLSCA() (string, error) {
 	return u.gConf.GSL.TumblebugCli.TLS.TLSCA, nil
 }
 
-// SetTimeout - Timeout 설정
+// SetTimeout is to Timeout 설정
 func (u *UtilityApi) SetTimeout(timeout time.Duration) error {
 	u.gConf.GSL.TumblebugCli.Timeout = timeout
 	return nil
 }
 
-// GetTimeout - Timeout 값 조회
+// GetTimeout is to Timeout 값 조회
 func (u *UtilityApi) GetTimeout() (time.Duration, error) {
 	return u.gConf.GSL.TumblebugCli.Timeout, nil
 }
 
-// SetJWTToken - JWT 인증 토큰 설정
+// SetJWTToken is to JWT 인증 토큰 설정
 func (u *UtilityApi) SetJWTToken(token string) error {
 	if token == "" {
 		return errors.New("parameter is empty")
@@ -107,7 +107,7 @@ func (u *UtilityApi) SetJWTToken(token string) error {
 	return nil
 }
 
-// GetJWTToken - JWT 인증 토큰 값 조회
+// GetJWTToken is to JWT 인증 토큰 값 조회
 func (u *UtilityApi) GetJWTToken() (string, error) {
 	if u.gConf.GSL.TumblebugCli.Interceptors == nil {
 		return "", nil
@@ -119,7 +119,7 @@ func (u *UtilityApi) GetJWTToken() (string, error) {
 	return u.gConf.GSL.TumblebugCli.Interceptors.AuthJWT.JWTToken, nil
 }
 
-// SetConfigPath - 환경설정 파일 설정
+// SetConfigPath is to 환경설정 파일 설정
 func (u *UtilityApi) SetConfigPath(configFile string) error {
 	logger := logger.NewLogger()
 
@@ -182,7 +182,7 @@ func (u *UtilityApi) SetConfigPath(configFile string) error {
 	return nil
 }
 
-// Open - 연결 설정
+// Open is to 연결 설정
 func (u *UtilityApi) Open() error {
 
 	tumblebugcli := u.gConf.GSL.TumblebugCli
@@ -208,7 +208,7 @@ func (u *UtilityApi) Open() error {
 	return nil
 }
 
-// Close - 연결 종료
+// Close is to 연결 종료
 func (u *UtilityApi) Close() {
 	if u.conn != nil {
 		u.conn.Close()
@@ -223,7 +223,7 @@ func (u *UtilityApi) Close() {
 	u.requestUtility = nil
 }
 
-// SetInType - 입력 문서 타입 설정 (json/yaml)
+// SetInType is to 입력 문서 타입 설정 (json/yaml)
 func (u *UtilityApi) SetInType(in string) error {
 	if in == "json" {
 		u.inType = in
@@ -240,12 +240,12 @@ func (u *UtilityApi) SetInType(in string) error {
 	return nil
 }
 
-// GetInType - 입력 문서 타입 값 조회
+// GetInType is to 입력 문서 타입 값 조회
 func (u *UtilityApi) GetInType() (string, error) {
 	return u.inType, nil
 }
 
-// SetOutType - 출력 문서 타입 설정 (json/yaml)
+// SetOutType is to 출력 문서 타입 설정 (json/yaml)
 func (u *UtilityApi) SetOutType(out string) error {
 	if out == "json" {
 		u.outType = out
@@ -262,12 +262,12 @@ func (u *UtilityApi) SetOutType(out string) error {
 	return nil
 }
 
-// GetOutType - 출력 문서 타입 값 조회
+// GetOutType is to 출력 문서 타입 값 조회
 func (u *UtilityApi) GetOutType() (string, error) {
 	return u.outType, nil
 }
 
-// ListConnConfig - Connection Config 목록
+// ListConnConfig is to Connection Config 목록
 func (u *UtilityApi) ListConnConfig() (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -276,7 +276,7 @@ func (u *UtilityApi) ListConnConfig() (string, error) {
 	return u.requestUtility.ListConnConfig()
 }
 
-// GetConnConfig - Connection Config 조회
+// GetConnConfig is to Connection Config 조회
 func (u *UtilityApi) GetConnConfig(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -286,7 +286,7 @@ func (u *UtilityApi) GetConnConfig(doc string) (string, error) {
 	return u.requestUtility.GetConnConfig()
 }
 
-// GetConnConfigByParam - Connection Config 조회
+// GetConnConfigByParam is to Connection Config 조회
 func (u *UtilityApi) GetConnConfigByParam(connConfigName string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -301,7 +301,7 @@ func (u *UtilityApi) GetConnConfigByParam(connConfigName string) (string, error)
 	return result, err
 }
 
-// ListRegion - Region 목록
+// ListRegion is to Region 목록
 func (u *UtilityApi) ListRegion() (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -310,7 +310,7 @@ func (u *UtilityApi) ListRegion() (string, error) {
 	return u.requestUtility.ListRegion()
 }
 
-// GetRegion - Region 조회
+// GetRegion is to Region 조회
 func (u *UtilityApi) GetRegion(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -320,7 +320,7 @@ func (u *UtilityApi) GetRegion(doc string) (string, error) {
 	return u.requestUtility.GetRegion()
 }
 
-// GetRegionByParam - Region 조회
+// GetRegionByParam is to Region 조회
 func (u *UtilityApi) GetRegionByParam(regionName string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -335,7 +335,7 @@ func (u *UtilityApi) GetRegionByParam(regionName string) (string, error) {
 	return result, err
 }
 
-// CreateConfig - Config 생성
+// CreateConfig is to Config 생성
 func (u *UtilityApi) CreateConfig(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -345,7 +345,7 @@ func (u *UtilityApi) CreateConfig(doc string) (string, error) {
 	return u.requestUtility.CreateConfig()
 }
 
-// CreateConfigByParam - Config 생성
+// CreateConfigByParam is to Config 생성
 func (u *UtilityApi) CreateConfigByParam(req *core_common.ConfigReq) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -364,7 +364,7 @@ func (u *UtilityApi) CreateConfigByParam(req *core_common.ConfigReq) (string, er
 	return result, err
 }
 
-// ListConfig - Config 목록
+// ListConfig is to Config 목록
 func (u *UtilityApi) ListConfig() (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -373,7 +373,7 @@ func (u *UtilityApi) ListConfig() (string, error) {
 	return u.requestUtility.ListConfig()
 }
 
-// GetConfig - Config 조회
+// GetConfig is to Config 조회
 func (u *UtilityApi) GetConfig(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -383,7 +383,7 @@ func (u *UtilityApi) GetConfig(doc string) (string, error) {
 	return u.requestUtility.GetConfig()
 }
 
-// GetConfigByParam - Config 조회
+// GetConfigByParam is to Config 조회
 func (u *UtilityApi) GetConfigByParam(configId string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -398,7 +398,7 @@ func (u *UtilityApi) GetConfigByParam(configId string) (string, error) {
 	return result, err
 }
 
-// InitConfig - Config 조회
+// InitConfig is to Config 조회
 func (u *UtilityApi) InitConfig(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -408,7 +408,7 @@ func (u *UtilityApi) InitConfig(doc string) (string, error) {
 	return u.requestUtility.InitConfig()
 }
 
-// InitConfigByParam - Config 조회
+// InitConfigByParam is to Config 조회
 func (u *UtilityApi) InitConfigByParam(configId string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -423,7 +423,7 @@ func (u *UtilityApi) InitConfigByParam(configId string) (string, error) {
 	return result, err
 }
 
-// InitAllConfig - Config 전체 삭제
+// InitAllConfig is to Config 전체 삭제
 func (u *UtilityApi) InitAllConfig() (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -432,7 +432,7 @@ func (u *UtilityApi) InitAllConfig() (string, error) {
 	return u.requestUtility.InitAllConfig()
 }
 
-// InspectMcirResources - MCIR 리소스 점검
+// InspectMcirResources is to MCIR 리소스 점검
 func (u *UtilityApi) InspectMcirResources(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -442,7 +442,7 @@ func (u *UtilityApi) InspectMcirResources(doc string) (string, error) {
 	return u.requestUtility.InspectMcirResources()
 }
 
-// InspectMcirResourcesByParam - MCIR 리소스 점검
+// InspectMcirResourcesByParam is to MCIR 리소스 점검
 func (u *UtilityApi) InspectMcirResourcesByParam(connectionName string, mcirType string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -457,7 +457,7 @@ func (u *UtilityApi) InspectMcirResourcesByParam(connectionName string, mcirType
 	return result, err
 }
 
-// InspectVmResources - VM 리소스 점검
+// InspectVmResources is to VM 리소스 점검
 func (u *UtilityApi) InspectVmResources(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -467,7 +467,7 @@ func (u *UtilityApi) InspectVmResources(doc string) (string, error) {
 	return u.requestUtility.InspectVmResources()
 }
 
-// InspectVmResourcesByParam - VM 리소스 점검
+// InspectVmResourcesByParam is to VM 리소스 점검
 func (u *UtilityApi) InspectVmResourcesByParam(connectionName string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -482,7 +482,7 @@ func (u *UtilityApi) InspectVmResourcesByParam(connectionName string) (string, e
 	return result, err
 }
 
-// ListObject - 객체 목록
+// ListObject is to 객체 목록
 func (u *UtilityApi) ListObject(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -492,7 +492,7 @@ func (u *UtilityApi) ListObject(doc string) (string, error) {
 	return u.requestUtility.ListObject()
 }
 
-// ListObjectByParam - 객체 목록
+// ListObjectByParam is to 객체 목록
 func (u *UtilityApi) ListObjectByParam(key string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -507,7 +507,7 @@ func (u *UtilityApi) ListObjectByParam(key string) (string, error) {
 	return result, err
 }
 
-// GetObject - 객체 조회
+// GetObject is to 객체 조회
 func (u *UtilityApi) GetObject(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -517,7 +517,7 @@ func (u *UtilityApi) GetObject(doc string) (string, error) {
 	return u.requestUtility.GetObject()
 }
 
-// GetObjectByParam - 객체 조회
+// GetObjectByParam is to 객체 조회
 func (u *UtilityApi) GetObjectByParam(key string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -532,7 +532,7 @@ func (u *UtilityApi) GetObjectByParam(key string) (string, error) {
 	return result, err
 }
 
-// DeleteObject - 객체 삭제
+// DeleteObject is to 객체 삭제
 func (u *UtilityApi) DeleteObject(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -542,7 +542,7 @@ func (u *UtilityApi) DeleteObject(doc string) (string, error) {
 	return u.requestUtility.DeleteObject()
 }
 
-// DeleteObjectByParam - 객체 삭제
+// DeleteObjectByParam is to 객체 삭제
 func (u *UtilityApi) DeleteObjectByParam(key string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -557,7 +557,7 @@ func (u *UtilityApi) DeleteObjectByParam(key string) (string, error) {
 	return result, err
 }
 
-// DeleteAllObject - 객체 전체 삭제
+// DeleteAllObject is to 객체 전체 삭제
 func (u *UtilityApi) DeleteAllObject(doc string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -567,7 +567,7 @@ func (u *UtilityApi) DeleteAllObject(doc string) (string, error) {
 	return u.requestUtility.DeleteAllObject()
 }
 
-// DeleteAllObjectByParam - 객체 전체 삭제
+// DeleteAllObjectByParam is to 객체 전체 삭제
 func (u *UtilityApi) DeleteAllObjectByParam(key string) (string, error) {
 	if u.requestUtility == nil {
 		return "", errors.New("The Open() function must be called")
@@ -586,7 +586,7 @@ func (u *UtilityApi) DeleteAllObjectByParam(key string) (string, error) {
 
 // ===== [ Public Functiou ] =====
 
-// NewUtilityManager - Utility API 객체 생성
+// NewUtilityManager is to Utility API 객체 생성
 func NewUtilityManager() (u *UtilityApi) {
 
 	u = &UtilityApi{}

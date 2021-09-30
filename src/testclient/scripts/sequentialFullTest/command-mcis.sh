@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Command (SSH) to MCIS with a user command"
+echo "## Command (SSH) to MCIS with a user command (-x for command, OPTIONAL: -y for vmid)"
 echo "####################################################################"
 
 source ../init.sh

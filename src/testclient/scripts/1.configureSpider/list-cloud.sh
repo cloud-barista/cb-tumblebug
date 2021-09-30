@@ -2,42 +2,48 @@
 
 #function list_cloud() {
 
-
-    TestSetFile=${4:-../testSet.env}
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
     source ../conf.env
-    #source ../credentials.conf
     
     echo "####################################################################"
     echo "## 0. List Cloud Connction Config(s)"
     echo "####################################################################"
 
-
-    #INDEX=${1}
-
-    RESTSERVER=localhost
-
-    # for Cloud Connection Config Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig | jq ''
-    echo ""
-
-
     # for Cloud Region Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region | jq ''
+    echo "[Cloud Region]"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region |
+    jq '.region' |
+    jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), (.[] | [.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+    column -t
+    echo ""
     echo ""
 
 
     # for Cloud Credential Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential | jq ''
+    echo "[Cloud Credential]"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/credential |
+    jq '.credential' |
+    jq -r '(["CredentialName","ProviderName"] | (., map(length*"-"))), (.[] | [.CredentialName, .ProviderName]) | @tsv' |
+    column -t
+    echo ""
     echo ""
     
     
     # for Cloud Driver Info
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver | jq ''
+    echo "[Cloud Driver]"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/driver |
+    jq '.driver' |
+    jq -r '(["DriverName","ProviderName","DriverLibFileName"] | (., map(length*"-"))), (.[] | [.DriverName, .ProviderName, .DriverLibFileName]) | @tsv' |
+    column -t
+    echo ""
+    echo ""
+
+
+    # for Cloud Connection Config Info
+    echo "[Cloud Connection Config]"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig |
+    jq '.connectionconfig' |
+    jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), (.[] | [.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
+    column -t
     echo ""
 #}
 

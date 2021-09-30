@@ -1,3 +1,17 @@
+/*
+Copyright 2019 The Cloud-Barista Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package mcis is to manage multi-cloud infra service
 package mcis
 
 import (
@@ -6,7 +20,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	//"fmt"
 	//"net/http"
@@ -21,6 +34,10 @@ import (
 	//"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
 	"github.com/go-resty/resty/v2"
+
+	"reflect"
+
+	validator "github.com/go-playground/validator/v10"
 )
 
 // CB-Store
@@ -29,10 +46,39 @@ import (
 
 //var SPIDER_REST_URL string
 
+// use a single instance of Validate, it caches struct info
+var validate *validator.Validate
+
 func init() {
 	//cblog = config.Cblogger
 	//store = cbstore.GetStore()
 	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
+
+	validate = validator.New()
+
+	// register function to get tag name from json tags.
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+
+	// register validation for 'Tb*Req'
+	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
+	// internally dereferences during it's type checks.
+
+	validate.RegisterStructValidation(TbMcisReqStructLevelValidation, TbMcisReq{})
+	validate.RegisterStructValidation(TbVmReqStructLevelValidation, TbVmReq{})
+	validate.RegisterStructValidation(TbMcisCmdReqStructLevelValidation, McisCmdReq{})
+	// validate.RegisterStructValidation(TbMcisRecommendReqStructLevelValidation, McisRecommendReq{})
+	// validate.RegisterStructValidation(TbVmRecommendReqStructLevelValidation, TbVmRecommendReq{})
+	// validate.RegisterStructValidation(TbBenchmarkReqStructLevelValidation, BenchmarkReq{})
+	// validate.RegisterStructValidation(TbMultihostBenchmarkReqStructLevelValidation, MultihostBenchmarkReq{})
+
+	validate.RegisterStructValidation(DFMonAgentInstallReqStructLevelValidation, MonAgentInstallReq{})
+
 }
 
 /*
@@ -176,75 +222,22 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 
 }
 
-func RunSSH(vmIP string, sshPort string, userName string, privateKey string, cmd string) (*string, error) {
-
-	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
-	sshInfo := SSHInfo{
-		ServerPort: serverEndpoint,
-		UserName:   userName,
-		PrivateKey: []byte(privateKey),
-	}
-
-	// VM SSH 명령어 실행
-	if result, err := SSHRun(sshInfo, cmd); err != nil {
-		return nil, err
-	} else {
-		return &result, nil
-	}
-}
-
-func RunSSHAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
-
-	defer wg.Done() //goroutin sync done
-
-	// VM SSH 접속정보 설정 (외부 연결 정보, 사용자 아이디, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
-	sshInfo := SSHInfo{
-		ServerPort: serverEndpoint,
-		UserName:   userName,
-		PrivateKey: []byte(privateKey),
-	}
-
-	// VM SSH 명령어 실행
-	result, err := SSHRun(sshInfo, cmd)
-
-	//wg.Done() //goroutin sync done
-
-	sshResultTmp := SshCmdResult{}
-	sshResultTmp.McisId = ""
-	sshResultTmp.VmId = vmID
-	sshResultTmp.VmIp = vmIP
-
-	if err != nil {
-		sshResultTmp.Result = err.Error()
-		sshResultTmp.Err = err
-		*returnResult = append(*returnResult, sshResultTmp)
-	} else {
-		fmt.Println("cmd result " + result)
-		sshResultTmp.Result = result
-		sshResultTmp.Err = nil
-		*returnResult = append(*returnResult, sshResultTmp)
-	}
-
-}
-
 func TrimIP(sshAccessPoint string) (string, error) {
 	splitted := strings.Split(sshAccessPoint, ":")
 	if len(splitted) != 2 {
 		err := fmt.Errorf("In TrimIP(), sshAccessPoint does not seem 8.8.8.8:22 form.")
 		return strconv.Itoa(0), err
 	}
-	port_string := splitted[1]
-	port, err := strconv.Atoi(port_string)
+	portString := splitted[1]
+	port, err := strconv.Atoi(portString)
 	if err != nil {
 		err := fmt.Errorf("In TrimIP(), strconv.Atoi returned an error.")
 		return strconv.Itoa(0), err
 	}
 	if port >= 1 && port <= 65535 { // valid port number
-		return port_string, nil
+		return portString, nil
 	} else {
-		err := fmt.Errorf("In TrimIP(), detected port number seems wrong: " + port_string)
+		err := fmt.Errorf("In TrimIP(), detected port number seems wrong: " + portString)
 		return strconv.Itoa(0), err
 	}
 }
@@ -350,7 +343,7 @@ func InspectVMs(connConfig string) (interface{}, error) {
 	tempReq := JsonTemplate{}
 	tempReq.ConnectionName = connConfig
 
-	spiderRequestURL := common.SPIDER_REST_URL + "/allvm"
+	spiderRequestURL := common.SpiderRestUrl + "/allvm"
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").

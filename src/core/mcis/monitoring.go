@@ -1,3 +1,17 @@
+/*
+Copyright 2019 The Cloud-Barista Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package mcis is to manage multi-cloud infra service
 package mcis
 
 import (
@@ -7,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	validator "github.com/go-playground/validator/v10"
 	"github.com/tidwall/gjson"
 
 	"fmt"
@@ -31,14 +46,16 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
-const monMetricAll string = "all"
-const monMetricCpu string = "cpu"
-const monMetricCpufreq string = "cpufreq"
-const monMetricMem string = "mem"
-const monMetricNet string = "net"
-const monMetricSwap string = "swap"
-const monMetricDisk string = "disk"
-const monMetricDiskio string = "diskio"
+const (
+	monMetricAll     string = "all"
+	monMetricCpu     string = "cpu"
+	monMetricCpufreq string = "cpufreq"
+	monMetricMem     string = "mem"
+	monMetricNet     string = "net"
+	monMetricSwap    string = "swap"
+	monMetricDisk    string = "disk"
+	monMetricDiskio  string = "diskio"
+)
 
 // MonAgentInstallReq struct
 type MonAgentInstallReq struct {
@@ -49,7 +66,30 @@ type MonAgentInstallReq struct {
 	Port     string `json:"port,omitempty"`
 	UserName string `json:"userName,omitempty"`
 	SshKey   string `json:"sshKey,omitempty"`
-	Csp_type string `json:"cspType,omitempty"`
+	CspType  string `json:"cspType,omitempty"`
+}
+
+func DFMonAgentInstallReqStructLevelValidation(sl validator.StructLevel) {
+
+	u := sl.Current().Interface().(MonAgentInstallReq)
+
+	err := common.CheckString(u.NsId)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.NsId, "nsId", "NsId", "NotObeyingNamingConvention", "")
+	}
+
+	err = common.CheckString(u.McisId)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.McisId, "mcisId", "McisId", "NotObeyingNamingConvention", "")
+	}
+
+	err = common.CheckString(u.VmId)
+	if err != nil {
+		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
+		sl.ReportError(u.VmId, "vmId", "VmId", "NotObeyingNamingConvention", "")
+	}
 }
 
 /*
@@ -82,7 +122,7 @@ func CheckDragonflyEndpoint() error {
 	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
 		cmd := "/config"
 
-		url := common.DRAGONFLY_REST_URL + cmd
+		url := common.DragonflyRestUrl + cmd
 		method := "GET"
 
 		client := &http.Client{}
@@ -142,7 +182,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	vmInfoTmp.MonAgentStatus = "installing"
 	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
 
-	url := common.DRAGONFLY_REST_URL + cmd
+	url := common.DragonflyRestUrl + cmd
 	fmt.Println("\n[Calling DRAGONFLY] START")
 	fmt.Println("VM:" + nsID + "_" + mcisID + "_" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType)
 
@@ -290,7 +330,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		// Request agent installation (skip if in installing or installed status)
 		if vmObjTmp.MonAgentStatus != "installed" && vmObjTmp.MonAgentStatus != "installing" {
 
-			// Avoid RunSSH to not ready VM
+			// Avoid RunRemoteCommand to not ready VM
 			if err == nil {
 				wg.Add(1)
 				go CallMonitoringAsync(&wg, nsId, mcisId, v, req.UserName, method, cmd, &resultArray)
@@ -309,7 +349,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
-		content.Result_array = append(content.Result_array, resultTmp)
+		content.ResultArray = append(content.ResultArray, resultTmp)
 		//fmt.Println("result from goroutin " + v)
 	}
 
@@ -400,7 +440,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	var result string
 	var err error
 	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
-		url := common.DRAGONFLY_REST_URL + cmd
+		url := common.DragonflyRestUrl + cmd
 		fmt.Println("URL: " + url)
 
 		responseLimit := 8

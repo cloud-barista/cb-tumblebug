@@ -1,3 +1,17 @@
+/*
+Copyright 2019 The Cloud-Barista Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package mcis is to manage multi-cloud infra service
 package mcis
 
 import (
@@ -13,18 +27,25 @@ import (
 const (
 	// AutoStatusReady is const for "Ready" status.
 	AutoStatusReady string = "Ready"
+
 	// AutoStatusChecking is const for "Checking" status.
 	AutoStatusChecking string = "Checking"
+
 	// AutoStatusDetected is const for "Detected" status.
 	AutoStatusDetected string = "Detected"
+
 	// AutoStatusOperating is const for "Operating" status.
 	AutoStatusOperating string = "Operating"
+
 	// AutoStatusStabilizing is const for "Stabilizing" status.
 	AutoStatusStabilizing string = "Stabilizing"
+
 	// AutoStatusTimeout is const for "Timeout" status.
 	AutoStatusTimeout string = "Timeout"
+
 	// AutoStatusError is const for "Failed" status.
 	AutoStatusError string = "Failed"
+
 	// AutoStatusSuspended is const for "Suspended" status.
 	AutoStatusSuspended string = "Suspended"
 )
@@ -33,6 +54,7 @@ const (
 const (
 	// AutoActionScaleOut is const for "ScaleOut" action.
 	AutoActionScaleOut string = "ScaleOut"
+
 	// AutoActionScaleIn is const for "ScaleIn" action.
 	AutoActionScaleIn string = "ScaleIn"
 )
@@ -303,7 +325,7 @@ func OrchestrationController() {
 						nullMcisCmdReq := McisCmdReq{}
 						if autoAction.PostCommand != nullMcisCmdReq {
 							fmt.Println("[Post Command to VM] " + autoAction.PostCommand.Command)
-							_, cmdErr := CorePostCmdMcisVm(nsId, mcisPolicyTmp.Id, autoAction.Vm.Name, &autoAction.PostCommand)
+							_, cmdErr := RemoteCommandToMcisVm(nsId, mcisPolicyTmp.Id, autoAction.Vm.Name, &autoAction.PostCommand)
 							if cmdErr != nil {
 								mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
