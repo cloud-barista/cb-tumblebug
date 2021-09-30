@@ -8,7 +8,7 @@ source ../common-functions.sh
 checkPrerequisite
 
 ./check-test-config.sh "$@"
-
+echo -e "${BOLD}"
 while true; do
     read -p 'Confirm the above configuration. Do you want to proceed ? (y/n) : ' CHECKPROCEED
     case $CHECKPROCEED in
@@ -16,7 +16,10 @@ while true; do
             break
             ;;
         [Nn]* ) 
-            echo "[Command: $0 $@] has been cancelled. See you soon. :)"
+            echo
+            echo "Cancel [$0 $@]"
+            echo "See you soon. :)"
+            echo
             exit 1
             ;;
         * ) 
