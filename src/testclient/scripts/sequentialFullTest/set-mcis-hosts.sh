@@ -58,7 +58,7 @@ for rowi in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 
 		CommandToAddHosts=""
 
-		if [ "${VMID}" != "${Bid}" ]; then
+		if [ "${VMID}" == "${Bid}" ]; then
 			CommandToAddHosts="sudo sed -i '2i127.0.0.1 ${Bid}' /etc/hosts"
 		elif [ "${vNetId}" == "${BvNetId}" ]; then
 			CommandToAddHosts="sudo sed -i '2i${BprivateIP} ${Bid}' /etc/hosts"
