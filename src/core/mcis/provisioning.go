@@ -401,8 +401,8 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	targetStatus := StatusRunning
 
 	vmInfoData.Id = vmInfoData.Name
-	vmInfoData.PublicIP = "Not assigned yet"
-	vmInfoData.PublicDNS = "Not assigned yet"
+	vmInfoData.PublicIP = "empty"
+	vmInfoData.PublicDNS = "empty"
 	vmInfoData.TargetAction = targetAction
 	vmInfoData.TargetStatus = targetStatus
 	vmInfoData.Status = StatusCreating
@@ -626,8 +626,8 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 		vmInfoData.Id = vmInfoData.Name
 
 		vmInfoData.Description = vmRequest.Description
-		vmInfoData.PublicIP = "Not assigned yet"
-		vmInfoData.PublicDNS = "Not assigned yet"
+		vmInfoData.PublicIP = "empty"
+		vmInfoData.PublicDNS = "empty"
 
 		vmInfoData.Status = StatusCreating
 		vmInfoData.TargetAction = targetAction
@@ -846,8 +846,8 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			}
 			vmInfoData.Id = vmInfoData.Name
 
-			vmInfoData.PublicIP = "Not assigned yet"
-			vmInfoData.PublicDNS = "Not assigned yet"
+			vmInfoData.PublicIP = "empty"
+			vmInfoData.PublicDNS = "empty"
 
 			vmInfoData.Status = StatusCreating
 			vmInfoData.TargetAction = targetAction
