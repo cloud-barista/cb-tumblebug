@@ -298,8 +298,8 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/)는 복잡한 단계가 필요한 MCIS (MC-Infra) 프로비저닝 절차를 간소화 및 자동화시킨 Bash shell 기반 스크립트를 제공.
  - 1 단계: [클라우드 인증 정보 및 테스트 기본 정보 입력](#클라우드-인증-정보-및-테스트-기본-정보-입력)
  - 2 단계: Namespace, MCIR, MCIS 등 프로비저닝 (통합 제어 / 개별 제어 중 선택)
-   - [개별 제어 시험](개별-제어-시험) (Namespace, MCIR, MCIS 등 개별 시험시, 오브젝트들의 의존성 고려 필수)
-   - [통합 제어 시험](통합-제어-시험) (추천 테스트 방법) `src/testclient/scripts/sequentialFullTest/`
+   - [개별 제어 시험](#개별-제어-시험) (Namespace, MCIR, MCIS 등 개별 시험시, 오브젝트들의 의존성 고려 필수)
+   - [통합 제어 시험](#통합-제어-시험) (추천 테스트 방법) `src/testclient/scripts/sequentialFullTest/`
  - 3 단계: [멀티 클라우드 인프라 유스케이스 자동 배포](#멀티-클라우드-인프라-유스케이스)
 
 #### 클라우드 인증 정보 및 테스트 기본 정보 입력
