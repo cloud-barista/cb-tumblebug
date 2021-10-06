@@ -95,7 +95,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 - In detail
   - [Open and update a PR](https://github.com/cloud-barista/docs/blob/master/contributing/how_to_open_a_pull_request-ko.md)
     - **Be careful!** 
-      - Contributors should not push files related to their personal credencials (e.g., credentials.conf) to remote repository.
+      - Contributors should not push files related to their personal credentials (e.g., credentials.conf) to remote repository.
       - The credential file for CSPs (`src/testclient/scripts/credentials.conf`) is in the [.gitignore](https://github.com/cloud-barista/cb-tumblebug/blob/ed250835a1357784afd4c857d6bd56e0d78cd219/.gitignore#L36) condition.
       - So, `credentials.conf` will not be staged for a commit.
       - Anyway, please be careful.
@@ -110,7 +110,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 ### (1) Source Code based Installation and Execution
 
 - Table of Contents
-  - Inatall tools and packages required
+  - Install tools and packages required
   - Clone CB-Tumblebug 
   - Set CB-Tumblebug Environmental Variable
   - Build CB-Tumblebug and Execute (`make` and `make run`)
@@ -146,13 +146,13 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
 ### (1) Configure CB-Tumblebug Build Environment
 
-- Inatall tools and packages required
+- Install tools and packages required
   - Install Git, gcc and make 
     - `# apt update`
     - `# apt install make gcc git`
 
-  - Inatall Go 
-    - Install Go by referencing https://golang.org/dl/ (Version v1.16 or upper: recommened environment)
+  - Install Go 
+    - Install Go by referencing https://golang.org/dl/ (Version v1.16 or upper: recommended environment)
     - Installation Example
       - `wget https://golang.org/dl/go1.16.4.linux-amd64.tar.gz`
       - `tar -C /usr/local -xzf go1.16.4.linux-amd64.tar.gz`
@@ -166,12 +166,12 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 - Clone CB-Tumblebug 
   - `# git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug`
 
-- Setting Environmentla Variable for executing CB-Tumblebug
+- Setting Environmental Variable for executing CB-Tumblebug
   - check and configure `cb-tumblebug/conf/setup.env`  (CB-Tumblebug environment variable, changes may be required)
     - run `source setup.env` to apply on the system.
   - check and configure `store_conf.yaml` under `cb-tumblebug/conf` (cb-store environment variable, changes may be required)
-    - Set storetype (NUTSDB or ETCD)
-    - Address with DB data shold be set when cnofiguring NUTSDB(local DB) i (file will be added under `cb-tumblebug/meta_db/dat` as default)
+    - Set store type (NUTSDB or ETCD)
+    - Address with DB data should be set when configuring NUTSDB(local DB) i (file will be added under `cb-tumblebug/meta_db/dat` as default)
   - set and configure`log_conf.yaml` under `cb-tumblebug/conf`  (cb-log environment variable, changes may be required)
 
 
@@ -184,7 +184,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   # make
   ```
 
-- If Swagger API Document needs to be upadated run `make swag` at `cb-tumblebug/src/` directory.
+- If Swagger API Document needs to be updated run `make swag` at `cb-tumblebug/src/` directory.
   - API document file is created at  `cb-tumblebug/src/api/rest/docs/swagger.yaml` directory.
   - Following API document can be checked on http://localhost:1323/tumblebug/swagger/index.html through web browser. (Automatically provided when CB-Tumblebug is executed)
 
@@ -209,7 +209,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
    ██║  ██║███████╗██║  ██║██████╔╝   ██║   
    ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝   
 
-   Multi-cloud infrastructure managemenet framework
+   Multi-cloud infrastructure management framework
    ________________________________________________
 
    https://github.com/cloud-barista/cb-tumblebug
@@ -222,15 +222,15 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   ⇨ grpc server started on [::]:50252
   ```
 
-- Known Errors and Trubleshooting
+- Known Errors and Troubleshooting
   ``` 
   panic: /debug/requests is already registered. 
   You may have two independent copies of golang.org/x/net/trace in your binary, 
   trying to maintain separate state. 
-  This may involve a vendored copy of golang.org/x/net/trace.
+  This may involve a vendor copy of golang.org/x/net/trace.
   ```
 
-  run following to reslove if error occurs.
+  run following to resolve if error occurs.
   ```Shell
   # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
   # make
@@ -249,7 +249,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/) provides a Bashshell-based script that simplifies and automates Complicated MCIS (MC-Infra) provisioning procedures.
  - Step 1: [Enter cloud authentication information and test basic information](#enter-cloud-authentication-information and test basic information)
  - Step 2: Provisioning Namespace, MCIR, MCIS .etc (Choose between Integrated control test/Individual controls test)
-   - [Individual Control Test](#Individual-Control-Test) (Objected Dependencies should be Considered when testing indivualsd of Namespace, MCIR, MCIS .etc)
+   - [Individual Control Test](#Individual-Control-Test) (Objected Dependencies should be Considered when testing individuals of Namespace, MCIR, MCIS .etc)
    - [Integrated Control Test](#Integrated-Control-Test) (Recommended) `src/testclient/scripts/sequentialFullTest/`
  - Step 3: [Multi Cloud Infrastructure usecase](#multi-cloud-infrastructure-usecase)
 
@@ -257,7 +257,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 1. Go to [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts)
 2. Create `credentials.conf`
    - `credentials.conf` provides basic credentials template of CSPs (AWS, GCP, AZURE, ALIBABA .etc)
-   - Reference [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)to enter the user's cloud crendentials.
+   - Reference [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)to enter the user's cloud credentials.
    - [How to get CSP credentials](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)
 3. Configure [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)
    - Provides basic test information (server endpoint, cloud vision, image name for test, and spec name for test .etc) of CB-Spider and CB-Tumblebug
@@ -273,7 +273,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
    - Set the region of combination of CSPs
      - Go to each CSP setting section [`# AWS (Total: 21 Regions)`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L44) 
      - Set the numbers of region desired`NumRegion[$IndexAWS]=2`  ( 2 was set for demo)
-     - Rearrange the orders of the region to selecte region desired (The top 2 region will be selected in case `NumRegion[$IndexAWS]=2`)
+     - Rearrange the orders of the region to selected region desired (The top 2 region will be selected in case `NumRegion[$IndexAWS]=2`)
    - **Be aware!** 
      - Be aware that creating VMs on public CSPs such as AWS, GCP, Azure, etc. may be billed.
      - With the default setting of [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env), TestClouds (`TestCloud01`, `TestCloud02`, `TestCloud03`) will be used to create mock VMs.
@@ -295,7 +295,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 
 #### Integrated Control Test
 - Executing `create-all.sh` and `clean-all.sh` under `src/testclient/scripts/sequentialFullTest/`You can test the entire process can be tested at once.
-- By running `create-all.sh` and `clean-all.sh` in `src/testclient/scripts/sequentialFullTest/` dritectory, 
+- By running `create-all.sh` and `clean-all.sh` in `src/testclient/scripts/sequentialFullTest/` directory, 
   ```
   └── sequentialFullTest  # Automatic testing of Cloud information registration, NS generation, MCIR generation, and MCIS generation at once.
       ├── check-test-config.sh  # Check the configuration of the multi-cloud infrastructure specified in the current testSet.
@@ -337,11 +337,11 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
     - `./clean-all.sh -n shson -f ../testSetCustom.env`   # Performs removal with the cloud combination configured in ../testSetCustom.env 
     - **Be aware!** 
       - If you created MCIS (VMs) for testing in public clouds, the VMs may be charged.
-      - You need to termiate MCIS by using `clean-all` to avoid unexpected billing.
+      - You need to terminate MCIS by using `clean-all` to avoid unexpected billing.
       - Anyway, please be aware cloud usage cost when you use public CSPs.
   - Create MCIS SSH access key and connect to each VM.
     - `./gen-sshKey.sh -n shson -f ../testSetCustom.env`  # Return all VM's access keys configured in MCIS.
-    - Executuon Result Example
+    - Execution Result Example
       ```
       ...
       [GENERATED PRIVATE KEY (PEM, PPK)]
@@ -369,7 +369,7 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
 ####################################################################
 [Test for AWS]
 ####################################################################
-## 0. Create Cloud Connction Config
+## 0. Create Cloud Connection Config
 ####################################################################
 [Test for AWS]
 {
@@ -655,11 +655,11 @@ Dozing for 1 : 1 (Back to work)
 
 
 ### Use CB-Tumblebug REST API
-1. Register cloud infrastructure interworking information through CB-Spider API.
+1. Register cloud infrastructure inter working information through CB-Spider API.
    - https://cloud-barista.github.io/rest-api/v0.4.0/spider/ccim/
 2. Create Namespace through CB-Tumblebug Multi-Cloud Namespace Management API.
    - [Create Namespace](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BNamespace%5D%20Namespace%20management/post_ns)
-3. Create requried VM resources(MCIR) Through CB-Tumblebug Multi Cloud Interface Resource(MCIR) management API
+3. Create required VM resources(MCIR) Through CB-Tumblebug Multi Cloud Interface Resource(MCIR) management API
    - [Create VM spec object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Spec%20management/post_ns__nsId__resources_spec)
    - [Create VM image object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Image%20management/post_ns__nsId__resources_image)
    - [Create Virtual network object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Network%20management/post_ns__nsId__resources_vNet)
