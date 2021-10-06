@@ -59,7 +59,7 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 ***
 ***
 
-[[WIP]English](i18n/README-EN.md)
+[English](i18n/README-EN.md)
 ## 목차
 
 1. [CB-Tumblebug 실행 및 개발 환경](#cb-tumblebug-실행-및-개발-환경)
