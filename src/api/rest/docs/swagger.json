@@ -847,7 +847,7 @@
                 }
             }
         },
-        "/ns/{nsId}/benchmarkall/mcis/{mcisId}": {
+        "/ns/{nsId}/benchmarkAll/mcis/{mcisId}": {
             "post": {
                 "description": "Run MCIS benchmark for all performance metrics and return results",
                 "consumes": [
@@ -1170,7 +1170,7 @@
                 }
             }
         },
-        "/ns/{nsId}/install/mcis/{mcisId}": {
+        "/ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}": {
             "post": {
                 "description": "Install the benchmark agent to specified MCIS",
                 "consumes": [

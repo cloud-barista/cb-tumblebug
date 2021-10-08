@@ -2066,7 +2066,7 @@ paths:
       summary: Run MCIS benchmark for a single performance metric and return results
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
-  /ns/{nsId}/benchmarkall/mcis/{mcisId}:
+  /ns/{nsId}/benchmarkAll/mcis/{mcisId}:
     post:
       consumes:
       - application/json
@@ -2285,7 +2285,7 @@ paths:
       summary: Control the lifecycle of VM
       tags:
       - '[MCIS] Control lifecycle'
-  /ns/{nsId}/install/mcis/{mcisId}:
+  /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}:
     post:
       consumes:
       - application/json

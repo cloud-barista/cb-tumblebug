@@ -509,7 +509,7 @@ func RestPostCmdMcis(c echo.Context) error {
 // @Success 200 {object} mcis.AgentInstallContentWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/install/mcis/{mcisId} [post]
+// @Router /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId} [post]
 func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -733,19 +733,12 @@ type RestGetAllBenchmarkRequest struct {
 // @Success 200 {object} mcis.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/benchmarkall/mcis/{mcisId} [post]
+// @Router /ns/{nsId}/benchmarkAll/mcis/{mcisId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
-	//id, _ := strconv.Atoi(c.Param("id"))
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	/*
-		type bmReq struct {
-			Host string `json:"host"`
-		}
-		req := &bmReq{}
-	*/
 	req := &RestGetAllBenchmarkRequest{}
 	if err := c.Bind(req); err != nil {
 		return err
@@ -780,19 +773,12 @@ type RestGetBenchmarkRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/benchmark/mcis/{mcisId} [post]
 func RestGetBenchmark(c echo.Context) error {
-	//id, _ := strconv.Atoi(c.Param("id"))
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	action := c.QueryParam("action")
 
-	/*
-		type bmReq struct {
-			Host string `json:"host"`
-		}
-		req := &bmReq{}
-	*/
 	req := &RestGetBenchmarkRequest{}
 	if err := c.Bind(req); err != nil {
 		return err
