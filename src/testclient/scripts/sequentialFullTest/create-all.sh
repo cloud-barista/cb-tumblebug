@@ -11,6 +11,7 @@ checkPrerequisite
 echo -e "${BOLD}"
 while true; do
     read -p 'Confirm the above configuration. Do you want to proceed ? (y/n) : ' CHECKPROCEED
+    echo -e "${NC}"
     case $CHECKPROCEED in
         [Yy]* ) 
             break
