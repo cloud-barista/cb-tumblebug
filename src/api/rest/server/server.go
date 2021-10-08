@@ -139,6 +139,9 @@ func ApiServer(port string) {
 	e.DELETE("/tumblebug/object", rest_common.RestDeleteObject)
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 
+	e.GET("/tumblebug/loadCommonResource", rest_mcir.RestLoadCommonResource)
+
+	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
 	//Namespace Management

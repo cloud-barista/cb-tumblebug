@@ -384,6 +384,35 @@ var doc = `{
                 }
             }
         },
+        "/loadCommonResource": {
+            "get": {
+                "description": "Load Common Resources from internal asset files (Spec, Image)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Load Common Resources from internal asset files",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/lookupImage": {
             "post": {
                 "description": "Lookup image",

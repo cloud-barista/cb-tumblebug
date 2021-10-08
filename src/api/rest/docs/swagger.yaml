@@ -1750,6 +1750,25 @@ paths:
         CB-Spider, CSP
       tags:
       - '[Admin] Cloud environment management'
+  /loadCommonResource:
+    get:
+      consumes:
+      - application/json
+      description: Load Common Resources from internal asset files (Spec, Image)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Load Common Resources from internal asset files
+      tags:
+      - '[Admin] Cloud environment management'
   /lookupImage:
     post:
       consumes:

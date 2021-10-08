@@ -1,6 +1,22 @@
+/*
+Copyright 2019 The Cloud-Barista Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// Package mcir is to manage multi-cloud infra resource
 package mcir
 
 import (
+	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -1260,3 +1276,79 @@ func GetNameFromStruct(u interface{}) string {
 }
 
 //func createResource(nsId string, resourceType string, u interface{}) (interface{}, int, []byte, error) {
+
+// LoadCommonResource is to register common resources from asset files (../assets/*.csv)
+func LoadCommonResource() error {
+
+	// Check 'common' namespace. Create one if not.
+	commonNsId := "common"
+	_, err := common.GetNs(commonNsId)
+	if err != nil {
+		nsReq := common.NsReq{}
+		nsReq.Name = commonNsId
+		nsReq.Description = "Namespace for common resources"
+		_, nsErr := common.CreateNs(&nsReq)
+		if nsErr != nil {
+			common.CBLog.Error(nsErr)
+			return nsErr
+		}
+	}
+
+	// Read common specs and register spec objects
+	file, fileErr := os.Open("../assets/cloudspec.csv")
+	defer file.Close()
+	if fileErr != nil {
+		common.CBLog.Error(fileErr)
+		return fileErr
+	}
+
+	rdr := csv.NewReader(bufio.NewReader(file))
+	rows, _ := rdr.ReadAll()
+	specReqTmp := TbSpecReq{}
+	for i, row := range rows[1:] {
+		// for j := range row {
+		// 	fmt.Printf("%s ", row[j])
+		// }
+		// fmt.Println()
+
+		// [0]connectionName, [1]cspSpecName, [2]CostPerHour
+		specReqTmp.ConnectionName = row[0]
+		specReqTmp.CspSpecName = row[1]
+		specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
+		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, " ", "-")
+		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, ".", "-")
+		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, "_", "-")
+		specReqTmp.Description = "Common spec resource"
+
+		fmt.Println(specReqTmp)
+
+		// Register Spec object
+		_, err := RegisterSpecWithCspSpecName(commonNsId, &specReqTmp)
+		if err != nil {
+			common.CBLog.Error(err)
+			// If already exist, error will occur
+			// Even if error, do not return here to update information
+			//return err
+		}
+		specObjId := specReqTmp.Name
+
+		// Update registered Spec object with Cost info
+		costPerHour, err := strconv.ParseFloat(row[2], 32)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		costPerHour32 := float32(costPerHour)
+		specUpdateRequest := TbSpecInfo{CostPerHour: costPerHour32}
+
+		updatedSpecInfo, err := UpdateSpec(commonNsId, specObjId, specUpdateRequest)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		fmt.Printf("[%d] Registered Common Spec ID: %v \n", i, updatedSpecInfo)
+
+	}
+
+	return nil
+}
