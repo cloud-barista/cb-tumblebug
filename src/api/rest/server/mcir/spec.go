@@ -82,7 +82,7 @@ func RestPostSpec(c echo.Context) error {
 // @Router /ns/{nsId}/resources/spec/{specId} [put]
 func RestPutSpec(c echo.Context) error {
 	nsId := c.Param("nsId")
-	specId := c.Param("specId")
+	specId := c.Param("resourceId")
 	fmt.Printf("RestPutSpec called; nsId: %s, specId: %s \n", nsId, specId) // for debug
 
 	u := &mcir.TbSpecInfo{}
@@ -100,7 +100,7 @@ func RestPutSpec(c echo.Context) error {
 		}
 	*/
 
-	updatedSpec, err := mcir.UpdateSpec(nsId, *u)
+	updatedSpec, err := mcir.UpdateSpec(nsId, specId, *u)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{

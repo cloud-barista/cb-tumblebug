@@ -10,5 +10,7 @@ cbadm:
 	cd api/grpc/cbadm && $(MAKE)
 run:
 	./cb-tumblebug
+runwithport:
+	./cb-tumblebug --port=$(PORT)
 clean:
 	rm -v cb-tumblebug cb-tumblebug-arm
