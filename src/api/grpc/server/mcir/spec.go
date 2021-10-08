@@ -290,7 +290,7 @@ func (s *MCIRService) SortSpecs(ctx context.Context, req *pb.SortSpecsRequest) (
 }
 
 // UpdateSpec is to update specs
-func (s *MCIRService) UpdateSpec(ctx context.Context, req *pb.TbSpecInfoRequest) (*pb.TbSpecInfoResponse, error) {
+func (s *MCIRService) UpdateSpec(ctx context.Context, req *pb.TbUpdateSpecRequest) (*pb.TbSpecInfoResponse, error) {
 	logger := logger.NewLogger()
 
 	logger.Debug("calling MCIRService.UpdateSpec()")
@@ -302,7 +302,7 @@ func (s *MCIRService) UpdateSpec(ctx context.Context, req *pb.TbSpecInfoRequest)
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.UpdateSpec()")
 	}
 
-	content, err := mcir.UpdateSpec(req.NsId, mcirObj)
+	content, err := mcir.UpdateSpec(req.NsId, req.SpecId, mcirObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.UpdateSpec()")
 	}
