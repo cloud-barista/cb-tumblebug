@@ -444,29 +444,29 @@ func (s *MCISService) CmdMcisVm(ctx context.Context, req *pb.McisCmdVmCreateRequ
 	return resp, nil
 }
 
-// InstallAgentToMcis is to MCIS Agent 설치
-func (s *MCISService) InstallAgentToMcis(ctx context.Context, req *pb.McisCmdCreateRequest) (*pb.ListAgentInstallResponse, error) {
+// InstallBenchmarkAgentToMcis is to MCIS Agent 설치
+func (s *MCISService) InstallBenchmarkAgentToMcis(ctx context.Context, req *pb.McisCmdCreateRequest) (*pb.ListAgentInstallResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling MCISService.InstallAgentToMcis()")
+	logger.Debug("calling MCISService.InstallBenchmarkAgentToMcis()")
 
 	// GRPC 메시지에서 MCIS 객체로 복사
 	var mcisObj mcis.McisCmdReq
 	err := gc.CopySrcToDest(&req.Item, &mcisObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallAgentToMcis()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallBenchmarkAgentToMcis()")
 	}
 
-	content, err := mcis.InstallAgentToMcis(req.NsId, req.McisId, &mcisObj)
+	content, err := mcis.InstallBenchmarkAgentToMcis(req.NsId, req.McisId, &mcisObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallAgentToMcis()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallBenchmarkAgentToMcis()")
 	}
 
 	// MCIS 객체에서 GRPC 메시지로 복사
 	var grpcObj pb.ListAgentInstallResponse
 	err = gc.CopySrcToDest(&content, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallAgentToMcis()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallBenchmarkAgentToMcis()")
 	}
 
 	return &grpcObj, nil

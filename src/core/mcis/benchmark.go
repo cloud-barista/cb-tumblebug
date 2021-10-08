@@ -92,8 +92,8 @@ type AgentInstallContent struct {
 	Result string `json:"result"`
 }
 
-// InstallAgentToMcis is func to install milkyway agents in MCIS
-func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
+// InstallBenchmarkAgentToMcis is func to install milkyway agents in MCIS
+func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {

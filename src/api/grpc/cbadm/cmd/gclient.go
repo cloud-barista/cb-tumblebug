@@ -405,7 +405,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "command-vm":
 			result, err = mcis.CmdMcisVm(inData)
 		case "deploy-milkyway":
-			result, err = mcis.InstallAgentToMcis(inData)
+			result, err = mcis.InstallBenchmarkAgentToMcis(inData)
 		case "access-vm":
 			fmt.Printf("mcis access-vm command is not implemented")
 		case "benchmark":

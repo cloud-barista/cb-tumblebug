@@ -13189,7 +13189,7 @@ type MCISClient interface {
 	RecommendVM(ctx context.Context, in *McisRecommendVmCreateRequest, opts ...grpc.CallOption) (*ListTbSpecInfoResponse, error)
 	CmdMcis(ctx context.Context, in *McisCmdCreateRequest, opts ...grpc.CallOption) (*ListCmdMcisResponse, error)
 	CmdMcisVm(ctx context.Context, in *McisCmdVmCreateRequest, opts ...grpc.CallOption) (*StringResponse, error)
-	InstallAgentToMcis(ctx context.Context, in *McisCmdCreateRequest, opts ...grpc.CallOption) (*ListAgentInstallResponse, error)
+	InstallBenchmarkAgentToMcis(ctx context.Context, in *McisCmdCreateRequest, opts ...grpc.CallOption) (*ListAgentInstallResponse, error)
 	GetBenchmark(ctx context.Context, in *BmQryRequest, opts ...grpc.CallOption) (*ListBenchmarkInfoResponse, error)
 	GetAllBenchmark(ctx context.Context, in *BmQryAllRequest, opts ...grpc.CallOption) (*ListBenchmarkInfoResponse, error)
 	InstallMonitorAgentToMcis(ctx context.Context, in *McisCmdCreateRequest, opts ...grpc.CallOption) (*ListAgentInstallResponse, error)
@@ -13391,9 +13391,9 @@ func (c *mCISClient) CmdMcisVm(ctx context.Context, in *McisCmdVmCreateRequest, 
 	return out, nil
 }
 
-func (c *mCISClient) InstallAgentToMcis(ctx context.Context, in *McisCmdCreateRequest, opts ...grpc.CallOption) (*ListAgentInstallResponse, error) {
+func (c *mCISClient) InstallBenchmarkAgentToMcis(ctx context.Context, in *McisCmdCreateRequest, opts ...grpc.CallOption) (*ListAgentInstallResponse, error) {
 	out := new(ListAgentInstallResponse)
-	err := c.cc.Invoke(ctx, "/cbtumblebug.MCIS/InstallAgentToMcis", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cbtumblebug.MCIS/InstallBenchmarkAgentToMcis", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -13521,7 +13521,7 @@ type MCISServer interface {
 	RecommendVM(context.Context, *McisRecommendVmCreateRequest) (*ListTbSpecInfoResponse, error)
 	CmdMcis(context.Context, *McisCmdCreateRequest) (*ListCmdMcisResponse, error)
 	CmdMcisVm(context.Context, *McisCmdVmCreateRequest) (*StringResponse, error)
-	InstallAgentToMcis(context.Context, *McisCmdCreateRequest) (*ListAgentInstallResponse, error)
+	InstallBenchmarkAgentToMcis(context.Context, *McisCmdCreateRequest) (*ListAgentInstallResponse, error)
 	GetBenchmark(context.Context, *BmQryRequest) (*ListBenchmarkInfoResponse, error)
 	GetAllBenchmark(context.Context, *BmQryAllRequest) (*ListBenchmarkInfoResponse, error)
 	InstallMonitorAgentToMcis(context.Context, *McisCmdCreateRequest) (*ListAgentInstallResponse, error)
@@ -13599,8 +13599,8 @@ func (*UnimplementedMCISServer) CmdMcis(ctx context.Context, req *McisCmdCreateR
 func (*UnimplementedMCISServer) CmdMcisVm(ctx context.Context, req *McisCmdVmCreateRequest) (*StringResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CmdMcisVm not implemented")
 }
-func (*UnimplementedMCISServer) InstallAgentToMcis(ctx context.Context, req *McisCmdCreateRequest) (*ListAgentInstallResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InstallAgentToMcis not implemented")
+func (*UnimplementedMCISServer) InstallBenchmarkAgentToMcis(ctx context.Context, req *McisCmdCreateRequest) (*ListAgentInstallResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InstallBenchmarkAgentToMcis not implemented")
 }
 func (*UnimplementedMCISServer) GetBenchmark(ctx context.Context, req *BmQryRequest) (*ListBenchmarkInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBenchmark not implemented")
@@ -14000,20 +14000,20 @@ func _MCIS_CmdMcisVm_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MCIS_InstallAgentToMcis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _MCIS_InstallBenchmarkAgentToMcis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(McisCmdCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MCISServer).InstallAgentToMcis(ctx, in)
+		return srv.(MCISServer).InstallBenchmarkAgentToMcis(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cbtumblebug.MCIS/InstallAgentToMcis",
+		FullMethod: "/cbtumblebug.MCIS/InstallBenchmarkAgentToMcis",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MCISServer).InstallAgentToMcis(ctx, req.(*McisCmdCreateRequest))
+		return srv.(MCISServer).InstallBenchmarkAgentToMcis(ctx, req.(*McisCmdCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -14301,8 +14301,8 @@ var _MCIS_serviceDesc = grpc.ServiceDesc{
 			Handler:    _MCIS_CmdMcisVm_Handler,
 		},
 		{
-			MethodName: "InstallAgentToMcis",
-			Handler:    _MCIS_InstallAgentToMcis_Handler,
+			MethodName: "InstallBenchmarkAgentToMcis",
+			Handler:    _MCIS_InstallBenchmarkAgentToMcis_Handler,
 		},
 		{
 			MethodName: "GetBenchmark",

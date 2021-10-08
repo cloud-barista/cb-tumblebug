@@ -497,7 +497,7 @@ func RestPostCmdMcis(c echo.Context) error {
 
 }
 
-// RestPostInstallAgentToMcis godoc
+// RestPostInstallBenchmarkAgentToMcis godoc
 // @Summary Install the benchmark agent to specified MCIS
 // @Description Install the benchmark agent to specified MCIS
 // @Tags [MCIS] Performance benchmarking (WIP)
@@ -510,7 +510,7 @@ func RestPostCmdMcis(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/install/mcis/{mcisId} [post]
-func RestPostInstallAgentToMcis(c echo.Context) error {
+func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -520,7 +520,7 @@ func RestPostInstallAgentToMcis(c echo.Context) error {
 		return err
 	}
 
-	content, err := mcis.InstallAgentToMcis(nsId, mcisId, req)
+	content, err := mcis.InstallBenchmarkAgentToMcis(nsId, mcisId, req)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
