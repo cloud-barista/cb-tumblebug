@@ -42,7 +42,7 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric" example:"numvCPU" enums:"numvCPU,memGiB,CostPerHour"`
+	Metric    string      `json:"metric" example:"cpu" enums:"cpu,memory,cost"`
 	Condition []Operation `json:"condition"`
 }
 
@@ -59,9 +59,9 @@ type PriorityInfo struct {
 
 // FilterCondition is struct for .
 type PriorityCondition struct {
-	Metric    string            `json:"metric" example:"location" enums:"location,latency,cost"` // location,latency,cost
+	Metric    string            `json:"metric" example:"location" enums:"location,cost,latency"` // location,cost,latency
 	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`                // 0.3
-	Parameter []ParameterKeyVal `json:"parameter"`
+	Parameter []ParameterKeyVal `json:"parameter,omitempty"`
 }
 
 // Operation is struct for .

@@ -779,10 +779,10 @@ definitions:
         type: array
       metric:
         enum:
-        - numvCPU
-        - memGiB
-        - CostPerHour
-        example: numvCPU
+        - cpu
+        - memory
+        - cost
+        example: cpu
         type: string
     type: object
   mcis.FilterInfo:
@@ -953,11 +953,11 @@ definitions:
   mcis.PriorityCondition:
     properties:
       metric:
-        description: location,latency,cost
+        description: location,cost,latency
         enum:
         - location
-        - latency
         - cost
+        - latency
         example: location
         type: string
       parameter:

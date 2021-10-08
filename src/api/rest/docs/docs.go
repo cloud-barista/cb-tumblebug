@@ -5404,11 +5404,11 @@ var doc = `{
                 "metric": {
                     "type": "string",
                     "enum": [
-                        "numvCPU",
-                        "memGiB",
-                        "CostPerHour"
+                        "cpu",
+                        "memory",
+                        "cost"
                     ],
-                    "example": "numvCPU"
+                    "example": "cpu"
                 }
             }
         },
@@ -5657,12 +5657,12 @@ var doc = `{
             "type": "object",
             "properties": {
                 "metric": {
-                    "description": "location,latency,cost",
+                    "description": "location,cost,latency",
                     "type": "string",
                     "enum": [
                         "location",
-                        "latency",
-                        "cost"
+                        "cost",
+                        "latency"
                     ],
                     "example": "location"
                 },
