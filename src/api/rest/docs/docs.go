@@ -1227,7 +1227,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
+                            "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
                         }
                     },
                     "404": {

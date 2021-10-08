@@ -506,7 +506,7 @@ func RestPostCmdMcis(c echo.Context) error {
 // @Param nsId path string true "Namespace ID"
 // @Param mcisId path string true "MCIS ID"
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
-// @Success 200 {object} mcis.AgentInstallContentWrapper
+// @Success 200 {object} mcis.RestPostCmdMcisResponseWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId} [post]
@@ -520,13 +520,29 @@ func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 		return err
 	}
 
-	content, err := mcis.InstallBenchmarkAgentToMcis(nsId, mcisId, req)
+	resultArray, err := mcis.InstallBenchmarkAgentToMcis(nsId, mcisId, req)
 	if err != nil {
-		common.CBLog.Error(err)
-		return err
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
+	content := RestPostCmdMcisResponseWrapper{}
+
+	for _, v := range resultArray {
+
+		resultTmp := RestPostCmdMcisResponse{}
+		resultTmp.McisId = mcisId
+		resultTmp.VmId = v.VmId
+		resultTmp.VmIp = v.VmIp
+		resultTmp.Result = v.Result
+		content.ResultArray = append(content.ResultArray, resultTmp)
+
+	}
+
+	common.PrintJsonPretty(content)
+
 	return c.JSON(http.StatusOK, content)
+
 }
 
 // RestPostMcisVm godoc
