@@ -1,6 +1,6 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
 
-This Directory consist test scripts for performing fundamental test of CB-Tumblebug.
+This Directory consists of test scripts for performing fundamental test of CB-Tumblebug.
 
 ***
 
