@@ -128,7 +128,7 @@ service MCIR {
 	rpc FilterSpec (TbSpecInfoRequest) returns (ListTbSpecInfoResponse) {}
 	rpc FilterSpecsByRange (FilterSpecsByRangeRequest) returns (ListTbSpecInfoResponse) {}
 	rpc SortSpecs (SortSpecsRequest) returns (ListTbSpecInfoResponse) {}
-	rpc UpdateSpec (TbSpecInfoRequest) returns (TbSpecInfoResponse) {}
+	rpc UpdateSpec (TbUpdateSpecRequest) returns (TbSpecInfoResponse) {}
 
 	rpc CreateSecurityGroup (TbSecurityGroupCreateRequest) returns (TbSecurityGroupInfoResponse) {}
 	rpc ListSecurityGroup (ResourceAllQryRequest) returns (ListTbSecurityGroupInfoResponse) {}
@@ -288,6 +288,13 @@ message TbSshKeyReq {
 //////////////////////////////////
 // Spec-related messages
 //////////////////////////////////
+
+
+message TbUpdateSpecRequest {
+	string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+	string spec_id = 2 [json_name="specId", (gogoproto.jsontag) = "specId", (gogoproto.moretags) = "yaml:\"specId\""];
+	TbSpecInfo item = 3 [json_name="spec", (gogoproto.jsontag) = "spec", (gogoproto.moretags) = "yaml:\"spec\""];
+}
 
 message TbSpecInfoRequest {
 	string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];

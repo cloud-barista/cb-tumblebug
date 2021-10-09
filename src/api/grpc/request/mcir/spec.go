@@ -319,7 +319,7 @@ func (r *MCIRRequest) UpdateSpec() (string, error) {
 	}
 
 	// Unmarshal (json/yaml -> Request Input)
-	var item pb.TbSpecInfoRequest
+	var item pb.TbUpdateSpecRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
