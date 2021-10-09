@@ -1,19 +1,19 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
 
-이 디렉토리는 CB-Tumblebug의 기본적인 테스트 수행을 위한 테스트 스크립트를 포함
+This Directory consists of test scripts for performing fundamental test of CB-Tumblebug.
 
 ***
 
-## [목차]
+## [Table of Contents]
 
-1. [실행 환경](#실행-환경)
-2. [실행 방법](#실행-방법)
+1. [Execution Environment](#execution-environment)
+2. [How to Execute](#how-to-execute)
 
 ***
 
-## 실행 환경
-- Linux (검증시험: Ubuntu 18.04)
+## Execution Environment
+- Linux (Verified: Ubuntu 18.04)
 
-## 실행 방법
+## How to Execute
 
-- [실행 방법](../../../README.md#2-cb-tumblebug-스크립트를-통한-테스트)
+- Executing CB-Tumblebug Test Scripts [[English](https://github.com/cloud-barista/cb-tumblebug/blob/main/i18n/README-EN.md#using-cb-tumblebug-script), [한국어](https://github.com/cloud-barista/cb-tumblebug#cb-tumblebug-%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8-%EC%82%AC%EC%9A%A9)]
