@@ -92,101 +92,23 @@ type AgentInstallContent struct {
 	Result string `json:"result"`
 }
 
-// InstallAgentToMcis is func to install milkyway agents in MCIS
-func InstallAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
+// InstallBenchmarkAgentToMcis is func to install milkyway agents in MCIS
+func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := AgentInstallContentWrapper{}
-		common.CBLog.Error(err)
-		return temp, err
-	}
-
-	err = common.CheckString(mcisId)
-	if err != nil {
-		temp := AgentInstallContentWrapper{}
-		common.CBLog.Error(err)
-		return temp, err
-	}
-	check, _ := CheckMcis(nsId, mcisId)
-
-	if !check {
-		temp := AgentInstallContentWrapper{}
-		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
-		return temp, err
-	}
-
-	content := AgentInstallContentWrapper{}
-
-	//install script
+	// SSH command to install benchmarking agent
 	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & netstat -tulpn | grep milkyway"
+	// Replace given parameter with the installation cmd
+	req.Command = cmd
 
-	vmList, err := ListVmId(nsId, mcisId)
+	sshCmdResult, err := RemoteCommandToMcis(nsId, mcisId, req)
+
 	if err != nil {
+		temp := []SshCmdResult{}
 		common.CBLog.Error(err)
-		return content, err
+		return temp, err
 	}
 
-	//goroutin sync wg
-	var wg sync.WaitGroup
-
-	var resultArray []SshCmdResult
-
-	for _, v := range vmList {
-
-		vmId := v
-		vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
-
-		//cmd := req.Command
-
-		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		// if (userName == "") {
-		// 	userName = req.UserName
-		// }
-		// if (userName == "") {
-		// 	userName = sshDefaultUserName
-		// }
-
-		// find vaild username
-		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
-
-		fmt.Println("")
-		fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName:" + userName)
-		fmt.Println("[CMD] " + cmd)
-		fmt.Println("")
-
-		// Avoid RunRemoteCommand to not ready VM
-		if err != nil {
-			wg.Add(1)
-			go RunRemoteCommandAsync(&wg, vmId, vmIp, sshPort, userName, sshKey, cmd, &resultArray)
-		} else {
-			common.CBLog.Error(err)
-			sshResultTmp := SshCmdResult{}
-			sshResultTmp.McisId = mcisId
-			sshResultTmp.VmId = vmId
-			sshResultTmp.VmIp = vmIp
-			sshResultTmp.Result = err.Error()
-			sshResultTmp.Err = err
-		}
-
-	}
-	wg.Wait() //goroutin sync wg
-
-	for _, v := range resultArray {
-
-		resultTmp := AgentInstallContent{}
-		resultTmp.McisId = mcisId
-		resultTmp.VmId = v.VmId
-		resultTmp.VmIp = v.VmIp
-		resultTmp.Result = v.Result
-		content.ResultArray = append(content.ResultArray, resultTmp)
-		//fmt.Println("result from goroutin " + v)
-	}
-
-	//fmt.Printf("%+v\n", content)
-	common.PrintJsonPretty(content)
-
-	return content, nil
+	return sshCmdResult, nil
 
 }
 

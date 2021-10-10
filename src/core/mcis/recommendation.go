@@ -42,7 +42,7 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric" example:"numvCPU" enums:"numvCPU,memGiB,CostPerHour"`
+	Metric    string      `json:"metric" example:"cpu" enums:"cpu,memory,cost"`
 	Condition []Operation `json:"condition"`
 }
 
@@ -59,9 +59,9 @@ type PriorityInfo struct {
 
 // FilterCondition is struct for .
 type PriorityCondition struct {
-	Metric    string            `json:"metric" example:"location" enums:"location,latency,cost"` // location,latency,cost
+	Metric    string            `json:"metric" example:"location" enums:"location,cost,latency"` // location,cost,latency
 	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`                // 0.3
-	Parameter []ParameterKeyVal `json:"parameter"`
+	Parameter []ParameterKeyVal `json:"parameter,omitempty"`
 }
 
 // Operation is struct for .
@@ -103,11 +103,11 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case "<=":
 
 				switch metric {
-				case "numvCPU":
+				case "cpu":
 					u.NumvCPU.Max = operand
-				case "memGiB":
+				case "memory":
 					u.MemGiB.Max = operand
-				case "CostPerHour":
+				case "cost":
 					u.CostPerHour.Max = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
@@ -116,11 +116,11 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case ">=":
 
 				switch metric {
-				case "numvCPU":
+				case "cpu":
 					u.NumvCPU.Min = operand
-				case "memGiB":
+				case "memory":
 					u.MemGiB.Min = operand
-				case "CostPerHour":
+				case "cost":
 					u.CostPerHour.Min = operand
 				default:
 					fmt.Println("[Checking] Not available metric " + metric)
@@ -129,13 +129,13 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case "==":
 
 				switch metric {
-				case "numvCPU":
+				case "cpu":
 					u.NumvCPU.Max = operand
 					u.NumvCPU.Min = operand
-				case "memGiB":
+				case "memory":
 					u.MemGiB.Max = operand
 					u.MemGiB.Min = operand
-				case "CostPerHour":
+				case "cost":
 					u.CostPerHour.Max = operand
 					u.CostPerHour.Min = operand
 				default:
@@ -168,7 +168,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 		case "latency":
 			//
 		case "cost":
-			//
+			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 		default:
 			// fmt.Println("[Checking] Not available metric " + metric)
 		}
@@ -330,6 +330,27 @@ func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (dista
 
 	earthRadius := float64(6371)
 	return (earthRadius * c)
+}
+
+// RecommendVmCost func prioritize specs based on given Cost
+func RecommendVmCost(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInfo, error) {
+
+	result := []mcir.TbSpecInfo{}
+
+	for i := range *specList {
+		result = append(result, (*specList)[i])
+	}
+
+	sort.Slice(result, func(i, j int) bool { return result[i].CostPerHour < result[j].CostPerHour })
+
+	for i := range result {
+		result[i].OrderInFilteredResult = uint16(i + 1)
+		result[i].EvaluationScore01 = float32(1 - (result[i].CostPerHour / float32(len(result))))
+	}
+
+	fmt.Printf("\n result : %v \n", result)
+
+	return result, nil
 }
 
 // GetRecommendList is func to get recommendation list

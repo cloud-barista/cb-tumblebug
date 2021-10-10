@@ -1063,18 +1063,18 @@ func (m *MCISApi) CmdMcisVmByParam(req *McisCmdVmCreateRequest) (string, error) 
 	return result, err
 }
 
-// InstallAgentToMcis is to  MCIS Agent 설치
-func (m *MCISApi) InstallAgentToMcis(doc string) (string, error) {
+// InstallBenchmarkAgentToMcis is to  MCIS Agent 설치
+func (m *MCISApi) InstallBenchmarkAgentToMcis(doc string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	m.requestMCIS.InData = doc
-	return m.requestMCIS.InstallAgentToMcis()
+	return m.requestMCIS.InstallBenchmarkAgentToMcis()
 }
 
-// InstallAgentToMcisByParam is to MCIS Agent 설치
-func (m *MCISApi) InstallAgentToMcisByParam(req *McisCmdCreateRequest) (string, error) {
+// InstallBenchmarkAgentToMcisByParam is to MCIS Agent 설치
+func (m *MCISApi) InstallBenchmarkAgentToMcisByParam(req *McisCmdCreateRequest) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
@@ -1086,7 +1086,7 @@ func (m *MCISApi) InstallAgentToMcisByParam(req *McisCmdCreateRequest) (string, 
 		return "", err
 	}
 	m.requestMCIS.InData = string(j)
-	result, err := m.requestMCIS.InstallAgentToMcis()
+	result, err := m.requestMCIS.InstallBenchmarkAgentToMcis()
 	m.SetInType(holdType)
 
 	return result, err

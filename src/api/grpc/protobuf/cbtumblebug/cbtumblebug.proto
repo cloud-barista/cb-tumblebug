@@ -588,7 +588,7 @@ service MCIS {
 
 	rpc CmdMcis (McisCmdCreateRequest) returns (ListCmdMcisResponse) {}
 	rpc CmdMcisVm (McisCmdVmCreateRequest) returns (StringResponse) {}
-	rpc InstallAgentToMcis (McisCmdCreateRequest) returns (ListAgentInstallResponse) {}
+	rpc InstallBenchmarkAgentToMcis (McisCmdCreateRequest) returns (ListAgentInstallResponse) {}
 	rpc GetBenchmark (BmQryRequest) returns (ListBenchmarkInfoResponse) {}
 	rpc GetAllBenchmark (BmQryAllRequest) returns (ListBenchmarkInfoResponse) {}
 

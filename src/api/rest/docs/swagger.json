@@ -369,6 +369,35 @@
                 }
             }
         },
+        "/loadCommonResource": {
+            "get": {
+                "description": "Load Common Resources from internal asset files (Spec, Image)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Load Common Resources from internal asset files",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/lookupImage": {
             "post": {
                 "description": "Lookup image",
@@ -847,7 +876,7 @@
                 }
             }
         },
-        "/ns/{nsId}/benchmarkall/mcis/{mcisId}": {
+        "/ns/{nsId}/benchmarkAll/mcis/{mcisId}": {
             "post": {
                 "description": "Run MCIS benchmark for all performance metrics and return results",
                 "consumes": [
@@ -1170,7 +1199,7 @@
                 }
             }
         },
-        "/ns/{nsId}/install/mcis/{mcisId}": {
+        "/ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}": {
             "post": {
                 "description": "Install the benchmark agent to specified MCIS",
                 "consumes": [
@@ -1212,7 +1241,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
+                            "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
                         }
                     },
                     "404": {
@@ -5360,11 +5389,11 @@
                 "metric": {
                     "type": "string",
                     "enum": [
-                        "numvCPU",
-                        "memGiB",
-                        "CostPerHour"
+                        "cpu",
+                        "memory",
+                        "cost"
                     ],
-                    "example": "numvCPU"
+                    "example": "cpu"
                 }
             }
         },
@@ -5613,12 +5642,12 @@
             "type": "object",
             "properties": {
                 "metric": {
-                    "description": "location,latency,cost",
+                    "description": "location,cost,latency",
                     "type": "string",
                     "enum": [
                         "location",
-                        "latency",
-                        "cost"
+                        "cost",
+                        "latency"
                     ],
                     "example": "location"
                 },

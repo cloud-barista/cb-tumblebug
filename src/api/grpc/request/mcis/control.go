@@ -527,8 +527,8 @@ func (r *MCISRequest) CmdMcisVm() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
-// InstallAgentToMcis is to Install CB-Tumblebug benchmarking agent (cb-milkyway), which will be deprecated
-func (r *MCISRequest) InstallAgentToMcis() (string, error) {
+// InstallBenchmarkAgentToMcis is to Install CB-Tumblebug benchmarking agent (cb-milkyway), which will be deprecated
+func (r *MCISRequest) InstallBenchmarkAgentToMcis() (string, error) {
 	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
@@ -545,7 +545,7 @@ func (r *MCISRequest) InstallAgentToMcis() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
-	resp, err := r.Client.InstallAgentToMcis(ctx, &item)
+	resp, err := r.Client.InstallBenchmarkAgentToMcis(ctx, &item)
 	if err != nil {
 		return "", err
 	}

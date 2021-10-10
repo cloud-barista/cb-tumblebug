@@ -139,6 +139,9 @@ func ApiServer(port string) {
 	e.DELETE("/tumblebug/object", rest_common.RestDeleteObject)
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 
+	e.GET("/tumblebug/loadCommonResource", rest_mcir.RestLoadCommonResource)
+
+	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
 	//Namespace Management
@@ -174,9 +177,9 @@ func ApiServer(port string) {
 
 	g.POST("/:nsId/cmd/mcis/:mcisId", rest_mcis.RestPostCmdMcis)
 	g.POST("/:nsId/cmd/mcis/:mcisId/vm/:vmId", rest_mcis.RestPostCmdMcisVm)
-	g.POST("/:nsId/install/mcis/:mcisId", rest_mcis.RestPostInstallAgentToMcis)
+	g.POST("/:nsId/installBenchmarkAgent/mcis/:mcisId", rest_mcis.RestPostInstallBenchmarkAgentToMcis)
 	g.POST("/:nsId/benchmark/mcis/:mcisId", rest_mcis.RestGetBenchmark)
-	g.POST("/:nsId/benchmarkall/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
+	g.POST("/:nsId/benchmarkAll/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
 
 	//MCIS AUTO Policy
 	g.POST("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPostMcisPolicy)
