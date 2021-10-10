@@ -1063,10 +1063,6 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		return nil, err
 	}
 
-	if err != nil {
-		common.CBLog.Error(err)
-		return nil, err
-	}
 	fmt.Println("[Get resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
