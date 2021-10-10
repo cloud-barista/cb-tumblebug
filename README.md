@@ -18,23 +18,30 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
+ - [CB-Tumblebug Overview (Korean)](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Overview) 
+ - [CB-Tumblebug Features (Korean)](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Features)
+ - [CB-Tumblebug Architecture (Korean)](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Architecture)
+ - [CB-Tumblebug Operation Sequence](https://github.com/cloud-barista/cb-tumblebug/tree/main/docs/designUML)
 
 <details>
-<summary>Note for developing and using Cloud-Barista</summary>
+<summary>[Note] CB-Tumblebug is currently under development</summary>
 
-### Development stage of Cloud-Barista
 ```
-Cloud-Barista is currently under development. (not v1.0 yet)
+CB-Tumblebug is currently under development. (not v1.0 yet)
 We welcome any new suggestions, issues, opinions, and contributors !
 Please note that the functionalities of Cloud-Barista are not stable and secure yet.
 Be careful if you plan to use the current release in production.
 If you have any difficulties in using Cloud-Barista, please let us know.
 (Open an issue or Join the Cloud-Barista Slack)
 ```
+  
+</details>
 
-### Localization and Globalization of CB-Tumblebug (CB-Tumblebug의 현지화 및 세계화)
+<details>
+<summary>[Note] Localization and Globalization of CB-Tumblebug</summary>
+    
 ```
-[English] As an opensource project initiated by Korean members, 
+Since CB-Tumblebug was initiated by Korean members, 
 we would like to promote participation of Korean contributors during initial stage of this project. 
 So, CB-Tumblebug Repo will accept use of Korean language in its early stages.
 On the other hand, we hope this project flourishes regardless of contributor's country eventually.
@@ -43,7 +50,7 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 ```
 
 ```
-[한국어] CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서 
+CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서 
 프로젝트의 초기 단계에는 한국 기여자들의 참여를 촉진하고자 합니다. 
 따라서 초기 단계의 CB-Tumblebug는 한국어 사용을 받아 들일 것입니다.
 다른 한편으로, 이 프로젝트가 국가에 관계없이 번성하기를 희망합니다.
@@ -54,12 +61,12 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 </details>
 
 
-
+[[한국어](README.md), [English](i18n/README-EN.md)]
 
 ***
 ***
 
-[English](i18n/README-EN.md)
+
 ## 목차
 
 1. [CB-Tumblebug 실행 및 개발 환경](#cb-tumblebug-실행-및-개발-환경)
