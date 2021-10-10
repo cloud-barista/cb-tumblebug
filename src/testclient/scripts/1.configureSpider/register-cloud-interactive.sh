@@ -187,6 +187,8 @@ if [ "${INDEX}" == "0" ]; then
         for ((cspj = 1; cspj <= INDEXY; cspj++)); do
             echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
 
+            INDEX=$cspi
+            REGION=$cspj
             CallSpider
 
         done
