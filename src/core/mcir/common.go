@@ -1080,6 +1080,10 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		return nil, err
 	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
@@ -1089,10 +1093,6 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		return nil, err
 	}
 
-	if err != nil {
-		common.CBLog.Error(err)
-		return nil, err
-	}
 	fmt.Println("[Get resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
@@ -1201,7 +1201,11 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	//fmt.Println(key)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
 	if keyValue != nil {
 		return true, nil
 	}
