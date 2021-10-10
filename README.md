@@ -14,7 +14,7 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-29-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
@@ -778,6 +778,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://sysgongbu.tistory.com/"><img src="https://avatars.githubusercontent.com/u/46469385?v=4?s=100" width="100px;" alt=""/><br /><sub><b>soyeon Park</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=sypark9646" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/Jayita10"><img src="https://avatars.githubusercontent.com/u/85472715?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jayita Pramanik</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=Jayita10" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/MukulKolpe"><img src="https://avatars.githubusercontent.com/u/78664749?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Mukul Kolpe</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=MukulKolpe" title="Documentation">📖</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/EmmanuelMarianMat"><img src="https://avatars.githubusercontent.com/u/75481347?v=4?s=100" width="100px;" alt=""/><br /><sub><b>EmmanuelMarianMat</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=EmmanuelMarianMat" title="Code">💻</a></td>
   </tr>
 </table>
 
