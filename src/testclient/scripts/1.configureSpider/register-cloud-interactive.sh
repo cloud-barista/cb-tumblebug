@@ -129,22 +129,53 @@ EOF
     echo ""
 }
 
-#function register_cloud() {
+echo "####################################################################"
+echo "## 1. Register Cloud Inforation"
+echo "####################################################################"
 
-echo "####################################################################"
-echo "## 1. Create Cloud Connction Config"
-echo "####################################################################"
 
 source ../init.sh
-
-echo "AUTH: $AUTH"
-echo "TumblebugServer: $TumblebugServer"
-echo "NSID: $NSID"
-echo "INDEX: $INDEX"
-echo "REGION: $REGION"
-echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-echo "POSTFIX: $POSTFIX"
 echo ""
+echo -e "[${BOLD}Configuration${NC} in ${GREEN}${BOLD} $TestSetFile${NC} & ${GREEN}${BOLD} ../conf.env ${NC} files]"
+echo ""
+echo -e "${BOLD}1) System Endpoints${NC}"
+echo -e " - Tumblebug Server : ${GREEN}${BOLD} $TumblebugServer ${NC}"
+echo -e " - Spider Server : ${GREEN}${BOLD} $SpiderServer ${NC}"
+echo ""
+
+INDEXX=${NumCSP}
+echo -e "${BOLD}2) Enabled Clouds and Regions${NC}"
+
+for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+	INDEXY=${NumRegion[$cspi]}
+	CSP=${CSPType[$cspi]}
+	echo -e "${GREEN}${BOLD} - [$cspi] Cloud : $CSP (enabled regions : $INDEXY)${NC}"
+	for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+		echo -e "${BLUE}${BOLD}   [$cspi,$cspj] Region : ${RegionName[$cspi,$cspj]} (${RegionLocation[$cspi,$cspj]}) ${NC}" 
+	done
+	echo ""
+done
+
+echo -e "${BOLD}"
+while true; do
+    read -p 'Confirm the above configuration. Do you want to proceed ? (y/n) : ' CHECKPROCEED
+    echo -e "${NC}"
+    case $CHECKPROCEED in
+    [Yy]*)
+        break
+        ;;
+    [Nn]*)
+        echo
+        echo "Cancel [$0 $@]"
+        echo "See you soon. :)"
+        echo
+        exit 1
+        ;;
+    *)
+        echo "Please answer yes or no."
+        ;;
+    esac
+done
 
 if [ "${INDEX}" == "0" ]; then
     echo "[Parallel execution for all CSP regions]"
@@ -156,6 +187,8 @@ if [ "${INDEX}" == "0" ]; then
         for ((cspj = 1; cspj <= INDEXY; cspj++)); do
             echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
 
+            INDEX=$cspi
+            REGION=$cspj
             CallSpider
 
         done
@@ -169,3 +202,9 @@ else
     CallSpider
 
 fi
+
+# Print list of all registered cloud info
+
+./list-cloud.sh
+
+echo -e "${NC}"
