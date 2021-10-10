@@ -1322,7 +1322,8 @@ func LoadCommonResource() error {
 		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, " ", "-")
 		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, ".", "-")
 		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, "_", "-")
-		specReqTmp.Description = "Common spec resource"
+		specReqTmp.Name = strings.ToLower(specReqTmp.Name)
+		specReqTmp.Description = "Common Spec Resource"
 
 		fmt.Println(specReqTmp)
 
