@@ -779,10 +779,10 @@ definitions:
         type: array
       metric:
         enum:
-        - numvCPU
-        - memGiB
-        - CostPerHour
-        example: numvCPU
+        - cpu
+        - memory
+        - cost
+        example: cpu
         type: string
     type: object
   mcis.FilterInfo:
@@ -953,11 +953,11 @@ definitions:
   mcis.PriorityCondition:
     properties:
       metric:
-        description: location,latency,cost
+        description: location,cost,latency
         enum:
         - location
-        - latency
         - cost
+        - latency
         example: location
         type: string
       parameter:
@@ -1750,6 +1750,25 @@ paths:
         CB-Spider, CSP
       tags:
       - '[Admin] Cloud environment management'
+  /loadCommonResource:
+    get:
+      consumes:
+      - application/json
+      description: Load Common Resources from internal asset files (Spec, Image)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Load Common Resources from internal asset files
+      tags:
+      - '[Admin] Cloud environment management'
   /lookupImage:
     post:
       consumes:
@@ -2066,7 +2085,7 @@ paths:
       summary: Run MCIS benchmark for a single performance metric and return results
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
-  /ns/{nsId}/benchmarkall/mcis/{mcisId}:
+  /ns/{nsId}/benchmarkAll/mcis/{mcisId}:
     post:
       consumes:
       - application/json
@@ -2285,7 +2304,7 @@ paths:
       summary: Control the lifecycle of VM
       tags:
       - '[MCIS] Control lifecycle'
-  /ns/{nsId}/install/mcis/{mcisId}:
+  /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}:
     post:
       consumes:
       - application/json
@@ -2313,7 +2332,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.AgentInstallContentWrapper'
+            $ref: '#/definitions/mcis.RestPostCmdMcisResponseWrapper'
         "404":
           description: Not Found
           schema:
