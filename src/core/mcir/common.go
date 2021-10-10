@@ -1318,6 +1318,8 @@ func LoadCommonResource() error {
 		// [0]connectionName, [1]cspSpecName, [2]CostPerHour
 		specReqTmp.ConnectionName = row[0]
 		specReqTmp.CspSpecName = row[1]
+		// Give a name for spec object by combining ConnectionName and CspSpecName
+		// To avoid naming-rule violation, modify the string
 		specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
 		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, " ", "-")
 		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, ".", "-")
