@@ -221,8 +221,10 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   ⇨ http server started on [::]:1323
   ⇨ grpc server started on [::]:50252
   ```
+<details>
+<summary>Known Errors and Troubleshooting</summary>
+- Errors related to `golang.org/x/net/trace`
 
-- Known Errors and Troubleshooting
   ``` 
   panic: /debug/requests is already registered. 
   You may have two independent copies of golang.org/x/net/trace in your binary, 
@@ -230,11 +232,12 @@ CB-Tumblebug welcomes improvements from all contributors, new and experienced!
   This may involve a vendor copy of golang.org/x/net/trace.
   ```
 
-  run following to resolve if error occurs.
+  solution:run following to resolve this issue by removing duplicated files.
   ```Shell
   # rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
   # make
   ```
+</details>
 
 ***
 ***
