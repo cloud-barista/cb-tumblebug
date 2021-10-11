@@ -1337,7 +1337,7 @@ func LoadCommonResource() error {
 		specObjId := specReqTmp.Name
 
 		// Update registered Spec object with Cost info
-		costPerHour, err := strconv.ParseFloat(row[2], 32)
+		costPerHour, err := strconv.ParseFloat(strings.ReplaceAll(row[2], " ", ""), 32)
 		if err != nil {
 			common.CBLog.Error(err)
 			return err

@@ -92,7 +92,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 		conditions := v.Condition
 		for _, condition := range conditions {
 
-			operand64, err := strconv.ParseFloat(condition.Operand, 32)
+			operand64, err := strconv.ParseFloat(strings.ReplaceAll(condition.Operand, " ", ""), 32)
 			operand := float32(operand64)
 			if err != nil {
 				common.CBLog.Error(err)
@@ -205,12 +205,12 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			coordinateStr := v.Val[0]
 
 			slice := strings.Split(coordinateStr, "/")
-			latitude, err := strconv.ParseFloat(slice[0], 32)
+			latitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
 			if err != nil {
 				common.CBLog.Error(err)
 				return []mcir.TbSpecInfo{}, err
 			}
-			longitude, err := strconv.ParseFloat(slice[1], 32)
+			longitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
 			if err != nil {
 				common.CBLog.Error(err)
 				return []mcir.TbSpecInfo{}, err
@@ -301,12 +301,12 @@ func getDistance(latitude float64, longitude float64, ConnectionName string) (fl
 	}
 	Location := GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
 
-	cloudLatitude, err := strconv.ParseFloat(Location.Latitude, 32)
+	cloudLatitude, err := strconv.ParseFloat(strings.ReplaceAll(Location.Latitude, " ", ""), 32)
 	if err != nil {
 		common.CBLog.Error(err)
 		return 0, err
 	}
-	cloudLongitude, err := strconv.ParseFloat(Location.Longitude, 32)
+	cloudLongitude, err := strconv.ParseFloat(strings.ReplaceAll(Location.Longitude, " ", ""), 32)
 	if err != nil {
 		common.CBLog.Error(err)
 		return 0, err
