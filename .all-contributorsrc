@@ -281,6 +281,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "carlosfrodrigues",
+      "name": "Carlos Felix",
+      "avatar_url": "https://avatars.githubusercontent.com/u/18339454?v=4",
+      "profile": "http://carlosfelix.pythonanywhere.com/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
