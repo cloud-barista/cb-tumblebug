@@ -12,18 +12,10 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// 2020-04-03 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/KeyPairHandler.go
-
 type SpiderKeyPairReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderKeyPairInfo
 }
-
-/*
-type SpiderKeyPairReqInfo struct { // Spider
-	Name string
-}
-*/
 
 type SpiderKeyPairInfo struct { // Spider
 	// Fields for request
