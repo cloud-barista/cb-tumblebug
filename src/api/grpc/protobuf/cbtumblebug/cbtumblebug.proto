@@ -318,7 +318,7 @@ message TbSpecInfo {
 	string os_type = 6 [json_name="os_type", (gogoproto.jsontag) = "os_type", (gogoproto.moretags) = "yaml:\"os_type\""];
 	uint32 num_vcpu = 7 [json_name="num_vCPU", (gogoproto.jsontag) = "num_vCPU", (gogoproto.moretags) = "yaml:\"num_vCPU\""];
 	uint32 num_core = 8 [json_name="num_core", (gogoproto.jsontag) = "num_core", (gogoproto.moretags) = "yaml:\"num_core\""];
-	uint32 mem_gib = 9 [json_name="mem_GiB", (gogoproto.jsontag) = "mem_GiB", (gogoproto.moretags) = "yaml:\"mem_GiB\""];
+	float mem_gib = 9 [json_name="mem_GiB", (gogoproto.jsontag) = "mem_GiB", (gogoproto.moretags) = "yaml:\"mem_GiB\""];
 	uint32 storage_gib = 10 [json_name="storage_GiB", (gogoproto.jsontag) = "storage_GiB", (gogoproto.moretags) = "yaml:\"storage_GiB\""];
 	string description = 11 [json_name="description", (gogoproto.jsontag) = "description", (gogoproto.moretags) = "yaml:\"description\""];
 	float cost_per_hour = 12 [json_name="cost_per_hour", (gogoproto.jsontag) = "cost_per_hour", (gogoproto.moretags) = "yaml:\"cost_per_hour\""];
@@ -329,7 +329,7 @@ message TbSpecInfo {
 	uint32 ebs_bw_mbps = 17 [json_name="ebs_bw_Mbps", (gogoproto.jsontag) = "ebs_bw_Mbps", (gogoproto.moretags) = "yaml:\"ebs_bw_Mbps\""];
 	string gpu_model = 18 [json_name="gpu_model", (gogoproto.jsontag) = "gpu_model", (gogoproto.moretags) = "yaml:\"gpu_model\""];
 	uint32 num_gpu = 19 [json_name="num_gpu", (gogoproto.jsontag) = "num_gpu", (gogoproto.moretags) = "yaml:\"num_gpu\""];
-	uint32 gpumem_gib = 20 [json_name="gpumem_GiB", (gogoproto.jsontag) = "gpumem_GiB", (gogoproto.moretags) = "yaml:\"gpumem_GiB\""];
+	float gpumem_gib = 20 [json_name="gpumem_GiB", (gogoproto.jsontag) = "gpumem_GiB", (gogoproto.moretags) = "yaml:\"gpumem_GiB\""];
 	string gpu_p2p = 21 [json_name="gpu_p2p", (gogoproto.jsontag) = "gpu_p2p", (gogoproto.moretags) = "yaml:\"gpu_p2p\""];
 	uint32 order_in_filtered_result = 22 [json_name="orderInFilteredResult", (gogoproto.jsontag) = "orderInFilteredResult", (gogoproto.moretags) = "yaml:\"orderInFilteredResult\""];
 	string evaluation_status = 23 [json_name="evaluationStatus", (gogoproto.jsontag) = "evaluationStatus", (gogoproto.moretags) = "yaml:\"evaluationStatus\""];

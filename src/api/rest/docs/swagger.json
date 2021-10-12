@@ -5023,7 +5023,7 @@
                     "type": "string"
                 },
                 "gpuMemGiB": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "gpuModel": {
                     "type": "string"
@@ -5044,7 +5044,7 @@
                     "type": "integer"
                 },
                 "memGiB": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "name": {
                     "type": "string"

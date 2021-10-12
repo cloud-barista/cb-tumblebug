@@ -71,7 +71,7 @@ type TbSpecInfo struct { // Tumblebug
 	OsType                string   `json:"osType,omitempty"`
 	NumvCPU               uint16   `json:"numvCPU,omitempty"`
 	NumCore               uint16   `json:"numCore,omitempty"`
-	MemGiB                uint16   `json:"memGiB,omitempty"`
+	MemGiB                float32  `json:"memGiB,omitempty"`
 	StorageGiB            uint32   `json:"storageGiB,omitempty"`
 	Description           string   `json:"description,omitempty"`
 	CostPerHour           float32  `json:"costPerHour,omitempty"`
@@ -82,7 +82,7 @@ type TbSpecInfo struct { // Tumblebug
 	EbsBwMbps             uint32   `json:"ebsBwMbps,omitempty"`
 	GpuModel              string   `json:"gpuModel,omitempty"`
 	NumGpu                uint8    `json:"numGpu,omitempty"`
-	GpuMemGiB             uint16   `json:"gpuMemGiB,omitempty"`
+	GpuMemGiB             float32  `json:"gpuMemGiB,omitempty"`
 	GpuP2p                string   `json:"gpuP2p,omitempty"`
 	OrderInFilteredResult uint16   `json:"orderInFilteredResult,omitempty"`
 	EvaluationStatus      string   `json:"evaluationStatus,omitempty"`
@@ -115,7 +115,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, er
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.NumvCPU = uint16(tempUint64)
 	tempFloat64, _ := strconv.ParseFloat(spiderSpec.Mem, 32)
-	tumblebugSpec.MemGiB = uint16(tempFloat64 / 1024) //fmt.Sprintf("%.0f", tempFloat64/1024)
+	tumblebugSpec.MemGiB = float32(tempFloat64 / 1024) //fmt.Sprintf("%.0f", tempFloat64/1024)
 
 	return tumblebugSpec, nil
 }
@@ -443,7 +443,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	//content.Num_core = res.Num_core
 
 	tempFloat64, _ := strconv.ParseFloat(res.Mem, 32)
-	content.MemGiB = uint16(tempFloat64 / 1024)
+	content.MemGiB = float32(tempFloat64 / 1024)
 
 	//content.StorageGiB = res.StorageGiB
 	//content.Description = res.Description
@@ -540,7 +540,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 }
 
 // RegisterRecommendList creates the spec recommendation info
-func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize uint16, diskSize uint32, specId string, price float32) error {
+func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize float32, diskSize uint32, specId string, price float32) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -567,7 +567,7 @@ func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, m
 }
 
 // DelRecommendSpec deletes the spec recommendation info
-func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize uint16, diskSize uint32) error {
+func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize float32, diskSize uint32) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
