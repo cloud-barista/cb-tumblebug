@@ -16,20 +16,10 @@ import (
 	validator "github.com/go-playground/validator/v10"
 )
 
-// 2020-04-03 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/ImageHandler.go
-
 type SpiderImageReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderImageInfo
 }
-
-/*
-type SpiderImageReqInfo struct { // Spider
-	//IId   IID 	// {NameId, SystemId}
-	Name string
-	// @todo
-}
-*/
 
 type SpiderImageInfo struct { // Spider
 	// Fields for request
