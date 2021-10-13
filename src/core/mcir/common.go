@@ -1310,10 +1310,6 @@ func LoadCommonResource() error {
 	rows, _ := rdr.ReadAll()
 	specReqTmp := TbSpecReq{}
 	for i, row := range rows[1:] {
-		// for j := range row {
-		// 	fmt.Printf("%s ", row[j])
-		// }
-		// fmt.Println()
 
 		// [0]connectionName, [1]cspSpecName, [2]CostPerHour
 		specReqTmp.ConnectionName = row[0]
@@ -1335,7 +1331,7 @@ func LoadCommonResource() error {
 			common.CBLog.Error(err)
 			// If already exist, error will occur
 			// Even if error, do not return here to update information
-			//return err
+			// return err
 		}
 		specObjId := specReqTmp.Name
 
@@ -1343,7 +1339,9 @@ func LoadCommonResource() error {
 		costPerHour, err := strconv.ParseFloat(strings.ReplaceAll(row[2], " ", ""), 32)
 		if err != nil {
 			common.CBLog.Error(err)
-			return err
+			// If already exist, error will occur
+			// Even if error, do not return here to update information
+			// return err
 		}
 		costPerHour32 := float32(costPerHour)
 		specUpdateRequest := TbSpecInfo{CostPerHour: costPerHour32}
@@ -1351,9 +1349,69 @@ func LoadCommonResource() error {
 		updatedSpecInfo, err := UpdateSpec(commonNsId, specObjId, specUpdateRequest)
 		if err != nil {
 			common.CBLog.Error(err)
-			return err
+			// If already exist, error will occur
+			// Even if error, do not return here to update information
+			// return err
 		}
 		fmt.Printf("[%d] Registered Common Spec ID: %v \n", i, updatedSpecInfo)
+
+	}
+
+	// Read common specs and register spec objects
+	file, fileErr = os.Open("../assets/cloudimage.csv")
+	defer file.Close()
+	if fileErr != nil {
+		common.CBLog.Error(fileErr)
+		return fileErr
+	}
+
+	rdr = csv.NewReader(bufio.NewReader(file))
+	rows, _ = rdr.ReadAll()
+	imageReqTmp := TbImageReq{}
+	for _, row := range rows[1:] {
+
+		// [0]connectionName, [1]cspImageId, [2]OsType
+		imageReqTmp.ConnectionName = row[0]
+		imageReqTmp.CspImageId = row[1]
+		// Give a name for spec object by combining ConnectionName and CspImageId
+		// To avoid naming-rule violation, modify the string
+		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + imageReqTmp.CspImageId
+		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, " ", "-")
+		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, ".", "-")
+		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, "_", "-")
+		imageReqTmp.Name = strings.ToLower(imageReqTmp.Name)
+		imageReqTmp.Description = "Common Image Resource"
+
+		fmt.Println(imageReqTmp)
+
+		// Register Spec object
+		_, err := RegisterImageWithId(commonNsId, &imageReqTmp)
+		if err != nil {
+			common.CBLog.Error(err)
+			// If already exist, error will occur
+			// Even if error, do not return here to update information
+			//return err
+		}
+
+		// Update registered image object with OsType info
+		// No update image function yet
+		/*
+			imageObjId := imageReqTmp.Name
+
+			osType := strings.ReplaceAll(row[2], " ", "")
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			specUpdateRequest := TbSpecInfo{CostPerHour: costPerHour32}
+
+			updatedSpecInfo, err := UpdateSpec(commonNsId, imageObjId, specUpdateRequest)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			fmt.Printf("[%d] Registered Common Spec ID: %v \n", i, updatedSpecInfo)
+		*/
 
 	}
 

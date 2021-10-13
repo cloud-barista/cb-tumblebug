@@ -1,0 +1,5 @@
+connectionName,cspImageId,OsType
+aws-ap-se-1,ami-061eb2b23f9f8839c,ubuntu-18.04
+aws-ca-ct-1,ami-0d0eaed20348a3389,ubuntu-18.04
+aws-us-west-1,ami-0dd655843c87b6930,ubuntu-18.04
+aws-us-east-1,ami-085925f297f89fce1,ubuntu-18.04
