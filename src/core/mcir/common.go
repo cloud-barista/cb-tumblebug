@@ -1370,12 +1370,15 @@ func LoadCommonResource() error {
 	imageReqTmp := TbImageReq{}
 	for _, row := range rows[1:] {
 
-		// [0]connectionName, [1]cspImageId, [2]OsType
-		imageReqTmp.ConnectionName = row[0]
-		imageReqTmp.CspImageId = row[1]
-		// Give a name for spec object by combining ConnectionName and CspImageId
+		// row0: ProviderName
+		// row1: connectionName
+		// row2: cspImageId
+		// row3: OsType
+		imageReqTmp.ConnectionName = row[1]
+		imageReqTmp.CspImageId = row[2]
+		// Give a name for spec object by combining ConnectionName and OsType
 		// To avoid naming-rule violation, modify the string
-		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + imageReqTmp.CspImageId
+		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + row[3]
 		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, " ", "-")
 		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, ".", "-")
 		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, "_", "-")
