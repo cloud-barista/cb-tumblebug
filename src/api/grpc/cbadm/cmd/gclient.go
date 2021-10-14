@@ -273,6 +273,8 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.FetchImageByParam(connConfigName, nameSpaceID)
 		case "search":
 			result, err = mcir.SearchImage(inData)
+		case "update":
+			result, err = mcir.UpdateImage(inData)
 		}
 	case "network":
 		switch cmd.Name() {

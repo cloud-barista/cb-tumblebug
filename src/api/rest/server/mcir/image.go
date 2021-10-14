@@ -72,7 +72,6 @@ func RestPostImage(c echo.Context) error {
 
 }
 
-/* function RestPutImage not yet implemented
 // RestPutImage godoc
 // @Summary Update image
 // @Description Update image
@@ -80,15 +79,30 @@ func RestPostImage(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param imageInfo body mcir.TbImageInfo true "Details for an image object"
+// @Param nsId path string true "Namespace ID"
+// @Param imageId path string true "Image ID"
 // @Success 200 {object} mcir.TbImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [put]
-*/
 func RestPutImage(c echo.Context) error {
-	//nsId := c.Param("nsId")
+	nsId := c.Param("nsId")
+	imageId := c.Param("resourceId")
+	fmt.Printf("RestPutImage called; nsId: %s, imageId: %s \n", nsId, imageId) // for debug
 
-	return nil
+	u := &mcir.TbImageInfo{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	updatedImage, err := mcir.UpdateImage(nsId, imageId, *u)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{
+			"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	return c.JSON(http.StatusOK, updatedImage)
 }
 
 // Request structure for RestLookupImage
