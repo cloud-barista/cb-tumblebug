@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package common is for collection of common functionalities
+// Package common is to include common methods for managing multi-cloud infra
 package common
 
 import (

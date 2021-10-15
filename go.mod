@@ -39,7 +39,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/swaggo/echo-swagger v1.1.0
+	github.com/swaggo/echo-swagger v1.1.3
 	github.com/swaggo/swag v1.7.1
 	github.com/tidwall/gjson v1.8.0
 	github.com/tidwall/pretty v1.2.0 // indirect
