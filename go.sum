@@ -411,6 +411,7 @@ github.com/gobuffalo/syncx v0.0.0-20190224160051-33c29581e754/go.mod h1:HhnNqWY9
 github.com/godbus/dbus/v5 v5.0.3/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gofrs/uuid v3.3.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
+github.com/gofrs/uuid v4.0.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.2.0/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.2.1/go.mod h1:hp+jE20tsWTFYpLwKvXlhS1hjn+gTNwPg2I6zVXpSg4=
@@ -882,6 +883,7 @@ github.com/shaodan/kapacitor-client v0.0.0-20181228024026-84c816949946/go.mod h1
 github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644/go.mod h1:nkxAfR/5quYxwPZhyDxgasBMnRtBZd0FCEpawpjMUFg=
 github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 h1:DAYUYH5869yV94zvCES9F51oYtN5oGlwjxJJz7ZCnik=
 github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18/go.mod h1:nkxAfR/5quYxwPZhyDxgasBMnRtBZd0FCEpawpjMUFg=
+github.com/shopspring/decimal v1.2.0/go.mod h1:DKyhrW/HYNuLGql+MJL6WCR6knT2jwCFRcu2hWCYk4o=
 github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749/go.mod h1:ZY1cvUeJuFPAdZ/B6v7RHavJWZn2YPVFQ1OSXhCGOkg=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
@@ -947,12 +949,18 @@ github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/swaggo/echo-swagger v1.1.0 h1:P46vSnGTjCo4PCDnztbyyiJ9csTt8/GvwL6UIhr4zEM=
 github.com/swaggo/echo-swagger v1.1.0/go.mod h1:JaipWDPqOBMwM40W6qz0o07lnPOxrhDkpjA2OaqfzL8=
+github.com/swaggo/echo-swagger v1.1.3 h1:2fW9pMvwqvHec8+HU89b1UbV0MuDxaQRe3ub4cGF80c=
+github.com/swaggo/echo-swagger v1.1.3/go.mod h1:JaipWDPqOBMwM40W6qz0o07lnPOxrhDkpjA2OaqfzL8=
+github.com/swaggo/echo-swagger v1.1.4 h1:uC5s/ynSwl0iJZTOMfSUGwHPRr0jLChMxb1YRMMWjfk=
+github.com/swaggo/echo-swagger v1.1.4/go.mod h1:JaipWDPqOBMwM40W6qz0o07lnPOxrhDkpjA2OaqfzL8=
 github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14 h1:PyYN9JH5jY9j6av01SpfRMb+1DWg/i3MbGOKPxJ2wjM=
 github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14/go.mod h1:gxQT6pBGRuIGunNf/+tSOB5OHvguWi8Tbt82WOkf35E=
 github.com/swaggo/swag v1.7.0 h1:5bCA/MTLQoIqDXXyHfOpMeDvL9j68OY/udlK4pQoo4E=
 github.com/swaggo/swag v1.7.0/go.mod h1:BdPIL73gvS9NBsdi7M1JOxLvlbfvNRaBP8m6WT6Aajo=
 github.com/swaggo/swag v1.7.1 h1:gY9ZakXlNWg/i/v5bQBic7VMZ4teq4m89lpiao74p/s=
 github.com/swaggo/swag v1.7.1/go.mod h1:gAiHxNTb9cIpNmA/VEGUP+CyZMCP/EW7mdtc8Bny+p8=
+github.com/swaggo/swag v1.7.3 h1:ucB7irEdRrhjmW+Z1Ss4GjO68oPKQFjSgOR8BCAvcbU=
+github.com/swaggo/swag v1.7.3/go.mod h1:zD8h6h4SPv7t3l+4BKdRquqW1ASWjKZgT6Qv9z3kNqI=
 github.com/syndtr/goleveldb v0.0.0-20160425020131-cfa635847112/go.mod h1:Z4AUp2Km+PwemOoO/VB5AOx9XSsIItzFjoJlOSiYmn0=
 github.com/syndtr/goleveldb v0.0.0-20181127023241-353a9fca669c/go.mod h1:Z4AUp2Km+PwemOoO/VB5AOx9XSsIItzFjoJlOSiYmn0=
 github.com/syndtr/goleveldb v1.0.0 h1:fBdIW9lB4Iz0n9khmH8w27SJ3QEJ7+IgjPEwGSZiFdE=
