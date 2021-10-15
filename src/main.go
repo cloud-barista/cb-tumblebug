@@ -15,8 +15,8 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 
-	grpcserver "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server"
-	restapiserver "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
+	grpcServer "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server"
+	restServer "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
 
 	"xorm.io/xorm"
 	"xorm.io/xorm/names"
@@ -152,13 +152,13 @@ func main() {
 
 	// Start REST Server
 	go func() {
-		restapiserver.ApiServer(*port)
+		restServer.RunServer(*port)
 		wg.Done()
 	}()
 
 	// Start gRPC Server
 	go func() {
-		grpcserver.RunServer()
+		grpcServer.RunServer()
 		//fmt.Println("gRPC server started on " + grpcserver.Port)
 		wg.Done()
 	}()

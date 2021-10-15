@@ -11,8 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package restapi is to handle REST API
-package restapi
+// Package server is to handle REST API
+package server
 
 import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -68,11 +68,8 @@ const (
  ________________________________________________`
 )
 
-/*
-	port is the port that the ApiServer will listen to.
-	port is passed without a ':' (colon).
-*/
-func ApiServer(port string) {
+// RunServer func start Rest API server
+func RunServer(port string) {
 
 	e := echo.New()
 
