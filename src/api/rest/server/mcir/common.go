@@ -310,3 +310,29 @@ func RestLoadCommonResource(c echo.Context) error {
 	mapA := map[string]string{"message": "Done"}
 	return c.JSON(http.StatusOK, &mapA)
 }
+
+// RestLoadDefaultResouce godoc
+// @Summary Load Default Resource from internal asset file
+// @Description Load Default Resource from internal asset file
+// @Tags [Admin] Cloud environment management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param option query string true "Option" Enums(all,vnet,sg,sshkey)
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/loadDefaultResouce [get]
+func RestLoadDefaultResouce(c echo.Context) error {
+	nsId := c.Param("nsId")
+	resType := c.QueryParam("option")
+
+	err := mcir.LoadDefaultResource(nsId, resType)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+	mapA := map[string]string{"message": "Done"}
+	return c.JSON(http.StatusOK, &mapA)
+}

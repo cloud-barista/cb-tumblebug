@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -1323,7 +1324,7 @@ func LoadCommonResource() error {
 		specReqTmp.Name = strings.ToLower(specReqTmp.Name)
 		specReqTmp.Description = "Common Spec Resource"
 
-		fmt.Println(specReqTmp)
+		common.PrintJsonPretty(specReqTmp)
 
 		// Register Spec object
 		_, err := RegisterSpecWithCspSpecName(commonNsId, &specReqTmp)
@@ -1385,7 +1386,7 @@ func LoadCommonResource() error {
 		imageReqTmp.Name = strings.ToLower(imageReqTmp.Name)
 		imageReqTmp.Description = "Common Image Resource"
 
-		fmt.Println(imageReqTmp)
+		common.PrintJsonPretty(imageReqTmp)
 
 		// Register Spec object
 		_, err := RegisterImageWithId(commonNsId, &imageReqTmp)
@@ -1419,4 +1420,148 @@ func LoadCommonResource() error {
 	}
 
 	return nil
+}
+
+// LoadDefaultResource is to register default resource from asset files (../assets/*.csv)
+func LoadDefaultResource(nsId string, resType string) error {
+
+	// Check 'nsId' namespace.
+	_, err := common.GetNs(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	var resList []string
+	if resType == "all" {
+		resList = append(resList, "vnet")
+		resList = append(resList, "sshkey")
+		resList = append(resList, "sg")
+	} else {
+		resList = append(resList, resType)
+	}
+
+	// Read default resources from file and create objects
+	// HEADER: ProviderName, CONN_CONFIG, RegionName, RegionLocation, DriverLibFileName, DriverName
+	file, fileErr := os.Open("../assets/cloudconnection.csv")
+	defer file.Close()
+	if fileErr != nil {
+		common.CBLog.Error(fileErr)
+		return fileErr
+	}
+
+	rdr := csv.NewReader(bufio.NewReader(file))
+	rows, err := rdr.ReadAll()
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	for _, resType := range resList {
+		if resType == "vnet" {
+			fmt.Println("vnet")
+
+			for i, row := range rows[1:] {
+				reqTmp := TbVNetReq{}
+				reqTmp.ConnectionName = row[1]
+				// To avoid naming-rule violation, modify the string
+				reqTmp.Name = reqTmp.ConnectionName
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
+				reqTmp.Name = strings.ToLower(reqTmp.Name)
+				reqTmp.Description = "Default vNet Resource"
+
+				// set isolated private address space for each cloud region (192.168.xxx.0/24)
+				reqTmp.CidrBlock = "192.168." + strconv.Itoa(i+1) + ".0/24"
+				subnet := SpiderSubnetReqInfo{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
+				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
+
+				common.PrintJsonPretty(reqTmp)
+
+				resultInfo, err := CreateVNet(nsId, &reqTmp)
+				if err != nil {
+					common.CBLog.Error(err)
+					// If already exist, error will occur
+					// Even if error, do not return here to update information
+					// return err
+				}
+				fmt.Printf("[%d] Registered Default vNet\n", i)
+				common.PrintJsonPretty(resultInfo)
+			}
+		} else if resType == "sg" {
+			fmt.Println("sg")
+
+			for i, row := range rows[1:] {
+				reqTmp := TbSecurityGroupReq{}
+
+				reqTmp.ConnectionName = row[1]
+				// To avoid naming-rule violation, modify the string
+				reqTmp.Name = reqTmp.ConnectionName
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
+				reqTmp.Name = strings.ToLower(reqTmp.Name)
+				reqTmp.Description = "Default SecurityGroup Resource"
+
+				reqTmp.VNetId = reqTmp.ConnectionName
+
+				// open all firewall for default securityGroup
+				rule := SpiderSecurityRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				var ruleList []SpiderSecurityRuleInfo
+				ruleList = append(ruleList, rule)
+				rule = SpiderSecurityRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				ruleList = append(ruleList, rule)
+				rule = SpiderSecurityRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				ruleList = append(ruleList, rule)
+				common.PrintJsonPretty(ruleList)
+				reqTmp.FirewallRules = &ruleList
+
+				common.PrintJsonPretty(reqTmp)
+
+				resultInfo, err := CreateSecurityGroup(nsId, &reqTmp)
+				if err != nil {
+					common.CBLog.Error(err)
+					// If already exist, error will occur
+					// Even if error, do not return here to update information
+					// return err
+				}
+				fmt.Printf("[%d] Registered Default SecurityGroup\n", i)
+				common.PrintJsonPretty(resultInfo)
+
+			}
+
+		} else if resType == "sshkey" {
+			fmt.Println("sshkey")
+
+			for i, row := range rows[1:] {
+				reqTmp := TbSshKeyReq{}
+
+				reqTmp.ConnectionName = row[1]
+				// To avoid naming-rule violation, modify the string
+				reqTmp.Name = reqTmp.ConnectionName
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
+				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
+				reqTmp.Name = strings.ToLower(reqTmp.Name)
+				reqTmp.Description = "Default SSHKey Resource"
+
+				common.PrintJsonPretty(reqTmp)
+
+				resultInfo, err := CreateSshKey(nsId, &reqTmp)
+				if err != nil {
+					common.CBLog.Error(err)
+					// If already exist, error will occur
+					// Even if error, do not return here to update information
+					// return err
+				}
+				fmt.Printf("[%d] Registered Default SSHKey\n", i)
+				common.PrintJsonPretty(resultInfo)
+			}
+		} else {
+			return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
+		}
+	}
+	return nil
+
 }

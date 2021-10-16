@@ -137,6 +137,7 @@ func RunServer(port string) {
 	e.DELETE("/tumblebug/objects", rest_common.RestDeleteObjects)
 
 	e.GET("/tumblebug/loadCommonResource", rest_mcir.RestLoadCommonResource)
+	e.GET("/tumblebug/ns/:nsId/loadDefaultResouce", rest_mcir.RestLoadDefaultResouce)
 
 	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())
