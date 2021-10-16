@@ -2344,6 +2344,41 @@ paths:
       summary: Install the benchmark agent to specified MCIS
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
+  /ns/{nsId}/loadDefaultResouce:
+    get:
+      consumes:
+      - application/json
+      description: Load Default Resource from internal asset file
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - all
+        - vnet
+        - sg
+        - sshkey
+        in: query
+        name: option
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Load Default Resource from internal asset file
+      tags:
+      - '[Admin] Cloud environment management'
   /ns/{nsId}/mcis:
     delete:
       consumes:
