@@ -6,6 +6,9 @@ function clean_mcis_sequence() {
 	local POSTFIX=$3
 	local TestSetFile=$4
 
+	echo '## 8. MCIS: Refine first (remove failed VMs)'
+	OUTPUT=$(../8.mcis/refine-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
+
 	echo '## 8. MCIS: Terminate'
 	OUTPUT=$(../8.mcis/terminate-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 	echo "${OUTPUT}"

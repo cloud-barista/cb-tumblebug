@@ -1,4 +1,7 @@
 ProviderName,CONN_CONFIG,RegionName,RegionLocation,DriverLibFileName,DriverName
+MOCK,testcloud01-seoul,testcloud01-seoul,Korea (Seoul),mock-driver-v1.0.so,mock-driver01
+MOCK,testcloud02-canada,testcloud02-canada,Canada (Central),mock-driver-v1.0.so,mock-driver01
+MOCK,testcloud03-frankfurt,testcloud03-frankfurt,Europe (Frankfurt),mock-driver-v1.0.so,mock-driver01
 AWS,aws-ap-se-1,aws-ap-southeast-1,Asia Pacific (Singapore),aws-driver-v1.0.so,aws-driver01
 AWS,aws-ca-ct-1,aws-ca-central-1,Canada (Central),aws-driver-v1.0.so,aws-driver01
 AWS,aws-us-west-1,aws-us-west-1,US West (N. California),aws-driver-v1.0.so,aws-driver01
@@ -83,8 +86,8 @@ GCP,gcp-us-west1,gcp-us-west1,Dalles Oregon USA [zone:a],gcp-driver-v1.0.so,gcp-
 GCP,gcp-us-west2,gcp-us-west2,LA California USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
 GCP,gcp-us-west3,gcp-us-west3,Salt Lake City Utah USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
 GCP,gcp-as-south1,gcp-asia-south1,Mumbai India [zone:b],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-as-se2,gcp-asia-southeast2,Jakarta, Indonesia [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-eu-cent2,gcp-europe-central2,Warsaw, Poland [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-as-se2,gcp-asia-southeast2,Jakarta Indonesia [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-eu-cent2,gcp-europe-central2,Warsaw Poland [zone:a],gcp-driver-v1.0.so,gcp-driver01
 ALIBABA,ali-ap-ne-1,alibaba-ap-northeast-1,Japan (Tokyo),alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,ali-ap-south-1,alibaba-ap-south-1,Mumbai Zone A,alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,ali-ap-southeast-1,alibaba-ap-southeast-1,Singapore [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
@@ -118,6 +121,3 @@ CLOUDIT,cit,cloudit-region01,Korea Seoul (Internal),cloudit-driver-v1.0.so,cloud
 TENCENT,tencent-XXX,tct-sing,Singapore,tencent-driver-v1.0.so,tencent-driver01
 CLOUDTWIN,ct-region01,cloudtwin-region01,Korea Daejeon (Internal),cloudtwin-driver-v1.0.so,cloudtwin-driver01
 MOCK,mock-seoul,mock-seoul,Korea Seoul (Virtual),mock-driver-v1.0.so,mock-driver01
-MOCK,testcloud01-seoul,testcloud01-seoul,Korea (Seoul),mock-driver-v1.0.so,mock-driver01
-MOCK,testcloud02-canada,testcloud02-canada,Canada (Central),mock-driver-v1.0.so,mock-driver01
-MOCK,testcloud03-frankfurt,testcloud03-frankfurt,Europe (Frankfurt),mock-driver-v1.0.so,mock-driver01

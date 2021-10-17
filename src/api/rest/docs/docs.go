@@ -1273,6 +1273,57 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/loadDefaultResouce": {
+            "get": {
+                "description": "Load Default Resource from internal asset file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Load Default Resource from internal asset file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "all",
+                            "vnet",
+                            "sg",
+                            "sshkey"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mcis": {
             "get": {
                 "description": "List all MCISs or MCISs' ID",
