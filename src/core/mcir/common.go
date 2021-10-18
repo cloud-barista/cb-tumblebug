@@ -1323,6 +1323,7 @@ func LoadCommonResource() error {
 		specReqTmp.Name = strings.ToLower(specReqTmp.Name)
 		specReqTmp.Description = "Common Spec Resource"
 
+		fmt.Printf("[%d] Register Common Spec\n", i)
 		common.PrintJsonPretty(specReqTmp)
 
 		// Register Spec object
@@ -1353,7 +1354,8 @@ func LoadCommonResource() error {
 			// Even if error, do not return here to update information
 			// return err
 		}
-		fmt.Printf("[%d] Registered Common Spec ID: %v \n", i, updatedSpecInfo)
+		fmt.Printf("[%d] Registered Common Spec\n", i)
+		common.PrintJsonPretty(updatedSpecInfo)
 
 	}
 
@@ -1368,7 +1370,7 @@ func LoadCommonResource() error {
 	rdr = csv.NewReader(bufio.NewReader(file))
 	rows, _ = rdr.ReadAll()
 	imageReqTmp := TbImageReq{}
-	for _, row := range rows[1:] {
+	for i, row := range rows[1:] {
 
 		// row0: ProviderName
 		// row1: connectionName
@@ -1376,15 +1378,17 @@ func LoadCommonResource() error {
 		// row3: OsType
 		imageReqTmp.ConnectionName = row[1]
 		imageReqTmp.CspImageId = row[2]
+		osType := strings.ReplaceAll(row[3], " ", "")
 		// Give a name for spec object by combining ConnectionName and OsType
 		// To avoid naming-rule violation, modify the string
-		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + row[3]
+		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
 		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, " ", "-")
 		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, ".", "-")
 		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, "_", "-")
 		imageReqTmp.Name = strings.ToLower(imageReqTmp.Name)
 		imageReqTmp.Description = "Common Image Resource"
 
+		fmt.Printf("[%d] Register Common Image\n", i)
 		common.PrintJsonPretty(imageReqTmp)
 
 		// Register Spec object
@@ -1397,25 +1401,17 @@ func LoadCommonResource() error {
 		}
 
 		// Update registered image object with OsType info
-		// No update image function yet
-		/*
-			imageObjId := imageReqTmp.Name
+		imageObjId := imageReqTmp.Name
 
-			osType := strings.ReplaceAll(row[2], " ", "")
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			specUpdateRequest := TbSpecInfo{CostPerHour: costPerHour32}
+		imageUpdateRequest := TbImageInfo{GuestOS: osType}
 
-			updatedSpecInfo, err := UpdateSpec(commonNsId, imageObjId, specUpdateRequest)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			fmt.Printf("[%d] Registered Common Spec ID: %v \n", i, updatedSpecInfo)
-		*/
-
+		updatedImageInfo, err := UpdateImage(commonNsId, imageObjId, imageUpdateRequest)
+		if err != nil {
+			common.CBLog.Error(err)
+			//return err
+		}
+		fmt.Printf("[%d] Registered Common Image\n", i)
+		common.PrintJsonPretty(updatedImageInfo)
 	}
 
 	return nil
