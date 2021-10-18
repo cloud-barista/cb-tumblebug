@@ -240,7 +240,14 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CreateSecurityGroup(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	return content, nil

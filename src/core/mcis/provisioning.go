@@ -600,7 +600,14 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 		if err != nil {
 			common.CBLog.Error(err)
 		}
-		keyValue, _ := common.CBStore.Get(string(key))
+		keyValue, err := common.CBStore.Get(string(key))
+		if err != nil {
+			common.CBLog.Error(err)
+			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get() returned an error.")
+			common.CBLog.Error(err)
+			// return nil, err
+		}
+
 		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		fmt.Println("===========================")
 
@@ -780,7 +787,14 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		return nil, err
 	}
 
-	keyValue, _ := common.CBStore.Get(string(key))
+	keyValue, err := common.CBStore.Get(string(key))
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CreateMcis(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -822,7 +836,14 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			if err != nil {
 				common.CBLog.Error(err)
 			}
-			keyValue, _ := common.CBStore.Get(string(key))
+			keyValue, err := common.CBStore.Get(string(key))
+			if err != nil {
+				common.CBLog.Error(err)
+				err = fmt.Errorf("In CreateMcis(); CBStore.Get() returned an error.")
+				common.CBLog.Error(err)
+				// return nil, err
+			}
+
 			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 			fmt.Println("===========================")
 
@@ -945,7 +966,14 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	defer wg.Done()
 
 	key := common.GenMcisKey(nsId, mcisId, "")
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In AddVmToMcis(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	if keyValue == nil {
 		return fmt.Errorf("AddVmToMcis: Cannot find mcisId. Key: %s", key)
 	}
@@ -970,7 +998,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	// Make VM object
 	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
-	err := common.CBStore.Put(string(key), string(val))
+	err = common.CBStore.Put(string(key), string(val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return err

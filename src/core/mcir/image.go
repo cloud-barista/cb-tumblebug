@@ -183,7 +183,10 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		fmt.Println("In RegisterImageWithId(); CBStore.Get() returned error.")
+	}
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -242,7 +245,10 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 		common.CBLog.Error(err)
 		return *content, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		fmt.Println("In RegisterImageWithInfo(); CBStore.Get() returned error.")
+	}
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -561,7 +567,14 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 		return temp, err
 	}
 
-	check, _ := CheckResource(nsId, resourceType, imageId)
+	check, err := CheckResource(nsId, resourceType, imageId)
+
+	if err != nil {
+		temp := TbImageInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
 	if !check {
 		temp := TbImageInfo{}
 		err := fmt.Errorf("The image " + imageId + " does not exist.")
@@ -582,7 +595,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 		return temp, err
 	}
 
-	// Update imageified fields only
+	// Update specified fields only
 	toBeImage := asIsImage
 	toBeImageJSON, _ := json.Marshal(fieldsToUpdate)
 	err = json.Unmarshal(toBeImageJSON, &toBeImage)
@@ -597,7 +610,14 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In UpdateImage(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 

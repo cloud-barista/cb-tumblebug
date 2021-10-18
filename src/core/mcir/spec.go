@@ -412,7 +412,13 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 		return temp, err
 	}
 
-	check, _ := CheckResource(nsId, resourceType, u.Name)
+	check, err := CheckResource(nsId, resourceType, u.Name)
+
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 
 	if check {
 		temp := TbSpecInfo{}
@@ -457,7 +463,10 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		fmt.Println("In RegisterSpecWithCspSpecName(); CBStore.Get() returned error.")
+	}
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -496,7 +505,13 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	check, _ := CheckResource(nsId, resourceType, content.Name)
+	check, err := CheckResource(nsId, resourceType, content.Name)
+
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
 
 	if check {
 		temp := TbSpecInfo{}
@@ -517,7 +532,11 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 		common.CBLog.Error(err)
 		return *content, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		fmt.Println("In RegisterSpecWithInfo(); CBStore.Get() returned error.")
+	}
+
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -1217,7 +1236,14 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 		return temp, err
 	}
 
-	check, _ := CheckResource(nsId, resourceType, specId)
+	check, err := CheckResource(nsId, resourceType, specId)
+
+	if err != nil {
+		temp := TbSpecInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
 	if !check {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("The spec " + specId + " does not exist.")
@@ -1259,7 +1285,14 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In UpdateSpec(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 

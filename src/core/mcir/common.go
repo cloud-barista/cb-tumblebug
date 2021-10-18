@@ -118,6 +118,11 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
 		//mapA := map[string]string{"message": errString}
@@ -127,24 +132,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		return err
 	}
 
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 	fmt.Println("key: " + key)
 
 	keyValue, _ := common.CBStore.Get(key)
-	/*
-		if keyValue == nil {
-			mapA := map[string]string{"message": "Failed to find the resource with given ID."}
-			mapB, _ := json.Marshal(mapA)
-			err := fmt.Errorf("Failed to find the resource with given ID.")
-			return http.StatusNotFound, mapB, err
-		}
-	*/
-	//fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
+	// In CheckResource() above, calling 'CBStore.Get()' and checking err parts exist.
+	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
@@ -684,7 +677,20 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 	key := "/ns/" + nsId + "/resources/"
 	fmt.Println(key)
 
-	keyValue, _ := common.CBStore.GetList(key, true)
+	keyValue, err := common.CBStore.GetList(key, true)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	/* if keyValue == nil, then for-loop below will not be executed, and the empty array will be returned in `resourceList` placeholder.
+	if keyValue == nil {
+		err = fmt.Errorf("ListResourceId(); %s is empty.", key)
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	*/
 
 	var resourceList []string
 	for _, v := range keyValue {
@@ -1065,13 +1071,6 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			common.CBLog.Error(err)
 			return nil, err
 		}
-		/*
-			keyValue, _ := common.CBStore.Get(key)
-			//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-			fmt.Println("===========================")
-			to_be = int8(gjson.Get(keyValue.Value, "inUseCount").Uint())
-			return to_be, nil
-		*/
 
 		result, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
 		return result, nil

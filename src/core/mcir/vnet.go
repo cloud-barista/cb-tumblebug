@@ -239,7 +239,14 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		common.CBLog.Error(err3)
 		return content, err3
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CreateVNet(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 	return content, nil
