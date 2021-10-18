@@ -1964,6 +1964,59 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/mcisDynamic": {
+            "post": {
+                "description": "Create MCIS Dynamically from common spec and image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MCIS] Provisioning management"
+                ],
+                "summary": "Create MCIS Dynamically",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object",
+                        "name": "mcisReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisDynamicReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/monitoring/install/mcis/{mcisId}": {
             "post": {
                 "description": "Install monitoring agent (CB-Dragonfly agent) to MCIS",
@@ -6096,6 +6149,43 @@ var doc = `{
                 }
             }
         },
+        "mcis.TbMcisDynamicReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "vm"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "installMonAgent": {
+                    "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "yes",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "yes"
+                },
+                "label": {
+                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
+                    "type": "string",
+                    "default": "no",
+                    "example": "custom tag"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "vm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbVmDynamicReq"
+                    }
+                }
+            }
+        },
         "mcis.TbMcisInfo": {
             "type": "object",
             "properties": {
@@ -6182,6 +6272,39 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmReq"
                     }
+                }
+            }
+        },
+        "mcis.TbVmDynamicReq": {
+            "type": "object",
+            "required": [
+                "commonImage",
+                "commonSpec",
+                "name"
+            ],
+            "properties": {
+                "commonImage": {
+                    "description": "CommonImage is field for id of a image in common namespace",
+                    "type": "string"
+                },
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
+                    "type": "string"
+                },
+                "vmGroupSize": {
+                    "description": "if vmGroupSize is (not empty) \u0026\u0026 (\u003e 0), VM group will be gernetad. VMs will be created accordingly.",
+                    "type": "string",
+                    "example": "3"
                 }
             }
         },

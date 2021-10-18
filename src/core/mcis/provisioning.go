@@ -112,10 +112,25 @@ type TbMcisReq struct {
 	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label" example:"custom tag" default:"no"`
 
-	PlacementAlgo string `json:"placementAlgo"`
+	PlacementAlgo string `json:"placementAlgo,omitempty"`
 	Description   string `json:"description"`
 
 	Vm []TbVmReq `json:"vm" validate:"required"`
+}
+
+// TbMcisDynamicReq is sturct for requirements to create MCIS dynamically (with default resource option)
+type TbMcisDynamicReq struct {
+	Name string `json:"name" validate:"required"`
+
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
+
+	// Label is for describing the mcis in a keyword (any string can be used)
+	Label string `json:"label" example:"custom tag" default:"no"`
+
+	Description string `json:"description"`
+
+	Vm []TbVmDynamicReq `json:"vm" validate:"required"`
 }
 
 // TbMcisReqStructLevelValidation is func to validate fields in TbMcisReqStruct
@@ -145,7 +160,7 @@ type TbMcisInfo struct {
 	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label"`
 
-	PlacementAlgo string     `json:"placementAlgo"`
+	PlacementAlgo string     `json:"placementAlgo,omitempty"`
 	Description   string     `json:"description"`
 	Vm            []TbVmInfo `json:"vm"`
 }
@@ -169,8 +184,26 @@ type TbVmReq struct {
 	SubnetId         string   `json:"subnetId"`
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
 	SshKeyId         string   `json:"sshKeyId" validate:"required"`
-	VmUserAccount    string   `json:"vmUserAccount"`
-	VmUserPassword   string   `json:"vmUserPassword"`
+	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
+	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
+}
+
+// TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
+type TbVmDynamicReq struct {
+	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
+	Name string `json:"name" validate:"required"`
+
+	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
+	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
+
+	Label string `json:"label"`
+
+	Description string `json:"description"`
+
+	// CommonSpec is field for id of a spec in common namespace
+	CommonSpec string `json:"commonSpec" validate:"required"`
+	// CommonImage is field for id of a image in common namespace
+	CommonImage string `json:"commonImage" validate:"required"`
 }
 
 // SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMInfo
@@ -277,8 +310,8 @@ type TbVmInfo struct {
 	SubnetId         string   `json:"subnetId"`
 	SecurityGroupIds []string `json:"securityGroupIds"`
 	SshKeyId         string   `json:"sshKeyId"`
-	VmUserAccount    string   `json:"vmUserAccount"`
-	VmUserPassword   string   `json:"vmUserPassword"`
+	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
+	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
 }
@@ -957,6 +990,47 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		return nil, err
 	}
 	return &mcisTmp, nil
+}
+
+// CreateMcis is func to create MCIS obeject and deploy requested VMs
+func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) {
+
+	commonNS := "common"
+
+	mcisId := req.Name
+	vmRequest := req.Vm
+
+	mcisInfo := TbMcisInfo{Id: mcisId}
+
+	// Check whether VM names meet requirement.
+	for _, k := range vmRequest {
+		resourceType := "spec"
+		vmReq := TbVmReq{}
+		tempInterface, err := mcir.GetResource(commonNS, resourceType, k.CommonSpec)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the spec " + k.CommonSpec + ".")
+			common.CBLog.Error(err)
+		}
+		specInfo := mcir.TbSpecInfo{}
+		err = common.CopySrcToDest(&tempInterface, &specInfo)
+		if err != nil {
+			err := fmt.Errorf("Failed to CopySrcToDest() " + k.CommonSpec + ".")
+			common.CBLog.Error(err)
+		}
+
+		vmReq.ConnectionName = specInfo.ConnectionName
+		vmReq.SshKeyId = vmReq.ConnectionName
+		vmReq.VNetId = vmReq.ConnectionName
+		vmReq.SubnetId = vmReq.ConnectionName
+		vmReq.SecurityGroupIds = []string{vmReq.ConnectionName}
+		vmReq.ImageId = k.CommonImage
+
+		vmInfoTmp := TbVmInfo{SpecId: specInfo.Id, ConnectionName: vmReq.ConnectionName, SshKeyId: vmReq.SshKeyId, SubnetId: vmReq.ConnectionName, ImageId: vmReq.ImageId}
+
+		mcisInfo.Vm = append(mcisInfo.Vm, vmInfoTmp)
+	}
+
+	return &mcisInfo, nil
 }
 
 // AddVmToMcis is func to add VM to MCIS

@@ -56,6 +56,39 @@ func RestPostMcis(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
+// RestPostMcisDynamic godoc
+// @Summary Create MCIS Dynamically
+// @Description Create MCIS Dynamically from common spec and image
+// @Tags [MCIS] Provisioning management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID"
+// @Param mcisReq body TbMcisDynamicReq true "Details for an MCIS object"
+// @Success 200 {object} TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcisDynamic [post]
+func RestPostMcisDynamic(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	req := &mcis.TbMcisDynamicReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	result, err := mcis.CreateMcisDynamic(nsId, req)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	//fmt.Printf("%+v\n", *result)
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusCreated, result)
+}
+
 // JSONResult's data field will be overridden by the specific type
 type JSONResult struct {
 	//Code    int          `json:"code" `
