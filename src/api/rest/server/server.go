@@ -15,7 +15,11 @@ limitations under the License.
 package server
 
 import (
+	"context"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"os/signal"
+	"syscall"
+	"time"
 
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
@@ -279,4 +283,16 @@ func RunServer(port string) {
 
 	port = fmt.Sprintf(":%s", port)
 	e.Logger.Fatal(e.Start(port))
+
+
+	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
+	// Use a buffered channel to avoid missing signals as recommended for signal.Notify
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
