@@ -15,10 +15,13 @@ limitations under the License.
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	gc "github.com/cloud-barista/cb-tumblebug/src/api/grpc/common"
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/config"
@@ -73,6 +76,16 @@ func RunServer() {
 			reflection.Register(gs)
 		}
 	}
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		s := <-quit
+		logger.Printf("got signal %v, attempting graceful shutdown", s)
+		_, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		gs.GracefulStop()
+	}()
 
 	//fmt.Printf("\n[CB-Tumblebug: Multi-Cloud Infra Service Management]")
 	//fmt.Printf("\n   Initiating GRPC API Server....__^..^__....")
