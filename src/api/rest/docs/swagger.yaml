@@ -3337,6 +3337,45 @@ paths:
       summary: Get image
       tags:
       - '[MCIR] Image management'
+    put:
+      consumes:
+      - application/json
+      description: Update image
+      parameters:
+      - description: Details for an image object
+        in: body
+        name: imageInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbImageInfo'
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Image ID
+        in: path
+        name: imageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbImageInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Update image
+      tags:
+      - '[MCIR] Image management'
   /ns/{nsId}/resources/searchImage:
     post:
       consumes:

@@ -107,6 +107,7 @@ service MCIR {
 	rpc ListLookupImage (LookupImageListQryRequest) returns (ListSpiderImageInfoResponse) {}
 	rpc FetchImage (FetchImageQryRequest) returns (MessageResponse) {}
 	rpc SearchImage (SearchImageQryRequest) returns (ListTbImageInfoResponse) {}
+	rpc UpdateImage (TbUpdateImageRequest) returns (TbImageInfoResponse) {}
 
 	rpc CreateSshKey (TbSshKeyCreateRequest) returns (TbSshKeyInfoResponse) {}
 	rpc ListSshKey (ResourceAllQryRequest) returns (ListTbSshKeyInfoResponse) {}
@@ -244,6 +245,12 @@ message LookupImageListQryRequest {
 message LookupImageQryRequest {
 	string connection_name = 1 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
 	string csp_image_id = 2 [json_name="cspImageId", (gogoproto.jsontag) = "cspImageId", (gogoproto.moretags) = "yaml:\"cspImageId\""];
+}
+
+message TbUpdateImageRequest {
+	string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+	string image_id = 2 [json_name="imageId", (gogoproto.jsontag) = "imageId", (gogoproto.moretags) = "yaml:\"imageId\""];
+	TbImageInfo item = 3 [json_name="image", (gogoproto.jsontag) = "image", (gogoproto.moretags) = "yaml:\"image\""];
 }
 
 //////////////////////////////////

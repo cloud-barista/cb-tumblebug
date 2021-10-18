@@ -134,7 +134,14 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 	key := common.GenMcisKey(nsId, mcisId, "")
 	//fmt.Println(key)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CheckMcis(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	if keyValue != nil {
 		return true, nil
 	}
@@ -177,7 +184,14 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CheckVm(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	if keyValue != nil {
 		return true, nil
 	}
@@ -213,7 +227,13 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 	//fmt.Println(key)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CheckMcisPolicy(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
 
 	if keyValue != nil {
 		return true, nil

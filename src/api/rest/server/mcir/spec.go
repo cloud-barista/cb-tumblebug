@@ -104,16 +104,6 @@ func RestPutSpec(c echo.Context) error {
 		return err
 	}
 
-	/*
-		if specId != u.Id {
-			err := fmt.Errorf("URL param " + specId + " and JSON param " + u.Id + " does not match.")
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusBadRequest, &mapA)
-		}
-	*/
-
 	updatedSpec, err := mcir.UpdateSpec(nsId, specId, *u)
 	if err != nil {
 		common.CBLog.Error(err)

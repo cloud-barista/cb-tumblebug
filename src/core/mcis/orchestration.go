@@ -119,7 +119,14 @@ func OrchestrationController() {
 
 			key := common.GenMcisPolicyKey(nsId, v, "")
 			//fmt.Println(key)
-			keyValue, _ := common.CBStore.Get(key)
+			keyValue, err := common.CBStore.Get(key)
+			if err != nil {
+				common.CBLog.Error(err)
+				err = fmt.Errorf("In OrchestrationController(); CBStore.Get() returned an error.")
+				common.CBLog.Error(err)
+				// return nil, err
+			}
+
 			if keyValue == nil {
 				//mapA := map[string]string{"message": "Cannot find " + key}
 				//return c.JSON(http.StatusOK, &mapA)
@@ -456,7 +463,14 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(string(Key))
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CreateMcisPolicy(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	fmt.Println("<KEY>\n" + keyValue.Key + "\n<VAL>\n" + keyValue.Value)
 	fmt.Println("===========================")
 
@@ -512,7 +526,14 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 	for _, v := range mcisList {
 
 		key := common.GenMcisPolicyKey(nsId, v, "")
-		keyValue, _ := common.CBStore.Get(key)
+		keyValue, err := common.CBStore.Get(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			err = fmt.Errorf("In GetAllMcisPolicyObject(); CBStore.Get() returned an error.")
+			common.CBLog.Error(err)
+			// return nil, err
+		}
+
 		if keyValue == nil {
 			return nil, fmt.Errorf("Cannot find " + key)
 		}
@@ -534,7 +555,13 @@ func ListMcisPolicyId(nsId string) []string {
 	}
 	//fmt.Println("[Get MCIS Policy ID list]")
 	key := "/ns/" + nsId + "/policy/mcis"
-	keyValue, _ := common.CBStore.GetList(key, true)
+	keyValue, err := common.CBStore.GetList(key, true)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In ListMcisPolicyId(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
 
 	var mcisList []string
 	for _, v := range keyValue {

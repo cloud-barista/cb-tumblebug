@@ -289,7 +289,14 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 		key := common.GenMcisKey(nsId, v, "")
 		//fmt.Println(key)
-		keyValue, _ := common.CBStore.Get(key)
+		keyValue, err := common.CBStore.Get(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			err = fmt.Errorf("In CoreGetAllMcis(); CBStore.Get() returned an error.")
+			common.CBLog.Error(err)
+			// return nil, err
+		}
+
 		if keyValue == nil {
 			//mapA := map[string]string{"message": "Cannot find " + key}
 			//return c.JSON(http.StatusOK, &mapA)
@@ -325,7 +332,14 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 			for _, v1 := range vmList {
 				vmKey := common.GenMcisKey(nsId, mcisId, v1)
 				//fmt.Println(vmKey)
-				vmKeyValue, _ := common.CBStore.Get(vmKey)
+				vmKeyValue, err := common.CBStore.Get(vmKey)
+				if err != nil {
+					common.CBLog.Error(err)
+					err = fmt.Errorf("In CoreGetAllMcis(); CBStore.Get() returned an error.")
+					common.CBLog.Error(err)
+					// return nil, err
+				}
+
 				if vmKeyValue == nil {
 					//mapA := map[string]string{"message": "Cannot find " + key}
 					//return c.JSON(http.StatusOK, &mapA)
@@ -397,7 +411,14 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(vmKey)
-	vmKeyValue, _ := common.CBStore.Get(vmKey)
+	vmKeyValue, err := common.CBStore.Get(vmKey)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CoreGetMcisVmInfo(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	if vmKeyValue == nil {
 		//mapA := map[string]string{"message": "Cannot find " + key}
 		//return c.JSON(http.StatusOK, &mapA)
@@ -837,7 +858,14 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In GetVmIp(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	//fmt.Println("===============================================")
 
@@ -858,7 +886,13 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 	fmt.Println("[getVmSpecID]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In GetVmSpecId(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
@@ -1212,7 +1246,14 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(vmKey)
-	vmKeyValue, _ := common.CBStore.Get(vmKey)
+	vmKeyValue, err := common.CBStore.Get(vmKey)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CoreGetMcisVmStatus(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	if vmKeyValue == nil {
 		//mapA := map[string]string{"message": "Cannot find " + vmKey}
 		//return c.JSON(http.StatusOK, &mapA)

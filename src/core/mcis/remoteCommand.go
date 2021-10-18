@@ -435,7 +435,14 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	//fmt.Println(key)
 
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In GetVmSshKey(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	//fmt.Println("===============================================")
 
@@ -463,7 +470,14 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	}
 	fmt.Println("[GetVmSshKey]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	keyValue, _ := common.CBStore.Get(key)
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In UpdateVmSshKey(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
@@ -475,7 +489,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	tmpSshKeyInfo.VerifiedUsername = verifiedUserName
 
 	val, _ := json.Marshal(tmpSshKeyInfo)
-	err := common.CBStore.Put(string(keyValue.Key), string(val))
+	err = common.CBStore.Put(string(keyValue.Key), string(val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return err

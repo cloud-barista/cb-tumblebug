@@ -219,6 +219,35 @@ func (s *MCIRService) SearchImage(ctx context.Context, req *pb.SearchImageQryReq
 	return resp, nil
 }
 
+// UpdateImage is to update images
+func (s *MCIRService) UpdateImage(ctx context.Context, req *pb.TbUpdateImageRequest) (*pb.TbImageInfoResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.UpdateImage()")
+
+	// GRPC 메시지에서 MCIR 객체로 복사
+	var mcirObj mcir.TbImageInfo
+	err := gc.CopySrcToDest(&req.Item, &mcirObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.UpdateImage()")
+	}
+
+	content, err := mcir.UpdateImage(req.NsId, req.ImageId, mcirObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.UpdateImage()")
+	}
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj pb.TbImageInfo
+	err = gc.CopySrcToDest(&content, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.UpdateImage()")
+	}
+
+	resp := &pb.TbImageInfoResponse{Item: &grpcObj}
+	return resp, nil
+}
+
 // ===== [ Private Functions ] =====
 
 // ===== [ Public Functions ] =====

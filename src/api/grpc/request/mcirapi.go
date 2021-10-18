@@ -720,6 +720,16 @@ func (m *MCIRApi) GetLookupImageByParam(connConfigName string, cspImageId string
 	return result, err
 }
 
+// UpdateImage is to update image
+func (m *MCIRApi) UpdateImage(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.UpdateImage()
+}
+
 // CreateSecurityGroup is to create securityGroup
 func (m *MCIRApi) CreateSecurityGroup(doc string) (string, error) {
 	if m.requestMCIR == nil {
