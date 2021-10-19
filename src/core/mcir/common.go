@@ -1473,7 +1473,9 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				// set isolated private address space for each cloud region (192.168.xxx.0/24)
 				reqTmp.CidrBlock = "192.168." + strconv.Itoa(i+1) + ".0/24"
-				subnet := SpiderSubnetReqInfo{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
+
+				// subnet := SpiderSubnetReqInfo{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
+				subnet := TbSubnetReq{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
 				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 
 				common.PrintJsonPretty(reqTmp)
