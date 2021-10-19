@@ -1023,7 +1023,12 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		vmReq.VNetId = vmReq.ConnectionName
 		vmReq.SubnetId = vmReq.ConnectionName
 		vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, vmReq.ConnectionName)
-		vmReq.ImageId = k.CommonImage
+
+		vmReq.ImageId = vmReq.ConnectionName + "-" + k.CommonImage
+		vmReq.ImageId = strings.ReplaceAll(vmReq.ImageId, " ", "-")
+		vmReq.ImageId = strings.ReplaceAll(vmReq.ImageId, ".", "-")
+		vmReq.ImageId = strings.ReplaceAll(vmReq.ImageId, "_", "-")
+		vmReq.ImageId = strings.ToLower(vmReq.ImageId)
 
 		vmInfoTmp := TbVmInfo{SpecId: specInfo.Id, ConnectionName: vmReq.ConnectionName, SshKeyId: vmReq.SshKeyId, SubnetId: vmReq.ConnectionName, ImageId: vmReq.ImageId, SecurityGroupIds: vmReq.SecurityGroupIds}
 
