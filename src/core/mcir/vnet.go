@@ -130,6 +130,7 @@ type TbSubnetInfo struct { // Tumblebug
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
 func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
+	fmt.Println("=========================== CreateVNet")
 
 	resourceType := common.StrVNet
 
@@ -284,38 +285,58 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	content.CidrBlock = tempSpiderVPCInfo.IPv4_CIDR
 
 	// content.SubnetInfoList = tempSpiderVPCInfo.SubnetInfoList
-	for _, v := range tempSpiderVPCInfo.SubnetInfoList {
-		jsonBody, err := json.Marshal(v)
-		if err != nil {
-			common.CBLog.Error(err)
-		}
+	/*
+		for _, v := range tempSpiderVPCInfo.SubnetInfoList {
+			jsonBody, err := json.Marshal(v)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
 
-		tbSubnetInfo := TbSubnetInfo{}
-		err = json.Unmarshal(jsonBody, &tbSubnetInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-		}
-		tbSubnetInfo.Id = v.IId.NameId
-		tbSubnetInfo.Name = v.IId.NameId
+			tbSubnetInfo := TbSubnetInfo{}
+			err = json.Unmarshal(jsonBody, &tbSubnetInfo)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
+			tbSubnetInfo.Id = v.IId.NameId
+			tbSubnetInfo.Name = v.IId.NameId
 
-		content.SubnetInfoList = append(content.SubnetInfoList, tbSubnetInfo)
-	}
+			content.SubnetInfoList = append(content.SubnetInfoList, tbSubnetInfo)
+		}
+	*/
 
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderVPCInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
 
 	// cb-store
-	fmt.Println("=========================== PUT CreateVNet")
 	Key := common.GenResourceKey(nsId, common.StrVNet, content.Id)
 	Val, _ := json.Marshal(content)
 
 	//fmt.Println("Key: ", Key)
 	//fmt.Println("Val: ", Val)
-	err3 := common.CBStore.Put(string(Key), string(Val))
-	if err3 != nil {
-		common.CBLog.Error(err3)
-		return content, err3
+	err = common.CBStore.Put(string(Key), string(Val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return content, err
+	}
+
+	for _, v := range tempSpiderVPCInfo.SubnetInfoList {
+		jsonBody, err := json.Marshal(v)
+		if err != nil {
+			common.CBLog.Error(err)
+		}
+
+		tbSubnetReq := TbSubnetReq{}
+		err = json.Unmarshal(jsonBody, &tbSubnetReq)
+		if err != nil {
+			common.CBLog.Error(err)
+		}
+		tbSubnetReq.Name = v.IId.NameId
+
+		_, err = CreateSubnet(nsId, content.Id, tbSubnetReq, true)
+		if err != nil {
+			common.CBLog.Error(err)
+		}
 	}
 	keyValue, err := common.CBStore.Get(string(Key))
 	if err != nil {
@@ -327,5 +348,11 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
-	return content, nil
+
+	result := TbVNetInfo{}
+	err = json.Unmarshal([]byte(keyValue.Value), &result)
+	if err != nil {
+		common.CBLog.Error(err)
+	}
+	return result, nil
 }

@@ -142,6 +142,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
+	var childResources interface{}
+
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		var url string
@@ -225,6 +227,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 			tempReq.ConnectionName = temp.ConnectionName
 			url = common.SpiderRestUrl + "/vpc/" + temp.Name
+			childResources = temp.SubnetInfoList
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -292,23 +295,23 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
-			err = common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			return nil
+			// err = common.CBStore.Delete(key)
+			// if err != nil {
+			// 	common.CBLog.Error(err)
+			// 	return err
+			// }
+			// return nil
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			return err
 		default:
-			err := common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			return nil
+			// err := common.CBStore.Delete(key)
+			// if err != nil {
+			// 	common.CBLog.Error(err)
+			// 	return err
+			// }
+			// return nil
 		}
 
 	} else {
@@ -409,6 +412,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
+			childResources = temp.SubnetInfoList
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
 			err := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -428,14 +432,37 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 
-		err = common.CBStore.Delete(key)
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-		return nil
+		// err = common.CBStore.Delete(key)
+		// if err != nil {
+		// 	common.CBLog.Error(err)
+		// 	return err
+		// }
+		// return nil
 
 	}
+
+	if resourceType == common.StrVNet {
+		// var subnetKeys []string
+		fmt.Printf("childResources: %s", childResources) // for debug
+		subnets := childResources.([]TbSubnetInfo)
+		for _, v := range subnets {
+			subnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, resourceId, v.Id)
+			// subnetKeys = append(subnetKeys, subnetKey)
+			fmt.Printf("subnetKey: %s", subnetKey) // for debug
+			err = common.CBStore.Delete(subnetKey)
+			if err != nil {
+				common.CBLog.Error(err)
+				// return err
+			}
+		}
+	}
+
+	err = common.CBStore.Delete(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	return nil
 }
 
 // SpiderNameIdSystemId is struct for mapping NameID and System ID from CB-Spider response
@@ -1215,6 +1242,70 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 	fmt.Println("[Check resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	//fmt.Println(key)
+
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
+
+}
+
+// CheckChildResource returns the existence of the TB MCIR resource in bool form.
+func CheckChildResource(nsId string, resourceType string, parentResourceId string, resourceId string) (bool, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("CheckResource failed; nsId given is null.")
+		return false, err
+	} else if resourceType == "" {
+		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
+		return false, err
+	} else if parentResourceId == "" {
+		err := fmt.Errorf("CheckResource failed; parentResourceId given is null.")
+		return false, err
+	} else if resourceId == "" {
+		err := fmt.Errorf("CheckResource failed; resourceId given is null.")
+		return false, err
+	}
+
+	var parentResourceType string
+	// Check resourceType's validity
+	if resourceType == common.StrSubnet {
+		parentResourceType = common.StrVNet
+		// continue
+	} else {
+		err := fmt.Errorf("invalid resource type")
+		return false, err
+	}
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	err = common.CheckString(parentResourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	fmt.Printf("[Check child resource] %s, %s, %s", resourceType, parentResourceId, resourceId)
+
+	key := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
+	key += "/" + resourceType + "/" + resourceId
 	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)

@@ -65,6 +65,7 @@ const (
 	StrSecurityGroup              string = "securityGroup"
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"
+	StrSubnet                     string = "subnet"
 	StrDefaultResourceName        string = "-tb-default"
 )
 
