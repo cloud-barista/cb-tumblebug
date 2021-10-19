@@ -1306,6 +1306,13 @@ var doc = `{
                         "name": "option",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "connectionConfig for designated resource",
+                        "name": "connection",
+                        "in": "query"
                     }
                 ],
                 "responses": {

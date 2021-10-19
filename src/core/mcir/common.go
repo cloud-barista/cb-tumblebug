@@ -1418,7 +1418,7 @@ func LoadCommonResource() error {
 }
 
 // LoadDefaultResource is to register default resource from asset files (../assets/*.csv)
-func LoadDefaultResource(nsId string, resType string) error {
+func LoadDefaultResource(nsId string, resType string, connectionConfig string) error {
 
 	// Check 'nsId' namespace.
 	_, err := common.GetNs(nsId)
@@ -1452,20 +1452,32 @@ func LoadDefaultResource(nsId string, resType string) error {
 		return err
 	}
 
-	for _, resType := range resList {
-		if resType == "vnet" {
-			fmt.Println("vnet")
+	for i, row := range rows[1:] {
+		if connectionConfig != "" {
+			// find only given connectionConfig (if not skip)
+			if connectionConfig != row[1] {
+				continue
+			}
+			fmt.Println("Found a line for the connectionConfig from file: " + row[1])
+		}
 
-			for i, row := range rows[1:] {
+		connectionName := row[1]
+		resourceName := connectionName
+		// To avoid naming-rule violation, modify the string
+		resourceName = strings.ReplaceAll(resourceName, " ", "-")
+		resourceName = strings.ReplaceAll(resourceName, ".", "-")
+		resourceName = strings.ReplaceAll(resourceName, "_", "-")
+		resourceName = strings.ToLower(resourceName)
+		description := "Generated Default Resource"
+
+		for _, resType := range resList {
+			if resType == "vnet" {
+				fmt.Println("vnet")
+
 				reqTmp := TbVNetReq{}
-				reqTmp.ConnectionName = row[1]
-				// To avoid naming-rule violation, modify the string
-				reqTmp.Name = reqTmp.ConnectionName
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
-				reqTmp.Name = strings.ToLower(reqTmp.Name)
-				reqTmp.Description = "Default vNet Resource"
+				reqTmp.ConnectionName = connectionName
+				reqTmp.Name = resourceName
+				reqTmp.Description = description
 
 				// set isolated private address space for each cloud region (192.168.xxx.0/24)
 				reqTmp.CidrBlock = "192.168." + strconv.Itoa(i+1) + ".0/24"
@@ -1483,21 +1495,14 @@ func LoadDefaultResource(nsId string, resType string) error {
 				}
 				fmt.Printf("[%d] Registered Default vNet\n", i)
 				common.PrintJsonPretty(resultInfo)
-			}
-		} else if resType == "sg" {
-			fmt.Println("sg")
+			} else if resType == "sg" {
+				fmt.Println("sg")
 
-			for i, row := range rows[1:] {
 				reqTmp := TbSecurityGroupReq{}
 
-				reqTmp.ConnectionName = row[1]
-				// To avoid naming-rule violation, modify the string
-				reqTmp.Name = reqTmp.ConnectionName
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
-				reqTmp.Name = strings.ToLower(reqTmp.Name)
-				reqTmp.Description = "Default SecurityGroup Resource"
+				reqTmp.ConnectionName = connectionName
+				reqTmp.Name = resourceName
+				reqTmp.Description = description
 
 				reqTmp.VNetId = reqTmp.ConnectionName
 
@@ -1524,22 +1529,14 @@ func LoadDefaultResource(nsId string, resType string) error {
 				fmt.Printf("[%d] Registered Default SecurityGroup\n", i)
 				common.PrintJsonPretty(resultInfo)
 
-			}
+			} else if resType == "sshkey" {
+				fmt.Println("sshkey")
 
-		} else if resType == "sshkey" {
-			fmt.Println("sshkey")
-
-			for i, row := range rows[1:] {
 				reqTmp := TbSshKeyReq{}
 
-				reqTmp.ConnectionName = row[1]
-				// To avoid naming-rule violation, modify the string
-				reqTmp.Name = reqTmp.ConnectionName
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
-				reqTmp.Name = strings.ToLower(reqTmp.Name)
-				reqTmp.Description = "Default SSHKey Resource"
+				reqTmp.ConnectionName = connectionName
+				reqTmp.Name = resourceName
+				reqTmp.Description = description
 
 				common.PrintJsonPretty(reqTmp)
 
@@ -1552,11 +1549,18 @@ func LoadDefaultResource(nsId string, resType string) error {
 				}
 				fmt.Printf("[%d] Registered Default SSHKey\n", i)
 				common.PrintJsonPretty(resultInfo)
+			} else {
+				return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
 			}
-		} else {
-			return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
+		}
+
+		if connectionConfig != "" {
+			// After finish handling line for the connectionConfig, break
+			if connectionConfig == row[1] {
+				fmt.Println("Handled for the connectionConfig from file: " + row[1])
+				break
+			}
 		}
 	}
 	return nil
-
 }

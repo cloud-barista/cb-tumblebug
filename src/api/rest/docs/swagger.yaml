@@ -2420,6 +2420,11 @@ paths:
         name: option
         required: true
         type: string
+      - default: ""
+        description: connectionConfig for designated resource
+        in: query
+        name: connection
+        type: string
       produces:
       - application/json
       responses:
