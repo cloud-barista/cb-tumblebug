@@ -1457,9 +1457,9 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 		}
 
 		connectionName := row[1]
-		resourceName := connectionName
-		// To avoid naming-rule violation, modify the string
-		resourceName = ToNamingRuleCompatible(resourceName)
+		//resourceName := connectionName
+		// Default resource name has this pattern (nsId + "-tb-default")
+		resourceName := nsId + common.StrDefaultResourceName
 		description := "Generated Default Resource"
 
 		for _, resType := range resList {
@@ -1496,7 +1496,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 				reqTmp.Name = resourceName
 				reqTmp.Description = description
 
-				reqTmp.VNetId = reqTmp.ConnectionName
+				reqTmp.VNetId = resourceName
 
 				// open all firewall for default securityGroup
 				rule := SpiderSecurityRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
