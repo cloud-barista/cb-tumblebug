@@ -1001,6 +1001,11 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	vmRequest := req.Vm
 
 	mcisInfo := TbMcisInfo{Id: mcisId}
+	mcisReq := TbMcisReq{}
+	mcisReq.Name = req.Name
+	mcisReq.Label = req.Label
+	mcisReq.InstallMonAgent = req.InstallMonAgent
+	mcisReq.Description = req.Description
 
 	// Check whether VM names meet requirement.
 	for _, k := range vmRequest {
@@ -1018,17 +1023,18 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 			common.CBLog.Error(err)
 		}
 
+		// remake vmReqest from given input
 		vmReq.ConnectionName = specInfo.ConnectionName
-		vmReq.SshKeyId = vmReq.ConnectionName
+		vmReq.SpecId = specInfo.Id
 		vmReq.VNetId = vmReq.ConnectionName
 		vmReq.SubnetId = vmReq.ConnectionName
+		vmReq.SshKeyId = vmReq.ConnectionName
 		vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, vmReq.ConnectionName)
+		vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
 
-		vmReq.ImageId = vmReq.ConnectionName + "-" + k.CommonImage
-		vmReq.ImageId = strings.ReplaceAll(vmReq.ImageId, " ", "-")
-		vmReq.ImageId = strings.ReplaceAll(vmReq.ImageId, ".", "-")
-		vmReq.ImageId = strings.ReplaceAll(vmReq.ImageId, "_", "-")
-		vmReq.ImageId = strings.ToLower(vmReq.ImageId)
+		vmReq.Description = k.Description
+		vmReq.VmGroupSize = k.VmGroupSize
+		vmReq.Label = k.Label
 
 		vmInfoTmp := TbVmInfo{SpecId: specInfo.Id, ConnectionName: vmReq.ConnectionName, SshKeyId: vmReq.SshKeyId, SubnetId: vmReq.ConnectionName, ImageId: vmReq.ImageId, SecurityGroupIds: vmReq.SecurityGroupIds}
 
@@ -1175,76 +1181,75 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	var tempSpiderVMInfo SpiderVMInfo
 
+	// Fill VM creation reqest (request to cb-spider)
+	tempReq := SpiderVMReqInfoWrapper{}
+	tempReq.ConnectionName = vmInfoData.ConnectionName
+
+	//generate VM ID(Name) to request to CSP(Spider)
+	//combination of nsId, mcidId, and vmName reqested from user
+	tempReq.ReqInfo.Name = nsId + "-" + mcisId + "-" + vmInfoData.Name
+
+	err := fmt.Errorf("")
+
+	tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
+	if tempReq.ReqInfo.ImageName == "" || err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
+	if tempReq.ReqInfo.VMSpecName == "" || err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
+	if tempReq.ReqInfo.VPCName == "" {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
+	tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
+	if tempReq.ReqInfo.SubnetName == "" {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	var SecurityGroupIdsTmp []string
+	for _, v := range vmInfoData.SecurityGroupIds {
+		CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
+		if CspSgId == "" {
+			common.CBLog.Error(err)
+			return err
+		}
+
+		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
+	}
+	tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
+
+	tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
+	if tempReq.ReqInfo.KeyPairName == "" {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	tempReq.ReqInfo.VMUserId = vmInfoData.VmUserAccount
+	tempReq.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
+
+	fmt.Printf("\n[Request body to CB-SPIDER for Creating VM]\n")
+	common.PrintJsonPretty(tempReq)
+
+	payload, _ := json.Marshal(tempReq)
+
+	// Call cb-spider API by REST or gRPC
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		url := common.SpiderRestUrl + "/vm"
-
 		method := "POST"
 
 		fmt.Println("\n[Calling SPIDER]START")
 		fmt.Println("url: " + url + " method: " + method)
-
-		tempReq := SpiderVMReqInfoWrapper{}
-		tempReq.ConnectionName = vmInfoData.ConnectionName
-
-		//generate VM ID(Name) to request to CSP(Spider)
-		//combination of nsId, mcidId, and vmName reqested from user
-		cspVmIdToRequest := nsId + "-" + mcisId + "-" + vmInfoData.Name
-		tempReq.ReqInfo.Name = cspVmIdToRequest
-
-		err := fmt.Errorf("")
-
-		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
-		if tempReq.ReqInfo.ImageName == "" || err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
-		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
-		if tempReq.ReqInfo.VPCName == "" {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
-		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
-		if tempReq.ReqInfo.SubnetName == "" {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		var SecurityGroupIdsTmp []string
-		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
-			if CspSgId == "" {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
-		}
-		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
-
-		tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
-		if tempReq.ReqInfo.KeyPairName == "" {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempReq.ReqInfo.VMUserId = vmInfoData.VmUserAccount
-		tempReq.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
-
-		fmt.Printf("\n[Request body to CB-SPIDER for Creating VM]\n")
-		common.PrintJsonPretty(tempReq)
-
-		payload, _ := json.Marshal(tempReq)
-		// fmt.Println("payload: " + string(payload))
 
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -1254,29 +1259,25 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 		if err != nil {
-			fmt.Println(err)
+			//fmt.Println(err)
 			common.CBLog.Error(err)
 			return err
 		}
 
 		req.Header.Add("Content-Type", "application/json")
 
-		//reqBody, _ := ioutil.ReadAll(req.Body)
-		//fmt.Println(string(reqBody))
-
 		res, err := client.Do(req)
 		if err != nil {
-			common.PrintJsonPretty(err)
+			//common.PrintJsonPretty(err)
 			common.CBLog.Error(err)
 			return err
 		}
 
-		fmt.Println("Called CB-Spider API.")
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 
 		if err != nil {
-			common.PrintJsonPretty(err)
+			//common.PrintJsonPretty(err)
 			common.CBLog.Error(err)
 			return err
 		}
@@ -1289,10 +1290,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 			common.CBLog.Error(err)
 			return err
 		}
-
-		fmt.Println("[Response from SPIDER]")
-		common.PrintJsonPretty(tempSpiderVMInfo)
-		fmt.Println("[Calling SPIDER]END")
 
 		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
@@ -1321,67 +1318,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		fmt.Println("\n[Calling SPIDER]START")
 
-		tempReq := SpiderVMReqInfoWrapper{}
-		tempReq.ConnectionName = vmInfoData.ConnectionName
-
-		//generate VM ID(Name) to request to CSP(Spider)
-		//combination of nsId, mcidId, and vmName reqested from user
-		cspVmIdToRequest := nsId + "-" + mcisId + "-" + vmInfoData.Name
-		tempReq.ReqInfo.Name = cspVmIdToRequest
-
-		err = fmt.Errorf("")
-
-		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
-		if tempReq.ReqInfo.ImageName == "" || err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
-		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempReq.ReqInfo.VPCName = vmInfoData.VNetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
-		if tempReq.ReqInfo.VPCName == "" {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, "subnet", vmInfoData.SubnetId)
-		if tempReq.ReqInfo.SubnetName == "" {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		var SecurityGroupIdsTmp []string
-		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
-			if CspSgId == "" {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
-		}
-		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
-
-		tempReq.ReqInfo.KeyPairName = vmInfoData.SshKeyId //common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
-		if tempReq.ReqInfo.KeyPairName == "" {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempReq.ReqInfo.VMUserId = vmInfoData.VmUserAccount
-		tempReq.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
-
-		fmt.Printf("\n[Request body to CB-SPIDER for Creating VM]\n")
-		common.PrintJsonPretty(tempReq)
-
-		payload, _ := json.Marshal(tempReq)
-		fmt.Println("payload: " + string(payload))
-
 		result, err := ccm.StartVM(string(payload))
 		if err != nil {
 			common.CBLog.Error(err)
@@ -1390,17 +1326,18 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
 		err2 := json.Unmarshal([]byte(result), &tempSpiderVMInfo)
-
 		if err2 != nil {
 			fmt.Println(err)
 			common.CBLog.Error(err)
 			return err
 		}
-
 	}
+	fmt.Println("[Response from SPIDER]")
+	common.PrintJsonPretty(tempSpiderVMInfo)
+	fmt.Println("[Calling SPIDER]END")
 
+	// Fill vmInfoData from the cb-spider response
 	vmInfoData.CspViewVmDetail = tempSpiderVMInfo
-
 	vmInfoData.VmUserAccount = tempSpiderVMInfo.VMUserId
 	vmInfoData.VmUserPassword = tempSpiderVMInfo.VMUserPasswd
 
@@ -1439,33 +1376,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	for _, v2 := range vmInfoData.SecurityGroupIds {
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrAdd, vmKey)
 	}
-
-	//content.Status = temp.
-	//content.CloudId = temp.
-
-	// cb-store
-	//fmt.Println("=========================== PUT createVM")
-	/*
-		Key := genResourceKey(nsId, "vm", content.Id)
-
-		Val, _ := json.Marshal(content)
-		fmt.Println("Key: ", Key)
-		fmt.Println("Val: ", Val)
-		err := common.CBStore.Put(string(Key), string(Val))
-		if err != nil {
-			common.CBLog.Error(err)
-			return nil, nil
-		}
-		keyValue, _ := common.CBStore.Get(string(Key))
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===========================")
-		return content, nil
-	*/
-
-	//instanceIds := make([]*string, 1)
-	//publicIPs := make([]*string, 1)
-	//instanceIds[0] = &content.CspVmId
-	//publicIPs[0] = &content.PublicIP
 
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 
