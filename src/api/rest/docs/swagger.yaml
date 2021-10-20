@@ -2421,9 +2421,9 @@ paths:
         required: true
         type: string
       - default: ""
-        description: connectionConfig for designated resource
+        description: connectionName of cloud for designated resource
         in: query
-        name: connection
+        name: connectionName
         type: string
       produces:
       - application/json

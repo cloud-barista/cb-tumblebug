@@ -1317,10 +1317,8 @@ func LoadCommonResource() error {
 		// Give a name for spec object by combining ConnectionName and CspSpecName
 		// To avoid naming-rule violation, modify the string
 		specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
-		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, " ", "-")
-		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, ".", "-")
-		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, "_", "-")
-		specReqTmp.Name = strings.ToLower(specReqTmp.Name)
+		specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
+
 		specReqTmp.Description = "Common Spec Resource"
 
 		fmt.Printf("[%d] Register Common Spec\n", i)
@@ -1382,10 +1380,7 @@ func LoadCommonResource() error {
 		// Give a name for spec object by combining ConnectionName and OsType
 		// To avoid naming-rule violation, modify the string
 		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
-		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, " ", "-")
-		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, ".", "-")
-		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, "_", "-")
-		imageReqTmp.Name = strings.ToLower(imageReqTmp.Name)
+		imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
 		imageReqTmp.Description = "Common Image Resource"
 
 		fmt.Printf("[%d] Register Common Image\n", i)
@@ -1418,7 +1413,7 @@ func LoadCommonResource() error {
 }
 
 // LoadDefaultResource is to register default resource from asset files (../assets/*.csv)
-func LoadDefaultResource(nsId string, resType string, connectionConfig string) error {
+func LoadDefaultResource(nsId string, resType string, connectionName string) error {
 
 	// Check 'nsId' namespace.
 	_, err := common.GetNs(nsId)
@@ -1433,7 +1428,7 @@ func LoadDefaultResource(nsId string, resType string, connectionConfig string) e
 		resList = append(resList, "sshkey")
 		resList = append(resList, "sg")
 	} else {
-		resList = append(resList, resType)
+		resList = append(resList, strings.ToLower(resType))
 	}
 
 	// Read default resources from file and create objects
@@ -1453,21 +1448,18 @@ func LoadDefaultResource(nsId string, resType string, connectionConfig string) e
 	}
 
 	for i, row := range rows[1:] {
-		if connectionConfig != "" {
-			// find only given connectionConfig (if not skip)
-			if connectionConfig != row[1] {
+		if connectionName != "" {
+			// find only given connectionName (if not skip)
+			if connectionName != row[1] {
 				continue
 			}
-			fmt.Println("Found a line for the connectionConfig from file: " + row[1])
+			fmt.Println("Found a line for the connectionName from file: " + row[1])
 		}
 
 		connectionName := row[1]
 		resourceName := connectionName
 		// To avoid naming-rule violation, modify the string
-		resourceName = strings.ReplaceAll(resourceName, " ", "-")
-		resourceName = strings.ReplaceAll(resourceName, ".", "-")
-		resourceName = strings.ReplaceAll(resourceName, "_", "-")
-		resourceName = strings.ToLower(resourceName)
+		resourceName = ToNamingRuleCompatible(resourceName)
 		description := "Generated Default Resource"
 
 		for _, resType := range resList {
@@ -1495,7 +1487,7 @@ func LoadDefaultResource(nsId string, resType string, connectionConfig string) e
 				}
 				fmt.Printf("[%d] Registered Default vNet\n", i)
 				common.PrintJsonPretty(resultInfo)
-			} else if resType == "sg" {
+			} else if resType == "sg" || resType == "securitygroup" {
 				fmt.Println("sg")
 
 				reqTmp := TbSecurityGroupReq{}
@@ -1554,13 +1546,22 @@ func LoadDefaultResource(nsId string, resType string, connectionConfig string) e
 			}
 		}
 
-		if connectionConfig != "" {
-			// After finish handling line for the connectionConfig, break
-			if connectionConfig == row[1] {
-				fmt.Println("Handled for the connectionConfig from file: " + row[1])
+		if connectionName != "" {
+			// After finish handling line for the connectionName, break
+			if connectionName == row[1] {
+				fmt.Println("Handled for the connectionName from file: " + row[1])
 				break
 			}
 		}
 	}
 	return nil
+}
+
+// ToNamingRuleCompatible func is a tool to replace string for name to make the name follow naming convention
+func ToNamingRuleCompatible(rawName string) string {
+	rawName = strings.ReplaceAll(rawName, " ", "-")
+	rawName = strings.ReplaceAll(rawName, ".", "-")
+	rawName = strings.ReplaceAll(rawName, "_", "-")
+	rawName = strings.ToLower(rawName)
+	return rawName
 }

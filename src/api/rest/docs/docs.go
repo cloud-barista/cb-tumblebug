@@ -1310,8 +1310,8 @@ var doc = `{
                     {
                         "type": "string",
                         "default": "",
-                        "description": "connectionConfig for designated resource",
-                        "name": "connection",
+                        "description": "connectionName of cloud for designated resource",
+                        "name": "connectionName",
                         "in": "query"
                     }
                 ],
