@@ -65,6 +65,7 @@ const (
 	StrSecurityGroup              string = "securityGroup"
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"
+	StrDefaultResourceName        string = "-tb-default"
 )
 
 var StartTime string
