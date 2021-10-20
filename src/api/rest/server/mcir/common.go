@@ -319,6 +319,7 @@ func RestLoadCommonResource(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
 // @Param option query string true "Option" Enums(all,vnet,sg,sshkey)
+// @Param connectionName query string false "connectionName of cloud for designated resource" default()
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/loadDefaultResouce [get]
@@ -326,7 +327,10 @@ func RestLoadDefaultResouce(c echo.Context) error {
 	nsId := c.Param("nsId")
 	resType := c.QueryParam("option")
 
-	err := mcir.LoadDefaultResource(nsId, resType)
+	// default of connectionConfig is empty string. with empty string, register all resources.
+	connectionName := c.QueryParam("connectionName")
+
+	err := mcir.LoadDefaultResource(nsId, resType, connectionName)
 
 	if err != nil {
 		common.CBLog.Error(err)

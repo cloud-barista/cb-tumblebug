@@ -1317,12 +1317,11 @@ func LoadCommonResource() error {
 		// Give a name for spec object by combining ConnectionName and CspSpecName
 		// To avoid naming-rule violation, modify the string
 		specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
-		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, " ", "-")
-		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, ".", "-")
-		specReqTmp.Name = strings.ReplaceAll(specReqTmp.Name, "_", "-")
-		specReqTmp.Name = strings.ToLower(specReqTmp.Name)
+		specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
+
 		specReqTmp.Description = "Common Spec Resource"
 
+		fmt.Printf("[%d] Register Common Spec\n", i)
 		common.PrintJsonPretty(specReqTmp)
 
 		// Register Spec object
@@ -1353,7 +1352,8 @@ func LoadCommonResource() error {
 			// Even if error, do not return here to update information
 			// return err
 		}
-		fmt.Printf("[%d] Registered Common Spec ID: %v \n", i, updatedSpecInfo)
+		fmt.Printf("[%d] Registered Common Spec\n", i)
+		common.PrintJsonPretty(updatedSpecInfo)
 
 	}
 
@@ -1368,7 +1368,7 @@ func LoadCommonResource() error {
 	rdr = csv.NewReader(bufio.NewReader(file))
 	rows, _ = rdr.ReadAll()
 	imageReqTmp := TbImageReq{}
-	for _, row := range rows[1:] {
+	for i, row := range rows[1:] {
 
 		// row0: ProviderName
 		// row1: connectionName
@@ -1376,15 +1376,14 @@ func LoadCommonResource() error {
 		// row3: OsType
 		imageReqTmp.ConnectionName = row[1]
 		imageReqTmp.CspImageId = row[2]
+		osType := strings.ReplaceAll(row[3], " ", "")
 		// Give a name for spec object by combining ConnectionName and OsType
 		// To avoid naming-rule violation, modify the string
-		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + row[3]
-		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, " ", "-")
-		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, ".", "-")
-		imageReqTmp.Name = strings.ReplaceAll(imageReqTmp.Name, "_", "-")
-		imageReqTmp.Name = strings.ToLower(imageReqTmp.Name)
+		imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
+		imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
 		imageReqTmp.Description = "Common Image Resource"
 
+		fmt.Printf("[%d] Register Common Image\n", i)
 		common.PrintJsonPretty(imageReqTmp)
 
 		// Register Spec object
@@ -1397,32 +1396,24 @@ func LoadCommonResource() error {
 		}
 
 		// Update registered image object with OsType info
-		// No update image function yet
-		/*
-			imageObjId := imageReqTmp.Name
+		imageObjId := imageReqTmp.Name
 
-			osType := strings.ReplaceAll(row[2], " ", "")
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			specUpdateRequest := TbSpecInfo{CostPerHour: costPerHour32}
+		imageUpdateRequest := TbImageInfo{GuestOS: osType}
 
-			updatedSpecInfo, err := UpdateSpec(commonNsId, imageObjId, specUpdateRequest)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			fmt.Printf("[%d] Registered Common Spec ID: %v \n", i, updatedSpecInfo)
-		*/
-
+		updatedImageInfo, err := UpdateImage(commonNsId, imageObjId, imageUpdateRequest)
+		if err != nil {
+			common.CBLog.Error(err)
+			//return err
+		}
+		fmt.Printf("[%d] Registered Common Image\n", i)
+		common.PrintJsonPretty(updatedImageInfo)
 	}
 
 	return nil
 }
 
 // LoadDefaultResource is to register default resource from asset files (../assets/*.csv)
-func LoadDefaultResource(nsId string, resType string) error {
+func LoadDefaultResource(nsId string, resType string, connectionName string) error {
 
 	// Check 'nsId' namespace.
 	_, err := common.GetNs(nsId)
@@ -1437,7 +1428,7 @@ func LoadDefaultResource(nsId string, resType string) error {
 		resList = append(resList, "sshkey")
 		resList = append(resList, "sg")
 	} else {
-		resList = append(resList, resType)
+		resList = append(resList, strings.ToLower(resType))
 	}
 
 	// Read default resources from file and create objects
@@ -1456,20 +1447,29 @@ func LoadDefaultResource(nsId string, resType string) error {
 		return err
 	}
 
-	for _, resType := range resList {
-		if resType == "vnet" {
-			fmt.Println("vnet")
+	for i, row := range rows[1:] {
+		if connectionName != "" {
+			// find only given connectionName (if not skip)
+			if connectionName != row[1] {
+				continue
+			}
+			fmt.Println("Found a line for the connectionName from file: " + row[1])
+		}
 
-			for i, row := range rows[1:] {
+		connectionName := row[1]
+		resourceName := connectionName
+		// To avoid naming-rule violation, modify the string
+		resourceName = ToNamingRuleCompatible(resourceName)
+		description := "Generated Default Resource"
+
+		for _, resType := range resList {
+			if resType == "vnet" {
+				fmt.Println("vnet")
+
 				reqTmp := TbVNetReq{}
-				reqTmp.ConnectionName = row[1]
-				// To avoid naming-rule violation, modify the string
-				reqTmp.Name = reqTmp.ConnectionName
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
-				reqTmp.Name = strings.ToLower(reqTmp.Name)
-				reqTmp.Description = "Default vNet Resource"
+				reqTmp.ConnectionName = connectionName
+				reqTmp.Name = resourceName
+				reqTmp.Description = description
 
 				// set isolated private address space for each cloud region (192.168.xxx.0/24)
 				reqTmp.CidrBlock = "192.168." + strconv.Itoa(i+1) + ".0/24"
@@ -1487,21 +1487,14 @@ func LoadDefaultResource(nsId string, resType string) error {
 				}
 				fmt.Printf("[%d] Registered Default vNet\n", i)
 				common.PrintJsonPretty(resultInfo)
-			}
-		} else if resType == "sg" {
-			fmt.Println("sg")
+			} else if resType == "sg" || resType == "securitygroup" {
+				fmt.Println("sg")
 
-			for i, row := range rows[1:] {
 				reqTmp := TbSecurityGroupReq{}
 
-				reqTmp.ConnectionName = row[1]
-				// To avoid naming-rule violation, modify the string
-				reqTmp.Name = reqTmp.ConnectionName
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
-				reqTmp.Name = strings.ToLower(reqTmp.Name)
-				reqTmp.Description = "Default SecurityGroup Resource"
+				reqTmp.ConnectionName = connectionName
+				reqTmp.Name = resourceName
+				reqTmp.Description = description
 
 				reqTmp.VNetId = reqTmp.ConnectionName
 
@@ -1528,22 +1521,14 @@ func LoadDefaultResource(nsId string, resType string) error {
 				fmt.Printf("[%d] Registered Default SecurityGroup\n", i)
 				common.PrintJsonPretty(resultInfo)
 
-			}
+			} else if resType == "sshkey" {
+				fmt.Println("sshkey")
 
-		} else if resType == "sshkey" {
-			fmt.Println("sshkey")
-
-			for i, row := range rows[1:] {
 				reqTmp := TbSshKeyReq{}
 
-				reqTmp.ConnectionName = row[1]
-				// To avoid naming-rule violation, modify the string
-				reqTmp.Name = reqTmp.ConnectionName
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, " ", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, ".", "-")
-				reqTmp.Name = strings.ReplaceAll(reqTmp.Name, "_", "-")
-				reqTmp.Name = strings.ToLower(reqTmp.Name)
-				reqTmp.Description = "Default SSHKey Resource"
+				reqTmp.ConnectionName = connectionName
+				reqTmp.Name = resourceName
+				reqTmp.Description = description
 
 				common.PrintJsonPretty(reqTmp)
 
@@ -1556,11 +1541,27 @@ func LoadDefaultResource(nsId string, resType string) error {
 				}
 				fmt.Printf("[%d] Registered Default SSHKey\n", i)
 				common.PrintJsonPretty(resultInfo)
+			} else {
+				return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
 			}
-		} else {
-			return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
+		}
+
+		if connectionName != "" {
+			// After finish handling line for the connectionName, break
+			if connectionName == row[1] {
+				fmt.Println("Handled for the connectionName from file: " + row[1])
+				break
+			}
 		}
 	}
 	return nil
+}
 
+// ToNamingRuleCompatible func is a tool to replace string for name to make the name follow naming convention
+func ToNamingRuleCompatible(rawName string) string {
+	rawName = strings.ReplaceAll(rawName, " ", "-")
+	rawName = strings.ReplaceAll(rawName, ".", "-")
+	rawName = strings.ReplaceAll(rawName, "_", "-")
+	rawName = strings.ToLower(rawName)
+	return rawName
 }

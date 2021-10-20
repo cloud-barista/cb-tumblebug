@@ -1182,6 +1182,35 @@ definitions:
           $ref: '#/definitions/mcis.resourceOnTumblebug'
         type: array
     type: object
+  mcis.TbMcisDynamicReq:
+    properties:
+      description:
+        type: string
+      installMonAgent:
+        default: "yes"
+        description: InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no]
+          default:yes)
+        enum:
+        - "yes"
+        - "no"
+        example: "yes"
+        type: string
+      label:
+        default: "no"
+        description: Label is for describing the mcis in a keyword (any string can
+          be used)
+        example: custom tag
+        type: string
+      name:
+        type: string
+      vm:
+        items:
+          $ref: '#/definitions/mcis.TbVmDynamicReq'
+        type: array
+    required:
+    - name
+    - vm
+    type: object
   mcis.TbMcisInfo:
     properties:
       description:
@@ -1248,6 +1277,32 @@ definitions:
     required:
     - name
     - vm
+    type: object
+  mcis.TbVmDynamicReq:
+    properties:
+      commonImage:
+        description: CommonImage is field for id of a image in common namespace
+        type: string
+      commonSpec:
+        description: CommonSpec is field for id of a spec in common namespace
+        type: string
+      description:
+        type: string
+      label:
+        type: string
+      name:
+        description: VM name or VM group name if is (not empty) && (> 0). If it is
+          a group, actual VM name will be generated with -N postfix.
+        type: string
+      vmGroupSize:
+        description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
+          VMs will be created accordingly.
+        example: "3"
+        type: string
+    required:
+    - commonImage
+    - commonSpec
+    - name
     type: object
   mcis.TbVmInfo:
     properties:
@@ -2365,6 +2420,11 @@ paths:
         name: option
         required: true
         type: string
+      - default: ""
+        description: connectionName of cloud for designated resource
+        in: query
+        name: connectionName
+        type: string
       produces:
       - application/json
       responses:
@@ -2801,6 +2861,41 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS recommendation
+      tags:
+      - '[MCIS] Provisioning management'
+  /ns/{nsId}/mcisDynamic:
+    post:
+      consumes:
+      - application/json
+      description: Create MCIS Dynamically from common spec and image
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object
+        in: body
+        name: mcisReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbMcisDynamicReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create MCIS Dynamically
       tags:
       - '[MCIS] Provisioning management'
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:
