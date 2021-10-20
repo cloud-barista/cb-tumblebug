@@ -996,6 +996,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) {
 
 	commonNS := "common"
+	onDemand := true
 
 	mcisReq := TbMcisReq{}
 	mcisReq.Name = req.Name
@@ -1038,7 +1039,15 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		if err != nil {
 			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
 			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
+			if !onDemand {
+				return &TbMcisInfo{}, err
+			}
+			err2 := mcir.LoadDefaultResource(nsId, common.StrVNet, vmReq.ConnectionName)
+			if err2 != nil {
+				common.CBLog.Error(err2)
+				err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+				return &TbMcisInfo{}, err2
+			}
 		}
 		vmReq.SubnetId = nsId + common.StrDefaultResourceName
 
@@ -1047,7 +1056,15 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		if err != nil {
 			err := fmt.Errorf("Failed to get the SshKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
 			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
+			if !onDemand {
+				return &TbMcisInfo{}, err
+			}
+			err2 := mcir.LoadDefaultResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
+			if err2 != nil {
+				common.CBLog.Error(err2)
+				err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+				return &TbMcisInfo{}, err2
+			}
 		}
 		securityGroup := nsId + common.StrDefaultResourceName
 		vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
@@ -1055,7 +1072,15 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		if err != nil {
 			err := fmt.Errorf("Failed to get the SecurityGroup " + securityGroup + " from " + vmReq.ConnectionName)
 			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
+			if !onDemand {
+				return &TbMcisInfo{}, err
+			}
+			err2 := mcir.LoadDefaultResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
+			if err2 != nil {
+				common.CBLog.Error(err2)
+				err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+				return &TbMcisInfo{}, err2
+			}
 		}
 
 		vmReq.Name = k.Name
