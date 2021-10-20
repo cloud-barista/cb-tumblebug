@@ -75,6 +75,30 @@ func RestDelResource(c echo.Context) error {
 }
 
 // Dummy functions for Swagger exist in [mcir/*.go]
+func RestDelChildResource(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	childResourceType := strings.Split(c.Path(), "/")[7]
+	// c.Path(): /tumblebug/ns/:nsId/resources/vNet/:vNetId/subnet/:subnetId
+
+	parentResourceId := c.Param("parentResourceId")
+	childResourceId := c.Param("childResourceId")
+
+	forceFlag := c.QueryParam("force")
+
+	err := mcir.DelChildResource(nsId, childResourceType, parentResourceId, childResourceId, forceFlag)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	mapA := map[string]string{"message": "The " + childResourceType + " " + childResourceId + " has been deleted"}
+	return c.JSON(http.StatusOK, &mapA)
+}
+
+// Dummy functions for Swagger exist in [mcir/*.go]
 func RestGetAllResources(c echo.Context) error {
 
 	nsId := c.Param("nsId")
