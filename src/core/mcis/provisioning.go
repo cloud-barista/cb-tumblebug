@@ -629,11 +629,11 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 		}
 
 		val, _ := json.Marshal(vmGroupInfoData)
-		err := common.CBStore.Put(string(key), string(val))
+		err := common.CBStore.Put(key, string(val))
 		if err != nil {
 			common.CBLog.Error(err)
 		}
-		keyValue, err := common.CBStore.Get(string(key))
+		keyValue, err := common.CBStore.Get(key)
 		if err != nil {
 			common.CBLog.Error(err)
 			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get() returned an error.")
@@ -813,14 +813,14 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		return nil, err
 	}
 
-	err = common.CBStore.Put(string(key), string(val))
+	err = common.CBStore.Put(key, string(val))
 	if err != nil {
 		err := fmt.Errorf("System Error: CreateMcis CBStore.Put Error")
 		common.CBLog.Error(err)
 		return nil, err
 	}
 
-	keyValue, err := common.CBStore.Get(string(key))
+	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
 		err = fmt.Errorf("In CreateMcis(); CBStore.Get() returned an error.")
@@ -865,11 +865,11 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			}
 
 			val, _ := json.Marshal(vmGroupInfoData)
-			err := common.CBStore.Put(string(key), string(val))
+			err := common.CBStore.Put(key, string(val))
 			if err != nil {
 				common.CBLog.Error(err)
 			}
-			keyValue, err := common.CBStore.Get(string(key))
+			keyValue, err := common.CBStore.Get(key)
 			if err != nil {
 				common.CBLog.Error(err)
 				err = fmt.Errorf("In CreateMcis(); CBStore.Get() returned an error.")
@@ -1137,7 +1137,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	// Make VM object
 	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
-	err = common.CBStore.Put(string(key), string(val))
+	err = common.CBStore.Put(key, string(val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -1496,7 +1496,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 			location.Latitude = rows[i][3]
 			location.Longitude = rows[i][4]
 			valLoc, _ := json.Marshal(location)
-			dbErr := common.CBStore.Put(string(keyLoc), string(valLoc))
+			dbErr := common.CBStore.Put(keyLoc, string(valLoc))
 			if dbErr != nil {
 				common.CBLog.Error(dbErr)
 				return location

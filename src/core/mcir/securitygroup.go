@@ -249,12 +249,12 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	fmt.Println("=========================== PUT CreateSecurityGroup")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		common.CBLog.Error(err)
 		err = fmt.Errorf("In CreateSecurityGroup(); CBStore.Get() returned an error.")

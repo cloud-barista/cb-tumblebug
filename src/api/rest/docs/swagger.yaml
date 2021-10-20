@@ -363,29 +363,6 @@ definitions:
           $ref: '#/definitions/mcir.SpiderSpecInfo'
         type: array
     type: object
-  mcir.SpiderSubnetInfo:
-    properties:
-      iid:
-        $ref: '#/definitions/common.IID'
-        description: '{NameId, SystemId}'
-      ipv4_CIDR:
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-    type: object
-  mcir.SpiderSubnetReqInfo:
-    properties:
-      ipv4_CIDR:
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      name:
-        type: string
-    type: object
   mcir.SpiderVCpuInfo:
     properties:
       clock:
@@ -632,6 +609,40 @@ definitions:
     - connectionName
     - name
     type: object
+  mcir.TbSubnetInfo:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      ipv4_CIDR:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+    required:
+    - ipv4_CIDR
+    - name
+    type: object
+  mcir.TbSubnetReq:
+    properties:
+      description:
+        type: string
+      ipv4_CIDR:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+    required:
+    - ipv4_CIDR
+    - name
+    type: object
   mcir.TbVNetInfo:
     properties:
       associatedObjectList:
@@ -662,7 +673,7 @@ definitions:
         type: string
       subnetInfoList:
         items:
-          $ref: '#/definitions/mcir.SpiderSubnetInfo'
+          $ref: '#/definitions/mcir.TbSubnetInfo'
         type: array
     type: object
   mcir.TbVNetReq:
@@ -677,7 +688,7 @@ definitions:
         type: string
       subnetInfoList:
         items:
-          $ref: '#/definitions/mcir.SpiderSubnetReqInfo'
+          $ref: '#/definitions/mcir.TbSubnetReq'
         type: array
     required:
     - connectionName
@@ -4213,6 +4224,71 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VNet
+      tags:
+      - '[MCIR] Network management'
+  /ns/{nsId}/resources/vNet/{vNetId}/subnet:
+    post:
+      consumes:
+      - application/json
+      description: Create Subnet
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an Subnet object
+        in: body
+        name: subnetReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSubnetReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSubnetInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create Subnet
+      tags:
+      - '[MCIR] Network management'
+  /ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Subnet
+      parameters:
+      - description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Subnet ID
+        in: path
+        name: subnetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete Subnet
       tags:
       - '[MCIR] Network management'
   /ns/{nsId}/testRecommendVm:

@@ -107,7 +107,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	}
 
 	vNetKey := common.GenResourceKey(nsId, common.StrVNet, vNetId)
-	vNetKeyValue, _ := common.CBStore.Get(string(vNetKey))
+	vNetKeyValue, _ := common.CBStore.Get(vNetKey)
 	oldVNet := TbVNetInfo{}
 	err = json.Unmarshal([]byte(vNetKeyValue.Value), &oldVNet)
 	if err != nil {
@@ -196,7 +196,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	SubnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, vNetId, req.Name)
 	Val, _ := json.Marshal(req)
 
-	err = common.CBStore.Put(string(SubnetKey), string(Val))
+	err = common.CBStore.Put(SubnetKey, string(Val))
 	if err != nil {
 		temp := TbVNetInfo{}
 		common.CBLog.Error(err)
@@ -222,14 +222,14 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	newVNet.SubnetInfoList = append(newVNet.SubnetInfoList, tbSubnetInfo) // need to be uncommented.
 	Val, _ = json.Marshal(newVNet)
 
-	err = common.CBStore.Put(string(vNetKey), string(Val))
+	err = common.CBStore.Put(vNetKey, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return oldVNet, err
 	}
 
 	// vNetKey := common.GenResourceKey(nsId, common.StrVNet, vNetId)
-	// keyValue, _ := common.CBStore.Get(string(vNetKey))
+	// keyValue, _ := common.CBStore.Get(vNetKey)
 	// fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	// fmt.Println("===========================")
 	// content := TbVNetInfo{}

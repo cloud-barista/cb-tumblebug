@@ -489,7 +489,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	tmpSshKeyInfo.VerifiedUsername = verifiedUserName
 
 	val, _ := json.Marshal(tmpSshKeyInfo)
-	err = common.CBStore.Put(string(keyValue.Key), string(val))
+	err = common.CBStore.Put(keyValue.Key, string(val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return err

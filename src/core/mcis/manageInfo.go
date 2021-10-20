@@ -1290,13 +1290,13 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 
 	if !reflect.DeepEqual(mcisTmp, mcisInfoData) {
 		val, _ := json.Marshal(mcisInfoData)
-		err = common.CBStore.Put(string(key), string(val))
+		err = common.CBStore.Put(key, string(val))
 		if err != nil {
 			common.CBLog.Error(err)
 		}
 	}
 	//fmt.Println("===========================")
-	//vmkeyValue, _ := common.CBStore.Get(string(key))
+	//vmkeyValue, _ := common.CBStore.Get(key)
 	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
 	//fmt.Println("===========================")
 }
@@ -1316,14 +1316,14 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 	if !reflect.DeepEqual(vmTmp, vmInfoData) {
 		val, _ := json.Marshal(vmInfoData)
-		err = common.CBStore.Put(string(key), string(val))
+		err = common.CBStore.Put(key, string(val))
 		if err != nil {
 			common.CBLog.Error(err)
 		}
 	}
 
 	//fmt.Println("===========================")
-	//vmkeyValue, _ := common.CBStore.Get(string(key))
+	//vmkeyValue, _ := common.CBStore.Get(key)
 	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
 	//fmt.Println("===========================")
 }

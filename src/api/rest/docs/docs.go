@@ -4008,6 +4008,104 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/vNet/{vNetId}/subnet": {
+            "post": {
+                "description": "Create Subnet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MCIR] Network management"
+                ],
+                "summary": "Create Subnet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an Subnet object",
+                        "name": "subnetReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSubnetReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSubnetInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/vNet/{vNetId}/subnet/{subnetId}": {
+            "delete": {
+                "description": "Delete Subnet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[MCIR] Network management"
+                ],
+                "summary": "Delete Subnet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Subnet ID",
+                        "name": "subnetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/testRecommendVm": {
             "post": {
                 "description": "Recommend MCIS plan (filter and priority)",
@@ -4950,41 +5048,6 @@ var doc = `{
                 }
             }
         },
-        "mcir.SpiderSubnetInfo": {
-            "type": "object",
-            "properties": {
-                "iid": {
-                    "description": "{NameId, SystemId}",
-                    "$ref": "#/definitions/common.IID"
-                },
-                "ipv4_CIDR": {
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                }
-            }
-        },
-        "mcir.SpiderSubnetReqInfo": {
-            "type": "object",
-            "properties": {
-                "ipv4_CIDR": {
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "mcir.SpiderVCpuInfo": {
             "type": "object",
             "properties": {
@@ -5352,6 +5415,57 @@ var doc = `{
                 }
             }
         },
+        "mcir.TbSubnetInfo": {
+            "type": "object",
+            "required": [
+                "ipv4_CIDR",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ipv4_CIDR": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbSubnetReq": {
+            "type": "object",
+            "required": [
+                "ipv4_CIDR",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "ipv4_CIDR": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "mcir.TbVNetInfo": {
             "type": "object",
             "properties": {
@@ -5397,7 +5511,7 @@ var doc = `{
                 "subnetInfoList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcir.SpiderSubnetInfo"
+                        "$ref": "#/definitions/mcir.TbSubnetInfo"
                     }
                 }
             }
@@ -5424,7 +5538,7 @@ var doc = `{
                 "subnetInfoList": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcir.SpiderSubnetReqInfo"
+                        "$ref": "#/definitions/mcir.TbSubnetReq"
                     }
                 }
             }

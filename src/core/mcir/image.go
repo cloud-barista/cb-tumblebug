@@ -192,12 +192,12 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		fmt.Println("In RegisterImageWithId(); CBStore.Get() returned error.")
 	}
@@ -254,12 +254,12 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	fmt.Println("=========================== PUT registerImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return *content, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		fmt.Println("In RegisterImageWithInfo(); CBStore.Get() returned error.")
 	}
@@ -618,13 +618,13 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 	fmt.Println("=========================== PUT UpdateImage")
 	Key := common.GenResourceKey(nsId, resourceType, toBeImage.Id)
 	Val, _ := json.Marshal(toBeImage)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		temp := TbImageInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		common.CBLog.Error(err)
 		err = fmt.Errorf("In UpdateImage(); CBStore.Get() returned an error.")
