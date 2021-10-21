@@ -98,12 +98,12 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	Key := "/ns/" + content.Id
 	//mapA := map[string]string{"name": content.Name, "description": content.Description}
 	Val, _ := json.Marshal(content)
-	err = CBStore.Put(string(Key), string(Val))
+	err = CBStore.Put(Key, string(Val))
 	if err != nil {
 		CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := CBStore.Get(string(Key))
+	keyValue, _ := CBStore.Get(Key)
 	fmt.Println("CreateNs(); ===========================")
 	fmt.Println("CreateNs(); Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
 	fmt.Println("CreateNs(); ===========================")

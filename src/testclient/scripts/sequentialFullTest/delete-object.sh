@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 
     TestSetFile=${4:-../testSet.env}

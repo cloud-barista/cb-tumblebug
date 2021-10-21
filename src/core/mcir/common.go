@@ -142,6 +142,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
+	var childResources interface{}
+
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		var url string
@@ -225,6 +227,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 			tempReq.ConnectionName = temp.ConnectionName
 			url = common.SpiderRestUrl + "/vpc/" + temp.Name
+			childResources = temp.SubnetInfoList
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -292,23 +295,23 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
-			err = common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			return nil
+			// err = common.CBStore.Delete(key)
+			// if err != nil {
+			// 	common.CBLog.Error(err)
+			// 	return err
+			// }
+			// return nil
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
 			common.CBLog.Error(err)
 			return err
 		default:
-			err := common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			return nil
+			// err := common.CBStore.Delete(key)
+			// if err != nil {
+			// 	common.CBLog.Error(err)
+			// 	return err
+			// }
+			// return nil
 		}
 
 	} else {
@@ -409,6 +412,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
+			childResources = temp.SubnetInfoList
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
 			err := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -428,13 +432,287 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 
-		err = common.CBStore.Delete(key)
+		// err = common.CBStore.Delete(key)
+		// if err != nil {
+		// 	common.CBLog.Error(err)
+		// 	return err
+		// }
+		// return nil
+
+	}
+
+	if resourceType == common.StrVNet {
+		// var subnetKeys []string
+		fmt.Printf("childResources: %s", childResources) // for debug
+		subnets := childResources.([]TbSubnetInfo)
+		for _, v := range subnets {
+			subnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, resourceId, v.Id)
+			// subnetKeys = append(subnetKeys, subnetKey)
+			fmt.Printf("subnetKey: %s", subnetKey) // for debug
+			err = common.CBStore.Delete(subnetKey)
+			if err != nil {
+				common.CBLog.Error(err)
+				// return err
+			}
+		}
+	}
+
+	err = common.CBStore.Delete(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	return nil
+}
+
+// DelChildResource deletes the TB MCIR object
+func DelChildResource(nsId string, resourceType string, parentResourceId string, resourceId string, forceFlag string) error {
+
+	fmt.Printf("DelChildResource() called; %s %s %s %s \n", nsId, resourceType, parentResourceId, resourceId) // for debug
+
+	var parentResourceType string
+	switch resourceType {
+	case common.StrSubnet:
+		parentResourceType = common.StrVNet
+	default:
+		err := fmt.Errorf("Not valid child resource type.")
+		return err
+	}
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	err = common.CheckString(parentResourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	check, err := CheckResource(nsId, parentResourceType, parentResourceId)
+
+	if !check {
+		errString := "The " + parentResourceType + " " + parentResourceId + " does not exist."
+		//mapA := map[string]string{"message": errString}
+		//mapB, _ := json.Marshal(mapA)
+		err := fmt.Errorf(errString)
+		//return http.StatusNotFound, mapB, err
+		return err
+	}
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	check, err = CheckChildResource(nsId, resourceType, parentResourceId, resourceId)
+
+	if !check {
+		errString := "The " + resourceType + " " + resourceId + " does not exist."
+		//mapA := map[string]string{"message": errString}
+		//mapB, _ := json.Marshal(mapA)
+		err := fmt.Errorf(errString)
+		//return http.StatusNotFound, mapB, err
+		return err
+	}
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	parentResourceKey := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
+	fmt.Println("parentResourceKey: " + parentResourceKey)
+
+	childResourceKey := common.GenChildResourceKey(nsId, resourceType, parentResourceId, resourceId)
+	fmt.Println("childResourceKey: " + childResourceKey)
+
+	parentKeyValue, _ := common.CBStore.Get(parentResourceKey)
+	/*
+		if keyValue == nil {
+			mapA := map[string]string{"message": "Failed to find the resource with given ID."}
+			mapB, _ := json.Marshal(mapA)
+			err := fmt.Errorf("Failed to find the resource with given ID.")
+			return http.StatusNotFound, mapB, err
+		}
+	*/
+	//fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
+
+	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
+
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+		var url string
+
+		// Create Req body
+		type JsonTemplate struct {
+			ConnectionName string
+		}
+		tempReq := JsonTemplate{}
+
+		switch resourceType {
+		case common.StrSubnet:
+			temp := TbVNetInfo{}
+			err = json.Unmarshal([]byte(parentKeyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			tempReq.ConnectionName = temp.ConnectionName
+			// url = common.SpiderRestUrl + "/vpc/" + temp.Name
+			url = fmt.Sprintf("%s/vpc/%s/subnet/%s", common.SpiderRestUrl, temp.Name, resourceId)
+		default:
+			err := fmt.Errorf("invalid resourceType")
+			//return http.StatusBadRequest, nil, err
+			return err
+		}
+
+		fmt.Println("url: " + url)
+
+		client := resty.New().SetCloseConnection(true)
+
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Delete(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return err
+		}
+
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case forceFlag == "true":
+			url += "?force=true"
+			fmt.Println("forceFlag == true; url: " + url)
+
+			_, err := client.R().
+				SetHeader("Content-Type", "application/json").
+				SetBody(tempReq).
+				//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
+				//SetError(&AuthError{}).       // or SetError(AuthError{}).
+				Delete(url)
+
+			if err != nil {
+				common.CBLog.Error(err)
+				err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+				return err
+			}
+
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			common.CBLog.Error(err)
+			return err
+		default:
+
+		}
+
+	} else {
+
+		// Set CCM gRPC API
+		ccm := api.NewCloudResourceHandler()
+		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+		if err != nil {
+			common.CBLog.Error("ccm failed to set config : ", err)
+			return err
+		}
+		err = ccm.Open()
+		if err != nil {
+			common.CBLog.Error("ccm api open failed : ", err)
+			return err
+		}
+		defer ccm.Close()
+
+		switch resourceType {
+		case common.StrSubnet:
+			temp := TbVNetInfo{}
+			err := json.Unmarshal([]byte(parentKeyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+
+			_, err = ccm.RemoveSubnetByParam(temp.ConnectionName, temp.Name, resourceId, forceFlag)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+		default:
+			err := fmt.Errorf("invalid resourceType")
+			return err
+		}
+
+	}
+
+	err = common.CBStore.Delete(childResourceKey)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	// Delete the child element in parent resources' array
+	switch resourceType {
+	case common.StrSubnet:
+		oldVNet := TbVNetInfo{}
+		err = json.Unmarshal([]byte(parentKeyValue.Value), &oldVNet)
 		if err != nil {
 			common.CBLog.Error(err)
 			return err
 		}
-		return nil
 
+		newVNet := TbVNetInfo{}
+		newVNet = oldVNet
+
+		var subnetIndex int
+		subnetIndex = -1
+		for i, v := range newVNet.SubnetInfoList {
+			if v.Name == resourceId {
+				subnetIndex = i
+				break
+			}
+		}
+
+		if subnetIndex != -1 {
+			DelEleInSlice(&newVNet.SubnetInfoList, subnetIndex)
+		} else {
+			err := fmt.Errorf("Failed to find and delete subnet %s in vNet %s.", resourceId, parentResourceId)
+			common.CBLog.Error(err)
+		}
+
+		Val, _ := json.Marshal(newVNet)
+		err = common.CBStore.Put(parentResourceKey, string(Val))
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		// default:
+	}
+
+	return nil
+
+}
+
+// DelEleInSlice delete an element from slice by index
+//  - arr: the reference of slice
+//  - index: the index of element will be deleted
+func DelEleInSlice(arr interface{}, index int) {
+	vField := reflect.ValueOf(arr)
+	value := vField.Elem()
+	if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
+		result := reflect.AppendSlice(value.Slice(0, index), value.Slice(index+1, value.Len()))
+		value.Set(result)
 	}
 }
 
@@ -1229,6 +1507,70 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 
 }
 
+// CheckChildResource returns the existence of the TB MCIR resource in bool form.
+func CheckChildResource(nsId string, resourceType string, parentResourceId string, resourceId string) (bool, error) {
+
+	// Check parameters' emptiness
+	if nsId == "" {
+		err := fmt.Errorf("CheckResource failed; nsId given is null.")
+		return false, err
+	} else if resourceType == "" {
+		err := fmt.Errorf("CheckResource failed; resourceType given is null.")
+		return false, err
+	} else if parentResourceId == "" {
+		err := fmt.Errorf("CheckResource failed; parentResourceId given is null.")
+		return false, err
+	} else if resourceId == "" {
+		err := fmt.Errorf("CheckResource failed; resourceId given is null.")
+		return false, err
+	}
+
+	var parentResourceType string
+	// Check resourceType's validity
+	if resourceType == common.StrSubnet {
+		parentResourceType = common.StrVNet
+		// continue
+	} else {
+		err := fmt.Errorf("invalid resource type")
+		return false, err
+	}
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	err = common.CheckString(parentResourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	err = common.CheckString(resourceId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	fmt.Printf("[Check child resource] %s, %s, %s", resourceType, parentResourceId, resourceId)
+
+	key := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
+	key += "/" + resourceType + "/" + resourceId
+	//fmt.Println(key)
+
+	keyValue, err := common.CBStore.Get(key)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	if keyValue != nil {
+		return true, nil
+	}
+	return false, nil
+
+}
+
 /*
 func convertSpiderResourceToTumblebugResource(resourceType string, i interface{}) (interface{}, error) {
 	if resourceType == "" {
@@ -1473,7 +1815,9 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				// set isolated private address space for each cloud region (192.168.xxx.0/24)
 				reqTmp.CidrBlock = "192.168." + strconv.Itoa(i+1) + ".0/24"
-				subnet := SpiderSubnetReqInfo{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
+
+				// subnet := SpiderSubnetReqInfo{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
+				subnet := TbSubnetReq{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
 				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 
 				common.PrintJsonPretty(reqTmp)

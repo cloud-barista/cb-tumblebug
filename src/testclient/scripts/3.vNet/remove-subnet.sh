@@ -1,32 +1,23 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Create vNet in ${MCIRRegionName}"
+	echo "- Remove subnet in ${MCIRRegionName}"
 
 	CIDRNum=$(($INDEX+1))
 	CIDRDiff=$(($CIDRNum*$REGION))
 	CIDRDiff=$(($CIDRDiff%254))
+	# CIDRDiff=$(($CIDRDiff+1))
 
     resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cidrBlock": "192.168.${CIDRDiff}.0/24",
-			"subnetInfoList": [ {
-				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-				"IPv4_CIDR": "192.168.${CIDRDiff}.128/28"
-			} ]
-		}
-EOF
+        curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}/subnet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-${CIDRDiff} -H 'Content-Type: application/json' 
     ); echo ${resp} | jq ''
     echo ""
 }
 
-#function create_vNet() {
+#function create_subnet() {
 
 	echo "####################################################################"
-	echo "## 3. vNet: Create"
+	echo "## 3. subnet: Remove"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -61,4 +52,4 @@ EOF
 	
 #}
 
-#create_vNet
+#create_subnet

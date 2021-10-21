@@ -235,14 +235,14 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/resources/vNet/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/vNet", rest_mcir.RestDelAllResources)
 
-	/*
-		g.POST("/:nsId/resources/subnet", mcir.RestPostSubnet)
-		g.GET("/:nsId/resources/subnet/:subnetId", mcir.RestGetSubnet)
-		g.GET("/:nsId/resources/subnet", mcir.RestGetAllSubnet)
-		g.PUT("/:nsId/resources/subnet/:subnetId", mcir.RestPutSubnet)
-		g.DELETE("/:nsId/resources/subnet/:subnetId", mcir.RestDelSubnet)
-		g.DELETE("/:nsId/resources/subnet", mcir.RestDelAllSubnet)
+	g.POST("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestPostSubnet)
+	// g.GET("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_mcir.RestGetSubnet)
+	// g.GET("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestGetAllSubnet)
+	// g.PUT("/:nsId/resources/vNet/:vNetId/subnet/:subnetId", rest_mcir.RestPutSubnet)
+	g.DELETE("/:nsId/resources/vNet/:parentResourceId/subnet/:childResourceId", rest_mcir.RestDelChildResource)
+	// g.DELETE("/:nsId/resources/vNet/:vNetId/subnet", rest_mcir.RestDelAllSubnet)
 
+	/*
 		g.POST("/:nsId/resources/publicIp", mcir.RestPostPublicIp)
 		g.GET("/:nsId/resources/publicIp/:publicIpId", mcir.RestGetPublicIp)
 		g.GET("/:nsId/resources/publicIp", mcir.RestGetAllPublicIp)

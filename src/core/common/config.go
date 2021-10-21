@@ -52,12 +52,12 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 	key := "/config/" + content.Id
 	//mapA := map[string]string{"name": content.Name, "description": content.Description}
 	val, _ := json.Marshal(content)
-	err = CBStore.Put(string(key), string(val))
+	err = CBStore.Put(key, string(val))
 	if err != nil {
 		CBLog.Error(err)
 		return content, err
 	}
-	keyValue, _ := CBStore.Get(string(key))
+	keyValue, _ := CBStore.Get(key)
 	fmt.Println("UpdateConfig(); ===========================")
 	fmt.Println("UpdateConfig(); Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
 	fmt.Println("UpdateConfig(); ===========================")

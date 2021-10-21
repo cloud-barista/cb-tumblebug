@@ -145,6 +145,18 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 	}
 }
 
+// GenChildResourceKey is func to generate a key from resource type and id
+func GenChildResourceKey(nsId string, resourceType string, parentResourceId string, resourceId string) string {
+
+	if resourceType == StrSubnet {
+		parentResourceType := StrVNet
+		// return "/ns/" + nsId + "/resources/" + resourceType + "/" + resourceId
+		return fmt.Sprintf("/ns/%s/resources/%s/%s/%s/%s", nsId, parentResourceType, parentResourceId, resourceType, resourceId)
+	} else {
+		return "/invalidKey"
+	}
+}
+
 // mcirIds is struct for containing id and name of each MCIR type
 type mcirIds struct { // Tumblebug
 	CspImageId           string

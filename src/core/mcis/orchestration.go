@@ -407,12 +407,12 @@ func OrchestrationController() {
 func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 	key := common.GenMcisPolicyKey(nsId, mcisPolicyInfoData.Id, "")
 	val, _ := json.Marshal(mcisPolicyInfoData)
-	err := common.CBStore.Put(string(key), string(val))
+	err := common.CBStore.Put(key, string(val))
 	if err != nil && !strings.Contains(err.Error(), common.CbStoreKeyNotFoundErrorString) {
 		common.CBLog.Error(err)
 	}
 	//fmt.Println("===========================")
-	//vmkeyValue, _ := common.CBStore.Get(string(key))
+	//vmkeyValue, _ := common.CBStore.Get(key)
 	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
 	//fmt.Println("===========================")
 }
@@ -458,12 +458,12 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 
 	//fmt.Println("Key: ", Key)
 	//fmt.Println("Val: ", Val)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		common.CBLog.Error(err)
 		err = fmt.Errorf("In CreateMcisPolicy(); CBStore.Get() returned an error.")

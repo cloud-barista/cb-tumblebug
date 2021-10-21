@@ -472,12 +472,12 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return content, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		fmt.Println("In RegisterSpecWithCspSpecName(); CBStore.Get() returned error.")
 	}
@@ -541,12 +541,12 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	fmt.Println("=========================== PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return *content, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		fmt.Println("In RegisterSpecWithInfo(); CBStore.Get() returned error.")
 	}
@@ -588,7 +588,7 @@ func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, m
 	mapA := map[string]string{"id": specId, "price": fmt.Sprintf("%.6f", price), "connectionName": connectionName}
 	Val, _ := json.Marshal(mapA)
 
-	err = common.CBStore.Put(string(key), string(Val))
+	err = common.CBStore.Put(key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -1293,13 +1293,13 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 	fmt.Println("=========================== PUT UpdateSpec")
 	Key := common.GenResourceKey(nsId, resourceType, toBeSpec.Id)
 	Val, _ := json.Marshal(toBeSpec)
-	err = common.CBStore.Put(string(Key), string(Val))
+	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		temp := TbSpecInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
-	keyValue, err := common.CBStore.Get(string(Key))
+	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		common.CBLog.Error(err)
 		err = fmt.Errorf("In UpdateSpec(); CBStore.Get() returned an error.")

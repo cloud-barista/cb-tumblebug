@@ -1,32 +1,28 @@
 #!/bin/bash
 
-function CallTB() {
-	echo "- Create vNet in ${MCIRRegionName}"
-
-	CIDRNum=$(($INDEX+1))
-	CIDRDiff=$(($CIDRNum*$REGION))
-	CIDRDiff=$(($CIDRDiff%254))
-
+function CallSpider() {
+    echo "- Create subnet in ${MCIRRegionName}"
+    
     resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cidrBlock": "192.168.${CIDRDiff}.0/24",
-			"subnetInfoList": [ {
-				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-				"IPv4_CIDR": "192.168.${CIDRDiff}.128/28"
-			} ]
-		}
+            curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/vpc/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}/subnet -H 'Content-Type: application/json' -d @- <<EOF
+            {
+                "ConnectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+                "ReqInfo": {
+                    "Name": "jhseo-3rd-subnet",
+                    "IPv4_CIDR": "192.168.xx.xx/16",
+                    "KeyValueList": []
+
+                }
+            }
 EOF
     ); echo ${resp} | jq ''
     echo ""
 }
 
-#function create_vNet() {
+#function create_subnet() {
 
 	echo "####################################################################"
-	echo "## 3. vNet: Create"
+	echo "## 3. subnet: Create"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -40,10 +36,10 @@ EOF
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
                 echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
-				
+
 				MCIRRegionName=${RegionName[$cspi,$cspj]}
 
-				CallTB
+				CallSpider
 
 			done
 
@@ -55,10 +51,10 @@ EOF
 		
 		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
-		CallTB
+		CallSpider
 
 	fi
-	
+        
 #}
 
 #create_vNet
