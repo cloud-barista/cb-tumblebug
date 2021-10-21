@@ -121,6 +121,24 @@ ncp,jpn-1,Japan,35.6895,139.6917
 ncp,uswn-1,US Western,37.3500,-121.9600
 ncp,den-1,Germany,50.1109,8.6821
 openstack,regionone,South Korea (Daejeon),36.3804,127.3650
+tencent,ap-singapore,Southeast Asia (Singapore),1.352083,103.819839
+tencent,ap-jakarta,Southeast Asia (Jakarta),-6.175110,106.865036
+tencent,ap-seoul,Northeast Asia (Seoul),37.566536,126.977966
+tencent,ap-tokyo,Northeast Asia (Tokyo),35.689487,139.691711
+tencent,ap-mumbai,South Asia (Mumbai),19.075983,72.877655
+tencent,ap-bangkok,Southeast Asia (Bangkok),13.756331,100.501765
+tencent,na-toronto,North America (Toronto),43.653226,-79.383184
+tencent,na-siliconvalley,Western US (Silicon Valley),37.387474,-122.057543
+tencent,na-ashburn,Eastern US (Virginia),37.431573,-78.656894
+tencent,eu-frankfurt,Europe (Frankfurt),50.110922,8.682127
+tencent,eu-moscow,Europe (Moscow),55.755826,37.6173
+tencent,ap-guangzhou,South China (Guangzhou),23.12911,113.264385
+tencent,ap-shanghai,East China (Shanghai),31.23039,121.473702
+tencent,ap-nanjing,East China (Nanjing),32.060255,118.796877
+tencent,ap-beijing,North China (Beijing),39.9042,116.407396
+tencent,ap-chengdu,Southwest China (Chengdu),30.572815,104.066801
+tencent,ap-chongqing,Southwest China (Chongqing),29.431586,106.912251
+tencent,ap-hongkong,Hong Kong,22.396428,114.109497
 cloudtwin,default,South Korea (Daejeon),36.3804,127.3650
 mock,default,South Korea (Seoul),37.0000,126.0000
 ufc,ufc,South Korea (Seoul),37.4767,126.8841
