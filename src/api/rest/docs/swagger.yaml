@@ -1185,6 +1185,7 @@ definitions:
   mcis.TbMcisDynamicReq:
     properties:
       description:
+        example: Made in CB-TB
         type: string
       installMonAgent:
         default: "yes"
@@ -1202,6 +1203,7 @@ definitions:
         example: custom tag
         type: string
       name:
+        example: default
         type: string
       vm:
         items:
@@ -1250,6 +1252,7 @@ definitions:
   mcis.TbMcisReq:
     properties:
       description:
+        example: Made in CB-TB
         type: string
       installMonAgent:
         default: "yes"
@@ -1267,6 +1270,7 @@ definitions:
         example: custom tag
         type: string
       name:
+        example: default
         type: string
       placementAlgo:
         type: string
@@ -1282,13 +1286,17 @@ definitions:
     properties:
       commonImage:
         description: CommonImage is field for id of a image in common namespace
+        example: ubuntu18.04
         type: string
       commonSpec:
         description: CommonSpec is field for id of a spec in common namespace
+        example: aws-ap-se-1-m1-small
         type: string
       description:
+        example: Description
         type: string
       label:
+        example: DynamicVM
         type: string
       name:
         description: VM name or VM group name if is (not empty) && (> 0). If it is
@@ -1423,6 +1431,7 @@ definitions:
   mcis.TbVmReq:
     properties:
       connectionName:
+        example: testcloud01-seoul
         type: string
       description:
         type: string

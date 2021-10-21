@@ -6164,7 +6164,8 @@ var doc = `{
             ],
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Made in CB-TB"
                 },
                 "installMonAgent": {
                     "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
@@ -6183,7 +6184,8 @@ var doc = `{
                     "example": "custom tag"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 },
                 "vm": {
                     "type": "array",
@@ -6250,7 +6252,8 @@ var doc = `{
             ],
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Made in CB-TB"
                 },
                 "installMonAgent": {
                     "description": "InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)",
@@ -6269,7 +6272,8 @@ var doc = `{
                     "example": "custom tag"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 },
                 "placementAlgo": {
                     "type": "string"
@@ -6292,17 +6296,21 @@ var doc = `{
             "properties": {
                 "commonImage": {
                     "description": "CommonImage is field for id of a image in common namespace",
-                    "type": "string"
+                    "type": "string",
+                    "example": "ubuntu18.04"
                 },
                 "commonSpec": {
                     "description": "CommonSpec is field for id of a spec in common namespace",
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-se-1-m1-small"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Description"
                 },
                 "label": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "DynamicVM"
                 },
                 "name": {
                     "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
@@ -6499,7 +6507,8 @@ var doc = `{
             ],
             "properties": {
                 "connectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "testcloud01-seoul"
                 },
                 "description": {
                     "type": "string"
