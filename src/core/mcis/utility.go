@@ -82,7 +82,7 @@ func init() {
 }
 
 /*
-func genUuid() string {
+func GenUid() string {
 	return uuid.New().String()
 }
 */
