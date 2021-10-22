@@ -1311,6 +1311,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	payload, _ := json.Marshal(tempReq)
 
+	// Randomly sleep within 30 Secs to avoid rateLimit from CSP
+	common.RandomSleep(30)
+
 	// Call cb-spider API by REST or gRPC
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
