@@ -6070,16 +6070,16 @@
 <path fill="none" stroke="#000000" d="M484.891,-3263.177C503.338,-3258.2627 521.13,-3249.6281 533.1432,-3234.8 574.3869,-3183.8922 547.5204,-2709.8865 561.1432,-2645.8 570.5645,-2601.4787 561.5082,-2577.4649 598.1432,-2550.8 653.031,-2510.8497 682.737,-2541.8 750.6244,-2541.8 750.6244,-2541.8 750.6244,-2541.8 1530.5494,-2541.8 1645.8782,-2541.8 1703.2194,-2485.0114 1789.2672,-2561.8 1913.5516,-2672.7109 1820.3714,-2768.0861 1860.3276,-2929.8 1888.8667,-3045.3055 1933.0264,-3180.1077 1952.2134,-3237.1091"/>
 <polygon fill="#000000" stroke="#000000" points="1948.9793,-3238.4714 1955.4961,-3246.8249 1955.611,-3236.2307 1948.9793,-3238.4714"/>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUuid -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUid -->
 <g id="node138" class="node">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUuid</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUid</title>
 <ellipse fill="#ffe4b5" stroke="#000000" stroke-width="1.5" cx="750.6244" cy="-2618.8" rx="41.889" ry="23.52"/>
 <text text-anchor="middle" x="750.6244" y="-2623" font-family="Verdana" font-size="14.00" fill="#000000">common</text>
-<text text-anchor="middle" x="750.6244" y="-2606.2" font-family="Verdana" font-size="14.00" fill="#000000">GenUuid</text>
+<text text-anchor="middle" x="750.6244" y="-2606.2" font-family="Verdana" font-size="14.00" fill="#000000">GenUid</text>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.OrchestrationController&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUuid -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.OrchestrationController&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUid -->
 <g id="edge792" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.OrchestrationController&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUuid</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.OrchestrationController&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GenUid</title>
 <path fill="none" stroke="#8b4513" d="M484.8778,-3263.1663C503.3249,-3258.252 521.1202,-3249.6201 533.1432,-3234.8 613.4606,-3135.7969 479.1873,-2759.451 561.1432,-2661.8 594.1682,-2622.4505 654.9565,-2614.7007 698.7888,-2614.8795"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="698.9193,-2618.3824 708.9808,-2615.0632 699.0455,-2611.3835 698.9193,-2618.3824"/>
 </g>
