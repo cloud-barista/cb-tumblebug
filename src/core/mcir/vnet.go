@@ -276,7 +276,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	}
 
 	content := TbVNetInfo{}
-	//content.Id = common.GenUuid()
+	//content.Id = common.GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName

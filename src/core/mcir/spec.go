@@ -450,7 +450,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	content := TbSpecInfo{}
 	content.Namespace = nsId
-	//content.Id = common.GenUuid()
+	//content.Id = common.GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.CspSpecName = res.Name

@@ -302,7 +302,7 @@ func OrchestrationController() {
 
 						autoAction.Vm.Label = labelAutoGen
 						// append UUID to given vm name to avoid duplicated vm ID.
-						autoAction.Vm.Name = autoAction.Vm.Name + "-" + common.GenUuid()
+						autoAction.Vm.Name = autoAction.Vm.Name + "-" + common.GenUid()
 						//vmReqTmp := autoAction.Vm
 
 						if autoAction.PlacementAlgo == "random" {

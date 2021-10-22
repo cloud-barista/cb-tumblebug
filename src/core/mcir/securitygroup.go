@@ -222,7 +222,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	}
 
 	content := TbSecurityGroupInfo{}
-	//content.Id = common.GenUuid()
+	//content.Id = common.GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
