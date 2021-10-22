@@ -104,7 +104,7 @@ type RegionInfo struct {
 
 // TbMcisReq is sturct for requirements to create MCIS
 type TbMcisReq struct {
-	Name string `json:"name" validate:"required" example:"default"`
+	Name string `json:"name" validate:"required" example:"tb-mcis"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
@@ -120,7 +120,7 @@ type TbMcisReq struct {
 
 // TbMcisDynamicReq is sturct for requirements to create MCIS dynamically (with default resource option)
 type TbMcisDynamicReq struct {
-	Name string `json:"name" validate:"required" example:"default"`
+	Name string `json:"name" validate:"required" example:"tb-mcis"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
@@ -168,14 +168,14 @@ type TbMcisInfo struct {
 // TbVmReq is struct to get requirements to create a new server instance
 type TbVmReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" validate:"required" example:"tb-vm"`
 
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
 
 	Label string `json:"label"`
 
-	Description string `json:"description"`
+	Description string `json:"description" example:"Description"`
 
 	ConnectionName   string   `json:"connectionName" validate:"required" example:"testcloud01-seoul"`
 	SpecId           string   `json:"specId" validate:"required"`
@@ -191,7 +191,7 @@ type TbVmReq struct {
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
 type TbVmDynamicReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" example:"tb-vm"`
 
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
@@ -1084,6 +1084,9 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		}
 
 		vmReq.Name = k.Name
+		if vmReq.Name == "" {
+			vmReq.Name = common.GenUid()
+		}
 		vmReq.Label = k.Label
 		vmReq.VmGroupSize = k.VmGroupSize
 		vmReq.Description = k.Description
