@@ -26,21 +26,10 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// 2020-04-13 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/SecurityHandler.go
-
 type SpiderSecurityReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderSecurityInfo
 }
-
-/*
-type SpiderSecurityReqInfo struct { // Spider
-	Name          string
-	VPCName       string
-	SecurityRules *[]SpiderSecurityRuleInfo
-	//Direction     string // @todo used??
-}
-*/
 
 type SpiderSecurityRuleInfo struct { // Spider
 	FromPort   string //`json:"fromPort"`
