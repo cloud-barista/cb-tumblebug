@@ -14,7 +14,7 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-30-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-31-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
@@ -769,6 +769,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tr>
     <td align="center"><a href="https://github.com/EmmanuelMarianMat"><img src="https://avatars.githubusercontent.com/u/75481347?v=4?s=100" width="100px;" alt=""/><br /><sub><b>EmmanuelMarianMat</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=EmmanuelMarianMat" title="Code">💻</a></td>
     <td align="center"><a href="http://carlosfelix.pythonanywhere.com/"><img src="https://avatars.githubusercontent.com/u/18339454?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Carlos Felix</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=carlosfrodrigues" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/Stuie"><img src="https://avatars.githubusercontent.com/u/389169?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stuart Gilbert</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=Stuie" title="Code">💻</a></td>
   </tr>
 </table>
 
