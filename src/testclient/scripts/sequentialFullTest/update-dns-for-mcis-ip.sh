@@ -22,7 +22,7 @@ then
 fi
 
 if [ "${INDEX}" == "0" ]; then
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 fi
 
 if [ -z "$HostedZoneID" ]; then

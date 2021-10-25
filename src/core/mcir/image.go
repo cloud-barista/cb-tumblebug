@@ -247,7 +247,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	}
 
 	content.Namespace = nsId
-	//content.Id = common.GenUuid()
+	//content.Id = common.GenUid()
 	content.Id = content.Name
 	content.AssociatedObjectList = []string{}
 

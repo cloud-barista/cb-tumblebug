@@ -209,7 +209,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 	}
 
 	content := TbSshKeyInfo{}
-	//content.Id = common.GenUuid()
+	//content.Id = common.GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName

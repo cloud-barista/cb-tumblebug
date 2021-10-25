@@ -298,8 +298,8 @@ func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 	defer file2.Close()
 	csvWriter2 := csv.NewWriter(file2)
 
-	const mrttArrayXMax = 50
-	const mrttArrayYMax = 50
+	const mrttArrayXMax = 300
+	const mrttArrayYMax = 300
 	mrttArray := make([][]string, mrttArrayXMax)
 	for i := 0; i < mrttArrayXMax; i++ {
 		mrttArray[i] = make([]string, mrttArrayYMax)

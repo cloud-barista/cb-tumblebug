@@ -104,7 +104,7 @@ type RegionInfo struct {
 
 // TbMcisReq is sturct for requirements to create MCIS
 type TbMcisReq struct {
-	Name string `json:"name" validate:"required" example:"default"`
+	Name string `json:"name" validate:"required" example:"tb-mcis"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
@@ -120,7 +120,7 @@ type TbMcisReq struct {
 
 // TbMcisDynamicReq is sturct for requirements to create MCIS dynamically (with default resource option)
 type TbMcisDynamicReq struct {
-	Name string `json:"name" validate:"required" example:"default"`
+	Name string `json:"name" validate:"required" example:"tb-mcis"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
@@ -168,14 +168,14 @@ type TbMcisInfo struct {
 // TbVmReq is struct to get requirements to create a new server instance
 type TbVmReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" validate:"required" example:"tb-vm"`
 
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
 
 	Label string `json:"label"`
 
-	Description string `json:"description"`
+	Description string `json:"description" example:"Description"`
 
 	ConnectionName   string   `json:"connectionName" validate:"required" example:"testcloud01-seoul"`
 	SpecId           string   `json:"specId" validate:"required"`
@@ -191,7 +191,7 @@ type TbVmReq struct {
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
 type TbVmDynamicReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" example:"tb-vm"`
 
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
@@ -1007,6 +1007,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	vmRequest := req.Vm
 	// Check whether VM names meet requirement.
 	for _, k := range vmRequest {
+
 		vmReq := TbVmReq{}
 		tempInterface, err := mcir.GetResource(commonNS, common.StrSpec, k.CommonSpec)
 		if err != nil {
@@ -1025,6 +1026,9 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		// remake vmReqest from given input and check resource availablity
 		vmReq.ConnectionName = specInfo.ConnectionName
 
+		// Default resource name has this pattern (nsId + "-default-" + vmReq.ConnectionName)
+		resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
+
 		vmReq.SpecId = specInfo.Id
 		vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
 		tempInterface, err = mcir.GetResource(commonNS, common.StrImage, vmReq.ImageId)
@@ -1034,11 +1038,11 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 			return &TbMcisInfo{}, err
 		}
 
-		vmReq.VNetId = nsId + common.StrDefaultResourceName
+		vmReq.VNetId = resourceName
 		tempInterface, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-			common.CBLog.Error(err)
+			common.CBLog.Info(err)
 			if !onDemand {
 				return &TbMcisInfo{}, err
 			}
@@ -1049,13 +1053,13 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 				return &TbMcisInfo{}, err2
 			}
 		}
-		vmReq.SubnetId = nsId + common.StrDefaultResourceName
+		vmReq.SubnetId = resourceName
 
-		vmReq.SshKeyId = nsId + common.StrDefaultResourceName
+		vmReq.SshKeyId = resourceName
 		tempInterface, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the SshKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-			common.CBLog.Error(err)
+			common.CBLog.Info(err)
 			if !onDemand {
 				return &TbMcisInfo{}, err
 			}
@@ -1066,12 +1070,12 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 				return &TbMcisInfo{}, err2
 			}
 		}
-		securityGroup := nsId + common.StrDefaultResourceName
+		securityGroup := resourceName
 		vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
 		tempInterface, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the SecurityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-			common.CBLog.Error(err)
+			common.CBLog.Info(err)
 			if !onDemand {
 				return &TbMcisInfo{}, err
 			}
@@ -1084,6 +1088,9 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		}
 
 		vmReq.Name = k.Name
+		if vmReq.Name == "" {
+			vmReq.Name = common.GenUid()
+		}
 		vmReq.Label = k.Label
 		vmReq.VmGroupSize = k.VmGroupSize
 		vmReq.Description = k.Description
@@ -1307,6 +1314,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	common.PrintJsonPretty(tempReq)
 
 	payload, _ := json.Marshal(tempReq)
+
+	// Randomly sleep within 30 Secs to avoid rateLimit from CSP
+	common.RandomSleep(30)
 
 	// Call cb-spider API by REST or gRPC
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {

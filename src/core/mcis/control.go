@@ -146,7 +146,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 		return "Terminating the MCIS", nil
 
 	} else if action == "refine" { //refine delete VMs in StatusFailed or StatusUndefined
-		fmt.Println("[terminate MCIS]")
+		fmt.Println("[refine MCIS]")
 
 		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {

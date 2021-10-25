@@ -87,7 +87,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	}
 
 	content := NsInfo{}
-	//content.Id = GenUuid()
+	//content.Id = GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.Description = u.Description

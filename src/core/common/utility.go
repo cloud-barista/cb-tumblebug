@@ -15,15 +15,17 @@ limitations under the License.
 package common
 
 import (
+	"math/rand"
 	"os"
 	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
-	uuid "github.com/google/uuid"
+	uid "github.com/rs/xid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
@@ -41,9 +43,16 @@ type SimpleMsg struct {
 	Message string `json:"message" example:"Any message"`
 }
 
-// GenUuid is func to return a UUID string
-func GenUuid() string {
-	return uuid.New().String()
+// GenUid is func to return a UUID string
+func GenUid() string {
+	return uid.New().String()
+}
+
+// RandomSleep is func to make a caller waits for during random time seconds
+func RandomSleep(t int) {
+	rand.Seed(time.Now().UnixNano())
+	n := rand.Intn(t * 1000)
+	time.Sleep(time.Duration(n) * time.Millisecond)
 }
 
 // CheckString is func to check string by the given rule `[a-z]([-a-z0-9]*[a-z0-9])?`

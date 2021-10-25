@@ -31,7 +31,7 @@
 
 	if [ "${INDEX}" == "0" ]; then
 		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
+		MCISID=${POSTFIX}
 	fi
 
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d \

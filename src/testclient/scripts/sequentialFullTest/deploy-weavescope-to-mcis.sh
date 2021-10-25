@@ -10,7 +10,7 @@ source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 fi
 
 MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)

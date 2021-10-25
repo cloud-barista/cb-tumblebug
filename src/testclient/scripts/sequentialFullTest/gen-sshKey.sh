@@ -8,7 +8,7 @@ source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 fi
 
 # curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey/$MCIRID -H 'Content-Type: application/json' | jq '.privateKey' | sed -e 's/\\n/\n/g' -e 's/\"//g' > ./sshkey-tmp/$MCISID.pem

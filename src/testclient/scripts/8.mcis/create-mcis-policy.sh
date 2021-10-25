@@ -29,7 +29,7 @@
 
 	if [ "${INDEX}" == "0" ]; then
 		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
+		MCISID=${POSTFIX}
 	fi
 
 	if [ "${MCISNAME}" != "noname" ]; then

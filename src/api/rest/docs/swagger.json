@@ -6285,7 +6285,7 @@
                 },
                 "name": {
                     "type": "string",
-                    "example": "default"
+                    "example": "tb-mcis"
                 },
                 "vm": {
                     "type": "array",
@@ -6373,7 +6373,7 @@
                 },
                 "name": {
                     "type": "string",
-                    "example": "default"
+                    "example": "tb-mcis"
                 },
                 "placementAlgo": {
                     "type": "string"
@@ -6390,8 +6390,7 @@
             "type": "object",
             "required": [
                 "commonImage",
-                "commonSpec",
-                "name"
+                "commonSpec"
             ],
             "properties": {
                 "commonImage": {
@@ -6414,7 +6413,8 @@
                 },
                 "name": {
                     "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string"
+                    "type": "string",
+                    "example": "tb-vm"
                 },
                 "vmGroupSize": {
                     "description": "if vmGroupSize is (not empty) \u0026\u0026 (\u003e 0), VM group will be gernetad. VMs will be created accordingly.",
@@ -6611,7 +6611,8 @@
                     "example": "testcloud01-seoul"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Description"
                 },
                 "imageId": {
                     "type": "string"
@@ -6621,7 +6622,8 @@
                 },
                 "name": {
                     "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
-                    "type": "string"
+                    "type": "string",
+                    "example": "tb-vm"
                 },
                 "securityGroupIds": {
                     "type": "array",

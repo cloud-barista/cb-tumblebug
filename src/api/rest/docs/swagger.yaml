@@ -1214,7 +1214,7 @@ definitions:
         example: custom tag
         type: string
       name:
-        example: default
+        example: tb-mcis
         type: string
       vm:
         items:
@@ -1281,7 +1281,7 @@ definitions:
         example: custom tag
         type: string
       name:
-        example: default
+        example: tb-mcis
         type: string
       placementAlgo:
         type: string
@@ -1312,6 +1312,7 @@ definitions:
       name:
         description: VM name or VM group name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
+        example: tb-vm
         type: string
       vmGroupSize:
         description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
@@ -1321,7 +1322,6 @@ definitions:
     required:
     - commonImage
     - commonSpec
-    - name
     type: object
   mcis.TbVmInfo:
     properties:
@@ -1445,6 +1445,7 @@ definitions:
         example: testcloud01-seoul
         type: string
       description:
+        example: Description
         type: string
       imageId:
         type: string
@@ -1453,6 +1454,7 @@ definitions:
       name:
         description: VM name or VM group name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
+        example: tb-vm
         type: string
       securityGroupIds:
         items:

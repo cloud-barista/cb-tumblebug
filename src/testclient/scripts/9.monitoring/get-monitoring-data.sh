@@ -26,7 +26,7 @@
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 	if [ "${INDEX}" == "0" ]; then
 		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
+		MCISID=${POSTFIX}
 	fi
 
 	USERCMD=${4}
