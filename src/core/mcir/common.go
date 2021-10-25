@@ -1800,8 +1800,8 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 		connectionName := row[1]
 		//resourceName := connectionName
-		// Default resource name has this pattern (nsId + "-tb-default")
-		resourceName := nsId + common.StrDefaultResourceName
+		// Default resource name has this pattern (nsId + "-default-" + connectionName)
+		resourceName := nsId + common.StrDefaultResourceName + connectionName
 		description := "Generated Default Resource"
 
 		for _, resType := range resList {

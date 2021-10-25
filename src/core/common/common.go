@@ -66,7 +66,7 @@ const (
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"
 	StrSubnet                     string = "subnet"
-	StrDefaultResourceName        string = "-tb-default"
+	StrDefaultResourceName        string = "-default-"
 )
 
 var StartTime string

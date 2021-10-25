@@ -1007,6 +1007,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	vmRequest := req.Vm
 	// Check whether VM names meet requirement.
 	for _, k := range vmRequest {
+
 		vmReq := TbVmReq{}
 		tempInterface, err := mcir.GetResource(commonNS, common.StrSpec, k.CommonSpec)
 		if err != nil {
@@ -1025,6 +1026,9 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		// remake vmReqest from given input and check resource availablity
 		vmReq.ConnectionName = specInfo.ConnectionName
 
+		// Default resource name has this pattern (nsId + "-default-" + vmReq.ConnectionName)
+		resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
+
 		vmReq.SpecId = specInfo.Id
 		vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
 		tempInterface, err = mcir.GetResource(commonNS, common.StrImage, vmReq.ImageId)
@@ -1034,11 +1038,11 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 			return &TbMcisInfo{}, err
 		}
 
-		vmReq.VNetId = nsId + common.StrDefaultResourceName
+		vmReq.VNetId = resourceName
 		tempInterface, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-			common.CBLog.Error(err)
+			common.CBLog.Info(err)
 			if !onDemand {
 				return &TbMcisInfo{}, err
 			}
@@ -1049,13 +1053,13 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 				return &TbMcisInfo{}, err2
 			}
 		}
-		vmReq.SubnetId = nsId + common.StrDefaultResourceName
+		vmReq.SubnetId = resourceName
 
-		vmReq.SshKeyId = nsId + common.StrDefaultResourceName
+		vmReq.SshKeyId = resourceName
 		tempInterface, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the SshKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-			common.CBLog.Error(err)
+			common.CBLog.Info(err)
 			if !onDemand {
 				return &TbMcisInfo{}, err
 			}
@@ -1066,12 +1070,12 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 				return &TbMcisInfo{}, err2
 			}
 		}
-		securityGroup := nsId + common.StrDefaultResourceName
+		securityGroup := resourceName
 		vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
 		tempInterface, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the SecurityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-			common.CBLog.Error(err)
+			common.CBLog.Info(err)
 			if !onDemand {
 				return &TbMcisInfo{}, err
 			}
