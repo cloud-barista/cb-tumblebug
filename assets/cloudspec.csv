@@ -163,6 +163,6 @@ aws-ap-se-1,t3.large,0.1056
 gcp-as-se1,e2-standard-2,0.082658
 gcp-as-se1,n2-standard-2,0.119806
 gcp-as-se1,n2d-standard-2,0.104234
-ali-ap-southeast-1,ecs.g7.large,0.108
-ali-ap-southeast-1,ecs.g6e.large,0.128
-ali-ap-southeast-1,ecs.g6.large,0.116
+ali-ap-southeast-1,ecs.g5.large,0.13
+ali-ap-southeast-1,ecs.g6.large,0.126
+ali-ap-southeast-1,ecs.hfg6.large,0.138
