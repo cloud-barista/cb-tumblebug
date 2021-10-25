@@ -10,14 +10,12 @@ replace (
 
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
-	github.com/beego/beego/v2 v2.0.1
 	github.com/bramvdbogaerde/go-scp v1.0.0
 	github.com/cloud-barista/cb-dragonfly v0.4.1
 	github.com/cloud-barista/cb-log v0.4.0
 	github.com/cloud-barista/cb-spider v0.4.5
 	github.com/cloud-barista/cb-store v0.4.1
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
-	github.com/go-openapi/spec v0.20.3 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/go-resty/resty/v2 v2.6.0
@@ -31,6 +29,7 @@ require (
 	github.com/labstack/echo/v4 v4.3.0
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.29.0 // indirect

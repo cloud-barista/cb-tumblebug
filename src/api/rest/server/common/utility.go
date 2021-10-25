@@ -16,18 +16,23 @@ package common
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 
-	"github.com/beego/beego/v2/core/validation"
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 )
+
+var validate *validator.Validate
+
+func init() {
+	validate = validator.New()
+}
 
 type TbConnectionName struct {
 	ConnectionName string `json:"connectionName"`
@@ -54,15 +59,11 @@ func Send(c echo.Context, httpCode int, json interface{}) error {
 }
 
 func Validate(c echo.Context, params []string) error {
-	valid := validation.Validation{}
-
+	var err error
 	for _, name := range params {
-		valid.Required(c.Param(name), name)
-	}
-
-	if valid.HasErrors() {
-		for _, err := range valid.Errors {
-			return errors.New(fmt.Sprintf("[%s]%s", err.Key, err.Error()))
+		err = validate.Var(c.Param(name), "required")
+		if err != nil {
+			return err
 		}
 	}
 	return nil
