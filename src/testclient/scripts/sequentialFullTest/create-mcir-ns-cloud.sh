@@ -113,7 +113,7 @@ if [ "${INDEX}" == "0" ]; then
 	wait
 
 
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 
 
 else

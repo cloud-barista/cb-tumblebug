@@ -19,7 +19,7 @@ source ../conf.env
 source ../credentials.conf
 
 getCloudIndex $CSP
-MCISID=${MCISPREFIX}-${POSTFIX}
+MCISID=${POSTFIX}
 
 #install jq and puttygen
 if ! dpkg-query -W -f='${Status}' jq | grep "ok installed" > /dev/null; then echo "install jq package"; sudo apt install -y jq; fi

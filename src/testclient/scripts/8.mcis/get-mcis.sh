@@ -8,7 +8,7 @@ source ../init.sh
 
 
 if [ "${INDEX}" == "0" ]; then
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 else
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 fi

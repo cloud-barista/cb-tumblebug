@@ -14,7 +14,7 @@ PublicDNS=${OPTION02}
 
 if [ "${INDEX}" == "0" ]; then
 	# MCISPREFIX=avengers
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 fi
 
 if [ -z "$EMAIL" ]; then

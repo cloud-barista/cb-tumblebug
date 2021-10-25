@@ -20,7 +20,7 @@
 	REGION=${2:-1}
 	POSTFIX=${3:-developer}
 	MCISPREFIX=${4:-avengers}
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 
 	source ../common-functions.sh
 	getCloudIndex $CSP

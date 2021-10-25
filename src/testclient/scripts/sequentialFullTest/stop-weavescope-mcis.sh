@@ -27,7 +27,7 @@
 
 	if [ "${INDEX}" == "0" ]; then
 		# MCISPREFIX=avengers
-		MCISID=${MCISPREFIX}-${POSTFIX}
+		MCISID=${POSTFIX}
 	fi
 
     LAUNCHCMD="sudo scope stop"

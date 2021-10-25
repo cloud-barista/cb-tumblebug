@@ -78,7 +78,7 @@ if [ "${INDEX}" == "0" ]; then
 	INDEXX=${NumCSP}
 
 
-	MCISID=${MCISPREFIX}-${POSTFIX}
+	MCISID=${POSTFIX}
 
 
 	for ((cspi = 1; cspi <= INDEXX; cspi++)); do
