@@ -192,13 +192,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 
-			//delete related recommend spec
-			err = DelRecommendSpec(nsId, resourceId, content.NumvCPU, content.MemGiB, content.StorageGiB)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
 			// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
 			_, err = common.ORM.Delete(&TbSpecInfo{Namespace: nsId, Id: resourceId})
 			if err != nil {
@@ -362,13 +355,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			err = common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			//delete related recommend spec
-			err = DelRecommendSpec(nsId, resourceId, content.NumvCPU, content.MemGiB, content.StorageGiB)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err

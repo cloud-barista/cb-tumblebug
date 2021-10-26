@@ -484,13 +484,6 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
-	// register information related with MCIS recommendation
-	err = RegisterRecommendList(nsId, content.ConnectionName, content.NumvCPU, content.MemGiB, content.StorageGiB, content.Id, content.CostPerHour)
-	if err != nil {
-		common.CBLog.Error(err)
-		return content, err
-	}
-
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(&content)
 	if err != nil {
@@ -554,13 +547,6 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
-	// register information related with MCIS recommendation
-	err = RegisterRecommendList(nsId, content.ConnectionName, content.NumvCPU, content.MemGiB, content.StorageGiB, content.Id, content.CostPerHour)
-	if err != nil {
-		common.CBLog.Error(err)
-		return *content, err
-	}
-
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(content)
 	if err != nil {
@@ -570,56 +556,6 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	}
 
 	return *content, nil
-}
-
-// RegisterRecommendList creates the spec recommendation info
-func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize float32, diskSize uint32, specId string, price float32) error {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	//fmt.Println("[Get MCISs")
-	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + strconv.Itoa(int(cpuSize)) + "/memSize/" + strconv.Itoa(int(memSize)) + "/diskSize/" + strconv.Itoa(int(diskSize)) + "/specId/" + specId
-	fmt.Println(key)
-
-	mapA := map[string]string{"id": specId, "price": fmt.Sprintf("%.6f", price), "connectionName": connectionName}
-	Val, _ := json.Marshal(mapA)
-
-	err = common.CBStore.Put(key, string(Val))
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	fmt.Println("===============================================")
-	return nil
-
-}
-
-// DelRecommendSpec deletes the spec recommendation info
-func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize float32, diskSize uint32) error {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	fmt.Println("DelRecommendSpec()")
-
-	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + strconv.Itoa(int(cpuSize)) + "/memSize/" + strconv.Itoa(int(memSize)) + "/diskSize/" + strconv.Itoa(int(diskSize)) + "/specId/" + specId
-
-	err = common.CBStore.Delete(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	return nil
-
 }
 
 // FilterSpecs accepts criteria for filtering, and returns the list of filtered TB spec objects
@@ -1278,12 +1214,6 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 		return temp, err
 	}
 
-	err = DelRecommendSpec(nsId, asIsSpec.Id, asIsSpec.NumvCPU, asIsSpec.MemGiB, asIsSpec.StorageGiB)
-	if err != nil {
-		temp := TbSpecInfo{}
-		return temp, err
-	}
-
 	// Update specified fields only
 	toBeSpec := asIsSpec
 	toBeSpecJSON, _ := json.Marshal(fieldsToUpdate)
@@ -1310,13 +1240,6 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===========================")
 
-	// register information related with MCIS recommendation
-	err = RegisterRecommendList(nsId, toBeSpec.ConnectionName, toBeSpec.NumvCPU, toBeSpec.MemGiB, toBeSpec.StorageGiB, toBeSpec.Id, toBeSpec.CostPerHour)
-	if err != nil {
-		common.CBLog.Error(err)
-		return toBeSpec, err
-	}
-
 	// "UPDATE `spec` SET `id`='" + specId + "', ... WHERE `namespace`='" + nsId + "' AND `id`='" + specId + "';"
 	_, err = common.ORM.Update(&toBeSpec, &TbSpecInfo{Namespace: nsId, Id: specId})
 	if err != nil {
@@ -1327,3 +1250,55 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 
 	return toBeSpec, nil
 }
+
+// deprecated
+// // RegisterRecommendList creates the spec recommendation info
+// func RegisterRecommendList(nsId string, connectionName string, cpuSize uint16, memSize float32, diskSize uint32, specId string, price float32) error {
+
+// 	err := common.CheckString(nsId)
+// 	if err != nil {
+// 		common.CBLog.Error(err)
+// 		return err
+// 	}
+
+// 	//fmt.Println("[Get MCISs")
+// 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + strconv.Itoa(int(cpuSize)) + "/memSize/" + strconv.Itoa(int(memSize)) + "/diskSize/" + strconv.Itoa(int(diskSize)) + "/specId/" + specId
+// 	fmt.Println(key)
+
+// 	mapA := map[string]string{"id": specId, "price": fmt.Sprintf("%.6f", price), "connectionName": connectionName}
+// 	Val, _ := json.Marshal(mapA)
+
+// 	err = common.CBStore.Put(key, string(Val))
+// 	if err != nil {
+// 		common.CBLog.Error(err)
+// 		return err
+// 	}
+
+// 	fmt.Println("===============================================")
+// 	return nil
+
+// }
+
+// deprecated
+// // DelRecommendSpec deletes the spec recommendation info
+// func DelRecommendSpec(nsId string, specId string, cpuSize uint16, memSize float32, diskSize uint32) error {
+
+// 	err := common.CheckString(nsId)
+// 	if err != nil {
+// 		common.CBLog.Error(err)
+// 		return err
+// 	}
+
+// 	fmt.Println("DelRecommendSpec()")
+
+// 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + strconv.Itoa(int(cpuSize)) + "/memSize/" + strconv.Itoa(int(memSize)) + "/diskSize/" + strconv.Itoa(int(diskSize)) + "/specId/" + specId
+
+// 	err = common.CBStore.Delete(key)
+// 	if err != nil {
+// 		common.CBLog.Error(err)
+// 		return err
+// 	}
+
+// 	return nil
+
+// }
