@@ -59,7 +59,7 @@ fi
 	echo ""
 
 	echo "[Update Tumblebug Environment for Dragonfly with following command]"
-	PARAM="DRAGONFLY_REST_URL http://${MASTERIP}:9090/dragonfly"
+	PARAM="-x DRAGONFLY_REST_URL -y http://${MASTERIP}:9090/dragonfly"
 	echo $PARAM
 	../2.configureTumblebug/update-config.sh $PARAM
 

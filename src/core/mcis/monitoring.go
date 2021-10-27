@@ -15,9 +15,7 @@ limitations under the License.
 package mcis
 
 import (
-
-	//"encoding/json"
-
+	"encoding/json"
 	"os"
 	"time"
 
@@ -29,11 +27,8 @@ import (
 
 	//"log"
 
-	//"strings"
 	"strconv"
-
-	"bytes"
-	"mime/multipart"
+	"strings"
 
 	// REST API (echo)
 	"net/http"
@@ -164,6 +159,19 @@ func CheckDragonflyEndpoint() error {
 	}
 }
 
+// monAgentInstallReq is struct for CB-Dragonfly monitoring agent installation request
+type monAgentInstallReq struct {
+	NsId     string `json:"ns_id"`
+	McisId   string `json:"mcis_id"`
+	VmId     string `json:"vm_id"`
+	PublicIp string `json:"public_ip"`
+	UserName string `json:"user_name"`
+	SshKey   string `json:"ssh_key"`
+	CspType  string `json:"cspType"`
+	Port     string `json:"port"`
+}
+
+// CallMonitoringAsync is func to call CB-Dragonfly monitoring framework
 func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, givenUserName string, method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
@@ -186,7 +194,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 	fmt.Println("\n[Calling DRAGONFLY] START")
 	fmt.Println("VM:" + nsID + "_" + mcisID + "_" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType)
 
-	tempReq := MonAgentInstallReq{
+	tempReq := monAgentInstallReq{
 		NsId:     nsID,
 		McisId:   mcisID,
 		VmId:     vmID,
@@ -194,24 +202,14 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		Port:     sshPort,
 		UserName: userName,
 		SshKey:   privateKey,
+		CspType:  vmInfoTmp.Location.CloudType,
 	}
 	if tempReq.SshKey == "" {
 		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.SshKey is empty.\n")
 		common.PrintJsonPretty(tempReq)
 	}
 
-	payload := &bytes.Buffer{}
-	writer := multipart.NewWriter(payload)
-	_ = writer.WriteField("ns_id", nsID)
-	_ = writer.WriteField("mcis_id", mcisID)
-	_ = writer.WriteField("vm_id", vmID)
-	_ = writer.WriteField("public_ip", vmIP)
-	_ = writer.WriteField("port", sshPort)
-	_ = writer.WriteField("user_name", userName)
-	_ = writer.WriteField("ssh_key", privateKey)
-	_ = writer.WriteField("cspType", vmInfoTmp.Location.CloudType)
-	err = writer.Close()
-
+	payload, err := json.Marshal(tempReq)
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr = err.Error()
@@ -224,8 +222,14 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		},
 		Timeout: time.Duration(responseLimit) * time.Minute,
 	}
-	req, err := http.NewRequest(method, url, payload)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		common.CBLog.Error(err)
+		errStr = err.Error()
+	}
+
+	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
 
@@ -269,7 +273,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 		*returnResult = append(*returnResult, sshResultTmp)
 		vmInfoTmp.MonAgentStatus = "failed"
 	} else {
-		fmt.Println("result " + result)
+		fmt.Println("Result: " + result)
 		sshResultTmp.Result = result
 		sshResultTmp.Err = nil
 		*returnResult = append(*returnResult, sshResultTmp)
@@ -466,7 +470,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 			common.CBLog.Error(err)
 			errStr = err.Error()
 		}
-		//fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err1 := fmt.Errorf("HTTP Status: not in 200-399")
@@ -504,6 +508,12 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		response = result
 	}
 
+	//common.PrintJsonPretty(response) // for debuging
+
+	if !gjson.Valid(response) {
+		fmt.Println("!gjson.Valid(response)")
+	}
+
 	switch {
 	case metric == monMetricCpu:
 		value := gjson.Get(response, "values.cpu_utilization")
@@ -528,11 +538,12 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	ResultTmp.Metric = metric
 
 	if err != nil {
+		fmt.Println("CB-DF Error message: " + errStr)
 		ResultTmp.Value = errStr
 		ResultTmp.Err = err.Error()
 		*returnResult = append(*returnResult, ResultTmp)
 	} else {
-		fmt.Println("result " + result)
+		fmt.Println("CB-DF Result: " + result)
 		ResultTmp.Value = result
 		*returnResult = append(*returnResult, ResultTmp)
 	}
