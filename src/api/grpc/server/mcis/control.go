@@ -204,7 +204,7 @@ func (s *MCISService) DeleteMcis(ctx context.Context, req *pb.TbMcisQryRequest) 
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteMcis()")
 	}
 
-	resp := &pb.MessageResponse{Message: "Deleting the MCIS " + req.McisId}
+	resp := &pb.MessageResponse{Message: "Deleted the MCIS " + req.McisId}
 	return resp, nil
 }
 
@@ -351,7 +351,7 @@ func (s *MCISService) DeleteMcisVM(ctx context.Context, req *pb.TbVmQryRequest) 
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteMcisVM()")
 	}
 
-	resp := &pb.MessageResponse{Message: "Deleting the VM info"}
+	resp := &pb.MessageResponse{Message: "Deleted the VM info"}
 	return resp, nil
 }
 

@@ -295,7 +295,7 @@ func RestDelMcis(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	mapA := map[string]string{"message": "Deleting the MCIS " + mcisId}
+	mapA := map[string]string{"message": "Deleted the MCIS " + mcisId}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
@@ -775,7 +775,7 @@ func RestDelMcisVm(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	mapA := map[string]string{"message": "Deleting the VM info"}
+	mapA := map[string]string{"message": "Deleted the VM info"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
