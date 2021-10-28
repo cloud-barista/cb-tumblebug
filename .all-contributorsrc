@@ -308,6 +308,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "polkabunny",
+      "name": "Tríona Barrow",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2207006?v=4",
+      "profile": "https://ie.linkedin.com/in/trionabarrow",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
