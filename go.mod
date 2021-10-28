@@ -39,7 +39,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/echo-swagger v1.1.3
 	github.com/swaggo/swag v1.7.1
-	github.com/tidwall/gjson v1.8.0
+	github.com/tidwall/gjson v1.10.2
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.1.7
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
