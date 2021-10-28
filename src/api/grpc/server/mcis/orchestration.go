@@ -104,7 +104,7 @@ func (s *MCISService) DeleteMcisPolicy(ctx context.Context, req *pb.McisPolicyQr
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteMcisPolicy()")
 	}
 
-	resp := &pb.MessageResponse{Message: "Deleting the MCIS Policy info"}
+	resp := &pb.MessageResponse{Message: "Deleted the MCIS Policy info"}
 	return resp, nil
 }
 

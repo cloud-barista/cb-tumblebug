@@ -166,7 +166,7 @@ func RestDelMcisPolicy(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	mapA := map[string]string{"message": "Deleting the MCIS Policy info"}
+	mapA := map[string]string{"message": "Deleted the MCIS Policy info"}
 	return c.JSON(http.StatusOK, &mapA)
 }
 
