@@ -317,6 +317,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "BamButz",
+      "name": "BamButz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7022144?v=4",
+      "profile": "https://www.bambutz.dev",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
