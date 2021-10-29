@@ -9,6 +9,7 @@ on:
 jobs:
   update-swagger-doc:
     name: Update Swagger doc
+    if: github.repository == 'cloud-barista/cb-tumblebug'
     runs-on: ubuntu-18.04
     strategy:
       matrix:
