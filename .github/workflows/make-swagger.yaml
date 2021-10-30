@@ -1,0 +1,40 @@
+name: Apply make swagger
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/core/**/**.go'
+      - 'src/api/rest/server/**/**.go'
+jobs:
+  update-swagger-doc:
+    name: Update Swagger doc
+    if: github.repository == 'cloud-barista/cb-tumblebug'
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        go-version: [ '1.17' ]
+
+    steps:
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Checkout source code
+        uses: actions/checkout@v2.3.4
+        
+      - name: Install swag
+        run: |
+          go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Update Swagger doc
+        run: |
+          cd src
+          make swag
+
+      - name: Commit generated Swagger docs
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          file_pattern: src/api/rest/docs/**
+          commit_message: Update Swagger docs
