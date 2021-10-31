@@ -807,7 +807,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.CoreGetAllBenchmark(nsId, mcisId, req.Host)
+	result, err := mcis.RunAllBenchmarks(nsId, mcisId, req.Host)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)

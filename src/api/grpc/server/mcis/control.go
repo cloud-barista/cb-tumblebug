@@ -513,7 +513,7 @@ func (s *MCISService) GetAllBenchmark(ctx context.Context, req *pb.BmQryAllReque
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.GetAllBenchmark()")
 	}
 
-	result, err := mcis.CoreGetAllBenchmark(req.NsId, req.McisId, mcisObj.Host)
+	result, err := mcis.RunAllBenchmarks(req.NsId, req.McisId, mcisObj.Host)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.GetAllBenchmark()")
 	}
