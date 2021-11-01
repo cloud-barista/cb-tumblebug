@@ -210,7 +210,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/keypair/" + temp.Name
+			url = common.SpiderRestUrl + "/keypair/" + temp.CspSshKeyName
 		case common.StrVNet:
 			temp := TbVNetInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -219,7 +219,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/vpc/" + temp.Name
+			url = common.SpiderRestUrl + "/vpc/" + temp.CspVNetName
 			childResources = temp.SubnetInfoList
 		case common.StrSecurityGroup:
 			temp := TbSecurityGroupInfo{}
@@ -229,7 +229,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/securitygroup/" + temp.Name
+			url = common.SpiderRestUrl + "/securitygroup/" + temp.CspSecurityGroupName
 		/*
 			case "subnet":
 				temp := subnetInfo{}
