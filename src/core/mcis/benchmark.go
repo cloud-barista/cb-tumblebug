@@ -192,8 +192,8 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	results.ResultArray = append(results.ResultArray, resultTmp)
 }
 
-// CoreGetAllBenchmark is func to get alls Benchmarks
-func CoreGetAllBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
+// RunAllBenchmarks is func to get all Benchmarks
+func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
 
 	var err error
 
