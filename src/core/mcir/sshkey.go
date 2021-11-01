@@ -138,7 +138,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	tempReq := SpiderKeyPairReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.Name
+	tempReq.ReqInfo.Name = nsId + "-" + u.Name
 
 	var tempSpiderKeyPairInfo *SpiderKeyPairInfo
 
