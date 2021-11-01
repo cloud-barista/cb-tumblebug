@@ -189,7 +189,7 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	tempReq := SpiderVPCReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.Name
+	tempReq.ReqInfo.Name = nsId + "-" + u.Name
 	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
 
 	// tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
