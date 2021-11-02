@@ -2549,7 +2549,7 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Details for an MCIS object
+      - description: Details for MCIS object
         in: body
         name: mcisReq
         required: true
