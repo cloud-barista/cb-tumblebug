@@ -1994,7 +1994,7 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
+                        "description": "Details for MCIS object",
                         "name": "mcisReq",
                         "in": "body",
                         "required": true,
@@ -6416,7 +6416,7 @@ var doc = `{
                 "commonSpec": {
                     "description": "CommonSpec is field for id of a spec in common namespace",
                     "type": "string",
-                    "example": "aws-ap-se-1-m1-small"
+                    "example": "aws-ap-southeast-1-m1-small"
                 },
                 "description": {
                     "type": "string",

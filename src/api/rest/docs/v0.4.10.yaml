@@ -1301,7 +1301,7 @@ definitions:
         type: string
       commonSpec:
         description: CommonSpec is field for id of a spec in common namespace
-        example: aws-ap-se-1-m1-small
+        example: aws-ap-southeast-1-m1-small
         type: string
       description:
         example: Description
