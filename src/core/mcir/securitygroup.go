@@ -149,10 +149,22 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		return content, err
 	}
 
+	tempInterface, err := GetResource(nsId, common.StrVNet, u.VNetId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the TbVNetInfo " + u.VNetId + ".")
+		return TbSecurityGroupInfo{}, err
+	}
+	vNetInfo := TbVNetInfo{}
+	err = common.CopySrcToDest(&tempInterface, &vNetInfo)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the TbVNetInfo-CopySrcToDest() " + u.VNetId + ".")
+		return TbSecurityGroupInfo{}, err
+	}
+
 	tempReq := SpiderSecurityReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
 	tempReq.ReqInfo.Name = u.Name
-	tempReq.ReqInfo.VPCName = u.VNetId
+	tempReq.ReqInfo.VPCName = vNetInfo.CspVNetName
 	tempReq.ReqInfo.SecurityRules = u.FirewallRules
 
 	var tempSpiderSecurityInfo *SpiderSecurityInfo

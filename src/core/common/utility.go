@@ -209,7 +209,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	case StrSSHKey:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return resourceId, nil
+		return content.CspSshKeyName, nil
 	case StrSpec:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
@@ -217,7 +217,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	case StrVNet:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return resourceId, nil // contains CspSubnetId
+		return content.CspVNetName, nil // contains CspSubnetId
 	// case "subnet":
 	// 	content := subnetInfo{}
 	// 	json.Unmarshal([]byte(keyValue.Value), &content)

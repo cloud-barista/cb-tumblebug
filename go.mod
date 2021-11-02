@@ -15,8 +15,6 @@ require (
 	github.com/cloud-barista/cb-log v0.4.0
 	github.com/cloud-barista/cb-spider v0.4.13
 	github.com/cloud-barista/cb-store v0.4.1
-	github.com/go-openapi/jsonreference v0.19.6 // indirect
-	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
@@ -26,7 +24,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/labstack/echo/v4 v4.6.1
-	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.11.0
