@@ -87,13 +87,14 @@ echo
 echo ==========================================================
 echo "[Stop existing $CONTAINER_NAME_READ container to prevent duplication]"
 echo ==========================================================
+sudo aa-remove-unknown
 sudo docker stop $CONTAINER_NAME
 
 # Run the $CONTAINER_NAME_READ container
 echo
 echo
 echo ==========================================================
-echo "[Check the command to run $CONTAINER_NAME_READ container]"
+echo "[Confirm the command to run $CONTAINER_NAME_READ container]"
 echo ==========================================================
 echo -e "${LGREEN}"
 RUNCMD="sudo docker run --rm $CONTAINER_PORT \\
