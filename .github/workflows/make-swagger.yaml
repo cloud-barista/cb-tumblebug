@@ -9,16 +9,13 @@ on:
 jobs:
   update-swagger-doc:
     name: Update Swagger doc
-    if: ${{ github.repository }} == 'cloud-barista/cb-tumblebug'
+    if: github.repository == 'cloud-barista/cb-tumblebug'
     runs-on: ubuntu-18.04
     strategy:
       matrix:
         go-version: [ '1.17' ]
 
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       - name: Set up Go ${{ matrix.go-version }}
         uses: actions/setup-go@v2
         with:
