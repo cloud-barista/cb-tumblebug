@@ -63,7 +63,7 @@ func RestPostMcis(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID"
-// @Param mcisReq body TbMcisDynamicReq true "Details for an MCIS object"
+// @Param mcisReq body TbMcisDynamicReq true "Details for MCIS object"
 // @Success 200 {object} TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
