@@ -201,7 +201,7 @@ type TbVmDynamicReq struct {
 	Description string `json:"description" example:"Description"`
 
 	// CommonSpec is field for id of a spec in common namespace
-	CommonSpec string `json:"commonSpec" validate:"required" example:"aws-ap-se-1-m1-small"`
+	CommonSpec string `json:"commonSpec" validate:"required" example:"aws-ap-southeast-1-m1-small"`
 	// CommonImage is field for id of a image in common namespace
 	CommonImage string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
 }
