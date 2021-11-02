@@ -299,9 +299,9 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
       ID              Status   PublicIP       PrivateIP      CloudType  CloudRegion     CreatedTime
       --              ------   --------       ---------      ---------  -----------     -----------
-      aws-ap-se-1-0   Running  xx.250.xx.73   192.168.2.180  aws        ap-southeast-1  2021-09-17   14:59:30
-      aws-ca-ct-1-0   Running  x.97.xx.230    192.168.4.98   aws        ca-central-1    2021-09-17   14:59:58
-      gcp-as-east1-0  Running  xx.229.xxx.26  192.168.3.2    gcp        asia-east1      2021-09-17   14:59:42
+      aws-ap-southeast-1-0   Running  xx.250.xx.73   192.168.2.180  aws        ap-southeast-1  2021-09-17   14:59:30
+      aws-ca-central-1-0   Running  x.97.xx.230    192.168.4.98   aws        ca-central-1    2021-09-17   14:59:58
+      gcp-asia-east1-0  Running  xx.229.xxx.26  192.168.3.2    gcp        asia-east1      2021-09-17   14:59:42
 
       [DATE: 17/09/2021 15:00:00] [ElapsedTime: 49s (0m:49s)] [Command: ./create-mcis-only.sh all 1 shson ../testSetCustom.env 1]
 
@@ -326,17 +326,17 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
       ...
       [GENERATED PRIVATE KEY (PEM, PPK)]
       [MCIS INFO: mc-shson]
-       [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
-       ./sshkey-tmp/aws-ap-se-1-shson.pem 
-       ./sshkey-tmp/aws-ap-se-1-shson.ppk
+       [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-southeast-1-0
+       ./sshkey-tmp/aws-ap-southeast-1-shson.pem 
+       ./sshkey-tmp/aws-ap-southeast-1-shson.ppk
        ...
        
       [SSH COMMAND EXAMPLE]
-       [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-se-1-0
-       ssh -i ./sshkey-tmp/aws-ap-se-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
+       [VMIP]: 13.212.254.59   [MCISID]: mc-shson   [VMID]: aws-ap-southeast-1-0
+       ssh -i ./sshkey-tmp/aws-ap-southeast-1-shson.pem cb-user@13.212.254.59 -o StrictHostKeyChecking=no
        ...
-       [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-ct-1-0
-       ssh -i ./sshkey-tmp/aws-ca-ct-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
+       [VMIP]: 35.182.30.37   [MCISID]: mc-shson   [VMID]: aws-ca-central-1-0
+       ssh -i ./sshkey-tmp/aws-ca-central-1-shson.pem cb-user@35.182.30.37 -o StrictHostKeyChecking=no
       ```
 
 <details>
