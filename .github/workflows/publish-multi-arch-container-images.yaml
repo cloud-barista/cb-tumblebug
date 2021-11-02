@@ -31,7 +31,7 @@ jobs:
     # Job name is "Publishing"
     name: Publishing
 
-    if: ${{ github.repository }} == 'cloud-barista/cb-tumblebug'
+    if: github.repository == 'cloud-barista/cb-tumblebug'
 
     # This job runs on Ubuntu-latest
     runs-on: ubuntu-18.04
