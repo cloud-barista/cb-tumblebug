@@ -28,8 +28,8 @@ import (
 // @Tags [MCIS] Resource monitor (Developer)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisInfo body mcis.McisCmdReq true "Details for an MCIS object"
 // @Success 200 {object} mcis.AgentInstallContentWrapper
 // @Failure 404 {object} common.SimpleMsg
@@ -60,8 +60,8 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 // @Tags [MCIS] Resource monitor (Developer)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param metric path string true "Metric type: cpu, memory, disk, network"
 // @Success 200 {object} mcis.MonResultSimpleResponse
 // @Failure 404 {object} common.SimpleMsg

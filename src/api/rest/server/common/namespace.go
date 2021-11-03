@@ -104,7 +104,7 @@ func RestDelAllNs(c echo.Context) error {
 // @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId} [delete]
@@ -205,7 +205,7 @@ func RestGetAllNs(c echo.Context) error {
 // @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.NsInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

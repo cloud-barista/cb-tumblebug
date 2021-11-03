@@ -104,10 +104,10 @@ type RegionInfo struct {
 
 // TbMcisReq is sturct for requirements to create MCIS
 type TbMcisReq struct {
-	Name string `json:"name" validate:"required" example:"tb-mcis"`
+	Name string `json:"name" validate:"required" example:"mcis01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
 
 	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label" example:"custom tag" default:"no"`
@@ -120,10 +120,10 @@ type TbMcisReq struct {
 
 // TbMcisDynamicReq is sturct for requirements to create MCIS dynamically (with default resource option)
 type TbMcisDynamicReq struct {
-	Name string `json:"name" validate:"required" example:"tb-mcis"`
+	Name string `json:"name" validate:"required" example:"mcis01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
 
 	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label" example:"custom tag" default:"no"`
@@ -168,7 +168,7 @@ type TbMcisInfo struct {
 // TbVmReq is struct to get requirements to create a new server instance
 type TbVmReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" validate:"required" example:"tb-vm"`
+	Name string `json:"name" validate:"required" example:"vm01"`
 
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
@@ -191,7 +191,7 @@ type TbVmReq struct {
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
 type TbVmDynamicReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" example:"tb-vm"`
+	Name string `json:"name" example:"vm01"`
 
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
