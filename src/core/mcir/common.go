@@ -1607,10 +1607,11 @@ func GetNameFromStruct(u interface{}) string {
 	}
 }
 
-//func createResource(nsId string, resourceType string, u interface{}) (interface{}, int, []byte, error) {
-
 // LoadCommonResource is to register common resources from asset files (../assets/*.csv)
-func LoadCommonResource() error {
+func LoadCommonResource() (common.IdList, error) {
+
+	regiesteredIds := common.IdList{}
+	regiesteredStatus := ""
 
 	// Check 'common' namespace. Create one if not.
 	commonNsId := "common"
@@ -1622,7 +1623,7 @@ func LoadCommonResource() error {
 		_, nsErr := common.CreateNs(&nsReq)
 		if nsErr != nil {
 			common.CBLog.Error(nsErr)
-			return nsErr
+			return regiesteredIds, nsErr
 		}
 	}
 
@@ -1631,7 +1632,7 @@ func LoadCommonResource() error {
 	defer file.Close()
 	if fileErr != nil {
 		common.CBLog.Error(fileErr)
-		return fileErr
+		return regiesteredIds, fileErr
 	}
 
 	rdr := csv.NewReader(bufio.NewReader(file))
@@ -1683,6 +1684,12 @@ func LoadCommonResource() error {
 		fmt.Printf("[%d] Registered Common Spec\n", i)
 		common.PrintJsonPretty(updatedSpecInfo)
 
+		regiesteredStatus = ""
+		if updatedSpecInfo.Id == "" {
+			regiesteredStatus = "  [FAILED]"
+		}
+		regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrSpec+": "+specObjId+regiesteredStatus)
+
 	}
 
 	// Read common specs and register spec objects
@@ -1690,7 +1697,7 @@ func LoadCommonResource() error {
 	defer file.Close()
 	if fileErr != nil {
 		common.CBLog.Error(fileErr)
-		return fileErr
+		return regiesteredIds, fileErr
 	}
 
 	rdr = csv.NewReader(bufio.NewReader(file))
@@ -1735,9 +1742,14 @@ func LoadCommonResource() error {
 		}
 		fmt.Printf("[%d] Registered Common Image\n", i)
 		common.PrintJsonPretty(updatedImageInfo)
+		regiesteredStatus = ""
+		if updatedImageInfo.Id == "" {
+			regiesteredStatus = "  [FAILED]"
+		}
+		regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrImage+": "+imageObjId+regiesteredStatus)
 	}
 
-	return nil
+	return regiesteredIds, nil
 }
 
 // LoadDefaultResource is to register default resource from asset files (../assets/*.csv)
