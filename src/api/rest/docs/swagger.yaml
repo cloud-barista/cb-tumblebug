@@ -72,17 +72,19 @@ definitions:
         example: Description for this namespace
         type: string
       id:
-        example: namespaceid01
+        example: ns01
         type: string
       name:
-        example: namespacename01
+        example: ns01
         type: string
     type: object
   common.NsReq:
     properties:
       description:
+        example: Description for this namespace
         type: string
       name:
+        example: ns01
         type: string
     type: object
   common.Region:
@@ -1205,7 +1207,7 @@ definitions:
         enum:
         - "yes"
         - "no"
-        example: "yes"
+        example: "no"
         type: string
       label:
         default: "no"
@@ -1214,7 +1216,7 @@ definitions:
         example: custom tag
         type: string
       name:
-        example: tb-mcis
+        example: mcis01
         type: string
       vm:
         items:
@@ -1272,7 +1274,7 @@ definitions:
         enum:
         - "yes"
         - "no"
-        example: "yes"
+        example: "no"
         type: string
       label:
         default: "no"
@@ -1281,7 +1283,7 @@ definitions:
         example: custom tag
         type: string
       name:
-        example: tb-mcis
+        example: mcis01
         type: string
       placementAlgo:
         type: string
@@ -1312,7 +1314,7 @@ definitions:
       name:
         description: VM name or VM group name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
-        example: tb-vm
+        example: vm01
         type: string
       vmGroupSize:
         description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
@@ -1454,7 +1456,7 @@ definitions:
       name:
         description: VM name or VM group name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
-        example: tb-vm
+        example: vm01
         type: string
       securityGroupIds:
         items:
@@ -1564,7 +1566,8 @@ paths:
       - application/json
       description: Check resources' existence
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2056,7 +2059,8 @@ paths:
       - application/json
       description: Delete namespace
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2080,7 +2084,8 @@ paths:
       - application/json
       description: Get namespace
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2109,12 +2114,14 @@ paths:
       - application/json
       description: Run MCIS benchmark for a single performance metric and return results
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2168,12 +2175,14 @@ paths:
       - application/json
       description: Run MCIS benchmark for all performance metrics and return results
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2208,12 +2217,14 @@ paths:
       - application/json
       description: Send a command to specified MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2248,17 +2259,20 @@ paths:
       - application/json
       description: Send a command to specified VM
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
         type: string
-      - description: VM ID
+      - default: vm01
+        description: VM ID
         in: path
         name: vmId
         required: true
@@ -2293,12 +2307,14 @@ paths:
       - application/json
       description: Control the lifecycle of MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2338,17 +2354,20 @@ paths:
       - application/json
       description: Control the lifecycle of VM
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
         type: string
-      - description: VM ID
+      - default: vm01
+        description: VM ID
         in: path
         name: vmId
         required: true
@@ -2387,12 +2406,14 @@ paths:
       - application/json
       description: Install the benchmark agent to specified MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2427,7 +2448,8 @@ paths:
       - application/json
       description: Load Default Resource from internal asset file
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2467,7 +2489,8 @@ paths:
       - application/json
       description: Delete all MCISs
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2497,7 +2520,8 @@ paths:
       - application/json
       description: List all MCISs or MCISs' ID
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2544,7 +2568,8 @@ paths:
       - application/json
       description: Create MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2579,12 +2604,14 @@ paths:
       - application/json
       description: Delete MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2615,12 +2642,14 @@ paths:
       description: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate),
         or Get VMs' ID
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2677,12 +2706,14 @@ paths:
       - application/json
       description: Create VM in specified MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2717,17 +2748,20 @@ paths:
       - application/json
       description: Delete VM in specified MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
         type: string
-      - description: VM ID
+      - default: vm01
+        description: VM ID
         in: path
         name: vmId
         required: true
@@ -2757,17 +2791,20 @@ paths:
       - application/json
       description: Get VM in specified MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
         type: string
-      - description: VM ID
+      - default: vm01
+        description: VM ID
         in: path
         name: vmId
         required: true
@@ -2815,12 +2852,14 @@ paths:
       - application/json
       description: Create multiple VMs by VM group in specified MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2856,7 +2895,8 @@ paths:
       deprecated: true
       description: Get MCIS recommendation
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2891,7 +2931,8 @@ paths:
       - application/json
       description: Create MCIS Dynamically from common spec and image
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -2926,12 +2967,14 @@ paths:
       - application/json
       description: Install monitoring agent (CB-Dragonfly agent) to MCIS
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -2967,12 +3010,14 @@ paths:
       description: Get monitoring data of specified MCIS for specified monitoring
         metric (cpu, memory, disk, network)
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -3007,7 +3052,8 @@ paths:
       - application/json
       description: Delete all MCIS policies
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3031,7 +3077,8 @@ paths:
       - application/json
       description: List all MCIS policies
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3060,12 +3107,14 @@ paths:
       - application/json
       description: Delete MCIS Policy
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -3089,12 +3138,14 @@ paths:
       - application/json
       description: Get MCIS Policy
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -3122,12 +3173,14 @@ paths:
       - application/json
       description: Create MCIS Automation policy
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: MCIS ID
+      - default: mcis01
+        description: MCIS ID
         in: path
         name: mcisId
         required: true
@@ -3191,7 +3244,8 @@ paths:
       - application/json
       description: Fetch specs
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3220,7 +3274,8 @@ paths:
       - application/json
       description: Filter specs
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3254,7 +3309,8 @@ paths:
       - application/json
       description: Filter specs by range
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3697,7 +3753,8 @@ paths:
       - application/json
       description: Delete all specs
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3721,7 +3778,8 @@ paths:
       - application/json
       description: List all specs or specs' ID
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3767,7 +3825,8 @@ paths:
         name: registeringMethod
         required: true
         type: string
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3806,7 +3865,8 @@ paths:
       - application/json
       description: Delete spec
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3835,7 +3895,8 @@ paths:
       - application/json
       description: Get spec
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3874,7 +3935,8 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbSpecInfo'
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4299,7 +4361,8 @@ paths:
       - application/json
       description: Recommend MCIS plan (filter and priority)
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
