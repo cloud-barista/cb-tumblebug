@@ -21,7 +21,7 @@ jobs:
           echo Hello, this workflow is allowed to specific OWNERS.
       
       # Apply 'approved' label when OWNER left '/approve' comment
-      - uses: actions/checkout@v2.3.5
+      - uses: actions/checkout@v2.4.0
       - uses: actions-ecosystem/action-add-labels@v1.1.3
         with:
           github_token: ${{ secrets.github_token }}
