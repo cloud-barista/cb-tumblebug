@@ -3,17 +3,19 @@ module github.com/cloud-barista/cb-tumblebug
 go 1.16
 
 replace (
+	github.com/cloud-barista/cb-spider => ./first_party/cb-spider
 	github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.3
 	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 )
 
 require (
+	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/bramvdbogaerde/go-scp v1.0.0
 	github.com/cloud-barista/cb-dragonfly v0.4.3
 	github.com/cloud-barista/cb-log v0.4.0
-	github.com/cloud-barista/cb-spider v0.4.13
+	github.com/cloud-barista/cb-spider v0.4.14
 	github.com/cloud-barista/cb-store v0.4.1
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/go-resty/resty/v2 v2.6.0
@@ -40,7 +42,7 @@ require (
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	google.golang.org/grpc v1.39.0
+	google.golang.org/grpc v1.42.0
 	gopkg.in/yaml.v2 v2.4.0
 	xorm.io/xorm v1.1.2
 )
