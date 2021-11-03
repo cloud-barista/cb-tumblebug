@@ -29,8 +29,8 @@ import (
 // @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisInfo body mcis.McisPolicyInfo true "Details for an MCIS object"
 // @Success 200 {object} mcis.McisPolicyInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -61,8 +61,8 @@ func RestPostMcisPolicy(c echo.Context) error {
 // @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Success 200 {object} mcis.McisPolicyInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -100,7 +100,7 @@ type RestGetAllMcisPolicyResponse struct {
 // @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} RestGetAllMcisPolicyResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -149,8 +149,8 @@ func RestPutMcisPolicy(c echo.Context) error {
 // @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis/{mcisId} [delete]
@@ -176,7 +176,7 @@ func RestDelMcisPolicy(c echo.Context) error {
 // @Tags [MCIS] Auto control policy management (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis [delete]
