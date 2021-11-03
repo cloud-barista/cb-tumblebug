@@ -1427,7 +1427,7 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "Details for MCIS object",
+                        "description": "Details for an MCIS object",
                         "name": "mcisReq",
                         "in": "body",
                         "required": true,
