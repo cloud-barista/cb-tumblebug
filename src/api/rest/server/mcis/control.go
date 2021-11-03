@@ -29,7 +29,7 @@ import (
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisReq body TbMcisReq true "Details for an MCIS object"
 // @Success 200 {object} TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -62,7 +62,7 @@ func RestPostMcis(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisReq body TbMcisDynamicReq true "Details for MCIS object"
 // @Success 200 {object} TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -105,8 +105,8 @@ type JSONResult struct {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
 // @Param option query string false "Option" Enums(id)
 // @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[STATUS]=mcis.McisStatusInfo,[CONTROL]=common.SimpleMsg,[ID]=common.IdList} "Different return structures by the given action param"
@@ -193,7 +193,7 @@ type RestGetAllMcisStatusResponse struct {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id, simple, status)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllMcisResponse,[SIMPLE]=RestGetAllMcisResponse,[ID]=common.IdList,[STATUS]=RestGetAllMcisStatusResponse} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
@@ -276,8 +276,8 @@ func RestPutMcis(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param option query string false "Option for delete MCIS (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -305,7 +305,7 @@ func RestDelMcis(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option for delete MCIS (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -337,7 +337,7 @@ type RestPostMcisRecommendResponse struct {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisRecommendReq body mcis.McisRecommendReq true "Details for an MCIS object"
 // @Success 200 {object} RestPostMcisRecommendResponse
 // @Failure 404 {object} common.SimpleMsg
@@ -376,8 +376,8 @@ func RestPostMcisRecommend(c echo.Context) error {
 // @Tags [MCIS] Control lifecycle
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate, refine)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -412,9 +412,9 @@ func RestGetControlMcis(c echo.Context) error {
 // @Tags [MCIS] Control lifecycle
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
-// @Param vmId path string true "VM ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
 // @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -455,9 +455,9 @@ type RestPostCmdMcisVmResponse struct {
 // @Tags [MCIS] Remote command
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
-// @Param vmId path string true "VM ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Success 200 {object} RestPostCmdMcisVmResponse
 // @Failure 404 {object} common.SimpleMsg
@@ -501,8 +501,8 @@ type RestPostCmdMcisResponseWrapper struct {
 // @Tags [MCIS] Remote command
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Success 200 {object} RestPostCmdMcisResponseWrapper
 // @Failure 404 {object} common.SimpleMsg
@@ -550,8 +550,8 @@ func RestPostCmdMcis(c echo.Context) error {
 // @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Success 200 {object} mcis.RestPostCmdMcisResponseWrapper
 // @Failure 404 {object} common.SimpleMsg
@@ -598,8 +598,8 @@ func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmReq body mcis.TbVmReq true "Details for an VM object"
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -632,8 +632,8 @@ func RestPostMcisVm(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmReq body mcis.TbVmReq true "Details for VM Group"
 // @Success 200 {object} mcis.TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -669,9 +669,9 @@ func RestPostMcisVmGroup(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
-// @Param vmId path string true "VM ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
 // @Param action query string false "Action to MCIS" Enums(status, suspend, resume, reboot, terminate)
 // @success 200 {object} JSONResult{[DEFAULT]=mcis.TbVmInfo,[STATUS]=mcis.TbVmStatusInfo,[CONTROL]=common.SimpleMsg} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
@@ -735,9 +735,9 @@ func RestGetMcisVm(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
-// @Param vmId path string true "VM ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
 // @Param vmInfo body mcis.TbVmInfo true "Details for an VM object"
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -754,9 +754,9 @@ func RestPutMcisVm(c echo.Context) error {
 // @Tags [MCIS] Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
-// @Param vmId path string true "VM ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
 // @Param option query string false "Option for delete VM (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -790,8 +790,8 @@ type RestGetAllBenchmarkRequest struct {
 // @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param hostIP body RestGetAllBenchmarkRequest true "Host IP address to benchmark"
 // @Success 200 {object} mcis.BenchmarkInfoArray
 // @Failure 404 {object} common.SimpleMsg
@@ -827,8 +827,8 @@ type RestGetBenchmarkRequest struct {
 // @Tags [MCIS] Performance benchmarking (WIP)
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
-// @Param mcisId path string true "MCIS ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param hostIP body RestGetBenchmarkRequest true "Host IP address to benchmark"
 // @Param action query string true "Benchmark Action to MCIS" Enums(install, init, cpus, cpum, memR, memW, fioR, fioW, dbR, dbW, rtt, mrtt, clean)
 // @Success 200 {object} mcis.BenchmarkInfoArray

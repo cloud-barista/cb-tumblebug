@@ -30,7 +30,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param registeringMethod query string true "registerWithInfo or else"
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param specInfo body mcir.TbSpecInfo false "Details for an spec object"
 // @Param specName body mcir.TbSpecReq false "name, connectionName and cspSpecName"
 // @Success 200 {object} mcir.TbSpecInfo
@@ -88,7 +88,7 @@ func RestPostSpec(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param specInfo body mcir.TbSpecInfo true "Details for an spec object"
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param specId path string true "Spec ID"
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -187,7 +187,7 @@ func RestLookupSpecList(c echo.Context) error {
 // @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -239,7 +239,7 @@ type RestFilterSpecsResponse struct {
 // @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param specFilter body mcir.TbSpecInfo false "Filter for filtering specs"
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
@@ -273,7 +273,7 @@ func RestFilterSpecs(c echo.Context) error {
 // @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param specRangeFilter body mcir.FilterSpecsByRangeRequest false "Filter for range-filtering specs"
 // @Success 200 {object} RestFilterSpecsResponse
 // @Failure 404 {object} common.SimpleMsg
@@ -335,7 +335,7 @@ func RestTestSortSpecs(c echo.Context) error {
 // @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param specId path string true "Spec ID"
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -357,7 +357,7 @@ type RestGetAllSpecResponse struct {
 // @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSpecResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
@@ -374,7 +374,7 @@ func RestGetAllSpec(c echo.Context) error {
 // @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param specId path string true "Spec ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -390,7 +390,7 @@ func RestDelSpec(c echo.Context) error {
 // @Tags [MCIR] Spec management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec [delete]
