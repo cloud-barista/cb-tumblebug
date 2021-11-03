@@ -16,14 +16,14 @@ source ../init.sh
 
 echo "${MCISID}"
 
-ControlCmd=status
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=${ControlCmd} | jq ''
+GetMCISOption=status
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=${GetMCISOption} | jq ''
 
 echo -e "${BOLD}"
 echo -e "Table: All VMs in the MCIS : ${MCISID}"
 
 echo -e "${NC} ${BLUE} ${BOLD}"
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=${ControlCmd} |
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=${GetMCISOption} |
     jq '.status | .vm | sort_by(.id)' |
     jq -r '(["VM-ID","Status","PublicIP","PrivateIP","CloudType","CloudRegion","CreatedTime"] | (., map(length*"-"))), (.[] | [.id, .status, .publicIp, .privateIp, .location.cloudType, .location.nativeRegion, .createdTime]) | @tsv' |
     column -t
