@@ -41,7 +41,7 @@ jobs:
 
       - name: Force-Add Swagger doc files
         run: |
-          cd api/rest/docs/
+          cd src/api/rest/docs/
           git add -f -v docs.go swagger.json swagger.yaml
 
       - name: Create Pull Request
