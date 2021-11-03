@@ -40,6 +40,11 @@ src/testclient/scripts/credentials.conf
 src/api/grpc/cbadm/testclient/scripts/sequentialFullTest/executionStatus*
 src/api/grpc/cbadm/testclient/scripts/credentials.conf
 
+# Swagger docs for REST APIs
+src/api/rest/docs/docs.go
+src/api/rest/docs/swagger.json
+src/api/rest/docs/swagger.yaml
+
 # Config file for mcism
 conf/
 
