@@ -1214,7 +1214,7 @@ definitions:
         example: custom tag
         type: string
       name:
-        example: tb-mcis
+        example: mcis01
         type: string
       vm:
         items:
@@ -1281,7 +1281,7 @@ definitions:
         example: custom tag
         type: string
       name:
-        example: tb-mcis
+        example: mcis01
         type: string
       placementAlgo:
         type: string
@@ -1312,7 +1312,7 @@ definitions:
       name:
         description: VM name or VM group name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
-        example: tb-vm
+        example: vm01
         type: string
       vmGroupSize:
         description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
@@ -1454,7 +1454,7 @@ definitions:
       name:
         description: VM name or VM group name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
-        example: tb-vm
+        example: vm01
         type: string
       securityGroupIds:
         items:
