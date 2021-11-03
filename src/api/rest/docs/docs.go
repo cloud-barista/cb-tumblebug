@@ -1090,7 +1090,7 @@ var doc = `{
         },
         "/ns/{nsId}/control/mcis/{mcisId}": {
             "get": {
-                "description": "Control the lifecycle of MCIS",
+                "description": "Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1100,7 +1100,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Control lifecycle"
                 ],
-                "summary": "Control the lifecycle of MCIS",
+                "summary": "Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1120,7 +1120,6 @@ var doc = `{
                     },
                     {
                         "enum": [
-                            "status",
                             "suspend",
                             "resume",
                             "reboot",
@@ -1130,7 +1129,8 @@ var doc = `{
                         "type": "string",
                         "description": "Action to MCIS",
                         "name": "action",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1157,7 +1157,7 @@ var doc = `{
         },
         "/ns/{nsId}/control/mcis/{mcisId}/vm/{vmId}": {
             "get": {
-                "description": "Control the lifecycle of VM",
+                "description": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1167,7 +1167,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Control lifecycle"
                 ],
-                "summary": "Control the lifecycle of VM",
+                "summary": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1195,7 +1195,6 @@ var doc = `{
                     },
                     {
                         "enum": [
-                            "status",
                             "suspend",
                             "resume",
                             "reboot",
@@ -1204,7 +1203,8 @@ var doc = `{
                         "type": "string",
                         "description": "Action to MCIS",
                         "name": "action",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1582,7 +1582,7 @@ var doc = `{
         },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
-                "description": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate), or Get VMs' ID",
+                "description": "Get MCIS object (option: status, vmID)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1592,7 +1592,7 @@ var doc = `{
                 "tags": [
                     "[MCIS] Provisioning management"
                 ],
-                "summary": "Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate), or Get VMs' ID",
+                "summary": "Get MCIS object (option: status, vmID)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1612,20 +1612,9 @@ var doc = `{
                     },
                     {
                         "enum": [
-                            "status",
-                            "suspend",
-                            "resume",
-                            "reboot",
-                            "terminate"
-                        ],
-                        "type": "string",
-                        "description": "Action to MCIS",
-                        "name": "action",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "id"
+                            "default",
+                            "id",
+                            "status"
                         ],
                         "type": "string",
                         "description": "Option",
@@ -1644,9 +1633,6 @@ var doc = `{
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "[CONTROL]": {
-                                            "$ref": "#/definitions/common.SimpleMsg"
-                                        },
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbMcisInfo"
                                         },
@@ -1832,21 +1818,18 @@ var doc = `{
                     },
                     {
                         "enum": [
-                            "status",
-                            "suspend",
-                            "resume",
-                            "reboot",
-                            "terminate"
+                            "default",
+                            "status"
                         ],
                         "type": "string",
-                        "description": "Action to MCIS",
-                        "name": "action",
+                        "description": "Option for MCIS",
+                        "name": "option",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Different return structures by the given action param",
+                        "description": "Different return structures by the given option param",
                         "schema": {
                             "allOf": [
                                 {
@@ -1855,9 +1838,6 @@ var doc = `{
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "[CONTROL]": {
-                                            "$ref": "#/definitions/common.SimpleMsg"
-                                        },
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbVmInfo"
                                         },

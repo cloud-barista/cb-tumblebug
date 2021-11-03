@@ -2305,7 +2305,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Control the lifecycle of MCIS
+      description: Control the lifecycle of MCIS (refine, suspend, resume, reboot,
+        terminate)
       parameters:
       - default: ns01
         description: Namespace ID
@@ -2321,7 +2322,6 @@ paths:
         type: string
       - description: Action to MCIS
         enum:
-        - status
         - suspend
         - resume
         - reboot
@@ -2329,6 +2329,7 @@ paths:
         - refine
         in: query
         name: action
+        required: true
         type: string
       produces:
       - application/json
@@ -2345,14 +2346,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Control the lifecycle of MCIS
+      summary: Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)
       tags:
       - '[MCIS] Control lifecycle'
   /ns/{nsId}/control/mcis/{mcisId}/vm/{vmId}:
     get:
       consumes:
       - application/json
-      description: Control the lifecycle of VM
+      description: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       parameters:
       - default: ns01
         description: Namespace ID
@@ -2374,13 +2375,13 @@ paths:
         type: string
       - description: Action to MCIS
         enum:
-        - status
         - suspend
         - resume
         - reboot
         - terminate
         in: query
         name: action
+        required: true
         type: string
       produces:
       - application/json
@@ -2397,7 +2398,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Control the lifecycle of VM
+      summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
       - '[MCIS] Control lifecycle'
   /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}:
@@ -2639,8 +2640,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate),
-        or Get VMs' ID
+      description: 'Get MCIS object (option: status, vmID)'
       parameters:
       - default: ns01
         description: Namespace ID
@@ -2654,19 +2654,11 @@ paths:
         name: mcisId
         required: true
         type: string
-      - description: Action to MCIS
-        enum:
-        - status
-        - suspend
-        - resume
-        - reboot
-        - terminate
-        in: query
-        name: action
-        type: string
       - description: Option
         enum:
+        - default
         - id
+        - status
         in: query
         name: option
         type: string
@@ -2679,8 +2671,6 @@ paths:
             allOf:
             - $ref: '#/definitions/mcis.JSONResult'
             - properties:
-                '[CONTROL]':
-                  $ref: '#/definitions/common.SimpleMsg'
                 '[DEFAULT]':
                   $ref: '#/definitions/mcis.TbMcisInfo'
                 '[ID]':
@@ -2696,8 +2686,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate),
-        or Get VMs' ID
+      summary: 'Get MCIS object (option: status, vmID)'
       tags:
       - '[MCIS] Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
@@ -2809,27 +2798,22 @@ paths:
         name: vmId
         required: true
         type: string
-      - description: Action to MCIS
+      - description: Option for MCIS
         enum:
+        - default
         - status
-        - suspend
-        - resume
-        - reboot
-        - terminate
         in: query
-        name: action
+        name: option
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Different return structures by the given action param
+          description: Different return structures by the given option param
           schema:
             allOf:
             - $ref: '#/definitions/mcis.JSONResult'
             - properties:
-                '[CONTROL]':
-                  $ref: '#/definitions/common.SimpleMsg'
                 '[DEFAULT]':
                   $ref: '#/definitions/mcis.TbVmInfo'
                 '[STATUS]':
