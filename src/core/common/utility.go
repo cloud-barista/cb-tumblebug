@@ -59,7 +59,7 @@ func RandomSleep(t int) {
 func CheckString(name string) error {
 
 	if name == "" {
-		err := fmt.Errorf("The provided name is empty")
+		err := fmt.Errorf("The provided string is empty")
 		return err
 	}
 
