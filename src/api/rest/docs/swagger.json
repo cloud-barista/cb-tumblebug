@@ -1413,7 +1413,7 @@
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
+                        "description": "Details for MCIS object",
                         "name": "mcisReq",
                         "in": "body",
                         "required": true,
