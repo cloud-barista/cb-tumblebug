@@ -744,6 +744,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -786,6 +787,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -824,6 +826,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -831,6 +834,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -906,6 +910,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -913,6 +918,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -966,6 +972,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -973,6 +980,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1026,6 +1034,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1033,6 +1042,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1040,6 +1050,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "vm01",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -1093,6 +1104,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1100,6 +1112,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1158,6 +1171,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1165,6 +1179,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1172,6 +1187,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "vm01",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -1229,6 +1245,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1236,6 +1253,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1289,6 +1307,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1347,6 +1366,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1421,6 +1441,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1472,6 +1493,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1520,6 +1542,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1573,6 +1596,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1580,6 +1604,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1665,6 +1690,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1672,6 +1698,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1719,6 +1746,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1726,6 +1754,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1779,6 +1808,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1786,6 +1816,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1793,6 +1824,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "vm01",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -1866,6 +1898,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1873,6 +1906,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1880,6 +1914,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "vm01",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -1927,6 +1962,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -1934,6 +1970,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -1987,6 +2024,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2040,6 +2078,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2047,6 +2086,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -2100,6 +2140,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2107,6 +2148,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -2158,6 +2200,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2200,6 +2243,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2238,6 +2282,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2245,6 +2290,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -2287,6 +2333,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2294,6 +2341,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -2345,6 +2393,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2352,6 +2401,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "mcis01",
                         "description": "MCIS ID",
                         "name": "mcisId",
                         "in": "path",
@@ -2434,6 +2484,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2478,6 +2529,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2530,6 +2582,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3205,6 +3258,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3278,6 +3332,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3336,6 +3391,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3374,6 +3430,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3432,6 +3489,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3481,6 +3539,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4122,6 +4181,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4463,6 +4523,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4609,11 +4670,11 @@ var doc = `{
                 },
                 "id": {
                     "type": "string",
-                    "example": "namespaceid01"
+                    "example": "ns01"
                 },
                 "name": {
                     "type": "string",
-                    "example": "namespacename01"
+                    "example": "ns01"
                 }
             }
         },
@@ -4621,10 +4682,12 @@ var doc = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Description for this namespace"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ns01"
                 }
             }
         },
@@ -6289,7 +6352,7 @@ var doc = `{
                         "yes",
                         "no"
                     ],
-                    "example": "yes"
+                    "example": "no"
                 },
                 "label": {
                     "description": "Label is for describing the mcis in a keyword (any string can be used)",
@@ -6299,7 +6362,7 @@ var doc = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "tb-mcis"
+                    "example": "mcis01"
                 },
                 "vm": {
                     "type": "array",
@@ -6377,7 +6440,7 @@ var doc = `{
                         "yes",
                         "no"
                     ],
-                    "example": "yes"
+                    "example": "no"
                 },
                 "label": {
                     "description": "Label is for describing the mcis in a keyword (any string can be used)",
@@ -6387,7 +6450,7 @@ var doc = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "tb-mcis"
+                    "example": "mcis01"
                 },
                 "placementAlgo": {
                     "type": "string"
@@ -6428,7 +6491,7 @@ var doc = `{
                 "name": {
                     "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
                     "type": "string",
-                    "example": "tb-vm"
+                    "example": "vm01"
                 },
                 "vmGroupSize": {
                     "description": "if vmGroupSize is (not empty) \u0026\u0026 (\u003e 0), VM group will be gernetad. VMs will be created accordingly.",
@@ -6637,7 +6700,7 @@ var doc = `{
                 "name": {
                     "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
                     "type": "string",
-                    "example": "tb-vm"
+                    "example": "vm01"
                 },
                 "securityGroupIds": {
                     "type": "array",
