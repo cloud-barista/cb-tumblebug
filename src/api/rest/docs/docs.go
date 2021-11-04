@@ -2420,6 +2420,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2615,6 +2616,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2688,6 +2690,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2746,6 +2749,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2784,6 +2788,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2842,6 +2847,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2891,6 +2897,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2936,6 +2943,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2989,6 +2997,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3055,6 +3064,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3106,6 +3116,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3144,6 +3155,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3193,6 +3205,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3565,6 +3578,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3631,6 +3645,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3682,6 +3697,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3720,6 +3736,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3769,6 +3786,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3814,6 +3832,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3880,6 +3899,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3931,6 +3951,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3969,6 +3990,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4018,6 +4040,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4063,6 +4086,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4116,6 +4140,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",

@@ -3199,7 +3199,8 @@ paths:
       - application/json
       description: Fetch images
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3328,7 +3329,8 @@ paths:
       - application/json
       description: Delete all images
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3352,7 +3354,8 @@ paths:
       - application/json
       description: List all images or images' ID
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3398,7 +3401,8 @@ paths:
         name: registeringMethod
         required: true
         type: string
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3437,7 +3441,8 @@ paths:
       - application/json
       description: Delete image
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3466,7 +3471,8 @@ paths:
       - application/json
       description: Get image
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3505,7 +3511,8 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbImageInfo'
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3539,7 +3546,8 @@ paths:
       - application/json
       description: Search image
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3574,7 +3582,8 @@ paths:
       - application/json
       description: Delete all Security Groups
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3598,7 +3607,8 @@ paths:
       - application/json
       description: List all Security Groups or Security Groups' ID
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3639,7 +3649,8 @@ paths:
       - application/json
       description: Create Security Group
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3674,7 +3685,8 @@ paths:
       - application/json
       description: Delete Security Group
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3703,7 +3715,8 @@ paths:
       - application/json
       description: Get Security Group
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3954,7 +3967,8 @@ paths:
       - application/json
       description: Delete all SSH Keys
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -3978,7 +3992,8 @@ paths:
       - application/json
       description: List all SSH Keys or SSH Keys' ID
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4019,7 +4034,8 @@ paths:
       - application/json
       description: Create SSH Key
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4054,7 +4070,8 @@ paths:
       - application/json
       description: Delete SSH Key
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4083,7 +4100,8 @@ paths:
       - application/json
       description: Get SSH Key
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4117,7 +4135,8 @@ paths:
       - application/json
       description: Delete all VNets
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4141,7 +4160,8 @@ paths:
       - application/json
       description: List all VNets or VNets' ID
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4182,7 +4202,8 @@ paths:
       - application/json
       description: Create VNet
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4217,7 +4238,8 @@ paths:
       - application/json
       description: Delete VNet
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4246,7 +4268,8 @@ paths:
       - application/json
       description: Get VNet
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4280,7 +4303,8 @@ paths:
       - application/json
       description: Create Subnet
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
@@ -4315,7 +4339,8 @@ paths:
       - application/json
       description: Delete Subnet
       parameters:
-      - description: Namespace ID
+      - default: ns01
+        description: Namespace ID
         in: path
         name: nsId
         required: true
