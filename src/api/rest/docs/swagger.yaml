@@ -29,6 +29,8 @@ definitions:
         type: string
       driverName:
         type: string
+      location:
+        $ref: '#/definitions/common.GeoLocation'
       providerName:
         type: string
       regionName:
@@ -40,6 +42,19 @@ definitions:
         items:
           $ref: '#/definitions/common.ConnConfig'
         type: array
+    type: object
+  common.GeoLocation:
+    properties:
+      briefAddr:
+        type: string
+      cloudType:
+        type: string
+      latitude:
+        type: string
+      longitude:
+        type: string
+      nativeRegion:
+        type: string
     type: object
   common.IID:
     properties:
@@ -805,19 +820,6 @@ definitions:
           $ref: '#/definitions/mcis.FilterCondition'
         type: array
     type: object
-  mcis.GeoLocation:
-    properties:
-      briefAddr:
-        type: string
-      cloudType:
-        type: string
-      latitude:
-        type: string
-      longitude:
-        type: string
-      nativeRegion:
-        type: string
-    type: object
   mcis.JSONResult:
     type: object
   mcis.McisCmdReq:
@@ -1344,7 +1346,7 @@ definitions:
       label:
         type: string
       location:
-        $ref: '#/definitions/mcis.GeoLocation'
+        $ref: '#/definitions/common.GeoLocation'
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -1499,7 +1501,7 @@ definitions:
       id:
         type: string
       location:
-        $ref: '#/definitions/mcis.GeoLocation'
+        $ref: '#/definitions/common.GeoLocation'
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
