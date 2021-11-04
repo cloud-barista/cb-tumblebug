@@ -19,7 +19,7 @@ CB-Tumblebug welcomes improvements from both new and experienced contributors!
   - [How to open and update a PR](https://github.com/cloud-barista/docs/blob/master/contributing/how_to_open_a_pull_request-ko.md)
     - **Be careful!** 
       - Contributors should not push files related to their personal credentials (e.g., credentials.conf) to remote repository.
-      - The credential file for CSPs (`src/testclient/scripts/credentials.conf`) is in the [.gitignore](https://github.com/cloud-barista/cb-tumblebug/blob/ed250835a1357784afd4c857d6bd56e0d78cd219/.gitignore#L36) condition.
+      - The credential file for CSPs (`src/credentials.conf`) is in the [.gitignore](https://github.com/cloud-barista/cb-tumblebug/blob/c6892605f8444e6aa475be05d4db32eec8c8f0ba/.gitignore#L51) condition.
       - So, `credentials.conf` will not be staged for a commit.
       - Anyway, please be careful.
   - [Test requirement for developers](https://github.com/cloud-barista/cb-tumblebug/wiki/Basic-testing-guide-before-a-contribution)
