@@ -319,20 +319,19 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @Tags [Admin] Cloud environment management
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Router /loadCommonResource [get]
 func RestLoadCommonResource(c echo.Context) error {
 
-	err := mcir.LoadCommonResource()
+	output, err := mcir.LoadCommonResource()
 
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)
 	}
-	mapA := map[string]string{"message": "Done"}
-	return c.JSON(http.StatusOK, &mapA)
+	return c.JSON(http.StatusOK, output)
 }
 
 // RestLoadDefaultResouce godoc
