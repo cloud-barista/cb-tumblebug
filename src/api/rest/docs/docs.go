@@ -400,7 +400,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
