@@ -4,7 +4,7 @@ source ../common-functions.sh
 readParametersByName "$@"
 set -- "$CSP" "$REGION" "$POSTFIX" "$TestSetFile" "$OPTION01" "$OPTION02" "$OPTION03"
 
-FILE=../credentials.conf
+FILE=../../../../conf/credentials.conf
 if [ ! -f "$FILE" ]; then
 	echo "$FILE does not exist."
 	exit
@@ -16,7 +16,7 @@ if [ ! -f "$TestSetFile" ]; then
 fi
 source $TestSetFile
 source ../conf.env
-source ../credentials.conf
+source ../../../../conf/credentials.conf
 
 getCloudIndex $CSP
 MCISID=${POSTFIX}

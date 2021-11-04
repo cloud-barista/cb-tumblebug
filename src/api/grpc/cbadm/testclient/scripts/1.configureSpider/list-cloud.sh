@@ -10,7 +10,7 @@
     fi
 	source $TestSetFile
     source ../conf.env
-    #source ../credentials.conf
+    #source ../../../../conf/credentials.conf
     
     echo "####################################################################"
     echo "## 0. List Cloud Connction Config(s)"
