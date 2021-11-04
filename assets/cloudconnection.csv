@@ -1,99 +1,145 @@
-ProviderName,CONN_CONFIG,RegionName,RegionLocation,DriverLibFileName,DriverName
-AWS,aws-ap-southeast-1,aws-ap-southeast-1,Asia Pacific (Singapore),aws-driver-v1.0.so,aws-driver01
-AWS,aws-ca-central-1,aws-ca-central-1,Canada (Central),aws-driver-v1.0.so,aws-driver01
-AWS,aws-us-west-1,aws-us-west-1,US West (N. California),aws-driver-v1.0.so,aws-driver01
-AWS,aws-us-east-1,aws-us-east-1,US East (N. Virginia),aws-driver-v1.0.so,aws-driver01
-AWS,aws-ap-northeast-1,aws-ap-northeast-1,Asia Pacific (Tokyo),aws-driver-v1.0.so,aws-driver01
-AWS,aws-ap-south-1,aws-ap-south-1,Asia Pacific (Mumbai),aws-driver-v1.0.so,aws-driver01
-AWS,aws-ap-southeast-2,aws-ap-southeast-2,Asia Pacific (Sydney),aws-driver-v1.0.so,aws-driver01
-AWS,aws-eu-west-2,aws-eu-west-2,Europe (London),aws-driver-v1.0.so,aws-driver01
-AWS,aws-us-east-2,aws-us-east-2,US East (Ohio),aws-driver-v1.0.so,aws-driver01
-AWS,aws-us-west-2,aws-us-west-2,US West (Oregon),aws-driver-v1.0.so,aws-driver01
-AWS,aws-ap-northeast-3,aws-ap-northeast-3,Asia Pacific (Osaka),aws-driver-v1.0.so,aws-driver01
-AWS,aws-eu-central-1,aws-eu-central-1,Europe (Frankfurt),aws-driver-v1.0.so,aws-driver01
-AWS,aws-eu-west-1,aws-eu-west-1,Europe (Ireland),aws-driver-v1.0.so,aws-driver01
-AWS,aws-eu-west-3,aws-eu-west-3,Europe (Paris),aws-driver-v1.0.so,aws-driver01
-AWS,aws-eu-north-1,aws-eu-north-1,Europe (Stockholm),aws-driver-v1.0.so,aws-driver01
-AWS,aws-sa-east-1,aws-sa-east-1,South America (Sao Paulo),aws-driver-v1.0.so,aws-driver01
-AWS,aws-ap-northeast-2,aws-ap-northeast-2,Asia Pacific (Seoul),aws-driver-v1.0.so,aws-driver01
-AWS,aws-ap-east-1,aws-ap-east-1,Asia Pacific (Hong Kong),aws-driver-v1.0.so,aws-driver01
-AWS,aws-me-south-1,aws-me-south-1,Middle East (Bahrain),aws-driver-v1.0.so,aws-driver01
-AWS,aws-af-south-1,aws-af-south-1,Africa (Cape Town),aws-driver-v1.0.so,aws-driver01
-AWS,aws-eu-south-1,aws-eu-south-1,Europe (Milan),aws-driver-v1.0.so,aws-driver01
-AZURE,azure-westus,azure-westus,West US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-eastus,azure-eastus,East US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-northeurope,azure-northeurope,North Europe,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westeurope,azure-westeurope,West Europe,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-eastasia,azure-eastasia,East Asia,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southeastasia,azure-southeastasia,Southeast Asia,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-northcentralus,azure-northcentralus,North Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southcentralus,azure-southcentralus,South Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-centralus,azure-centralus,Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-eastus2,azure-eastus2,East US 2,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-japaneast,azure-japaneast,Japan East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-japanwest,azure-japanwest,Japan West,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-brazilsouth,azure-brazilsouth,Brazil South,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-australiaeast,azure-australiaeast,Australia East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-australiasoutheast,azure-australiasoutheast,Australia Southeast,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-centralindia,azure-centralindia,Central India,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-canadacentral,azure-canadacentral,Canada Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-canadaeast,azure-canadaeast,Canada East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westcentralus,azure-westcentralus, West Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westus2,azure-westus2,West US 2,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-ukwest,azure-ukwest,UK West,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-uksouth,azure-uksouth,UK South,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-koreacentral,azure-koreacentral,Korea Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-koreasouth,azure-koreasouth,Korea South,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-francecentral,azure-francecentral,France Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-australiacentral,azure-australiacentral,Australia Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southafricanorth,azure-southafricanorth,South Africa North,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-uaenorth,azure-uaenorth,UAE North,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-switzerlandnorth,azure-switzerlandnorth,Switzerland North,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-germanywestcentral,azure-germanywestcentral,Germany West Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-norwayeast,azure-norwayeast,Norway East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southindia,azure-southindia,South India,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westindia,azure-westindia,West India,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southafricawest,azure-southafricawest,South Africa West,azure-driver-v1.0.so,azure-driver01
-GCP,gcp-asia-east1,gcp-asia-east1,Changhua County Taiwan [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-europe-west3,gcp-europe-west3,Frankfurt Germany [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-asia-east2,gcp-asia-east2,Hong Kong [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-asia-northeast1,gcp-asia-northeast1,Tokyo Japan [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-asia-northeast2,gcp-asia-northeast2,Osaka Japan [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-asia-northeast3,gcp-asia-northeast3,Seoul South Korea [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-us-west4,gcp-us-west4,Las Vegas USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-asia-southeast1,gcp-asia-southeast1,Jurong West Singapore [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-australia-southeast1,gcp-australia-southeast1,Sydney Australia [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-europe-north1,gcp-europe-north1,Hamina Finland [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-europe-west1,gcp-europe-west1,St. Ghislain Belgium [zone:b],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-europe-west2,gcp-europe-west2,London England  UK [zone:b],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-europe-west4,gcp-europe-west4,Eemshaven Netherlands [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-europe-west6,gcp-europe-west6,Zurich Switzerland [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-northamerica-northeast1,gcp-northamerica-northeast1,Montreal Quebec Canada [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-southamerica-east1,gcp-southamerica-east1,Osasco (Sao Paulo)  Brazil [zone:e],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-us-central1,gcp-us-central1,Council Bluffs Iowa  USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-us-east1,gcp-us-east1,Moncks Corner South Carolina USA [zone:b],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-us-east4,gcp-us-east4,Ashburn Northern Virginia USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-us-west1,gcp-us-west1,Dalles Oregon USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-us-west2,gcp-us-west2,LA California USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
-GCP,gcp-us-west3,gcp-us-west3,Salt Lake City Utah USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
-ALIBABA,alibaba-ap-northeast-1,alibaba-ap-northeast-1,Japan (Tokyo),alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-ap-south-1,alibaba-ap-south-1,Mumbai Zone A,alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-ap-southeast-1,alibaba-ap-southeast-1,Singapore [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-ap-southeast-2,alibaba-ap-southeast-2,Australia (Sydney) [zone:a],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-ap-southeast-3,alibaba-ap-southeast-3,Malaysia (Kuala Lumpur) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-ap-southeast-5,alibaba-ap-southeast-5,Indonesia (Jakarta) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-us-west-1,alibaba-us-west-1,US (Silicon Valley) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-us-east-1,alibaba-us-east-1,US (Virginia) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
-MOCK,testcloud01-seoul,testcloud01-seoul,Korea (Seoul),mock-driver-v1.0.so,mock-driver01
-MOCK,testcloud02-canada,testcloud02-canada,Canada (Central),mock-driver-v1.0.so,mock-driver01
-MOCK,testcloud03-frankfurt,testcloud03-frankfurt,Europe (Frankfurt),mock-driver-v1.0.so,mock-driver01
-OPENSTACK,openstack-region01,openstack-region01,Korea Daejeon (Internal),openstack-driver-v1.0.so,openstack-driver01
-NCP,ncp-korea1,ncp-korea1,Korea,ncp-driver-v1.0.so,ncp-driver01
-NCP,ncp-us-western,ncp-us-western,US West,ncp-driver-v1.0.so,ncp-driver01
-NCP,ncp-germany,ncp-germany,Germany,ncp-driver-v1.0.so,ncp-driver01
-NCP,ncp-singapore,ncp-singapore,Singapore,ncp-driver-v1.0.so,ncp-driver01
-NCP,ncp-japan,ncp-japan,Japan,ncp-driver-v1.0.so,ncp-driver01
-CLOUDIT,cloudit-region01,cloudit-region01,Korea Seoul (Internal),cloudit-driver-v1.0.so,cloudit-driver01
-TENCENT,tencent-ap-singapore,tencent-ap-singapore,Singapore,tencent-driver-v1.0.so,tencent-driver01
-CLOUDTWIN,cloudtwin-region01,cloudtwin-region01,Korea Daejeon (Internal),cloudtwin-driver-v1.0.so,cloudtwin-driver01
-MOCK,mock-seoul,mock-seoul,Korea Seoul (Virtual),mock-driver-v1.0.so,mock-driver01
+ProviderName,CONN_CONFIG,RegionName,NativeRegionName,RegionLocation,DriverLibFileName,DriverName
+MOCK,testcloud01-seoul,testcloud01-seoul,default,Korea (Seoul),mock-driver-v1.0.so,mock-driver01
+MOCK,testcloud02-canada,testcloud02-canada,default,Canada (Central),mock-driver-v1.0.so,mock-driver01
+MOCK,testcloud03-frankfurt,testcloud03-frankfurt,default,Europe (Frankfurt),mock-driver-v1.0.so,mock-driver01
+AWS,aws-ap-southeast-1,aws-ap-southeast-1,ap-southeast-1,Asia Pacific (Singapore),aws-driver-v1.0.so,aws-driver01
+AWS,aws-ca-central-1,aws-ca-central-1,ca-central-1,Canada (Central),aws-driver-v1.0.so,aws-driver01
+AWS,aws-us-west-1,aws-us-west-1,us-west-1,US West (N. California),aws-driver-v1.0.so,aws-driver01
+AWS,aws-us-east-1,aws-us-east-1,us-east-1,US East (N. Virginia),aws-driver-v1.0.so,aws-driver01
+AWS,aws-ap-northeast-1,aws-ap-northeast-1,ap-northeast-1,Asia Pacific (Tokyo),aws-driver-v1.0.so,aws-driver01
+AWS,aws-ap-south-1,aws-ap-south-1,ap-south-1,Asia Pacific (Mumbai),aws-driver-v1.0.so,aws-driver01
+AWS,aws-ap-southeast-2,aws-ap-southeast-2,ap-southeast-2,Asia Pacific (Sydney),aws-driver-v1.0.so,aws-driver01
+AWS,aws-eu-west-2,aws-eu-west-2,eu-west-2,Europe (London),aws-driver-v1.0.so,aws-driver01
+AWS,aws-us-east-2,aws-us-east-2,us-east-2,US East (Ohio),aws-driver-v1.0.so,aws-driver01
+AWS,aws-us-west-2,aws-us-west-2,us-west-2,US West (Oregon),aws-driver-v1.0.so,aws-driver01
+AWS,aws-ap-northeast-3,aws-ap-northeast-3,ap-northeast-3,Asia Pacific (Osaka),aws-driver-v1.0.so,aws-driver01
+AWS,aws-eu-central-1,aws-eu-central-1,eu-central-1,Europe (Frankfurt),aws-driver-v1.0.so,aws-driver01
+AWS,aws-eu-west-1,aws-eu-west-1,eu-west-1,Europe (Ireland),aws-driver-v1.0.so,aws-driver01
+AWS,aws-eu-west-3,aws-eu-west-3,eu-west-3,Europe (Paris),aws-driver-v1.0.so,aws-driver01
+AWS,aws-eu-north-1,aws-eu-north-1,eu-north-1,Europe (Stockholm),aws-driver-v1.0.so,aws-driver01
+AWS,aws-sa-east-1,aws-sa-east-1,sa-east-1,South America (Sao Paulo),aws-driver-v1.0.so,aws-driver01
+AWS,aws-ap-northeast-2,aws-ap-northeast-2,ap-northeast-2,Asia Pacific (Seoul),aws-driver-v1.0.so,aws-driver01
+AWS,aws-ap-east-1,aws-ap-east-1,ap-east-1,Asia Pacific (Hong Kong),aws-driver-v1.0.so,aws-driver01
+AWS,aws-me-south-1,aws-me-south-1,me-south-1,Middle East (Bahrain),aws-driver-v1.0.so,aws-driver01
+AWS,aws-af-south-1,aws-af-south-1,af-south-1,Africa (Cape Town),aws-driver-v1.0.so,aws-driver01
+AWS,aws-eu-south-1,aws-eu-south-1,eu-south-1,Europe (Milan),aws-driver-v1.0.so,aws-driver01
+AZURE,azure-westus,azure-westus,westus,West US,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-eastus,azure-eastus,eastus,East US,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-northeurope,azure-northeurope,northeurope,North Europe,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-westeurope,azure-westeurope,westeurope,West Europe,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-eastasia,azure-eastasia,eastasia,East Asia,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-southeastasia,azure-southeastasia,southeastasia,Southeast Asia,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-northcentralus,azure-northcentralus,northcentralus,North Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-southcentralus,azure-southcentralus,southcentralus,South Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-centralus,azure-centralus,centralus,Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-eastus2,azure-eastus2,eastus2,East US 2,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-japaneast,azure-japaneast,japaneast,Japan East,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-japanwest,azure-japanwest,japanwest,Japan West,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-brazilsouth,azure-brazilsouth,brazilsouth,Brazil South,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-australiaeast,azure-australiaeast,australiaeast,Australia East,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-australiasoutheast,azure-australiasoutheast,australiasoutheast,Australia Southeast,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-centralindia,azure-centralindia,centralindia,Central India,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-canadacentral,azure-canadacentral,canadacentral,Canada Central,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-canadaeast,azure-canadaeast,canadaeast,Canada East,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-westcentralus,azure-westcentralus,westcentralus, West Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-westus2,azure-westus2,westus2,West US 2,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-ukwest,azure-ukwest,ukwest,UK West,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-uksouth,azure-uksouth,uksouth,UK South,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-koreacentral,azure-koreacentral,koreacentral,Korea Central,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-koreasouth,azure-koreasouth,koreasouth,Korea South,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-francecentral,azure-francecentral,francecentral,France Central,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-australiacentral,azure-australiacentral,australiacentral,Australia Central,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-southafricanorth,azure-southafricanorth,southafricanorth,South Africa North,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-uaenorth,azure-uaenorth,uaenorth,UAE North,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-switzerlandnorth,azure-switzerlandnorth,switzerlandnorth,Switzerland North,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-germanywestcentral,azure-germanywestcentral,germanywestcentral,Germany West Central,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-norwayeast,azure-norwayeast,norwayeast,Norway East,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-southindia,azure-southindia,southindia,South India,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-westindia,azure-westindia,westindia,West India,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-southafricawest,azure-southafricawest,southafricawest,South Africa West,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-switzerlandwest,azure-switzerlandwest,switzerlandwest,Switzerland West,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-germanynorth,azure-germanynorth,germanynorth,Germany North,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-uaecentral,azure-uaecentral,uaecentral,UAE Central,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-norwaywest,azure-norwaywest,norwaywest,Norway West,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-francesouth,azure-francesouth,francesouth,France South,azure-driver-v1.0.so,azure-driver01
+AZURE,azure-australiacentral2,azure-australiacentral2,australiacentral2,Australia Central 2,azure-driver-v1.0.so,azure-driver01
+GCP,gcp-asia-east1,gcp-asia-east1,asia-east1,Changhua County Taiwan [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-europe-west3,gcp-europe-west3,europe-west3,Frankfurt Germany [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-asia-east2,gcp-asia-east2,asia-east2,Hong Kong [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-asia-northeast1,gcp-asia-northeast1,asia-northeast1,Tokyo Japan [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-asia-northeast2,gcp-asia-northeast2,asia-northeast2,Osaka Japan [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-asia-northeast3,gcp-asia-northeast3,asia-northeast3,Seoul South Korea [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-us-west4,gcp-us-west4,us-west4,Las Vegas USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-asia-southeast1,gcp-asia-southeast1,asia-southeast1,Jurong West Singapore [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-australia-southeast1,gcp-australia-southeast1,australia-southeast1,Sydney Australia [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-europe-north1,gcp-europe-north1,europe-north1,Hamina Finland [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-europe-west1,gcp-europe-west1,europe-west1,St. Ghislain Belgium [zone:b],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-europe-west2,gcp-europe-west2,europe-west2,London England  UK [zone:b],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-europe-west4,gcp-europe-west4,europe-west4,Eemshaven Netherlands [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-europe-west6,gcp-europe-west6,europe-west6,Zurich Switzerland [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-northamerica-northeast1,gcp-northamerica-northeast1,northamerica-northeast1,Montreal Quebec Canada [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-southamerica-east1,gcp-southamerica-east1,southamerica-east1,Osasco (Sao Paulo)  Brazil [zone:e],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-us-central1,gcp-us-central1,us-central1,Council Bluffs Iowa  USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-us-east1,gcp-us-east1,us-east1,Moncks Corner South Carolina USA [zone:b],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-us-east4,gcp-us-east4,us-east4,Ashburn Northern Virginia USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-us-west1,gcp-us-west1,us-west1,Dalles Oregon USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-us-west2,gcp-us-west2,us-west2,LA California USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-us-west3,gcp-us-west3,us-west3,Salt Lake City Utah USA [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-asia-south1,gcp-asia-south1,asia-south1,Mumbai India [zone:b],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-asia-southeast2,gcp-asia-southeast2,asia-southeast2,Jakarta Indonesia [zone:a],gcp-driver-v1.0.so,gcp-driver01
+GCP,gcp-europe-central2,gcp-europe-central2,europe-central2,Warsaw Poland [zone:a],gcp-driver-v1.0.so,gcp-driver01
+ALIBABA,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ap-northeast-1,Japan (Tokyo),alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-ap-south-1,alibaba-ap-south-1,ap-south-1,Mumbai Zone A,alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-ap-southeast-1,alibaba-ap-southeast-1,ap-southeast-1,Singapore [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-ap-southeast-2,alibaba-ap-southeast-2,ap-southeast-2,Australia (Sydney) [zone:a],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-ap-southeast-3,alibaba-ap-southeast-3,ap-southeast-3,Malaysia (Kuala Lumpur) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-ap-southeast-5,alibaba-ap-southeast-5,ap-southeast-5,Indonesia (Jakarta) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-us-west-1,alibaba-us-west-1,us-west-1,US (Silicon Valley) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-us-east-1,alibaba-us-east-1,us-east-1,US (Virginia) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-eu-central-1,alibaba-eu-central-1,eu-central-1,Germany (Frankfurt) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-eu-west-1,alibaba-eu-west-1,eu-west-1,UK (London) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-me-east-1,alibaba-me-east-1,me-east-1,UAE (Dubai) [zone:a],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-hongkong,alibaba-cn-hongkong,cn-hongkong,China (Hong Kong) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-shanghai,alibaba-cn-shanghai,cn-shanghai,China (Shanghai) [zone:g],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-beijing,alibaba-cn-beijing,cn-beijing,China (Beijing) [zone:h],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-qingdao,alibaba-cn-qingdao,cn-qingdao,China (Qingdao) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-zhangjiakou,alibaba-cn-zhangjiakou,cn-zhangjiakou,China (Zhangjiakou) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-huhehaote,alibaba-cn-huhehaote,cn-huhehaote,China (Hohhot) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-hangzhou,alibaba-cn-hangzhou,cn-hangzhou,China (HohHangzhouhot) [zone:h],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-shenz,alibaba-cn-shenzhen,cn-shenzhen,China (Shenzhen) [zone:e],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-heyuan,alibaba-cn-heyuan,cn-heyuan,China (Heyuan) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-chengdu,alibaba-cn-chengdu,cn-chengdu,China (Chengdu) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-wulanchabu,alibaba-cn-wulanchabu,cn-wulanchabu,China (Ulanqab) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-guangzhou,alibaba-cn-guangzhou,cn-guangzhou,China (Guangzhou) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+OPENSTACK,openstack-region01,openstack-region01,RegionOne,Korea Daejeon (Internal),openstack-driver-v1.0.so,openstack-driver01
+NCP,ncp-korea1,ncp-korea1,KR,Korea,ncp-driver-v1.0.so,ncp-driver01
+NCP,ncp-us-western,ncp-us-western,USWN,US West,ncp-driver-v1.0.so,ncp-driver01
+NCP,ncp-germany,ncp-germany,DEN,Germany,ncp-driver-v1.0.so,ncp-driver01
+NCP,ncp-singapore,ncp-singapore,SGN,Singapore,ncp-driver-v1.0.so,ncp-driver01
+NCP,ncp-japan,ncp-japan,JPN,Japan,ncp-driver-v1.0.so,ncp-driver01
+CLOUDIT,cloudit-region01,cloudit-region01,default,Korea Seoul (Internal),cloudit-driver-v1.0.so,cloudit-driver01
+TENCENT,tencent-ap-singapore,tencent-ap-singapore,ap-singapore,Singapore,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-jakarta,tencent-ap-jakarta,ap-jakarta,Jakarta,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-seoul,tencent-ap-seoul,ap-seoul,Seoul,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-tokyo,tencent-ap-tokyo,ap-tokyo,Tokyo,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-mumbai,tencent-ap-mumbai,ap-mumbai,Mumbai,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-bangkok,tencent-ap-bangkok,ap-bangkok,Bangkok,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-na-toronto,tencent-na-toronto,na-toronto,Toronto,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-na-siliconvalley,tencent-na-siliconvalley,na-siliconvalley,SiliconValley,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-na-ashburn,tencent-na-ashburn,na-ashburn,Virginia,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-eu-frankfurt,tencent-eu-frankfurt,eu-frankfurt,Frankfurt,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-eu-moscow,tencent-eu-moscow,eu-moscow,Moscow,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-guangzhou,tencent-ap-guangzhou,ap-guangzhou,Guangzhou,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-shanghai,tencent-ap-shanghai,ap-shanghai,Shanghai,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-nanjing,tencent-ap-nanjing,ap-nanjing,Nanjing,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-beijing,tencent-ap-beijing,ap-beijing,Beijing,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-chengdu,tencent-ap-chengdu,ap-chengdu,Chengdu,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-chongqing,tencent-ap-chongqing,ap-chongqing,Chongqing,tencent-driver-v1.0.so,tencent-driver01
+TENCENT,tencent-ap-hongkong,tencent-ap-hongkong,ap-hongkong,HongKong,tencent-driver-v1.0.so,tencent-driver01
+KTCLOUD,kt-kr-central-a,kt-kr-central-a,KOR-Cheonan,Cheon-an - South Korea,ktcloud-driver-v1.0.so,ktcloud-driver01
+KTCLOUD,kt-kr-central-b,kt-kr-central-b,KOR-Cheonan,Cheon-an - South Korea,ktcloud-driver-v1.0.so,ktcloud-driver01
+KTCLOUD,kt-kr-seoul-m,kt-kr-seoul-m,KOR-Seoul,Seoul - South Korea,ktcloud-driver-v1.0.so,ktcloud-driver01
+KTCLOUD,kt-kr-seoul-m2,kt-kr-seoul-m2,KOR-Seoul,Seoul - South Korea,ktcloud-driver-v1.0.so,ktcloud-driver01
+KTCLOUD,kt-us-west,kt-us-west,US,LA - US,ktcloud-driver-v1.0.so,ktcloud-driver01
+CLOUDTWIN,cloudtwin-region01,cloudtwin-region01,default,Korea Daejeon (Internal),cloudtwin-driver-v1.0.so,cloudtwin-driver01
+MOCK,mock-seoul,mock-seoul,default,Korea Seoul (Virtual),mock-driver-v1.0.so,mock-driver01
