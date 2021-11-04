@@ -143,11 +143,11 @@ echo -e " - Tumblebug Server : ${GREEN}${BOLD} $TumblebugServer ${NC}"
 echo -e " - Spider Server : ${GREEN}${BOLD} $SpiderServer ${NC}"
 echo ""
 
-INDEXX=${NumCSP}
+INDEXX=${TotalNumCSP}
 echo -e "${BOLD}2) Enabled Clouds and Regions${NC}"
 
 for ((cspi = 1; cspi <= INDEXX; cspi++)); do
-	INDEXY=${NumRegion[$cspi]}
+	INDEXY=${TotalNumRegion[$cspi]}
 	CSP=${CSPType[$cspi]}
 	echo -e "${GREEN}${BOLD} - [$cspi] Cloud : $CSP (enabled regions : $INDEXY)${NC}"
 	for ((cspj = 1; cspj <= INDEXY; cspj++)); do
@@ -179,9 +179,9 @@ done
 
 if [ "${INDEX}" == "0" ]; then
     echo "[Parallel execution for all CSP regions]"
-    INDEXX=${NumCSP}
+    INDEXX=${TotalNumCSP}
     for ((cspi = 1; cspi <= INDEXX; cspi++)); do
-        INDEXY=${NumRegion[$cspi]}
+        INDEXY=${TotalNumRegion[$cspi]}
         CSP=${CSPType[$cspi]}
         echo "[$cspi] $CSP details"
         for ((cspj = 1; cspj <= INDEXY; cspj++)); do
