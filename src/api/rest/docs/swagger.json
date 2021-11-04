@@ -4595,6 +4595,9 @@
                 "driverName": {
                     "type": "string"
                 },
+                "location": {
+                    "$ref": "#/definitions/common.GeoLocation"
+                },
                 "providerName": {
                     "type": "string"
                 },
@@ -4611,6 +4614,26 @@
                     "items": {
                         "$ref": "#/definitions/common.ConnConfig"
                     }
+                }
+            }
+        },
+        "common.GeoLocation": {
+            "type": "object",
+            "properties": {
+                "briefAddr": {
+                    "type": "string"
+                },
+                "cloudType": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "string"
+                },
+                "longitude": {
+                    "type": "string"
+                },
+                "nativeRegion": {
+                    "type": "string"
                 }
             }
         },
@@ -5759,26 +5782,6 @@
                 }
             }
         },
-        "mcis.GeoLocation": {
-            "type": "object",
-            "properties": {
-                "briefAddr": {
-                    "type": "string"
-                },
-                "cloudType": {
-                    "type": "string"
-                },
-                "latitude": {
-                    "type": "string"
-                },
-                "longitude": {
-                    "type": "string"
-                },
-                "nativeRegion": {
-                    "type": "string"
-                }
-            }
-        },
         "mcis.JSONResult": {
             "type": "object"
         },
@@ -6518,7 +6521,7 @@
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/mcis.GeoLocation"
+                    "$ref": "#/definitions/common.GeoLocation"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",
@@ -6739,7 +6742,7 @@
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/mcis.GeoLocation"
+                    "$ref": "#/definitions/common.GeoLocation"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",

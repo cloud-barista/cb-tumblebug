@@ -4609,6 +4609,9 @@ var doc = `{
                 "driverName": {
                     "type": "string"
                 },
+                "location": {
+                    "$ref": "#/definitions/common.GeoLocation"
+                },
                 "providerName": {
                     "type": "string"
                 },
@@ -4625,6 +4628,26 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/common.ConnConfig"
                     }
+                }
+            }
+        },
+        "common.GeoLocation": {
+            "type": "object",
+            "properties": {
+                "briefAddr": {
+                    "type": "string"
+                },
+                "cloudType": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "string"
+                },
+                "longitude": {
+                    "type": "string"
+                },
+                "nativeRegion": {
+                    "type": "string"
                 }
             }
         },
@@ -5773,26 +5796,6 @@ var doc = `{
                 }
             }
         },
-        "mcis.GeoLocation": {
-            "type": "object",
-            "properties": {
-                "briefAddr": {
-                    "type": "string"
-                },
-                "cloudType": {
-                    "type": "string"
-                },
-                "latitude": {
-                    "type": "string"
-                },
-                "longitude": {
-                    "type": "string"
-                },
-                "nativeRegion": {
-                    "type": "string"
-                }
-            }
-        },
         "mcis.JSONResult": {
             "type": "object"
         },
@@ -6532,7 +6535,7 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/mcis.GeoLocation"
+                    "$ref": "#/definitions/common.GeoLocation"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",
@@ -6753,7 +6756,7 @@ var doc = `{
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/mcis.GeoLocation"
+                    "$ref": "#/definitions/common.GeoLocation"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",
