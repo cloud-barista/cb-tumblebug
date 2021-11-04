@@ -6483,7 +6483,7 @@ var doc = `{
                 "commonSpec": {
                     "description": "CommonSpec is field for id of a spec in common namespace",
                     "type": "string",
-                    "example": "aws-ap-southeast-1-m1-small"
+                    "example": "aws-ap-northeast-2-t2-small"
                 },
                 "description": {
                     "type": "string",
