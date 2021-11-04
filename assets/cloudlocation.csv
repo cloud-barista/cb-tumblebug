@@ -64,31 +64,31 @@ aws,us-west-1,California,37.3500,-121.9600
 aws,us-west-2,Oregon,46.1500,-123.8800
 aws,us-gov-east-1,AWS GovCloud (US-East),37.0000,-81.0000
 aws,us-gov-west-1,AWS GovCloud (US),40.0000,-120.0000
-gcp,asia-east1,Changhua County  Taiwan,24.0756,120.5451
+gcp,asia-east1,Changhua County Taiwan,24.0756,120.5451
 gcp,asia-east2,Hong Kong,22.3964,114.1095
-gcp,asia-northeast1,Tokyo  Japan,35.6895,139.6917
-gcp,asia-northeast2,Osaka  Japan,34.6937,135.5022
-gcp,asia-northeast3,Seoul  South Korea,37.2000,127.0000
-gcp,asia-south1,Mumbai  India,19.0761,72.8774
-gcp,asia-southeast1,Jurong West  Singapore,1.3400,103.7041
-gcp,asia-southeast2,Jakarta  Indonesia,-6.2000,106.8160
-gcp,australia-southeast1,Sydney  Australia,-33.8651,151.2099
-gcp,europe-north1,Hamina  Finland,60.5700,27.2000
-gcp,europe-west1,St. Ghislain  Belgium,50.4482,3.8189
-gcp,europe-west2,London  England  UK,51.5099,-0.1181
-gcp,europe-west3,Frankfurt  Germany,50.1109,8.6821
-gcp,europe-west4,Eemshaven  Netherlands,53.4423,6.8253
-gcp,europe-west6,Zurich  Switzerland,47.3667,8.5500
-gcp,europe-central2,Warsaw  Poland,52.237049,21.017532
-gcp,northamerica-northeast1,Montreal  Quebec  Canada,45.5089,-73.5617
-gcp,southamerica-east1,Osasco (Sao Paulo)  Brazil,-23.5325,-46.7917
-gcp,us-central1,Council Bluffs  Iowa  USA,41.2522,-95.8575
-gcp,us-east1,Moncks Corner  South Carolina  USA,33.1913,-80.0040
-gcp,us-east4,Ashburn  Northern Virginia  USA,39.0403,-77.4852
-gcp,us-west1,The Dalles  Oregon  USA,45.5946,-121.1787
-gcp,us-west2,Los Angeles  California  USA,34.0522,-118.2437
-gcp,us-west3,Salt Lake City  Utah  USA,40.7587,-111.8762
-gcp,us-west4,Las Vegas  Nevada  USA,36.1146,-115.1728
+gcp,asia-northeast1,Tokyo Japan,35.6895,139.6917
+gcp,asia-northeast2,Osaka Japan,34.6937,135.5022
+gcp,asia-northeast3,Seoul South Korea,37.2000,127.0000
+gcp,asia-south1,Mumbai India,19.0761,72.8774
+gcp,asia-southeast1,Jurong West Singapore,1.3400,103.7041
+gcp,asia-southeast2,Jakarta Indonesia,-6.2000,106.8160
+gcp,australia-southeast1,Sydney Australia,-33.8651,151.2099
+gcp,europe-north1,Hamina Finland,60.5700,27.2000
+gcp,europe-west1,St. Ghislain Belgium,50.4482,3.8189
+gcp,europe-west2,London England UK,51.5099,-0.1181
+gcp,europe-west3,Frankfurt Germany,50.1109,8.6821
+gcp,europe-west4,Eemshaven Netherlands,53.4423,6.8253
+gcp,europe-west6,Zurich Switzerland,47.3667,8.5500
+gcp,europe-central2,Warsaw Poland,52.237049,21.017532
+gcp,northamerica-northeast1,Montreal Quebec Canada,45.5089,-73.5617
+gcp,southamerica-east1,Osasco (Sao Paulo) Brazil,-23.5325,-46.7917
+gcp,us-central1,Council Bluffs Iowa USA,41.2522,-95.8575
+gcp,us-east1,Moncks Corner South Carolina USA,33.1913,-80.0040
+gcp,us-east4,Ashburn Northern Virginia USA,39.0403,-77.4852
+gcp,us-west1,The Dalles Oregon USA,45.5946,-121.1787
+gcp,us-west2,Los Angeles California USA,34.0522,-118.2437
+gcp,us-west3,Salt Lake City Utah USA,40.7587,-111.8762
+gcp,us-west4,Las Vegas Nevada USA,36.1146,-115.1728
 alibaba,cn-qingdao,China (Qingdao),36.3000,120.2200
 alibaba,cn-beijing,China (Beijing),39.5427,116.2350
 alibaba,cn-zhangjiakou,China (Zhangjiakou),40.4836,114.5245
