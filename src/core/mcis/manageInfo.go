@@ -722,7 +722,7 @@ type TbVmStatusInfo struct {
 	PrivateIp string `json:"privateIp"`
 	SSHPort   string `json:"sshPort"`
 
-	Location GeoLocation `json:"location"`
+	Location common.GeoLocation `json:"location"`
 }
 
 // GetVmCurrentPublicIp is func to get VM public IP

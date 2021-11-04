@@ -15,8 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"bufio"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -275,7 +273,7 @@ type TbVmInfo struct {
 	// defined if the VM is in a group
 	VmGroupId string `json:"vmGroupId"`
 
-	Location GeoLocation `json:"location"`
+	Location common.GeoLocation `json:"location"`
 
 	// Required by CB-Tumblebug
 	Status       string `json:"status"`
@@ -314,15 +312,6 @@ type TbVmInfo struct {
 	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
-}
-
-// GeoLocation is struct for geographical location
-type GeoLocation struct {
-	Latitude     string `json:"latitude"`
-	Longitude    string `json:"longitude"`
-	BriefAddr    string `json:"briefAddr"`
-	CloudType    string `json:"cloudType"`
-	NativeRegion string `json:"nativeRegion"`
 }
 
 // StatusCountInfo is struct to count the number of VMs in each status. ex: Running=4, Suspended=8.
@@ -1135,7 +1124,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 		}
 	}
 
-	vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
+	vmInfoData.Location = common.GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
 
 	//fmt.Printf("\n[configTmp]\n %+v regionTmp %+v \n", configTmp, regionTmp)
 	//fmt.Printf("\n[vmInfoData.Location]\n %+v\n", vmInfoData.Location)
@@ -1459,78 +1448,3 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 }
 
 // [Etc used in provisioning]
-
-// GetCloudLocation is to get location of clouds (need error handling)
-func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
-
-	location := GeoLocation{}
-
-	if cloudType == "" || nativeRegion == "" {
-
-		// need error handling instead of assigning default value
-		location.CloudType = "ufc"
-		location.NativeRegion = "ufc"
-		location.BriefAddr = "South Korea (Seoul)"
-		location.Latitude = "37.4767"
-		location.Longitude = "126.8841"
-
-		return location
-	}
-
-	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
-
-	fmt.Printf("[GetCloudLocation] KEY: %+v\n", key)
-
-	keyValue, err := common.CBStore.Get(key)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return location
-	}
-
-	if keyValue == nil {
-		file, fileErr := os.Open("../assets/cloudlocation.csv")
-		defer file.Close()
-		if fileErr != nil {
-			common.CBLog.Error(fileErr)
-			return location
-		}
-
-		rdr := csv.NewReader(bufio.NewReader(file))
-		rows, _ := rdr.ReadAll()
-		for i, row := range rows {
-			keyLoc := "/cloudtype/" + rows[i][0] + "/region/" + rows[i][1]
-			location.CloudType = rows[i][0]
-			location.NativeRegion = rows[i][1]
-			location.BriefAddr = rows[i][2]
-			location.Latitude = rows[i][3]
-			location.Longitude = rows[i][4]
-			valLoc, _ := json.Marshal(location)
-			dbErr := common.CBStore.Put(keyLoc, string(valLoc))
-			if dbErr != nil {
-				common.CBLog.Error(dbErr)
-				return location
-			}
-			for j := range row {
-				fmt.Printf("%s ", rows[i][j])
-			}
-			fmt.Println()
-		}
-		keyValue, err = common.CBStore.Get(key)
-		if err != nil {
-			common.CBLog.Error(err)
-			return location
-		}
-	}
-
-	if keyValue != nil {
-		fmt.Printf("[GetCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
-		err = json.Unmarshal([]byte(keyValue.Value), &location)
-		if err != nil {
-			common.CBLog.Error(err)
-			return location
-		}
-	}
-
-	return location
-}

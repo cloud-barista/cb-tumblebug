@@ -15,6 +15,7 @@ limitations under the License.
 package common
 
 import (
+	"bufio"
 	"math/rand"
 	"os"
 	"regexp"
@@ -30,6 +31,7 @@ import (
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v2"
 
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 
@@ -253,6 +255,91 @@ type ConnConfig struct { // Spider
 	DriverName     string
 	CredentialName string
 	RegionName     string
+	Location       GeoLocation
+}
+
+// GeoLocation is struct for geographical location
+type GeoLocation struct {
+	Latitude     string `json:"latitude"`
+	Longitude    string `json:"longitude"`
+	BriefAddr    string `json:"briefAddr"`
+	CloudType    string `json:"cloudType"`
+	NativeRegion string `json:"nativeRegion"`
+}
+
+// GetCloudLocation is to get location of clouds (need error handling)
+func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
+
+	location := GeoLocation{}
+
+	if cloudType == "" || nativeRegion == "" {
+
+		// need error handling instead of assigning default value
+		location.CloudType = "ufc"
+		location.NativeRegion = "ufc"
+		location.BriefAddr = "South Korea (Seoul)"
+		location.Latitude = "37.4767"
+		location.Longitude = "126.8841"
+
+		return location
+	}
+
+	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
+
+	fmt.Printf("[GetCloudLocation] KEY: %+v\n", key)
+
+	keyValue, err := CBStore.Get(key)
+
+	if err != nil {
+		CBLog.Error(err)
+		return location
+	}
+
+	if keyValue == nil {
+		file, fileErr := os.Open("../assets/cloudlocation.csv")
+		defer file.Close()
+		if fileErr != nil {
+			CBLog.Error(fileErr)
+			return location
+		}
+
+		rdr := csv.NewReader(bufio.NewReader(file))
+		rows, _ := rdr.ReadAll()
+		for i, row := range rows {
+			keyLoc := "/cloudtype/" + rows[i][0] + "/region/" + rows[i][1]
+			location.CloudType = rows[i][0]
+			location.NativeRegion = rows[i][1]
+			location.BriefAddr = rows[i][2]
+			location.Latitude = rows[i][3]
+			location.Longitude = rows[i][4]
+			valLoc, _ := json.Marshal(location)
+			dbErr := CBStore.Put(keyLoc, string(valLoc))
+			if dbErr != nil {
+				CBLog.Error(dbErr)
+				return location
+			}
+			for j := range row {
+				fmt.Printf("%s ", rows[i][j])
+			}
+			fmt.Println()
+		}
+		keyValue, err = CBStore.Get(key)
+		if err != nil {
+			CBLog.Error(err)
+			return location
+		}
+	}
+
+	if keyValue != nil {
+		fmt.Printf("[GetCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
+		err = json.Unmarshal([]byte(keyValue.Value), &location)
+		if err != nil {
+			CBLog.Error(err)
+			return location
+		}
+	}
+
+	return location
 }
 
 // GetConnConfig is func to get connection config from CB-Spider
@@ -288,6 +375,18 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 		}
 
 		temp, _ := resp.Result().(*ConnConfig)
+
+		// Get geolocation
+		nativeRegion, err := GetNativeRegion(temp.ConfigName)
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfig{}
+			return content, err
+		}
+
+		location := GetCloudLocation(strings.ToLower(temp.ProviderName), strings.ToLower(nativeRegion))
+		temp.Location = location
+
 		return *temp, nil
 
 	} else {
@@ -360,6 +459,20 @@ func GetConnConfigList() (ConnConfigList, error) {
 		}
 
 		temp, _ := resp.Result().(*ConnConfigList)
+
+		// Get geolocations
+		for i, connConfig := range temp.Connectionconfig {
+			nativeRegion, err := GetNativeRegion(connConfig.ConfigName)
+			if err != nil {
+				CBLog.Error(err)
+				content := ConnConfigList{}
+				return content, err
+			}
+
+			location := GetCloudLocation(strings.ToLower(connConfig.ProviderName), strings.ToLower(nativeRegion))
+			temp.Connectionconfig[i].Location = location
+		}
+
 		return *temp, nil
 
 	} else {
@@ -468,6 +581,49 @@ func GetRegion(RegionName string) (Region, error) {
 		return temp, nil
 
 	}
+}
+
+// GetRegion is func to get NativRegion from file
+func GetNativeRegion(connectionName string) (string, error) {
+	// Read default resources from file and create objects
+	// HEADER: ProviderName, CONN_CONFIG, RegionName, NativeRegionName, RegionLocation, DriverLibFileName, DriverName
+	file, fileErr := os.Open("../assets/cloudconnection.csv")
+	defer file.Close()
+	if fileErr != nil {
+		CBLog.Error(fileErr)
+		return "", fileErr
+	}
+
+	rdr := csv.NewReader(bufio.NewReader(file))
+	rows, err := rdr.ReadAll()
+	if err != nil {
+		CBLog.Error(err)
+		return "", err
+	}
+
+	nativeRegionName := ""
+
+	for _, row := range rows[1:] {
+		if connectionName != "" {
+			// find only given connectionName (if not skip)
+			if connectionName != row[1] {
+				continue
+			}
+			fmt.Println("Found a line for the connectionName from file: " + row[1])
+		}
+
+		if connectionName != "" {
+			// After finish handling line for the connectionName, break
+			if connectionName == row[1] {
+				nativeRegionName = row[3]
+				fmt.Println("Handled for the connectionName from file: " + row[1])
+				break
+			}
+		}
+
+	}
+	return nativeRegionName, nil
+
 }
 
 // RegionList is array struct for Region
