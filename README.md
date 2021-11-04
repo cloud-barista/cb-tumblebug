@@ -279,10 +279,10 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
      - `credentials.conf` 는 CB-TB가 지원하는 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 사용자 인증 정보를 입력 및 보관하는 파일
      - [`conf/template.credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/conf/template.credentials.conf)를 참조하여 `credentials.conf` 파일 생성 및 내용 입력 필요
    - 생성 방법: CB-TB 스크립트를 통해 `credentials.conf` 기본 파일 자동 생성
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/generateCredencialFile.sh
-    ```
+     ```bash
+     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+     ./scripts/generateCredencialFile.sh
+     ```
    - [참고: CSP별 인증 정보 획득 방법](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)을 참고하여, `credentials.conf`에 사용자 정보 입력
 
 - 모든 멀티 클라우드 연결 정보 등록 
@@ -291,10 +291,10 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
      - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env): 클라우드 리젼 등 기본 정보 제공
      - 이미 많은 클라우드 타입에 대한 정보가 조사 및 입력되어 있으므로, 수정없이 사용 가능
    - 설정 방법: CB-TB 스크립트를 통해 [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 연결 정보 자동 등록
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/registerCloudInfo.sh
-    ```
+     ```bash
+     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+     ./scripts/registerCloudInfo.sh
+     ```
 
 
 ***
