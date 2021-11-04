@@ -272,9 +272,9 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   make
   ```
 
-### (4) CB-Tumblebug 멀티클라우드 환경 설정
+### (4) CB-Tumblebug 멀티 클라우드 연결 환경 설정
 
-- 멀티클라우드 credential 등록을 위한 `credentials.conf` 생성 
+- 클라우드 credential 등록을 위한 `credentials.conf` 생성 
    - 개요
      - `credentials.conf` 는 CB-TB가 지원하는 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 사용자 인증 정보를 입력 및 보관하는 파일
      - [`conf/template.credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/conf/template.credentials.conf)를 참조하여 `credentials.conf` 파일 생성 및 내용 입력 필요
@@ -285,7 +285,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     ```
    - [참고: CSP별 인증 정보 획득 방법](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)을 참고하여, `credentials.conf`에 사용자 정보 입력
 
-- 모든 멀티클라우드 연결 정보 등록 
+- 모든 멀티 클라우드 연결 정보 등록 
    - 개요
      - CB-TB의 멀티클라우드 인프라를 생성하기 위해서, 클라우드에 대한 연결 정보 (크리덴셜, 클라우드 종류, 클라우드 리젼 등) 등록이 필요
      - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env): 클라우드 리젼 등 기본 정보 제공
