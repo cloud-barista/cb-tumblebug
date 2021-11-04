@@ -299,7 +299,7 @@ func getDistance(latitude float64, longitude float64, ConnectionName string) (fl
 			break
 		}
 	}
-	Location := GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
+	Location := common.GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
 
 	cloudLatitude, err := strconv.ParseFloat(strings.ReplaceAll(Location.Latitude, " ", ""), 32)
 	if err != nil {

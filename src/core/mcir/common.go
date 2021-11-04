@@ -1806,7 +1806,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 	}
 
 	// Read default resources from file and create objects
-	// HEADER: ProviderName, CONN_CONFIG, RegionName, RegionLocation, DriverLibFileName, DriverName
+	// HEADER: ProviderName, CONN_CONFIG, RegionName, NativeRegionName, RegionLocation, DriverLibFileName, DriverName
 	file, fileErr := os.Open("../assets/cloudconnection.csv")
 	defer file.Close()
 	if fileErr != nil {
