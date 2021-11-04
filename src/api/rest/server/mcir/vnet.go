@@ -29,7 +29,7 @@ import (
 // @Tags [MCIR] Network management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param vNetReq body mcir.TbVNetReq true "Details for an VNet object"
 // @Success 200 {object} mcir.TbVNetInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -86,7 +86,7 @@ func RestPutVNet(c echo.Context) error {
 // @Tags [MCIR] Network management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param vNetId path string true "VNet ID"
 // @Success 200 {object} mcir.TbVNetInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -108,7 +108,7 @@ type RestGetAllVNetResponse struct {
 // @Tags [MCIR] Network management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllVNetResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
@@ -125,7 +125,7 @@ func RestGetAllVNet(c echo.Context) error {
 // @Tags [MCIR] Network management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param vNetId path string true "VNet ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -141,7 +141,7 @@ func RestDelVNet(c echo.Context) error {
 // @Tags [MCIR] Network management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [delete]

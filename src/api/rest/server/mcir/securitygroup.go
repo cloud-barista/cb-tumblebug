@@ -29,7 +29,7 @@ import (
 // @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param securityGroupReq body mcir.TbSecurityGroupReq true "Details for an securityGroup object"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -85,7 +85,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 // @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param securityGroupId path string true "Security Group ID"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -107,7 +107,7 @@ type RestGetAllSecurityGroupResponse struct {
 // @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSecurityGroupResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
@@ -124,7 +124,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 // @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param securityGroupId path string true "Security Group ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -140,7 +140,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Tags [MCIR] Security group management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [delete]

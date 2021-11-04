@@ -29,7 +29,7 @@ import (
 // @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param sshKeyInfo body mcir.TbSshKeyReq true "Details for an SSH Key object"
 // @Success 200 {object} mcir.TbSshKeyInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -81,7 +81,7 @@ func RestPutSshKey(c echo.Context) error {
 // @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} mcir.TbSshKeyInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -103,7 +103,7 @@ type RestGetAllSshKeyResponse struct {
 // @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id)
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSshKeyResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
@@ -120,7 +120,7 @@ func RestGetAllSshKey(c echo.Context) error {
 // @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Param sshKeyId path string true "SSH Key ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -136,7 +136,7 @@ func RestDelSshKey(c echo.Context) error {
 // @Tags [MCIR] Access key management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID"
+// @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [delete]
