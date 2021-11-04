@@ -37,9 +37,9 @@ container-volume/
 # Config file for test
 src/testclient/scripts/sequentialFullTest/executionStatus*
 src/testclient/scripts/sequentialFullTest/ansibleAutoConf/*
-src/testclient/scripts/credentials.conf
+src/testclient/scripts/credentials*
 src/api/grpc/cbadm/testclient/scripts/sequentialFullTest/executionStatus*
-src/api/grpc/cbadm/testclient/scripts/credentials.conf
+src/api/grpc/cbadm/testclient/scripts/credentials*
 
 # Swagger docs for REST APIs
 src/api/rest/docs/docs.go
