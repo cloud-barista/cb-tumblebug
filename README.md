@@ -272,6 +272,31 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   make
   ```
 
+### (4) CB-Tumblebug 멀티클라우드 환경 설정
+
+- 멀티클라우드 credential 등록을 위한 `credentials.conf` 생성 
+   - 개요
+     - `credentials.conf` 는 CB-TB가 지원하는 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 사용자 인증 정보를 입력 및 보관하는 파일
+     - [`conf/template.credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/conf/template.credentials.conf)를 참조하여 `credentials.conf` 파일 생성 및 내용 입력 필요
+   - 생성 방법: CB-TB 스크립트를 통해 `credentials.conf` 기본 파일 자동 생성
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    ./scripts/generateCredencialFile.sh
+    ```
+   - [참고: CSP별 인증 정보 획득 방법](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)을 참고하여, `credentials.conf`에 사용자 정보 입력
+
+- 모든 멀티클라우드 연결 정보 등록 
+   - 개요
+     - CB-TB의 멀티클라우드 인프라를 생성하기 위해서, 클라우드에 대한 연결 정보 (크리덴셜, 클라우드 종류, 클라우드 리젼 등) 등록이 필요
+     - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env): 클라우드 리젼 등 기본 정보 제공
+     - 이미 많은 클라우드 타입에 대한 정보가 조사 및 입력되어 있으므로, 수정없이 사용 가능
+   - 설정 방법: CB-TB 스크립트를 통해 [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 연결 정보 자동 등록
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    ./scripts/registerCloudInfo.sh
+    ```
+
+
 ***
 ***
 
@@ -291,23 +316,12 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 #### 클라우드 인증 정보 및 테스트 기본 정보 입력
 1. [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts) 이동
-
-2. `credentials.conf` 생성 
-   - `credentials.conf` 는 기본적인 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 인증 정보 템플릿 제공
-   - [`credentials.conf.example`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/credentials.conf.example)를 참조하여 항목에 사용자의 클라우드 인증 정보 입력
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts
-    cp ./credentials.conf.example credentials.conf
-    ls credentials.conf
-    ```
-   - [CSP별 인증 정보 획득 방법 참고](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials)
-
-3. [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env) 설정
+2. [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env) 설정
    - CB-Spider 및 CB-Tumblebug 서버 엔드포인트, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
    - 이미 많은 클라우드 타입에 대한 정보가 조사 및 입력되어 있으므로, 수정없이 사용 가능. (단, 지정된 Spec에 따라 과금이 발생할 수 있으므로 확인 필요)
      - 테스트용 VM 이미지 수정 방식: [`IMAGE_NAME[$IX,$IY]=ami-061eb2b23f9f8839c`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L49)
      - 테스트용 VM 스펙 수정 방식: [`SPEC_NAME[$IX,$IY]=m4.4xlarge`](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/conf.env#L50)   
-4. [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env) 설정
+3. [`testSet.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/testSet.env) 설정
    - MCIS 프로비저닝에 사용될, 클라우드 및 리전 구성을 파일로 설정 (기존의 `testSet.env` 를 변경해도 되고, 복사하여 활용도 가능)
    - 조합할 CSP 종류 지정
      - 조합할 총 CSP 개수 지정 ([NumCSP=](https://github.com/cloud-barista/cb-tumblebug/blob/553c4884943916b3287ec17501c6f639e8667897/src/testclient/scripts/testSet.env#L9) 에 숫자를 변경)

@@ -3,7 +3,7 @@
 #function register_cloud() {
 
 
-    FILE=../credentials.conf
+    FILE=../../../../conf/credentials.conf
     if [ ! -f "$FILE" ]; then
         echo "$FILE does not exist."
         exit
@@ -16,7 +16,7 @@
     fi
 	source $TestSetFile
     source ../conf.env
-    source ../credentials.conf
+    source ../../../../conf/credentials.conf
     
     echo "####################################################################"
     echo "## 1. Create Cloud Connction Config"

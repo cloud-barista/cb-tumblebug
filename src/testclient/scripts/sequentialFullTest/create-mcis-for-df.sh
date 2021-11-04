@@ -41,7 +41,7 @@ function test_sequence()
 
 
 
-	FILE=../credentials.conf
+	FILE=../../../../conf/credentials.conf
     if [ ! -f "$FILE" ]; then
         echo "$FILE does not exist."
         exit
@@ -54,7 +54,7 @@ function test_sequence()
     fi
 	source $TestSetFile
     source ../conf.env
-		source ../credentials.conf
+		source ../../../../conf/credentials.conf
 
 	echo "####################################################################"
 	echo "## Create MCIS from Zero Base"

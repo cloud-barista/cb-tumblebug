@@ -133,6 +133,8 @@ echo "####################################################################"
 echo "## 1. Register Cloud Inforation"
 echo "####################################################################"
 
+SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
+cd $SCRIPT_DIR
 
 source ../init.sh
 echo ""
