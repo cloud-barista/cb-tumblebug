@@ -21,7 +21,6 @@ vendor/
 
 # Binaries
 src/src
-src/mcism
 src/cb-tumblebug
 src/cb-tumblebug-arm
 src/cli/tbctl
@@ -46,7 +45,7 @@ src/api/rest/docs/docs.go
 src/api/rest/docs/swagger.json
 src/api/rest/docs/swagger.yaml
 
-# Config file for mcism
+# Config file for CB-Tumblebug
 conf/
 conf/credentials.conf
 
