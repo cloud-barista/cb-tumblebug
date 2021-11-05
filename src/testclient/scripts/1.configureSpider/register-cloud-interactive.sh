@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function CallSpider() {
+function CallSpiderPostDriver() {
     # for Cloud Driver Info
     echo "[Cloud Driver] ${DriverName[$INDEX]}"
     resp=$(
@@ -15,7 +15,6 @@ EOF
     echo ${resp} |
         jq -r '(["DriverName","ProviderName","DriverLibFileName"] | (., map(length*"-"))), ([.DriverName, .ProviderName, .DriverLibFileName]) | @tsv' |
         column -t
-    echo ""
     echo ""
 
     # for Cloud Credential Info
@@ -54,8 +53,9 @@ EOF
         jq -r '(["CredentialName","ProviderName"] | (., map(length*"-"))), ([.CredentialName, .ProviderName]) | @tsv' |
         column -t
     echo ""
-    echo ""
 
+}
+function CallSpiderPostRegion() {
     # for Cloud Region Info
     # Differenciate Cloud Region Value for Resource Group Name
     if [ "${CSP}" == "azure" ]; then
@@ -82,7 +82,6 @@ EOF
             jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
             column -t
         echo ""
-        echo ""
     else
         echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
         resp=$(
@@ -106,7 +105,6 @@ EOF
         echo ${resp} |
             jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
             column -t
-        echo ""
         echo ""
     fi
 
@@ -186,12 +184,13 @@ if [ "${INDEX}" == "0" ]; then
         INDEXY=${TotalNumRegion[$cspi]}
         CSP=${CSPType[$cspi]}
         echo "[$cspi] $CSP details"
+        CallSpiderPostDriver
         for ((cspj = 1; cspj <= INDEXY; cspj++)); do
             echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
 
             INDEX=$cspi
             REGION=$cspj
-            CallSpider
+            CallSpiderPostRegion
 
         done
 
@@ -200,8 +199,8 @@ if [ "${INDEX}" == "0" ]; then
 
 else
     echo ""
-
-    CallSpider
+    CallSpiderPostDriver
+    CallSpiderPostRegion
 
 fi
 
