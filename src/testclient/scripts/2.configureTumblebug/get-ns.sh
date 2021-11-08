@@ -6,7 +6,7 @@ echo "####################################################################"
 
 source ../init.sh
 
-NSID=${OPTION01:-tb01}
+NSID=${OPTION01:-ns01}
 
 curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID | jq ''
 echo ""

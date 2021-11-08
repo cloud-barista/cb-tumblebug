@@ -4,10 +4,13 @@ echo "####################################################################"
 echo "## 2. Namespace: Create (-x option for NameSpace Name)"
 echo "####################################################################"
 
+SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
+cd $SCRIPT_DIR
+
 source ../init.sh
 
 if [ -z "$NSID" ]; then
-	NSID=${OPTION01:-tb01}
+	NSID=${OPTION01:-ns01}
 fi
 
 resp=$(
