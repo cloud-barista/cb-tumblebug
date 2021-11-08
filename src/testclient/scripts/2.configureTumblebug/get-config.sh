@@ -8,7 +8,7 @@
 
     source ../init.sh
 
-    VAR=${OPTION01:-tb01}
+    VAR=${OPTION01:-ns01}
 
     curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/config/$VAR | jq ''
     echo ""
