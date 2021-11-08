@@ -378,19 +378,14 @@ func RestLoadDefaultResouce(c echo.Context) error {
 func RestDelAllDefaultResouces(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-	resourceType := strings.Split(c.Path(), "/")[5]
-	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
-	forceFlag := c.QueryParam("force")
-	subString := c.QueryParam("match")
-
-	err := mcir.DelAllResources(nsId, resourceType, subString, forceFlag)
+	err := mcir.DelAllDefaultResources(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusConflict, &mapA)
 	}
 
-	mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
+	mapA := map[string]string{"message": "All default resources have been deleted"}
 	return c.JSON(http.StatusOK, &mapA)
 }

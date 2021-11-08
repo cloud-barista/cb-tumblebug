@@ -76,6 +76,38 @@ func init() {
 	validate.RegisterStructValidation(TbVNetReqStructLevelValidation, TbVNetReq{})
 }
 
+// DelAllDefaultResources deletes all Default securityGroup, sshKey, vNet objects
+func DelAllDefaultResources(nsId string) error {
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	matchedSubstring := nsId + common.StrDefaultResourceName
+
+	err = DelAllResources(nsId, common.StrSecurityGroup, matchedSubstring, "false")
+	if err != nil {
+		common.CBLog.Error(err)
+		//return err
+	}
+
+	err = DelAllResources(nsId, common.StrSSHKey, matchedSubstring, "false")
+	if err != nil {
+		common.CBLog.Error(err)
+		//return err
+	}
+
+	err = DelAllResources(nsId, common.StrVNet, matchedSubstring, "false")
+	if err != nil {
+		common.CBLog.Error(err)
+		//return err
+	}
+
+	return nil
+}
+
 // DelAllResources deletes all TB MCIR object of given resourceType
 func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) error {
 
