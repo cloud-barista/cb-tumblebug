@@ -131,7 +131,7 @@ func (s *MCIRService) DeleteAllSecurityGroup(ctx context.Context, req *pb.Resour
 
 	logger.Debug("calling MCIRService.DeleteAllSecurityGroup()")
 
-	err := mcir.DelAllResources(req.NsId, req.ResourceType, req.Force)
+	err := mcir.DelAllResources(req.NsId, req.ResourceType, "", req.Force)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.DeleteAllSecurityGroup()")
 	}

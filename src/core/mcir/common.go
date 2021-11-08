@@ -77,7 +77,7 @@ func init() {
 }
 
 // DelAllResources deletes all TB MCIR object of given resourceType
-func DelAllResources(nsId string, resourceType string, forceFlag string) error {
+func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -95,9 +95,12 @@ func DelAllResources(nsId string, resourceType string, forceFlag string) error {
 	}
 
 	for _, v := range resourceIdList {
-		err := DelResource(nsId, resourceType, v, forceFlag)
-		if err != nil {
-			return err
+		// if subSting is provided, check the resourceId contains the subString.
+		if subString == "" || strings.Contains(v, subString) {
+			err := DelResource(nsId, resourceType, v, forceFlag)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -1832,7 +1835,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 		connectionName := row[1]
 		//resourceName := connectionName
-		// Default resource name has this pattern (nsId + "-default-" + connectionName)
+		// Default resource name has this pattern (nsId + "-systemdefault-" + connectionName)
 		resourceName := nsId + common.StrDefaultResourceName + connectionName
 		description := "Generated Default Resource"
 
