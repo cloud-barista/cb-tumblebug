@@ -31,7 +31,7 @@ type KeyValue struct {
 }
 
 type IdList struct {
-	IdList []string `json:"idList"`
+	IdList []string `json:"ouput"`
 }
 
 // CB-Store
