@@ -2,7 +2,7 @@
 
 function CallSpiderPostDriver() {
     # for Cloud Driver Info
-    echo "[Cloud Driver] ${DriverName[$INDEX]}"
+    # echo "[Cloud Driver] ${DriverName[$INDEX]}"
     resp=$(
         curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/driver -H 'Content-Type: application/json' -d @- <<EOF
         {
@@ -12,13 +12,13 @@ function CallSpiderPostDriver() {
          }
 EOF
     )
-    echo ${resp} |
-        jq -r '(["DriverName","ProviderName","DriverLibFileName"] | (., map(length*"-"))), ([.DriverName, .ProviderName, .DriverLibFileName]) | @tsv' |
-        column -t
-    echo ""
+    # echo ${resp} |
+    #     jq -r '(["DriverName","ProviderName","DriverLibFileName"] | (., map(length*"-"))), ([.DriverName, .ProviderName, .DriverLibFileName]) | @tsv' |
+    #     column -t
+    # echo ""
 
     # for Cloud Credential Info
-    echo "[Cloud Credential] ${CredentialName[$INDEX]}"
+    # echo "[Cloud Credential] ${CredentialName[$INDEX]}"
     resp=$(
         curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/credential -H 'Content-Type: application/json' -d @- <<EOF
         {
@@ -49,17 +49,17 @@ EOF
          }
 EOF
     )
-    echo ${resp} | # jq '.message'
-        jq -r '(["CredentialName","ProviderName"] | (., map(length*"-"))), ([.CredentialName, .ProviderName]) | @tsv' |
-        column -t
-    echo ""
+    # echo ${resp} | # jq '.message'
+    #     jq -r '(["CredentialName","ProviderName"] | (., map(length*"-"))), ([.CredentialName, .ProviderName]) | @tsv' |
+    #     column -t
+    # echo ""
 
 }
 function CallSpiderPostRegion() {
     # for Cloud Region Info
     # Differenciate Cloud Region Value for Resource Group Name
     if [ "${CSP}" == "azure" ]; then
-        echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
+        # echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
         resp=$(
             curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
             {
@@ -78,12 +78,12 @@ function CallSpiderPostRegion() {
         }
 EOF
         )
-        echo ${resp} |
-            jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
-            column -t
-        echo ""
+        # echo ${resp} |
+        #     jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+        #     column -t
+        # echo ""
     else
-        echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
+        # echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
         resp=$(
             curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
             {
@@ -102,10 +102,10 @@ EOF
         }
 EOF
         )
-        echo ${resp} |
-            jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
-            column -t
-        echo ""
+        # echo ${resp} |
+        #     jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+        #     column -t
+        # echo ""
     fi
 
     # for Cloud Connection Config Info
@@ -121,10 +121,10 @@ EOF
         }
 EOF
     )
-    echo ${resp} |
-        jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
-        column -t
-    echo ""
+    # echo ${resp} |
+    #     jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
+    #     column -t
+    # echo ""
 }
 
 echo "####################################################################"
@@ -183,10 +183,10 @@ if [ "${INDEX}" == "0" ]; then
     for ((cspi = 1; cspi <= INDEXX; cspi++)); do
         INDEXY=${TotalNumRegion[$cspi]}
         CSP=${CSPType[$cspi]}
-        echo "[$cspi] $CSP details"
+        # echo "[$cspi] $CSP details"
         CallSpiderPostDriver
         for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-            echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+            # echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
 
             INDEX=$cspi
             REGION=$cspj

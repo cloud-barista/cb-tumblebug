@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Load common Image and Spec from asset files"
+echo "## Load common Image and Spec from asset files (takes 5~20 seconds)"
 echo "## (assets/cloudspec.csv, assets/cloudimage.csv)"
 echo "####################################################################"
 
