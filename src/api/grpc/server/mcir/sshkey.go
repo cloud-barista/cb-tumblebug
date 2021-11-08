@@ -132,7 +132,7 @@ func (s *MCIRService) DeleteAllSshKey(ctx context.Context, req *pb.ResourceAllQr
 
 	logger.Debug("calling MCIRService.DeleteAllSshKey()")
 
-	err := mcir.DelAllResources(req.NsId, req.ResourceType, "", req.Force)
+	_, err := mcir.DelAllResources(req.NsId, req.ResourceType, "", req.Force)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.DeleteAllSshKey()")
 	}

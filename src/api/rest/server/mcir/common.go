@@ -41,15 +41,15 @@ func RestDelAllResources(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 	subString := c.QueryParam("match")
 
-	err := mcir.DelAllResources(nsId, resourceType, subString, forceFlag)
+	output, err := mcir.DelAllResources(nsId, resourceType, subString, forceFlag)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusConflict, &mapA)
 	}
 
-	mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
+	//mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
+	return c.JSON(http.StatusOK, output)
 }
 
 // Dummy functions for Swagger exist in [mcir/*.go]
@@ -372,20 +372,20 @@ func RestLoadDefaultResouce(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/defaultResouces [delete]
 func RestDelAllDefaultResouces(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	err := mcir.DelAllDefaultResources(nsId)
+	output, err := mcir.DelAllDefaultResources(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusConflict, &mapA)
 	}
 
-	mapA := map[string]string{"message": "All default resources have been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
+	//mapA := map[string]string{"message": "All default resources have been deleted"}
+	return c.JSON(http.StatusOK, output)
 }
