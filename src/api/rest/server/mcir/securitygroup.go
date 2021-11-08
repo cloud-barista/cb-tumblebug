@@ -141,6 +141,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [delete]
