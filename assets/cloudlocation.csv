@@ -139,6 +139,18 @@ tencent,ap-beijing,North China (Beijing),39.9042,116.407396
 tencent,ap-chengdu,Southwest China (Chengdu),30.572815,104.066801
 tencent,ap-chongqing,Southwest China (Chongqing),29.431586,106.912251
 tencent,ap-hongkong,Hong Kong,22.396428,114.109497
+ktcloud,KOR-Cheonan,Cheon-an - South Korea,36.812583,127.107005
+ktcloud,KOR-Seoul,Seoul - South Korea,37.566535,126.977969
+ktcloud,US,LA - US,34.052234,-118.243685
+ibm,us-south,Dallas (US South),32.776664,-96.796988
+ibm,br-sao,Sao Paulo (Brazil),-23.55052,-46.633309
+ibm,ca-tor,Toronto (Canada),43.653226,-79.383184
+ibm,us-east,Washington DC (US East),38.907192,-77.036871
+ibm,eu-de,Frankfurt (Germany),50.110922,8.682127
+ibm,eu-gb,London (United Kingdom),51.507351,-0.127758
+ibm,jp-osa,Osaka (Japan),34.693738,135.502165
+ibm,au-syd,Sydney (Australia),-33.86882,151.209296
+ibm,jp-tok,Tokyo (Japan),35.689488,139.691706
 cloudtwin,default,South Korea (Daejeon),36.3804,127.3650
 mock,default,South Korea (Seoul),37.0000,126.0000
 ufc,ufc,South Korea (Seoul),37.4767,126.8841
