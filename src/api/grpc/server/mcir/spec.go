@@ -162,7 +162,7 @@ func (s *MCIRService) DeleteAllSpec(ctx context.Context, req *pb.ResourceAllQryR
 
 	logger.Debug("calling MCIRService.DeleteAllSpec()")
 
-	err := mcir.DelAllResources(req.NsId, req.ResourceType, req.Force)
+	_, err := mcir.DelAllResources(req.NsId, req.ResourceType, "", req.Force)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.DeleteAllSpec()")
 	}

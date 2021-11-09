@@ -31,7 +31,7 @@ type KeyValue struct {
 }
 
 type IdList struct {
-	IdList []string `json:"idList"`
+	IdList []string `json:"ouput"`
 }
 
 // CB-Store
@@ -66,7 +66,7 @@ const (
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"
 	StrSubnet                     string = "subnet"
-	StrDefaultResourceName        string = "-default-"
+	StrDefaultResourceName        string = "-systemdefault-"
 )
 
 var StartTime string

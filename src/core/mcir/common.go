@@ -77,30 +77,41 @@ func init() {
 }
 
 // DelAllResources deletes all TB MCIR object of given resourceType
-func DelAllResources(nsId string, resourceType string, forceFlag string) error {
+func DelAllResources(nsId string, resourceType string, subString string, forceFlag string) (common.IdList, error) {
+
+	deletedResources := common.IdList{}
+	deleteStatus := ""
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		return deletedResources, err
 	}
 
 	resourceIdList, err := ListResourceId(nsId, resourceType)
 	if err != nil {
-		return err
+		return deletedResources, err
 	}
 
 	if len(resourceIdList) == 0 {
-		return nil
+		return deletedResources, nil
 	}
 
 	for _, v := range resourceIdList {
-		err := DelResource(nsId, resourceType, v, forceFlag)
-		if err != nil {
-			return err
+		// if subSting is provided, check the resourceId contains the subString.
+		if subString == "" || strings.Contains(v, subString) {
+			err := DelResource(nsId, resourceType, v, forceFlag)
+			common.CBLog.Error(err)
+			deleteStatus = ""
+			if err != nil {
+				deleteStatus = "  [FAILED]" + err.Error()
+			} else {
+				deleteStatus = "  [DELETED]"
+			}
+			deletedResources.IdList = append(deletedResources.IdList, resourceType+": "+v+deleteStatus)
 		}
 	}
-	return nil
+	return deletedResources, nil
 }
 
 // DelResource deletes the TB MCIR object
@@ -1832,7 +1843,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 		connectionName := row[1]
 		//resourceName := connectionName
-		// Default resource name has this pattern (nsId + "-default-" + connectionName)
+		// Default resource name has this pattern (nsId + "-systemdefault-" + connectionName)
 		resourceName := nsId + common.StrDefaultResourceName + connectionName
 		description := "Generated Default Resource"
 
@@ -1931,6 +1942,42 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 		}
 	}
 	return nil
+}
+
+// DelAllDefaultResources deletes all Default securityGroup, sshKey, vNet objects
+func DelAllDefaultResources(nsId string) (common.IdList, error) {
+
+	output := common.IdList{}
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return output, err
+	}
+
+	matchedSubstring := nsId + common.StrDefaultResourceName
+
+	list, err := DelAllResources(nsId, common.StrSecurityGroup, matchedSubstring, "false")
+	if err != nil {
+		common.CBLog.Error(err)
+		//return err
+	}
+	output.IdList = append(output.IdList, list.IdList...)
+
+	list, err = DelAllResources(nsId, common.StrSSHKey, matchedSubstring, "false")
+	if err != nil {
+		common.CBLog.Error(err)
+		//return err
+	}
+	output.IdList = append(output.IdList, list.IdList...)
+
+	list, err = DelAllResources(nsId, common.StrVNet, matchedSubstring, "false")
+	if err != nil {
+		common.CBLog.Error(err)
+		//return err
+	}
+	output.IdList = append(output.IdList, list.IdList...)
+
+	return output, nil
 }
 
 // ToNamingRuleCompatible func is a tool to replace string for name to make the name follow naming convention

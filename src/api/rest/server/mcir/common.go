@@ -39,16 +39,17 @@ func RestDelAllResources(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
 	forceFlag := c.QueryParam("force")
+	subString := c.QueryParam("match")
 
-	err := mcir.DelAllResources(nsId, resourceType, forceFlag)
+	output, err := mcir.DelAllResources(nsId, resourceType, subString, forceFlag)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusConflict, &mapA)
 	}
 
-	mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
+	//mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
+	return c.JSON(http.StatusOK, output)
 }
 
 // Dummy functions for Swagger exist in [mcir/*.go]
@@ -362,4 +363,29 @@ func RestLoadDefaultResouce(c echo.Context) error {
 	}
 	mapA := map[string]string{"message": "Done"}
 	return c.JSON(http.StatusOK, &mapA)
+}
+
+// RestDelAllDefaultResouces godoc
+// @Summary Delete all Default Resource Objects in the given namespace
+// @Description Delete all Default Resource Objects in the given namespace
+// @Tags [Admin] Cloud environment management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Success 200 {object} common.IdList
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/defaultResouces [delete]
+func RestDelAllDefaultResouces(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	output, err := mcir.DelAllDefaultResources(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusConflict, &mapA)
+	}
+
+	//mapA := map[string]string{"message": "All default resources have been deleted"}
+	return c.JSON(http.StatusOK, output)
 }

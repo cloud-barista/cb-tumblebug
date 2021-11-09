@@ -162,7 +162,7 @@ func (s *MCIRService) DeleteAllImage(ctx context.Context, req *pb.ResourceAllQry
 
 	logger.Debug("calling MCIRService.DeleteAllImage()")
 
-	err := mcir.DelAllResources(req.NsId, req.ResourceType, req.Force)
+	_, err := mcir.DelAllResources(req.NsId, req.ResourceType, "", req.Force)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.DeleteAllImage()")
 	}

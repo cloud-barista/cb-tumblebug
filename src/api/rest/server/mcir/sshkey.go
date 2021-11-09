@@ -137,7 +137,8 @@ func RestDelSshKey(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Success 200 {object} common.SimpleMsg
+// @Param match query string false "Delete resources containing matched ID-substring only" default()
+// @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [delete]
 func RestDelAllSshKey(c echo.Context) error {
