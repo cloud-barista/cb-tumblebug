@@ -30,11 +30,13 @@ import (
 	validator "github.com/go-playground/validator/v10"
 )
 
+// SpiderImageReqInfoWrapper struct is ...
 type SpiderImageReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderImageInfo
 }
 
+// SpiderImageInfo struct is ...
 type SpiderImageInfo struct { // Spider
 	// Fields for request
 	Name string
@@ -46,6 +48,7 @@ type SpiderImageInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
+// TbImageReq struct is for image create request
 type TbImageReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
@@ -53,6 +56,7 @@ type TbImageReq struct {
 	Description    string `json:"description"`
 }
 
+// TbImageReqStructLevelValidation func is for Validation
 func TbImageReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbImageReq)
@@ -64,6 +68,7 @@ func TbImageReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbImageInfo struct is for image object
 type TbImageInfo struct {
 	Namespace            string            `json:"namespace,omitempty"` // required to save in RDB
 	Id                   string            `json:"id,omitempty"`
@@ -277,6 +282,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	return *content, nil
 }
 
+// SpiderImageList is struct for Spider Image List
 type SpiderImageList struct {
 	Image []SpiderImageInfo `json:"image"`
 }
