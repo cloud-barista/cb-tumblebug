@@ -920,12 +920,12 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		}
 	}
 
-	mcisTmp, err = GetMcisObject(nsId, mcisId)
+	mcisResult, err := GetMcisInfo(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	return &mcisTmp, nil
+	return mcisResult, nil
 }
 
 // CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
