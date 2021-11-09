@@ -100,14 +100,22 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 	for _, v := range resourceIdList {
 		// if subSting is provided, check the resourceId contains the subString.
 		if subString == "" || strings.Contains(v, subString) {
-			err := DelResource(nsId, resourceType, v, forceFlag)
-			common.CBLog.Error(err)
 			deleteStatus = ""
-			if err != nil {
-				deleteStatus = "  [FAILED]" + err.Error()
+
+			associatedList, _ := GetAssociatedObjectList(nsId, resourceType, v)
+			if len(associatedList) == 0 {
+				err := DelResource(nsId, resourceType, v, forceFlag)
+				common.CBLog.Error(err)
+
+				if err != nil {
+					deleteStatus = "  [FAILED]" + err.Error()
+				} else {
+					deleteStatus = "  [DELETED]"
+				}
 			} else {
-				deleteStatus = "  [DELETED]"
+				deleteStatus = "  [FAILED]" + " in use by [" + strings.Join(associatedList[:], ", "+"]")
 			}
+
 			deletedResources.IdList = append(deletedResources.IdList, resourceType+": "+v+deleteStatus)
 		}
 	}
