@@ -1229,6 +1229,45 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/defaultResouces": {
+            "delete": {
+                "description": "Delete all Default Resource Objects in the given namespace",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Cloud environment management"
+                ],
+                "summary": "Delete all Default Resource Objects in the given namespace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}": {
             "post": {
                 "description": "Install the benchmark agent to specified MCIS",
@@ -2754,13 +2793,20 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Delete resources containing matched ID-substring only",
+                        "name": "match",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
@@ -3121,13 +3167,20 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Delete resources containing matched ID-substring only",
+                        "name": "match",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
@@ -3389,13 +3442,20 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Delete resources containing matched ID-substring only",
+                        "name": "match",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
@@ -3702,13 +3762,20 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Delete resources containing matched ID-substring only",
+                        "name": "match",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
@@ -3956,13 +4023,20 @@ var doc = `{
                         "name": "nsId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Delete resources containing matched ID-substring only",
+                        "name": "match",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
@@ -4667,7 +4741,7 @@ var doc = `{
         "common.IdList": {
             "type": "object",
             "properties": {
-                "idList": {
+                "ouput": {
                     "type": "array",
                     "items": {
                         "type": "string"

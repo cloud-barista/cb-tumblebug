@@ -67,7 +67,7 @@ definitions:
     type: object
   common.IdList:
     properties:
-      idList:
+      ouput:
         items:
           type: string
         type: array
@@ -2403,6 +2403,32 @@ paths:
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
       - '[MCIS] Control lifecycle'
+  /ns/{nsId}/defaultResouces:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all Default Resource Objects in the given namespace
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all Default Resource Objects in the given namespace
+      tags:
+      - '[Admin] Cloud environment management'
   /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}:
     post:
       consumes:
@@ -3337,13 +3363,18 @@ paths:
         name: nsId
         required: true
         type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/common.IdList'
         "404":
           description: Not Found
           schema:
@@ -3590,13 +3621,18 @@ paths:
         name: nsId
         required: true
         type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/common.IdList'
         "404":
           description: Not Found
           schema:
@@ -3758,13 +3794,18 @@ paths:
         name: nsId
         required: true
         type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/common.IdList'
         "404":
           description: Not Found
           schema:
@@ -3975,13 +4016,18 @@ paths:
         name: nsId
         required: true
         type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/common.IdList'
         "404":
           description: Not Found
           schema:
@@ -4143,13 +4189,18 @@ paths:
         name: nsId
         required: true
         type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/common.IdList'
         "404":
           description: Not Found
           schema:
