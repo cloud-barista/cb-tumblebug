@@ -852,6 +852,8 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			vmInfoData.VmUserAccount = k.VmUserAccount
 			vmInfoData.VmUserPassword = k.VmUserPassword
 
+			vmInfoData.Label = k.Label
+
 			// Avoid concurrent requests to CSP.
 			time.Sleep(time.Duration(i) * time.Second)
 
