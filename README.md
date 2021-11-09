@@ -289,14 +289,13 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
    - 개요
      - CB-TB의 멀티클라우드 인프라를 생성하기 위해서 클라우드에 대한 연결 정보 (크리덴셜, 클라우드 종류, 클라우드 리젼 등), 공통 활용 이미지 및 스펙 등의 등록이 필요
      - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env): 클라우드 리젼 등 기본 정보 제공 (수정없이 사용 가능)
-   - 등록 방법: `initMultiCloudEnv.sh` 스크립트 실행
-     - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 연결 정보 자동 등록
-     - [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets)의 파일에 기록된 공통 이미지 및 스펙 자동 등록
+   - 등록 방법: `initMultiCloudEnv.sh` 스크립트 실행 (모든 확인 메시지에 대해 'y' 입력)
        ```bash
        cd ~/go/src/github.com/cloud-barista/cb-tumblebug
        ./scripts/initMultiCloudEnv.sh
        ```
-
+     - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 연결 정보 자동 등록됨
+     - [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets)의 파일에 기록된 공통 이미지 및 스펙 자동 등록됨
 
 ***
 ***
