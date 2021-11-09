@@ -67,7 +67,7 @@ definitions:
     type: object
   common.IdList:
     properties:
-      ouput:
+      output:
         items:
           type: string
         type: array

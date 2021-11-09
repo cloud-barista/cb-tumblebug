@@ -4741,7 +4741,7 @@ var doc = `{
         "common.IdList": {
             "type": "object",
             "properties": {
-                "ouput": {
+                "output": {
                     "type": "array",
                     "items": {
                         "type": "string"

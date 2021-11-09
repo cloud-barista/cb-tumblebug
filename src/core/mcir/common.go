@@ -161,6 +161,16 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	// In CheckResource() above, calling 'CBStore.Get()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
+	associatedList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
+	if len(associatedList) == 0 {
+		// continue
+	} else {
+		errString := "  [FAILED]" + " in use by [" + strings.Join(associatedList[:], ", "+"]")
+		err := fmt.Errorf(errString)
+		common.CBLog.Error(err)
+		return err
+	}
+
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
 	var childResources interface{}
