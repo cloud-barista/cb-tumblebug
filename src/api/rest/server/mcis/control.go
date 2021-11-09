@@ -632,7 +632,7 @@ func RestPostMcisVmGroup(c echo.Context) error {
 	}
 	common.PrintJsonPretty(*vmInfoData)
 
-	result, err := mcis.CorePostMcisGroupVm(nsId, mcisId, vmInfoData)
+	result, err := mcis.CreateMcisGroupVm(nsId, mcisId, vmInfoData)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
