@@ -94,7 +94,10 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 	}
 
 	if len(resourceIdList) == 0 {
-		return deletedResources, nil
+		errString := "There is no " + resourceType + " resource in " + nsId
+		err := fmt.Errorf(errString)
+		common.CBLog.Error(err)
+		return deletedResources, err
 	}
 
 	for _, v := range resourceIdList {
@@ -102,18 +105,13 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 		if subString == "" || strings.Contains(v, subString) {
 			deleteStatus = ""
 
-			associatedList, _ := GetAssociatedObjectList(nsId, resourceType, v)
-			if len(associatedList) == 0 {
-				err := DelResource(nsId, resourceType, v, forceFlag)
-				common.CBLog.Error(err)
+			err := DelResource(nsId, resourceType, v, forceFlag)
+			common.CBLog.Error(err)
 
-				if err != nil {
-					deleteStatus = "  [FAILED]" + err.Error()
-				} else {
-					deleteStatus = "  [DELETED]"
-				}
+			if err != nil {
+				deleteStatus = err.Error()
 			} else {
-				deleteStatus = "  [FAILED]" + " in use by [" + strings.Join(associatedList[:], ", "+"]")
+				deleteStatus = " [Done]"
 			}
 
 			deletedResources.IdList = append(deletedResources.IdList, resourceType+": "+v+deleteStatus)
@@ -165,7 +163,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	if len(associatedList) == 0 {
 		// continue
 	} else {
-		errString := "  [FAILED]" + " in use by [" + strings.Join(associatedList[:], ", "+"]")
+		errString := " [Failed]" + " Associated with [" + strings.Join(associatedList[:], ", ") + "]"
 		err := fmt.Errorf(errString)
 		common.CBLog.Error(err)
 		return err
@@ -1978,6 +1976,7 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	if err != nil {
 		common.CBLog.Error(err)
 		//return err
+		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
 
@@ -1985,6 +1984,7 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	if err != nil {
 		common.CBLog.Error(err)
 		//return err
+		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
 
@@ -1992,6 +1992,7 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	if err != nil {
 		common.CBLog.Error(err)
 		//return err
+		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
 
