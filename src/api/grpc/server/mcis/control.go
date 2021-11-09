@@ -265,7 +265,7 @@ func (s *MCISService) CreateMcisVMGroup(ctx context.Context, req *pb.TbVmGroupCr
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
 	}
 
-	result, err := mcis.CorePostMcisGroupVm(req.NsId, req.McisId, &mcisObj)
+	result, err := mcis.CreateMcisGroupVm(req.NsId, req.McisId, &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
 	}

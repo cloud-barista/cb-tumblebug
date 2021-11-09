@@ -481,61 +481,6 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	return vmInfoData, nil
 }
 
-// CorePostMcisGroupVm is func for a wrapper for CreateMcisGroupVm
-func CorePostMcisGroupVm(nsId string, mcisId string, vmReq *TbVmReq) (*TbMcisInfo, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := &TbMcisInfo{}
-		common.CBLog.Error(err)
-		return temp, err
-	}
-
-	err = common.CheckString(mcisId)
-	if err != nil {
-		temp := &TbMcisInfo{}
-		common.CBLog.Error(err)
-		return temp, err
-	}
-
-	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
-	err = validate.Struct(vmReq)
-	if err != nil {
-
-		// this check is only needed when your code could produce
-		// an invalid value for validation such as interface with nil
-		// value most including myself do not usually have code like this.
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
-			return nil, err
-		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
-
-		return nil, err
-	}
-
-	content, err := CreateMcisGroupVm(nsId, mcisId, vmReq)
-	if err != nil {
-		common.CBLog.Error(err)
-		return content, err
-	}
-	return content, nil
-}
-
 // CreateMcisGroupVm is func to create MCIS groupVM
 func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisInfo, error) {
 
@@ -907,6 +852,8 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			vmInfoData.VmUserAccount = k.VmUserAccount
 			vmInfoData.VmUserPassword = k.VmUserPassword
 
+			vmInfoData.Label = k.Label
+
 			// Avoid concurrent requests to CSP.
 			time.Sleep(time.Duration(i) * time.Second)
 
@@ -973,12 +920,12 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		}
 	}
 
-	mcisTmp, err = GetMcisObject(nsId, mcisId)
+	mcisResult, err := GetMcisInfo(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	return &mcisTmp, nil
+	return mcisResult, nil
 }
 
 // CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
