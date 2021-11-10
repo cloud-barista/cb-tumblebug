@@ -219,7 +219,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "List all registered ConnConfig",
                 "responses": {
@@ -254,7 +254,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Get registered ConnConfig info",
                 "parameters": [
@@ -333,7 +333,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Admin] System management"
                 ],
                 "summary": "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP",
                 "parameters": [
@@ -379,7 +379,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Load Common Resources from internal asset files",
                 "responses": {
@@ -408,7 +408,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup image",
                 "parameters": [
@@ -454,7 +454,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup image list",
                 "parameters": [
@@ -500,7 +500,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup spec",
                 "parameters": [
@@ -546,7 +546,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup spec list",
                 "parameters": [
@@ -806,7 +806,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Performance benchmarking (WIP)"
+                    "[Infra service] MCIS Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCIS benchmark for a single performance metric and return results",
                 "parameters": [
@@ -890,7 +890,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Performance benchmarking (WIP)"
+                    "[Infra service] MCIS Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCIS benchmark for all performance metrics and return results",
                 "parameters": [
@@ -952,7 +952,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Remote command"
+                    "[Infra service] MCIS Remote command"
                 ],
                 "summary": "Send a command to specified MCIS",
                 "parameters": [
@@ -1014,7 +1014,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Remote command"
+                    "[Infra service] MCIS Remote command"
                 ],
                 "summary": "Send a command to specified VM",
                 "parameters": [
@@ -1084,7 +1084,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Control lifecycle"
+                    "[Infra service] MCIS Control lifecycle"
                 ],
                 "summary": "Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)",
                 "parameters": [
@@ -1151,7 +1151,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Control lifecycle"
+                    "[Infra service] MCIS Control lifecycle"
                 ],
                 "summary": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
                 "parameters": [
@@ -1215,7 +1215,7 @@
                 }
             }
         },
-        "/ns/{nsId}/defaultResouces": {
+        "/ns/{nsId}/defaultResources": {
             "delete": {
                 "description": "Delete all Default Resource Objects in the given namespace",
                 "consumes": [
@@ -1225,7 +1225,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Infra resource] MCIR Common"
                 ],
                 "summary": "Delete all Default Resource Objects in the given namespace",
                 "parameters": [
@@ -1264,7 +1264,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Performance benchmarking (WIP)"
+                    "[Infra service] MCIS Performance benchmarking (WIP)"
                 ],
                 "summary": "Install the benchmark agent to specified MCIS",
                 "parameters": [
@@ -1316,7 +1316,7 @@
                 }
             }
         },
-        "/ns/{nsId}/loadDefaultResouce": {
+        "/ns/{nsId}/loadDefaultResource": {
             "get": {
                 "description": "Load Default Resource from internal asset file",
                 "consumes": [
@@ -1326,7 +1326,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Infra resource] MCIR Common"
                 ],
                 "summary": "Load Default Resource from internal asset file",
                 "parameters": [
@@ -1385,7 +1385,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "List all MCISs or MCISs' ID",
                 "parameters": [
@@ -1460,7 +1460,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create MCIS",
                 "parameters": [
@@ -1512,7 +1512,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Delete all MCISs",
                 "parameters": [
@@ -1560,7 +1560,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Get MCIS recommendation",
                 "deprecated": true,
@@ -1615,7 +1615,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Get MCIS object (option: status, vmID)",
                 "parameters": [
@@ -1695,7 +1695,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Delete MCIS",
                 "parameters": [
@@ -1751,7 +1751,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create VM in specified MCIS",
                 "parameters": [
@@ -1813,7 +1813,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Get VM in specified MCIS",
                 "parameters": [
@@ -1897,7 +1897,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Delete VM in specified MCIS",
                 "parameters": [
@@ -1961,7 +1961,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create multiple VMs by VM group in specified MCIS",
                 "parameters": [
@@ -2023,7 +2023,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create MCIS Dynamically",
                 "parameters": [
@@ -2077,7 +2077,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Resource monitor (Developer)"
+                    "[Infra service] MCIS Resource monitor (for developer)"
                 ],
                 "summary": "Install monitoring agent (CB-Dragonfly agent) to MCIS",
                 "parameters": [
@@ -2139,7 +2139,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Resource monitor (Developer)"
+                    "[Infra service] MCIS Resource monitor (for developer)"
                 ],
                 "summary": "Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)",
                 "parameters": [
@@ -2199,7 +2199,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management (WIP)"
+                    "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "List all MCIS policies",
                 "parameters": [
@@ -2242,7 +2242,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management (WIP)"
+                    "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Delete all MCIS policies",
                 "parameters": [
@@ -2281,7 +2281,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management (WIP)"
+                    "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Get MCIS Policy",
                 "parameters": [
@@ -2332,7 +2332,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management (WIP)"
+                    "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Create MCIS Automation policy",
                 "parameters": [
@@ -2392,7 +2392,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Auto control policy management (WIP)"
+                    "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Delete MCIS Policy",
                 "parameters": [
@@ -2439,7 +2439,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Fetch images",
                 "parameters": [
@@ -2484,7 +2484,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Fetch specs",
                 "parameters": [
@@ -2529,7 +2529,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Filter specs",
                 "parameters": [
@@ -2582,7 +2582,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Filter specs by range",
                 "parameters": [
@@ -2635,7 +2635,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "List all images or images' ID",
                 "parameters": [
@@ -2702,7 +2702,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Register image",
                 "parameters": [
@@ -2768,7 +2768,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Delete all images",
                 "parameters": [
@@ -2814,7 +2814,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Get image",
                 "parameters": [
@@ -2864,7 +2864,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Update image",
                 "parameters": [
@@ -2923,7 +2923,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Delete image",
                 "parameters": [
@@ -2969,7 +2969,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Image management"
+                    "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Search image",
                 "parameters": [
@@ -3023,7 +3023,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Security group management"
+                    "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "List all Security Groups or Security Groups' ID",
                 "parameters": [
@@ -3090,7 +3090,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Security group management"
+                    "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Create Security Group",
                 "parameters": [
@@ -3142,7 +3142,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Security group management"
+                    "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Delete all Security Groups",
                 "parameters": [
@@ -3188,7 +3188,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Security group management"
+                    "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Get Security Group",
                 "parameters": [
@@ -3238,7 +3238,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Security group management"
+                    "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Delete Security Group",
                 "parameters": [
@@ -3284,7 +3284,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "List all specs or specs' ID",
                 "parameters": [
@@ -3351,7 +3351,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Register spec",
                 "parameters": [
@@ -3417,7 +3417,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Delete all specs",
                 "parameters": [
@@ -3463,7 +3463,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Get spec",
                 "parameters": [
@@ -3513,7 +3513,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Update spec",
                 "parameters": [
@@ -3572,7 +3572,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Spec management"
+                    "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Delete spec",
                 "parameters": [
@@ -3618,7 +3618,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Access key management"
+                    "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "List all SSH Keys or SSH Keys' ID",
                 "parameters": [
@@ -3685,7 +3685,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Access key management"
+                    "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Create SSH Key",
                 "parameters": [
@@ -3737,7 +3737,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Access key management"
+                    "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Delete all SSH Keys",
                 "parameters": [
@@ -3783,7 +3783,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Access key management"
+                    "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Get SSH Key",
                 "parameters": [
@@ -3833,7 +3833,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Access key management"
+                    "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Delete SSH Key",
                 "parameters": [
@@ -3879,7 +3879,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Network management"
+                    "[Infra resource] MCIR Network management"
                 ],
                 "summary": "List all VNets or VNets' ID",
                 "parameters": [
@@ -3946,7 +3946,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Network management"
+                    "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Create VNet",
                 "parameters": [
@@ -3998,7 +3998,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Network management"
+                    "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Delete all VNets",
                 "parameters": [
@@ -4044,7 +4044,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Network management"
+                    "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Get VNet",
                 "parameters": [
@@ -4094,7 +4094,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Network management"
+                    "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Delete VNet",
                 "parameters": [
@@ -4140,7 +4140,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Network management"
+                    "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Create Subnet",
                 "parameters": [
@@ -4194,7 +4194,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIR] Network management"
+                    "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Delete Subnet",
                 "parameters": [
@@ -4240,7 +4240,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[MCIS] Provisioning management"
+                    "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Recommend MCIS plan (filter and priority)",
                 "parameters": [
@@ -4468,7 +4468,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "List all registered regions",
                 "responses": {
@@ -4503,7 +4503,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] Cloud environment management"
+                    "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Get registered region info",
                 "parameters": [
@@ -4582,7 +4582,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Infra resource] MCIR Common"
                 ],
                 "summary": "Check resources' existence",
                 "parameters": [
