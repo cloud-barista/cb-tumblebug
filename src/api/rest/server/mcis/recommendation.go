@@ -25,7 +25,7 @@ import (
 // RestRecommendVm godoc
 // @Summary Recommend MCIS plan (filter and priority)
 // @Description Recommend MCIS plan (filter and priority)
-// @Tags [MCIS] Provisioning management
+// @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
