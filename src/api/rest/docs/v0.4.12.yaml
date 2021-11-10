@@ -1747,7 +1747,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered ConnConfig
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /connConfig/{connConfigName}:
     get:
       consumes:
@@ -1776,7 +1776,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /health:
     get:
       consumes:
@@ -1831,7 +1831,7 @@ paths:
       summary: Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug,
         CB-Spider, CSP
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /loadCommonResource:
     get:
       consumes:
@@ -1850,7 +1850,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Load Common Resources from internal asset files
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /lookupImage:
     post:
       consumes:
@@ -1880,7 +1880,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /lookupImages:
     post:
       consumes:
@@ -1910,7 +1910,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image list
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /lookupSpec:
     post:
       consumes:
@@ -1940,7 +1940,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /lookupSpecs:
     post:
       consumes:
@@ -1970,7 +1970,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec list
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /ns:
     delete:
       consumes:
@@ -2428,7 +2428,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all Default Resource Objects in the given namespace
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId}:
     post:
       consumes:
@@ -2511,7 +2511,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Load Default Resource from internal asset file
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /ns/{nsId}/mcis:
     delete:
       consumes:
@@ -4590,7 +4590,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered regions
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /region/{regionName}:
     get:
       consumes:
@@ -4619,7 +4619,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment management'
   /swaggerActive:
     get:
       consumes:

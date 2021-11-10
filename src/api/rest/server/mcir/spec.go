@@ -123,7 +123,7 @@ type RestLookupSpecRequest struct {
 // RestLookupSpec godoc
 // @Summary Lookup spec
 // @Description Lookup spec
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param lookupSpecReq body RestLookupSpecRequest true "Specify connectionName & cspSpecName"
@@ -151,7 +151,7 @@ func RestLookupSpec(c echo.Context) error {
 // RestLookupSpecList godoc
 // @Summary Lookup spec list
 // @Description Lookup spec list
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param lookupSpecsReq body common.TbConnectionName true "Specify connectionName"

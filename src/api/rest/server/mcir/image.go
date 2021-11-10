@@ -128,7 +128,7 @@ type RestLookupImageRequest struct {
 // RestLookupImage godoc
 // @Summary Lookup image
 // @Description Lookup image
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param lookupImageReq body RestLookupImageRequest true "Specify connectionName & cspImageId"
@@ -157,7 +157,7 @@ func RestLookupImage(c echo.Context) error {
 // RestLookupImageList godoc
 // @Summary Lookup image list
 // @Description Lookup image list
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment management
 // @Accept  json
 // @Produce  json
 // @Param lookupImagesReq body common.TbConnectionName true "Specify connectionName"
