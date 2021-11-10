@@ -1697,9 +1697,9 @@ func LoadCommonResource() (common.IdList, error) {
 				common.PrintJsonPretty(specReqTmp)
 
 				// Register Spec object
-				_, err := RegisterSpecWithCspSpecName(commonNsId, &specReqTmp)
-				if err != nil {
-					common.CBLog.Error(err)
+				_, err1 := RegisterSpecWithCspSpecName(commonNsId, &specReqTmp)
+				if err1 != nil {
+					common.CBLog.Error(err1)
 					// If already exist, error will occur
 					// Even if error, do not return here to update information
 					// return err
@@ -1707,9 +1707,9 @@ func LoadCommonResource() (common.IdList, error) {
 				specObjId := specReqTmp.Name
 
 				// Update registered Spec object with Cost info
-				costPerHour, err := strconv.ParseFloat(strings.ReplaceAll(row[2], " ", ""), 32)
-				if err != nil {
-					common.CBLog.Error(err)
+				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[2], " ", ""), 32)
+				if err2 != nil {
+					common.CBLog.Error(err2)
 					// If already exist, error will occur
 					// Even if error, do not return here to update information
 					// return err
@@ -1717,9 +1717,9 @@ func LoadCommonResource() (common.IdList, error) {
 				costPerHour32 := float32(costPerHour)
 				specUpdateRequest := TbSpecInfo{CostPerHour: costPerHour32}
 
-				updatedSpecInfo, err := UpdateSpec(commonNsId, specObjId, specUpdateRequest)
-				if err != nil {
-					common.CBLog.Error(err)
+				updatedSpecInfo, err3 := UpdateSpec(commonNsId, specObjId, specUpdateRequest)
+				if err3 != nil {
+					common.CBLog.Error(err3)
 					// If already exist, error will occur
 					// Even if error, do not return here to update information
 					// return err
@@ -1728,8 +1728,18 @@ func LoadCommonResource() (common.IdList, error) {
 				common.PrintJsonPretty(updatedSpecInfo)
 
 				regiesteredStatus = ""
-				if updatedSpecInfo.Id == "" {
-					regiesteredStatus = "  [FAILED]"
+				if updatedSpecInfo.Id != "" {
+					if err3 != nil {
+						regiesteredStatus = "  [Failed] " + err3.Error()
+					}
+				} else {
+					if err1 != nil {
+						regiesteredStatus = "  [Failed] " + err1.Error()
+					} else if err2 != nil {
+						regiesteredStatus = "  [Failed] " + err2.Error()
+					} else if err3 != nil {
+						regiesteredStatus = "  [Failed] " + err3.Error()
+					}
 				}
 				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrSpec+": "+specObjId+regiesteredStatus)
 			}(i, row)
@@ -1777,9 +1787,9 @@ func LoadCommonResource() (common.IdList, error) {
 				common.PrintJsonPretty(imageReqTmp)
 
 				// Register Spec object
-				_, err := RegisterImageWithId(commonNsId, &imageReqTmp)
-				if err != nil {
-					common.CBLog.Error(err)
+				_, err1 := RegisterImageWithId(commonNsId, &imageReqTmp)
+				if err1 != nil {
+					common.CBLog.Error(err1)
 					// If already exist, error will occur
 					// Even if error, do not return here to update information
 					//return err
@@ -1790,17 +1800,26 @@ func LoadCommonResource() (common.IdList, error) {
 
 				imageUpdateRequest := TbImageInfo{GuestOS: osType}
 
-				updatedImageInfo, err := UpdateImage(commonNsId, imageObjId, imageUpdateRequest)
-				if err != nil {
-					common.CBLog.Error(err)
+				updatedImageInfo, err2 := UpdateImage(commonNsId, imageObjId, imageUpdateRequest)
+				if err2 != nil {
+					common.CBLog.Error(err2)
 					//return err
 				}
 				fmt.Printf("[%d] Registered Common Image\n", i)
 				common.PrintJsonPretty(updatedImageInfo)
 				regiesteredStatus = ""
-				if updatedImageInfo.Id == "" {
-					regiesteredStatus = "  [FAILED]"
+				if updatedImageInfo.Id != "" {
+					if err2 != nil {
+						regiesteredStatus = "  [Failed] " + err2.Error()
+					}
+				} else {
+					if err1 != nil {
+						regiesteredStatus = "  [Failed] " + err1.Error()
+					} else if err2 != nil {
+						regiesteredStatus = "  [Failed] " + err2.Error()
+					}
 				}
+				//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)
 				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrImage+": "+imageObjId+regiesteredStatus)
 			}(i, row)
 		}
