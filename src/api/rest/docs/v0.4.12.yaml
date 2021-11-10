@@ -2403,7 +2403,7 @@ paths:
       summary: Control the lifecycle of VM (suspend, resume, reboot, terminate)
       tags:
       - '[MCIS] Control lifecycle'
-  /ns/{nsId}/defaultResouces:
+  /ns/{nsId}/defaultResources:
     delete:
       consumes:
       - application/json
@@ -2471,7 +2471,7 @@ paths:
       summary: Install the benchmark agent to specified MCIS
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
-  /ns/{nsId}/loadDefaultResouce:
+  /ns/{nsId}/loadDefaultResource:
     get:
       consumes:
       - application/json

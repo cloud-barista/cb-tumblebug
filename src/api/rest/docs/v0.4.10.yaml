@@ -2421,7 +2421,7 @@ paths:
       summary: Install the benchmark agent to specified MCIS
       tags:
       - '[MCIS] Performance benchmarking (WIP)'
-  /ns/{nsId}/loadDefaultResouce:
+  /ns/{nsId}/loadDefaultResource:
     get:
       consumes:
       - application/json
