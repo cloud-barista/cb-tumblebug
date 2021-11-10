@@ -26,7 +26,7 @@ import (
 // RestPostSubnet godoc
 // @Summary Create Subnet
 // @Description Create Subnet
-// @Tags [MCIR] Network management
+// @Tags [Infra resource] MCIR Network management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -66,7 +66,7 @@ func RestPostSubnet(c echo.Context) error {
 // RestPutSubnet godoc
 // @Summary Update Subnet
 // @Description Update Subnet
-// @Tags [MCIR] Network management
+// @Tags [Infra resource] MCIR Network management
 // @Accept  json
 // @Produce  json
 // @Param subnetInfo body mcir.TbSubnetInfo true "Details for an Subnet object"
@@ -85,7 +85,7 @@ func RestPutSubnet(c echo.Context) error {
 // RestGetSubnet godoc
 // @Summary Get Subnet
 // @Description Get Subnet
-// @Tags [MCIR] Network management
+// @Tags [Infra resource] MCIR Network management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -107,7 +107,7 @@ type RestGetAllSubnetResponse struct {
 // RestGetAllSubnet godoc
 // @Summary List all Subnets or Subnets' ID
 // @Description List all Subnets or Subnets' ID
-// @Tags [MCIR] Network management
+// @Tags [Infra resource] MCIR Network management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -125,7 +125,7 @@ func RestGetAllSubnet(c echo.Context) error {
 // RestDelSubnet godoc
 // @Summary Delete Subnet
 // @Description Delete Subnet
-// @Tags [MCIR] Network management
+// @Tags [Infra resource] MCIR Network management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -142,7 +142,7 @@ func RestDelSubnet(c echo.Context) error {
 // RestDelAllSubnet godoc
 // @Summary Delete all Subnets
 // @Description Delete all Subnets
-// @Tags [MCIR] Network management
+// @Tags [Infra resource] MCIR Network management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)

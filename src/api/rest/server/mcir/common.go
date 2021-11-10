@@ -218,7 +218,7 @@ func RestGetResource(c echo.Context) error {
 // RestCheckResource godoc
 // @Summary Check resources' existence
 // @Description Check resources' existence
-// @Tags [Admin] System management
+// @Tags [Infra resource] MCIR Common
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -317,7 +317,7 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // RestLoadCommonResource godoc
 // @Summary Load Common Resources from internal asset files
 // @Description Load Common Resources from internal asset files (Spec, Image)
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment configuration
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.IdList
@@ -335,10 +335,10 @@ func RestLoadCommonResource(c echo.Context) error {
 	return c.JSON(http.StatusOK, output)
 }
 
-// RestLoadDefaultResouce godoc
+// RestLoadDefaultResource godoc
 // @Summary Load Default Resource from internal asset file
 // @Description Load Default Resource from internal asset file
-// @Tags [Admin] Cloud environment management
+// @Tags [Infra resource] MCIR Common
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -346,8 +346,8 @@ func RestLoadCommonResource(c echo.Context) error {
 // @Param connectionName query string false "connectionName of cloud for designated resource" default()
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/loadDefaultResouce [get]
-func RestLoadDefaultResouce(c echo.Context) error {
+// @Router /ns/{nsId}/loadDefaultResource [get]
+func RestLoadDefaultResource(c echo.Context) error {
 	nsId := c.Param("nsId")
 	resType := c.QueryParam("option")
 
@@ -365,17 +365,17 @@ func RestLoadDefaultResouce(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
-// RestDelAllDefaultResouces godoc
+// RestDelAllDefaultResources godoc
 // @Summary Delete all Default Resource Objects in the given namespace
 // @Description Delete all Default Resource Objects in the given namespace
-// @Tags [Admin] Cloud environment management
+// @Tags [Infra resource] MCIR Common
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/defaultResouces [delete]
-func RestDelAllDefaultResouces(c echo.Context) error {
+// @Router /ns/{nsId}/defaultResources [delete]
+func RestDelAllDefaultResources(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 

@@ -25,7 +25,7 @@ import (
 // RestPostInstallMonitorAgentToMcis godoc
 // @Summary Install monitoring agent (CB-Dragonfly agent) to MCIS
 // @Description Install monitoring agent (CB-Dragonfly agent) to MCIS
-// @Tags [MCIS] Resource monitor (Developer)
+// @Tags [Infra service] MCIS Resource monitor (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -57,7 +57,7 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 // RestGetMonitorData godoc
 // @Summary Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
 // @Description Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
-// @Tags [MCIS] Resource monitor (Developer)
+// @Tags [Infra service] MCIS Resource monitor (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)

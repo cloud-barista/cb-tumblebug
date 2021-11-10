@@ -1572,7 +1572,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered ConnConfig
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /connConfig/{connConfigName}:
     get:
       consumes:
@@ -1601,7 +1601,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /health:
     get:
       consumes:
@@ -1656,7 +1656,7 @@ paths:
       summary: Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug,
         CB-Spider, CSP
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /lookupImage:
     get:
       consumes:
@@ -1686,7 +1686,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /lookupImages:
     get:
       consumes:
@@ -1716,7 +1716,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup image list
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /lookupSpec:
     get:
       consumes:
@@ -1746,7 +1746,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /lookupSpecs:
     get:
       consumes:
@@ -1776,7 +1776,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Lookup spec list
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /ns:
     delete:
       consumes:
@@ -1972,7 +1972,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCIS benchmark for a single performance metric and return results
       tags:
-      - '[MCIS] Performance benchmarking (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Performance benchmarking (WIP)'
   /ns/{nsId}/benchmarkall/mcis/{mcisId}:
     post:
       consumes:
@@ -2012,7 +2012,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Run MCIS benchmark for all performance metrics and return results
       tags:
-      - '[MCIS] Performance benchmarking (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Performance benchmarking (WIP)'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
@@ -2052,7 +2052,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified MCIS
       tags:
-      - '[MCIS] Remote command'
+      - '[Multi-Cloud Infra service] MCIS Remote command'
   /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}:
     post:
       consumes:
@@ -2097,7 +2097,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Send a command to specified VM
       tags:
-      - '[MCIS] Remote command'
+      - '[Multi-Cloud Infra service] MCIS Remote command'
   /ns/{nsId}/install/mcis/{mcisId}:
     post:
       consumes:
@@ -2137,7 +2137,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install the benchmark agent to specified MCIS
       tags:
-      - '[MCIS] Performance benchmarking (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Performance benchmarking (WIP)'
   /ns/{nsId}/mcis:
     delete:
       consumes:
@@ -2168,7 +2168,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCISs
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
     get:
       consumes:
       - application/json
@@ -2209,7 +2209,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCISs or MCISs' ID
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
     post:
       consumes:
       - application/json
@@ -2243,7 +2243,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}:
     delete:
       consumes:
@@ -2279,7 +2279,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
     get:
       consumes:
       - application/json
@@ -2342,7 +2342,7 @@ paths:
       summary: Get MCIS, Action to MCIS (status, suspend, resume, reboot, terminate,
         refine), or Get VMs' ID
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
     post:
       consumes:
@@ -2382,7 +2382,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VM in specified MCIS
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
     delete:
       consumes:
@@ -2423,7 +2423,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VM in specified MCIS
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
     get:
       consumes:
       - application/json
@@ -2480,7 +2480,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VM in specified MCIS
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
     post:
       consumes:
@@ -2520,7 +2520,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create multiple VMs by VM group in specified MCIS
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/recommend:
     post:
       consumes:
@@ -2556,7 +2556,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS recommendation
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:
     post:
       consumes:
@@ -2596,7 +2596,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Install monitoring agent (CB-Dragonfly agent) to MCIS
       tags:
-      - '[MCIS] Resource monitor (Developer)'
+      - '[Multi-Cloud Infra service] MCIS Resource monitor (for developer)'
   /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric}:
     get:
       consumes:
@@ -2637,7 +2637,7 @@ paths:
       summary: Get monitoring data of specified MCIS for specified monitoring metric
         (cpu, memory, disk, network)
       tags:
-      - '[MCIS] Resource monitor (Developer)'
+      - '[Multi-Cloud Infra service] MCIS Resource monitor (for developer)'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:
@@ -2662,7 +2662,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all MCIS policies
       tags:
-      - '[MCIS] Auto control policy management (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -2690,7 +2690,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all MCIS policies
       tags:
-      - '[MCIS] Auto control policy management (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Auto control policy management (WIP)'
   /ns/{nsId}/policy/mcis/{mcisId}:
     delete:
       consumes:
@@ -2720,7 +2720,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete MCIS Policy
       tags:
-      - '[MCIS] Auto control policy management (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Auto control policy management (WIP)'
     get:
       consumes:
       - application/json
@@ -2753,7 +2753,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get MCIS Policy
       tags:
-      - '[MCIS] Auto control policy management (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Auto control policy management (WIP)'
     post:
       consumes:
       - application/json
@@ -2792,7 +2792,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS Automation policy
       tags:
-      - '[MCIS] Auto control policy management (WIP)'
+      - '[Multi-Cloud Infra service] MCIS Auto control policy management (WIP)'
   /ns/{nsId}/resources/fetchImages:
     post:
       consumes:
@@ -2821,7 +2821,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch images
       tags:
-      - '[MCIR] Image management'
+      - '[Multi-Cloud Infra resource] MCIR Image management'
   /ns/{nsId}/resources/fetchSpecs:
     post:
       consumes:
@@ -2850,7 +2850,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Fetch specs
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
   /ns/{nsId}/resources/filterSpecs:
     post:
       consumes:
@@ -2884,7 +2884,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
   /ns/{nsId}/resources/filterSpecsByRange:
     post:
       consumes:
@@ -2918,7 +2918,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Filter specs by range
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
   /ns/{nsId}/resources/image:
     delete:
       consumes:
@@ -2943,7 +2943,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all images
       tags:
-      - '[MCIR] Image management'
+      - '[Multi-Cloud Infra resource] MCIR Image management'
     get:
       consumes:
       - application/json
@@ -2984,7 +2984,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all images or images' ID
       tags:
-      - '[MCIR] Image management'
+      - '[Multi-Cloud Infra resource] MCIR Image management'
     post:
       consumes:
       - application/json
@@ -3027,7 +3027,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register image
       tags:
-      - '[MCIR] Image management'
+      - '[Multi-Cloud Infra resource] MCIR Image management'
   /ns/{nsId}/resources/image/{imageId}:
     delete:
       consumes:
@@ -3057,7 +3057,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete image
       tags:
-      - '[MCIR] Image management'
+      - '[Multi-Cloud Infra resource] MCIR Image management'
     get:
       consumes:
       - application/json
@@ -3090,7 +3090,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get image
       tags:
-      - '[MCIR] Image management'
+      - '[Multi-Cloud Infra resource] MCIR Image management'
   /ns/{nsId}/resources/searchImage:
     post:
       consumes:
@@ -3125,7 +3125,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Search image
       tags:
-      - '[MCIR] Image management'
+      - '[Multi-Cloud Infra resource] MCIR Image management'
   /ns/{nsId}/resources/securityGroup:
     delete:
       consumes:
@@ -3150,7 +3150,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all Security Groups
       tags:
-      - '[MCIR] Security group management'
+      - '[Multi-Cloud Infra resource] MCIR Security group management'
     get:
       consumes:
       - application/json
@@ -3191,7 +3191,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all Security Groups or Security Groups' ID
       tags:
-      - '[MCIR] Security group management'
+      - '[Multi-Cloud Infra resource] MCIR Security group management'
     post:
       consumes:
       - application/json
@@ -3225,7 +3225,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create Security Group
       tags:
-      - '[MCIR] Security group management'
+      - '[Multi-Cloud Infra resource] MCIR Security group management'
   /ns/{nsId}/resources/securityGroup/{securityGroupId}:
     delete:
       consumes:
@@ -3255,7 +3255,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete Security Group
       tags:
-      - '[MCIR] Security group management'
+      - '[Multi-Cloud Infra resource] MCIR Security group management'
     get:
       consumes:
       - application/json
@@ -3288,7 +3288,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get Security Group
       tags:
-      - '[MCIR] Security group management'
+      - '[Multi-Cloud Infra resource] MCIR Security group management'
   /ns/{nsId}/resources/spec:
     delete:
       consumes:
@@ -3313,7 +3313,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all specs
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
     get:
       consumes:
       - application/json
@@ -3354,7 +3354,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all specs or specs' ID
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
     post:
       consumes:
       - application/json
@@ -3397,7 +3397,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register spec
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
   /ns/{nsId}/resources/spec/{specId}:
     delete:
       consumes:
@@ -3427,7 +3427,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete spec
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
     get:
       consumes:
       - application/json
@@ -3460,7 +3460,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get spec
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
     put:
       consumes:
       - application/json
@@ -3499,7 +3499,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Update spec
       tags:
-      - '[MCIR] Spec management'
+      - '[Multi-Cloud Infra resource] MCIR Spec management'
   /ns/{nsId}/resources/sshKey:
     delete:
       consumes:
@@ -3524,7 +3524,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all SSH Keys
       tags:
-      - '[MCIR] Access key management'
+      - '[Multi-Cloud Infra resource] MCIR Access key management'
     get:
       consumes:
       - application/json
@@ -3565,7 +3565,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all SSH Keys or SSH Keys' ID
       tags:
-      - '[MCIR] Access key management'
+      - '[Multi-Cloud Infra resource] MCIR Access key management'
     post:
       consumes:
       - application/json
@@ -3599,7 +3599,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create SSH Key
       tags:
-      - '[MCIR] Access key management'
+      - '[Multi-Cloud Infra resource] MCIR Access key management'
   /ns/{nsId}/resources/sshKey/{sshKeyId}:
     delete:
       consumes:
@@ -3629,7 +3629,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete SSH Key
       tags:
-      - '[MCIR] Access key management'
+      - '[Multi-Cloud Infra resource] MCIR Access key management'
     get:
       consumes:
       - application/json
@@ -3662,7 +3662,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get SSH Key
       tags:
-      - '[MCIR] Access key management'
+      - '[Multi-Cloud Infra resource] MCIR Access key management'
   /ns/{nsId}/resources/vNet:
     delete:
       consumes:
@@ -3687,7 +3687,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all VNets
       tags:
-      - '[MCIR] Network management'
+      - '[Multi-Cloud Infra resource] MCIR Network management'
     get:
       consumes:
       - application/json
@@ -3728,7 +3728,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all VNets or VNets' ID
       tags:
-      - '[MCIR] Network management'
+      - '[Multi-Cloud Infra resource] MCIR Network management'
     post:
       consumes:
       - application/json
@@ -3762,7 +3762,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create VNet
       tags:
-      - '[MCIR] Network management'
+      - '[Multi-Cloud Infra resource] MCIR Network management'
   /ns/{nsId}/resources/vNet/{vNetId}:
     delete:
       consumes:
@@ -3792,7 +3792,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete VNet
       tags:
-      - '[MCIR] Network management'
+      - '[Multi-Cloud Infra resource] MCIR Network management'
     get:
       consumes:
       - application/json
@@ -3825,7 +3825,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VNet
       tags:
-      - '[MCIR] Network management'
+      - '[Multi-Cloud Infra resource] MCIR Network management'
   /ns/{nsId}/testRecommendVm:
     post:
       consumes:
@@ -3861,7 +3861,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Recommend MCIS plan (filter and priority)
       tags:
-      - '[MCIS] Provisioning management'
+      - '[Multi-Cloud Infra service] MCIS Provisioning management'
   /object:
     delete:
       consumes:
@@ -3998,7 +3998,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all registered regions
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /region/{regionName}:
     get:
       consumes:
@@ -4027,7 +4027,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
       tags:
-      - '[Admin] Cloud environment management'
+      - '[Admin] Multi-Cloud environment configuration'
   /swaggerActive:
     get:
       consumes:

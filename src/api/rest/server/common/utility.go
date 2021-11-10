@@ -120,7 +120,7 @@ func RestGetSwagger(c echo.Context) error {
 // RestGetConnConfig godoc
 // @Summary Get registered ConnConfig info
 // @Description Get registered ConnConfig info
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment configuration
 // @Accept  json
 // @Produce  json
 // @Param connConfigName path string true "Name of connection config (cloud config)"
@@ -146,7 +146,7 @@ func RestGetConnConfig(c echo.Context) error {
 // RestGetConnConfigList godoc
 // @Summary List all registered ConnConfig
 // @Description List all registered ConnConfig
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment configuration
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.ConnConfigList
@@ -170,7 +170,7 @@ func RestGetConnConfigList(c echo.Context) error {
 // RestGetRegion godoc
 // @Summary Get registered region info
 // @Description Get registered region info
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment configuration
 // @Accept  json
 // @Produce  json
 // @Param regionName path string true "Name of region to retrieve"
@@ -197,7 +197,7 @@ func RestGetRegion(c echo.Context) error {
 // RestGetRegionList godoc
 // @Summary List all registered regions
 // @Description List all registered regions
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] Multi-Cloud environment configuration
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} common.RegionList
@@ -337,7 +337,7 @@ type RestInspectResourcesRequest struct {
 // RestInspectResources godoc
 // @Summary Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
 // @Description Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
-// @Tags [Admin] Cloud environment management
+// @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
