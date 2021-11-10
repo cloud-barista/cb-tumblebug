@@ -1333,6 +1333,8 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 // DelMcis is func to delete MCIS object
 func DelMcis(nsId string, mcisId string, option string) error {
 
+	option = common.ToLower(option)
+
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1353,18 +1355,27 @@ func DelMcis(nsId string, mcisId string, option string) error {
 
 	fmt.Println("[Delete MCIS] " + mcisId)
 
-	// // ControlMcis first
-	// err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
-	// if err != nil {
-	// 	common.CBLog.Error(err)
-	// 	if option != "force" {
-	// 		return err
-	// 	}
-	// }
-	// // for deletion, need to wait until termination is finished
-	// // Sleep for 5 seconds
-	// fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCIS-VMs termination.\n\n")
-	// time.Sleep(5 * time.Second)
+	// with terminate option, do MCIS refine and terminate in advance
+	if strings.EqualFold(option, ActionTerminate) {
+
+		// ActionRefine
+		_, err := HandleMcisAction(nsId, mcisId, ActionRefine)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+
+		// ActionTerminate
+		_, err = HandleMcisAction(nsId, mcisId, ActionTerminate)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		// for deletion, need to wait until termination is finished
+		// Sleep for 5 seconds
+		fmt.Printf("\n\n[Info] Sleep for 5 seconds for safe MCIS-VMs termination.\n\n")
+		time.Sleep(5 * time.Second)
+	}
 
 	// Check MCIS status is Terminated so that approve deletion
 	mcisStatus, _ := GetMcisStatus(nsId, mcisId)
@@ -1376,7 +1387,7 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		}
 	}
 	// Check MCIS status is Terminated (not Partial)
-	if !(!strings.Contains(mcisStatus.Status, "Partial-") && (strings.Contains(mcisStatus.Status, StatusTerminated) || strings.Contains(mcisStatus.Status, StatusUndefined) || strings.Contains(mcisStatus.Status, StatusFailed))) {
+	if mcisStatus.Id != "" && !(!strings.Contains(mcisStatus.Status, "Partial-") && (strings.Contains(mcisStatus.Status, StatusTerminated) || strings.Contains(mcisStatus.Status, StatusUndefined) || strings.Contains(mcisStatus.Status, StatusFailed))) {
 		err := fmt.Errorf("MCIS " + mcisId + " is " + mcisStatus.Status + " and not " + StatusTerminated + "/" + StatusUndefined + "/" + StatusFailed + ", Deletion is not allowed (use option=force for force deletion)")
 		common.CBLog.Error(err)
 		if option != "force" {

@@ -54,6 +54,9 @@ const (
 	// ActionReboot is const for Reboot
 	ActionReboot string = "Reboot"
 
+	// ActionRefine is const for Refine
+	ActionRefine string = "Refine"
+
 	// ActionComplete is const for Complete
 	ActionComplete string = "None"
 )

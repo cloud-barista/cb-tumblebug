@@ -260,7 +260,7 @@ func RestPutMcis(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param option query string false "Option for delete MCIS (support force delete)" Enums(force)
+// @Param option query string false "Option for delete MCIS (support force delete)" Enums(terminate,force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [delete]
