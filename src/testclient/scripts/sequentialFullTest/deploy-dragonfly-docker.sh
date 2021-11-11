@@ -20,7 +20,7 @@ fi
 			"command": "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setcbdf.sh -O ~/setcbdf.sh; chmod +x ~/setcbdf.sh; ~/setcbdf.sh"
 		}' | jq '' #|| return 1
 
-	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status`
+	MCISINFO=`curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status`
 	MASTERIP=$(jq -r '.status.masterIp' <<< "$MCISINFO")
 	MASTERVM=$(jq -r '.status.masterVmId' <<< "$MCISINFO")
 	
