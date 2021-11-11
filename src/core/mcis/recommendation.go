@@ -48,7 +48,7 @@ type FilterCondition struct {
 
 // Operation is struct for .
 type Operation struct {
-	Operator string `json:"operator" example:">=" enums:">=,<=,=="` // >=, <=, ==
+	Operator string `json:"operator" example:"<=" enums:">=,<=,=="` // >=, <=, ==
 	Operand  string `json:"operand" example:"4" enums:"4,8,.."`     // 10, 70, 80, 98, ...
 }
 
@@ -67,7 +67,7 @@ type PriorityCondition struct {
 // Operation is struct for .
 type ParameterKeyVal struct {
 	Key string   `json:"key" example:"coordinateClose" enums:"coordinateClose,coordinateWithin,coordinateFair"` // coordinate
-	Val []string `json:"val" example:"46.3772/2.3730"`                                                          // ["Latitude,Longitude","12,543",..,"31,433"]
+	Val []string `json:"val" example:"44.146838/-116.411403"`                                                   // ["Latitude,Longitude","12,543",..,"31,433"]
 }
 
 ///
