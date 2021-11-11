@@ -28,7 +28,7 @@ import (
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nsId path string true "Namespace ID" default(common)
 // @Param deploymentPlan body mcis.DeploymentPlan false "Recommend MCIS plan (filter and priority)"
 // @Success 200 {object} []mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
