@@ -8,7 +8,7 @@ source ../init.sh
 
 echo ""
 
-MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?action=status)
+MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status)
 VMARRAY=$(jq '.status.vm' <<<"$MCISINFO")
 
 echo ""
