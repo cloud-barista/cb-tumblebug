@@ -1731,6 +1731,7 @@ var doc = `{
                     },
                     {
                         "enum": [
+                            "terminate",
                             "force"
                         ],
                         "type": "string",

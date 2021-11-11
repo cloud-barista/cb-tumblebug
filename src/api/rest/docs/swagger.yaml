@@ -2647,6 +2647,7 @@ paths:
         type: string
       - description: Option for delete MCIS (support force delete)
         enum:
+        - terminate
         - force
         in: query
         name: option
