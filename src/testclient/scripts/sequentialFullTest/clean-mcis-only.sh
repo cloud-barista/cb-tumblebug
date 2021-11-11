@@ -6,22 +6,22 @@ function clean_mcis_sequence() {
 	local POSTFIX=$3
 	local TestSetFile=$4
 
-	echo '## 8. MCIS: Refine first (remove failed VMs)'
-	OUTPUT=$(../8.mcis/refine-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
+	# echo '## 8. MCIS: Refine first (remove failed VMs)'
+	# OUTPUT=$(../8.mcis/refine-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 
-	echo '## 8. MCIS: Terminate'
-	OUTPUT=$(../8.mcis/terminate-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
-	echo "${OUTPUT}"
-	OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
-	OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
-	OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
+	# echo '## 8. MCIS: Terminate'
+	# OUTPUT=$(../8.mcis/terminate-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
+	# echo "${OUTPUT}"
+	# OUTPUT1=$(echo "${OUTPUT}" | grep -c 'No VM to terminate')
+	# OUTPUT2=$(echo "${OUTPUT}" | grep -c 'Terminate is not allowed')
+	# OUTPUT3=$(echo "${OUTPUT}" | grep -c 'does not exist')
 
-	if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]; then
-		echo "============== sleep 30 before delete MCIS obj"
-		dozing 30
-	fi
+	# if [ "${OUTPUT1}" != 1 ] && [ "${OUTPUT2}" != 1 ] && [ "${OUTPUT3}" != 1 ]; then
+	# 	echo "============== sleep 30 before delete MCIS obj"
+	# 	dozing 30
+	# fi
 
-	../8.mcis/delete-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	../8.mcis/delete-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate
 }
 
 SECONDS=0
