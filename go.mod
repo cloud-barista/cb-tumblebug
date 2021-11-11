@@ -13,7 +13,7 @@ require (
 	github.com/bramvdbogaerde/go-scp v1.0.0
 	github.com/cloud-barista/cb-dragonfly v0.4.3
 	github.com/cloud-barista/cb-log v0.4.0
-	github.com/cloud-barista/cb-spider v0.4.13
+	github.com/cloud-barista/cb-spider v0.4.17
 	github.com/cloud-barista/cb-store v0.4.1
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/go-resty/resty/v2 v2.6.0

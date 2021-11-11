@@ -234,6 +234,8 @@ github.com/cloud-barista/cb-log v0.4.0/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJa
 github.com/cloud-barista/cb-spider v0.4.5/go.mod h1:/6DT/uHT/XEN6pm3Ne89awbjrFBJl8PE6F3i8T4SW/Y=
 github.com/cloud-barista/cb-spider v0.4.13 h1:SFH20EH1/6hqtx5VBY1LlfL+3pgnUMXgie3chP7OvsE=
 github.com/cloud-barista/cb-spider v0.4.13/go.mod h1:PfVT0TTR8kgpH5DGJkyqa6nsEsb8rp/Y/KIwFw4TcvA=
+github.com/cloud-barista/cb-spider v0.4.17 h1:q+B/S9/xNe+iA/qjk2mnKIkibmZ/PTof8Bz6/GUMTIM=
+github.com/cloud-barista/cb-spider v0.4.17/go.mod h1:QhEE8dYh0xUvi4tSyxrbIZn1TzCwpDfFQTVTYIGlS6s=
 github.com/cloud-barista/cb-store v0.4.1 h1:/4Y8SWO3QAvQU2YUc8i72aBp+W5X8rvgk5w4yMt0MQg=
 github.com/cloud-barista/cb-store v0.4.1/go.mod h1:d3mwxDF2gC4lc7a+DFc2eo1OqqS9sHygLGUrU94hhj0=
 github.com/cockroachdb/datadriven v0.0.0-20190809214429-80d97fb3cbaa/go.mod h1:zn76sxSg3SzpJ0PPJaLDCu+Bu0Lg3sKTORVIj19EIF8=

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CONTAINER_NAME_READ="CB-Spider"
-CONTAINER_VERSION="0.4.13"
+CONTAINER_VERSION="0.4.17"
 CONTAINER_PORT="-p 1024:1024 -p 2048:2048"
 CONTAINER_DATA_PATH="/root/go/src/github.com/cloud-barista/cb-spider/meta_db"
 
