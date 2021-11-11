@@ -55,6 +55,7 @@ type ControlVmResultWrapper struct {
 
 // HandleMcisAction is func to handle actions to MCIS
 func HandleMcisAction(nsId string, mcisId string, action string) (string, error) {
+	action = common.ToLower(action)
 
 	err := common.CheckString(nsId)
 	if err != nil {
