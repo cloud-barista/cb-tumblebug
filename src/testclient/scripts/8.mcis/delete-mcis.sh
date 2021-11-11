@@ -3,18 +3,12 @@
 #function terminate_and_delete_mcis() {
 
 echo "####################################################################"
-echo "## 8. VM: Delete MCIS"
+echo "## 8. VM: Delete MCIS (-x for option. ex: -x terminate)"
 echo "####################################################################"
 
 source ../init.sh
 
-# MCISID=TBD
-# if [ "${INDEX}" == "0" ]; then
-# 	MCISID=${POSTFIX}
-# else
-# 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
-# fi
-
+OPTION=$OPTION01
 echo "${INDEX} ${REGION} ${MCISID}"
 
 echo ""
