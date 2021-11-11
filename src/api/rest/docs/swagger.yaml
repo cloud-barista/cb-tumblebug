@@ -935,7 +935,7 @@ definitions:
         - '>='
         - <=
         - ==
-        example: '>='
+        example: <=
         type: string
     type: object
   mcis.ParameterKeyVal:
@@ -951,7 +951,7 @@ definitions:
       val:
         description: '["Latitude,Longitude","12,543",..,"31,433"]'
         example:
-        - 46.3772/2.3730
+        - 44.146838/-116.411403
         items:
           type: string
         type: array
@@ -4424,7 +4424,7 @@ paths:
       - application/json
       description: Recommend MCIS plan (filter and priority)
       parameters:
-      - default: ns01
+      - default: common
         description: Namespace ID
         in: path
         name: nsId

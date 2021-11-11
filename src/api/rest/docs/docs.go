@@ -4261,7 +4261,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "common",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -6038,7 +6038,7 @@ var doc = `{
                         "\u003c=",
                         "=="
                     ],
-                    "example": "\u003e="
+                    "example": "\u003c="
                 }
             }
         },
@@ -6062,7 +6062,7 @@ var doc = `{
                         "type": "string"
                     },
                     "example": [
-                        "46.3772/2.3730"
+                        "44.146838/-116.411403"
                     ]
                 }
             }
