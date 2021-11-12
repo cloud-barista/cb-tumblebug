@@ -1681,7 +1681,7 @@ func LoadCommonResource() (common.IdList, error) {
 			go func(i int, row []string) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(5)
+				common.RandomSleep(20)
 				specReqTmp := TbSpecReq{}
 				// [0]connectionName, [1]cspSpecName, [2]CostPerHour
 				specReqTmp.ConnectionName = row[0]
@@ -1768,7 +1768,7 @@ func LoadCommonResource() (common.IdList, error) {
 			go func(i int, row []string) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(5)
+				common.RandomSleep(20)
 				imageReqTmp := TbImageReq{}
 				// row0: ProviderName
 				// row1: connectionName
