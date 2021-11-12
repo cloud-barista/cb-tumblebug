@@ -10,7 +10,7 @@ USERCMD=$OPTION01
 VMID=$OPTION02
 
 if [ -z "$USERCMD" ]; then
-	USERCMD="echo -n [Public IP: ; curl https://api.ipify.org ; echo -n ], [Hostname: ; hostname ; echo -n ]"
+	USERCMD="echo -n [Hostname: ; hostname ; echo -n ]"
 fi
 
 if [ -z "$VMID" ]; then

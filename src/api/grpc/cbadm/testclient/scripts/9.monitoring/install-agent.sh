@@ -34,7 +34,7 @@
 		\"nsId\":  \"${NSID}\",
 		\"mcisId\": \"${MCISID}\",
 		\"cmd\": {
-			\"command\": \"echo -n [CMD] Works! [Public IP: ; curl https://api.ipify.org ; echo -n ], [Hostname: ; hostname ; echo -n ]\"
+			\"command\": \"echo -n [CMD] Works! [Hostname: ; hostname ; echo -n ]\"
 		}
 	}" | jq '' #|| return 1
 #}
