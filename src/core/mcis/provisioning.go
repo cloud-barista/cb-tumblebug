@@ -962,7 +962,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 			return &TbMcisInfo{}, err
 		}
 
-		// remake vmReqest from given input and check resource availablity
+		// remake vmReqest from given input and check resource availability
 		vmReq.ConnectionName = specInfo.ConnectionName
 
 		// Default resource name has this pattern (nsId + "-systemdefault-" + vmReq.ConnectionName)
