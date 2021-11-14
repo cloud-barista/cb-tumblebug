@@ -39,9 +39,9 @@ make
 str=$(curl https://api.ipify.org)
 printf "cb-operator is ready. Access to it with ssh %s " $str
 
-sudo sed -i "s/external_ip: 127.0.0.1/external_ip: `curl https://api.ipify.org`/g" $GOPATH/src/github.com/cloud-barista/cb-operator/docker-compose-mode-files/conf/cb-dragonfly/config.yaml
+sudo sed -i "s/127.0.0.1/`curl https://api.ipify.org`/g" $GOPATH/src/github.com/cloud-barista/cb-operator/docker-compose-mode-files/conf/cb-dragonfly/config.yaml
 
-sudo sed -i "s/collector_ip: 127.0.0.1/collector_ip: `curl https://api.ipify.org`/g" $GOPATH/src/github.com/cloud-barista/cb-operator/docker-compose-mode-files/conf/cb-dragonfly/config.yaml
+sudo sed -i "s/127.0.0.1/`curl https://api.ipify.org`/g" $GOPATH/src/github.com/cloud-barista/cb-operator/docker-compose-mode-files/conf/cb-dragonfly/config.yaml
 
 nohup sudo $GOPATH/src/github.com/cloud-barista/cb-operator/src/operator run -f $GOPATH/src/github.com/cloud-barista/cb-operator/docker-compose-mode-files/docker-compose-df-only.yaml 1>/dev/null 2>&1 &
 # $GOPATH/src/github.com/cloud-barista/cb-operator/src/operator info -f $GOPATH/src/github.com/cloud-barista/cb-operator/docker-compose-mode-files/docker-compose-df-only.yaml
