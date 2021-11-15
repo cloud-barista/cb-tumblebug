@@ -9,7 +9,6 @@ replace (
 )
 
 require (
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/bramvdbogaerde/go-scp v1.0.0
 	github.com/cloud-barista/cb-dragonfly v0.4.3
 	github.com/cloud-barista/cb-log v0.4.0
