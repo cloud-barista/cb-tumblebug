@@ -35,7 +35,9 @@
 				"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 				"description": "description",
-				"vmUserPassword": ""
+				"vmUserPassword": "",
+				"rootDiskType": "",
+				"rootDiskSize": "77"
 			}
 			]
 		}' | jq '' 
