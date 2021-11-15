@@ -423,3 +423,6 @@ gcp-us-west1,g1-small,0.48
 gcp-us-west2,g1-small,0.42
 gcp-us-west3,g1-small,0.47
 gcp-us-west4,g1-small,0.48
+alibaba-ap-northeast-1,ecs.t5-lc1m2.large,0.77
+gcp-asia-east1,e2-standard-2,0.082658
+azure-westus,Standard_B2s,0.57
