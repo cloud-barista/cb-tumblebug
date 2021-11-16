@@ -32,7 +32,7 @@ fi
 	echo "[Waiting for initialization of CB-Dragonfly. (20s)]"
 	dozing 20
 
-	echo "Checking CB-Dragonfly Status. (upto 3s * 20 trials)" 
+	echo "Checking CB-Dragonfly Status. (upto 5s * 20 trials)" 
 
 	for (( try=1; try<=20; try++ ))
 	do
@@ -42,7 +42,7 @@ fi
 			break
 		else 
 			printf "[$try : NOT Healthy.].."
-			dozing 3
+			dozing 5
 		fi
 	done
 
