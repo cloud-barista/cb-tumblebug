@@ -5949,6 +5949,11 @@ var doc = `{
                     "type": "string",
                     "example": "[yes, no]"
                 },
+                "label": {
+                    "description": "Label is for describing the mcis in a keyword (any string can be used)",
+                    "type": "string",
+                    "example": "User custom label"
+                },
                 "masterIp": {
                     "type": "string",
                     "example": "32.201.134.113"
@@ -5968,6 +5973,11 @@ var doc = `{
                 },
                 "statusCount": {
                     "$ref": "#/definitions/mcis.StatusCountInfo"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
                 },
                 "targetAction": {
                     "type": "string"
@@ -6440,12 +6450,15 @@ var doc = `{
                 "label": {
                     "description": "Label is for describing the mcis in a keyword (any string can be used)",
                     "type": "string",
-                    "default": "no",
-                    "example": "custom tag"
+                    "example": "DynamicVM"
                 },
                 "name": {
                     "type": "string",
                     "example": "mcis01"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
+                    "type": "string"
                 },
                 "vm": {
                     "type": "array",
@@ -6476,7 +6489,8 @@ var doc = `{
                 },
                 "label": {
                     "description": "Label is for describing the mcis in a keyword (any string can be used)",
-                    "type": "string"
+                    "type": "string",
+                    "example": "User custom label"
                 },
                 "name": {
                     "type": "string"
@@ -6489,6 +6503,11 @@ var doc = `{
                 },
                 "statusCount": {
                     "$ref": "#/definitions/mcis.StatusCountInfo"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
                 },
                 "targetAction": {
                     "type": "string"
@@ -6528,7 +6547,6 @@ var doc = `{
                 "label": {
                     "description": "Label is for describing the mcis in a keyword (any string can be used)",
                     "type": "string",
-                    "default": "no",
                     "example": "custom tag"
                 },
                 "name": {
@@ -6536,6 +6554,10 @@ var doc = `{
                     "example": "mcis01"
                 },
                 "placementAlgo": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
                     "type": "string"
                 },
                 "vm": {
