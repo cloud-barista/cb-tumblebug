@@ -161,18 +161,19 @@ func CheckDragonflyEndpoint() error {
 
 // monAgentInstallReq is struct for CB-Dragonfly monitoring agent installation request
 type monAgentInstallReq struct {
-	NsId     string `json:"ns_id"`
-	McisId   string `json:"mcis_id"`
-	VmId     string `json:"vm_id"`
-	PublicIp string `json:"public_ip"`
-	UserName string `json:"user_name"`
-	SshKey   string `json:"ssh_key"`
-	CspType  string `json:"cspType"`
-	Port     string `json:"port"`
+	NsId        string `json:"ns_id"`
+	McisId      string `json:"mcis_id"`
+	VmId        string `json:"vm_id"`
+	PublicIp    string `json:"public_ip"`
+	UserName    string `json:"user_name"`
+	SshKey      string `json:"ssh_key"`
+	CspType     string `json:"cspType"`
+	ServiceType string `json:"service_type"`
+	Port        string `json:"port"`
 }
 
 // CallMonitoringAsync is func to call CB-Dragonfly monitoring framework
-func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID string, givenUserName string, method string, cmd string, returnResult *[]SshCmdResult) {
+func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisServiceType string, vmID string, givenUserName string, method string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
@@ -192,17 +193,18 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 	url := common.DragonflyRestUrl + cmd
 	fmt.Println("\n[Calling DRAGONFLY] START")
-	fmt.Println("VM:" + nsID + "_" + mcisID + "_" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType)
+	fmt.Println("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
 
 	tempReq := monAgentInstallReq{
-		NsId:     nsID,
-		McisId:   mcisID,
-		VmId:     vmID,
-		PublicIp: vmIP,
-		Port:     sshPort,
-		UserName: userName,
-		SshKey:   privateKey,
-		CspType:  vmInfoTmp.Location.CloudType,
+		NsId:        nsID,
+		McisId:      mcisID,
+		VmId:        vmID,
+		PublicIp:    vmIP,
+		Port:        sshPort,
+		UserName:    userName,
+		SshKey:      privateKey,
+		CspType:     vmInfoTmp.Location.CloudType,
+		ServiceType: mcisServiceType,
 	}
 	if tempReq.SshKey == "" {
 		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.SshKey is empty.\n")
@@ -284,7 +286,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID st
 
 }
 
-func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
+func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType string, req *McisCmdReq) (AgentInstallContentWrapper, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -337,7 +339,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, req *McisCmdReq) (Age
 			// Avoid RunRemoteCommand to not ready VM
 			if err == nil {
 				wg.Add(1)
-				go CallMonitoringAsync(&wg, nsId, mcisId, v, req.UserName, method, cmd, &resultArray)
+				go CallMonitoringAsync(&wg, nsId, mcisId, mcisServiceType, v, req.UserName, method, cmd, &resultArray)
 			} else {
 				common.CBLog.Error(err)
 			}

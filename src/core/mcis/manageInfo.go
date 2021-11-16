@@ -695,6 +695,12 @@ type McisStatusInfo struct {
 	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
 	MasterSSHPort string `json:"masterSSHPort"`
 
+	// Label is for describing the mcis in a keyword (any string can be used)
+	Label string `json:"label" example:"User custom label"`
+
+	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
+
 	Vm []TbVmStatusInfo `json:"vm"`
 }
 

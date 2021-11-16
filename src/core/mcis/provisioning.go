@@ -97,6 +97,9 @@ const (
 
 const labelAutoGen string = "AutoGen"
 
+// DefaultSystemLabel is const for string to specify the Default System Label
+const DefaultSystemLabel string = "Managed by CB-Tumblebug"
+
 // RegionInfo is struct for region information
 type RegionInfo struct {
 	Region string
@@ -111,7 +114,10 @@ type TbMcisReq struct {
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
 
 	// Label is for describing the mcis in a keyword (any string can be used)
-	Label string `json:"label" example:"custom tag" default:"no"`
+	Label string `json:"label" example:"custom tag" default:""`
+
+	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"" default:""`
 
 	PlacementAlgo string `json:"placementAlgo,omitempty"`
 	Description   string `json:"description" example:"Made in CB-TB"`
@@ -127,7 +133,10 @@ type TbMcisDynamicReq struct {
 	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
 
 	// Label is for describing the mcis in a keyword (any string can be used)
-	Label string `json:"label" example:"custom tag" default:"no"`
+	Label string `json:"label" example:"DynamicVM" default:""`
+
+	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"" default:""`
 
 	Description string `json:"description" example:"Made in CB-TB"`
 
@@ -159,7 +168,10 @@ type TbMcisInfo struct {
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
 	// Label is for describing the mcis in a keyword (any string can be used)
-	Label string `json:"label"`
+	Label string `json:"label" example:"User custom label"`
+
+	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
 	PlacementAlgo string     `json:"placementAlgo,omitempty"`
 	Description   string     `json:"description"`
@@ -468,10 +480,10 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, mcisTmp.SystemLabel, reqToMon)
 			if err != nil {
 				common.CBLog.Error(err)
 				//mcisTmp.InstallMonAgent = "no"
@@ -663,10 +675,10 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, mcisTmp.SystemLabel, reqToMon)
 			if err != nil {
 				common.CBLog.Error(err)
 				//mcisTmp.InstallMonAgent = "no"
@@ -742,6 +754,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		"targetStatus":    targetStatus,
 		"installMonAgent": req.InstallMonAgent,
 		"label":           req.Label,
+		"systemLabel":     req.SystemLabel,
 	}
 	val, err := json.Marshal(mapA)
 	if err != nil {
@@ -905,7 +918,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
-			reqToMon.UserName = "ubuntu" // this MCIS user name is temporal code. Need to improve.
+			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n===========================\n")
 			// Sleep for 60 seconds for a safe DF agent installation.
@@ -913,7 +926,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 			time.Sleep(60 * time.Second)
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, reqToMon)
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, mcisTmp.SystemLabel, reqToMon)
 			if err != nil {
 				common.CBLog.Error(err)
 				//mcisTmp.InstallMonAgent = "no"
@@ -940,6 +953,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	mcisReq := TbMcisReq{}
 	mcisReq.Name = req.Name
 	mcisReq.Label = req.Label
+	mcisReq.SystemLabel = req.SystemLabel
 	mcisReq.InstallMonAgent = req.InstallMonAgent
 	mcisReq.Description = req.Description
 
