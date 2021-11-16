@@ -29,7 +29,8 @@ func (s *MCISService) InstallMonitorAgentToMcis(ctx context.Context, req *pb.Mci
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallMonitorAgentToMcis()")
 	}
 
-	content, err := mcis.InstallMonitorAgentToMcis(req.NsId, req.McisId, &mcisObj)
+	mcisTmpSystemLabel := mcis.DefaultSystemLabel
+	content, err := mcis.InstallMonitorAgentToMcis(req.NsId, req.McisId, mcisTmpSystemLabel, &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallMonitorAgentToMcis()")
 	}
