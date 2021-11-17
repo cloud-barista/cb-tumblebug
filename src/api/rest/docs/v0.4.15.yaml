@@ -874,6 +874,11 @@ definitions:
           default:yes)
         example: '[yes, no]'
         type: string
+      label:
+        description: Label is for describing the mcis in a keyword (any string can
+          be used)
+        example: User custom label
+        type: string
       masterIp:
         example: 32.201.134.113
         type: string
@@ -888,6 +893,11 @@ definitions:
         type: string
       statusCount:
         $ref: '#/definitions/mcis.StatusCountInfo'
+      systemLabel:
+        description: SystemLabel is for describing the mcis in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
       targetAction:
         type: string
       targetStatus:
@@ -1212,13 +1222,16 @@ definitions:
         example: "no"
         type: string
       label:
-        default: "no"
         description: Label is for describing the mcis in a keyword (any string can
           be used)
-        example: custom tag
+        example: DynamicVM
         type: string
       name:
         example: mcis01
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the mcis in a keyword (any string
+          can be used) for special System purpose
         type: string
       vm:
         items:
@@ -1246,6 +1259,7 @@ definitions:
       label:
         description: Label is for describing the mcis in a keyword (any string can
           be used)
+        example: User custom label
         type: string
       name:
         type: string
@@ -1255,6 +1269,11 @@ definitions:
         type: string
       statusCount:
         $ref: '#/definitions/mcis.StatusCountInfo'
+      systemLabel:
+        description: SystemLabel is for describing the mcis in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
       targetAction:
         type: string
       targetStatus:
@@ -1279,7 +1298,6 @@ definitions:
         example: "no"
         type: string
       label:
-        default: "no"
         description: Label is for describing the mcis in a keyword (any string can
           be used)
         example: custom tag
@@ -1288,6 +1306,10 @@ definitions:
         example: mcis01
         type: string
       placementAlgo:
+        type: string
+      systemLabel:
+        description: SystemLabel is for describing the mcis in a keyword (any string
+          can be used) for special System purpose
         type: string
       vm:
         items:
