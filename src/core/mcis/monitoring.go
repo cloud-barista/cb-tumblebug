@@ -182,7 +182,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	errStr := ""
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr = err.Error()
+		errStr += err.Error()
 	}
 	fmt.Println("[CallMonitoringAsync] " + mcisID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
 
@@ -194,6 +194,10 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	url := common.DragonflyRestUrl + cmd
 	fmt.Println("\n[Calling DRAGONFLY] START")
 	fmt.Println("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
+
+	if mcisServiceType == "" {
+		mcisServiceType = "default"
+	}
 
 	tempReq := monAgentInstallReq{
 		NsId:        nsID,
@@ -209,12 +213,15 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	if tempReq.SshKey == "" {
 		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.SshKey is empty.\n")
 		common.PrintJsonPretty(tempReq)
+		err = fmt.Errorf("/request body to install monitoring agent: sshKey is empty/")
+		common.CBLog.Error(err)
+		errStr += err.Error()
 	}
 
 	payload, err := json.Marshal(tempReq)
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr = err.Error()
+		errStr += err.Error()
 	}
 
 	responseLimit := 8
@@ -228,7 +235,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr = err.Error()
+		errStr += err.Error()
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -240,21 +247,21 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	fmt.Println("Called CB-DRAGONFLY API")
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr = err.Error()
+		errStr += err.Error()
 	} else {
 		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err1 := fmt.Errorf("HTTP Status: not in 200-399")
-			common.CBLog.Error(err1)
-			errStr = err1.Error()
+			err = fmt.Errorf("HTTP Status: not in 200-399")
+			common.CBLog.Error(err)
+			errStr += err.Error()
 		}
 
 		defer res.Body.Close()
-		body, err2 := ioutil.ReadAll(res.Body)
-		if err2 != nil {
-			common.CBLog.Error(err2)
-			errStr = err2.Error()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			common.CBLog.Error(err)
+			errStr += err.Error()
 		}
 
 		result = string(body)
