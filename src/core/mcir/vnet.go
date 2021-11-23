@@ -129,7 +129,7 @@ type TbSubnetInfo struct { // Tumblebug
 }
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
-func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
+func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	fmt.Println("=========================== CreateVNet")
 
 	resourceType := common.StrVNet
@@ -212,16 +212,30 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SpiderRestUrl + "/vpc"
+		var url string
+		if option == "register" {
+			url = fmt.Sprintf("%s/vpc/%s", common.SpiderRestUrl, u.Name)
+		} else {
+			url = fmt.Sprintf("%s/vpc", common.SpiderRestUrl)
+		}
 
 		client := resty.New().SetCloseConnection(true)
+		client.SetAllowGetMethodPayload(true)
 
-		resp, err := client.R().
+		req := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
-			SetResult(&SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Post(url)
+			SetResult(&SpiderVPCInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+		var resp *resty.Response
+		var err error
+
+		if option == "register" {
+			resp, err = req.Get(url)
+		} else {
+			resp, err = req.Post(url)
+		}
 
 		if err != nil {
 			common.CBLog.Error(err)
@@ -260,7 +274,15 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
 		fmt.Println("payload: " + string(payload)) // for debug
 
-		result, err := ccm.CreateVPC(string(payload))
+		// result, err := ccm.CreateVPC(string(payload))
+		var result string
+
+		if option == "register" {
+			result, err = ccm.CreateVPC(string(payload))
+		} else {
+			result, err = ccm.GetVPC(string(payload))
+		}
+
 		if err != nil {
 			common.CBLog.Error(err)
 			return TbVNetInfo{}, err
@@ -283,27 +305,6 @@ func CreateVNet(nsId string, u *TbVNetReq) (TbVNetInfo, error) {
 	content.CspVNetId = tempSpiderVPCInfo.IId.SystemId
 	content.CspVNetName = tempSpiderVPCInfo.IId.NameId
 	content.CidrBlock = tempSpiderVPCInfo.IPv4_CIDR
-
-	// content.SubnetInfoList = tempSpiderVPCInfo.SubnetInfoList
-	/*
-		for _, v := range tempSpiderVPCInfo.SubnetInfoList {
-			jsonBody, err := json.Marshal(v)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-
-			tbSubnetInfo := TbSubnetInfo{}
-			err = json.Unmarshal(jsonBody, &tbSubnetInfo)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-			tbSubnetInfo.Id = v.IId.NameId
-			tbSubnetInfo.Name = v.IId.NameId
-
-			content.SubnetInfoList = append(content.SubnetInfoList, tbSubnetInfo)
-		}
-	*/
-
 	content.Description = u.Description
 	content.KeyValueList = tempSpiderVPCInfo.KeyValueList
 	content.AssociatedObjectList = []string{}

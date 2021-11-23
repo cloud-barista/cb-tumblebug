@@ -29,7 +29,7 @@ func (s *MCIRService) CreateVNet(ctx context.Context, req *pb.TbVNetCreateReques
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.CreateVNet()")
 	}
 
-	content, err := mcir.CreateVNet(req.NsId, &mcirObj)
+	content, err := mcir.CreateVNet(req.NsId, &mcirObj, "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.CreateVNet()")
 	}

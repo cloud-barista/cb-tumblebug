@@ -1,22 +1,24 @@
 #!/bin/bash
 
 function CallTB() {
+	echo "- Register vNet in ${MCIRRegionName}"
 	echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
+	
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet?option=register -H 'Content-Type: application/json' -d @- <<EOF
         {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"type": "vNet"
+			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
 		}
 EOF
     ); echo ${resp} | jq ''
     echo ""
 }
 
-#function create_vNet() {
+#function register_vNet() {
 
 	echo "####################################################################"
-	echo "## 3. vNet: Status"
+	echo "## 3. vNet: Register"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -48,6 +50,7 @@ EOF
 		CallTB
 
 	fi
+	
 #}
 
-#create_vNet
+#register_vNet

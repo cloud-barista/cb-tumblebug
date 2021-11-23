@@ -4284,6 +4284,12 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: Option
+        enum:
+        - register
+        in: query
+        name: option
+        type: string
       - description: Details for an VNet object
         in: body
         name: vNetReq

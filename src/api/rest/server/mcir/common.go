@@ -389,3 +389,37 @@ func RestDelAllDefaultResources(c echo.Context) error {
 	//mapA := map[string]string{"message": "All default resources have been deleted"}
 	return c.JSON(http.StatusOK, output)
 }
+
+/*
+// Request structure for RestRegisterExistingResources
+type RestRegisterExistingResourcesRequest struct {
+	ConnectionName string `json:"connectionName"`
+}
+
+// RestRegisterExistingResources godoc
+// @Summary Register resources which are existing in CSP and/or CB-Spider
+// @Description Register resources which are existing in CSP and/or CB-Spider
+// @Tags
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.IdList
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/registerExistingResources [post]
+func RestRegisterExistingResources(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	u := &RestRegisterExistingResourcesRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	result, err := mcir.RegisterExistingResources(nsId, u.ConnectionName)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusConflict, &mapA)
+	}
+	return c.JSON(http.StatusOK, result)
+}
+*/

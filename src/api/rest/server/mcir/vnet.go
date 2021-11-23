@@ -30,6 +30,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param option query string false "Option" Enums(register)
 // @Param vNetReq body mcir.TbVNetReq true "Details for an VNet object"
 // @Success 200 {object} mcir.TbVNetInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -39,22 +40,19 @@ func RestPostVNet(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
+	optionFlag := c.QueryParam("option")
+
 	u := &mcir.TbVNetReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
 	fmt.Println("[POST VNet]")
-	//fmt.Println("[Creating VNet]")
-	//content, responseCode, body, err := CreateVNet(nsId, u)
-	content, err := mcir.CreateVNet(nsId, u)
+
+	content, err := mcir.CreateVNet(nsId, u, optionFlag)
+
 	if err != nil {
 		common.CBLog.Error(err)
-		/*
-			mapA := map[string]string{
-				"message": "Failed to create a vNet"}
-		*/
-		//return c.JSONBlob(responseCode, body)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
