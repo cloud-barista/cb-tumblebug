@@ -182,7 +182,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	errStr := ""
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr += err.Error()
+		errStr += "/ " + err.Error()
 	}
 	fmt.Println("[CallMonitoringAsync] " + mcisID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
 
@@ -214,13 +214,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		common.PrintJsonPretty(tempReq)
 		err = fmt.Errorf("/request body to install monitoring agent: privateKey is empty/")
 		common.CBLog.Error(err)
-		errStr += err.Error()
+		errStr += "/ " + err.Error()
 	}
 
 	payload, err := json.Marshal(tempReq)
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr += err.Error()
+		errStr += "/ " + err.Error()
 	}
 
 	responseLimit := 8
@@ -234,7 +234,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr += err.Error()
+		errStr += "/ " + err.Error()
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -246,21 +246,21 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	fmt.Println("Called CB-DRAGONFLY API")
 	if err != nil {
 		common.CBLog.Error(err)
-		errStr += err.Error()
+		errStr += "/ " + err.Error()
 	} else {
 		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err = fmt.Errorf("HTTP Status: not in 200-399")
 			common.CBLog.Error(err)
-			errStr += err.Error()
+			errStr += "/ " + err.Error()
 		}
 
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			common.CBLog.Error(err)
-			errStr += err.Error()
+			errStr += "/ " + err.Error()
 		}
 
 		result = string(body)
@@ -276,6 +276,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	sshResultTmp.VmIp = vmIP
 
 	if err != nil {
+		common.CBLog.Error("[Monitoring Agent deployment errors] " + errStr)
 		sshResultTmp.Result = errStr
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
