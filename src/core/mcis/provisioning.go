@@ -326,7 +326,7 @@ type TbVmInfo struct {
 	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
 	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
 
-	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail"`
+	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail,omitempty"`
 }
 
 // StatusCountInfo is struct to count the number of VMs in each status. ex: Running=4, Suspended=8.

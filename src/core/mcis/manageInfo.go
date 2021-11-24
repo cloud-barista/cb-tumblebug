@@ -322,49 +322,52 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 		}
 
 		// The cases with id, status, or others. except simple
-		if option != "simple" {
-			vmList, err := ListVmId(nsId, mcisId)
+
+		vmList, err := ListVmId(nsId, mcisId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
+
+		for _, v1 := range vmList {
+			vmKey := common.GenMcisKey(nsId, mcisId, v1)
+			//fmt.Println(vmKey)
+			vmKeyValue, err := common.CBStore.Get(vmKey)
 			if err != nil {
+				err = fmt.Errorf("In CoreGetAllMcis(); CBStore.Get() returned an error")
 				common.CBLog.Error(err)
-				return nil, err
+				// return nil, err
 			}
 
-			for _, v1 := range vmList {
-				vmKey := common.GenMcisKey(nsId, mcisId, v1)
-				//fmt.Println(vmKey)
-				vmKeyValue, err := common.CBStore.Get(vmKey)
+			if vmKeyValue == nil {
+				//mapA := map[string]string{"message": "Cannot find " + key}
+				//return c.JSON(http.StatusOK, &mapA)
+				return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
+			}
+			//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
+			//vmTmp := vmOverview{}
+			vmTmp := TbVmInfo{}
+			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
+			vmTmp.Id = v1
+
+			if option == "status" {
+				//get current vm status
+				vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v1)
 				if err != nil {
 					common.CBLog.Error(err)
-					err = fmt.Errorf("In CoreGetAllMcis(); CBStore.Get() returned an error.")
-					common.CBLog.Error(err)
-					// return nil, err
 				}
-
-				if vmKeyValue == nil {
-					//mapA := map[string]string{"message": "Cannot find " + key}
-					//return c.JSON(http.StatusOK, &mapA)
-					return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
-				}
-				//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-				//vmTmp := vmOverview{}
-				vmTmp := TbVmInfo{}
-				json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
-				vmTmp.Id = v1
-
-				if option == "status" {
-					//get current vm status
-					vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v1)
-					if err != nil {
-						common.CBLog.Error(err)
-					}
-					vmTmp.Status = vmStatusInfoTmp.Status
-				} else {
-					//Set current vm status with NullStr
-					vmTmp.Status = ""
-				}
-
-				mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
+				vmTmp.Status = vmStatusInfoTmp.Status
+			} else if option == "simple" {
+				vmSimpleTmp := TbVmInfo{}
+				vmSimpleTmp.Id = vmTmp.Id
+				vmSimpleTmp.Location = vmTmp.Location
+				vmTmp = vmSimpleTmp
+			} else {
+				//Set current vm status with NullStr
+				vmTmp.Status = ""
 			}
+
+			mcisTmp.Vm = append(mcisTmp.Vm, vmTmp)
 		}
 
 		Mcis = append(Mcis, mcisTmp)
