@@ -191,13 +191,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	vmInfoTmp.MonAgentStatus = "installing"
 	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
 
-	url := common.DragonflyRestUrl + cmd
-	fmt.Println("\n[Calling DRAGONFLY] START")
-	fmt.Println("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
-
 	if mcisServiceType == "" {
 		mcisServiceType = "default"
 	}
+
+	url := common.DragonflyRestUrl + cmd
+	fmt.Println("\n[Calling DRAGONFLY] START")
+	fmt.Println("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
 
 	tempReq := monAgentInstallReq{
 		NsId:        nsID,
@@ -211,9 +211,8 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		ServiceType: mcisServiceType,
 	}
 	if tempReq.SshKey == "" {
-		fmt.Printf("\n[Request body to CB-DRAGONFLY]A problem detected.SshKey is empty.\n")
 		common.PrintJsonPretty(tempReq)
-		err = fmt.Errorf("/request body to install monitoring agent: sshKey is empty/")
+		err = fmt.Errorf("/request body to install monitoring agent: privateKey is empty/")
 		common.CBLog.Error(err)
 		errStr += err.Error()
 	}
@@ -470,30 +469,29 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 			errStr = err.Error()
 		}
 
+		fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
 		res, err := client.Do(req)
 
-		// result := ""
-
-		fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
 		if err != nil {
 			common.CBLog.Error(err)
 			errStr = err.Error()
-		}
-		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err1 := fmt.Errorf("HTTP Status: not in 200-399")
-			common.CBLog.Error(err1)
-			errStr = err1.Error()
-		}
+		} else {
+			fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+			switch {
+			case res.StatusCode >= 400 || res.StatusCode < 200:
+				err1 := fmt.Errorf("HTTP Status: not in 200-399")
+				common.CBLog.Error(err1)
+				errStr = err1.Error()
+			}
 
-		defer res.Body.Close()
-		body, err2 := ioutil.ReadAll(res.Body)
-		if err2 != nil {
-			common.CBLog.Error(err2)
-			errStr = err2.Error()
+			defer res.Body.Close()
+			body, err2 := ioutil.ReadAll(res.Body)
+			if err2 != nil {
+				common.CBLog.Error(err2)
+				errStr = err2.Error()
+			}
+			response = string(body)
 		}
-		response = string(body)
 	} else {
 		reqParams := df_pb.VMOnDemandMonQryRequest{
 			NsId:    nsID,
