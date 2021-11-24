@@ -324,17 +324,19 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	fmt.Println("[Start SSH checking squence]")
 
 	// verify if vm is running with a public ip.
-	if vmIp == "" {
-		return "", "", fmt.Errorf("Cannot ssh, VM IP is null")
-	}
-	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return "", "", err
-	}
-	if vmStatusInfoTmp.Status != StatusRunning || vmIp == "" {
-		return "", "", fmt.Errorf("Cannot ssh, VM is not Running")
-	}
+	/*
+		if vmIp == "" {
+			return "", "", fmt.Errorf("Cannot ssh, VM IP is null")
+		}
+		vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return "", "", err
+		}
+		if vmStatusInfoTmp.Status != StatusRunning || vmIp == "" {
+			return "", "", fmt.Errorf("Cannot ssh, VM is not Running")
+		}
+	*/
 
 	/* Code to check endpoint and port connectivity. (disabled for better speed)
 	// CheckConnectivity func checks if given port is open and ready.
