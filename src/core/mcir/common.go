@@ -123,7 +123,7 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 // DelResource deletes the TB MCIR object
 func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) error {
 
-	fmt.Printf("DelResource() called; %s %s %s \n", nsId, resourceType, resourceId) // for debug
+	fmt.Printf("DelResource() called; %s %s %s %s \n", nsId, resourceType, resourceId, forceFlag) // for debug
 
 	err := common.CheckString(nsId)
 	if err != nil {

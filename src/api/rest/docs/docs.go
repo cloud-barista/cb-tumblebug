@@ -3118,6 +3118,15 @@ var doc = `{
                         "required": true
                     },
                     {
+                        "enum": [
+                            "register"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
                         "description": "Details for an securityGroup object",
                         "name": "securityGroupReq",
                         "in": "body",
@@ -5351,6 +5360,11 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
                 },
                 "vNetId": {
                     "type": "string"
