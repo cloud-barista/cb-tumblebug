@@ -5688,6 +5688,11 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/mcir.TbSubnetInfo"
                     }
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
                 }
             }
         },
