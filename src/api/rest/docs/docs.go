@@ -3974,6 +3974,15 @@ var doc = `{
                         "required": true
                     },
                     {
+                        "enum": [
+                            "register"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
                         "description": "Details for an VNet object",
                         "name": "vNetReq",
                         "in": "body",

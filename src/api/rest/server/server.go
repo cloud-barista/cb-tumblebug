@@ -267,6 +267,9 @@ func RunServer(port string) {
 	g.GET("/:nsId/checkResource/:resourceType/:resourceId", rest_mcir.RestCheckResource)
 	g.GET("/:nsId/checkMcis/:mcisId", rest_mcis.RestCheckMcis)
 	g.GET("/:nsId/mcis/:mcisId/checkVm/:vmId", rest_mcis.RestCheckVm)
+
+	// g.POST("/:nsId/registerExistingResources", rest_mcir.RestRegisterExistingResources)
+
 	// Temporal test API for development of UpdateAssociatedObjectList
 	g.PUT("/:nsId/testAddObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestAddObjectAssociation)
 	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestDeleteObjectAssociation)

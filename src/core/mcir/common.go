@@ -774,13 +774,14 @@ type resourceOnTumblebug struct {
 }
 
 // InspectResources returns the state list of TB MCIR objects of given connConfig and resourceType
-func InspectResources(connConfig string, resourceType string) (interface{}, error) {
+func InspectResources(connConfig string, resourceType string) (TbInspectResourcesResponse, error) {
 
 	nsList, err := common.ListNsId()
 	if err != nil {
+		nullObj := TbInspectResourcesResponse{}
 		common.CBLog.Error(err)
 		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
-		return nil, err
+		return nullObj, err
 	}
 	// var TbResourceList []string
 	var TbResourceList []resourceOnTumblebug
@@ -795,9 +796,10 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 
 		resourceListInNs, err := ListResource(ns, resourceType)
 		if err != nil {
+			nullObj := TbInspectResourcesResponse{}
 			common.CBLog.Error(err)
 			err := fmt.Errorf("an error occurred while getting resource list")
-			return nil, err
+			return nullObj, err
 		}
 		if resourceListInNs == nil {
 			continue
@@ -880,17 +882,19 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 		Get(spiderRequestURL)
 
 	if err != nil {
+		nullObj := TbInspectResourcesResponse{}
 		common.CBLog.Error(err)
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return nil, err
+		return nullObj, err
 	}
 
 	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		nullObj := TbInspectResourcesResponse{}
 		err := fmt.Errorf(string(resp.Body()))
 		common.CBLog.Error(err)
-		return nil, err
+		return nullObj, err
 	default:
 	}
 
@@ -942,6 +946,29 @@ func InspectResources(connConfig string, resourceType string) (interface{}, erro
 
 	return result, nil
 }
+
+/*
+// RegisterExistingResources
+func RegisterExistingResources(nsId string, connConfig string) (interface{}, error) {
+	fmt.Println("RegisterExistingResources called;") // for debug
+
+	vpcInspectionResult, err := InspectResources(connConfig, common.StrVNet)
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("in RegisterExistingResources(); an error occurred while calling InspectResources()")
+		return nil, err
+	}
+
+	vNetsInCspOnly := vpcInspectionResult.ResourcesOnCsp
+	vNetsInSpiderOnly :=
+	for _, v := range vpcInspectionResult.ResourcesOnTumblebug {
+		vNetId := v.Id
+		fmt.Println("vNetId: " + vNetId) // for debug
+	}
+
+	return nil, nil
+}
+*/
 
 // ListResourceId returns the list of TB MCIR object IDs of given resourceType
 func ListResourceId(nsId string, resourceType string) ([]string, error) {
@@ -1900,7 +1927,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				common.PrintJsonPretty(reqTmp)
 
-				resultInfo, err := CreateVNet(nsId, &reqTmp)
+				resultInfo, err := CreateVNet(nsId, &reqTmp, "")
 				if err != nil {
 					common.CBLog.Error(err)
 					// If already exist, error will occur

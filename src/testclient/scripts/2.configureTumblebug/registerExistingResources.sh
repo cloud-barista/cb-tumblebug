@@ -1,22 +1,22 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
+	echo "- Register existing resources"
+
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/registerExistingResources -H 'Content-Type: application/json' -d @- <<EOF
         {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"type": "vNet"
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
 		}
 EOF
     ); echo ${resp} | jq ''
     echo ""
 }
 
-#function create_vNet() {
+#function register_existing_resources() {
 
 	echo "####################################################################"
-	echo "## 3. vNet: Status"
+	echo "## 2. Register existing resources"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -48,6 +48,7 @@ EOF
 		CallTB
 
 	fi
+	
 #}
 
-#create_vNet
+#register_existing_resources
