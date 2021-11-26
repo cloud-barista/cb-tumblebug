@@ -198,6 +198,7 @@ func NewMcisDeleteCmd() *cobra.Command {
 			}
 			logger.Debug("--ns parameter value : ", nameSpaceID)
 			logger.Debug("--mcis parameter value : ", mcisID)
+			logger.Debug("--option parameter value : ", option)
 
 			SetupAndRun(cmd, args)
 		},
@@ -205,6 +206,7 @@ func NewMcisDeleteCmd() *cobra.Command {
 
 	deleteCmd.PersistentFlags().StringVarP(&nameSpaceID, "ns", "", "", "namespace id")
 	deleteCmd.PersistentFlags().StringVarP(&mcisID, "mcis", "", "", "mcis id")
+	deleteCmd.PersistentFlags().StringVarP(&option, "option", "", "", "option [terminate, force]")
 
 	return deleteCmd
 }

@@ -836,6 +836,7 @@ message TbMcisActionRequest {
 message TbMcisQryRequest {
 	string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
 	string mcis_id = 2 [json_name="mcisId", (gogoproto.jsontag) = "mcisId", (gogoproto.moretags) = "yaml:\"mcisId\""];
+	string option = 3 [json_name="option", (gogoproto.jsontag) = "option", (gogoproto.moretags) = "yaml:\"option\""];
 }
 
 //////////////////////////////////
