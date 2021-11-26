@@ -136,7 +136,8 @@ func (s *MCIRService) LoadCommonResource(ctx context.Context, req *pb.Empty) (*p
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.LoadCommonResource()")
 	}
 
-	resp := &pb.IdListResponse{Output: grpcObj.Output}
+	// resp := &pb.IdListResponse{Output: grpcObj.Output}
+	resp := &grpcObj
 	return resp, nil
 }
 

@@ -127,17 +127,25 @@ func (s *MCIRService) DeleteSshKey(ctx context.Context, req *pb.ResourceQryReque
 }
 
 // DeleteAllSshKey is to KeyPair 전체 삭제
-func (s *MCIRService) DeleteAllSshKey(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.MessageResponse, error) {
+func (s *MCIRService) DeleteAllSshKey(ctx context.Context, req *pb.ResourceAllQryRequest) (*pb.IdListResponse, error) {
 	logger := logger.NewLogger()
 
 	logger.Debug("calling MCIRService.DeleteAllSshKey()")
 
-	_, err := mcir.DelAllResources(req.NsId, req.ResourceType, "", req.Force)
+	content, err := mcir.DelAllResources(req.NsId, req.ResourceType, "", req.Force)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.DeleteAllSshKey()")
 	}
 
-	resp := &pb.MessageResponse{Message: "All " + req.ResourceType + "s has been deleted"}
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj pb.IdListResponse
+	err = gc.CopySrcToDest(&content, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.DeleteAllSshKey()")
+	}
+
+	// resp := &pb.MessageResponse{Message: "All " + req.ResourceType + "s has been deleted"}
+	resp := &grpcObj
 	return resp, nil
 }
 

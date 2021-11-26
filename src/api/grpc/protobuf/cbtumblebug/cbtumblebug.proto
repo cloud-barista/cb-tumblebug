@@ -102,7 +102,7 @@ service MCIR {
 	rpc ListImageId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetImage (ResourceQryRequest) returns (TbImageInfoResponse) {}
 	rpc DeleteImage (ResourceQryRequest) returns (MessageResponse) {}
-	rpc DeleteAllImage (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllImage (ResourceAllQryRequest) returns (IdListResponse) {}
 	rpc GetLookupImage (LookupImageQryRequest) returns (SpiderImageInfoResponse) {}
 	rpc ListLookupImage (LookupImageListQryRequest) returns (ListSpiderImageInfoResponse) {}
 	rpc FetchImage (FetchImageQryRequest) returns (MessageResponse) {}
@@ -114,7 +114,7 @@ service MCIR {
 	rpc ListSshKeyId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetSshKey (ResourceQryRequest) returns (TbSshKeyInfoResponse) {}
 	rpc DeleteSshKey (ResourceQryRequest) returns (MessageResponse) {}
-	rpc DeleteAllSshKey (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllSshKey (ResourceAllQryRequest) returns (IdListResponse) {}
 
 	rpc CreateSpecWithInfo (TbSpecInfoRequest) returns (TbSpecInfoResponse) {}
 	rpc CreateSpecWithSpecName (TbSpecCreateRequest) returns (TbSpecInfoResponse) {}
@@ -122,7 +122,7 @@ service MCIR {
 	rpc ListSpecId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetSpec (ResourceQryRequest) returns (TbSpecInfoResponse) {}
 	rpc DeleteSpec (ResourceQryRequest) returns (MessageResponse) {}
-	rpc DeleteAllSpec (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllSpec (ResourceAllQryRequest) returns (IdListResponse) {}
 	rpc GetLookupSpec (LookupSpecQryRequest) returns (SpiderSpecInfoResponse) {}
 	rpc ListLookupSpec (LookupSpecListQryRequest) returns (ListSpiderSpecInfoResponse) {}
 	rpc FetchSpec (FetchSpecQryRequest) returns (MessageResponse) {}
@@ -136,14 +136,14 @@ service MCIR {
 	rpc ListSecurityGroupId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetSecurityGroup (ResourceQryRequest) returns (TbSecurityGroupInfoResponse) {}
 	rpc DeleteSecurityGroup (ResourceQryRequest) returns (MessageResponse) {}
-	rpc DeleteAllSecurityGroup (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllSecurityGroup (ResourceAllQryRequest) returns (IdListResponse) {}
 
 	rpc CreateVNet (TbVNetCreateRequest) returns (TbVNetInfoResponse) {}
 	rpc ListVNet (ResourceAllQryRequest) returns (ListTbVNetInfoResponse) {}
 	rpc ListVNetId (ResourceAllQryRequest) returns (ListIdResponse) {}
 	rpc GetVNet (ResourceQryRequest) returns (TbVNetInfoResponse) {}
 	rpc DeleteVNet (ResourceQryRequest) returns (MessageResponse) {}
-	rpc DeleteAllVNet (ResourceAllQryRequest) returns (MessageResponse) {}
+	rpc DeleteAllVNet (ResourceAllQryRequest) returns (IdListResponse) {}
 
 	rpc LoadCommonResource (Empty) returns (IdListResponse) {}
 }
