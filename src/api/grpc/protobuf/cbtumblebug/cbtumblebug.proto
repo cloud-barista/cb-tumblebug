@@ -144,10 +144,16 @@ service MCIR {
 	rpc GetVNet (ResourceQryRequest) returns (TbVNetInfoResponse) {}
 	rpc DeleteVNet (ResourceQryRequest) returns (MessageResponse) {}
 	rpc DeleteAllVNet (ResourceAllQryRequest) returns (MessageResponse) {}
+
+	rpc LoadCommonResource (Empty) returns (IdListResponse) {}
 }
 
 message ListIdResponse {
 	repeated string id_list = 1 [json_name="idList", (gogoproto.jsontag) = "idList", (gogoproto.moretags) = "yaml:\"idList\""];
+}
+
+message IdListResponse {
+	repeated string output = 1 [json_name="output", (gogoproto.jsontag) = "output", (gogoproto.moretags) = "yaml:\"output\""];
 }
 
 //////////////////////////////////

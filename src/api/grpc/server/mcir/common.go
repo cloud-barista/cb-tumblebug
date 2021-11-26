@@ -118,6 +118,28 @@ func (s *MCIRService) GetLookupImage(ctx context.Context, req *pb.LookupImageQry
 	return resp, nil
 }
 
+// LoadCommonResource is to Image 조회
+func (s *MCIRService) LoadCommonResource(ctx context.Context, req *pb.Empty) (*pb.IdListResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.LoadCommonResource()")
+
+	content, err := mcir.LoadCommonResource()
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.LoadCommonResource()")
+	}
+
+	// MCIR 객체에서 GRPC 메시지로 복사
+	var grpcObj pb.IdListResponse
+	err = gc.CopySrcToDest(&content, &grpcObj)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.LoadCommonResource()")
+	}
+
+	resp := &pb.IdListResponse{Output: grpcObj.Output}
+	return resp, nil
+}
+
 // ===== [ Private Functions ] =====
 
 // ===== [ Public Functions ] =====

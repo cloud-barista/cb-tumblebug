@@ -88,6 +88,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewKeypairCmd())
 	rootCmd.AddCommand(NewSpecCmd())
 	rootCmd.AddCommand(NewMcisCmd())
+	rootCmd.AddCommand(NewCommonResourceCmd())
 
 	rootCmd.AddCommand(NewYamlApplyCmd())
 	rootCmd.AddCommand(NewYamlGetCmd())

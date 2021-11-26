@@ -41,6 +41,21 @@ func (r *MCIRRequest) CheckResource() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// LoadCommonResource is to load common resources into the namespace 'common'.
+func (r *MCIRRequest) LoadCommonResource() (string, error) {
+	// Request to server
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.LoadCommonResource(ctx, &pb.Empty{})
+	if err != nil {
+		return "", err
+	}
+
+	// Marshal (Response -> json/yaml)
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // ===== [ Private Functions ] =====
 
 // ===== [ Public Functions ] =====

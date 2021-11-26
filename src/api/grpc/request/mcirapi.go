@@ -1515,6 +1515,15 @@ func (m *MCIRApi) CheckResourceByParam(nameSpaceID string, resourceID string, re
 	return result, err
 }
 
+// LoadCommonResource is to load common resources into the namespace 'common'.
+func (m *MCIRApi) LoadCommonResource() (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	return m.requestMCIR.LoadCommonResource()
+}
+
 // ===== [ Private Functiom ] =====
 
 // ===== [ Public Functiom ] =====
