@@ -146,6 +146,7 @@ service MCIR {
 	rpc DeleteAllVNet (ResourceAllQryRequest) returns (IdListResponse) {}
 
 	rpc LoadCommonResource (Empty) returns (IdListResponse) {}
+	rpc LoadDefaultResource (TbLoadDefaultResourceRequest) returns (MessageResponse) {}
 }
 
 message ListIdResponse {
@@ -154,6 +155,12 @@ message ListIdResponse {
 
 message IdListResponse {
 	repeated string output = 1 [json_name="output", (gogoproto.jsontag) = "output", (gogoproto.moretags) = "yaml:\"output\""];
+}
+
+message TbLoadDefaultResourceRequest {
+	string ns_id = 1 [json_name="nsId", (gogoproto.jsontag) = "nsId", (gogoproto.moretags) = "yaml:\"nsId\""];
+	string resource_type = 2 [json_name="resourceType", (gogoproto.jsontag) = "resourceType", (gogoproto.moretags) = "yaml:\"resourceType\""];
+	string connection_name = 3 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
 }
 
 //////////////////////////////////

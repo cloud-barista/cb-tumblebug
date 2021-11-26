@@ -359,6 +359,13 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "load":
 			result, err = mcir.LoadCommonResource()
 		}
+	case "defaultresource":
+		switch cmd.Name() {
+		case "load":
+			result, err = mcir.LoadDefaultResourceByParam(nameSpaceID, resourceType, connConfigName)
+			// case "delete":
+			// 	result, err = mcir.DeleteDefaultResource()
+		}
 	case "mcis":
 		switch cmd.Name() {
 		case "create":

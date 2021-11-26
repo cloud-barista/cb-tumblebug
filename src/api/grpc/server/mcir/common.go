@@ -118,7 +118,7 @@ func (s *MCIRService) GetLookupImage(ctx context.Context, req *pb.LookupImageQry
 	return resp, nil
 }
 
-// LoadCommonResource is to Image 조회
+// LoadCommonResource is to register common resources from asset files (../assets/*.csv)
 func (s *MCIRService) LoadCommonResource(ctx context.Context, req *pb.Empty) (*pb.IdListResponse, error) {
 	logger := logger.NewLogger()
 
@@ -138,6 +138,21 @@ func (s *MCIRService) LoadCommonResource(ctx context.Context, req *pb.Empty) (*p
 
 	// resp := &pb.IdListResponse{Output: grpcObj.Output}
 	resp := &grpcObj
+	return resp, nil
+}
+
+// LoadDefaultResource is to register common resources from asset files (../assets/*.csv)
+func (s *MCIRService) LoadDefaultResource(ctx context.Context, req *pb.TbLoadDefaultResourceRequest) (*pb.MessageResponse, error) {
+	logger := logger.NewLogger()
+
+	logger.Debug("calling MCIRService.LoadDefaultResource()")
+
+	err := mcir.LoadDefaultResource(req.NsId, req.ResourceType, req.ConnectionName)
+	if err != nil {
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.LoadDefaultResource()")
+	}
+
+	resp := &pb.MessageResponse{Message: "Default resources has been loaded."}
 	return resp, nil
 }
 

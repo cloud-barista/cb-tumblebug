@@ -32,7 +32,7 @@ func NewCommonResourceCmd() *cobra.Command {
 // NewCommonResourceLoadCmd : "cbadm commonresource load"
 func NewCommonResourceLoadCmd() *cobra.Command {
 
-	createCmd := &cobra.Command{
+	loadCmd := &cobra.Command{
 		Use:   "load",
 		Short: "Load common resources into the namespace 'common'.",
 		Long:  "Load common resources into the namespace 'common'.",
@@ -41,5 +41,5 @@ func NewCommonResourceLoadCmd() *cobra.Command {
 		},
 	}
 
-	return createCmd
+	return loadCmd
 }

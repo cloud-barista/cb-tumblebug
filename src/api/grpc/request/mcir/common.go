@@ -56,6 +56,33 @@ func (r *MCIRRequest) LoadCommonResource() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp)
 }
 
+// LoadDefaultResource is to load common resources into the specified namespace.
+func (r *MCIRRequest) LoadDefaultResource() (string, error) {
+	// Check input data
+	if r.InData == "" {
+		return "", errors.New("input data required")
+	}
+
+	// Unmarshal (json/yaml -> Request Input)
+	var item pb.TbLoadDefaultResourceRequest
+	err := gc.ConvertToMessage(r.InType, r.InData, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// Request to server
+	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
+	defer cancel()
+
+	resp, err := r.Client.LoadDefaultResource(ctx, &item)
+	if err != nil {
+		return "", err
+	}
+
+	// Marshal (Response -> json/yaml)
+	return gc.ConvertToOutput(r.OutType, &resp)
+}
+
 // ===== [ Private Functions ] =====
 
 // ===== [ Public Functions ] =====
