@@ -165,8 +165,8 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 		switch metric {
 		case "location":
 			prioritySpecs, err = RecommendVmLocation(nsId, &filteredSpecs, &v.Parameter)
-		case "latency":
-			//
+		case "performance":
+			prioritySpecs, err = RecommendVmPerformance(nsId, &filteredSpecs)
 		case "cost":
 			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 		default:
@@ -251,14 +251,17 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 			}
 
+			max := float32(distances[len(*specList)-1].distance)
+			min := float32(distances[0].distance)
+
 			for i := range *specList {
 				// update OrderInFilteredResult based on calculated priorityIndex
 				(*specList)[distances[i].index].OrderInFilteredResult = uint16(distances[i].priorityIndex)
-				// assign nomalized priorityIdex value to EvaluationScore01
-				(*specList)[distances[i].index].EvaluationScore01 = float32(1 - (float32(distances[i].priorityIndex) / float32(len(*specList))))
-				(*specList)[distances[i].index].EvaluationScore02 = float32(distances[i].distance)
+				// assign nomalized priorityIdex value to EvaluationScore09
+				(*specList)[distances[i].index].EvaluationScore09 = float32((max - float32(distances[i].distance)) / (max - min + 0.0000001)) // Add small value to avoid NaN by division
+				(*specList)[distances[i].index].EvaluationScore10 = float32(distances[i].distance)
+				fmt.Printf("\n distances : %v %v %v %v %v \n", distances, max, min, float32(distances[i].distance), (*specList)[distances[i].index].EvaluationScore09)
 			}
-			fmt.Printf("\n distances : %v \n", distances)
 
 			//fmt.Printf("\n distances : %v \n", *specList)
 
@@ -343,11 +346,37 @@ func RecommendVmCost(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInf
 
 	sort.Slice(result, func(i, j int) bool { return result[i].CostPerHour < result[j].CostPerHour })
 
+	Max := float32(result[len(result)-1].CostPerHour)
+	Min := float32(result[0].CostPerHour)
+
 	for i := range result {
 		result[i].OrderInFilteredResult = uint16(i + 1)
-		result[i].EvaluationScore01 = float32(1 - (result[i].CostPerHour / float32(len(result))))
+		result[i].EvaluationScore09 = float32((Max - result[i].CostPerHour) / (Max - Min + 0.0000001)) // Add small value to avoid NaN by division
 	}
 
+	fmt.Printf("\n result : %v \n", result)
+
+	return result, nil
+}
+
+// RecommendVmPerformance func prioritize specs based on given Perfomance condition
+func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInfo, error) {
+
+	result := []mcir.TbSpecInfo{}
+
+	for i := range *specList {
+		result = append(result, (*specList)[i])
+	}
+
+	sort.Slice(result, func(i, j int) bool { return result[i].EvaluationScore01 > result[j].EvaluationScore01 })
+
+	Max := float32(result[0].EvaluationScore01)
+	Min := float32(result[len(result)-1].EvaluationScore01)
+
+	for i := range result {
+		result[i].OrderInFilteredResult = uint16(i + 1)
+		result[i].EvaluationScore09 = float32((result[i].EvaluationScore01 - Min) / (Max - Min + 0.0000001)) // Add small value to avoid NaN by division
+	}
 	fmt.Printf("\n result : %v \n", result)
 
 	return result, nil

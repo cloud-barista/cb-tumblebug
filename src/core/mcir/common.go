@@ -1710,7 +1710,7 @@ func LoadCommonResource() (common.IdList, error) {
 				// RandomSleep for safe parallel executions
 				common.RandomSleep(20)
 				specReqTmp := TbSpecReq{}
-				// [0]connectionName, [1]cspSpecName, [2]CostPerHour
+				// [0]connectionName, [1]cspSpecName, [2]CostPerHour, [3]evaluationScore01, ..., [12]evaluationScore10
 				specReqTmp.ConnectionName = row[0]
 				specReqTmp.CspSpecName = row[1]
 				// Give a name for spec object by combining ConnectionName and CspSpecName
@@ -1737,12 +1737,21 @@ func LoadCommonResource() (common.IdList, error) {
 				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[2], " ", ""), 32)
 				if err2 != nil {
 					common.CBLog.Error(err2)
-					// If already exist, error will occur
-					// Even if error, do not return here to update information
+					// If already exist, error will occur. Even if error, do not return here to update information
 					// return err
 				}
-				costPerHour32 := float32(costPerHour)
-				specUpdateRequest := TbSpecInfo{CostPerHour: costPerHour32}
+
+				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+				if err2 != nil {
+					common.CBLog.Error(err2)
+					// If already exist, error will occur. Even if error, do not return here to update information
+					// return err
+				}
+
+				specUpdateRequest :=
+					TbSpecInfo{CostPerHour: float32(costPerHour),
+						EvaluationScore01: float32(evaluationScore01),
+					}
 
 				updatedSpecInfo, err3 := UpdateSpec(commonNsId, specObjId, specUpdateRequest)
 				if err3 != nil {
