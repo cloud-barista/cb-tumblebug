@@ -170,7 +170,7 @@ func RunServer(port string) {
 
 	g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommend)
 
-	g.POST("/:nsId/testRecommendVm", rest_mcis.RestRecommendVm)
+	g.POST("/:nsId/RecommendVm", rest_mcis.RestRecommendVm)
 
 	g.GET("/:nsId/control/mcis/:mcisId", rest_mcis.RestGetControlMcis)
 	g.GET("/:nsId/control/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetControlMcisVm)

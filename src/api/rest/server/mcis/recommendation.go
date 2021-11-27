@@ -33,7 +33,7 @@ import (
 // @Success 200 {object} []mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/testRecommendVm [post]
+// @Router /ns/{nsId}/RecommendVm [post]
 func RestRecommendVm(c echo.Context) error {
 
 	nsId := c.Param("nsId")

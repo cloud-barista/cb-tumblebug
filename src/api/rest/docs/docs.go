@@ -810,6 +810,62 @@ var doc = `{
                 }
             }
         },
+        "/ns/{nsId}/RecommendVm": {
+            "post": {
+                "description": "Recommend MCIS plan (filter and priority)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Recommend MCIS plan (filter and priority)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "common",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Recommend MCIS plan (filter and priority)",
+                        "name": "deploymentPlan",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.DeploymentPlan"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/mcir.TbSpecInfo"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/benchmark/mcis/{mcisId}": {
             "post": {
                 "description": "Run MCIS benchmark for a single performance metric and return results",
@@ -4247,62 +4303,6 @@ var doc = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/testRecommendVm": {
-            "post": {
-                "description": "Recommend MCIS plan (filter and priority)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "Recommend MCIS plan (filter and priority)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "common",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Recommend MCIS plan (filter and priority)",
-                        "name": "deploymentPlan",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.DeploymentPlan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/mcir.TbSpecInfo"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
                         }

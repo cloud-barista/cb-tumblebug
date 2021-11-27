@@ -2137,6 +2137,43 @@ paths:
       summary: Get namespace
       tags:
       - '[Namespace] Namespace management'
+  /ns/{nsId}/RecommendVm:
+    post:
+      consumes:
+      - application/json
+      description: Recommend MCIS plan (filter and priority)
+      parameters:
+      - default: common
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Recommend MCIS plan (filter and priority)
+        in: body
+        name: deploymentPlan
+        schema:
+          $ref: '#/definitions/mcis.DeploymentPlan'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/mcir.TbSpecInfo'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Recommend MCIS plan (filter and priority)
+      tags:
+      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/benchmark/mcis/{mcisId}:
     post:
       consumes:
@@ -4451,43 +4488,6 @@ paths:
       summary: Delete Subnet
       tags:
       - '[Infra resource] MCIR Network management'
-  /ns/{nsId}/testRecommendVm:
-    post:
-      consumes:
-      - application/json
-      description: Recommend MCIS plan (filter and priority)
-      parameters:
-      - default: common
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Recommend MCIS plan (filter and priority)
-        in: body
-        name: deploymentPlan
-        schema:
-          $ref: '#/definitions/mcis.DeploymentPlan'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/mcir.TbSpecInfo'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Recommend MCIS plan (filter and priority)
-      tags:
-      - '[Infra service] MCIS Provisioning management'
   /object:
     delete:
       consumes:
