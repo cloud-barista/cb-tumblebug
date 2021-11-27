@@ -810,62 +810,6 @@ var doc = `{
                 }
             }
         },
-        "/ns/{nsId}/RecommendVm": {
-            "post": {
-                "description": "Recommend MCIS plan (filter and priority)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "Recommend MCIS plan (filter and priority)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "common",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Recommend MCIS plan (filter and priority)",
-                        "name": "deploymentPlan",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.DeploymentPlan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/mcir.TbSpecInfo"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/benchmark/mcis/{mcisId}": {
             "post": {
                 "description": "Run MCIS benchmark for a single performance metric and return results",
@@ -1620,61 +1564,6 @@ var doc = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/recommend": {
-            "post": {
-                "description": "Get MCIS recommendation",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "Get MCIS recommendation",
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Details for an MCIS object",
-                        "name": "mcisRecommendReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcis.McisRecommendReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.RestPostMcisRecommendResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
                 "description": "Get MCIS object (option: status, vmID)",
@@ -2121,6 +2010,62 @@ var doc = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcisRecommendVm": {
+            "post": {
+                "description": "Recommend MCIS plan (filter and priority)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Recommend MCIS plan (filter and priority)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "common",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Recommend MCIS plan (filter and priority)",
+                        "name": "deploymentPlan",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.DeploymentPlan"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/mcir.TbSpecInfo"
+                            }
                         }
                     },
                     "404": {
@@ -5929,29 +5874,6 @@ var doc = `{
                 }
             }
         },
-        "mcis.McisRecommendReq": {
-            "type": "object",
-            "properties": {
-                "maxResultNum": {
-                    "type": "string"
-                },
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "placementParam": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "vmReq": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbVmRecommendReq"
-                    }
-                }
-            }
-        },
         "mcis.McisStatusInfo": {
             "type": "object",
             "properties": {
@@ -6240,27 +6162,6 @@ var doc = `{
             "properties": {
                 "result": {
                     "type": "string"
-                }
-            }
-        },
-        "mcis.RestPostMcisRecommendResponse": {
-            "type": "object",
-            "properties": {
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "placementParam": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "vmRecommend": {
-                    "description": "VmReq          []TbVmRecommendReq    ` + "`" + `json:\"vmReq\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbVmRecommendInfo"
-                    }
                 }
             }
         },
@@ -6723,69 +6624,6 @@ var doc = `{
                     "type": "string"
                 },
                 "vmUserPassword": {
-                    "type": "string"
-                }
-            }
-        },
-        "mcis.TbVmPriority": {
-            "type": "object",
-            "properties": {
-                "priority": {
-                    "type": "string"
-                },
-                "vmSpec": {
-                    "$ref": "#/definitions/mcir.TbSpecInfo"
-                }
-            }
-        },
-        "mcis.TbVmRecommendInfo": {
-            "type": "object",
-            "properties": {
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "placementParam": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "vmPriority": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.TbVmPriority"
-                    }
-                },
-                "vmReq": {
-                    "$ref": "#/definitions/mcis.TbVmRecommendReq"
-                }
-            }
-        },
-        "mcis.TbVmRecommendReq": {
-            "type": "object",
-            "properties": {
-                "diskSize": {
-                    "type": "string"
-                },
-                "maxResultNum": {
-                    "type": "string"
-                },
-                "memorySize": {
-                    "type": "string"
-                },
-                "placementAlgo": {
-                    "type": "string"
-                },
-                "placementParam": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "requestName": {
-                    "type": "string"
-                },
-                "vcpuSize": {
                     "type": "string"
                 }
             }

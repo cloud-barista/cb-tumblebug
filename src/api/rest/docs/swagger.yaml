@@ -855,21 +855,6 @@ definitions:
           $ref: '#/definitions/mcis.Policy'
         type: array
     type: object
-  mcis.McisRecommendReq:
-    properties:
-      maxResultNum:
-        type: string
-      placementAlgo:
-        type: string
-      placementParam:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      vmReq:
-        items:
-          $ref: '#/definitions/mcis.TbVmRecommendReq'
-        type: array
-    type: object
   mcis.McisStatusInfo:
     properties:
       id:
@@ -1070,20 +1055,6 @@ definitions:
     properties:
       result:
         type: string
-    type: object
-  mcis.RestPostMcisRecommendResponse:
-    properties:
-      placementAlgo:
-        type: string
-      placementParam:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      vmRecommend:
-        description: VmReq          []TbVmRecommendReq    `json:"vmReq"`
-        items:
-          $ref: '#/definitions/mcis.TbVmRecommendInfo'
-        type: array
     type: object
   mcis.SpiderVMInfo:
     properties:
@@ -1427,47 +1398,6 @@ definitions:
       vmUserAccount:
         type: string
       vmUserPassword:
-        type: string
-    type: object
-  mcis.TbVmPriority:
-    properties:
-      priority:
-        type: string
-      vmSpec:
-        $ref: '#/definitions/mcir.TbSpecInfo'
-    type: object
-  mcis.TbVmRecommendInfo:
-    properties:
-      placementAlgo:
-        type: string
-      placementParam:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      vmPriority:
-        items:
-          $ref: '#/definitions/mcis.TbVmPriority'
-        type: array
-      vmReq:
-        $ref: '#/definitions/mcis.TbVmRecommendReq'
-    type: object
-  mcis.TbVmRecommendReq:
-    properties:
-      diskSize:
-        type: string
-      maxResultNum:
-        type: string
-      memorySize:
-        type: string
-      placementAlgo:
-        type: string
-      placementParam:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      requestName:
-        type: string
-      vcpuSize:
         type: string
     type: object
   mcis.TbVmReq:
@@ -2137,43 +2067,6 @@ paths:
       summary: Get namespace
       tags:
       - '[Namespace] Namespace management'
-  /ns/{nsId}/RecommendVm:
-    post:
-      consumes:
-      - application/json
-      description: Recommend MCIS plan (filter and priority)
-      parameters:
-      - default: common
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Recommend MCIS plan (filter and priority)
-        in: body
-        name: deploymentPlan
-        schema:
-          $ref: '#/definitions/mcis.DeploymentPlan'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/mcir.TbSpecInfo'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Recommend MCIS plan (filter and priority)
-      tags:
-      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/benchmark/mcis/{mcisId}:
     post:
       consumes:
@@ -2965,43 +2858,6 @@ paths:
       summary: Create multiple VMs by VM group in specified MCIS
       tags:
       - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/recommend:
-    post:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Get MCIS recommendation
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Details for an MCIS object
-        in: body
-        name: mcisRecommendReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.McisRecommendReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.RestPostMcisRecommendResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Get MCIS recommendation
-      tags:
-      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcisDynamic:
     post:
       consumes:
@@ -3036,6 +2892,43 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS Dynamically
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcisRecommendVm:
+    post:
+      consumes:
+      - application/json
+      description: Recommend MCIS plan (filter and priority)
+      parameters:
+      - default: common
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Recommend MCIS plan (filter and priority)
+        in: body
+        name: deploymentPlan
+        schema:
+          $ref: '#/definitions/mcis.DeploymentPlan'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/mcir.TbSpecInfo'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Recommend MCIS plan (filter and priority)
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:
