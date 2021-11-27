@@ -314,20 +314,19 @@ type RestPostMcisRecommendResponse struct {
 }
 
 // RestPostMcisRecommend godoc
-// @Summary Get MCIS recommendation
-// @Description Get MCIS recommendation
-// @Tags [Infra service] MCIS Provisioning management
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisRecommendReq body mcis.McisRecommendReq true "Details for an MCIS object"
-// @Success 200 {object} RestPostMcisRecommendResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/recommend [post]
 // @Deprecated
 func RestPostMcisRecommend(c echo.Context) error {
-
+	// @Summary Get MCIS recommendation
+	// @Description Get MCIS recommendation
+	// @Tags [Infra service] MCIS Provisioning management
+	// @Accept  json
+	// @Produce  json
+	// @Param nsId path string true "Namespace ID" default(ns01)
+	// @Param mcisRecommendReq body mcis.McisRecommendReq true "Details for an MCIS object"
+	// @Success 200 {object} RestPostMcisRecommendResponse
+	// @Failure 404 {object} common.SimpleMsg
+	// @Failure 500 {object} common.SimpleMsg
+	// @Router /ns/{nsId}/mcis/recommend [post]
 	nsId := c.Param("nsId")
 
 	req := &mcis.McisRecommendReq{}
