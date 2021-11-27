@@ -277,7 +277,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 - 클라우드 credential 등록을 위한 `credentials.conf` 생성 및 정보 입력
    - 개요
      - `credentials.conf` 는 CB-TB가 지원하는 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 사용자 인증 정보를 입력 및 보관하는 파일
-     - [`conf/template.credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/conf/template.credentials.conf)를 참조하여 `credentials.conf` 파일 생성 및 내용 입력 필요
+     - [`conf/template.credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/conf/template.credentials.conf)를 참조하여 `credentials.conf` 파일 생성 및 내용 입력 필요
    - 파일 생성 방법: CB-TB 스크립트를 통해 `credentials.conf` 파일 자동 생성
      ```bash
      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
