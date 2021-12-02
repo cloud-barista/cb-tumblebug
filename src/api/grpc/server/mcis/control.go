@@ -199,7 +199,7 @@ func (s *MCISService) DeleteMcis(ctx context.Context, req *pb.TbMcisQryRequest) 
 
 	logger.Debug("calling MCISService.DeleteMcis()")
 
-	err := mcis.DelMcis(req.NsId, req.McisId, "")
+	err := mcis.DelMcis(req.NsId, req.McisId, req.Option)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.DeleteMcis()")
 	}

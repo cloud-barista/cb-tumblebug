@@ -365,7 +365,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "get":
 			result, err = mcis.GetMcisInfoByParam(nameSpaceID, mcisID)
 		case "delete":
-			result, err = mcis.DeleteMcisByParam(nameSpaceID, mcisID)
+			result, err = mcis.DeleteMcisByParam(nameSpaceID, mcisID, option)
 		case "delete-all":
 			result, err = mcis.DeleteAllMcisByParam(nameSpaceID)
 		case "status-list":

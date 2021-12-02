@@ -3,6 +3,7 @@ package request
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"time"
 
@@ -751,14 +752,15 @@ func (m *MCISApi) DeleteMcis(doc string) (string, error) {
 }
 
 // DeleteMcisByParam is to MCIS 삭제
-func (m *MCISApi) DeleteMcisByParam(nameSpaceID string, mcisID string) (string, error) {
+func (m *MCISApi) DeleteMcisByParam(nameSpaceID string, mcisID string, option string) (string, error) {
 	if m.requestMCIS == nil {
 		return "", errors.New("The Open() function must be called")
 	}
 
 	holdType, _ := m.GetInType()
 	m.SetInType("json")
-	m.requestMCIS.InData = `{"nsId":"` + nameSpaceID + `", "mcisId":"` + mcisID + `"}`
+	// m.requestMCIS.InData = `{"nsId":"` + nameSpaceID + `", "mcisId":"` + mcisID + `", "option":"` + option + `"}` // Style 1
+	m.requestMCIS.InData = fmt.Sprintf("{\"nsId\":\"%s\", \"mcisId\":\"%s\", \"option\":\"%s\"}", nameSpaceID, mcisID, option) // Style 2
 	result, err := m.requestMCIS.DeleteMcis()
 	m.SetInType(holdType)
 
