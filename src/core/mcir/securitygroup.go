@@ -69,7 +69,7 @@ func TbSecurityGroupReqStructLevelValidation(sl validator.StructLevel) {
 	err := common.CheckString(u.Name)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.Name, "name", "Name", "NotObeyingNamingConvention", "")
+		sl.ReportError(u.Name, "name", "Name", err.Error(), "")
 	}
 }
 

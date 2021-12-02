@@ -71,19 +71,19 @@ func DFMonAgentInstallReqStructLevelValidation(sl validator.StructLevel) {
 	err := common.CheckString(u.NsId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.NsId, "nsId", "NsId", "NotObeyingNamingConvention", "")
+		sl.ReportError(u.NsId, "nsId", "NsId", err.Error(), "")
 	}
 
 	err = common.CheckString(u.McisId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.McisId, "mcisId", "McisId", "NotObeyingNamingConvention", "")
+		sl.ReportError(u.McisId, "mcisId", "McisId", err.Error(), "")
 	}
 
 	err = common.CheckString(u.VmId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.VmId, "vmId", "VmId", "NotObeyingNamingConvention", "")
+		sl.ReportError(u.VmId, "vmId", "VmId", err.Error(), "")
 	}
 }
 
