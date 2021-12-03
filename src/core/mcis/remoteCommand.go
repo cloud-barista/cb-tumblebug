@@ -51,7 +51,7 @@ func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
 	// err := common.CheckString(u.Command)
 	// if err != nil {
 	// 	// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-	// 	sl.ReportError(u.Command, "command", "Command", "NotObeyingNamingConvention", "")
+	// 	sl.ReportError(u.Command, "command", "Command", err.Error(), "")
 	// }
 }
 
