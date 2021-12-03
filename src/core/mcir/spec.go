@@ -34,6 +34,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// SpiderSpecInfo is a struct to create JSON body of 'Get spec request'
 type SpiderSpecInfo struct { // Spider
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
@@ -46,11 +47,13 @@ type SpiderSpecInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
+// SpiderVCpuInfo is a struct to handle vCPU Info from CB-Spider.
 type SpiderVCpuInfo struct { // Spider
 	Count string
 	Clock string // GHz
 }
 
+// SpiderGpuInfo is a struct to handle GPU Info from CB-Spider.
 type SpiderGpuInfo struct { // Spider
 	Count string
 	Mfr   string
@@ -58,6 +61,7 @@ type SpiderGpuInfo struct { // Spider
 	Mem   string
 }
 
+// TbSpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
 type TbSpecReq struct { // Tumblebug
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
@@ -65,6 +69,7 @@ type TbSpecReq struct { // Tumblebug
 	Description    string `json:"description"`
 }
 
+// TbSpecReqStructLevelValidation is a function to validate 'TbSpecReq' object.
 func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbSpecReq)
@@ -76,6 +81,7 @@ func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbSpecInfo is a struct that represents TB spec object.
 type TbSpecInfo struct { // Tumblebug
 	Namespace             string   `json:"namespace,omitempty"` // required to save in RDB
 	Id                    string   `json:"id,omitempty"`
@@ -134,6 +140,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, er
 	return tumblebugSpec, nil
 }
 
+// SpiderSpecList is a struct to handle spec list from the CB-Spider's REST API response
 type SpiderSpecList struct {
 	Vmspec []SpiderSpecInfo `json:"vmspec"`
 }
@@ -715,11 +722,13 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	return tempList, nil
 }
 
+// Range struct is for 'FilterSpecsByRange'
 type Range struct {
 	Min float32 `json:"min"`
 	Max float32 `json:"max"`
 }
 
+// FilterSpecsByRangeRequest is for 'FilterSpecsByRange'
 type FilterSpecsByRangeRequest struct {
 	Id                 string `json:"id"`
 	Name               string `json:"name"`

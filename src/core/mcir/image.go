@@ -30,13 +30,13 @@ import (
 	validator "github.com/go-playground/validator/v10"
 )
 
-// SpiderImageReqInfoWrapper struct is ...
+// SpiderImageReqInfoWrapper is a wrapper struct to create JSON body of 'Get image request'
 type SpiderImageReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderImageInfo
 }
 
-// SpiderImageInfo struct is ...
+// SpiderImageInfo is a struct to create JSON body of 'Get image request'
 type SpiderImageInfo struct { // Spider
 	// Fields for request
 	Name string
@@ -48,7 +48,7 @@ type SpiderImageInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-// TbImageReq struct is for image create request
+// TbImageReq struct is for image register request
 type TbImageReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
