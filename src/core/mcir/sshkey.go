@@ -26,11 +26,13 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// SpiderKeyPairReqInfoWrapper is a wrapper struct to create JSON body of 'Create keypair request'
 type SpiderKeyPairReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderKeyPairInfo
 }
 
+// SpiderKeyPairInfo is a struct to create JSON body of 'Create keypair request'
 type SpiderKeyPairInfo struct { // Spider
 	// Fields for request
 	Name string
@@ -44,12 +46,14 @@ type SpiderKeyPairInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
+// TbSshKeyReq is a struct to handle 'Create SSH key' request toward CB-Tumblebug.
 type TbSshKeyReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
 	Description    string `json:"description"`
 }
 
+// TbSshKeyReqStructLevelValidation is a function to validate 'TbSshKeyReq' object.
 func TbSshKeyReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbSshKeyReq)
@@ -61,6 +65,7 @@ func TbSshKeyReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbSshKeyInfo is a struct that represents TB SSH key object.
 type TbSshKeyInfo struct {
 	Id                   string            `json:"id"`
 	Name                 string            `json:"name"`

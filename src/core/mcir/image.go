@@ -47,7 +47,7 @@ type SpiderImageInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-// TbImageReq struct is for image register request
+// TbImageReq is a struct to handle 'Register image' request toward CB-Tumblebug.
 type TbImageReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
@@ -67,7 +67,7 @@ func TbImageReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// TbImageInfo struct is for image object
+// TbImageInfo is a struct that represents TB image object.
 type TbImageInfo struct {
 	Namespace            string            `json:"namespace,omitempty"` // required to save in RDB
 	Id                   string            `json:"id,omitempty"`
