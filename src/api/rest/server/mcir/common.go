@@ -24,13 +24,14 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 )
 
-// JSONResult's data field will be overridden by the specific type
+// JSONResult is a dummy struct for Swagger annotations.
 type JSONResult struct {
 	//Code    int          `json:"code" `
 	//Message string       `json:"message"`
 	//Data    interface{}  `json:"data"`
 }
 
+// RestDelAllResources is a common function to handle 'DelAllResources' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelAllResources(c echo.Context) error {
 
@@ -52,6 +53,7 @@ func RestDelAllResources(c echo.Context) error {
 	return c.JSON(http.StatusOK, output)
 }
 
+// RestDelResource is a common function to handle 'DelResource' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelResource(c echo.Context) error {
 
@@ -75,6 +77,7 @@ func RestDelResource(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
+// RestDelChildResource is a common function to handle 'DelChildResource' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelChildResource(c echo.Context) error {
 
@@ -99,6 +102,7 @@ func RestDelChildResource(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
+// RestGetAllResources is a common function to handle 'GetAllResources' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestGetAllResources(c echo.Context) error {
 
@@ -196,6 +200,7 @@ func RestGetAllResources(c echo.Context) error {
 	}
 }
 
+// RestGetResource is a common function to handle 'GetResource' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestGetResource(c echo.Context) error {
 

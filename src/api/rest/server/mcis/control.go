@@ -89,7 +89,7 @@ func RestPostMcisDynamic(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
-// JSONResult's data field will be overridden by the specific type
+// JSONResult is a dummy struct for Swagger annotations.
 type JSONResult struct {
 	//Code    int          `json:"code" `
 	//Message string       `json:"message"`
@@ -159,12 +159,12 @@ func RestGetMcis(c echo.Context) error {
 	}
 }
 
-// Response structure for RestGetAllMcis
+// RestGetAllMcisResponse is a response structure for RestGetAllMcis
 type RestGetAllMcisResponse struct {
 	Mcis []mcis.TbMcisInfo `json:"mcis"`
 }
 
-// Response structure for RestGetAllMcisStatus
+// RestGetAllMcisStatusResponse is a response structure for RestGetAllMcisStatus
 type RestGetAllMcisStatusResponse struct {
 	Mcis []mcis.McisStatusInfo `json:"mcis"`
 }
