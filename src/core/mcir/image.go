@@ -20,7 +20,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/go-resty/resty/v2"
 
@@ -458,16 +457,6 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	}
 }
 
-func RefineImageName(imageName string) string {
-	out := strings.ToLower(imageName)
-	out = strings.ReplaceAll(out, ".", "-")
-	out = strings.ReplaceAll(out, "_", "-")
-	out = strings.ReplaceAll(out, ":", "-")
-	out = strings.ReplaceAll(out, "/", "-")
-
-	return out
-}
-
 // FetchImagesForAllConnConfigs gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
 func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, err error) {
 	fmt.Println("FetchImagesForConnConfig(" + connConfig + ")")
@@ -485,7 +474,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 			return 0, err
 		}
 
-		tumblebugImageId := connConfig + "-" + RefineImageName(tumblebugImage.Name)
+		tumblebugImageId := connConfig + "-" + ToNamingRuleCompatible(tumblebugImage.Name)
 		//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
 
 		check, err := CheckResource(nsId, common.StrImage, tumblebugImageId)
@@ -548,7 +537,7 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 	sqlQuery := common.ORM.Where("Namespace = ?", nsId)
 
 	for _, keyword := range keywords {
-		keyword = RefineImageName(keyword)
+		keyword = ToNamingRuleCompatible(keyword)
 		//sqlQuery += " AND `name` LIKE '%" + keyword + "%'"
 		sqlQuery = sqlQuery.And("Name LIKE ?", "%"+keyword+"%")
 	}
