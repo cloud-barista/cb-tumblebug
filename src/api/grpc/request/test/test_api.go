@@ -656,7 +656,7 @@ func DeleteMCISApiTest() {
 		logger.Fatal(err)
 	}
 
-	result, err = mcis.DeleteMcisByParam("ns-test", "mcis-01")
+	result, err = mcis.DeleteMcisByParam("ns-test", "mcis-01", "")
 	if err != nil {
 		logger.Fatal(err)
 	}
