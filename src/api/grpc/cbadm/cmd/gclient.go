@@ -91,7 +91,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		defer ns.Close()
 	}
 
-	if cmd.Parent().Name() == "image" || cmd.Parent().Name() == "network" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypair" || cmd.Parent().Name() == "spec" {
+	if cmd.Parent().Name() == "image" || cmd.Parent().Name() == "network" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypair" || cmd.Parent().Name() == "spec" || cmd.Parent().Name() == "commonresource" || cmd.Parent().Name() == "defaultresource" {
 		// MCIR API
 		mcir = tb_api.NewMCIRManager()
 		err = mcir.SetConfigPath(configFile)
@@ -157,7 +157,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		ns.SetInType(inType)
 		ns.SetOutType(outType)
 	}
-	if cmd.Parent().Name() == "image" || cmd.Parent().Name() == "network" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypair" || cmd.Parent().Name() == "spec" {
+	if cmd.Parent().Name() == "image" || cmd.Parent().Name() == "network" || cmd.Parent().Name() == "securitygroup" || cmd.Parent().Name() == "keypair" || cmd.Parent().Name() == "spec" || cmd.Parent().Name() == "commonresource" || cmd.Parent().Name() == "defaultresource" {
 		mcir.SetInType(inType)
 		mcir.SetOutType(outType)
 	}
@@ -353,6 +353,18 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 			result, err = mcir.SortSpecs(inData)
 		case "update":
 			result, err = mcir.UpdateSpec(inData)
+		}
+	case "commonresource":
+		switch cmd.Name() {
+		case "load":
+			result, err = mcir.LoadCommonResource()
+		}
+	case "defaultresource":
+		switch cmd.Name() {
+		case "load":
+			result, err = mcir.LoadDefaultResourceByParam(nameSpaceID, resourceType, connConfigName)
+			// case "delete":
+			// 	result, err = mcir.DeleteDefaultResource()
 		}
 	case "mcis":
 		switch cmd.Name() {

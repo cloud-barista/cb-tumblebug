@@ -1515,6 +1515,40 @@ func (m *MCIRApi) CheckResourceByParam(nameSpaceID string, resourceID string, re
 	return result, err
 }
 
+// LoadCommonResource is to load common resources into the namespace 'common'.
+func (m *MCIRApi) LoadCommonResource() (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	return m.requestMCIR.LoadCommonResource()
+}
+
+// LoadDefaultResource is to Check whether Resource exists or not
+func (m *MCIRApi) LoadDefaultResource(doc string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	m.requestMCIR.InData = doc
+	return m.requestMCIR.LoadDefaultResource()
+}
+
+// LoadDefaultResourceByParam is to Check whether Resource exists or not
+func (m *MCIRApi) LoadDefaultResourceByParam(nameSpaceID string, resourceType string, connectionName string) (string, error) {
+	if m.requestMCIR == nil {
+		return "", errors.New("The Open() function must be called")
+	}
+
+	holdType, _ := m.GetInType()
+	m.SetInType("json")
+	m.requestMCIR.InData = `{"nsId":"` + nameSpaceID + `", "resourceType":"` + resourceType + `", "connectionName":"` + connectionName + `"}`
+	result, err := m.requestMCIR.LoadDefaultResource()
+	m.SetInType(holdType)
+
+	return result, err
+}
+
 // ===== [ Private Functiom ] =====
 
 // ===== [ Public Functiom ] =====
