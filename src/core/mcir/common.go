@@ -2059,6 +2059,8 @@ func ToNamingRuleCompatible(rawName string) string {
 	rawName = strings.ReplaceAll(rawName, " ", "-")
 	rawName = strings.ReplaceAll(rawName, ".", "-")
 	rawName = strings.ReplaceAll(rawName, "_", "-")
+	rawName = strings.ReplaceAll(rawName, ":", "-")
+	rawName = strings.ReplaceAll(rawName, "/", "-")
 	rawName = strings.ToLower(rawName)
 	return rawName
 }

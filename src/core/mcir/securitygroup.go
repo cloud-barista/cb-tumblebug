@@ -26,11 +26,13 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// SpiderSecurityReqInfoWrapper is a wrapper struct to create JSON body of 'Create security group request'
 type SpiderSecurityReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderSecurityInfo
 }
 
+// SpiderSecurityRuleInfo is a struct to handle security group rule info from/to CB-Spider.
 type SpiderSecurityRuleInfo struct { // Spider
 	FromPort   string //`json:"fromPort"`
 	ToPort     string //`json:"toPort"`
@@ -39,6 +41,7 @@ type SpiderSecurityRuleInfo struct { // Spider
 	CIDR       string
 }
 
+// SpiderSecurityRuleInfo is a struct to create JSON body of 'Create security group request'
 type SpiderSecurityInfo struct { // Spider
 	// Fields for request
 	Name    string
@@ -54,6 +57,7 @@ type SpiderSecurityInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
+// TbSecurityGroupReq is a struct to handle 'Create security group' request toward CB-Tumblebug.
 type TbSecurityGroupReq struct { // Tumblebug
 	Name           string                    `json:"name" validate:"required"`
 	ConnectionName string                    `json:"connectionName" validate:"required"`
@@ -62,6 +66,7 @@ type TbSecurityGroupReq struct { // Tumblebug
 	FirewallRules  *[]SpiderSecurityRuleInfo `json:"firewallRules" validate:"required"`
 }
 
+// TbSecurityGroupReqStructLevelValidation is a function to validate 'TbSecurityGroupReq' object.
 func TbSecurityGroupReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbSecurityGroupReq)
@@ -73,6 +78,7 @@ func TbSecurityGroupReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbSecurityGroupInfo is a struct that represents TB security group object.
 type TbSecurityGroupInfo struct { // Tumblebug
 	Id                   string                    `json:"id"`
 	Name                 string                    `json:"name"`

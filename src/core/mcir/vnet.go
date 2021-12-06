@@ -28,11 +28,13 @@ import (
 
 // 2020-04-09 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
 
+// SpiderVPCReqInfoWrapper is a wrapper struct to create JSON body of 'Create VPC request'
 type SpiderVPCReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderVPCReqInfo
 }
 
+// SpiderVPCReqInfo is a struct to create JSON body of 'Create VPC request'
 type SpiderVPCReqInfo struct { // Spider
 	Name           string
 	IPv4_CIDR      string
@@ -40,17 +42,20 @@ type SpiderVPCReqInfo struct { // Spider
 	//SubnetInfoList []SpiderSubnetInfo
 }
 
+// SpiderSubnetReqInfoWrapper is a wrapper struct to create JSON body of 'Create subnet request'
 type SpiderSubnetReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderSubnetReqInfo
 }
 
+// SpiderSubnetReqInfo is a struct to create JSON body of 'Create subnet request'
 type SpiderSubnetReqInfo struct { // Spider
 	Name         string `validate:"required"`
 	IPv4_CIDR    string `validate:"required"`
 	KeyValueList []common.KeyValue
 }
 
+// SpiderVPCInfo is a struct to handle VPC information from the CB-Spider's REST API response
 type SpiderVPCInfo struct { // Spider
 	IId            common.IID // {NameId, SystemId}
 	IPv4_CIDR      string
@@ -58,12 +63,14 @@ type SpiderVPCInfo struct { // Spider
 	KeyValueList   []common.KeyValue
 }
 
+// SpiderSubnetInfo is a struct to handle subnet information from the CB-Spider's REST API response
 type SpiderSubnetInfo struct { // Spider
 	IId          common.IID // {NameId, SystemId}
 	IPv4_CIDR    string
 	KeyValueList []common.KeyValue
 }
 
+// TbVNetReq is a struct to handle 'Create vNet' request toward CB-Tumblebug.
 type TbVNetReq struct { // Tumblebug
 	Name           string        `json:"name" validate:"required"`
 	ConnectionName string        `json:"connectionName" validate:"required"`
@@ -72,6 +79,7 @@ type TbVNetReq struct { // Tumblebug
 	Description    string        `json:"description"`
 }
 
+// TbVNetReqStructLevelValidation is a function to validate 'TbVNetReq' object.
 func TbVNetReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbVNetReq)
@@ -83,6 +91,7 @@ func TbVNetReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbVNetInfo is a struct that represents TB vNet object.
 type TbVNetInfo struct { // Tumblebug
 	Id                   string            `json:"id"`
 	Name                 string            `json:"name"`
@@ -105,6 +114,7 @@ type TbVNetInfo struct { // Tumblebug
 	//ResourceGroupName string `json:"resourceGroupName"`
 }
 
+// TbSubnetReq is a struct that represents TB subnet object.
 type TbSubnetReq struct { // Tumblebug
 	Name         string `validate:"required"`
 	IPv4_CIDR    string `validate:"required"`
@@ -112,6 +122,7 @@ type TbSubnetReq struct { // Tumblebug
 	Description  string
 }
 
+// TbSubnetReqStructLevelValidation is a function to validate 'TbSubnetReq' object.
 func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbSubnetReq)
@@ -123,6 +134,7 @@ func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbSubnetInfo is a struct that represents TB subnet object.
 type TbSubnetInfo struct { // Tumblebug
 	Id           string
 	Name         string `validate:"required"`

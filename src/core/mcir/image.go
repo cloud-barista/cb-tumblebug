@@ -20,7 +20,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/go-resty/resty/v2"
 
@@ -30,13 +29,13 @@ import (
 	validator "github.com/go-playground/validator/v10"
 )
 
-// SpiderImageReqInfoWrapper struct is ...
+// SpiderImageReqInfoWrapper is a wrapper struct to create JSON body of 'Get image request'
 type SpiderImageReqInfoWrapper struct { // Spider
 	ConnectionName string
 	ReqInfo        SpiderImageInfo
 }
 
-// SpiderImageInfo struct is ...
+// SpiderImageInfo is a struct to create JSON body of 'Get image request'
 type SpiderImageInfo struct { // Spider
 	// Fields for request
 	Name string
@@ -48,7 +47,7 @@ type SpiderImageInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
-// TbImageReq struct is for image create request
+// TbImageReq is a struct to handle 'Register image' request toward CB-Tumblebug.
 type TbImageReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
@@ -68,7 +67,7 @@ func TbImageReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// TbImageInfo struct is for image object
+// TbImageInfo is a struct that represents TB image object.
 type TbImageInfo struct {
 	Namespace            string            `json:"namespace,omitempty"` // required to save in RDB
 	Id                   string            `json:"id,omitempty"`
@@ -458,16 +457,6 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	}
 }
 
-func RefineImageName(imageName string) string {
-	out := strings.ToLower(imageName)
-	out = strings.ReplaceAll(out, ".", "-")
-	out = strings.ReplaceAll(out, "_", "-")
-	out = strings.ReplaceAll(out, ":", "-")
-	out = strings.ReplaceAll(out, "/", "-")
-
-	return out
-}
-
 // FetchImagesForAllConnConfigs gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
 func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, err error) {
 	fmt.Println("FetchImagesForConnConfig(" + connConfig + ")")
@@ -485,7 +474,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 			return 0, err
 		}
 
-		tumblebugImageId := connConfig + "-" + RefineImageName(tumblebugImage.Name)
+		tumblebugImageId := connConfig + "-" + ToNamingRuleCompatible(tumblebugImage.Name)
 		//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
 
 		check, err := CheckResource(nsId, common.StrImage, tumblebugImageId)
@@ -548,7 +537,7 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 	sqlQuery := common.ORM.Where("Namespace = ?", nsId)
 
 	for _, keyword := range keywords {
-		keyword = RefineImageName(keyword)
+		keyword = ToNamingRuleCompatible(keyword)
 		//sqlQuery += " AND `name` LIKE '%" + keyword + "%'"
 		sqlQuery = sqlQuery.And("Name LIKE ?", "%"+keyword+"%")
 	}

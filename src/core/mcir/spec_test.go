@@ -26,9 +26,9 @@ import (
 
 func TestSpec(t *testing.T) {
 	/*
-		    expected := 1
-		    actual := 0
-			assert.Equal(t, expected, actual, "기대값과 결과값이 다릅니다.")
+		expected := 1
+		actual := 0
+		assert.Equal(t, expected, actual, "기대값과 결과값이 다릅니다.")
 	*/
 
 	nsName := "tb-unit-test"

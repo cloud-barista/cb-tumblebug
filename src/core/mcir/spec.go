@@ -20,7 +20,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 
 	//"strings"
 
@@ -34,6 +33,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// SpiderSpecInfo is a struct to create JSON body of 'Get spec request'
 type SpiderSpecInfo struct { // Spider
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
@@ -46,11 +46,13 @@ type SpiderSpecInfo struct { // Spider
 	KeyValueList []common.KeyValue
 }
 
+// SpiderVCpuInfo is a struct to handle vCPU Info from CB-Spider.
 type SpiderVCpuInfo struct { // Spider
 	Count string
 	Clock string // GHz
 }
 
+// SpiderGpuInfo is a struct to handle GPU Info from CB-Spider.
 type SpiderGpuInfo struct { // Spider
 	Count string
 	Mfr   string
@@ -58,6 +60,7 @@ type SpiderGpuInfo struct { // Spider
 	Mem   string
 }
 
+// TbSpecReq is a struct to handle 'Register spec' request toward CB-Tumblebug.
 type TbSpecReq struct { // Tumblebug
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
@@ -65,6 +68,7 @@ type TbSpecReq struct { // Tumblebug
 	Description    string `json:"description"`
 }
 
+// TbSpecReqStructLevelValidation is a function to validate 'TbSpecReq' object.
 func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbSpecReq)
@@ -76,6 +80,7 @@ func TbSpecReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+// TbSpecInfo is a struct that represents TB spec object.
 type TbSpecInfo struct { // Tumblebug
 	Namespace             string   `json:"namespace,omitempty"` // required to save in RDB
 	Id                    string   `json:"id,omitempty"`
@@ -134,6 +139,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, er
 	return tumblebugSpec, nil
 }
 
+// SpiderSpecList is a struct to handle spec list from the CB-Spider's REST API response
 type SpiderSpecList struct {
 	Vmspec []SpiderSpecInfo `json:"vmspec"`
 }
@@ -309,14 +315,6 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 	}
 }
 
-func RefineSpecName(specName string) string {
-	out := strings.ToLower(specName)
-	out = strings.ReplaceAll(out, ".", "-")
-	out = strings.ReplaceAll(out, "_", "-")
-
-	return out
-}
-
 // FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects
 func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, err error) {
 	fmt.Println("FetchSpecsForConnConfig(" + connConfig + ")")
@@ -334,7 +332,7 @@ func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, er
 			return 0, err
 		}
 
-		tumblebugSpecId := connConfig + "-" + RefineSpecName(tumblebugSpec.Name)
+		tumblebugSpecId := connConfig + "-" + ToNamingRuleCompatible(tumblebugSpec.Name)
 		//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
 
 		check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
@@ -574,27 +572,27 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 
 	if filter.Id != "" {
 		//sqlQuery += " AND `id` LIKE '%" + filter.Id + "%'"
-		filter.Id = RefineSpecName(filter.Id)
+		filter.Id = ToNamingRuleCompatible(filter.Id)
 		sqlQuery = sqlQuery.And("Id LIKE ?", "%"+filter.Id+"%")
 	}
 	if filter.Name != "" {
 		//sqlQuery += " AND `name` LIKE '%" + filter.Name + "%'"
-		filter.Name = RefineSpecName(filter.Name)
+		filter.Name = ToNamingRuleCompatible(filter.Name)
 		sqlQuery = sqlQuery.And("Name LIKE ?", "%"+filter.Name+"%")
 	}
 	if filter.ConnectionName != "" {
 		//sqlQuery += " AND `connectionName` LIKE '%" + filter.ConnectionName + "%'"
-		filter.ConnectionName = RefineSpecName(filter.ConnectionName)
+		filter.ConnectionName = ToNamingRuleCompatible(filter.ConnectionName)
 		sqlQuery = sqlQuery.And("ConnectionName LIKE ?", "%"+filter.ConnectionName+"%")
 	}
 	if filter.CspSpecName != "" {
 		//sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
-		filter.CspSpecName = RefineSpecName(filter.CspSpecName)
+		filter.CspSpecName = ToNamingRuleCompatible(filter.CspSpecName)
 		sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+filter.CspSpecName+"%")
 	}
 	if filter.OsType != "" {
 		//sqlQuery += " AND `osType` LIKE '%" + filter.OsType + "%'"
-		filter.OsType = RefineSpecName(filter.OsType)
+		filter.OsType = ToNamingRuleCompatible(filter.OsType)
 		sqlQuery = sqlQuery.And("OsType LIKE ?", "%"+filter.OsType+"%")
 	}
 
@@ -616,7 +614,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	}
 	if filter.Description != "" {
 		//sqlQuery += " AND `description` LIKE '%" + filter.Description + "%'"
-		filter.Description = RefineSpecName(filter.Description)
+		filter.Description = ToNamingRuleCompatible(filter.Description)
 		sqlQuery = sqlQuery.And("Description LIKE ?", "%"+filter.Description+"%")
 	}
 	if filter.CostPerHour > 0 {
@@ -645,7 +643,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	}
 	if filter.GpuModel != "" {
 		//sqlQuery += " AND `gpuModel` LIKE '%" + filter.GpuModel + "%'"
-		filter.GpuModel = RefineSpecName(filter.GpuModel)
+		filter.GpuModel = ToNamingRuleCompatible(filter.GpuModel)
 		sqlQuery = sqlQuery.And("GpuModel LIKE ?", "%"+filter.GpuModel+"%")
 	}
 	if filter.NumGpu > 0 {
@@ -658,12 +656,12 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	}
 	if filter.GpuP2p != "" {
 		//sqlQuery += " AND `gpuP2p` LIKE '%" + filter.GpuP2p + "%'"
-		filter.GpuP2p = RefineSpecName(filter.GpuP2p)
+		filter.GpuP2p = ToNamingRuleCompatible(filter.GpuP2p)
 		sqlQuery = sqlQuery.And("GpuP2p LIKE ?", "%"+filter.GpuP2p+"%")
 	}
 	if filter.EvaluationStatus != "" {
 		//sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
-		filter.EvaluationStatus = RefineSpecName(filter.EvaluationStatus)
+		filter.EvaluationStatus = ToNamingRuleCompatible(filter.EvaluationStatus)
 		sqlQuery = sqlQuery.And("EvaluationStatus LIKE ?", "%"+filter.EvaluationStatus+"%")
 	}
 	if filter.EvaluationScore01 > 0 {
@@ -715,11 +713,13 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 	return tempList, nil
 }
 
+// Range struct is for 'FilterSpecsByRange'
 type Range struct {
 	Min float32 `json:"min"`
 	Max float32 `json:"max"`
 }
 
+// FilterSpecsByRangeRequest is for 'FilterSpecsByRange'
 type FilterSpecsByRangeRequest struct {
 	Id                 string `json:"id"`
 	Name               string `json:"name"`
@@ -770,27 +770,27 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 
 	if filter.Id != "" {
 		//sqlQuery += " AND `id` LIKE '%" + filter.Id + "%'"
-		filter.Id = RefineSpecName(filter.Id)
+		filter.Id = ToNamingRuleCompatible(filter.Id)
 		sqlQuery = sqlQuery.And("Id LIKE ?", "%"+filter.Id+"%")
 	}
 	if filter.Name != "" {
 		//sqlQuery += " AND `name` LIKE '%" + filter.Name + "%'"
-		filter.Name = RefineSpecName(filter.Name)
+		filter.Name = ToNamingRuleCompatible(filter.Name)
 		sqlQuery = sqlQuery.And("Name LIKE ?", "%"+filter.Name+"%")
 	}
 	if filter.ConnectionName != "" {
 		//sqlQuery += " AND `connectionName` LIKE '%" + filter.ConnectionName + "%'"
-		filter.ConnectionName = RefineSpecName(filter.ConnectionName)
+		filter.ConnectionName = ToNamingRuleCompatible(filter.ConnectionName)
 		sqlQuery = sqlQuery.And("ConnectionName LIKE ?", "%"+filter.ConnectionName+"%")
 	}
 	if filter.CspSpecName != "" {
 		//sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
-		filter.CspSpecName = RefineSpecName(filter.CspSpecName)
+		filter.CspSpecName = ToNamingRuleCompatible(filter.CspSpecName)
 		sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+filter.CspSpecName+"%")
 	}
 	if filter.OsType != "" {
 		//sqlQuery += " AND `osType` LIKE '%" + filter.OsType + "%'"
-		filter.OsType = RefineSpecName(filter.OsType)
+		filter.OsType = ToNamingRuleCompatible(filter.OsType)
 		sqlQuery = sqlQuery.And("OsType LIKE ?", "%"+filter.OsType+"%")
 	}
 
@@ -832,7 +832,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 
 	if filter.Description != "" {
 		//sqlQuery += " AND `description` LIKE '%" + filter.Description + "%'"
-		filter.Description = RefineSpecName(filter.Description)
+		filter.Description = ToNamingRuleCompatible(filter.Description)
 		sqlQuery = sqlQuery.And("Description LIKE ?", "%"+filter.Description+"%")
 	}
 
@@ -892,7 +892,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 
 	if filter.GpuModel != "" {
 		//sqlQuery += " AND `GpuModel` LIKE '%" + filter.GpuModel + "%'"
-		filter.GpuModel = RefineSpecName(filter.GpuModel)
+		filter.GpuModel = ToNamingRuleCompatible(filter.GpuModel)
 		sqlQuery = sqlQuery.And("GpuModel LIKE ?", "%"+filter.GpuModel+"%")
 	}
 
@@ -916,12 +916,12 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 
 	if filter.GpuP2p != "" {
 		//sqlQuery += " AND `GpuP2p` LIKE '%" + filter.GpuP2p + "%'"
-		filter.GpuP2p = RefineSpecName(filter.GpuP2p)
+		filter.GpuP2p = ToNamingRuleCompatible(filter.GpuP2p)
 		sqlQuery = sqlQuery.And("GpuP2p LIKE ?", "%"+filter.GpuP2p+"%")
 	}
 	if filter.EvaluationStatus != "" {
 		//sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
-		filter.EvaluationStatus = RefineSpecName(filter.EvaluationStatus)
+		filter.EvaluationStatus = ToNamingRuleCompatible(filter.EvaluationStatus)
 		sqlQuery = sqlQuery.And("EvaluationStatus LIKE ?", "%"+filter.EvaluationStatus+"%")
 	}
 
