@@ -234,7 +234,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			SetResult(&SpiderVPCInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
 		var resp *resty.Response
 		var err error

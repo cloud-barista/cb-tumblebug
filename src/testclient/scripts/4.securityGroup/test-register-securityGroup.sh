@@ -1,48 +1,24 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Create securityGroup in ${MCIRRegionName}"
+	echo "- Register securityGroup in ${MCIRRegionName}"
 
 	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup?option=register -H 'Content-Type: application/json' -d @- <<EOF
         {
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"description": "test description",
-			"firewallRules": [
-				{
-					"FromPort": "1",
-					"ToPort": "65535",
-					"IPProtocol": "tcp",
-					"Direction": "inbound",
-					"CIDR": "0.0.0.0/0"
-				},
-				{
-					"FromPort": "1",
-					"ToPort": "65535",
-					"IPProtocol": "udp",
-					"Direction": "inbound",
-					"CIDR": "0.0.0.0/0"
-				},
-				{
-					"FromPort": "-1",
-					"ToPort": "-1",
-					"IPProtocol": "icmp",
-					"Direction": "inbound",
-					"CIDR": "0.0.0.0/0"
-				}
-			]
+			"vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
 		}
 EOF
     ); echo ${resp} | jq ''
     echo ""
 }
 
-#function create_securityGroup() {
+#function register_securityGroup() {
 
 	echo "####################################################################"
-	echo "## 4. SecurityGroup: Create"
+	echo "## 4. SecurityGroup: Register"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -77,4 +53,4 @@ EOF
     
 #}
 
-#create_securityGroup
+#register_securityGroup

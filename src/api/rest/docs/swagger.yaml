@@ -467,6 +467,11 @@ definitions:
         type: array
       name:
         type: string
+      systemLabel:
+        description: SystemLabel is for describing the MCIR in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
       vNetId:
         type: string
     type: object
@@ -3650,6 +3655,12 @@ paths:
         in: path
         name: nsId
         required: true
+        type: string
+      - description: Option
+        enum:
+        - register
+        in: query
+        name: option
         type: string
       - description: Details for an securityGroup object
         in: body

@@ -30,30 +30,36 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param option query string false "Option" Enums(register)
 // @Param securityGroupReq body mcir.TbSecurityGroupReq true "Details for an securityGroup object"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [post]
 func RestPostSecurityGroup(c echo.Context) error {
+	fmt.Println("[POST SecurityGroup")
 
 	nsId := c.Param("nsId")
 
-	u := &mcir.TbSecurityGroupReq{}
-	if err := c.Bind(u); err != nil {
-		return err
-	}
+	optionFlag := c.QueryParam("option")
 
-	fmt.Println("[POST SecurityGroup")
-	//fmt.Println("[Creating SecurityGroup]")
-	//content, responseCode, _, err := CreateSecurityGroup(nsId, u)
-	content, err := mcir.CreateSecurityGroup(nsId, u)
+	var content mcir.TbSecurityGroupInfo
+	var err error
+	if optionFlag == "register" {
+		u := &mcir.TbSecurityGroupRegReq{}
+		if err := c.Bind(u); err != nil {
+			return err
+		}
+		content, err = mcir.RegisterSecurityGroup(nsId, u)
+	} else {
+		u := &mcir.TbSecurityGroupReq{}
+		if err := c.Bind(u); err != nil {
+			return err
+		}
+		content, err = mcir.CreateSecurityGroup(nsId, u)
+	}
 	if err != nil {
 		common.CBLog.Error(err)
-		/*
-			mapA := map[string]string{
-				"message": "Failed to create a SecurityGroup"}
-		*/
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
