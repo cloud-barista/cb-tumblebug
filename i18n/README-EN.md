@@ -105,7 +105,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   # docker run -p 1323:1323 -p 50252:50252 \
   -v ${HOME}/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
   --name cb-tumblebug \
-  cloudbaristaorg/cb-tumblebug:0.4.xx
+  cloudbaristaorg/cb-tumblebug:x.x.x
   ```
 
 ### (3) cb-operator based Cloud-Barista Combined Execution
@@ -635,17 +635,13 @@ Dozing for 1 : 1 (Back to work)
 
 
 ### Use CB-Tumblebug REST API
-1. Register cloud infrastructure inter working information through CB-Spider API.
-   - https://cloud-barista.github.io/rest-api/v0.4.0/spider/ccim/
-2. Create Namespace through CB-Tumblebug Multi-Cloud Namespace Management API.
-   - [Create Namespace](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BNamespace%5D%20Namespace%20management/post_ns)
-3. Create required VM resources(MCIR) Through CB-Tumblebug Multi Cloud Interface Resource(MCIR) management API
+1. Create required VM resources(MCIR) Through CB-Tumblebug Multi Cloud Interface Resource(MCIR) management API
    - [Create VM spec object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Spec%20management/post_ns__nsId__resources_spec)
    - [Create VM image object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Image%20management/post_ns__nsId__resources_image)
    - [Create Virtual network object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Network%20management/post_ns__nsId__resources_vNet)
    - [Create Security group object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
    - [Create VM ssh key object](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIR%5D%20Access%20key%20management/post_ns__nsId__resources_sshKey)
-4. Through CB-Tumblebug Multi Cloud Infra Service(MCIS) Management API, create, check, control, send command, termination, and deletion of MCIS.
+2. Through CB-Tumblebug Multi Cloud Infra Service(MCIS) Management API, create, check, control, send command, termination, and deletion of MCIS.
    - [Create MCIS](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/post_ns__nsId__mcis)
    - [Send Commands to MCIS](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Remote%20command/post_ns__nsId__cmd_mcis__mcisId_)
    - [Check and Control MCIS](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BMCIS%5D%20Provisioning%20management/get_ns__nsId__mcis__mcisId_)

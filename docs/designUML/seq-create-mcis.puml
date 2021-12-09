@@ -1,6 +1,6 @@
 @startuml
 
-header **CB-Tumblebug** (v0.4.7)
+header **CB-Tumblebug** (v0.5.0)
 title Basic sequence for creating MCIS
 hide footbox
 
