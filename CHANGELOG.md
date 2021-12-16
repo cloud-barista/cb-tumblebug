@@ -1,38 +1,38 @@
-# v0.5.0-Affogato (2021.12.16.)
+# v0.5.0 (Affogato, 2021.12.16.)
 
 ### Tested with 
 - CB-Spider (https://github.com/cloud-barista/cb-spider/releases/tag/v0.5.0)
 - CB-Dragonfly (https://github.com/cloud-barista/cb-dragonfly/releases/tag/v0.5.0)
 
 ### Note
-- Fix error regarding `OpenSQL()` (Issue: #645, PR: #646)
-- Update grpc protobuf to sync with rest #668 
-- Change method to input parameters for script #677
-- Refine source code  (variable name in camelCase consistently)
-- Add list MCIS simple option #731
-- Add MCIS status count feature and update MCIS response field #732
-- Apply colors to important messages in script #798
-- Add interactive scripts to run containers to support CB-Tumblebug #764
-- Fix some REST APIs methods from get to post #742
-- Verify cb-tb and cb-sp are ready #741
-- Enhance capability of mcis recommendation #833
-- Add omitted error handling #828
-- English README.md #825
-- Influencing cb-spider resource objects with namespace in https://github.com/cloud-barista/cb-tumblebug/pull/909
-- Add delete all default resource feature #942 (deleteAll output becomes list)
-- Remove control action parameters from get mcis #928
-- Add feature for connection with geolocation #936
-- Enable dynamic MCIS provisioning #879
-- Added and tested IBM(VPC) CSP and Tencent CSP [#969](https://github.com/cloud-barista/cb-tumblebug/discussions/969))
-- Add option=terminate for delete mcis #959
+- Fix error regarding `OpenSQL()` (Issue: [#645](https://github.com/cloud-barista/cb-tumblebug/issues/645), PR: [#646](https://github.com/cloud-barista/cb-tumblebug/pull/646))
+- Update grpc protobuf to sync with rest [#668](https://github.com/cloud-barista/cb-tumblebug/pull/668)
+- Change method to input parameters for script [#677](https://github.com/cloud-barista/cb-tumblebug/pull/677)
+- Refine source code (variable name in camelCase consistently)
+- Add list MCIS simple option [#731](https://github.com/cloud-barista/cb-tumblebug/pull/731)
+- Add MCIS status count feature and update MCIS response field [#732](https://github.com/cloud-barista/cb-tumblebug/pull/732)
+- Apply colors to important messages in script [#798](https://github.com/cloud-barista/cb-tumblebug/pull/798)
+- Add interactive scripts to run containers to support CB-Tumblebug [#764](https://github.com/cloud-barista/cb-tumblebug/pull/764)
+- Fix some REST APIs methods from get to post [#742](https://github.com/cloud-barista/cb-tumblebug/pull/742)
+- Verify cb-tb and cb-sp are ready [#741](https://github.com/cloud-barista/cb-tumblebug/pull/741)
+- Enhance capability of mcis recommendation [#833](https://github.com/cloud-barista/cb-tumblebug/pull/833)
+- Add omitted error handling [#828](https://github.com/cloud-barista/cb-tumblebug/pull/828)
+- English README.md [#825](https://github.com/cloud-barista/cb-tumblebug/pull/825)
+- Influencing cb-spider resource objects with namespace [#909](https://github.com/cloud-barista/cb-tumblebug/pull/909)
+- Add delete all default resource feature (deleteAll output becomes list) [#942](https://github.com/cloud-barista/cb-tumblebug/pull/942)
+- Remove control action parameters from get mcis [#928](https://github.com/cloud-barista/cb-tumblebug/pull/928)
+- Add feature for connection with geolocation [#936](https://github.com/cloud-barista/cb-tumblebug/pull/936)
+- Enable dynamic MCIS provisioning [#879](https://github.com/cloud-barista/cb-tumblebug/pull/879)
+- Added and tested IBM(VPC) CSP and Tencent CSP [#969](https://github.com/cloud-barista/cb-tumblebug/discussions/969)
+- Add option=terminate for delete mcis [#959](https://github.com/cloud-barista/cb-tumblebug/pull/959)
 - Expedite speed of scripts
-- Add SystemLabel field to MCIS info for CB-DF CB-MCKS CB-webtool integration #977
-- Update assets/cloudspec.csv #975
+- Add SystemLabel field to MCIS info for CB-DF CB-MCKS CB-webtool integration [#977](https://github.com/cloud-barista/cb-tumblebug/pull/977)
+- Update assets/cloudspec.csv [#975](https://github.com/cloud-barista/cb-tumblebug/pull/975)
 
 ### API
 - Swagger UI URL: https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/v0.5.0/src/api/rest/docs/swagger.yaml
 - Trace for API changes: diff between two API doc files like 
-  - git diff https://github.com/cloud-barista/cb-tumblebug/blob/v0.4.0/src/api/rest/docs/swagger.yaml https://github.com/cloud-barista/cb-tumblebug/blob/v0.5.0/src/api/rest/docs/swagger.yaml
+  - `git diff https://github.com/cloud-barista/cb-tumblebug/blob/v0.4.0/src/api/rest/docs/swagger.yaml https://github.com/cloud-barista/cb-tumblebug/blob/v0.5.0/src/api/rest/docs/swagger.yaml`
 
 ### What's Changed
 
@@ -41,7 +41,7 @@
 ***
 
 
-# v0.4.0-CafeMocha (2021.06.30.)
+# v0.4.0 (Cafe Mocha, 2021.06.30.)
 
 ### API Change 
 Ref) [API ChangeLog](https://github.com/cloud-barista/cb-tumblebug/discussions/416)
