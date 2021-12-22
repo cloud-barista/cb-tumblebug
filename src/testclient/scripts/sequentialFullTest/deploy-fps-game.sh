@@ -35,7 +35,7 @@ EOF
 echo "${VAR1}" | jq ''
 echo ""
 
-LAUNCHCMD="cd Xonotic/; ./xonotic-linux64-dedicated &"
+LAUNCHCMD="cd Xonotic/; nohup ./xonotic-linux64-dedicated 1>server.log 2>&1 &"
 
 echo "Launching Xonotic for master node..."
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
