@@ -1,14 +1,17 @@
 #!/bin/bash
 
-echo "[Status Xonotic FPS Game]"
+echo "[Stop Xonotic FPS Game]"
 
 echo ""
-echo "[Xonotic Server.log so far]"
+echo "[Current server.log]"
 cat ~/Xonotic/server.log
 echo ""
 
-PS=$(ps -ef | head -1; ps -ef | grep [x]onotic)
-echo "[Process status of Xonotic]"
-echo "$PS"
+PID=$(ps -ef | grep [x]onotic | awk '{print $2}')
+kill $PID
+echo ""
+echo "[Stop Xonotic] PID=$PID"
+
+ps -ef | grep [x]onotic
 
 echo ""
