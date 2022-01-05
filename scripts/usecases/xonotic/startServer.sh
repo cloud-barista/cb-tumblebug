@@ -1,8 +1,15 @@
 #!/bin/bash
 
+# Need to be executed with sudo
+# Param: serverName, serverPort, numBot
 echo "[Start Xonotic FPS Game Server]"
 
 SECONDS=0
+
+serverName=${1:-Xonotic-0.8.2-by-Cloud-Barista}
+serverPort=${2:-26000}
+numBot=${3:-2}
+numMaxUser=32
 
 echo "Installing Xonotic to instance..."
 FILE="xonotic-0.8.2.zip"
@@ -24,7 +31,9 @@ else
         sudo apt install unzip -y; unzip $FILE
 fi
 
-echo ""
+appendConfig="port $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
+cp ~/Xonotic/server/server.cfg ~/Xonotic/data/
+echo -e "${appendConfig}" >>~/Xonotic/data/server.cfg
 
 echo "Launching Xonotic dedicated server"
 
@@ -40,5 +49,5 @@ cat ~/Xonotic/server.log
 
 echo ""
 echo "[Start Xonotic: complete] PID=$PID"
-echo "Access to $IP:26000 by using your Xonotic Client"
-echo ""
+echo "Access to $IP:$serverPort by using your Xonotic Client"
+echo "Hostname: $serverName"
