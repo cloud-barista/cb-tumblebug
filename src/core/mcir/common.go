@@ -1969,7 +1969,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				common.PrintJsonPretty(reqTmp)
 
-				resultInfo, err := CreateSecurityGroup(nsId, &reqTmp)
+				resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
 				if err != nil {
 					common.CBLog.Error(err)
 					// If already exist, error will occur

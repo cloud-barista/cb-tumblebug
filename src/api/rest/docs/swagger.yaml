@@ -482,6 +482,7 @@ definitions:
       description:
         type: string
       firewallRules:
+        description: validate:"required"`
         items:
           $ref: '#/definitions/mcir.SpiderSecurityRuleInfo'
         type: array
@@ -491,7 +492,6 @@ definitions:
         type: string
     required:
     - connectionName
-    - firewallRules
     - name
     - vNetId
     type: object
