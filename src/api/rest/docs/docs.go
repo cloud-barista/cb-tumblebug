@@ -5320,7 +5320,6 @@ var doc = `{
             "type": "object",
             "required": [
                 "connectionName",
-                "firewallRules",
                 "name",
                 "vNetId"
             ],
@@ -5332,6 +5331,7 @@ var doc = `{
                     "type": "string"
                 },
                 "firewallRules": {
+                    "description": "validate:\"required\"` + "`" + `",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcir.SpiderSecurityRuleInfo"

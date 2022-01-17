@@ -28,7 +28,7 @@ func (s *MCIRService) CreateSecurityGroup(ctx context.Context, req *pb.TbSecurit
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.CreateSecurityGroup()")
 	}
 
-	content, err := mcir.CreateSecurityGroup(req.NsId, &mcirObj)
+	content, err := mcir.CreateSecurityGroup(req.NsId, &mcirObj, "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.CreateSecurityGroup()")
 	}

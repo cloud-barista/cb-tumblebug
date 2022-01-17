@@ -37,27 +37,18 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [post]
 func RestPostSecurityGroup(c echo.Context) error {
-	fmt.Println("[POST SecurityGroup")
+	fmt.Println("[POST SecurityGroup]")
 
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
 
-	var content mcir.TbSecurityGroupInfo
-	var err error
-	if optionFlag == "register" {
-		u := &mcir.TbSecurityGroupRegReq{}
-		if err := c.Bind(u); err != nil {
-			return err
-		}
-		content, err = mcir.RegisterSecurityGroup(nsId, u)
-	} else {
-		u := &mcir.TbSecurityGroupReq{}
-		if err := c.Bind(u); err != nil {
-			return err
-		}
-		content, err = mcir.CreateSecurityGroup(nsId, u)
+	u := &mcir.TbSecurityGroupReq{}
+	if err := c.Bind(u); err != nil {
+		return err
 	}
+
+	content, err := mcir.CreateSecurityGroup(nsId, u, optionFlag)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}

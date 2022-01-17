@@ -63,7 +63,7 @@ type TbSecurityGroupReq struct { // Tumblebug
 	ConnectionName string                    `json:"connectionName" validate:"required"`
 	VNetId         string                    `json:"vNetId" validate:"required"`
 	Description    string                    `json:"description"`
-	FirewallRules  *[]SpiderSecurityRuleInfo `json:"firewallRules" validate:"required"`
+	FirewallRules  *[]SpiderSecurityRuleInfo `json:"firewallRules"` // validate:"required"`
 }
 
 // TbSecurityGroupReqStructLevelValidation is a function to validate 'TbSecurityGroupReq' object.
@@ -100,7 +100,7 @@ type TbSecurityGroupInfo struct { // Tumblebug
 }
 
 // CreateSecurityGroup accepts SG creation request, creates and returns an TB SG object
-func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInfo, error) {
+func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbSecurityGroupInfo, error) {
 
 	resourceType := common.StrSecurityGroup
 
@@ -111,33 +111,37 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		return temp, err
 	}
 
-	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	// if option == "register" {
+	// 	mockFirewallRule := SpiderSecurityRuleInfo{
+	// 		FromPort:   "22",
+	// 		ToPort:     "22",
+	// 		IPProtocol: "tcp",
+	// 		Direction:  "inbound",
+	// 		CIDR:       "0.0.0.0/0",
+	// 	}
+
+	// 	*u.FirewallRules = append(*u.FirewallRules, mockFirewallRule)
+	// }
+
+	if option != "register" {
+		err = validate.Var(u.FirewallRules, "required")
+		if err != nil {
+			temp := TbSecurityGroupInfo{}
+			if _, ok := err.(*validator.InvalidValidationError); ok {
+				fmt.Println(err)
+				return temp, err
+			}
+			return temp, err
+		}
+	}
+
 	err = validate.Struct(u)
 	if err != nil {
-
-		// this check is only needed when your code could produce
-		// an invalid value for validation such as interface with nil
-		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			fmt.Println(err)
 			temp := TbSecurityGroupInfo{}
 			return temp, err
 		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
 
 		temp := TbSecurityGroupInfo{}
 		return temp, err
@@ -179,16 +183,26 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-		url := common.SpiderRestUrl + "/securitygroup"
-
 		client := resty.New().SetCloseConnection(true)
+		client.SetAllowGetMethodPayload(true)
 
-		resp, err := client.R().
+		req := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
-			SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
+			SetResult(&SpiderSecurityInfo{}) // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Post(url)
+
+		var resp *resty.Response
+		var err error
+
+		var url string
+		if option == "register" {
+			url = fmt.Sprintf("%s/securitygroup/%s", common.SpiderRestUrl, u.Name)
+			resp, err = req.Get(url)
+		} else {
+			url = fmt.Sprintf("%s/securitygroup", common.SpiderRestUrl)
+			resp, err = req.Post(url)
+		}
 
 		if err != nil {
 			common.CBLog.Error(err)
@@ -227,7 +241,15 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 		payload, _ := json.Marshal(tempReq)
 		fmt.Println("payload: " + string(payload)) // for debug
 
-		result, err := ccm.CreateSecurity(string(payload))
+		//result, err := ccm.CreateSecurity(string(payload))
+		var result string
+
+		if option == "register" {
+			result, err = ccm.CreateVPC(string(payload))
+		} else {
+			result, err = ccm.GetVPC(string(payload))
+		}
+
 		if err != nil {
 			common.CBLog.Error(err)
 			return TbSecurityGroupInfo{}, err
@@ -252,6 +274,10 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	content.FirewallRules = tempSpiderSecurityInfo.SecurityRules
 	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
+
+	if option == "register" {
+		content.SystemLabel = "Registered from CSP resource"
+	}
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateSecurityGroup")
@@ -266,169 +292,6 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq) (TbSecurityGroupInf
 	if err != nil {
 		common.CBLog.Error(err)
 		err = fmt.Errorf("In CreateSecurityGroup(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
-		// return nil, err
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
-	return content, nil
-}
-
-type TbSecurityGroupRegReq struct {
-	Name           string `json:"name" validate:"required"`
-	ConnectionName string `json:"connectionName" validate:"required"`
-	VNetId         string `json:"vNetId" validate:"required"`
-	Description    string `json:"description"`
-}
-
-// RegisterSecurityGroup accepts SG registration request, registers and returns an TB SG object
-func RegisterSecurityGroup(nsId string, u *TbSecurityGroupRegReq) (TbSecurityGroupInfo, error) {
-
-	resourceType := common.StrSecurityGroup
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := TbSecurityGroupInfo{}
-		common.CBLog.Error(err)
-		return temp, err
-	}
-
-	check, err := CheckResource(nsId, resourceType, u.Name)
-
-	if check {
-		temp := TbSecurityGroupInfo{}
-		err := fmt.Errorf("The securityGroup " + u.Name + " already exists.")
-		return temp, err
-	}
-	if err != nil {
-		common.CBLog.Error(err)
-		content := TbSecurityGroupInfo{}
-		err := fmt.Errorf("in RegisterSecurityGroup(); Error occurred while checking the existence of SG")
-		return content, err
-	}
-
-	err = validate.Struct(u)
-	if err != nil {
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
-			temp := TbSecurityGroupInfo{}
-			return temp, err
-		}
-
-		temp := TbSecurityGroupInfo{}
-		return temp, err
-	}
-
-	tempInterface, err := GetResource(nsId, common.StrVNet, u.VNetId)
-	if err != nil {
-		err := fmt.Errorf("Failed to get the TbVNetInfo " + u.VNetId + ".")
-		return TbSecurityGroupInfo{}, err
-	}
-	vNetInfo := TbVNetInfo{}
-	err = common.CopySrcToDest(&tempInterface, &vNetInfo)
-	if err != nil {
-		err := fmt.Errorf("Failed to get the TbVNetInfo-CopySrcToDest() " + u.VNetId + ".")
-		return TbSecurityGroupInfo{}, err
-	}
-
-	tempReq := SpiderSecurityReqInfoWrapper{}
-	tempReq.ConnectionName = u.ConnectionName
-
-	var tempSpiderSecurityInfo *SpiderSecurityInfo
-
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
-
-		url := fmt.Sprintf("%s/securitygroup/%s", common.SpiderRestUrl, u.Name)
-
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Get(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			return content, err
-		}
-
-		tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		defer ccm.Close()
-
-		payload, _ := json.Marshal(tempReq)
-		fmt.Println("payload: " + string(payload)) // for debug
-
-		result, err := ccm.GetSecurity(string(payload))
-
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
-
-		tempSpiderSecurityInfo = &SpiderSecurityInfo{}
-		err = json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
-	}
-
-	content := TbSecurityGroupInfo{}
-	content.Id = u.Name
-	content.Name = u.Name
-	content.ConnectionName = u.ConnectionName
-	content.VNetId = tempSpiderSecurityInfo.VpcIID.NameId
-	content.CspSecurityGroupId = tempSpiderSecurityInfo.IId.SystemId
-	content.CspSecurityGroupName = tempSpiderSecurityInfo.IId.NameId
-	content.Description = u.Description
-	content.FirewallRules = tempSpiderSecurityInfo.SecurityRules
-	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
-	content.AssociatedObjectList = []string{}
-	content.SystemLabel = "Registered from CSP resource"
-
-	// cb-store
-	fmt.Println("=========================== PUT RegisterSecurityGroup")
-	Key := common.GenResourceKey(nsId, resourceType, content.Id)
-	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
-	if err != nil {
-		common.CBLog.Error(err)
-		return content, err
-	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		common.CBLog.Error(err)
-		err = fmt.Errorf("In RegisterSecurityGroup(); CBStore.Get() returned an error.")
 		common.CBLog.Error(err)
 		// return nil, err
 	}

@@ -5306,7 +5306,6 @@
             "type": "object",
             "required": [
                 "connectionName",
-                "firewallRules",
                 "name",
                 "vNetId"
             ],
@@ -5318,6 +5317,7 @@
                     "type": "string"
                 },
                 "firewallRules": {
+                    "description": "validate:\"required\"`",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcir.SpiderSecurityRuleInfo"
