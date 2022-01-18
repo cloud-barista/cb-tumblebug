@@ -29,7 +29,7 @@ func (s *MCIRService) CreateSshKey(ctx context.Context, req *pb.TbSshKeyCreateRe
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.CreateSshKey()")
 	}
 
-	content, err := mcir.CreateSshKey(req.NsId, &mcirObj)
+	content, err := mcir.CreateSshKey(req.NsId, &mcirObj, "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.CreateSshKey()")
 	}

@@ -36,18 +36,18 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [post]
 func RestPostSshKey(c echo.Context) error {
+	fmt.Println("[POST SshKey]")
 
 	nsId := c.Param("nsId")
+
+	optionFlag := c.QueryParam("option")
 
 	u := &mcir.TbSshKeyReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	fmt.Println("[POST SshKey")
-	//fmt.Println("[Creating SshKey]")
-	//content, responseCode, _, err := CreateSshKey(nsId, u)
-	content, err := mcir.CreateSshKey(nsId, u)
+	content, err := mcir.CreateSshKey(nsId, u, optionFlag)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
