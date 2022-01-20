@@ -5541,10 +5541,29 @@ var doc = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "cspSshKeyName": {
+                    "description": "Fields for \"Register existing SSH keys\" feature",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
+                "fingerprint": {
+                    "type": "string"
+                },
                 "name": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "verifiedUsername": {
                     "type": "string"
                 }
             }

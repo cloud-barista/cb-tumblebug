@@ -51,6 +51,14 @@ type TbSshKeyReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
 	Description    string `json:"description"`
+
+	// Fields for "Register existing SSH keys" feature
+	CspSshKeyName    string `json:"cspSshKeyName"`
+	Fingerprint      string `json:"fingerprint"`
+	Username         string `json:"username"`
+	VerifiedUsername string `json:"verifiedUsername"`
+	PublicKey        string `json:"publicKey"`
+	PrivateKey       string `json:"privateKey"`
 }
 
 // TbSshKeyReqStructLevelValidation is a function to validate 'TbSshKeyReq' object.
@@ -83,7 +91,7 @@ type TbSshKeyInfo struct {
 }
 
 // CreateSshKey accepts SSH key creation request, creates and returns an TB sshKey object
-func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
+func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, error) {
 
 	resourceType := common.StrSSHKey
 
@@ -94,33 +102,30 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 		return temp, err
 	}
 
-	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
+	if option == "register" {
+		errs := []error{}
+		errs = append(errs, validate.Var(u.Username, "required"))
+		errs = append(errs, validate.Var(u.PrivateKey, "required"))
+
+		for _, err := range errs {
+			if err != nil {
+				temp := TbSshKeyInfo{}
+				if _, ok := err.(*validator.InvalidValidationError); ok {
+					fmt.Println(err)
+					return temp, err
+				}
+				return temp, err
+			}
+		}
+	}
+
 	err = validate.Struct(u)
 	if err != nil {
-
-		// this check is only needed when your code could produce
-		// an invalid value for validation such as interface with nil
-		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			fmt.Println(err)
 			temp := TbSshKeyInfo{}
 			return temp, err
 		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
 
 		temp := TbSshKeyInfo{}
 		return temp, err
@@ -147,7 +152,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 	var tempSpiderKeyPairInfo *SpiderKeyPairInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" && option != "register" {
 
 		url := common.SpiderRestUrl + "/keypair"
 
@@ -179,7 +184,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 
 		tempSpiderKeyPairInfo = resp.Result().(*SpiderKeyPairInfo)
 
-	} else {
+	} else if os.Getenv("SPIDER_CALL_METHOD") != "REST" && option != "register" {
 
 		// Set CCM gRPC API
 		ccm := api.NewCloudResourceHandler()
@@ -211,6 +216,13 @@ func CreateSshKey(nsId string, u *TbSshKeyReq) (TbSshKeyInfo, error) {
 			return TbSshKeyInfo{}, err
 		}
 
+	} else { // option == "register"
+		tempSpiderKeyPairInfo = &SpiderKeyPairInfo{}
+		tempSpiderKeyPairInfo.IId.NameId = u.CspSshKeyName
+		tempSpiderKeyPairInfo.Fingerprint = u.Fingerprint
+		tempSpiderKeyPairInfo.VMUserID = u.Username
+		tempSpiderKeyPairInfo.PublicKey = u.PublicKey
+		tempSpiderKeyPairInfo.PrivateKey = u.PrivateKey
 	}
 
 	content := TbSshKeyInfo{}
