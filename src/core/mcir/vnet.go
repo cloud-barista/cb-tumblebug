@@ -39,7 +39,7 @@ type SpiderVPCReqInfo struct { // Spider
 	Name           string
 	IPv4_CIDR      string
 	SubnetInfoList []SpiderSubnetReqInfo
-	//SubnetInfoList []SpiderSubnetInfo
+	CSPId          string
 }
 
 // SpiderSubnetReqInfoWrapper is a wrapper struct to create JSON body of 'Create subnet request'
@@ -77,6 +77,7 @@ type TbVNetReq struct { // Tumblebug
 	CidrBlock      string        `json:"cidrBlock"`
 	SubnetInfoList []TbSubnetReq `json:"subnetInfoList"`
 	Description    string        `json:"description"`
+	CspVNetId      string        `json:"cspVNetId"`
 }
 
 // TbVNetReqStructLevelValidation is a function to validate 'TbVNetReq' object.
@@ -156,33 +157,13 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		return temp, err
 	}
 
-	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
 	err = validate.Struct(u)
 	if err != nil {
-
-		// this check is only needed when your code could produce
-		// an invalid value for validation such as interface with nil
-		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			fmt.Println(err)
 			temp := TbVNetInfo{}
 			return temp, err
 		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
 
 		temp := TbVNetInfo{}
 		return temp, err
@@ -206,6 +187,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	tempReq.ConnectionName = u.ConnectionName
 	tempReq.ReqInfo.Name = nsId + "-" + u.Name
 	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
+	tempReq.ReqInfo.CSPId = u.CspVNetId
 
 	// tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
 	for _, v := range u.SubnetInfoList {
@@ -240,10 +222,13 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		var err error
 
 		var url string
-		if option == "register" {
+		if option == "register" && u.CspVNetId == "" {
 			url = fmt.Sprintf("%s/vpc/%s", common.SpiderRestUrl, u.Name)
 			resp, err = req.Get(url)
-		} else {
+		} else if option == "register" && u.CspVNetId != "" {
+			url = fmt.Sprintf("%s/regvpc", common.SpiderRestUrl)
+			resp, err = req.Post(url)
+		} else { // option != "register"
 			url = fmt.Sprintf("%s/vpc", common.SpiderRestUrl)
 			resp, err = req.Post(url)
 		}
@@ -320,7 +305,9 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	content.KeyValueList = tempSpiderVPCInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
 
-	if option == "register" {
+	if option == "register" && u.CspVNetId == "" {
+		content.SystemLabel = "Registered from CB-Spider resource"
+	} else if option == "register" && u.CspVNetId != "" {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
