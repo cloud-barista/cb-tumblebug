@@ -5687,6 +5687,9 @@ var doc = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "cspVNetId": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },

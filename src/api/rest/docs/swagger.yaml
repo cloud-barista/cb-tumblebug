@@ -722,6 +722,8 @@ definitions:
         type: string
       connectionName:
         type: string
+      cspVNetId:
+        type: string
       description:
         type: string
       name:
