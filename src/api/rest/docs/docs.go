@@ -5327,6 +5327,10 @@ var doc = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "cspSecurityGroupId": {
+                    "description": "CspSecurityGroupId is required to register object from CSP (option=register)",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -5493,7 +5497,12 @@ var doc = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "cspSshKeyId": {
+                    "description": "CspSshKeyId used for CSP-native identifier (either Name or ID)",
+                    "type": "string"
+                },
                 "cspSshKeyName": {
+                    "description": "CspSshKeyName used for CB-Spider identifier",
                     "type": "string"
                 },
                 "description": {
@@ -5523,6 +5532,11 @@ var doc = `{
                 "publicKey": {
                     "type": "string"
                 },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
                 "username": {
                     "type": "string"
                 },
@@ -5541,8 +5555,8 @@ var doc = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspSshKeyName": {
-                    "description": "Fields for \"Register existing SSH keys\" feature",
+                "cspSshKeyId": {
+                    "description": "Fields for \"Register existing SSH keys\" feature\nCspSshKeyId is required to register object from CSP (option=register)",
                     "type": "string"
                 },
                 "description": {

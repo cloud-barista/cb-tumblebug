@@ -1,24 +1,25 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Register sshKey in ${MCIRRegionName}"
+	echo "- Register securityGroup in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/sshKey?option=register -H 'Content-Type: application/json' -d \
-		'{ 
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
-			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"cspSshKeyName": "'${NSID}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}'",
-			"fingerprint": "xx:c4:5a:ea:7f:c4:db:d5:80:80:92:47:7e:43:c9:2c:01:d3:ee:xx",
-			"username": "cb-user",
-			"publicKey": "",
-			"privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIE....Kplg==\n-----END RSA PRIVATE KEY-----"
-		}' | jq '.message'
+	resp=$(
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/securityGroup?option=register -H 'Content-Type: application/json' -d @- <<EOF
+        {
+			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+			"vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
+			"cspSecurityGroupId": "sg-06b67660aa959e005"
+		}
+EOF
+    ); echo ${resp} | jq ''
+    echo ""
 }
 
-#function register_sshKey() {
+#function register_securityGroup() {
 
 	echo "####################################################################"
-	echo "## 5. sshKey: Register"
+	echo "## 4. SecurityGroup: Register"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -50,7 +51,7 @@ function CallTB() {
 		CallTB
 
 	fi
-	
+    
 #}
 
-#register_sshKey
+#register_securityGroup
