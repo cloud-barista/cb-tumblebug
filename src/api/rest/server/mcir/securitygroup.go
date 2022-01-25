@@ -30,7 +30,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param option query string false "Option" Enums(register)
+// @Param option query string false "Option: [required params for register] connectionName, name, vNetId, cspSecurityGroupId" Enums(register)
 // @Param securityGroupReq body mcir.TbSecurityGroupReq true "Details for an securityGroup object"
 // @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg

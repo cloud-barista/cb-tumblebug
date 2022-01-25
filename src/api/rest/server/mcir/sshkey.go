@@ -30,6 +30,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param option query string false "Option: [required params for register] connectionName, name, cspSshKeyId, fingerprint, username, publicKey, privateKey" Enums(register)
 // @Param sshKeyInfo body mcir.TbSshKeyReq true "Details for an SSH Key object"
 // @Success 200 {object} mcir.TbSshKeyInfo
 // @Failure 404 {object} common.SimpleMsg
