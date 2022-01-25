@@ -7,12 +7,12 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"cspSshKeyName": "'${NSID}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}'",
+			"cspSshKeyId": "",
 			"fingerprint": "xx:c4:5a:ea:7f:c4:db:d5:80:80:92:47:7e:43:c9:2c:01:d3:ee:xx",
 			"username": "cb-user",
 			"publicKey": "",
 			"privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIE....Kplg==\n-----END RSA PRIVATE KEY-----"
-		}' | jq '.message'
+		}' | jq ''
 }
 
 #function register_sshKey() {

@@ -479,6 +479,9 @@ definitions:
     properties:
       connectionName:
         type: string
+      cspSecurityGroupId:
+        description: CspSecurityGroupId is required to register object from CSP (option=register)
+        type: string
       description:
         type: string
       firewallRules:
@@ -594,7 +597,11 @@ definitions:
         type: array
       connectionName:
         type: string
+      cspSshKeyId:
+        description: CspSshKeyId used for CSP-native identifier (either Name or ID)
+        type: string
       cspSshKeyName:
+        description: CspSshKeyName used for CB-Spider identifier
         type: string
       description:
         type: string
@@ -614,6 +621,11 @@ definitions:
         type: string
       publicKey:
         type: string
+      systemLabel:
+        description: SystemLabel is for describing the MCIR in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
       username:
         type: string
       verifiedUsername:
@@ -623,8 +635,10 @@ definitions:
     properties:
       connectionName:
         type: string
-      cspSshKeyName:
-        description: Fields for "Register existing SSH keys" feature
+      cspSshKeyId:
+        description: |-
+          Fields for "Register existing SSH keys" feature
+          CspSshKeyId is required to register object from CSP (option=register)
         type: string
       description:
         type: string
