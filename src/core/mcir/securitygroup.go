@@ -46,6 +46,7 @@ type SpiderSecurityInfo struct { // Spider
 	// Fields for request
 	Name    string
 	VPCName string
+	CSPId   string
 
 	// Fields for both request and response
 	SecurityRules *[]SpiderSecurityRuleInfo
@@ -64,6 +65,9 @@ type TbSecurityGroupReq struct { // Tumblebug
 	VNetId         string                    `json:"vNetId" validate:"required"`
 	Description    string                    `json:"description"`
 	FirewallRules  *[]SpiderSecurityRuleInfo `json:"firewallRules"` // validate:"required"`
+
+	// CspSecurityGroupId is required to register object from CSP (option=register)
+	CspSecurityGroupId string `json:"cspSecurityGroupId"`
 }
 
 // TbSecurityGroupReqStructLevelValidation is a function to validate 'TbSecurityGroupReq' object.
@@ -178,6 +182,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	tempReq.ReqInfo.Name = u.Name
 	tempReq.ReqInfo.VPCName = vNetInfo.CspVNetName
 	tempReq.ReqInfo.SecurityRules = u.FirewallRules
+	tempReq.ReqInfo.CSPId = u.CspSecurityGroupId
 
 	var tempSpiderSecurityInfo *SpiderSecurityInfo
 
@@ -196,10 +201,13 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		var err error
 
 		var url string
-		if option == "register" {
+		if option == "register" && u.CspSecurityGroupId == "" {
 			url = fmt.Sprintf("%s/securitygroup/%s", common.SpiderRestUrl, u.Name)
 			resp, err = req.Get(url)
-		} else {
+		} else if option == "register" && u.CspSecurityGroupId != "" {
+			url = fmt.Sprintf("%s/regsecuritygroup", common.SpiderRestUrl)
+			resp, err = req.Post(url)
+		} else { // option != "register"
 			url = fmt.Sprintf("%s/securitygroup", common.SpiderRestUrl)
 			resp, err = req.Post(url)
 		}
@@ -275,7 +283,9 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	content.KeyValueList = tempSpiderSecurityInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
 
-	if option == "register" {
+	if option == "register" && u.CspSecurityGroupId == "" {
+		content.SystemLabel = "Registered from CB-Spider resource"
+	} else if option == "register" && u.CspSecurityGroupId != "" {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
