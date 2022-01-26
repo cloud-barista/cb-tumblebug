@@ -3123,7 +3123,7 @@ var doc = `{
                             "register"
                         ],
                         "type": "string",
-                        "description": "Option",
+                        "description": "Option: [required params for register] connectionName, name, vNetId, cspSecurityGroupId",
                         "name": "option",
                         "in": "query"
                     },
@@ -3723,6 +3723,15 @@ var doc = `{
                         "required": true
                     },
                     {
+                        "enum": [
+                            "register"
+                        ],
+                        "type": "string",
+                        "description": "Option: [required params for register] connectionName, name, cspSshKeyId, fingerprint, username, publicKey, privateKey",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
                         "description": "Details for an SSH Key object",
                         "name": "sshKeyInfo",
                         "in": "body",
@@ -3988,7 +3997,7 @@ var doc = `{
                             "register"
                         ],
                         "type": "string",
-                        "description": "Option",
+                        "description": "Option: [required params for register] connectionName, name, cspVNetId",
                         "name": "option",
                         "in": "query"
                     },

@@ -3685,7 +3685,8 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Option
+      - description: 'Option: [required params for register] connectionName, name,
+          vNetId, cspSecurityGroupId'
         enum:
         - register
         in: query
@@ -4086,6 +4087,13 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: 'Option: [required params for register] connectionName, name,
+          cspSshKeyId, fingerprint, username, publicKey, privateKey'
+        enum:
+        - register
+        in: query
+        name: option
+        type: string
       - description: Details for an SSH Key object
         in: body
         name: sshKeyInfo
@@ -4259,7 +4267,8 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Option
+      - description: 'Option: [required params for register] connectionName, name,
+          cspVNetId'
         enum:
         - register
         in: query
