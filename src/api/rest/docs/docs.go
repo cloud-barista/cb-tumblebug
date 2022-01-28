@@ -3858,6 +3858,65 @@ var doc = `{
                     }
                 }
             },
+            "put": {
+                "description": "Update SSH Key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Access key management"
+                ],
+                "summary": "Update SSH Key",
+                "parameters": [
+                    {
+                        "description": "Details for an SSH Key object",
+                        "name": "sshKeyInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SshKey ID",
+                        "name": "sshKeyId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbSshKeyInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete SSH Key",
                 "consumes": [
@@ -5248,6 +5307,11 @@ var doc = `{
                 "status": {
                     "description": "available, unavailable",
                     "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
                 }
             }
         },
@@ -5469,6 +5533,11 @@ var doc = `{
                 },
                 "storageGiB": {
                     "type": "integer"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
                 }
             }
         },
