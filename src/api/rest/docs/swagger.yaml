@@ -423,6 +423,11 @@ definitions:
       status:
         description: available, unavailable
         type: string
+      systemLabel:
+        description: SystemLabel is for describing the MCIR in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
     type: object
   mcir.TbImageReq:
     properties:
@@ -573,6 +578,11 @@ definitions:
         type: string
       storageGiB:
         type: integer
+      systemLabel:
+        description: SystemLabel is for describing the MCIR in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
     type: object
   mcir.TbSpecReq:
     properties:
@@ -4181,6 +4191,46 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get SSH Key
+      tags:
+      - '[Infra resource] MCIR Access key management'
+    put:
+      consumes:
+      - application/json
+      description: Update SSH Key
+      parameters:
+      - description: Details for an SSH Key object
+        in: body
+        name: sshKeyInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbSshKeyInfo'
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: SshKey ID
+        in: path
+        name: sshKeyId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbSshKeyInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Update SSH Key
       tags:
       - '[Infra resource] MCIR Access key management'
   /ns/{nsId}/resources/vNet:
