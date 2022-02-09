@@ -22,11 +22,11 @@ jobs:
           go-version: ${{ matrix.go-version }}
 
       - name: Checkout source code
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v2
         
       - name: Install swag
         run: |
-          go install github.com/swaggo/swag/cmd/swag@latest
+          go install github.com/swaggo/swag/cmd/swag@v1.7.8
 
       - name: Update Swagger doc
         run: |
