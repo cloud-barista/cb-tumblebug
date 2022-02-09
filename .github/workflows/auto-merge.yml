@@ -21,8 +21,8 @@ jobs:
           echo Hello, this workflow is allowed to specific OWNERS.
       
       # Apply 'approved' label when OWNER left '/approve' comment
-      - uses: actions/checkout@v2.4.0
-      - uses: actions-ecosystem/action-add-labels@v1.1.3
+      - uses: actions/checkout@v2
+      - uses: actions-ecosystem/action-add-labels@v1
         with:
           github_token: ${{ secrets.github_token }}
           labels: |
@@ -30,7 +30,7 @@ jobs:
       
       # AutoMerging if this PR has MERGE_LABELS: approved, lgtm (not wip, hold)
       - name: automerge-lgtm-approved
-        uses: "pascalgn/automerge-action@v0.14.3"
+        uses: "pascalgn/automerge-action@v0"
         with:
           args: "--trace"
         env:
