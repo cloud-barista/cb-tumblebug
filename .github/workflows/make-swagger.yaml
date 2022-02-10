@@ -26,7 +26,7 @@ jobs:
         
       - name: Install swag
         run: |
-          go install github.com/swaggo/swag/cmd/swag@v1.7.8
+          go install github.com/swaggo/swag/cmd/swag@latest
 
       - name: Update Swagger doc
         run: |

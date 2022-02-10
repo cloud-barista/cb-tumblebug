@@ -33,13 +33,13 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/swaggo/echo-swagger v1.1.3
-	github.com/swaggo/swag v1.7.1
+	github.com/swaggo/echo-swagger v1.3.0
+	github.com/swaggo/swag v1.7.9
 	github.com/tidwall/gjson v1.10.2
 	github.com/tidwall/sjson v1.1.7
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
 	google.golang.org/grpc v1.42.0
 	gopkg.in/yaml.v2 v2.4.0
 	xorm.io/xorm v1.1.2
