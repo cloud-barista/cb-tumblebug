@@ -196,7 +196,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 
    Access to API dashboard (username: default / password: default)
-   http://xxx.xxx.xxx.xxx:1323/tumblebug/swagger/index.html?url=http://xxx.xxx.xxx.xxx:1323/tumblebug/swaggerActive
+   http://xxx.xxx.xxx.xxx:1323/tumblebug/swagger/index.html
 
   ⇨ http server started on [::]:1323
   ⇨ grpc server started on [::]:50252
