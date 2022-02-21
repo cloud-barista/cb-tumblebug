@@ -33,7 +33,8 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
     getCloudIndexGeneral $cloudType
 
     # ChangeHostCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${connectionName}-${publicIP}; sudo hostname -f"
-    USERCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${VMID}; echo -n [Hostname: ; hostname -f; echo -n ]"
+    # USERCMD="sudo hostnamectl set-hostname ${GeneralINDEX}-${VMID}; echo -n [Hostname: ; hostname -f; echo -n ]"
+    USERCMD="sudo hostnamectl set-hostname ${VMID}; echo -n [Hostname: ; hostname -f; echo -n ]"
 	VAR1=$(
 		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
 	{
