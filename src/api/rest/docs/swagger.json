@@ -14,7 +14,6 @@
         },
         "version": "latest"
     },
-    "host": "localhost:1323",
     "basePath": "/tumblebug",
     "paths": {
         "/config": {
@@ -4569,41 +4568,6 @@
                 }
             }
         },
-        "/swaggerActive": {
-            "get": {
-                "description": "Get API document web",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Admin] System management"
-                ],
-                "summary": "Get API document web",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/{nsId}/checkResource/{resourceType}/{resourceId}": {
             "get": {
                 "description": "Check resources' existence",
@@ -6487,7 +6451,8 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "vm": {
                     "type": "array",
@@ -6587,7 +6552,8 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "vm": {
                     "type": "array",
