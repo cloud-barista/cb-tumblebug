@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -87,6 +86,7 @@ func RestGetHealth(c echo.Context) error {
 	return c.JSON(http.StatusOK, &okMessage)
 }
 
+/*
 // RestGetSwagger func is to get API document web.
 // RestGetSwagger godoc
 // @Summary Get API document web
@@ -115,6 +115,7 @@ func RestGetSwagger(c echo.Context) error {
 	data["host"] = os.Getenv("SELF_ENDPOINT")
 	return c.JSON(http.StatusOK, data)
 }
+*/
 
 // RestGetConnConfig func is a rest api wrapper for GetConnConfig.
 // RestGetConnConfig godoc

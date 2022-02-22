@@ -82,7 +82,7 @@ func RunServer(port string) {
 
 	// Route for system management
 	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
-	e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
+	// e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
 	e.GET("/tumblebug/health", rest_common.RestGetHealth)
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -276,7 +276,7 @@ func RunServer(port string) {
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
-	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html?url=http://" + selfEndpoint + "/tumblebug/swaggerActive"
+	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html"
 
 	fmt.Println(" Access to API dashboard" + " (username: " + API_USERNAME + " / password: " + API_PASSWORD + ")")
 	fmt.Printf(noticeColor, apidashboard)
