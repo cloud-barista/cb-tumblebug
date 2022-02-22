@@ -1,35 +1,17 @@
 #!/bin/bash
 
-TestSetFile=${4:-../testSet.env}
-if [ ! -f "$TestSetFile" ]; then
-	echo "$TestSetFile does not exist."
-	exit
-fi
-source $TestSetFile
-source ../conf.env
-
 echo "####################################################################"
 echo "## Config Ansible environment (generate host file)"
 echo "####################################################################"
 
-CSP=${1}
-REGION=${2:-1}
-POSTFIX=${3:-developer}
+SECONDS=0
 
-source ../common-functions.sh
-getCloudIndex $CSP
-
-MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
+source ../init.sh
 
 if [ "${INDEX}" == "0" ]; then
-	# MCISPREFIX=avengers
 	MCISID=${POSTFIX}
 fi
 
-#install jq and puttygen
-echo "[Check jq and putty-tools package (if not, install)]"
-if ! dpkg-query -W -f='${Status}' jq | grep "ok installed"; then sudo apt install -y jq; fi
-if ! dpkg-query -W -f='${Status}' putty-tools | grep "ok installed"; then sudo apt install -y putty-tools; fi
 
 echo "[Check Ansible (if not, Exit)]"
 
@@ -48,7 +30,7 @@ echo ""
 echo "[CHECK REMOTE COMMAND BY CB-TB API]"
 echo " This will retrieve verified SSH username"
 
-./command-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+./command-mcis.sh -n $POSTFIX -f $TestSetFile
 
 MCISINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}?option=status)
 VMARRAY=$(jq '.status.vm' <<<"$MCISINFO")
