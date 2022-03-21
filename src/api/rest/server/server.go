@@ -16,10 +16,11 @@ package server
 
 import (
 	"context"
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
@@ -281,18 +282,32 @@ func RunServer(port string) {
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
+	// A context for graceful shutdown (It is based on the signal package)
+	// NOTE -
+	// Use os.Interrupt Ctrl+C or Ctrl+Break on Windows
+	// Use syscall.KILL for Kill(can't be caught or ignored) (POSIX)
+	// Use syscall.SIGTERM for Termination (ANSI)
+	// Use syscall.SIGINT for Terminal interrupt (ANSI)
+	// Use syscall.SIGQUIT for Terminal quit (POSIX)
+	gracefulShutdownContext, stop := signal.NotifyContext(context.TODO(),
+		os.Interrupt, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
+
+	go func() {
+		// Block until a signal is triggered
+		<-gracefulShutdownContext.Done()
+
+		fmt.Println("\nshutdown REST server after 3 sec")
+		ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+		defer cancel()
+
+		if err := e.Shutdown(ctx); err != nil {
+			e.Logger.Panic(err)
+		}
+	}()
+
 	port = fmt.Sprintf(":%s", port)
-	e.Logger.Fatal(e.Start(port))
-
-
-	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 10 seconds.
-	// Use a buffered channel to avoid missing signals as recommended for signal.Notify
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	<-quit
-	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
+	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
+		e.Logger.Panic("shuttig down the server")
 	}
 }
