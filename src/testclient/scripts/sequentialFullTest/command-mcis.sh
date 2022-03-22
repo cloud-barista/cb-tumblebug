@@ -9,9 +9,12 @@ source ../init.sh
 USERCMD=$OPTION01
 VMID=$OPTION02
 
+
 if [ -z "$USERCMD" ]; then
 	USERCMD="echo -n [Hostname: ; hostname ; echo -n ]"
 fi
+
+echo $USERCMD
 
 if [ -z "$VMID" ]; then
 

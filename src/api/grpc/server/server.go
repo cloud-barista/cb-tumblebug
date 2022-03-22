@@ -92,7 +92,7 @@ func RunServer() {
 		// Block until a signal is triggered
 		<-gracefulShutdownContext.Done()
 
-		fmt.Println("\nstop gRPC server")
+		fmt.Println("\n[Stop] CB-Tumblebug gRPC Server")
 		gs.GracefulStop()
 	}()
 

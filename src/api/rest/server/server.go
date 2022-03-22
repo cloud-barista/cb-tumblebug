@@ -302,7 +302,7 @@ func RunServer(port string) {
 		// Block until a signal is triggered
 		<-gracefulShutdownContext.Done()
 
-		fmt.Println("\nshutdown REST server after 3 sec")
+		fmt.Println("\n[Stop] CB-Tumblebug REST Server")
 		ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 		defer cancel()
 
