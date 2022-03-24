@@ -152,6 +152,9 @@ ibm,eu-gb,London (United Kingdom),51.507351,-0.127758
 ibm,jp-osa,Osaka (Japan),34.693738,135.502165
 ibm,au-syd,Sydney (Australia),-33.86882,151.209296
 ibm,jp-tok,Tokyo (Japan),35.689488,139.691706
+nhncloud,kr1,South Korea (Pangyo),37.390889,127.096792
+nhncloud,kr2,South Korea (Pyeongchon),37.392584,126.95145
+nhncloud,jp1,Japan (Tokyo),35.4100,139.4200
 cloudtwin,default,South Korea (Daejeon),36.3804,127.3650
 mock,default,South Korea (Seoul),37.0000,126.0000
 ufc,ufc,South Korea (Seoul),37.4767,126.8841
