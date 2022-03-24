@@ -43,7 +43,42 @@ func RestPostMcis(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.CreateMcis(nsId, req)
+	option := "create"
+	result, err := mcis.CreateMcis(nsId, req, option)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	//fmt.Printf("%+v\n", *result)
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusCreated, result)
+}
+
+// RestPostRegisterCSPNativeVM godoc
+// @Summary Register existing VM in a CSP to Cloud-Barista MCIS
+// @Description Register existing VM in a CSP to Cloud-Barista MCIS
+// @Tags [Infra service] MCIS Provisioning management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisReq body TbMcisReq true "Details for an MCIS object with existing CSP VM ID"
+// @Success 200 {object} TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/registerCspVm [post]
+func RestPostRegisterCSPNativeVM(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	req := &mcis.TbMcisReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	option := "register"
+	result, err := mcis.CreateMcis(nsId, req, option)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
