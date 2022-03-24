@@ -183,6 +183,9 @@ type TbVmReq struct {
 	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
 	Name string `json:"name" validate:"required" example:"vm01"`
 
+	// CSP managed ID or Name (required for option=register)
+	IdByCSP string `json:"idByCsp,omitempty" example:"i-014fa6ede6ada0b2c"`
+
 	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
 	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
 
@@ -234,6 +237,7 @@ type SpiderVMInfo struct { // Spider
 	SubnetName         string
 	SecurityGroupNames []string
 	KeyPairName        string
+	CSPid              string // VM ID given by CSP (required for registering VM)
 
 	// Fields for both request and response
 	VMSpecName   string //  instance type or flavour, etc... ex) t2.micro or f1.micro
@@ -282,8 +286,9 @@ type TbVmGroupInfo struct {
 
 // TbVmInfo is struct to define a server instance object
 type TbVmInfo struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	IdByCSP string `json:"idByCSP"` // CSP managed ID or Name
 
 	// defined if the VM is in a group
 	VmGroupId string `json:"vmGroupId"`
@@ -448,7 +453,8 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go AddVmToMcis(&wg, nsId, mcisId, vmInfoData)
+	option := "create"
+	go AddVmToMcis(&wg, nsId, mcisId, vmInfoData, option)
 
 	wg.Wait()
 
@@ -637,7 +643,8 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 		vmInfoData.VmUserPassword = vmRequest.VmUserPassword
 
 		wg.Add(1)
-		go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
+		// option != register
+		go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData, "")
 
 	}
 
@@ -691,8 +698,8 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 
 }
 
-// CreateMcis is func to create MCIS obeject and deploy requested VMs
-func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
+// CreateMcis is func to create MCIS obeject and deploy requested VMs (register CSP native VM with option=register)
+func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -731,10 +738,15 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 		return nil, err
 	}
 
-	check, _ := CheckMcis(nsId, req.Name)
-	if check {
-		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
-		return nil, err
+	// skip mcis id checking for option=register
+	if option != "register" {
+		check, _ := CheckMcis(nsId, req.Name)
+		if check {
+			err := fmt.Errorf("The mcis " + req.Name + " already exists.")
+			return nil, err
+		}
+	} else {
+		req.SystemLabel = "Registered from CSP resource"
 	}
 
 	targetAction := ActionCreate
@@ -870,11 +882,13 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 
 			vmInfoData.Label = k.Label
 
+			vmInfoData.IdByCSP = k.IdByCSP
+
 			// Avoid concurrent requests to CSP.
 			time.Sleep(time.Duration(i) * time.Second)
 
 			wg.Add(1)
-			go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData)
+			go AddVmToMcis(&wg, nsId, mcisId, &vmInfoData, option)
 			//AddVmToMcis(nsId, req.Id, vmInfoData)
 
 		}
@@ -911,7 +925,7 @@ func CreateMcis(nsId string, req *TbMcisReq) (*TbMcisInfo, error) {
 	mcisTmp.InstallMonAgent = req.InstallMonAgent
 	UpdateMcisInfo(nsId, mcisTmp)
 
-	if req.InstallMonAgent != "no" {
+	if req.InstallMonAgent != "no" || option != "register" {
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
@@ -1054,12 +1068,13 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 
 	common.PrintJsonPretty(mcisReq)
 
-	// Run create MCIS with the generated MCIS request
-	return CreateMcis(nsId, &mcisReq)
+	// Run create MCIS with the generated MCIS request (option != register)
+	option := "create"
+	return CreateMcis(nsId, &mcisReq, option)
 }
 
 // AddVmToMcis is func to add VM to MCIS
-func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbVmInfo) error {
+func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbVmInfo, option string) error {
 	fmt.Printf("\n[AddVmToMcis]\n")
 	//goroutin
 	defer wg.Done()
@@ -1107,7 +1122,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	//common.PrintJsonPretty(vmInfoData)
 
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
-	err = CreateVm(nsId, mcisId, vmInfoData)
+	err = CreateVm(nsId, mcisId, vmInfoData, option)
 
 	fmt.Printf("\n[AddVmToMcis After request vmInfoData]\n")
 	//common.PrintJsonPretty(vmInfoData)
@@ -1151,8 +1166,8 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 }
 
-// CreateVm is func to create VM
-func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
+// CreateVm is func to create VM (option = "register" for register existing VM)
+func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) error {
 
 	fmt.Printf("\n\n[CreateVm(vmInfoData *TbVmInfo)]\n\n")
 
@@ -1193,6 +1208,16 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	}
 
+	// in case of registering existing CSP VM
+	if option == "register" {
+		// IdByCSP is required
+		if vmInfoData.IdByCSP == "" {
+			err := fmt.Errorf("vmInfoData.IdByCSP is empty (required for register VM)")
+			common.CBLog.Error(err)
+			return err
+		}
+	}
+
 	var tempSpiderVMInfo SpiderVMInfo
 
 	// Fill VM creation reqest (request to cb-spider)
@@ -1207,57 +1232,62 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 	commonNs := "common"
 
-	tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
-	if tempReq.ReqInfo.ImageName == "" || err != nil {
-		common.CBLog.Error(err)
-		// If cannot find the resource, use common resource
-		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(commonNs, common.StrImage, vmInfoData.ImageId)
+	if option == "register" {
+		tempReq.ReqInfo.CSPid = vmInfoData.IdByCSP
+
+	} else {
+		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
 		if tempReq.ReqInfo.ImageName == "" || err != nil {
 			common.CBLog.Error(err)
-			return err
+			// If cannot find the resource, use common resource
+			tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(commonNs, common.StrImage, vmInfoData.ImageId)
+			if tempReq.ReqInfo.ImageName == "" || err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 		}
-	}
 
-	tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
-	if tempReq.ReqInfo.VMSpecName == "" || err != nil {
-		common.CBLog.Error(err)
-		// If cannot find the resource, use common resource
-		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(commonNs, common.StrSpec, vmInfoData.SpecId)
-		if tempReq.ReqInfo.ImageName == "" || err != nil {
+		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
+		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
 			common.CBLog.Error(err)
-			return err
+			// If cannot find the resource, use common resource
+			tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(commonNs, common.StrSpec, vmInfoData.SpecId)
+			if tempReq.ReqInfo.ImageName == "" || err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
 		}
-	}
 
-	tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
-	if tempReq.ReqInfo.VPCName == "" {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
-	tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
-	if tempReq.ReqInfo.SubnetName == "" {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	var SecurityGroupIdsTmp []string
-	for _, v := range vmInfoData.SecurityGroupIds {
-		CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
-		if CspSgId == "" {
+		tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
+		if tempReq.ReqInfo.VPCName == "" {
 			common.CBLog.Error(err)
 			return err
 		}
 
-		SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
-	}
-	tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
+		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
+		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
+		if tempReq.ReqInfo.SubnetName == "" {
+			common.CBLog.Error(err)
+			return err
+		}
 
-	tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
-	if tempReq.ReqInfo.KeyPairName == "" {
-		common.CBLog.Error(err)
-		return err
+		var SecurityGroupIdsTmp []string
+		for _, v := range vmInfoData.SecurityGroupIds {
+			CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
+			if CspSgId == "" {
+				common.CBLog.Error(err)
+				return err
+			}
+
+			SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
+		}
+		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
+
+		tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
+		if tempReq.ReqInfo.KeyPairName == "" {
+			common.CBLog.Error(err)
+			return err
+		}
 	}
 
 	tempReq.ReqInfo.VMUserId = vmInfoData.VmUserAccount
@@ -1276,6 +1306,10 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 
 		url := common.SpiderRestUrl + "/vm"
 		method := "POST"
+		if option == "register" {
+			url = common.SpiderRestUrl + "/regvm"
+			method = "POST"
+		}
 
 		fmt.Println("\n[Calling SPIDER]START")
 		fmt.Println("url: " + url + " method: " + method)
@@ -1395,15 +1429,17 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo) error {
 	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	//vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
 
-	vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-	//mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
-	mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
-	mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
-	mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
-	mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfoData.VNetId, common.StrAdd, vmKey)
+	if option != "register" {
+		vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+		//mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfoData.VNetId, common.StrAdd, vmKey)
 
-	for _, v2 := range vmInfoData.SecurityGroupIds {
-		mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrAdd, vmKey)
+		for _, v2 := range vmInfoData.SecurityGroupIds {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrAdd, vmKey)
+		}
 	}
 
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)

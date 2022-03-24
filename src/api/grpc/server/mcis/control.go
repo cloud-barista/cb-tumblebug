@@ -30,7 +30,7 @@ func (s *MCISService) CreateMcis(ctx context.Context, req *pb.TbMcisCreateReques
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcis()")
 	}
 
-	result, err := mcis.CreateMcis(req.NsId, &mcisObj)
+	result, err := mcis.CreateMcis(req.NsId, &mcisObj, "create")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcis()")
 	}

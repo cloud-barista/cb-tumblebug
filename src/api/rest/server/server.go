@@ -158,6 +158,8 @@ func RunServer(port string) {
 
 	//MCIS Management
 	g.POST("/:nsId/mcis", rest_mcis.RestPostMcis)
+	g.POST("/:nsId/registerCspVm", rest_mcis.RestPostRegisterCSPNativeVM)
+
 	g.POST("/:nsId/mcisDynamic", rest_mcis.RestPostMcisDynamic)
 	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis)
 	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
