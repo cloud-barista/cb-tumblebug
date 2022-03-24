@@ -1102,6 +1102,9 @@ definitions:
     type: object
   mcis.SpiderVMInfo:
     properties:
+      cspid:
+        description: VM ID given by CSP (required for registering VM)
+        type: string
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
@@ -1385,6 +1388,9 @@ definitions:
         type: string
       id:
         type: string
+      idByCSP:
+        description: CSP managed ID or Name
+        type: string
       imageId:
         type: string
       label:
@@ -1453,6 +1459,10 @@ definitions:
         type: string
       description:
         example: Description
+        type: string
+      idByCsp:
+        description: CSP managed ID or Name (required for option=register)
+        example: i-014fa6ede6ada0b2c
         type: string
       imageId:
         type: string
@@ -3224,6 +3234,42 @@ paths:
       summary: Create MCIS Automation policy
       tags:
       - '[Infra service] MCIS Auto control policy management (WIP)'
+  /ns/{nsId}/registerCspVm:
+    post:
+      consumes:
+      - application/json
+      description: Register existing VM in a CSP to Cloud-Barista MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details for an MCIS object with existing CSP VM ID
+        in: body
+        name: mcisReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbMcisReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Register existing VM in a CSP to Cloud-Barista MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/resources/fetchImages:
     post:
       consumes:
