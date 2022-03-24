@@ -1226,7 +1226,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	//generate VM ID(Name) to request to CSP(Spider)
 	//combination of nsId, mcidId, and vmName reqested from user
-	tempReq.ReqInfo.Name = nsId + "-" + mcisId + "-" + vmInfoData.Name
+	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s-%s", nsId, mcisId, vmInfoData.Name)
 
 	err := fmt.Errorf("")
 
