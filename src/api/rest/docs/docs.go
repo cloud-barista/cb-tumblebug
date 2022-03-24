@@ -2438,6 +2438,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/registerCspVm": {
+            "post": {
+                "description": "Register existing VM in a CSP to Cloud-Barista MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Register existing VM in a CSP to Cloud-Barista MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for an MCIS object with existing CSP VM ID",
+                        "name": "mcisReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/fetchImages": {
             "post": {
                 "description": "Fetch images",
@@ -6254,6 +6308,10 @@ const docTemplate = `{
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
+                "cspid": {
+                    "description": "VM ID given by CSP (required for registering VM)",
+                    "type": "string"
+                },
                 "iid": {
                     "description": "Fields for response",
                     "$ref": "#/definitions/common.IID"
@@ -6628,6 +6686,10 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "idByCSP": {
+                    "description": "CSP managed ID or Name",
+                    "type": "string"
+                },
                 "imageId": {
                     "type": "string"
                 },
@@ -6735,6 +6797,11 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "Description"
+                },
+                "idByCsp": {
+                    "description": "CSP managed ID or Name (required for option=register)",
+                    "type": "string",
+                    "example": "i-014fa6ede6ada0b2c"
                 },
                 "imageId": {
                     "type": "string"
