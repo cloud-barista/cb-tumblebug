@@ -179,7 +179,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 
 	tempReq := SpiderSecurityReqInfoWrapper{}
 	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = u.Name
+	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
 	tempReq.ReqInfo.VPCName = vNetInfo.CspVNetName
 	tempReq.ReqInfo.SecurityRules = u.FirewallRules
 	tempReq.ReqInfo.CSPId = u.CspSecurityGroupId
