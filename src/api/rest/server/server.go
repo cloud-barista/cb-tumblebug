@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -300,7 +301,13 @@ func RunServer(port string) {
 		os.Interrupt, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	defer stop()
 
-	go func() {
+	// Wait graceful shutdown (and then main thread will be finished)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+
 		// Block until a signal is triggered
 		<-gracefulShutdownContext.Done()
 
@@ -311,10 +318,12 @@ func RunServer(port string) {
 		if err := e.Shutdown(ctx); err != nil {
 			e.Logger.Panic(err)
 		}
-	}()
+	}(&wg)
 
 	port = fmt.Sprintf(":%s", port)
 	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
 		e.Logger.Panic("shuttig down the server")
 	}
+
+	wg.Wait()
 }
