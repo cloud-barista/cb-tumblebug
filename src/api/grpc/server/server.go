@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	gc "github.com/cloud-barista/cb-tumblebug/src/api/grpc/common"
@@ -88,13 +89,19 @@ func RunServer() {
 		os.Interrupt, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	defer stop()
 
-	go func() {
+	var wg sync.WaitGroup
+
+	// Wait graceful shutdown (and then main thread will be finished)
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+
 		// Block until a signal is triggered
 		<-gracefulShutdownContext.Done()
 
 		fmt.Println("\n[Stop] CB-Tumblebug gRPC Server")
 		gs.GracefulStop()
-	}()
+	}(&wg)
 
 	//fmt.Printf("\n[CB-Tumblebug: Multi-Cloud Infra Service Management]")
 	//fmt.Printf("\n   Initiating GRPC API Server....__^..^__....")
@@ -103,6 +110,8 @@ func RunServer() {
 	if err := gs.Serve(conn); err != nil {
 		logger.Error("failed to serve: ", err)
 	}
+
+	wg.Wait()
 }
 
 func configLoad(cf string) (config.GrpcConfig, error) {
