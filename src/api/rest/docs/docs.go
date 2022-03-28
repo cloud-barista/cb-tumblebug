@@ -6358,6 +6358,18 @@ const docTemplate = `{
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
                     "$ref": "#/definitions/mcis.RegionInfo"
                 },
+                "rootDeviceName": {
+                    "description": "\"/dev/sda1\", ...",
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", \"50\", \"1000\" (GB)",
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "description": "\"SSD(gp2)\", \"Premium SSD\", ...",
+                    "type": "string"
+                },
                 "securityGroupIIds": {
                     "description": "AWS, ex) sg-0b7452563e1121bb6",
                     "type": "array",
@@ -6390,7 +6402,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vmbootDisk": {
-                    "description": "ex) /dev/sda1",
+                    "description": "Deprecated soon // ex) /dev/sda1",
                     "type": "string"
                 },
                 "vmspecName": {
@@ -6659,6 +6671,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "vm01"
                 },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "default, 30, 42, ..."
+                },
                 "vmGroupSize": {
                     "description": "if vmGroupSize is (not empty) \u0026\u0026 (\u003e 0), VM group will be gernetad. VMs will be created accordingly.",
                     "type": "string",
@@ -6722,6 +6739,15 @@ const docTemplate = `{
                 "region": {
                     "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
                     "$ref": "#/definitions/mcis.RegionInfo"
+                },
+                "rootDeviceName": {
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
                 },
                 "securityGroupIds": {
                     "type": "array",
@@ -6787,6 +6813,7 @@ const docTemplate = `{
                 "securityGroupIds",
                 "specId",
                 "sshKeyId",
+                "subnetId",
                 "vNetId"
             ],
             "properties": {
@@ -6813,6 +6840,16 @@ const docTemplate = `{
                     "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
                     "type": "string",
                     "example": "vm01"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHHD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "example": "default, TYPE1, ..."
                 },
                 "securityGroupIds": {
                     "type": "array",

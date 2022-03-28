@@ -197,11 +197,13 @@ type TbVmReq struct {
 	SpecId           string   `json:"specId" validate:"required"`
 	ImageId          string   `json:"imageId" validate:"required"`
 	VNetId           string   `json:"vNetId" validate:"required"`
-	SubnetId         string   `json:"subnetId"`
+	SubnetId         string   `json:"subnetId" validate:"required"`
 	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
 	SshKeyId         string   `json:"sshKeyId" validate:"required"`
 	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
 	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
+	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHHD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize     string   `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
 }
 
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
@@ -220,6 +222,8 @@ type TbVmDynamicReq struct {
 	CommonSpec string `json:"commonSpec" validate:"required" example:"aws-ap-northeast-2-t2-small"`
 	// CommonImage is field for id of a image in common namespace
 	CommonImage string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
+
+	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
 }
 
 // SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMInfo
@@ -240,9 +244,11 @@ type SpiderVMInfo struct { // Spider
 	CSPid              string // VM ID given by CSP (required for registering VM)
 
 	// Fields for both request and response
-	VMSpecName   string //  instance type or flavour, etc... ex) t2.micro or f1.micro
+	VMSpecName   string // instance type or flavour, etc... ex) t2.micro or f1.micro
 	VMUserId     string // ex) user1
 	VMUserPasswd string
+	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
+	RootDiskSize string // "default", "50", "1000" (GB)
 
 	// Fields for response
 	IId               common.IID // {NameId, SystemId}
@@ -258,7 +264,8 @@ type SpiderVMInfo struct { // Spider
 	PublicDNS         string
 	PrivateIP         string
 	PrivateDNS        string
-	VMBootDisk        string // ex) /dev/sda1
+	RootDeviceName    string // "/dev/sda1", ...
+	VMBootDisk        string // Deprecated soon // ex) /dev/sda1
 	VMBlockDisk       string // ex)
 	SSHAccessPoint    string
 	KeyValueList      []common.KeyValue
@@ -312,14 +319,17 @@ type TbVmInfo struct {
 	Label       string `json:"label"`
 	Description string `json:"description"`
 
-	Region      RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
-	PublicIP    string     `json:"publicIP"`
-	SSHPort     string     `json:"sshPort"`
-	PublicDNS   string     `json:"publicDNS"`
-	PrivateIP   string     `json:"privateIP"`
-	PrivateDNS  string     `json:"privateDNS"`
-	VMBootDisk  string     `json:"vmBootDisk"` // ex) /dev/sda1
-	VMBlockDisk string     `json:"vmBlockDisk"`
+	Region         RegionInfo `json:"region"` // AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+	PublicIP       string     `json:"publicIP"`
+	SSHPort        string     `json:"sshPort"`
+	PublicDNS      string     `json:"publicDNS"`
+	PrivateIP      string     `json:"privateIP"`
+	PrivateDNS     string     `json:"privateDNS"`
+	RootDiskType   string     `json:"rootDiskType"`
+	RootDiskSize   string     `json:"rootDiskSize"`
+	RootDeviceName string     `json:"rootDeviceName"`
+	VMBootDisk     string     `json:"vmBootDisk"` // ex) /dev/sda1
+	VMBlockDisk    string     `json:"vmBlockDisk"`
 
 	ConnectionName   string   `json:"connectionName"`
 	SpecId           string   `json:"specId"`
@@ -639,6 +649,9 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 		vmInfoData.SshKeyId = vmRequest.SshKeyId
 		vmInfoData.Description = vmRequest.Description
 
+		vmInfoData.RootDiskType = vmRequest.RootDiskType
+		vmInfoData.RootDiskSize = vmRequest.RootDiskSize
+
 		vmInfoData.VmUserAccount = vmRequest.VmUserAccount
 		vmInfoData.VmUserPassword = vmRequest.VmUserPassword
 
@@ -879,6 +892,8 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			vmInfoData.Description = k.Description
 			vmInfoData.VmUserAccount = k.VmUserAccount
 			vmInfoData.VmUserPassword = k.VmUserPassword
+			vmInfoData.RootDiskType = k.RootDiskType
+			vmInfoData.RootDiskSize = k.RootDiskSize
 
 			vmInfoData.Label = k.Label
 
@@ -1061,6 +1076,8 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		vmReq.Label = k.Label
 		vmReq.VmGroupSize = k.VmGroupSize
 		vmReq.Description = k.Description
+		//vmReq.RootDiskType = k.RootDiskType
+		vmReq.RootDiskSize = k.RootDiskSize
 
 		mcisReq.Vm = append(mcisReq.Vm, vmReq)
 
@@ -1293,6 +1310,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	tempReq.ReqInfo.VMUserId = vmInfoData.VmUserAccount
 	tempReq.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
 
+	tempReq.ReqInfo.RootDiskType = vmInfoData.RootDiskType
+	tempReq.ReqInfo.RootDiskSize = vmInfoData.RootDiskSize
+
 	fmt.Printf("\n[Request body to CB-SPIDER for Creating VM]\n")
 	common.PrintJsonPretty(tempReq)
 
@@ -1422,6 +1442,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	vmInfoData.PublicDNS = tempSpiderVMInfo.PublicDNS
 	vmInfoData.PrivateIP = tempSpiderVMInfo.PrivateIP
 	vmInfoData.PrivateDNS = tempSpiderVMInfo.PrivateDNS
+	vmInfoData.RootDiskType = tempSpiderVMInfo.RootDiskType
+	vmInfoData.RootDiskSize = tempSpiderVMInfo.RootDiskSize
+	vmInfoData.RootDeviceName = tempSpiderVMInfo.RootDeviceName
 	vmInfoData.VMBootDisk = tempSpiderVMInfo.VMBootDisk
 	vmInfoData.VMBlockDisk = tempSpiderVMInfo.VMBlockDisk
 	//vmInfoData.KeyValueList = temp.KeyValueList

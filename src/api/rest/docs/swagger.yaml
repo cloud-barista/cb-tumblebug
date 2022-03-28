@@ -1137,6 +1137,15 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
+      rootDeviceName:
+        description: '"/dev/sda1", ...'
+        type: string
+      rootDiskSize:
+        description: '"default", "50", "1000" (GB)'
+        type: string
+      rootDiskType:
+        description: '"SSD(gp2)", "Premium SSD", ...'
+        type: string
       securityGroupIIds:
         description: AWS, ex) sg-0b7452563e1121bb6
         items:
@@ -1160,7 +1169,7 @@ definitions:
         description: ex)
         type: string
       vmbootDisk:
-        description: ex) /dev/sda1
+        description: Deprecated soon // ex) /dev/sda1
         type: string
       vmspecName:
         description: Fields for both request and response
@@ -1365,6 +1374,10 @@ definitions:
           a group, actual VM name will be generated with -N postfix.
         example: vm01
         type: string
+      rootDiskSize:
+        description: '"default", Integer (GB): ["50", ..., "1000"]'
+        example: default, 30, 42, ...
+        type: string
       vmGroupSize:
         description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
           VMs will be created accordingly.
@@ -1414,6 +1427,12 @@ definitions:
       region:
         $ref: '#/definitions/mcis.RegionInfo'
         description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
+      rootDeviceName:
+        type: string
+      rootDiskSize:
+        type: string
+      rootDiskType:
+        type: string
       securityGroupIds:
         items:
           type: string
@@ -1473,6 +1492,17 @@ definitions:
           a group, actual VM name will be generated with -N postfix.
         example: vm01
         type: string
+      rootDiskSize:
+        description: '"default", Integer (GB): ["50", ..., "1000"]'
+        example: default, 30, 42, ...
+        type: string
+      rootDiskType:
+        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
+          ["PremiumSSD", "StandardSSD", "StandardHHD"], GCP: ["pd-standard", "pd-balanced",
+          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
+          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
+        example: default, TYPE1, ...
+        type: string
       securityGroupIds:
         items:
           type: string
@@ -1501,6 +1531,7 @@ definitions:
     - securityGroupIds
     - specId
     - sshKeyId
+    - subnetId
     - vNetId
     type: object
   mcis.TbVmStatusInfo:
