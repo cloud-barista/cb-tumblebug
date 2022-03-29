@@ -3,7 +3,7 @@
 function CallSpider() {
 	echo "- Get securityGroup in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/securitygroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' | jq ''
+	curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/securitygroup/$NSID-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' | jq ''
 }
 
 #function spider_get_securityGroup() {

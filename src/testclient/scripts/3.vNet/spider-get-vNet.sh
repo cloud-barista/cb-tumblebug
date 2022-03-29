@@ -4,7 +4,7 @@ function CallSpider() {
     echo "- Get vNet in ${MCIRRegionName}"
 
     resp=$(
-        curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vpc/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' 
+        curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/vpc/$NSID-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' 
     ); echo ${resp} | jq ''
     echo ""
 }
