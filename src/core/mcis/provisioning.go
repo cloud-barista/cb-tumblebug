@@ -1290,7 +1290,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		var SecurityGroupIdsTmp []string
 		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId := v //common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
+			CspSgId, err := common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 			if CspSgId == "" {
 				common.CBLog.Error(err)
 				return err
