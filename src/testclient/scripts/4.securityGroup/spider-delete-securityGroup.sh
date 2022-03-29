@@ -3,7 +3,7 @@
 function CallSpider() {
 	echo "- Delete securityGroup in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/securitygroup/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/securitygroup/$NSID-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' | jq ''
 }
 
 #function spider_get_securityGroup() {
