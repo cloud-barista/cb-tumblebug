@@ -76,8 +76,8 @@ echo ==========================================================
 if ! sudo docker -v 2>&1; then
     echo
     echo "Docker isn't running. Please install or start Docker!"
-    echo "Installation Ref: https://github.com/cloud-barista/cb-coffeehouse/tree/main/scripts/docker-setup"
     echo "Installation Ref: https://docs.docker.com/engine/install/ubuntu/#installation-methods"
+    echo "You can use `sudo ./scripts/runContainer.sh` script to install"
     echo
     exit 1
 fi
@@ -127,6 +127,10 @@ while true; do
                 echo -e "${NC}"
                 read -p "Please specify $CONTAINER_NAME_READ version you want (latest / $CONTAINER_VERSION / ...): " CONTAINER_VERSION
                 echo
+                if [ "$CONTAINER_VERSION" == "latest" ]; then
+                    echo "Pull the latest image from image repository"
+                    sudo docker pull cloudbaristaorg/$CONTAINER_NAME
+                fi 
                 echo
                 echo ==========================================================
                 echo "[Check the command to run $CONTAINER_NAME_READ container]"

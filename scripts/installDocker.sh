@@ -4,9 +4,21 @@
 echo "[Install Docker]"
 
 echo
-echo "Will run the following command"
-echo "1) wget https://raw.githubusercontent.com/hermitkim1/scripts4Ubuntu/master/2.Docker-installation.sh"
-echo "2) source 2.Docker-installation.sh"
+echo "Will run the following command (the script needs to be executed with sudo)"
+echo "1) sudo apt update -y"
+echo "2) wget -qO- get.docker.com | sh"
+echo "3) sudo docker info"
 
-wget https://raw.githubusercontent.com/hermitkim1/scripts4Ubuntu/master/2.Docker-installation.sh
-source 2.Docker-installation.sh
+# Install Docker engine
+# update
+echo == apt update
+sudo apt update -y
+
+echo == install Docker engine
+sleep 2
+# install docker
+wget -qO- get.docker.com | sh
+
+# installation checking
+echo == sudo docker info
+sudo docker info
