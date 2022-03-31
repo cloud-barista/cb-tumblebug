@@ -933,14 +933,24 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	fmt.Println("[MCIS has been created]" + mcisId)
 	//common.PrintJsonPretty(mcisTmp)
 
-	// Install CB-Dragonfly monitoring agent
+	// The below will be added to 'TbMcisInfo struct{}'
+	// // ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
+	// ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
-	fmt.Printf("[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisTmp.Id, req.InstallMonAgent)
+	if (req.InstallMonAgent != "no" || option != "register") || true { // mcisTmp.ConfigureCloudAdaptiveNetwork != "no" {
+		// Sleep for 60 seconds for a safe DF agent installation.
+		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation or Cloud Adaptive Network configuration.\n\n")
+		time.Sleep(60 * time.Second)
+	}
+
+	// Install CB-Dragonfly monitoring agent
 
 	mcisTmp.InstallMonAgent = req.InstallMonAgent
 	UpdateMcisInfo(nsId, mcisTmp)
 
 	if req.InstallMonAgent != "no" || option != "register" {
+
+		fmt.Printf("[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisTmp.Id, req.InstallMonAgent)
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
@@ -948,11 +958,6 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 		} else {
 			reqToMon := &McisCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
-
-			fmt.Printf("\n===========================\n")
-			// Sleep for 60 seconds for a safe DF agent installation.
-			fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n")
-			time.Sleep(60 * time.Second)
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, mcisTmp.SystemLabel, reqToMon)
@@ -963,6 +968,13 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			common.PrintJsonPretty(content)
 			//mcisTmp.InstallMonAgent = "yes"
 		}
+	}
+
+	// Configure Cloud Adaptive Network
+	if true { //mcisTmp.ConfigureCloudAdaptiveNetwork != "no" {
+
+		fmt.Printf("\n[Configure Cloud Adaptive Network] for %+v\n - req.ConfigureCloudAdaptiveNetwork: %+v\n\n", mcisId, "yes") //mcisTmp.ConfigureCloudAdaptiveNetwork)
+		configureCloudAdaptiveNetwork(nsId, mcisTmp)
 	}
 
 	mcisResult, err := GetMcisInfo(nsId, mcisId)
