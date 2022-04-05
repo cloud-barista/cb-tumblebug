@@ -16,8 +16,10 @@ package mcis
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 
@@ -30,8 +32,8 @@ import (
 
 // NetworkReq is a struct for a request to configure Cloud Adaptive Network
 type NetworkReq struct {
-	ServiceEndpoint string   `json:"serviceEndpoint" example:"localhost:8053" default:"localhost:8053"`
-	EtcdEndpoints   []string `json:"etcdEndpoints" example:"[\"PUBLIC_IP_1:2379\", \"PUBLIC_IP_2:2379\", ...]"`
+	ServiceEndpoint string   `json:"serviceEndpoint" example:"localhost:8053" default:""`
+	EtcdEndpoints   []string `json:"etcdEndpoints" example:"[\"PUBLIC_IP_1:2379\", \"PUBLIC_IP_2:2379\", ...]" default:"[]"`
 }
 
 // ConfigureCloudAdaptiveNetwork configures a cloud adaptive network to VMs in an MCIS
@@ -59,11 +61,23 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 		return AgentInstallContentWrapper{}, err
 	}
 
-	// // Check cb-network endpoints
-	// networkServiceEndpoint, etcdEndpoints, err := checkCBNetworkEndpoints()
-	// if err != nil {
-	// 	return cladnetSpec, err
-	// }
+	// if the parameter is not passed, try to read from the environment variable
+	if netReq.ServiceEndpoint == "" {
+		// Get an endpoint of cb-network service
+		serviceEndpoint := os.Getenv("CB_NETWORK_SERVICE_ENDPOINT")
+		if serviceEndpoint == "" {
+			return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_SERVICE_ENDPOINT")
+		}
+	}
+
+	// if the parameter is not passed, try to read from the environment variable
+	if len(netReq.EtcdEndpoints) == 0 {
+		// Get endpoints of cb-network etcd which should be accessible from the remote
+		etcdEndpoints := os.Getenv("CB_NETWORK_ETCD_ENDPOINTS")
+		if etcdEndpoints == "" {
+			return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_ETCD_ENDPOINTS")
+		}
+	}
 
 	// Get Cloud Adaptive Network
 	cladnetSpec, err := getCloudAdaptiveNetwork(netReq.ServiceEndpoint, mcisId)
@@ -160,8 +174,8 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 	return contents, nil
 }
 
-// // checkCBNetworkEndpoints checks endpoints of cb-network service and etcd.
-// func checkCBNetworkEndpoints() (string, string, error) {
+// // readCBNetworkEndpoints checks endpoints of cb-network service and etcd.
+// func readCBNetworkEndpoints() (string, string, error) {
 // 	common.CBLog.Debug("Start.........")
 
 // 	// Get an endpoint of cb-network service

@@ -168,7 +168,7 @@ type TbMcisInfo struct {
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
 	// ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
-	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"yes" enums:"yes,no"` // yes or no
+	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"no" enums:"yes,no"` // yes or no
 
 	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label" example:"User custom label"`
