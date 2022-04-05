@@ -33,7 +33,7 @@ import (
 // NetworkReq is a struct for a request to configure Cloud Adaptive Network
 type NetworkReq struct {
 	ServiceEndpoint string   `json:"serviceEndpoint" example:"localhost:8053" default:""`
-	EtcdEndpoints   []string `json:"etcdEndpoints" example:"[\"PUBLIC_IP_1:2379\", \"PUBLIC_IP_2:2379\", ...]" default:"[]"`
+	EtcdEndpoints   []string `json:"etcdEndpoints" example:"PUBLIC_IP_1:2379,PUBLIC_IP_2:2379,..." default:""`
 }
 
 // ConfigureCloudAdaptiveNetwork configures a cloud adaptive network to VMs in an MCIS
@@ -61,26 +61,32 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 		return AgentInstallContentWrapper{}, err
 	}
 
+	serviceEndpoint := netReq.ServiceEndpoint
 	// if the parameter is not passed, try to read from the environment variable
-	if netReq.ServiceEndpoint == "" {
+	if serviceEndpoint == "" {
+		common.CBLog.Printf("read env for CB_NETWORK_SERVICE_ENDPOINT")
 		// Get an endpoint of cb-network service
-		serviceEndpoint := os.Getenv("CB_NETWORK_SERVICE_ENDPOINT")
+		serviceEndpoint = os.Getenv("CB_NETWORK_SERVICE_ENDPOINT")
 		if serviceEndpoint == "" {
 			return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_SERVICE_ENDPOINT")
 		}
 	}
+	common.CBLog.Printf("Network service endpoint: %+v", serviceEndpoint)
 
+	etcdEndpoints := netReq.EtcdEndpoints
 	// if the parameter is not passed, try to read from the environment variable
-	if len(netReq.EtcdEndpoints) == 0 {
+	if len(etcdEndpoints) == 0 {
+		common.CBLog.Printf("read env for CB_NETWORK_ETCD_ENDPOINTS")
 		// Get endpoints of cb-network etcd which should be accessible from the remote
-		etcdEndpoints := os.Getenv("CB_NETWORK_ETCD_ENDPOINTS")
-		if etcdEndpoints == "" {
+		etcdEndpoints = strings.Split(os.Getenv("CB_NETWORK_ETCD_ENDPOINTS"), ",")
+		if len(etcdEndpoints) == 0 {
 			return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_ETCD_ENDPOINTS")
 		}
 	}
+	common.CBLog.Printf("etcd endpoints: %+v", etcdEndpoints)
 
 	// Get Cloud Adaptive Network
-	cladnetSpec, err := getCloudAdaptiveNetwork(netReq.ServiceEndpoint, mcisId)
+	cladnetSpec, err := getCloudAdaptiveNetwork(serviceEndpoint, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return AgentInstallContentWrapper{}, err
@@ -97,7 +103,7 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 
 		// Get a propoer address space
 		cladnetDescription := fmt.Sprintf("A cladnet for %s", mcisId)
-		cladnetSpec, err = createProperCloudAdaptiveNetwork(netReq.ServiceEndpoint, ipNetworksInMCIS, mcisId, cladnetDescription)
+		cladnetSpec, err = createProperCloudAdaptiveNetwork(serviceEndpoint, ipNetworksInMCIS, mcisId, cladnetDescription)
 		if err != nil {
 			common.CBLog.Printf("could not create a cloud adaptive network: %v\n", err)
 			return AgentInstallContentWrapper{}, err
@@ -107,8 +113,9 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 	common.CBLog.Printf("Struct: %#v\n", cladnetSpec)
 
 	// Prepare the installation command
-	etcdEndpointsJSON, _ := json.Marshal(netReq.EtcdEndpoints)
+	etcdEndpointsJSON, _ := json.Marshal(etcdEndpoints)
 	command := makeInstallationCommand(string(etcdEndpointsJSON), cladnetSpec.ID)
+	common.CBLog.Printf("Command: %#v\n", command)
 
 	// Replace given parameter with the installation cmd
 	mcisCmdReq := McisCmdReq{}
@@ -119,10 +126,12 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 	// sshCmdResults, err := installCBNetworkAgentToMcis(nsId, mcisId, mcisCmdReq)
 
 	// Install cb-network agents in parallel
-	var wg *sync.WaitGroup
+	var wg sync.WaitGroup
 	chanResults := make(chan SshCmdResult)
 
 	var sshCmdResults []SshCmdResult
+
+	common.CBLog.Printf("VM list: %v\n", vmIdList)
 
 	for _, vmId := range vmIdList {
 		wg.Add(1)
@@ -131,22 +140,21 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 
 			// Check NetworkAgentStatus
 			vmObject, _ := GetVmObject(nsId, mcisId, vmId)
-			fmt.Println("NetworkAgentStatus : " + vmObject.NetworkAgentStatus)
+			common.CBLog.Printf("NetworkAgentStatus: %+v\n" + vmObject.NetworkAgentStatus)
 
 			// Skip if in installing or installed status)
 			if vmObject.NetworkAgentStatus != "installed" && vmObject.NetworkAgentStatus != "installing" {
 
-				vmObj, _ := GetVmObject(nsId, mcisId, vmId)
-				vmObj.NetworkAgentStatus = "installing"
+				vmObject.NetworkAgentStatus = "installing"
 
-				SshCmdResult, err := installCBNetworkAgentToVM(nsId, mcisId, vmId, mcisCmdReq)
+				sshCmdResult, err := installCBNetworkAgentToVM(nsId, mcisId, vmId, mcisCmdReq)
 				if err != nil {
 					vmObject.NetworkAgentStatus = "installed"
 				} else {
 					vmObject.NetworkAgentStatus = "failed"
 				}
 
-				chanResults <- SshCmdResult
+				chanResults <- sshCmdResult
 			}
 
 		}(nsId, mcisId, vmId, mcisCmdReq, chanResults)
@@ -332,8 +340,8 @@ func makeInstallationCommand(etcdEndpoints, cladnetId string) string {
 	// SSH command to install cb-network agents
 	placeHolderCommand := `wget https://raw.githubusercontent.com/cloud-barista/cb-larva/develop/poc-cb-net/scripts/1.deploy-cb-network-agent.sh -O ~/1.deploy-cb-network-agent.sh; chmod +x ~/1.deploy-cb-network-agent.sh; source ~/1.deploy-cb-network-agent.sh '%s' %s`
 
-	additionalEncodedString := strings.Replace(etcdEndpoints, "\"", "\\\"", -1)
-	command := fmt.Sprintf(placeHolderCommand, additionalEncodedString, cladnetId)
+	// additionalEncodedString := strings.Replace(etcdEndpoints, "\"", "\\\"", -1)
+	command := fmt.Sprintf(placeHolderCommand, etcdEndpoints, cladnetId)
 
 	return command
 }
