@@ -963,6 +963,20 @@ definitions:
       nsId:
         type: string
     type: object
+  mcis.NetworkReq:
+    properties:
+      etcdEndpoints:
+        example:
+        - PUBLIC_IP_1:2379
+        - PUBLIC_IP_2:2379
+        - '...'
+        items:
+          type: string
+        type: array
+      serviceEndpoint:
+        example: localhost:8053
+        type: string
+    type: object
   mcis.Operation:
     properties:
       operand:
@@ -1276,6 +1290,15 @@ definitions:
     type: object
   mcis.TbMcisInfo:
     properties:
+      configureCloudAdaptiveNetwork:
+        default: "no"
+        description: ConfigureCloudAdaptiveNetwork is an option to configure Cloud
+          Adaptive Network (CLADNet) ([yes/no] default:yes)
+        enum:
+        - "yes"
+        - "no"
+        example: "yes"
+        type: string
       description:
         type: string
       id:
@@ -1415,6 +1438,10 @@ definitions:
         example: '[installed, notInstalled, failed]'
         type: string
       name:
+        type: string
+      networkAgentStatus:
+        description: NetworkAgent status
+        example: '[notInstalled, installing, installed, failed]'
         type: string
       privateDNS:
         type: string
@@ -3102,6 +3129,48 @@ paths:
         (cpu, memory, disk, network)
       tags:
       - '[Infra service] MCIS Resource monitor (for developer)'
+  /ns/{nsId}/network/mcis/{mcisId}:
+    post:
+      consumes:
+      - application/json
+      description: Configure Cloud Adaptive Network (cb-network agent) to MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Details for the network request body
+        in: body
+        name: networkReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.NetworkReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.AgentInstallContentWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Configure Cloud Adaptive Network (cb-network agent) to MCIS
+      tags:
+      - '[Infra service] MCIS Cloud Adaptive Network (for developer)'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:
