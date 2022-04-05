@@ -167,6 +167,9 @@ type TbMcisInfo struct {
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
 	InstallMonAgent string `json:"installMonAgent" example:"yes" default:"yes" enums:"yes,no"` // yes or no
 
+	// ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
+	ConfigureCloudAdaptiveNetwork string `json:"configureCloudAdaptiveNetwork" example:"yes" default:"no" enums:"yes,no"` // yes or no
+
 	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label" example:"User custom label"`
 
@@ -309,6 +312,9 @@ type TbVmInfo struct {
 
 	// Montoring agent status
 	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+
+	// NetworkAgent status
+	NetworkAgentStatus string `json:"networkAgentStatus" example:"[notInstalled, installing, installed, failed]"` // notInstalled, installing, installed, failed
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
@@ -1171,6 +1177,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 	// Monitoring Agent Installation Status (init: notInstalled)
 	vmInfoData.MonAgentStatus = "notInstalled"
+	vmInfoData.NetworkAgentStatus = "notInstalled"
 
 	// set CreatedTime
 	t := time.Now()

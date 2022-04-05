@@ -12,6 +12,7 @@ replace (
 require (
 	github.com/bramvdbogaerde/go-scp v1.0.0
 	github.com/cloud-barista/cb-dragonfly v0.4.4
+	github.com/cloud-barista/cb-larva v0.0.10
 	github.com/cloud-barista/cb-log v0.5.0
 	github.com/cloud-barista/cb-spider v0.4.19
 	github.com/cloud-barista/cb-store v0.5.0
@@ -35,10 +36,11 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/echo-swagger v1.3.0
 	github.com/swaggo/swag v1.7.9
-	github.com/tidwall/gjson v1.10.2
+	github.com/tidwall/gjson v1.11.0
 	github.com/tidwall/sjson v1.1.7
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
+	go.etcd.io/etcd v3.3.27+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
 	google.golang.org/grpc v1.42.0
 	gopkg.in/yaml.v2 v2.4.0
