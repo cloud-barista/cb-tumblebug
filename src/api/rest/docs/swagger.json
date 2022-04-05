@@ -2190,6 +2190,68 @@
                 }
             }
         },
+        "/ns/{nsId}/network/mcis/{mcisId}": {
+            "post": {
+                "description": "Configure Cloud Adaptive Network (cb-network agent) to MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Cloud Adaptive Network (for developer)"
+                ],
+                "summary": "Configure Cloud Adaptive Network (cb-network agent) to MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for the network request body",
+                        "name": "networkReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.NetworkReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.AgentInstallContentWrapper"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/policy/mcis": {
             "get": {
                 "description": "List all MCIS policies",
@@ -6095,6 +6157,26 @@
                 }
             }
         },
+        "mcis.NetworkReq": {
+            "type": "object",
+            "properties": {
+                "etcdEndpoints": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "PUBLIC_IP_1:2379",
+                        "PUBLIC_IP_2:2379",
+                        "..."
+                    ]
+                },
+                "serviceEndpoint": {
+                    "type": "string",
+                    "example": "localhost:8053"
+                }
+            }
+        },
         "mcis.Operation": {
             "type": "object",
             "properties": {
@@ -6535,6 +6617,16 @@
         "mcis.TbMcisInfo": {
             "type": "object",
             "properties": {
+                "configureCloudAdaptiveNetwork": {
+                    "description": "ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)",
+                    "type": "string",
+                    "default": "no",
+                    "enum": [
+                        "yes",
+                        "no"
+                    ],
+                    "example": "yes"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -6715,6 +6807,11 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "networkAgentStatus": {
+                    "description": "NetworkAgent status",
+                    "type": "string",
+                    "example": "[notInstalled, installing, installed, failed]"
                 },
                 "privateDNS": {
                     "type": "string"
