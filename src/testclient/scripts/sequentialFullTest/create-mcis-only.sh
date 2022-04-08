@@ -37,7 +37,7 @@ function test_sequence_allcsp_mcis() {
 
 	_self=$CMDPATH
 
-	../8.mcis/create-single-vm-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM
+	../8.mcis/create-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM
 	#dozing 1
 	#../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCISPREFIX
 	echo ""
