@@ -701,9 +701,8 @@ Dozing for 1 : 1 (Back to work)
 
 #### 멀티 클라우드 인프라 유스케이스
 
-##### 스크립트를 통해 MCIS에 Nginx 분산 배치
+##### MCIS에 Nginx 분산 배치
   - deploy-nginx-mcis.sh  # 생성된 MCIS(다중VM)에 Nginx 자동 배포
-    - deploy-nginx-mcis.sh -n shson -f ../testSetAws.env # testSetAws.env 에 구성된 정보를 기준으로 MCIS의 모든 VM에 Nginx 및 웹페이지 설치
 
 ##### MCIS Weave Scope 클러스터 모니터링 분산 배치
   - [스크립트를 통해 MCIS에 Weave Scope 클러스터 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
@@ -715,8 +714,10 @@ Dozing for 1 : 1 (Back to work)
   - [스크립트를 통해 MCIS에 Ansible 실행 환경 자동 구성](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
 
 ##### MCIS 토이 게임 서버 배치
-  - [스크립트를 통해 MCIS에 토이 게임 서버 설치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-toy-game-deployment)
+  - [스크립트를 통해 MCIS에 토이 게임 서버 배치](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-toy-game-deployment)
 
+##### MCIS Xonotic(3D FPS) 게임 서버 배치
+  - [스크립트를 통해 MCIS에 Xonotic 게임 서버 배치](https://github.com/cloud-barista/cb-tumblebug/wiki/Deploy-Xonotic-game-sever-in-a-Cloud-via-CB-Tumblebug)
 
 
 ### CB-Tumblebug REST API 사용
