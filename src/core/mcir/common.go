@@ -1673,12 +1673,11 @@ func LoadCommonResource() (common.IdList, error) {
 	var waitSpecImg sync.WaitGroup
 	var wait sync.WaitGroup
 
-	// Check 'common' namespace. Create one if not.
-	commonNsId := "common"
-	_, err := common.GetNs(commonNsId)
+	// Check common namespace. Create one if not.
+	_, err := common.GetNs(common.SystemCommonNs)
 	if err != nil {
 		nsReq := common.NsReq{}
-		nsReq.Name = commonNsId
+		nsReq.Name = common.SystemCommonNs
 		nsReq.Description = "Namespace for common resources"
 		_, nsErr := common.CreateNs(&nsReq)
 		if nsErr != nil {
@@ -1711,8 +1710,8 @@ func LoadCommonResource() (common.IdList, error) {
 				common.RandomSleep(20)
 				specReqTmp := TbSpecReq{}
 				// [0]connectionName, [1]cspSpecName, [2]CostPerHour, [3]evaluationScore01, ..., [12]evaluationScore10
-				specReqTmp.ConnectionName = row[0]
-				specReqTmp.CspSpecName = row[1]
+				specReqTmp.ConnectionName = row[2]
+				specReqTmp.CspSpecName = row[3]
 				// Give a name for spec object by combining ConnectionName and CspSpecName
 				// To avoid naming-rule violation, modify the string
 				specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
@@ -1724,7 +1723,7 @@ func LoadCommonResource() (common.IdList, error) {
 				common.PrintJsonPretty(specReqTmp)
 
 				// Register Spec object
-				_, err1 := RegisterSpecWithCspSpecName(commonNsId, &specReqTmp)
+				_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp)
 				if err1 != nil {
 					common.CBLog.Error(err1)
 					// If already exist, error will occur
@@ -1733,15 +1732,21 @@ func LoadCommonResource() (common.IdList, error) {
 				}
 				specObjId := specReqTmp.Name
 
+				// Update registered Spec object with ProviderName
+				providerName := row[0]
+
+				// Update registered Spec object with RegionName
+				regionName := row[1]
+
 				// Update registered Spec object with Cost info
-				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[2], " ", ""), 32)
+				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
 				if err2 != nil {
 					common.CBLog.Error(err2)
 					// If already exist, error will occur. Even if error, do not return here to update information
 					// return err
 				}
 
-				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[5], " ", ""), 32)
 				if err2 != nil {
 					common.CBLog.Error(err2)
 					// If already exist, error will occur. Even if error, do not return here to update information
@@ -1749,11 +1754,14 @@ func LoadCommonResource() (common.IdList, error) {
 				}
 
 				specUpdateRequest :=
-					TbSpecInfo{CostPerHour: float32(costPerHour),
+					TbSpecInfo{
+						ProviderName:      providerName,
+						RegionName:        regionName,
+						CostPerHour:       float32(costPerHour),
 						EvaluationScore01: float32(evaluationScore01),
 					}
 
-				updatedSpecInfo, err3 := UpdateSpec(commonNsId, specObjId, specUpdateRequest)
+				updatedSpecInfo, err3 := UpdateSpec(common.SystemCommonNs, specObjId, specUpdateRequest)
 				if err3 != nil {
 					common.CBLog.Error(err3)
 					// If already exist, error will occur
@@ -1823,7 +1831,7 @@ func LoadCommonResource() (common.IdList, error) {
 				common.PrintJsonPretty(imageReqTmp)
 
 				// Register Spec object
-				_, err1 := RegisterImageWithId(commonNsId, &imageReqTmp)
+				_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp)
 				if err1 != nil {
 					common.CBLog.Error(err1)
 					// If already exist, error will occur
@@ -1836,7 +1844,7 @@ func LoadCommonResource() (common.IdList, error) {
 
 				imageUpdateRequest := TbImageInfo{GuestOS: osType}
 
-				updatedImageInfo, err2 := UpdateImage(commonNsId, imageObjId, imageUpdateRequest)
+				updatedImageInfo, err2 := UpdateImage(common.SystemCommonNs, imageObjId, imageUpdateRequest)
 				if err2 != nil {
 					common.CBLog.Error(err2)
 					//return err

@@ -67,6 +67,8 @@ const (
 	StrVNet                       string = "vNet"
 	StrSubnet                     string = "subnet"
 	StrDefaultResourceName        string = "-systemdefault-"
+	// SystemCommonNs is const for SystemCommon NameSpace ID
+	SystemCommonNs string = "system-purpose-common-ns"
 )
 
 var StartTime string
