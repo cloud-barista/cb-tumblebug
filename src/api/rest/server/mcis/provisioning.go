@@ -123,6 +123,36 @@ func RestPostMcisDynamic(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
+// RestPostMcisDynamicCheckRequest godoc
+// @Summary Check avaiable ConnectionConfig list for creating MCIS Dynamically
+// @Description Check avaiable ConnectionConfig list before create MCIS Dynamically from common spec and image
+// @Tags [Infra service] MCIS Provisioning management
+// @Accept  json
+// @Produce  json
+// @Param mcisReq body McisConnectionConfigCandidatesReq true "Details for MCIS dynamic request information"
+// @Success 200 {object} CheckMcisDynamicReqInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /mcisDynamicCheckRequest [post]
+func RestPostMcisDynamicCheckRequest(c echo.Context) error {
+
+	req := &mcis.McisConnectionConfigCandidatesReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	result, err := mcis.CheckMcisDynamicReq(req)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	//fmt.Printf("%+v\n", *result)
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusOK, result)
+}
+
 // RestPostMcisVm godoc
 // @Summary Create VM in specified MCIS
 // @Description Create VM in specified MCIS

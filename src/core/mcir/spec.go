@@ -86,6 +86,8 @@ type TbSpecInfo struct { // Tumblebug
 	Id                    string   `json:"id,omitempty"`
 	Name                  string   `json:"name,omitempty"`
 	ConnectionName        string   `json:"connectionName,omitempty"`
+	ProviderName          string   `json:"providerName,omitempty"`
+	RegionName            string   `json:"regionName,omitempty"`
 	CspSpecName           string   `json:"cspSpecName,omitempty"`
 	OsType                string   `json:"osType,omitempty"`
 	NumvCPU               uint16   `json:"numvCPU,omitempty"`
@@ -122,6 +124,43 @@ type TbSpecInfo struct { // Tumblebug
 	SystemLabel string `json:"systemLabel,omitempty" example:"Managed by CB-Tumblebug" default:""`
 }
 
+// FilterSpecsByRangeRequest is for 'FilterSpecsByRange'
+type FilterSpecsByRangeRequest struct {
+	Id                 string `json:"id"`
+	Name               string `json:"name"`
+	ConnectionName     string `json:"connectionName"`
+	ProviderName       string `json:"providerName"`
+	RegionName         string `json:"regionName"`
+	CspSpecName        string `json:"cspSpecName"`
+	OsType             string `json:"osType"`
+	NumvCPU            Range  `json:"numvCPU"`
+	NumCore            Range  `json:"numcore"`
+	MemGiB             Range  `json:"memGiB"`
+	StorageGiB         Range  `json:"storageGiB"`
+	Description        string `json:"description"`
+	CostPerHour        Range  `json:"costPerHour"`
+	NumStorage         Range  `json:"numStorage"`
+	MaxNumStorage      Range  `json:"maxNumStorage"`
+	MaxTotalStorageTiB Range  `json:"maxTotalStorageTiB"`
+	NetBwGbps          Range  `json:"netBwGbps"`
+	EbsBwMbps          Range  `json:"ebsBwMbps"`
+	GpuModel           string `json:"gpuModel"`
+	NumGpu             Range  `json:"numGpu"`
+	GpuMemGiB          Range  `json:"gpuMemGiB"`
+	GpuP2p             string `json:"gpuP2p"`
+	EvaluationStatus   string `json:"evaluationStatus"`
+	EvaluationScore01  Range  `json:"evaluationScore01"`
+	EvaluationScore02  Range  `json:"evaluationScore02"`
+	EvaluationScore03  Range  `json:"evaluationScore03"`
+	EvaluationScore04  Range  `json:"evaluationScore04"`
+	EvaluationScore05  Range  `json:"evaluationScore05"`
+	EvaluationScore06  Range  `json:"evaluationScore06"`
+	EvaluationScore07  Range  `json:"evaluationScore07"`
+	EvaluationScore08  Range  `json:"evaluationScore08"`
+	EvaluationScore09  Range  `json:"evaluationScore09"`
+	EvaluationScore10  Range  `json:"evaluationScore10"`
+}
+
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
 func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, error) {
 	if spiderSpec.Name == "" {
@@ -134,6 +173,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, er
 
 	tumblebugSpec.Name = spiderSpec.Name
 	tumblebugSpec.CspSpecName = spiderSpec.Name
+	tumblebugSpec.RegionName = spiderSpec.Region
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.NumvCPU = uint16(tempUint64)
 	tempFloat64, _ := strconv.ParseFloat(spiderSpec.Mem, 32)
@@ -569,6 +609,16 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		filter.ConnectionName = ToNamingRuleCompatible(filter.ConnectionName)
 		sqlQuery = sqlQuery.And("ConnectionName LIKE ?", "%"+filter.ConnectionName+"%")
 	}
+	if filter.RegionName != "" {
+		//sqlQuery += " AND `regionName` LIKE '%" + filter.RegionName + "%'"
+		filter.RegionName = ToNamingRuleCompatible(filter.RegionName)
+		sqlQuery = sqlQuery.And("RegionName LIKE ?", "%"+filter.RegionName+"%")
+	}
+	if filter.ProviderName != "" {
+		//sqlQuery += " AND `providerName` LIKE '%" + filter.ProviderName + "%'"
+		filter.ProviderName = ToNamingRuleCompatible(filter.ProviderName)
+		sqlQuery = sqlQuery.And("ProviderName LIKE ?", "%"+filter.ProviderName+"%")
+	}
 	if filter.CspSpecName != "" {
 		//sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
 		filter.CspSpecName = ToNamingRuleCompatible(filter.CspSpecName)
@@ -703,41 +753,6 @@ type Range struct {
 	Max float32 `json:"max"`
 }
 
-// FilterSpecsByRangeRequest is for 'FilterSpecsByRange'
-type FilterSpecsByRangeRequest struct {
-	Id                 string `json:"id"`
-	Name               string `json:"name"`
-	ConnectionName     string `json:"connectionName"`
-	CspSpecName        string `json:"cspSpecName"`
-	OsType             string `json:"osType"`
-	NumvCPU            Range  `json:"numvCPU"`
-	NumCore            Range  `json:"numcore"`
-	MemGiB             Range  `json:"memGiB"`
-	StorageGiB         Range  `json:"storageGiB"`
-	Description        string `json:"description"`
-	CostPerHour        Range  `json:"costPerHour"`
-	NumStorage         Range  `json:"numStorage"`
-	MaxNumStorage      Range  `json:"maxNumStorage"`
-	MaxTotalStorageTiB Range  `json:"maxTotalStorageTiB"`
-	NetBwGbps          Range  `json:"netBwGbps"`
-	EbsBwMbps          Range  `json:"ebsBwMbps"`
-	GpuModel           string `json:"gpuModel"`
-	NumGpu             Range  `json:"numGpu"`
-	GpuMemGiB          Range  `json:"gpuMemGiB"`
-	GpuP2p             string `json:"gpuP2p"`
-	EvaluationStatus   string `json:"evaluationStatus"`
-	EvaluationScore01  Range  `json:"evaluationScore01"`
-	EvaluationScore02  Range  `json:"evaluationScore02"`
-	EvaluationScore03  Range  `json:"evaluationScore03"`
-	EvaluationScore04  Range  `json:"evaluationScore04"`
-	EvaluationScore05  Range  `json:"evaluationScore05"`
-	EvaluationScore06  Range  `json:"evaluationScore06"`
-	EvaluationScore07  Range  `json:"evaluationScore07"`
-	EvaluationScore08  Range  `json:"evaluationScore08"`
-	EvaluationScore09  Range  `json:"evaluationScore09"`
-	EvaluationScore10  Range  `json:"evaluationScore10"`
-}
-
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
 func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpecInfo, error) {
 
@@ -766,6 +781,16 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		//sqlQuery += " AND `connectionName` LIKE '%" + filter.ConnectionName + "%'"
 		filter.ConnectionName = ToNamingRuleCompatible(filter.ConnectionName)
 		sqlQuery = sqlQuery.And("ConnectionName LIKE ?", "%"+filter.ConnectionName+"%")
+	}
+	if filter.RegionName != "" {
+		//sqlQuery += " AND `regionName` LIKE '%" + filter.RegionName + "%'"
+		filter.RegionName = ToNamingRuleCompatible(filter.RegionName)
+		sqlQuery = sqlQuery.And("RegionName LIKE ?", "%"+filter.RegionName+"%")
+	}
+	if filter.ProviderName != "" {
+		//sqlQuery += " AND `providerName` LIKE '%" + filter.ProviderName + "%'"
+		filter.ProviderName = ToNamingRuleCompatible(filter.ProviderName)
+		sqlQuery = sqlQuery.And("ProviderName LIKE ?", "%"+filter.ProviderName+"%")
 	}
 	if filter.CspSpecName != "" {
 		//sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"

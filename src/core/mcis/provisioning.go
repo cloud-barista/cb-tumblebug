@@ -227,7 +227,42 @@ type TbVmDynamicReq struct {
 	CommonImage string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
 
 	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
+
+	// if ConnectionName is given, the VM tries to use associtated credential.
+	// if not, it will use predefined ConnectionName in Spec objects
+	ConnectionName string `json:"connectionName,omitempty" default:""`
 }
+
+// McisConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCIS instance dynamically (with default resource option)
+type McisConnectionConfigCandidatesReq struct {
+	// CommonSpec is field for id of a spec in common namespace
+	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws-ap-northeast-2-t2-small,gcp-us-west1-g1-small"`
+}
+
+// CheckMcisDynamicReqInfo is struct to check requirements to create a new MCIS instance dynamically (with default resource option)
+type CheckMcisDynamicReqInfo struct {
+	ReqCheck []CheckVmDynamicReqInfo `json:"reqCheck" validate:"required"`
+}
+
+// CheckVmDynamicReqInfo is struct to check requirements to create a new server instance dynamically (with default resource option)
+type CheckVmDynamicReqInfo struct {
+
+	// ConnectionConfigCandidates will provide ConnectionConfig options
+	ConnectionConfigCandidates []string `json:"connectionConfigCandidates" default:""`
+
+	// CommonImage is field for id of a image in common namespace
+	// CommonImage		string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
+	//RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
+
+	VmSpec mcir.TbSpecInfo `json:"vmSpec" default:""`
+	Region common.Region   `json:"region" default:""`
+
+	// Latest system message such as error message
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+
+}
+
+//
 
 // SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMInfo
 type SpiderVMReqInfoWrapper struct { // Spider
@@ -979,10 +1014,58 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	return mcisResult, nil
 }
 
+// CheckMcisDynamicReq is func to check request info to create MCIS obeject and deploy requested VMs in a dynamic way
+func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDynamicReqInfo, error) {
+
+	mcisReqInfo := CheckMcisDynamicReqInfo{}
+
+	connectionConfigList, err := common.GetConnConfigList()
+	if err != nil {
+		err := fmt.Errorf("Cannnot load ConnectionConfigList in MCIS dynamic request check.")
+		common.CBLog.Error(err)
+		return &mcisReqInfo, err
+	}
+
+	// Find detail info and ConnectionConfigCandidates
+	for _, k := range req.CommonSpecs {
+		errMessage := ""
+
+		vmReqInfo := CheckVmDynamicReqInfo{}
+
+		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k)
+		if err != nil {
+			errMessage += "//Failed to get the spec " + k
+		}
+
+		specInfo := mcir.TbSpecInfo{}
+		err = common.CopySrcToDest(&tempInterface, &specInfo)
+		if err != nil {
+			errMessage += "//Failed to CopySrcToDest() " + k
+		}
+
+		regionInfo, err := common.GetRegion(specInfo.RegionName)
+		if err != nil {
+			errMessage += "//Failed to get Region (" + specInfo.RegionName + ") for Spec (" + k + ") is not found."
+		}
+
+		for _, connectionConfig := range connectionConfigList.Connectionconfig {
+			if connectionConfig.RegionName == specInfo.RegionName {
+				vmReqInfo.ConnectionConfigCandidates = append(vmReqInfo.ConnectionConfigCandidates, connectionConfig.ConfigName)
+			}
+		}
+
+		vmReqInfo.VmSpec = specInfo
+		vmReqInfo.Region = regionInfo
+		vmReqInfo.SystemMessage = errMessage
+		mcisReqInfo.ReqCheck = append(mcisReqInfo.ReqCheck, vmReqInfo)
+	}
+
+	return &mcisReqInfo, err
+}
+
 // CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
 func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) {
 
-	commonNS := "common"
 	onDemand := true
 
 	mcisReq := TbMcisReq{}
@@ -997,7 +1080,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	for _, k := range vmRequest {
 
 		vmReq := TbVmReq{}
-		tempInterface, err := mcir.GetResource(commonNS, common.StrSpec, k.CommonSpec)
+		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k.CommonSpec)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the spec " + k.CommonSpec)
 			common.CBLog.Error(err)
@@ -1014,12 +1097,31 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		// remake vmReqest from given input and check resource availability
 		vmReq.ConnectionName = specInfo.ConnectionName
 
+		// If ConnectionName is specified by the request, Use ConnectionName from the request
+		if k.ConnectionName != "" {
+			vmReq.ConnectionName = k.ConnectionName
+		}
+		// validate the region for spec
+		_, err = common.GetConnConfig(specInfo.RegionName)
+		if err != nil {
+			err := fmt.Errorf("Failed to get RegionName (" + specInfo.RegionName + ") for Spec (" + k.CommonSpec + ") is not found.")
+			common.CBLog.Error(err)
+			return &TbMcisInfo{}, err
+		}
+		// validate the GetConnConfig for spec
+		_, err = common.GetConnConfig(vmReq.ConnectionName)
+		if err != nil {
+			err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
+			common.CBLog.Error(err)
+			return &TbMcisInfo{}, err
+		}
+
 		// Default resource name has this pattern (nsId + "-systemdefault-" + vmReq.ConnectionName)
 		resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
 
 		vmReq.SpecId = specInfo.Id
 		vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
-		tempInterface, err = mcir.GetResource(commonNS, common.StrImage, vmReq.ImageId)
+		tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 		if err != nil {
 			err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
 			common.CBLog.Error(err)
@@ -1254,8 +1356,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	err := fmt.Errorf("")
 
-	commonNs := "common"
-
 	if option == "register" {
 		tempReq.ReqInfo.CSPid = vmInfoData.IdByCSP
 
@@ -1264,7 +1364,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		if tempReq.ReqInfo.ImageName == "" || err != nil {
 			common.CBLog.Error(err)
 			// If cannot find the resource, use common resource
-			tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(commonNs, common.StrImage, vmInfoData.ImageId)
+			tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
 			if tempReq.ReqInfo.ImageName == "" || err != nil {
 				common.CBLog.Error(err)
 				return err
@@ -1275,7 +1375,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
 			common.CBLog.Error(err)
 			// If cannot find the resource, use common resource
-			tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(commonNs, common.StrSpec, vmInfoData.SpecId)
+			tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
 			if tempReq.ReqInfo.ImageName == "" || err != nil {
 				common.CBLog.Error(err)
 				return err

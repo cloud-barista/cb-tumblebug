@@ -161,6 +161,9 @@ func RunServer(port string) {
 	g.POST("/:nsId/mcis", rest_mcis.RestPostMcis)
 	g.POST("/:nsId/registerCspVm", rest_mcis.RestPostRegisterCSPNativeVM)
 
+	e.POST("/tumblebug/mcisRecommendVm", rest_mcis.RestRecommendVm)
+	e.POST("/tumblebug/mcisDynamicCheckRequest", rest_mcis.RestPostMcisDynamicCheckRequest)
+
 	g.POST("/:nsId/mcisDynamic", rest_mcis.RestPostMcisDynamic)
 	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis)
 	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
@@ -177,8 +180,6 @@ func RunServer(port string) {
 	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 
 	//g.POST("/:nsId/mcis/recommend", rest_mcis.RestPostMcisRecommend)
-
-	g.POST("/:nsId/mcisRecommendVm", rest_mcis.RestRecommendVm)
 
 	g.GET("/:nsId/control/mcis/:mcisId", rest_mcis.RestGetControlMcis)
 	g.GET("/:nsId/control/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetControlMcisVm)
