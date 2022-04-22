@@ -589,6 +589,100 @@ const docTemplate = `{
                 }
             }
         },
+        "/mcisDynamicCheckRequest": {
+            "post": {
+                "description": "Check avaiable ConnectionConfig list before create MCIS Dynamically from common spec and image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Check avaiable ConnectionConfig list for creating MCIS Dynamically",
+                "parameters": [
+                    {
+                        "description": "Details for MCIS dynamic request information",
+                        "name": "mcisReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.McisConnectionConfigCandidatesReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.CheckMcisDynamicReqInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/mcisRecommendVm": {
+            "post": {
+                "description": "Recommend MCIS plan (filter and priority)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Recommend MCIS plan (filter and priority)",
+                "parameters": [
+                    {
+                        "description": "Recommend MCIS plan (filter and priority)",
+                        "name": "deploymentPlan",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.DeploymentPlan"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/mcir.TbSpecInfo"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns": {
             "get": {
                 "description": "List all namespaces or namespaces' ID",
@@ -2003,62 +2097,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcis.TbMcisInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/mcisRecommendVm": {
-            "post": {
-                "description": "Recommend MCIS plan (filter and priority)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "Recommend MCIS plan (filter and priority)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "common",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Recommend MCIS plan (filter and priority)",
-                        "name": "deploymentPlan",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.DeploymentPlan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/mcir.TbSpecInfo"
-                            }
                         }
                     },
                     "404": {
@@ -5082,6 +5120,12 @@ const docTemplate = `{
                 "osType": {
                     "type": "string"
                 },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
                 "storageGiB": {
                     "$ref": "#/definitions/mcir.Range"
                 }
@@ -5605,6 +5649,12 @@ const docTemplate = `{
                 "osType": {
                     "type": "string"
                 },
+                "providerName": {
+                    "type": "string"
+                },
+                "regionName": {
+                    "type": "string"
+                },
                 "storageGiB": {
                     "type": "integer"
                 },
@@ -5979,6 +6029,43 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.CheckMcisDynamicReqInfo": {
+            "type": "object",
+            "required": [
+                "reqCheck"
+            ],
+            "properties": {
+                "reqCheck": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.CheckVmDynamicReqInfo"
+                    }
+                }
+            }
+        },
+        "mcis.CheckVmDynamicReqInfo": {
+            "type": "object",
+            "properties": {
+                "connectionConfigCandidates": {
+                    "description": "ConnectionConfigCandidates will provide ConnectionConfig options",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "region": {
+                    "$ref": "#/definitions/common.Region"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "vmSpec": {
+                    "$ref": "#/definitions/mcir.TbSpecInfo"
+                }
+            }
+        },
         "mcis.DeploymentPlan": {
             "type": "object",
             "properties": {
@@ -6048,6 +6135,25 @@ const docTemplate = `{
                 "userName": {
                     "type": "string",
                     "example": "cb-user"
+                }
+            }
+        },
+        "mcis.McisConnectionConfigCandidatesReq": {
+            "type": "object",
+            "required": [
+                "commonSpec"
+            ],
+            "properties": {
+                "commonSpec": {
+                    "description": "CommonSpec is field for id of a spec in common namespace",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "aws-ap-northeast-2-t2-small",
+                        "gcp-us-west1-g1-small"
+                    ]
                 }
             }
         },
@@ -6749,6 +6855,10 @@ const docTemplate = `{
                     "description": "CommonSpec is field for id of a spec in common namespace",
                     "type": "string",
                     "example": "aws-ap-northeast-2-t2-small"
+                },
+                "connectionName": {
+                    "description": "if ConnectionName is given, the VM tries to use associtated credential.\nif not, it will use predefined ConnectionName in Spec objects",
+                    "type": "string"
                 },
                 "description": {
                     "type": "string",

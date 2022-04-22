@@ -225,6 +225,10 @@ definitions:
         $ref: '#/definitions/mcir.Range'
       osType:
         type: string
+      providerName:
+        type: string
+      regionName:
+        type: string
       storageGiB:
         $ref: '#/definitions/mcir.Range'
     type: object
@@ -576,6 +580,10 @@ definitions:
         type: integer
       osType:
         type: string
+      providerName:
+        type: string
+      regionName:
+        type: string
       storageGiB:
         type: integer
       systemLabel:
@@ -832,6 +840,31 @@ definitions:
           $ref: '#/definitions/mcis.BenchmarkInfo'
         type: array
     type: object
+  mcis.CheckMcisDynamicReqInfo:
+    properties:
+      reqCheck:
+        items:
+          $ref: '#/definitions/mcis.CheckVmDynamicReqInfo'
+        type: array
+    required:
+    - reqCheck
+    type: object
+  mcis.CheckVmDynamicReqInfo:
+    properties:
+      connectionConfigCandidates:
+        description: ConnectionConfigCandidates will provide ConnectionConfig options
+        items:
+          type: string
+        type: array
+      region:
+        $ref: '#/definitions/common.Region'
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+      vmSpec:
+        $ref: '#/definitions/mcir.TbSpecInfo'
+    type: object
   mcis.DeploymentPlan:
     properties:
       filter:
@@ -881,6 +914,19 @@ definitions:
         type: string
     required:
     - command
+    type: object
+  mcis.McisConnectionConfigCandidatesReq:
+    properties:
+      commonSpec:
+        description: CommonSpec is field for id of a spec in common namespace
+        example:
+        - aws-ap-northeast-2-t2-small
+        - gcp-us-west1-g1-small
+        items:
+          type: string
+        type: array
+    required:
+    - commonSpec
     type: object
   mcis.McisPolicyInfo:
     properties:
@@ -1385,6 +1431,11 @@ definitions:
       commonSpec:
         description: CommonSpec is field for id of a spec in common namespace
         example: aws-ap-northeast-2-t2-small
+        type: string
+      connectionName:
+        description: |-
+          if ConnectionName is given, the VM tries to use associtated credential.
+          if not, it will use predefined ConnectionName in Spec objects
         type: string
       description:
         example: Description
@@ -2041,6 +2092,68 @@ paths:
       summary: Lookup spec list
       tags:
       - '[Infra resource] MCIR Common'
+  /mcisDynamicCheckRequest:
+    post:
+      consumes:
+      - application/json
+      description: Check avaiable ConnectionConfig list before create MCIS Dynamically
+        from common spec and image
+      parameters:
+      - description: Details for MCIS dynamic request information
+        in: body
+        name: mcisReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.McisConnectionConfigCandidatesReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.CheckMcisDynamicReqInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check avaiable ConnectionConfig list for creating MCIS Dynamically
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+  /mcisRecommendVm:
+    post:
+      consumes:
+      - application/json
+      description: Recommend MCIS plan (filter and priority)
+      parameters:
+      - description: Recommend MCIS plan (filter and priority)
+        in: body
+        name: deploymentPlan
+        schema:
+          $ref: '#/definitions/mcis.DeploymentPlan'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/mcir.TbSpecInfo'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Recommend MCIS plan (filter and priority)
+      tags:
+      - '[Infra service] MCIS Provisioning management'
   /ns:
     delete:
       consumes:
@@ -3005,43 +3118,6 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create MCIS Dynamically
-      tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcisRecommendVm:
-    post:
-      consumes:
-      - application/json
-      description: Recommend MCIS plan (filter and priority)
-      parameters:
-      - default: common
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Recommend MCIS plan (filter and priority)
-        in: body
-        name: deploymentPlan
-        schema:
-          $ref: '#/definitions/mcis.DeploymentPlan'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/mcir.TbSpecInfo'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Recommend MCIS plan (filter and priority)
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/monitoring/install/mcis/{mcisId}:
