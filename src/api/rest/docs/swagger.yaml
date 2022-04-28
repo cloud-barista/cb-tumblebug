@@ -902,6 +902,25 @@ definitions:
           $ref: '#/definitions/mcis.FilterCondition'
         type: array
     type: object
+  mcis.InspectResource:
+    properties:
+      connectionName:
+        type: string
+      resourcesOnCsp:
+        items:
+          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+        type: array
+      resourcesOnSpider:
+        items:
+          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+        type: array
+      resourcesOnTumblebug:
+        items:
+          $ref: '#/definitions/mcis.resourceOnTumblebug'
+        type: array
+      systemMessage:
+        type: string
+    type: object
   mcis.JSONResult:
     type: object
   mcis.McisCmdReq:
@@ -1280,25 +1299,6 @@ definitions:
         description: CountUndefined is for counting Undefined
         type: integer
     type: object
-  mcis.TbInspectResourcesResponse:
-    properties:
-      resourcesOnCsp:
-        description: |-
-          ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
-          ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
-          ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
-        items:
-          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
-        type: array
-      resourcesOnSpider:
-        items:
-          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
-        type: array
-      resourcesOnTumblebug:
-        items:
-          $ref: '#/definitions/mcis.resourceOnTumblebug'
-        type: array
-    type: object
   mcis.TbMcisDynamicReq:
     properties:
       description:
@@ -1324,7 +1324,6 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
-        example: ""
         type: string
       vm:
         items:
@@ -1412,7 +1411,6 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
-        example: ""
         type: string
       vm:
         items:
@@ -1940,7 +1938,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbInspectResourcesResponse'
+            $ref: '#/definitions/mcis.InspectResource'
         "404":
           description: Not Found
           schema:

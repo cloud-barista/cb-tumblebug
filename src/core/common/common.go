@@ -66,6 +66,7 @@ const (
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"
 	StrSubnet                     string = "subnet"
+	StrVM                         string = "vm"
 	StrDefaultResourceName        string = "-systemdefault-"
 	// SystemCommonNs is const for SystemCommon NameSpace ID
 	SystemCommonNs string = "system-purpose-common-ns"

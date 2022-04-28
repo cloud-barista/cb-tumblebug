@@ -751,12 +751,20 @@ type SpiderAllList struct {
 
 // TbInspectResourcesResponse is struct for response of InspectResources request
 type TbInspectResourcesResponse struct {
+	InspectResources []InspectResource `json:"inspectResources"`
+}
+
+// InspectResource is struct for InspectResource per Cloud Connection
+type InspectResource struct {
 	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
 	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
 	// ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
-	ResourcesOnCsp       []resourceOnCspOrSpider `json:"resourcesOnCsp"`
-	ResourcesOnSpider    []resourceOnCspOrSpider `json:"resourcesOnSpider"`
+
+	ConnectionName       string                  `json:"connectionName"`
+	SystemMessage        string                  `json:"systemMessage"`
 	ResourcesOnTumblebug []resourceOnTumblebug   `json:"resourcesOnTumblebug"`
+	ResourcesOnSpider    []resourceOnCspOrSpider `json:"resourcesOnSpider"`
+	ResourcesOnCsp       []resourceOnCspOrSpider `json:"resourcesOnCsp"`
 }
 
 type resourceOnCspOrSpider struct {
@@ -771,180 +779,6 @@ type resourceOnTumblebug struct {
 	//McisId      string `json:"mcisId"`
 	Type      string `json:"type"`
 	ObjectKey string `json:"objectKey"`
-}
-
-// InspectResources returns the state list of TB MCIR objects of given connConfig and resourceType
-func InspectResources(connConfig string, resourceType string) (TbInspectResourcesResponse, error) {
-
-	nsList, err := common.ListNsId()
-	if err != nil {
-		nullObj := TbInspectResourcesResponse{}
-		common.CBLog.Error(err)
-		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
-		return nullObj, err
-	}
-	// var TbResourceList []string
-	var TbResourceList []resourceOnTumblebug
-	for _, ns := range nsList {
-		/*
-			resourceListInNs := ListResourceId(ns, resourceType)
-			for i, _ := range resourceListInNs {
-				resourceListInNs[i] = ns + "/" + resourceListInNs[i]
-			}
-			TbResourceList = append(TbResourceList, resourceListInNs...)
-		*/
-
-		resourceListInNs, err := ListResource(ns, resourceType)
-		if err != nil {
-			nullObj := TbInspectResourcesResponse{}
-			common.CBLog.Error(err)
-			err := fmt.Errorf("an error occurred while getting resource list")
-			return nullObj, err
-		}
-		if resourceListInNs == nil {
-			continue
-		}
-
-		switch resourceType {
-		case common.StrVNet:
-			resourcesInNs := resourceListInNs.([]TbVNetInfo) // type assertion
-			for _, resource := range resourcesInNs {
-				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebug{}
-					temp.Id = resource.Id
-					temp.CspNativeId = resource.CspVNetId
-					temp.NsId = ns
-					//temp.McisId = ""
-					temp.Type = resourceType
-					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
-
-					TbResourceList = append(TbResourceList, temp)
-				}
-			}
-		case common.StrSecurityGroup:
-			resourcesInNs := resourceListInNs.([]TbSecurityGroupInfo) // type assertion
-			for _, resource := range resourcesInNs {
-				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebug{}
-					temp.Id = resource.Id
-					temp.CspNativeId = resource.CspSecurityGroupId
-					temp.NsId = ns
-					//temp.McisId = ""
-					temp.Type = resourceType
-					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
-
-					TbResourceList = append(TbResourceList, temp)
-				}
-			}
-		case common.StrSSHKey:
-			resourcesInNs := resourceListInNs.([]TbSshKeyInfo) // type assertion
-			for _, resource := range resourcesInNs {
-				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebug{}
-					temp.Id = resource.Id
-					temp.CspNativeId = resource.CspSshKeyName
-					temp.NsId = ns
-					//temp.McisId = ""
-					temp.Type = resourceType
-					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
-
-					TbResourceList = append(TbResourceList, temp)
-				}
-			}
-		}
-	}
-
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	// Create Req body
-	type JsonTemplate struct {
-		ConnectionName string
-	}
-	tempReq := JsonTemplate{}
-	tempReq.ConnectionName = connConfig
-
-	var spiderRequestURL string
-	switch resourceType {
-	case common.StrVNet:
-		spiderRequestURL = common.SpiderRestUrl + "/allvpc"
-	case common.StrSecurityGroup:
-		spiderRequestURL = common.SpiderRestUrl + "/allsecuritygroup"
-	case common.StrSSHKey:
-		spiderRequestURL = common.SpiderRestUrl + "/allkeypair"
-	}
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
-		SetResult(&SpiderAllListWrapper{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Get(spiderRequestURL)
-
-	if err != nil {
-		nullObj := TbInspectResourcesResponse{}
-		common.CBLog.Error(err)
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return nullObj, err
-	}
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		nullObj := TbInspectResourcesResponse{}
-		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
-		return nullObj, err
-	default:
-	}
-
-	temp, _ := resp.Result().(*SpiderAllListWrapper) // type assertion
-
-	result := TbInspectResourcesResponse{}
-
-	/*
-		// Implementation style 1
-		if len(TbResourceList) > 0 {
-			result.ResourcesOnTumblebug = TbResourceList
-		} else {
-			result.ResourcesOnTumblebug = []resourceOnTumblebug{}
-		}
-	*/
-	// Implementation style 2
-	result.ResourcesOnTumblebug = []resourceOnTumblebug{}
-	result.ResourcesOnTumblebug = append(result.ResourcesOnTumblebug, TbResourceList...)
-
-	// result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
-	// result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
-	result.ResourcesOnCsp = []resourceOnCspOrSpider{}
-	result.ResourcesOnSpider = []resourceOnCspOrSpider{}
-
-	for _, v := range (*temp).AllList.MappedList {
-		tmpObj := resourceOnCspOrSpider{}
-		tmpObj.Id = v.NameId
-		tmpObj.CspNativeId = v.SystemId
-
-		result.ResourcesOnCsp = append(result.ResourcesOnCsp, tmpObj)
-		result.ResourcesOnSpider = append(result.ResourcesOnSpider, tmpObj)
-	}
-
-	for _, v := range (*temp).AllList.OnlySpiderList {
-		tmpObj := resourceOnCspOrSpider{}
-		tmpObj.Id = v.NameId
-		tmpObj.CspNativeId = v.SystemId
-
-		result.ResourcesOnSpider = append(result.ResourcesOnSpider, tmpObj)
-	}
-
-	for _, v := range (*temp).AllList.OnlyCSPList {
-		tmpObj := resourceOnCspOrSpider{}
-		tmpObj.Id = v.NameId
-		tmpObj.CspNativeId = v.SystemId
-
-		result.ResourcesOnCsp = append(result.ResourcesOnCsp, tmpObj)
-	}
-
-	return result, nil
 }
 
 /*

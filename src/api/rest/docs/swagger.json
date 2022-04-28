@@ -350,7 +350,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbInspectResourcesResponse"
+                            "$ref": "#/definitions/mcis.InspectResource"
                         }
                     },
                     "404": {
@@ -6111,6 +6111,35 @@
                 }
             }
         },
+        "mcis.InspectResource": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "resourcesOnCsp": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                    }
+                },
+                "resourcesOnSpider": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                    }
+                },
+                "resourcesOnTumblebug": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnTumblebug"
+                    }
+                },
+                "systemMessage": {
+                    "type": "string"
+                }
+            }
+        },
         "mcis.JSONResult": {
             "type": "object"
         },
@@ -6653,30 +6682,6 @@
                 }
             }
         },
-        "mcis.TbInspectResourcesResponse": {
-            "type": "object",
-            "properties": {
-                "resourcesOnCsp": {
-                    "description": "ResourcesOnCsp       interface{} `json:\"resourcesOnCsp\"`\nResourcesOnSpider    interface{} `json:\"resourcesOnSpider\"`\nResourcesOnTumblebug interface{} `json:\"resourcesOnTumblebug\"`",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
-                    }
-                },
-                "resourcesOnSpider": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
-                    }
-                },
-                "resourcesOnTumblebug": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnTumblebug"
-                    }
-                }
-            }
-        },
         "mcis.TbMcisDynamicReq": {
             "type": "object",
             "required": [
@@ -6709,8 +6714,7 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
+                    "type": "string"
                 },
                 "vm": {
                     "type": "array",
@@ -6820,8 +6824,7 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
+                    "type": "string"
                 },
                 "vm": {
                     "type": "array",
