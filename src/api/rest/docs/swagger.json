@@ -6714,7 +6714,8 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "vm": {
                     "type": "array",
@@ -6824,7 +6825,8 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "vm": {
                     "type": "array",
