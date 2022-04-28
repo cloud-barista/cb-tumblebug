@@ -23,7 +23,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 )
 
@@ -342,7 +341,7 @@ type RestInspectResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param connectionName body RestInspectResourcesRequest true "Specify connectionName and resource type"
-// @Success 200 {object} mcis.TbInspectResourcesResponse
+// @Success 200 {object} mcis.InspectResource
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /inspectResources [post]
@@ -358,11 +357,12 @@ func RestInspectResources(c echo.Context) error {
 	fmt.Printf("[List Resource Status: %s]", u.Type)
 	var content interface{}
 	var err error
-	if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
-		content, err = mcir.InspectResources(u.ConnectionName, u.Type)
-	} else if u.Type == "vm" {
-		content, err = mcis.InspectVMs(u.ConnectionName)
-	}
+	// if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
+	// 	content, err = mcis.InspectResources(u.ConnectionName, u.Type)
+	// } else if u.Type == "vm" {
+	// 	content, err = mcis.InspectVMs(u.ConnectionName)
+	// }
+	content, err = mcis.InspectResources(u.ConnectionName, u.Type)
 
 	if err != nil {
 		common.CBLog.Error(err)

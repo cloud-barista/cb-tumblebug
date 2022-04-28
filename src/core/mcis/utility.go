@@ -21,17 +21,8 @@ import (
 	"strconv"
 	"strings"
 
-	//"fmt"
-	//"net/http"
-	//"io/ioutil"
-	//"strconv"
-
-	// CB-Store
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	//"github.com/cloud-barista/cb-spider/cloud-control-manager/vm-ssh"
-	//"github.com/cloud-barista/cb-tumblebug/src/core/mcism"
-	//"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 
 	"github.com/go-resty/resty/v2"
 
@@ -277,14 +268,22 @@ type SpiderAllList struct {
 	OnlyCSPList    []SpiderNameIdSystemId
 }
 
-// Response struct for InspectResources
+// TbInspectResourcesResponse is struct for response of InspectResources request
 type TbInspectResourcesResponse struct {
+	InspectResources []InspectResource `json:"inspectResources"`
+}
+
+// InspectResource is struct for InspectResource per Cloud Connection
+type InspectResource struct {
 	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
 	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
 	// ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
-	ResourcesOnCsp       []resourceOnCspOrSpider `json:"resourcesOnCsp"`
-	ResourcesOnSpider    []resourceOnCspOrSpider `json:"resourcesOnSpider"`
+
+	ConnectionName       string                  `json:"connectionName"`
+	SystemMessage        string                  `json:"systemMessage"`
 	ResourcesOnTumblebug []resourceOnTumblebug   `json:"resourcesOnTumblebug"`
+	ResourcesOnSpider    []resourceOnCspOrSpider `json:"resourcesOnSpider"`
+	ResourcesOnCsp       []resourceOnCspOrSpider `json:"resourcesOnCsp"`
 }
 
 type resourceOnCspOrSpider struct {
@@ -301,51 +300,126 @@ type resourceOnTumblebug struct {
 	ObjectKey   string `json:"objectKey"`
 }
 
-// InspectVMs returns the state list of TB VM objects of given connConfig
-func InspectVMs(connConfig string) (interface{}, error) {
+// InspectResources returns the state list of TB MCIR objects of given connConfig and resourceType
+func InspectResources(connConfig string, resourceType string) (InspectResource, error) {
 
 	nsList, err := common.ListNsId()
+	nullObj := InspectResource{}
 	if err != nil {
 		common.CBLog.Error(err)
 		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
-		return nil, err
+		return nullObj, err
 	}
 	// var TbResourceList []string
 	var TbResourceList []resourceOnTumblebug
 	for _, ns := range nsList {
 
-		mcisListinNs, _ := ListMcisId(ns)
-		if mcisListinNs == nil {
-			continue
-		}
-
-		for _, mcis := range mcisListinNs {
-			vmListInMcis, err := ListVmId(ns, mcis)
-			if err != nil {
-				common.CBLog.Error(err)
-				err := fmt.Errorf("an error occurred while getting resource list")
-				return nil, err
-			}
-			if vmListInMcis == nil {
+		// Bring TB resources
+		switch resourceType {
+		case common.StrVM:
+			mcisListinNs, _ := ListMcisId(ns)
+			if mcisListinNs == nil {
 				continue
 			}
-
-			for _, vmId := range vmListInMcis {
-				vm, err := GetVmObject(ns, mcis, vmId)
+			for _, mcis := range mcisListinNs {
+				vmListInMcis, err := ListVmId(ns, mcis)
 				if err != nil {
 					common.CBLog.Error(err)
 					err := fmt.Errorf("an error occurred while getting resource list")
-					return nil, err
+					return nullObj, err
 				}
+				if vmListInMcis == nil {
+					continue
+				}
+				for _, vmId := range vmListInMcis {
+					vm, err := GetVmObject(ns, mcis, vmId)
+					if err != nil {
+						common.CBLog.Error(err)
+						err := fmt.Errorf("an error occurred while getting resource list")
+						return nullObj, err
+					}
 
-				if vm.ConnectionName == connConfig { // filtering
+					if vm.ConnectionName == connConfig { // filtering
+						temp := resourceOnTumblebug{}
+						temp.Id = vm.Id
+						temp.CspNativeId = vm.CspViewVmDetail.IId.SystemId
+						temp.NsId = ns
+						temp.McisId = mcis
+						temp.Type = "vm"
+						temp.ObjectKey = common.GenMcisKey(ns, mcis, vm.Id)
+
+						TbResourceList = append(TbResourceList, temp)
+					}
+				}
+			}
+		case common.StrVNet:
+			resourceListInNs, err := mcir.ListResource(ns, resourceType)
+			if err != nil {
+				common.CBLog.Error(err)
+				err := fmt.Errorf("an error occurred while getting resource list")
+				return nullObj, err
+			}
+			if resourceListInNs == nil {
+				continue
+			}
+			resourcesInNs := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				if resource.ConnectionName == connConfig { // filtering
 					temp := resourceOnTumblebug{}
-					temp.Id = vm.Id
-					temp.CspNativeId = vm.CspViewVmDetail.IId.SystemId
+					temp.Id = resource.Id
+					temp.CspNativeId = resource.CspVNetId
 					temp.NsId = ns
-					temp.McisId = mcis
-					temp.Type = "vm"
-					temp.ObjectKey = common.GenMcisKey(ns, mcis, vm.Id)
+					//temp.McisId = ""
+					temp.Type = resourceType
+					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+
+					TbResourceList = append(TbResourceList, temp)
+				}
+			}
+		case common.StrSecurityGroup:
+			resourceListInNs, err := mcir.ListResource(ns, resourceType)
+			if err != nil {
+				common.CBLog.Error(err)
+				err := fmt.Errorf("an error occurred while getting resource list")
+				return nullObj, err
+			}
+			if resourceListInNs == nil {
+				continue
+			}
+			resourcesInNs := resourceListInNs.([]mcir.TbSecurityGroupInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				if resource.ConnectionName == connConfig { // filtering
+					temp := resourceOnTumblebug{}
+					temp.Id = resource.Id
+					temp.CspNativeId = resource.CspSecurityGroupId
+					temp.NsId = ns
+					//temp.McisId = ""
+					temp.Type = resourceType
+					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+
+					TbResourceList = append(TbResourceList, temp)
+				}
+			}
+		case common.StrSSHKey:
+			resourceListInNs, err := mcir.ListResource(ns, resourceType)
+			if err != nil {
+				common.CBLog.Error(err)
+				err := fmt.Errorf("an error occurred while getting resource list")
+				return nullObj, err
+			}
+			if resourceListInNs == nil {
+				continue
+			}
+			resourcesInNs := resourceListInNs.([]mcir.TbSshKeyInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				if resource.ConnectionName == connConfig { // filtering
+					temp := resourceOnTumblebug{}
+					temp.Id = resource.Id
+					temp.CspNativeId = resource.CspSshKeyName
+					temp.NsId = ns
+					//temp.McisId = ""
+					temp.Type = resourceType
+					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
 					TbResourceList = append(TbResourceList, temp)
 				}
@@ -363,7 +437,17 @@ func InspectVMs(connConfig string) (interface{}, error) {
 	tempReq := JsonTemplate{}
 	tempReq.ConnectionName = connConfig
 
-	spiderRequestURL := common.SpiderRestUrl + "/allvm"
+	var spiderRequestURL string
+	switch resourceType {
+	case common.StrVM:
+		spiderRequestURL = common.SpiderRestUrl + "/allvm"
+	case common.StrVNet:
+		spiderRequestURL = common.SpiderRestUrl + "/allvpc"
+	case common.StrSecurityGroup:
+		spiderRequestURL = common.SpiderRestUrl + "/allsecuritygroup"
+	case common.StrSSHKey:
+		spiderRequestURL = common.SpiderRestUrl + "/allkeypair"
+	}
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -375,7 +459,7 @@ func InspectVMs(connConfig string) (interface{}, error) {
 	if err != nil {
 		common.CBLog.Error(err)
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return nil, err
+		return nullObj, err
 	}
 
 	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
@@ -383,13 +467,13 @@ func InspectVMs(connConfig string) (interface{}, error) {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
 		common.CBLog.Error(err)
-		return nil, err
+		return nullObj, err
 	default:
 	}
 
 	temp, _ := resp.Result().(*SpiderAllListWrapper) // type assertion
 
-	result := TbInspectResourcesResponse{}
+	result := InspectResource{}
 
 	/*
 		// Implementation style 1
@@ -400,6 +484,8 @@ func InspectVMs(connConfig string) (interface{}, error) {
 		}
 	*/
 	// Implementation style 2
+	result.ConnectionName = connConfig
+
 	result.ResourcesOnTumblebug = []resourceOnTumblebug{}
 	result.ResourcesOnTumblebug = append(result.ResourcesOnTumblebug, TbResourceList...)
 

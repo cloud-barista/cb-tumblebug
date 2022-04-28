@@ -7,7 +7,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/api/grpc/logger"
 	pb "github.com/cloud-barista/cb-tumblebug/src/api/grpc/protobuf/cbtumblebug"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 )
 
@@ -109,7 +108,7 @@ func (s *UtilityService) InspectMcirResources(ctx context.Context, req *pb.Inspe
 
 	logger.Debug("calling UtilityService.InspectMcirResources()")
 
-	content, err := mcir.InspectResources(req.ConnectionName, req.Type)
+	content, err := mcis.InspectResources(req.ConnectionName, req.Type)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InspectMcirResources()")
 	}
@@ -131,7 +130,7 @@ func (s *UtilityService) InspectVmResources(ctx context.Context, req *pb.Inspect
 
 	logger.Debug("calling UtilityService.InspectVmResources()")
 
-	content, err := mcis.InspectVMs(req.ConnectionName)
+	content, err := mcis.InspectResources(req.ConnectionName, common.StrVM)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "UtilityService.InspectVmResources()")
 	}
