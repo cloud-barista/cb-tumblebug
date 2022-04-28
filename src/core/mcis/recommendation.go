@@ -359,7 +359,7 @@ func RecommendVmCost(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInf
 	return result, nil
 }
 
-// RecommendVmPerformance func prioritize specs based on given Perfomance condition
+// RecommendVmPerformance func prioritize specs based on given Performance condition
 func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInfo, error) {
 
 	result := []mcir.TbSpecInfo{}
