@@ -284,6 +284,7 @@ type InspectResource struct {
 	ResourcesOnTumblebug []resourceOnTumblebug   `json:"resourcesOnTumblebug"`
 	ResourcesOnSpider    []resourceOnCspOrSpider `json:"resourcesOnSpider"`
 	ResourcesOnCsp       []resourceOnCspOrSpider `json:"resourcesOnCsp"`
+	ResourcesOnCspOnly   []resourceOnCspOrSpider `json:"resourcesOnCspOnly"`
 }
 
 type resourceOnCspOrSpider struct {
@@ -491,8 +492,9 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 
 	// result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
 	// result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
-	result.ResourcesOnCsp = []resourceOnCspOrSpider{}
 	result.ResourcesOnSpider = []resourceOnCspOrSpider{}
+	result.ResourcesOnCsp = []resourceOnCspOrSpider{}
+	result.ResourcesOnCspOnly = []resourceOnCspOrSpider{}
 
 	for _, v := range (*temp).AllList.MappedList {
 		tmpObj := resourceOnCspOrSpider{}
@@ -517,6 +519,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		tmpObj.CspNativeId = v.SystemId
 
 		result.ResourcesOnCsp = append(result.ResourcesOnCsp, tmpObj)
+		result.ResourcesOnCspOnly = append(result.ResourcesOnCspOnly, tmpObj)
 	}
 
 	return result, nil
