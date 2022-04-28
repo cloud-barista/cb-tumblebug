@@ -910,6 +910,10 @@ definitions:
         items:
           $ref: '#/definitions/mcis.resourceOnCspOrSpider'
         type: array
+      resourcesOnCspOnly:
+        items:
+          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+        type: array
       resourcesOnSpider:
         items:
           $ref: '#/definitions/mcis.resourceOnCspOrSpider'

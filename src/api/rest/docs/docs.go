@@ -6131,6 +6131,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
                     }
                 },
+                "resourcesOnCspOnly": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                    }
+                },
                 "resourcesOnSpider": {
                     "type": "array",
                     "items": {
