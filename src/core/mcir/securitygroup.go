@@ -165,12 +165,31 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		return content, err
 	}
 
+	// TODO: Need to be improved
+	// Avoid retrieving vNet info if option == register
+	// Assign random temporal ID to u.VNetId
+	if option == "register" {
+		resourceIdList, err := ListResourceId(nsId, common.StrVNet)
+		if err != nil {
+			common.CBLog.Error(err)
+			err := fmt.Errorf("Cannot ListResourceId securityGroup")
+			return TbSecurityGroupInfo{}, err
+		}
+		if len(resourceIdList) == 0 {
+			errString := "There is no " + common.StrVNet + " resource in " + nsId
+			err := fmt.Errorf(errString)
+			common.CBLog.Error(err)
+			return TbSecurityGroupInfo{}, err
+		}
+		u.VNetId = resourceIdList[0]
+	}
+
+	vNetInfo := TbVNetInfo{}
 	tempInterface, err := GetResource(nsId, common.StrVNet, u.VNetId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the TbVNetInfo " + u.VNetId + ".")
 		return TbSecurityGroupInfo{}, err
 	}
-	vNetInfo := TbVNetInfo{}
 	err = common.CopySrcToDest(&tempInterface, &vNetInfo)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the TbVNetInfo-CopySrcToDest() " + u.VNetId + ".")
