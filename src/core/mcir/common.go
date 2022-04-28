@@ -731,56 +731,6 @@ func DelEleInSlice(arr interface{}, index int) {
 	}
 }
 
-// SpiderNameIdSystemId is struct for mapping NameID and System ID from CB-Spider response
-type SpiderNameIdSystemId struct {
-	NameId   string
-	SystemId string
-}
-
-// SpiderAllListWrapper is struct for wrapping SpiderAllList struct from CB-Spider response.
-type SpiderAllListWrapper struct {
-	AllList SpiderAllList
-}
-
-// SpiderAllList is struct for OnlyCSPList, OnlySpiderList MappedList from CB-Spider response.
-type SpiderAllList struct {
-	MappedList     []SpiderNameIdSystemId
-	OnlySpiderList []SpiderNameIdSystemId
-	OnlyCSPList    []SpiderNameIdSystemId
-}
-
-// TbInspectResourcesResponse is struct for response of InspectResources request
-type TbInspectResourcesResponse struct {
-	InspectResources []InspectResource `json:"inspectResources"`
-}
-
-// InspectResource is struct for InspectResource per Cloud Connection
-type InspectResource struct {
-	// ResourcesOnCsp       interface{} `json:"resourcesOnCsp"`
-	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
-	// ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
-
-	ConnectionName       string                  `json:"connectionName"`
-	SystemMessage        string                  `json:"systemMessage"`
-	ResourcesOnTumblebug []resourceOnTumblebug   `json:"resourcesOnTumblebug"`
-	ResourcesOnSpider    []resourceOnCspOrSpider `json:"resourcesOnSpider"`
-	ResourcesOnCsp       []resourceOnCspOrSpider `json:"resourcesOnCsp"`
-}
-
-type resourceOnCspOrSpider struct {
-	Id          string `json:"id"`
-	CspNativeId string `json:"cspNativeId"`
-}
-
-type resourceOnTumblebug struct {
-	Id          string `json:"id"`
-	CspNativeId string `json:"cspNativeId"`
-	NsId        string `json:"nsId"`
-	//McisId      string `json:"mcisId"`
-	Type      string `json:"type"`
-	ObjectKey string `json:"objectKey"`
-}
-
 /*
 // RegisterExistingResources
 func RegisterExistingResources(nsId string, connConfig string) (interface{}, error) {
