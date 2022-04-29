@@ -330,7 +330,7 @@ func RestDeleteObjects(c echo.Context) error {
 
 // Request struct for RestInspectResources
 type RestInspectResourcesRequest struct {
-	ConnectionName string `json:"connectionName"`
+	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
 	Type           string `json:"type" example:"vNet" enums:"vNet,securityGroup,sshKey,vm"`
 }
 
@@ -363,6 +363,43 @@ func RestInspectResources(c echo.Context) error {
 	// 	content, err = mcis.InspectVMs(u.ConnectionName)
 	// }
 	content, err = mcis.InspectResources(u.ConnectionName, u.Type)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+// Request struct for RestRegisterCspNativeResources
+type RestRegisterCspNativeResourcesRequest struct {
+	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
+	NsId           string `json:"nsId" example:"ns01"`
+	McisName       string `json:"mcisName" example:"mcis-csp-native"`
+}
+
+// RestRegisterCspNativeResources godoc
+// @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
+// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
+// @Tags [Admin] System management
+// @Accept  json
+// @Produce  json
+// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName and NS Id"
+// @Success 200 {object} mcis.InspectResource
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /registerCspResources [post]
+func RestRegisterCspNativeResources(c echo.Context) error {
+
+	u := &RestRegisterCspNativeResourcesRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName)
 
 	if err != nil {
 		common.CBLog.Error(err)
