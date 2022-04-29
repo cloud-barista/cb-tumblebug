@@ -4730,6 +4730,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/registerCspResources": {
+            "post": {
+                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug",
+                "parameters": [
+                    {
+                        "description": "Specify connectionName and NS Id",
+                        "name": "Request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/common.RestRegisterCspNativeResourcesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.InspectResource"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/{nsId}/checkResource/{resourceType}/{resourceId}": {
             "get": {
                 "description": "Check resources' existence",
@@ -4996,7 +5042,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "connectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "type": {
                     "type": "string",
@@ -5007,6 +5054,23 @@ const docTemplate = `{
                         "vm"
                     ],
                     "example": "vNet"
+                }
+            }
+        },
+        "common.RestRegisterCspNativeResourcesRequest": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
+                },
+                "mcisName": {
+                    "type": "string",
+                    "example": "mcis-csp-native"
+                },
+                "nsId": {
+                    "type": "string",
+                    "example": "ns01"
                 }
             }
         },
