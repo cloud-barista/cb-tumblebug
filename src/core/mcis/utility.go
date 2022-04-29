@@ -565,7 +565,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 	for _, r := range inspectedResources.ResourcesOnCspOnly {
 		req := mcir.TbSecurityGroupReq{}
 		req.ConnectionName = connConfig
-		req.VNetId = "not-defined-yet"
+		req.VNetId = "not defined"
 		req.CspSecurityGroupId = r.IdByCsp
 		req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 		req.Name = req.ConnectionName + "-" + req.CspSecurityGroupId
