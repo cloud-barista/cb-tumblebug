@@ -526,15 +526,17 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 }
 
 // RegisterCspNativeResources func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (InspectResource, error) {
+func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (common.IdList, error) {
 
 	optionFlag := "register"
+	registeredStatus := ""
+	result := common.IdList{}
 
 	// bring vNet list and register all
 	inspectedResources, err := InspectResources(connConfig, common.StrVNet)
 	if err != nil {
 		common.CBLog.Error(err)
-		return InspectResource{}, err
+		return common.IdList{}, err
 	}
 	for _, r := range inspectedResources.ResourcesOnCspOnly {
 		req := mcir.TbVNetReq{}
@@ -542,18 +544,23 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		req.CspVNetId = r.IdByCsp
 		req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 		req.Name = req.ConnectionName + "-" + req.CspVNetId
+		req.Name = strings.ToLower(req.Name)
 
 		_, err = mcir.CreateVNet(nsId, &req, optionFlag)
+
+		registeredStatus = ""
 		if err != nil {
 			common.CBLog.Error(err)
+			registeredStatus = "  [Failed] " + err.Error()
 		}
+		result.IdList = append(result.IdList, common.StrVNet+": "+req.Name+registeredStatus)
 	}
 
 	// bring SecurityGroup list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrSecurityGroup)
 	if err != nil {
 		common.CBLog.Error(err)
-		return InspectResource{}, err
+		return common.IdList{}, err
 	}
 	for _, r := range inspectedResources.ResourcesOnCspOnly {
 		req := mcir.TbSecurityGroupReq{}
@@ -562,17 +569,23 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		req.CspSecurityGroupId = r.IdByCsp
 		req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 		req.Name = req.ConnectionName + "-" + req.CspSecurityGroupId
+		req.Name = strings.ToLower(req.Name)
+
 		_, err = mcir.CreateSecurityGroup(nsId, &req, optionFlag)
+
+		registeredStatus = ""
 		if err != nil {
 			common.CBLog.Error(err)
+			registeredStatus = "  [Failed] " + err.Error()
 		}
+		result.IdList = append(result.IdList, common.StrSecurityGroup+": "+req.Name+registeredStatus)
 	}
 
 	// bring SSHKey list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrSSHKey)
 	if err != nil {
 		common.CBLog.Error(err)
-		return InspectResource{}, err
+		return common.IdList{}, err
 	}
 	for _, r := range inspectedResources.ResourcesOnCspOnly {
 		req := mcir.TbSshKeyReq{}
@@ -580,6 +593,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		req.CspSshKeyId = r.IdByCsp
 		req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 		req.Name = req.ConnectionName + "-" + req.CspSshKeyId
+		req.Name = strings.ToLower(req.Name)
 
 		req.Fingerprint = "cannot retrieve"
 		req.PrivateKey = "cannot retrieve"
@@ -587,28 +601,34 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		req.Username = "cannot retrieve"
 
 		_, err = mcir.CreateSshKey(nsId, &req, optionFlag)
+
+		registeredStatus = ""
 		if err != nil {
 			common.CBLog.Error(err)
+			registeredStatus = "  [Failed] " + err.Error()
 		}
+		result.IdList = append(result.IdList, common.StrSSHKey+": "+req.Name+registeredStatus)
 	}
 
 	// bring VM list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrVM)
 	if err != nil {
 		common.CBLog.Error(err)
-		return InspectResource{}, err
+		return common.IdList{}, err
 	}
 	for _, r := range inspectedResources.ResourcesOnCspOnly {
 		req := TbMcisReq{}
 		req.Description = "MCIS for CSP managed VMs (registered to CB-TB)"
 		req.InstallMonAgent = "no"
 		req.Name = mcisId
+		req.Name = strings.ToLower(req.Name)
 
 		vm := TbVmReq{}
 		vm.ConnectionName = connConfig
 		vm.IdByCSP = r.IdByCsp
 		vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
 		vm.Name = vm.ConnectionName + "-" + vm.IdByCSP
+		vm.Name = strings.ToLower(vm.Name)
 		vm.Label = "not defined"
 
 		vm.ImageId = "cannot retrieve"
@@ -621,17 +641,21 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		req.Vm = append(req.Vm, vm)
 
 		_, err = CreateMcis(nsId, &req, optionFlag)
+
+		registeredStatus = ""
 		if err != nil {
 			common.CBLog.Error(err)
+			registeredStatus = "  [Failed] " + err.Error()
 		}
+		result.IdList = append(result.IdList, common.StrVM+": "+vm.Name+registeredStatus)
 
 	}
 
-	inspectedResources, err = InspectResources(connConfig, common.StrVM)
-	if err != nil {
-		common.CBLog.Error(err)
-		return InspectResource{}, err
-	}
-	return inspectedResources, err
+	// inspectedResources, err = InspectResources(connConfig, common.StrVM)
+	// if err != nil {
+	// 	common.CBLog.Error(err)
+	// 	return common.IdList{}, err
+	// }
+	return result, err
 
 }

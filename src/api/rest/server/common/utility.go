@@ -388,7 +388,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName and NS Id"
-// @Success 200 {object} mcis.InspectResource
+// @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResources [post]
