@@ -142,6 +142,7 @@ definitions:
   common.RestInspectResourcesRequest:
     properties:
       connectionName:
+        example: aws-ap-southeast-1
         type: string
       type:
         enum:
@@ -150,6 +151,18 @@ definitions:
         - sshKey
         - vm
         example: vNet
+        type: string
+    type: object
+  common.RestRegisterCspNativeResourcesRequest:
+    properties:
+      connectionName:
+        example: aws-ap-southeast-1
+        type: string
+      mcisName:
+        example: mcis-csp-native
+        type: string
+      nsId:
+        example: ns01
         type: string
     type: object
   common.SimpleMsg:
@@ -4873,6 +4886,38 @@ paths:
       summary: Get registered region info
       tags:
       - '[Admin] Multi-Cloud environment configuration'
+  /registerCspResources:
+    post:
+      consumes:
+      - application/json
+      description: Register CSP Native Resources (vNet, securityGroup, sshKey, vm)
+        to CB-Tumblebug
+      parameters:
+      - description: Specify connectionName and NS Id
+        in: body
+        name: Request
+        required: true
+        schema:
+          $ref: '#/definitions/common.RestRegisterCspNativeResourcesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.InspectResource'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to
+        CB-Tumblebug
+      tags:
+      - '[Admin] System management'
 securityDefinitions:
   BasicAuth:
     type: basic
