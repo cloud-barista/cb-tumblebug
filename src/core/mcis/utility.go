@@ -279,26 +279,53 @@ type InspectResource struct {
 	// ResourcesOnSpider    interface{} `json:"resourcesOnSpider"`
 	// ResourcesOnTumblebug interface{} `json:"resourcesOnTumblebug"`
 
-	ConnectionName       string                `json:"connectionName"`
-	ResourceType         string                `json:"resourceType"`
-	SystemMessage        string                `json:"systemMessage"`
-	ResourcesOnTumblebug []resourceOnTumblebug `json:"resourcesOnTumblebug"`
-	ResourcesOnSpider    []resourceOnSpider    `json:"resourcesOnSpider"`
-	ResourcesOnCsp       []resourceOnCsp       `json:"resourcesOnCsp"`
-	ResourcesOnCspOnly   []resourceOnCsp       `json:"resourcesOnCspOnly"`
+	ConnectionName   string                `json:"connectionName"`
+	ResourceType     string                `json:"resourceType"`
+	SystemMessage    string                `json:"systemMessage"`
+	ResourceOverview resourceCountOverview `json:"resourceOverview"`
+	Resources        resourcesByManageType `json:"resources"`
+}
+
+type resourceCountOverview struct {
+	OnTumblebug int `json:"onTumblebug"`
+	OnSpider    int `json:"onSpider"`
+	OnCspTotal  int `json:"onCspTotal"`
+	OnCspOnly   int `json:"onCspOnly"`
+}
+
+type resourcesByManageType struct {
+	OnTumblebug resourceOnTumblebug `json:"onTumblebug"`
+	OnSpider    resourceOnSpider    `json:"onSpider"`
+	OnCspTotal  resourceOnCsp       `json:"onCspTotal"`
+	OnCspOnly   resourceOnCsp       `json:"onCspOnly"`
 }
 
 type resourceOnSpider struct {
+	Count int                    `json:"count"`
+	Info  []resourceOnSpiderInfo `json:"info"`
+}
+
+type resourceOnSpiderInfo struct {
 	IdBySp  string `json:"idBySp"`
 	IdByCsp string `json:"idByCsp"`
 }
 
 type resourceOnCsp struct {
+	Count int                 `json:"count"`
+	Info  []resourceOnCspInfo `json:"info"`
+}
+
+type resourceOnCspInfo struct {
 	IdByCsp     string `json:"idByCsp"`
 	RefNameOrId string `json:"refNameOrId"`
 }
 
 type resourceOnTumblebug struct {
+	Count int                       `json:"count"`
+	Info  []resourceOnTumblebugInfo `json:"info"`
+}
+
+type resourceOnTumblebugInfo struct {
 	IdByTb    string `json:"idByTb"`
 	IdByCsp   string `json:"idByCsp"`
 	NsId      string `json:"nsId"`
@@ -317,7 +344,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		return nullObj, err
 	}
 	// var TbResourceList []string
-	var TbResourceList []resourceOnTumblebug
+	TbResourceList := resourceOnTumblebug{}
 	for _, ns := range nsList {
 
 		// Bring TB resources
@@ -337,6 +364,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				if vmListInMcis == nil {
 					continue
 				}
+
 				for _, vmId := range vmListInMcis {
 					vm, err := GetVmObject(ns, mcis, vmId)
 					if err != nil {
@@ -346,14 +374,14 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					}
 
 					if vm.ConnectionName == connConfig { // filtering
-						temp := resourceOnTumblebug{}
+						temp := resourceOnTumblebugInfo{}
 						temp.IdByTb = vm.Id
 						temp.IdByCsp = vm.CspViewVmDetail.IId.SystemId
 						temp.NsId = ns
 						temp.McisId = mcis
 						temp.ObjectKey = common.GenMcisKey(ns, mcis, vm.Id)
 
-						TbResourceList = append(TbResourceList, temp)
+						TbResourceList.Info = append(TbResourceList.Info, temp)
 					}
 				}
 			}
@@ -370,13 +398,13 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 			resourcesInNs := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebug{}
+					temp := resourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspVNetId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
-					TbResourceList = append(TbResourceList, temp)
+					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
 		case common.StrSecurityGroup:
@@ -392,13 +420,13 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 			resourcesInNs := resourceListInNs.([]mcir.TbSecurityGroupInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebug{}
+					temp := resourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspSecurityGroupId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
-					TbResourceList = append(TbResourceList, temp)
+					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
 		case common.StrSSHKey:
@@ -414,13 +442,13 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 			resourcesInNs := resourceListInNs.([]mcir.TbSshKeyInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
-					temp := resourceOnTumblebug{}
+					temp := resourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
 					temp.IdByCsp = resource.CspSshKeyName
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
-					TbResourceList = append(TbResourceList, temp)
+					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
 		}
@@ -486,41 +514,51 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	result.ConnectionName = connConfig
 	result.ResourceType = resourceType
 
-	result.ResourcesOnTumblebug = []resourceOnTumblebug{}
-	result.ResourcesOnTumblebug = append(result.ResourcesOnTumblebug, TbResourceList...)
+	result.Resources.OnTumblebug = TbResourceList
+	//result.ResourcesOnTumblebug.Info = append(result.ResourcesOnTumblebug.Info, TbResourceList...)
 
 	// result.ResourcesOnCsp = append((*temp).AllList.MappedList, (*temp).AllList.OnlyCSPList...)
 	// result.ResourcesOnSpider = append((*temp).AllList.MappedList, (*temp).AllList.OnlySpiderList...)
-	result.ResourcesOnSpider = []resourceOnSpider{}
-	result.ResourcesOnCsp = []resourceOnCsp{}
-	result.ResourcesOnCspOnly = []resourceOnCsp{}
+	result.Resources.OnSpider = resourceOnSpider{}
+	result.Resources.OnCspTotal = resourceOnCsp{}
+	result.Resources.OnCspOnly = resourceOnCsp{}
 
-	tmpResourceOnSpider := resourceOnSpider{}
-	tmpResourceOnCsp := resourceOnCsp{}
+	tmpResourceOnSpider := resourceOnSpiderInfo{}
+	tmpResourceOnCsp := resourceOnCspInfo{}
 
 	for _, v := range (*temp).AllList.MappedList {
 		tmpResourceOnSpider.IdBySp = v.NameId
 		tmpResourceOnSpider.IdByCsp = v.SystemId
-		result.ResourcesOnSpider = append(result.ResourcesOnSpider, tmpResourceOnSpider)
+		result.Resources.OnSpider.Info = append(result.Resources.OnSpider.Info, tmpResourceOnSpider)
 
 		tmpResourceOnCsp.IdByCsp = v.SystemId
 		tmpResourceOnCsp.RefNameOrId = v.NameId
-		result.ResourcesOnCsp = append(result.ResourcesOnCsp, tmpResourceOnCsp)
+		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
 	}
 
 	for _, v := range (*temp).AllList.OnlySpiderList {
 		tmpResourceOnSpider.IdBySp = v.NameId
 		tmpResourceOnSpider.IdByCsp = v.SystemId
-		result.ResourcesOnSpider = append(result.ResourcesOnSpider, tmpResourceOnSpider)
+		result.Resources.OnSpider.Info = append(result.Resources.OnSpider.Info, tmpResourceOnSpider)
 	}
 
 	for _, v := range (*temp).AllList.OnlyCSPList {
 		tmpResourceOnCsp.IdByCsp = v.SystemId
 		tmpResourceOnCsp.RefNameOrId = v.NameId
 
-		result.ResourcesOnCsp = append(result.ResourcesOnCsp, tmpResourceOnCsp)
-		result.ResourcesOnCspOnly = append(result.ResourcesOnCspOnly, tmpResourceOnCsp)
+		result.Resources.OnCspTotal.Info = append(result.Resources.OnCspTotal.Info, tmpResourceOnCsp)
+		result.Resources.OnCspOnly.Info = append(result.Resources.OnCspOnly.Info, tmpResourceOnCsp)
 	}
+
+	// Count resources
+	result.Resources.OnTumblebug.Count = len(result.Resources.OnTumblebug.Info)
+	result.Resources.OnSpider.Count = len(result.Resources.OnSpider.Info)
+	result.Resources.OnCspTotal.Count = len(result.Resources.OnCspTotal.Info)
+	result.Resources.OnCspOnly.Count = len(result.Resources.OnCspOnly.Info)
+	result.ResourceOverview.OnTumblebug = result.Resources.OnTumblebug.Count
+	result.ResourceOverview.OnSpider = result.Resources.OnSpider.Count
+	result.ResourceOverview.OnCspTotal = result.Resources.OnCspTotal.Count
+	result.ResourceOverview.OnCspOnly = result.Resources.OnCspOnly.Count
 
 	return result, nil
 }
@@ -538,7 +576,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		common.CBLog.Error(err)
 		return common.IdList{}, err
 	}
-	for _, r := range inspectedResources.ResourcesOnCspOnly {
+	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := mcir.TbVNetReq{}
 		req.ConnectionName = connConfig
 		req.CspVNetId = r.IdByCsp
@@ -562,7 +600,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		common.CBLog.Error(err)
 		return common.IdList{}, err
 	}
-	for _, r := range inspectedResources.ResourcesOnCspOnly {
+	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := mcir.TbSecurityGroupReq{}
 		req.ConnectionName = connConfig
 		req.VNetId = "not defined"
@@ -587,7 +625,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		common.CBLog.Error(err)
 		return common.IdList{}, err
 	}
-	for _, r := range inspectedResources.ResourcesOnCspOnly {
+	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := mcir.TbSshKeyReq{}
 		req.ConnectionName = connConfig
 		req.CspSshKeyId = r.IdByCsp
@@ -616,7 +654,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		common.CBLog.Error(err)
 		return common.IdList{}, err
 	}
-	for _, r := range inspectedResources.ResourcesOnCspOnly {
+	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := TbMcisReq{}
 		req.Description = "MCIS for CSP managed VMs (registered to CB-TB)"
 		req.InstallMonAgent = "no"
