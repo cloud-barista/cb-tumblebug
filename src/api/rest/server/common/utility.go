@@ -331,7 +331,7 @@ func RestDeleteObjects(c echo.Context) error {
 // Request struct for RestInspectResources
 type RestInspectResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
-	Type           string `json:"type" example:"vNet" enums:"vNet,securityGroup,sshKey,vm"`
+	ResourceType   string `json:"resourceType" example:"vNet" enums:"vNet,securityGroup,sshKey,vm"`
 }
 
 // RestInspectResources godoc
@@ -354,7 +354,7 @@ func RestInspectResources(c echo.Context) error {
 		return err
 	}
 
-	fmt.Printf("[List Resource Status: %s]", u.Type)
+	fmt.Printf("[List Resource Status: %s]", u.ResourceType)
 	var content interface{}
 	var err error
 	// if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
@@ -362,7 +362,7 @@ func RestInspectResources(c echo.Context) error {
 	// } else if u.Type == "vm" {
 	// 	content, err = mcis.InspectVMs(u.ConnectionName)
 	// }
-	content, err = mcis.InspectResources(u.ConnectionName, u.Type)
+	content, err = mcis.InspectResources(u.ConnectionName, u.ResourceType)
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -388,7 +388,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName and NS Id"
-// @Success 200 {object} mcis.InspectResource
+// @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResources [post]
