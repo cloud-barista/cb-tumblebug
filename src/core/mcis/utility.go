@@ -26,7 +26,10 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
+	"math"
 	"reflect"
+	"sync"
+	"time"
 
 	validator "github.com/go-playground/validator/v10"
 )
@@ -563,18 +566,74 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	return result, nil
 }
 
+// RegisterCspNativeResourceResultAll is struct for Register Csp Native Resource Result for All Clouds
+type RegisterResourceAllResult struct {
+	RegisterationResult []RegisterResourceResult `json:"registerationResult"`
+}
+
+// RegisterCspNativeResourceResult is struct for Register Csp Native Resource Result
+type RegisterResourceResult struct {
+	ConnectionName        string                `json:"connectionName"`
+	SystemMessage         string                `json:"systemMessage"`
+	ElapsedTime           int                   `json:"elapsedTime"`
+	RegisterationOverview registerationOverview `json:"registerationOverview"`
+	RegisterationOutputs  common.IdList         `json:"registerationOutputs"`
+}
+
+type registerationOverview struct {
+	VNet          int `json:"vNet"`
+	SecurityGroup int `json:"securityGroup"`
+	SshKey        int `json:"sshKey"`
+	Vm            int `json:"vm"`
+	Failed        int `json:"failed"`
+}
+
+// RegisterCspNativeResourcesAll func registers all CSP-native resources into CB-TB
+func RegisterCspNativeResourcesAll(nsId string, mcisId string) (RegisterResourceAllResult, error) {
+
+	connectionConfigList, err := common.GetConnConfigList()
+	if err != nil {
+		err := fmt.Errorf("Cannnot load ConnectionConfigList")
+		common.CBLog.Error(err)
+		return RegisterResourceAllResult{}, err
+	}
+	output := RegisterResourceAllResult{}
+
+	var wait sync.WaitGroup
+	for _, k := range connectionConfigList.Connectionconfig {
+		wait.Add(1)
+		go func(k common.ConnConfig) {
+			defer wait.Done()
+
+			mcisNameForRegister := mcisId + "-" + k.ConfigName
+
+			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
+
+			output.RegisterationResult = append(output.RegisterationResult, registerResult)
+
+		}(k)
+	}
+	wait.Wait()
+
+	return output, err
+}
+
 // RegisterCspNativeResources func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (common.IdList, error) {
+func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (RegisterResourceResult, error) {
+	startTime := time.Now()
 
 	optionFlag := "register"
 	registeredStatus := ""
-	result := common.IdList{}
+	result := RegisterResourceResult{}
 
 	// bring vNet list and register all
 	inspectedResources, err := InspectResources(connConfig, common.StrVNet)
 	if err != nil {
 		common.CBLog.Error(err)
-		return common.IdList{}, err
+		result.SystemMessage = err.Error()
 	}
 	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := mcir.TbVNetReq{}
@@ -590,15 +649,18 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		if err != nil {
 			common.CBLog.Error(err)
 			registeredStatus = "  [Failed] " + err.Error()
+			result.RegisterationOverview.VNet--
+			result.RegisterationOverview.Failed++
 		}
-		result.IdList = append(result.IdList, common.StrVNet+": "+req.Name+registeredStatus)
+		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVNet+": "+req.Name+registeredStatus)
+		result.RegisterationOverview.VNet++
 	}
 
 	// bring SecurityGroup list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrSecurityGroup)
 	if err != nil {
 		common.CBLog.Error(err)
-		return common.IdList{}, err
+		result.SystemMessage += "//" + err.Error()
 	}
 	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := mcir.TbSecurityGroupReq{}
@@ -615,15 +677,18 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		if err != nil {
 			common.CBLog.Error(err)
 			registeredStatus = "  [Failed] " + err.Error()
+			result.RegisterationOverview.SecurityGroup--
+			result.RegisterationOverview.Failed++
 		}
-		result.IdList = append(result.IdList, common.StrSecurityGroup+": "+req.Name+registeredStatus)
+		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSecurityGroup+": "+req.Name+registeredStatus)
+		result.RegisterationOverview.SecurityGroup++
 	}
 
 	// bring SSHKey list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrSSHKey)
 	if err != nil {
 		common.CBLog.Error(err)
-		return common.IdList{}, err
+		result.SystemMessage += "//" + err.Error()
 	}
 	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := mcir.TbSshKeyReq{}
@@ -644,15 +709,18 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		if err != nil {
 			common.CBLog.Error(err)
 			registeredStatus = "  [Failed] " + err.Error()
+			result.RegisterationOverview.SshKey--
+			result.RegisterationOverview.Failed++
 		}
-		result.IdList = append(result.IdList, common.StrSSHKey+": "+req.Name+registeredStatus)
+		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSSHKey+": "+req.Name+registeredStatus)
+		result.RegisterationOverview.SshKey++
 	}
 
 	// bring VM list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrVM)
 	if err != nil {
 		common.CBLog.Error(err)
-		return common.IdList{}, err
+		result.SystemMessage += "//" + err.Error()
 	}
 	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
 		req := TbMcisReq{}
@@ -684,16 +752,15 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		if err != nil {
 			common.CBLog.Error(err)
 			registeredStatus = "  [Failed] " + err.Error()
+			result.RegisterationOverview.Vm--
+			result.RegisterationOverview.Failed++
 		}
-		result.IdList = append(result.IdList, common.StrVM+": "+vm.Name+registeredStatus)
-
+		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVM+": "+vm.Name+registeredStatus)
+		result.RegisterationOverview.Vm++
 	}
+	result.ConnectionName = connConfig
+	result.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
 
-	// inspectedResources, err = InspectResources(connConfig, common.StrVM)
-	// if err != nil {
-	// 	common.CBLog.Error(err)
-	// 	return common.IdList{}, err
-	// }
 	return result, err
 
 }

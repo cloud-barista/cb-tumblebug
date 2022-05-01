@@ -388,7 +388,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Accept  json
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName and NS Id"
-// @Success 200 {object} common.IdList
+// @Success 200 {object} mcis.RegisterResourceResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResources [post]
@@ -400,6 +400,36 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	}
 
 	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
+
+// RestRegisterCspNativeResourcesAll godoc
+// @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
+// @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
+// @Tags [Admin] System management
+// @Accept  json
+// @Produce  json
+// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify NS Id and MCIS Name"
+// @Success 200 {object} mcis.RegisterResourceAllResult
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /registerCspResourcesAll [post]
+func RestRegisterCspNativeResourcesAll(c echo.Context) error {
+
+	u := &RestRegisterCspNativeResourcesRequest{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName)
 
 	if err != nil {
 		common.CBLog.Error(err)
