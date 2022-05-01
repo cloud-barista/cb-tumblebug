@@ -144,7 +144,7 @@ definitions:
       connectionName:
         example: aws-ap-southeast-1
         type: string
-      type:
+      resourceType:
         enum:
         - vNet
         - securityGroup
@@ -919,17 +919,19 @@ definitions:
     properties:
       connectionName:
         type: string
+      resourceType:
+        type: string
       resourcesOnCsp:
         items:
-          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+          $ref: '#/definitions/mcis.resourceOnCsp'
         type: array
       resourcesOnCspOnly:
         items:
-          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+          $ref: '#/definitions/mcis.resourceOnCsp'
         type: array
       resourcesOnSpider:
         items:
-          $ref: '#/definitions/mcis.resourceOnCspOrSpider'
+          $ref: '#/definitions/mcis.resourceOnSpider'
         type: array
       resourcesOnTumblebug:
         items:
@@ -1666,26 +1668,31 @@ definitions:
       targetStatus:
         type: string
     type: object
-  mcis.resourceOnCspOrSpider:
+  mcis.resourceOnCsp:
     properties:
-      cspNativeId:
+      idByCsp:
         type: string
-      id:
+      refNameOrId:
+        type: string
+    type: object
+  mcis.resourceOnSpider:
+    properties:
+      idByCsp:
+        type: string
+      idBySp:
         type: string
     type: object
   mcis.resourceOnTumblebug:
     properties:
-      cspNativeId:
+      idByCsp:
         type: string
-      id:
+      idByTb:
         type: string
       mcisId:
         type: string
       nsId:
         type: string
       objectKey:
-        type: string
-      type:
         type: string
     type: object
 info:
@@ -4905,7 +4912,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.InspectResource'
+            $ref: '#/definitions/common.IdList'
         "404":
           description: Not Found
           schema:

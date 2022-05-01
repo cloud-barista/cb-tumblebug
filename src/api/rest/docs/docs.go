@@ -4758,7 +4758,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.InspectResource"
+                            "$ref": "#/definitions/common.IdList"
                         }
                     },
                     "404": {
@@ -5045,7 +5045,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "aws-ap-southeast-1"
                 },
-                "type": {
+                "resourceType": {
                     "type": "string",
                     "enum": [
                         "vNet",
@@ -6189,22 +6189,25 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "resourceType": {
+                    "type": "string"
+                },
                 "resourcesOnCsp": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                        "$ref": "#/definitions/mcis.resourceOnCsp"
                     }
                 },
                 "resourcesOnCspOnly": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                        "$ref": "#/definitions/mcis.resourceOnCsp"
                     }
                 },
                 "resourcesOnSpider": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCspOrSpider"
+                        "$ref": "#/definitions/mcis.resourceOnSpider"
                     }
                 },
                 "resourcesOnTumblebug": {
@@ -7217,13 +7220,24 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.resourceOnCspOrSpider": {
+        "mcis.resourceOnCsp": {
             "type": "object",
             "properties": {
-                "cspNativeId": {
+                "idByCsp": {
                     "type": "string"
                 },
-                "id": {
+                "refNameOrId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.resourceOnSpider": {
+            "type": "object",
+            "properties": {
+                "idByCsp": {
+                    "type": "string"
+                },
+                "idBySp": {
                     "type": "string"
                 }
             }
@@ -7231,10 +7245,10 @@ const docTemplate = `{
         "mcis.resourceOnTumblebug": {
             "type": "object",
             "properties": {
-                "cspNativeId": {
+                "idByCsp": {
                     "type": "string"
                 },
-                "id": {
+                "idByTb": {
                     "type": "string"
                 },
                 "mcisId": {
@@ -7244,9 +7258,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "objectKey": {
-                    "type": "string"
-                },
-                "type": {
                     "type": "string"
                 }
             }
