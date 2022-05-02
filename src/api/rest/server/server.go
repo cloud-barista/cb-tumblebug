@@ -130,6 +130,7 @@ func RunServer(port string) {
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
 	e.POST("/tumblebug/registerCspResources", rest_common.RestRegisterCspNativeResources)
+	e.POST("/tumblebug/registerCspResourcesAll", rest_common.RestRegisterCspNativeResourcesAll)
 
 	// @Tags [Admin] System environment
 	e.POST("/tumblebug/config", rest_common.RestPostConfig)
