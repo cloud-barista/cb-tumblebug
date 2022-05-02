@@ -1749,12 +1749,12 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 				reqTmp.VNetId = resourceName
 
 				// open all firewall for default securityGroup
-				rule := SpiderSecurityRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-				var ruleList []SpiderSecurityRuleInfo
+				rule := TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				var ruleList []TbFirewallRuleInfo
 				ruleList = append(ruleList, rule)
-				rule = SpiderSecurityRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				rule = TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 				ruleList = append(ruleList, rule)
-				rule = SpiderSecurityRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				rule = TbFirewallRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 				ruleList = append(ruleList, rule)
 				common.PrintJsonPretty(ruleList)
 				reqTmp.FirewallRules = &ruleList
