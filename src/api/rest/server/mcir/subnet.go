@@ -46,16 +46,9 @@ func RestPostSubnet(c echo.Context) error {
 	}
 
 	fmt.Println("[POST Subnet]")
-	//fmt.Println("[Creating Subnet]")
-	//content, responseCode, body, err := CreateSubnet(nsId, u)
 	content, err := mcir.CreateSubnet(nsId, vNetId, *u, false)
 	if err != nil {
 		common.CBLog.Error(err)
-		/*
-			mapA := map[string]string{
-				"message": "Failed to create a subnet"}
-		*/
-		//return c.JSONBlob(responseCode, body)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}

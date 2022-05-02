@@ -347,8 +347,6 @@ type RestInspectResourcesRequest struct {
 // @Router /inspectResources [post]
 func RestInspectResources(c echo.Context) error {
 
-	fmt.Println("RestInspectResources called;") // for debug
-
 	u := &RestInspectResourcesRequest{}
 	if err := c.Bind(u); err != nil {
 		return err

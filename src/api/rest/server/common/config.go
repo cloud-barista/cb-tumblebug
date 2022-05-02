@@ -43,11 +43,8 @@ func RestInitConfig(c echo.Context) error {
 
 	err := common.InitConfig(c.Param("configId"))
 	if err != nil {
-		//mapA := common.SimpleMsg{"Failed to find the config " + id}
-		//return c.JSON(http.StatusNotFound, &mapA)
 		return SendMessage(c, http.StatusOK, "Failed to init the config "+c.Param("configId"))
 	} else {
-		//return c.JSON(http.StatusOK, &res)
 		return SendMessage(c, http.StatusOK, "The config "+c.Param("configId")+" has been initialized.")
 	}
 }
@@ -72,11 +69,8 @@ func RestGetConfig(c echo.Context) error {
 
 	res, err := common.GetConfig(c.Param("configId"))
 	if err != nil {
-		//mapA := common.SimpleMsg{"Failed to find the config " + id}
-		//return c.JSON(http.StatusNotFound, &mapA)
 		return SendMessage(c, http.StatusOK, "Failed to find the config "+c.Param("configId"))
 	} else {
-		//return c.JSON(http.StatusOK, &res)
 		return Send(c, http.StatusOK, res)
 	}
 }
@@ -103,19 +97,15 @@ func RestGetAllConfig(c echo.Context) error {
 
 	configList, err := common.ListConfig()
 	if err != nil {
-		//mapA := common.SimpleMsg{"Failed to list configs."}
-		//return c.JSON(http.StatusNotFound, &mapA)
 		return SendMessage(c, http.StatusOK, "Failed to list configs.")
 	}
 
 	if configList == nil {
-		//return c.JSON(http.StatusOK, &content)
 		return Send(c, http.StatusOK, content)
 	}
 
 	// When err == nil && resourceList != nil
 	content.Config = configList
-	//return c.JSON(http.StatusOK, &content)
 	return Send(c, http.StatusOK, content)
 
 }
@@ -142,13 +132,8 @@ func RestPostConfig(c echo.Context) error {
 	fmt.Println("[Creating or Updating Config]")
 	content, err := common.UpdateConfig(u)
 	if err != nil {
-		//common.CBLog.Error(err)
-		////mapA := common.SimpleMsg{"Failed to create the config " + u.Name}
-		//mapA := common.SimpleMsg{err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
 		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
-	//return c.JSON(http.StatusCreated, content)
 	return Send(c, http.StatusOK, content)
 
 }

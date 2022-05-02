@@ -73,7 +73,6 @@ func RestPostSshKey(c echo.Context) error {
 func RestPutSshKey(c echo.Context) error {
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("resourceId")
-	fmt.Printf("RestPutSshKey called; nsId: %s, sshKeyId: %s \n", nsId, sshKeyId) // for debug
 
 	u := &mcir.TbSshKeyInfo{}
 	if err := c.Bind(u); err != nil {
