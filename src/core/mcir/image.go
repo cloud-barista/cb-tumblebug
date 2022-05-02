@@ -30,13 +30,13 @@ import (
 )
 
 // SpiderImageReqInfoWrapper is a wrapper struct to create JSON body of 'Get image request'
-type SpiderImageReqInfoWrapper struct { // Spider
+type SpiderImageReqInfoWrapper struct {
 	ConnectionName string
 	ReqInfo        SpiderImageInfo
 }
 
 // SpiderImageInfo is a struct to create JSON body of 'Get image request'
-type SpiderImageInfo struct { // Spider
+type SpiderImageInfo struct {
 	// Fields for request
 	Name string
 
@@ -431,10 +431,9 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		}
 
 		temp := SpiderImageInfo{}
-		err2 := json.Unmarshal([]byte(result), &temp)
-		if err2 != nil {
-			//fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
-			common.CBLog.Error(err2)
+		err = json.Unmarshal([]byte(result), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
 		}
 		return temp, nil
 
@@ -459,7 +458,6 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 		}
 
 		tumblebugImageId := connConfig + "-" + ToNamingRuleCompatible(tumblebugImage.Name)
-		//fmt.Println("tumblebugImageId: " + tumblebugImageId) // for debug
 
 		check, err := CheckResource(nsId, common.StrImage, tumblebugImageId)
 		if check {

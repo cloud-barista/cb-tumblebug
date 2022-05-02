@@ -363,8 +363,6 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 			return content, err
 		}
 
-		fmt.Println(string(resp.Body())) // for debug
-
 		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
@@ -446,8 +444,6 @@ func GetConnConfigList() (ConnConfigList, error) {
 			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
-
-		fmt.Println(string(resp.Body())) // for debug
 
 		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
@@ -535,8 +531,6 @@ func GetRegion(RegionName string) (Region, error) {
 			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
-
-		fmt.Println(string(resp.Body())) // for debug
 
 		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
@@ -651,8 +645,6 @@ func GetRegionList() (RegionList, error) {
 			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
 		}
-
-		fmt.Println(string(resp.Body())) // for debug
 
 		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {

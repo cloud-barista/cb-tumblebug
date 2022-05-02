@@ -34,7 +34,7 @@ import (
 )
 
 // SpiderSpecInfo is a struct to create JSON body of 'Get spec request'
-type SpiderSpecInfo struct { // Spider
+type SpiderSpecInfo struct {
 	// https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VMSpecHandler.go
 
 	Region string
@@ -47,13 +47,13 @@ type SpiderSpecInfo struct { // Spider
 }
 
 // SpiderVCpuInfo is a struct to handle vCPU Info from CB-Spider.
-type SpiderVCpuInfo struct { // Spider
+type SpiderVCpuInfo struct {
 	Count string
 	Clock string // GHz
 }
 
 // SpiderGpuInfo is a struct to handle GPU Info from CB-Spider.
-type SpiderGpuInfo struct { // Spider
+type SpiderGpuInfo struct {
 	Count string
 	Mfr   string
 	Model string
@@ -177,7 +177,7 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, er
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
 	tumblebugSpec.NumvCPU = uint16(tempUint64)
 	tempFloat64, _ := strconv.ParseFloat(spiderSpec.Mem, 32)
-	tumblebugSpec.MemGiB = float32(tempFloat64 / 1024) //fmt.Sprintf("%.0f", tempFloat64/1024)
+	tumblebugSpec.MemGiB = float32(tempFloat64 / 1024)
 
 	return tumblebugSpec, nil
 }
@@ -376,7 +376,6 @@ func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, er
 		}
 
 		tumblebugSpecId := connConfig + "-" + ToNamingRuleCompatible(tumblebugSpec.Name)
-		//fmt.Println("tumblebugSpecId: " + tumblebugSpecId) // for debug
 
 		check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
 		if check {

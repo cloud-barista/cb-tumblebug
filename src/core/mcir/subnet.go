@@ -43,33 +43,13 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 		return temp, err
 	}
 
-	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
 	err = validate.Struct(req)
 	if err != nil {
-
-		// this check is only needed when your code could produce
-		// an invalid value for validation such as interface with nil
-		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			fmt.Println(err)
 			temp := TbVNetInfo{}
 			return temp, err
 		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
 
 		temp := TbVNetInfo{}
 		return temp, err
@@ -125,7 +105,6 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 
 		if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-			//url := common.SpiderRestUrl + "/vpc"
 			url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, vNetId)
 
 			client := resty.New().SetCloseConnection(true)
@@ -172,7 +151,6 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 			defer ccm.Close()
 
 			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-			fmt.Println("payload: " + string(payload)) // for debug
 
 			result, err := ccm.AddSubnet(string(payload))
 			if err != nil {
@@ -180,7 +158,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 				return TbVNetInfo{}, err
 			}
 
-			tempSpiderVPCInfo = &SpiderVPCInfo{} // Spider
+			tempSpiderVPCInfo = &SpiderVPCInfo{}
 			err = json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
 			if err != nil {
 				common.CBLog.Error(err)
@@ -219,7 +197,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	tbSubnetInfo.Id = req.Name
 	tbSubnetInfo.Name = req.Name
 
-	newVNet.SubnetInfoList = append(newVNet.SubnetInfoList, tbSubnetInfo) // need to be uncommented.
+	newVNet.SubnetInfoList = append(newVNet.SubnetInfoList, tbSubnetInfo)
 	Val, _ = json.Marshal(newVNet)
 
 	err = common.CBStore.Put(vNetKey, string(Val))
@@ -228,15 +206,5 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 		return oldVNet, err
 	}
 
-	// vNetKey := common.GenResourceKey(nsId, common.StrVNet, vNetId)
-	// keyValue, _ := common.CBStore.Get(vNetKey)
-	// fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	// fmt.Println("===========================")
-	// content := TbVNetInfo{}
-	// err = json.Unmarshal([]byte(keyValue.Value), &content)
-	// if err != nil {
-	// 	common.CBLog.Error(err)
-	// 	return err
-	// }
 	return newVNet, nil
 }

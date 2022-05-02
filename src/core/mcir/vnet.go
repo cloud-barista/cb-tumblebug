@@ -29,13 +29,13 @@ import (
 // 2020-04-09 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
 
 // SpiderVPCReqInfoWrapper is a wrapper struct to create JSON body of 'Create VPC request'
-type SpiderVPCReqInfoWrapper struct { // Spider
+type SpiderVPCReqInfoWrapper struct {
 	ConnectionName string
 	ReqInfo        SpiderVPCReqInfo
 }
 
 // SpiderVPCReqInfo is a struct to create JSON body of 'Create VPC request'
-type SpiderVPCReqInfo struct { // Spider
+type SpiderVPCReqInfo struct {
 	Name           string
 	IPv4_CIDR      string
 	SubnetInfoList []SpiderSubnetReqInfo
@@ -43,20 +43,20 @@ type SpiderVPCReqInfo struct { // Spider
 }
 
 // SpiderSubnetReqInfoWrapper is a wrapper struct to create JSON body of 'Create subnet request'
-type SpiderSubnetReqInfoWrapper struct { // Spider
+type SpiderSubnetReqInfoWrapper struct {
 	ConnectionName string
 	ReqInfo        SpiderSubnetReqInfo
 }
 
 // SpiderSubnetReqInfo is a struct to create JSON body of 'Create subnet request'
-type SpiderSubnetReqInfo struct { // Spider
+type SpiderSubnetReqInfo struct {
 	Name         string `validate:"required"`
 	IPv4_CIDR    string `validate:"required"`
 	KeyValueList []common.KeyValue
 }
 
 // SpiderVPCInfo is a struct to handle VPC information from the CB-Spider's REST API response
-type SpiderVPCInfo struct { // Spider
+type SpiderVPCInfo struct {
 	IId            common.IID // {NameId, SystemId}
 	IPv4_CIDR      string
 	SubnetInfoList []SpiderSubnetInfo
@@ -64,7 +64,7 @@ type SpiderVPCInfo struct { // Spider
 }
 
 // SpiderSubnetInfo is a struct to handle subnet information from the CB-Spider's REST API response
-type SpiderSubnetInfo struct { // Spider
+type SpiderSubnetInfo struct {
 	IId          common.IID // {NameId, SystemId}
 	IPv4_CIDR    string
 	KeyValueList []common.KeyValue
@@ -268,9 +268,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		defer ccm.Close()
 
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		fmt.Println("payload: " + string(payload)) // for debug
 
-		// result, err := ccm.CreateVPC(string(payload))
 		var result string
 
 		if option == "register" {
@@ -284,7 +282,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 			return TbVNetInfo{}, err
 		}
 
-		tempSpiderVPCInfo = &SpiderVPCInfo{} // Spider
+		tempSpiderVPCInfo = &SpiderVPCInfo{}
 		err = json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
 		if err != nil {
 			common.CBLog.Error(err)
@@ -315,8 +313,6 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	Key := common.GenResourceKey(nsId, common.StrVNet, content.Id)
 	Val, _ := json.Marshal(content)
 
-	//fmt.Println("Key: ", Key)
-	//fmt.Println("Val: ", Val)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
@@ -341,6 +337,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 			common.CBLog.Error(err)
 		}
 	}
+
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
 		common.CBLog.Error(err)
