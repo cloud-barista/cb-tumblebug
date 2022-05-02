@@ -354,23 +354,6 @@ definitions:
           $ref: '#/definitions/mcir.SpiderImageInfo'
         type: array
     type: object
-  mcir.SpiderSecurityRuleInfo:
-    properties:
-      cidr:
-        type: string
-      direction:
-        description: '`json:"direction"`'
-        type: string
-      fromPort:
-        description: '`json:"fromPort"`'
-        type: string
-      ipprotocol:
-        description: '`json:"ipProtocol"`'
-        type: string
-      toPort:
-        description: '`json:"toPort"`'
-        type: string
-    type: object
   mcir.SpiderSpecInfo:
     properties:
       gpu:
@@ -404,6 +387,36 @@ definitions:
         type: string
       count:
         type: string
+    type: object
+  mcir.TbFirewallRuleInfo:
+    properties:
+      cidr:
+        type: string
+      direction:
+        description: '`json:"direction"`'
+        type: string
+      fromPort:
+        description: '`json:"fromPort"`'
+        type: string
+      ipprotocol:
+        description: '`json:"ipProtocol"`'
+        type: string
+      toPort:
+        description: '`json:"toPort"`'
+        type: string
+    required:
+    - direction
+    - fromPort
+    - ipprotocol
+    - toPort
+    type: object
+  mcir.TbFirewallRulesWrapper:
+    properties:
+      firewallRules:
+        description: validate:"required"`
+        items:
+          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
+        type: array
     type: object
   mcir.TbImageInfo:
     properties:
@@ -477,7 +490,7 @@ definitions:
         type: string
       firewallRules:
         items:
-          $ref: '#/definitions/mcir.SpiderSecurityRuleInfo'
+          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
         type: array
       id:
         type: string
@@ -509,7 +522,7 @@ definitions:
       firewallRules:
         description: validate:"required"`
         items:
-          $ref: '#/definitions/mcir.SpiderSecurityRuleInfo'
+          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
         type: array
       name:
         type: string
@@ -919,24 +932,12 @@ definitions:
     properties:
       connectionName:
         type: string
+      resourceOverview:
+        $ref: '#/definitions/mcis.resourceCountOverview'
       resourceType:
         type: string
-      resourcesOnCsp:
-        items:
-          $ref: '#/definitions/mcis.resourceOnCsp'
-        type: array
-      resourcesOnCspOnly:
-        items:
-          $ref: '#/definitions/mcis.resourceOnCsp'
-        type: array
-      resourcesOnSpider:
-        items:
-          $ref: '#/definitions/mcis.resourceOnSpider'
-        type: array
-      resourcesOnTumblebug:
-        items:
-          $ref: '#/definitions/mcis.resourceOnTumblebug'
-        type: array
+      resources:
+        $ref: '#/definitions/mcis.resourcesByManageType'
       systemMessage:
         type: string
     type: object
@@ -1142,6 +1143,26 @@ definitions:
       region:
         type: string
       zone:
+        type: string
+    type: object
+  mcis.RegisterResourceAllResult:
+    properties:
+      registerationResult:
+        items:
+          $ref: '#/definitions/mcis.RegisterResourceResult'
+        type: array
+    type: object
+  mcis.RegisterResourceResult:
+    properties:
+      connectionName:
+        type: string
+      elapsedTime:
+        type: integer
+      registerationOutputs:
+        $ref: '#/definitions/common.IdList'
+      registerationOverview:
+        $ref: '#/definitions/mcis.registerationOverview'
+      systemMessage:
         type: string
     type: object
   mcis.RestGetAllBenchmarkRequest:
@@ -1668,7 +1689,40 @@ definitions:
       targetStatus:
         type: string
     type: object
+  mcis.registerationOverview:
+    properties:
+      failed:
+        type: integer
+      securityGroup:
+        type: integer
+      sshKey:
+        type: integer
+      vNet:
+        type: integer
+      vm:
+        type: integer
+    type: object
+  mcis.resourceCountOverview:
+    properties:
+      onCspOnly:
+        type: integer
+      onCspTotal:
+        type: integer
+      onSpider:
+        type: integer
+      onTumblebug:
+        type: integer
+    type: object
   mcis.resourceOnCsp:
+    properties:
+      count:
+        type: integer
+      info:
+        items:
+          $ref: '#/definitions/mcis.resourceOnCspInfo'
+        type: array
+    type: object
+  mcis.resourceOnCspInfo:
     properties:
       idByCsp:
         type: string
@@ -1677,12 +1731,30 @@ definitions:
     type: object
   mcis.resourceOnSpider:
     properties:
+      count:
+        type: integer
+      info:
+        items:
+          $ref: '#/definitions/mcis.resourceOnSpiderInfo'
+        type: array
+    type: object
+  mcis.resourceOnSpiderInfo:
+    properties:
       idByCsp:
         type: string
       idBySp:
         type: string
     type: object
   mcis.resourceOnTumblebug:
+    properties:
+      count:
+        type: integer
+      info:
+        items:
+          $ref: '#/definitions/mcis.resourceOnTumblebugInfo'
+        type: array
+    type: object
+  mcis.resourceOnTumblebugInfo:
     properties:
       idByCsp:
         type: string
@@ -1694,6 +1766,17 @@ definitions:
         type: string
       objectKey:
         type: string
+    type: object
+  mcis.resourcesByManageType:
+    properties:
+      onCspOnly:
+        $ref: '#/definitions/mcis.resourceOnCsp'
+      onCspTotal:
+        $ref: '#/definitions/mcis.resourceOnCsp'
+      onSpider:
+        $ref: '#/definitions/mcis.resourceOnSpider'
+      onTumblebug:
+        $ref: '#/definitions/mcis.resourceOnTumblebug'
     type: object
 info:
   contact:
@@ -4038,6 +4121,73 @@ paths:
       summary: Get Security Group
       tags:
       - '[Infra resource] MCIR Security group management'
+  /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules:
+    delete:
+      consumes:
+      - application/json
+      description: Delete FirewallRules
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: FirewallRules to delete
+        in: body
+        name: firewallRuleReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbFirewallRulesWrapper'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete FirewallRules
+      tags:
+      - '[Infra resource] MCIR Network management'
+    post:
+      consumes:
+      - application/json
+      description: Create FirewallRules
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: FirewallRules to create
+        in: body
+        name: firewallRuleReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbFirewallRulesWrapper'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbFirewallRuleInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create FirewallRules
+      tags:
+      - '[Infra resource] MCIR Network management'
   /ns/{nsId}/resources/spec:
     delete:
       consumes:
@@ -4912,7 +5062,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.IdList'
+            $ref: '#/definitions/mcis.RegisterResourceResult'
         "404":
           description: Not Found
           schema:
@@ -4923,6 +5073,38 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to
         CB-Tumblebug
+      tags:
+      - '[Admin] System management'
+  /registerCspResourcesAll:
+    post:
+      consumes:
+      - application/json
+      description: Register CSP Native Resources (vNet, securityGroup, sshKey, vm)
+        from all Clouds to CB-Tumblebug
+      parameters:
+      - description: Specify NS Id and MCIS Name
+        in: body
+        name: Request
+        required: true
+        schema:
+          $ref: '#/definitions/common.RestRegisterCspNativeResourcesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.RegisterResourceAllResult'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from
+        all Clouds to CB-Tumblebug
       tags:
       - '[Admin] System management'
 securityDefinitions:

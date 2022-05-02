@@ -243,6 +243,9 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/resources/securityGroup/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/securityGroup", rest_mcir.RestDelAllResources)
 
+	g.POST("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_mcir.RestPostFirewallRules)
+	g.DELETE("/:nsId/resources/securityGroup/:securityGroupId/rules", rest_mcir.RestDelFirewallRules)
+
 	g.POST("/:nsId/resources/vNet", rest_mcir.RestPostVNet)
 	g.GET("/:nsId/resources/vNet/:resourceId", rest_mcir.RestGetResource)
 	g.GET("/:nsId/resources/vNet", rest_mcir.RestGetAllResources)
