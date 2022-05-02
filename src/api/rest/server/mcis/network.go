@@ -63,35 +63,37 @@ func RestPostConfigureCloudAdaptiveNetworkToMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, contents)
 }
 
-// // RestGetMonitorData godoc
-// // @Summary Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
-// // @Description Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
-// // @Tags [Infra service] MCIS Resource monitor (for developer)
-// // @Accept  json
-// // @Produce  json
-// // @Param nsId path string true "Namespace ID" default(ns01)
-// // @Param mcisId path string true "MCIS ID" default(mcis01)
-// // @Param metric path string true "Metric type: cpu, memory, disk, network"
-// // @Success 200 {object} mcis.MonResultSimpleResponse
-// // @Failure 404 {object} common.SimpleMsg
-// // @Failure 500 {object} common.SimpleMsg
-// // @Router /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric} [get]
-// func RestGetMonitorData(c echo.Context) error {
+/*
+// RestGetMonitorData godoc
+// @Summary Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
+// @Description Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
+// @Tags [Infra service] MCIS Resource monitor (for developer)
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param metric path string true "Metric type: cpu, memory, disk, network"
+// @Success 200 {object} mcis.MonResultSimpleResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric} [get]
+func RestGetMonitorData(c echo.Context) error {
 
-// 	nsId := c.Param("nsId")
-// 	mcisId := c.Param("mcisId")
-// 	metric := c.Param("metric")
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	metric := c.Param("metric")
 
-// 	req := &mcis.McisCmdReq{}
-// 	if err := c.Bind(req); err != nil {
-// 		return err
-// 	}
+	req := &mcis.McisCmdReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
 
-// 	content, err := mcis.GetMonitoringData(nsId, mcisId, metric)
-// 	if err != nil {
-// 		common.CBLog.Error(err)
-// 		return err
-// 	}
+	content, err := mcis.GetMonitoringData(nsId, mcisId, metric)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
 
-// 	return c.JSON(http.StatusOK, content)
-// }
+	return c.JSON(http.StatusOK, content)
+}
+*/

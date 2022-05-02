@@ -119,7 +119,6 @@ func RestGetAllMcisPolicy(c echo.Context) error {
 	content := RestGetAllMcisPolicyResponse{}
 	content.McisPolicy = result
 
-	//fmt.Printf("content %+v\n", content)
 	common.PrintJsonPretty(content)
 
 	return c.JSON(http.StatusOK, &content)

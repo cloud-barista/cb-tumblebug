@@ -93,7 +93,6 @@ func RestPostMcisRecommend(c echo.Context) error {
 	content.PlacementAlgo = req.PlacementAlgo
 	content.PlacementParam = req.PlacementParam
 
-	//fmt.Printf("%+v\n", content)
 	common.PrintJsonPretty(content)
 
 	return c.JSON(http.StatusCreated, content)
