@@ -124,9 +124,7 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 	}
 	fmt.Println("[Check mcis] " + mcisId)
 
-	//key := "/ns/" + nsId + "/mcis/" + mcisId
 	key := common.GenMcisKey(nsId, mcisId, "")
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -176,7 +174,6 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -217,9 +214,7 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 	}
 	fmt.Println("[Check McisPolicy] " + mcisId)
 
-	//key := "/ns/" + nsId + "/mcis/" + mcisId
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {

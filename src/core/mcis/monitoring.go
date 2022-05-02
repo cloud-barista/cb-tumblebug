@@ -363,10 +363,8 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
 		content.ResultArray = append(content.ResultArray, resultTmp)
-		//fmt.Println("result from goroutin " + v)
 	}
 
-	//fmt.Printf("%+v\n", content)
 	common.PrintJsonPretty(content)
 
 	return content, nil
@@ -419,9 +417,8 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
 
 		// DF: Get vm on-demand monitoring metric info
-		// Path Para: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
+		// Path Param: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
 		cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
-		//fmt.Println("[CMD] " + cmd)
 
 		go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, metric, cmd, &resultArray)
 
@@ -432,11 +429,9 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 	content.McisId = mcisId
 	for _, v := range resultArray {
 		content.McisMonitoring = append(content.McisMonitoring, v)
-		//fmt.Println("result from goroutin " + v)
 	}
 
 	fmt.Printf("%+v\n", content)
-	//common.PrintJsonPretty(content)
 
 	return content, nil
 
@@ -464,7 +459,6 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 			Timeout: time.Duration(responseLimit) * time.Minute,
 		}
 		req, err := http.NewRequest(method, url, nil)
-		// errStr := ""
 		if err != nil {
 			common.CBLog.Error(err)
 			errStr = err.Error()
@@ -512,11 +506,8 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		if err != nil {
 			common.CBLog.Error(err)
 		}
-		fmt.Println(result) // for debug
 		response = result
 	}
-
-	//common.PrintJsonPretty(response) // for debuging
 
 	if !gjson.Valid(response) {
 		fmt.Println("!gjson.Valid(response)")

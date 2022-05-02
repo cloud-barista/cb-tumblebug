@@ -265,13 +265,13 @@ type CheckVmDynamicReqInfo struct {
 //
 
 // SpiderVMReqInfoWrapper is struct from CB-Spider (VMHandler.go) for wrapping SpiderVMInfo
-type SpiderVMReqInfoWrapper struct { // Spider
+type SpiderVMReqInfoWrapper struct {
 	ConnectionName string
 	ReqInfo        SpiderVMInfo
 }
 
 // SpiderVMInfo is struct from CB-Spider for VM information
-type SpiderVMInfo struct { // Spider
+type SpiderVMInfo struct {
 	// Fields for request
 	Name               string
 	ImageName          string
@@ -511,8 +511,6 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 
 	vmStatus, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
 	if err != nil {
-		//mapA := map[string]string{"message": "Cannot find " + common.GenMcisKey(nsId, mcisId, "")}
-		//return c.JSON(http.StatusOK, &mapA)
 		return nil, fmt.Errorf("Cannot find " + common.GenMcisKey(nsId, mcisId, vmInfoData.Id))
 	}
 
@@ -972,7 +970,6 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	UpdateMcisInfo(nsId, mcisTmp)
 
 	fmt.Println("[MCIS has been created]" + mcisId)
-	//common.PrintJsonPretty(mcisTmp)
 
 	// Install CB-Dragonfly monitoring agent
 
@@ -1230,9 +1227,6 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 	vmInfoData.Location = common.GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
 
-	//fmt.Printf("\n[configTmp]\n %+v regionTmp %+v \n", configTmp, regionTmp)
-	//fmt.Printf("\n[vmInfoData.Location]\n %+v\n", vmInfoData.Location)
-
 	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
 	// Make VM object
 	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
@@ -1244,13 +1238,11 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	}
 
 	fmt.Printf("\n[AddVmToMcis Befor request vmInfoData]\n")
-	//common.PrintJsonPretty(vmInfoData)
 
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
 	err = CreateVm(nsId, mcisId, vmInfoData, option)
 
 	fmt.Printf("\n[AddVmToMcis After request vmInfoData]\n")
-	//common.PrintJsonPretty(vmInfoData)
 
 	if err != nil {
 		vmInfoData.Status = StatusFailed
@@ -1449,7 +1441,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 		if err != nil {
-			//fmt.Println(err)
 			common.CBLog.Error(err)
 			return err
 		}
@@ -1458,7 +1449,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		res, err := client.Do(req)
 		if err != nil {
-			//common.PrintJsonPretty(err)
 			common.CBLog.Error(err)
 			return err
 		}
@@ -1467,7 +1457,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		body, err := ioutil.ReadAll(res.Body)
 
 		if err != nil {
-			//common.PrintJsonPretty(err)
 			common.CBLog.Error(err)
 			return err
 		}

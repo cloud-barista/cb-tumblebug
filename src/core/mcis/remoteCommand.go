@@ -124,17 +124,15 @@ func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmd
 
 	vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
 
-	//fmt.Printf("[vmIp] " +vmIp)
-
 	//sshKey := req.SshKey
 	cmd := req.Command
 
 	// find vaild username
 	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
-	// Eventhough VerifySshUserName is not complete, Try RunRemoteCommand
+	// Even though VerifySshUserName is not complete, Try RunRemoteCommand
 	// With RunRemoteCommand, error will be checked again
 	if err == nil {
-		// Just logging the error (but it is net a faultal )
+		// Just logging the error (but it is net a faultal)
 		common.CBLog.Info(err)
 	}
 
@@ -145,8 +143,6 @@ func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmd
 
 	result, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, cmd)
 	if err != nil {
-		//return c.JSON(http.StatusInternalServerError, err)
-		//return "", errors.New(err.Error() + *result)
 		return ("[ERROR: " + err.Error() + "]\n " + *result), nil
 	}
 	return *result, nil
@@ -435,7 +431,6 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 
 	fmt.Println("[GetVmSshKey]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -444,9 +439,6 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 		common.CBLog.Error(err)
 		// return nil, err
 	}
-
-	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	//fmt.Println("===============================================")
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
