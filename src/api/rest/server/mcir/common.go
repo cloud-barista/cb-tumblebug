@@ -49,7 +49,6 @@ func RestDelAllResources(c echo.Context) error {
 		return c.JSON(http.StatusConflict, &mapA)
 	}
 
-	//mapA := map[string]string{"message": "All " + resourceType + "s has been deleted"}
 	return c.JSON(http.StatusOK, output)
 }
 
@@ -248,8 +247,6 @@ func RestCheckResource(c echo.Context) error {
 
 	if err != nil {
 		common.CBLog.Error(err)
-		//mapA := map[string]string{"message": err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
 		return c.JSON(http.StatusNotFound, &content)
 	}
 
@@ -273,7 +270,6 @@ func RestTestAddObjectAssociation(c echo.Context) error {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
-	//mapA := map[string]int8{"inUseCount": inUseCount}
 	return c.JSON(http.StatusOK, vmKeyList)
 }
 
@@ -294,7 +290,6 @@ func RestTestDeleteObjectAssociation(c echo.Context) error {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
-	//mapA := map[string]int8{"inUseCount": inUseCount}
 	return c.JSON(http.StatusOK, vmKeyList)
 }
 
@@ -391,7 +386,6 @@ func RestDelAllDefaultResources(c echo.Context) error {
 		return c.JSON(http.StatusConflict, &mapA)
 	}
 
-	//mapA := map[string]string{"message": "All default resources have been deleted"}
 	return c.JSON(http.StatusOK, output)
 }
 

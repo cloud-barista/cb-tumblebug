@@ -26,13 +26,13 @@ import (
 )
 
 // SpiderKeyPairReqInfoWrapper is a wrapper struct to create JSON body of 'Create keypair request'
-type SpiderKeyPairReqInfoWrapper struct { // Spider
+type SpiderKeyPairReqInfoWrapper struct {
 	ConnectionName string
 	ReqInfo        SpiderKeyPairInfo
 }
 
 // SpiderKeyPairInfo is a struct to create JSON body of 'Create keypair request'
-type SpiderKeyPairInfo struct { // Spider
+type SpiderKeyPairInfo struct {
 	// Fields for request
 	Name  string
 	CSPId string
@@ -146,7 +146,6 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	if check {
 		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey %s already exists.", u.Name)
-		//return temp, http.StatusConflict, nil, err
 		return temp, err
 	}
 
@@ -280,9 +279,6 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 		common.CBLog.Error(err)
 		return content, err
 	}
-	//keyValue, _ := common.CBStore.Get(Key)
-	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 	return content, nil
 }
 

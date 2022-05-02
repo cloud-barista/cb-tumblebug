@@ -102,7 +102,7 @@ type TbSecurityGroupCreateRequest struct {
 // }
 
 // SpiderSecurityRuleInfo
-// type SpiderSecurityRuleInfo struct { // Spider
+// type SpiderSecurityRuleInfo struct {
 // 	FromPort   string `yaml:"fromPort" json:"fromPort"`
 // 	ToPort     string `yaml:"toPort" json:"toPort"`
 // 	IPProtocol string `yaml:"ipProtocol" json:"ipProtocol"`
@@ -198,7 +198,7 @@ type TbVNetCreateRequest struct {
 // }
 
 // SpiderSubnetReqInfo
-// type SpiderSubnetReqInfo struct { // Spider
+// type SpiderSubnetReqInfo struct {
 // 	Name         string     `yaml:"Name" json:"Name"`
 // 	IPv4_CIDR    string     `yaml:"IPv4_CIDR" json:"IPv4_CIDR"`
 // 	KeyValueList []KeyValue `yaml:"KeyValueList" json:"KeyValueList"`

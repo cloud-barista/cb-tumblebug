@@ -81,13 +81,9 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 
 		err := ControlMcisAsync(nsId, mcisId, ActionSuspend)
 		if err != nil {
-			//mapA := map[string]string{"message": err.Error()}
-			//return c.JSON(http.StatusFailedDependency, &mapA)
 			return "", err
 		}
 
-		//mapA := map[string]string{"message": "Suspending the MCIS"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Suspending the MCIS", nil
 
 	} else if action == "resume" {
@@ -95,13 +91,9 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 
 		err := ControlMcisAsync(nsId, mcisId, ActionResume)
 		if err != nil {
-			//mapA := map[string]string{"message": err.Error()}
-			//return c.JSON(http.StatusFailedDependency, &mapA)
 			return "", err
 		}
 
-		//mapA := map[string]string{"message": "Resuming the MCIS"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Resuming the MCIS", nil
 
 	} else if action == "reboot" {
@@ -109,13 +101,9 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 
 		err := ControlMcisAsync(nsId, mcisId, ActionReboot)
 		if err != nil {
-			//mapA := map[string]string{"message": err.Error()}
-			//return c.JSON(http.StatusFailedDependency, &mapA)
 			return "", err
 		}
 
-		//mapA := map[string]string{"message": "Rebooting the MCIS"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Rebooting the MCIS", nil
 
 	} else if action == "terminate" {
@@ -127,18 +115,10 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 			return "", err
 		}
 
-		//fmt.Println("len(vmList) %d ", len(vmList))
 		if len(vmList) == 0 {
-			//mapA := map[string]string{"message": "No VM to terminate in the MCIS"}
-			//return c.JSON(http.StatusOK, &mapA)
 			return "No VM to terminate in the MCIS", nil
 		}
 
-		/*
-			for _, v := range vmList {
-				ControlVm(nsId, mcisId, v, ActionTerminate)
-			}
-		*/
 		err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
 		if err != nil {
 			return "", err
@@ -146,7 +126,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 
 		return "Terminating the MCIS", nil
 
-	} else if action == "refine" { //refine delete VMs in StatusFailed or StatusUndefined
+	} else if action == "refine" { // refine delete VMs in StatusFailed or StatusUndefined
 		fmt.Println("[refine MCIS]")
 
 		vmList, err := ListVmId(nsId, mcisId)
@@ -216,35 +196,22 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 	fmt.Println("[Get VM requested action: " + action)
 	if action == "suspend" {
 		fmt.Println("[suspend VM]")
-
 		ControlVm(nsId, mcisId, vmId, ActionSuspend)
-		//mapA := map[string]string{"message": "Suspending the VM"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Suspending the VM", nil
 
 	} else if action == "resume" {
 		fmt.Println("[resume VM]")
-
 		ControlVm(nsId, mcisId, vmId, ActionResume)
-		//mapA := map[string]string{"message": "Resuming the VM"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Resuming the VM", nil
 
 	} else if action == "reboot" {
 		fmt.Println("[reboot VM]")
-
 		ControlVm(nsId, mcisId, vmId, ActionReboot)
-		//mapA := map[string]string{"message": "Rebooting the VM"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Rebooting the VM", nil
 
 	} else if action == "terminate" {
 		fmt.Println("[terminate VM]")
-
 		ControlVm(nsId, mcisId, vmId, ActionTerminate)
-
-		//mapA := map[string]string{"message": "Terminating the VM"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "Terminating the VM", nil
 	} else {
 		return "", fmt.Errorf(action + " not supported")
@@ -469,7 +436,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 				}
 
 				UpdateVmInfo(nsId, mcisId, temp)
-				//fmt.Println("url: " + url + " method: " + method)
 
 				type ControlVMReqInfo struct {
 					ConnectionName string
@@ -477,7 +443,6 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 				tempReq := ControlVMReqInfo{}
 				tempReq.ConnectionName = temp.ConnectionName
 				payload, _ := json.MarshalIndent(tempReq, "", "  ")
-				//fmt.Println("payload: " + string(payload)) // for debug
 
 				client := &http.Client{
 					CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -639,9 +604,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	//fmt.Printf("%+v\n", content.CloudId)
-	//fmt.Printf("%+v\n", content.CspVmId)
-
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 	if unmarshalErr != nil {
@@ -650,15 +612,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	fmt.Println("\n[Calling SPIDER]START vmControl")
 
-	//fmt.Println("temp.CspVmId: " + temp.CspViewVmDetail.IId.NameId)
-
-	/*
-		cspType := getVMsCspType(nsId, mcisId, vmId)
-		var cspVmId string
-		if cspType == "AWS" {
-			cspVmId = temp.CspViewVmDetail.Id
-		} else {
-	*/
 	cspVmId := temp.CspViewVmDetail.IId.NameId
 	common.PrintJsonPretty(temp.CspViewVmDetail)
 
@@ -704,7 +657,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		}
 
 		UpdateVmInfo(nsId, mcisId, temp)
-		//fmt.Println("url: " + url + " method: " + method)
 
 		type ControlVMReqInfo struct {
 			ConnectionName string
@@ -712,7 +664,6 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		tempReq := ControlVMReqInfo{}
 		tempReq.ConnectionName = temp.ConnectionName
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		//fmt.Println("payload: " + string(payload)) // for debug
 
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -728,13 +679,12 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		req.Header.Add("Content-Type", "application/json")
 
 		res, err := client.Do(req)
-		//fmt.Println("Called mockAPI.")
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 
 		fmt.Println(string(body))
 
-		fmt.Println("[Calling SPIDER]END vmControl\n")
+		fmt.Println("[Calling SPIDER] END vmControl\n")
 		/*
 			if strings.Compare(content.CspVmId, "Not assigned yet") == 0 {
 				return nil

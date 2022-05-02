@@ -141,7 +141,6 @@ func RestGetAllMcis(c echo.Context) error {
 		}
 		content := RestGetAllMcisStatusResponse{}
 		content.Mcis = result
-		//common.PrintJsonPretty(content)
 		return c.JSON(http.StatusOK, &content)
 	} else if option == "simple" {
 		// MCIS in simple (without VM information)
@@ -152,7 +151,6 @@ func RestGetAllMcis(c echo.Context) error {
 		}
 		content := RestGetAllMcisResponse{}
 		content.Mcis = result
-		//common.PrintJsonPretty(content)
 		return c.JSON(http.StatusOK, &content)
 	} else {
 		// MCIS in detail (with status information)
@@ -163,7 +161,6 @@ func RestGetAllMcis(c echo.Context) error {
 		}
 		content := RestGetAllMcisResponse{}
 		content.Mcis = result
-		//common.PrintJsonPretty(content)
 		return c.JSON(http.StatusOK, &content)
 	}
 
@@ -274,7 +271,6 @@ func RestGetMcisVm(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
 
-		//fmt.Printf("%+v\n", *result)
 		common.PrintJsonPretty(*result)
 
 		return c.JSON(http.StatusOK, result)
@@ -287,11 +283,8 @@ func RestGetMcisVm(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, &mapA)
 		}
 
-		//fmt.Printf("%+v\n", *result)
 		common.PrintJsonPretty(*result)
 
-		//return by string
-		//return c.String(http.StatusOK, keyValue.Value)
 		return c.JSON(http.StatusOK, result)
 
 	}

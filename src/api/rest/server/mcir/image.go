@@ -69,12 +69,9 @@ func RestPostImage(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return err
 		}
-		//content, responseCode, body, err := RegisterImageWithId(nsId, u)
 		content, err := mcir.RegisterImageWithId(nsId, u)
 		if err != nil {
 			common.CBLog.Error(err)
-			//fmt.Println("body: ", string(body))
-			//return c.JSONBlob(responseCode, body)
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusInternalServerError, &mapA)
 		}
@@ -102,7 +99,6 @@ func RestPostImage(c echo.Context) error {
 func RestPutImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 	imageId := c.Param("resourceId")
-	fmt.Printf("RestPutImage called; nsId: %s, imageId: %s \n", nsId, imageId) // for debug
 
 	u := &mcir.TbImageInfo{}
 	if err := c.Bind(u); err != nil {
@@ -167,10 +163,6 @@ func RestLookupImage(c echo.Context) error {
 // @Router /lookupImages [post]
 func RestLookupImageList(c echo.Context) error {
 
-	//type JsonTemplate struct {
-	//	ConnectionName string
-	//}
-
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
@@ -202,14 +194,6 @@ func RestFetchImages(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 
-	// connConfigCount, imageCount, err := mcir.FetchImages(nsId)
-	// if err != nil {
-	// 	common.CBLog.Error(err)
-	// 	mapA := map[string]string{
-	// 		"message": err.Error()}
-	// 	return c.JSON(http.StatusInternalServerError, &mapA)
-	// }
-
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
@@ -239,7 +223,7 @@ func RestFetchImages(c echo.Context) error {
 
 	mapA := map[string]string{
 		"message": "Fetched " + fmt.Sprint(imageCount) + " images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-	return c.JSON(http.StatusCreated, &mapA) //content)
+	return c.JSON(http.StatusCreated, &mapA)
 }
 
 // RestGetImage godoc
@@ -337,9 +321,6 @@ func RestSearchImage(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-
-	//fmt.Println("RestSearchImage called; keywords: ") // for debug
-	//fmt.Println(u.Keywords) // for debug
 
 	content, err := mcir.SearchImage(nsId, u.Keywords...)
 	if err != nil {

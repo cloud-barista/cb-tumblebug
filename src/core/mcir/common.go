@@ -123,8 +123,6 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 // DelResource deletes the TB MCIR object
 func DelResource(nsId string, resourceType string, resourceId string, forceFlag string) error {
 
-	fmt.Printf("DelResource() called; %s %s %s %s \n", nsId, resourceType, resourceId, forceFlag) // for debug
-
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -145,10 +143,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		//mapA := map[string]string{"message": errString}
-		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
-		//return http.StatusNotFound, mapB, err
 		return err
 	}
 
@@ -189,7 +184,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			err := common.CBStore.Delete(key)
 			if err != nil {
 				common.CBLog.Error(err)
-				//return http.StatusInternalServerError, nil, err
 				return err
 			}
 
@@ -201,7 +195,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				fmt.Println("Data deleted successfully..")
 			}
 
-			//return http.StatusOK, nil, nil
 			return nil
 		case common.StrSpec:
 			// delete spec info
@@ -229,7 +222,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				fmt.Println("Data deleted successfully..")
 			}
 
-			//return http.StatusOK, nil, nil
 			return nil
 		case common.StrSSHKey:
 			temp := TbSshKeyInfo{}
@@ -277,7 +269,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		*/
 		default:
 			err := fmt.Errorf("invalid resourceType")
-			//return http.StatusBadRequest, nil, err
 			return err
 		}
 
@@ -358,7 +349,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			err := common.CBStore.Delete(key)
 			if err != nil {
 				common.CBLog.Error(err)
-				//return http.StatusInternalServerError, nil, err
 				return err
 			}
 
@@ -370,7 +360,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				fmt.Println("Data deleted successfully..")
 			}
 
-			//return http.StatusOK, nil, nil
 			return nil
 		case common.StrSpec:
 			// delete spec info
@@ -458,12 +447,10 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	if resourceType == common.StrVNet {
 		// var subnetKeys []string
-		fmt.Printf("childResources: %s", childResources) // for debug
 		subnets := childResources.([]TbSubnetInfo)
 		for _, v := range subnets {
 			subnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, resourceId, v.Id)
 			// subnetKeys = append(subnetKeys, subnetKey)
-			fmt.Printf("subnetKey: %s", subnetKey) // for debug
 			err = common.CBStore.Delete(subnetKey)
 			if err != nil {
 				common.CBLog.Error(err)
@@ -482,8 +469,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 // DelChildResource deletes the TB MCIR object
 func DelChildResource(nsId string, resourceType string, parentResourceId string, resourceId string, forceFlag string) error {
-
-	fmt.Printf("DelChildResource() called; %s %s %s %s \n", nsId, resourceType, parentResourceId, resourceId) // for debug
 
 	var parentResourceType string
 	switch resourceType {
@@ -516,10 +501,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 
 	if !check {
 		errString := "The " + parentResourceType + " " + parentResourceId + " does not exist."
-		//mapA := map[string]string{"message": errString}
-		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
-		//return http.StatusNotFound, mapB, err
 		return err
 	}
 
@@ -532,10 +514,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		//mapA := map[string]string{"message": errString}
-		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
-		//return http.StatusNotFound, mapB, err
 		return err
 	}
 
@@ -551,15 +530,6 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 	fmt.Println("childResourceKey: " + childResourceKey)
 
 	parentKeyValue, _ := common.CBStore.Get(parentResourceKey)
-	/*
-		if keyValue == nil {
-			mapA := map[string]string{"message": "Failed to find the resource with given ID."}
-			mapB, _ := json.Marshal(mapA)
-			err := fmt.Errorf("Failed to find the resource with given ID.")
-			return http.StatusNotFound, mapB, err
-		}
-	*/
-	//fmt.Println("keyValue: " + keyValue.Key + " / " + keyValue.Value)
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
@@ -582,11 +552,9 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 				return err
 			}
 			tempReq.ConnectionName = temp.ConnectionName
-			// url = common.SpiderRestUrl + "/vpc/" + temp.Name
 			url = fmt.Sprintf("%s/vpc/%s/subnet/%s", common.SpiderRestUrl, temp.Name, resourceId)
 		default:
 			err := fmt.Errorf("invalid resourceType")
-			//return http.StatusBadRequest, nil, err
 			return err
 		}
 
@@ -731,29 +699,6 @@ func DelEleInSlice(arr interface{}, index int) {
 	}
 }
 
-/*
-// RegisterExistingResources
-func RegisterExistingResources(nsId string, connConfig string) (interface{}, error) {
-	fmt.Println("RegisterExistingResources called;") // for debug
-
-	vpcInspectionResult, err := InspectResources(connConfig, common.StrVNet)
-	if err != nil {
-		common.CBLog.Error(err)
-		err := fmt.Errorf("in RegisterExistingResources(); an error occurred while calling InspectResources()")
-		return nil, err
-	}
-
-	vNetsInCspOnly := vpcInspectionResult.ResourcesOnCsp
-	vNetsInSpiderOnly :=
-	for _, v := range vpcInspectionResult.ResourcesOnTumblebug {
-		vNetId := v.Id
-		fmt.Println("vNetId: " + vNetId) // for debug
-	}
-
-	return nil, nil
-}
-*/
-
 // ListResourceId returns the list of TB MCIR object IDs of given resourceType
 func ListResourceId(nsId string, resourceType string) ([]string, error) {
 
@@ -805,10 +750,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 			resourceList = append(resourceList, trimmedString)
 		}
 	}
-	// for _, v := range resourceList {
-	// 	fmt.Println("<" + v + "> \n")
-	// }
-	// fmt.Println("===============================================")
+
 	return resourceList, nil
 
 }
@@ -846,17 +788,6 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 
 	if err != nil {
 		common.CBLog.Error(err)
-		/*
-			fmt.Println("func ListResource; common.CBStore.GetList gave error")
-			var resourceList []string
-			for _, v := range keyValue {
-				resourceList = append(resourceList, strings.TrimPrefix(v.Key, "/ns/"+nsId+"/resources/"+resourceType+"/"))
-			}
-			for _, v := range resourceList {
-				fmt.Println("<" + v + "> \n")
-			}
-			fmt.Println("===============================================")
-		*/
 		return nil, err
 	}
 	if keyValue != nil {
@@ -947,8 +878,6 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		//mapA := map[string]string{"message": errString}
-		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
 		return -1, err
 	}
@@ -960,7 +889,6 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 	fmt.Println("[Get count] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -996,8 +924,6 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		//mapA := map[string]string{"message": errString}
-		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
 		return nil, err
 	}
@@ -1009,7 +935,6 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 	fmt.Println("[Get count] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -1017,38 +942,6 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 		return nil, err
 	}
 	if keyValue != nil {
-		/*
-			objList := gjson.Get(keyValue.Value, "associatedObjectList")
-			objList.ForEach(func(key, value gjson.Result) bool {
-				result = append(result, value.String())
-				return true
-			})
-		*/
-
-		/*
-			switch resourceType {
-			case common.StrImage:
-				res := TbImageInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &res)
-				//result = res.
-			case common.StrSecurityGroup:
-				res := TbSecurityGroupInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &res)
-
-			case common.StrSpec:
-				res := TbSpecInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &res)
-
-			case common.StrSSHKey:
-				res := TbSshKeyInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &res)
-				result = res.AssociatedObjectList
-			case common.StrVNet:
-				res := TbVNetInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &res)
-
-			}
-		*/
 
 		type stringList struct {
 			AssociatedObjectList []string `json:"associatedObjectList"`
@@ -1087,8 +980,6 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 
 		if !check {
 			errString := "The " + resourceType + " " + resourceId + " does not exist."
-			//mapA := map[string]string{"message": errString}
-			//mapB, _ := json.Marshal(mapA)
 			err := fmt.Errorf(errString)
 			return -1, err
 		}
@@ -1101,7 +992,6 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 	fmt.Println("[Set count] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -1120,28 +1010,20 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 					return nil, err
 				}
 			}
-			// fmt.Println("len(objList): " + strconv.Itoa(len(objList))) // for debug
-			// fmt.Print("objList: ")                                     // for debug
-			// fmt.Println(objList)                                       // for debug
-
 			var anyJson map[string]interface{}
 			json.Unmarshal([]byte(keyValue.Value), &anyJson)
 			if anyJson["associatedObjectList"] == nil {
 				arrayToBe := []string{objectKey}
-				// fmt.Println("array_to_be: ", array_to_be) // for debug
 
 				anyJson["associatedObjectList"] = arrayToBe
 			} else { // anyJson["associatedObjectList"] != nil
 				arrayAsIs := anyJson["associatedObjectList"].([]interface{})
-				// fmt.Println("array_as_is: ", array_as_is) // for debug
 
 				arrayToBe := append(arrayAsIs, objectKey)
-				// fmt.Println("array_to_be: ", array_to_be) // for debug
 
 				anyJson["associatedObjectList"] = arrayToBe
 			}
 			updatedJson, _ := json.Marshal(anyJson)
-			// fmt.Println(string(updatedJson)) // for debug
 
 			keyValue.Value = string(updatedJson)
 		case common.StrDelete:
@@ -1207,8 +1089,6 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 	if !check {
 		errString := "The " + resourceType + " " + resourceId + " does not exist."
-		//mapA := map[string]string{"message": errString}
-		//mapB, _ := json.Marshal(mapA)
 		err := fmt.Errorf(errString)
 		return nil, err
 	}
@@ -1216,7 +1096,6 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	fmt.Println("[Get resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -1319,7 +1198,6 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 	fmt.Println("[Check resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -1383,7 +1261,6 @@ func CheckChildResource(nsId string, resourceType string, parentResourceId strin
 
 	key := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
 	key += "/" + resourceType + "/" + resourceId
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -1436,11 +1313,8 @@ type NameOnly struct {
 func GetNameFromStruct(u interface{}) string {
 	var result = ReturnValue{CustomStruct: u}
 
-	//fmt.Println(result)
-
 	msg, ok := result.CustomStruct.(NameOnly)
 	if ok {
-		//fmt.Printf("Message1 is %s\n", msg.Name)
 		return msg.Name
 	} else {
 		return ""
@@ -1822,7 +1696,6 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	list, err := DelAllResources(nsId, common.StrSecurityGroup, matchedSubstring, "false")
 	if err != nil {
 		common.CBLog.Error(err)
-		//return err
 		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
@@ -1830,7 +1703,6 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	list, err = DelAllResources(nsId, common.StrSSHKey, matchedSubstring, "false")
 	if err != nil {
 		common.CBLog.Error(err)
-		//return err
 		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
@@ -1838,7 +1710,6 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	list, err = DelAllResources(nsId, common.StrVNet, matchedSubstring, "false")
 	if err != nil {
 		common.CBLog.Error(err)
-		//return err
 		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)

@@ -50,7 +50,6 @@ func RestPostMcis(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	//fmt.Printf("%+v\n", *result)
 	common.PrintJsonPretty(*result)
 
 	return c.JSON(http.StatusCreated, result)
@@ -84,7 +83,6 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	//fmt.Printf("%+v\n", *result)
 	common.PrintJsonPretty(*result)
 
 	return c.JSON(http.StatusCreated, result)
@@ -117,7 +115,6 @@ func RestPostMcisDynamic(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	//fmt.Printf("%+v\n", *result)
 	common.PrintJsonPretty(*result)
 
 	return c.JSON(http.StatusCreated, result)
@@ -147,7 +144,6 @@ func RestPostMcisDynamicCheckRequest(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	//fmt.Printf("%+v\n", *result)
 	common.PrintJsonPretty(*result)
 
 	return c.JSON(http.StatusOK, result)

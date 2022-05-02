@@ -4758,7 +4758,53 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.IdList"
+                            "$ref": "#/definitions/mcis.RegisterResourceResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/registerCspResourcesAll": {
+            "post": {
+                "description": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug",
+                "parameters": [
+                    {
+                        "description": "Specify NS Id and MCIS Name",
+                        "name": "Request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/common.RestRegisterCspNativeResourcesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.RegisterResourceAllResult"
                         }
                     },
                     "404": {
@@ -6189,32 +6235,14 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
+                "resourceOverview": {
+                    "$ref": "#/definitions/mcis.resourceCountOverview"
+                },
                 "resourceType": {
                     "type": "string"
                 },
-                "resourcesOnCsp": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCsp"
-                    }
-                },
-                "resourcesOnCspOnly": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnCsp"
-                    }
-                },
-                "resourcesOnSpider": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnSpider"
-                    }
-                },
-                "resourcesOnTumblebug": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.resourceOnTumblebug"
-                    }
+                "resources": {
+                    "$ref": "#/definitions/mcis.resourcesByManageType"
                 },
                 "systemMessage": {
                     "type": "string"
@@ -6506,6 +6534,37 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.RegisterResourceAllResult": {
+            "type": "object",
+            "properties": {
+                "registerationResult": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.RegisterResourceResult"
+                    }
+                }
+            }
+        },
+        "mcis.RegisterResourceResult": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "elapsedTime": {
+                    "type": "integer"
+                },
+                "registerationOutputs": {
+                    "$ref": "#/definitions/common.IdList"
+                },
+                "registerationOverview": {
+                    "$ref": "#/definitions/mcis.registerationOverview"
+                },
+                "systemMessage": {
                     "type": "string"
                 }
             }
@@ -7220,7 +7279,58 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.registerationOverview": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "integer"
+                },
+                "securityGroup": {
+                    "type": "integer"
+                },
+                "sshKey": {
+                    "type": "integer"
+                },
+                "vNet": {
+                    "type": "integer"
+                },
+                "vm": {
+                    "type": "integer"
+                }
+            }
+        },
+        "mcis.resourceCountOverview": {
+            "type": "object",
+            "properties": {
+                "onCspOnly": {
+                    "type": "integer"
+                },
+                "onCspTotal": {
+                    "type": "integer"
+                },
+                "onSpider": {
+                    "type": "integer"
+                },
+                "onTumblebug": {
+                    "type": "integer"
+                }
+            }
+        },
         "mcis.resourceOnCsp": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnCspInfo"
+                    }
+                }
+            }
+        },
+        "mcis.resourceOnCspInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -7234,6 +7344,20 @@ const docTemplate = `{
         "mcis.resourceOnSpider": {
             "type": "object",
             "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnSpiderInfo"
+                    }
+                }
+            }
+        },
+        "mcis.resourceOnSpiderInfo": {
+            "type": "object",
+            "properties": {
                 "idByCsp": {
                     "type": "string"
                 },
@@ -7243,6 +7367,20 @@ const docTemplate = `{
             }
         },
         "mcis.resourceOnTumblebug": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.resourceOnTumblebugInfo"
+                    }
+                }
+            }
+        },
+        "mcis.resourceOnTumblebugInfo": {
             "type": "object",
             "properties": {
                 "idByCsp": {
@@ -7259,6 +7397,23 @@ const docTemplate = `{
                 },
                 "objectKey": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.resourcesByManageType": {
+            "type": "object",
+            "properties": {
+                "onCspOnly": {
+                    "$ref": "#/definitions/mcis.resourceOnCsp"
+                },
+                "onCspTotal": {
+                    "$ref": "#/definitions/mcis.resourceOnCsp"
+                },
+                "onSpider": {
+                    "$ref": "#/definitions/mcis.resourceOnSpider"
+                },
+                "onTumblebug": {
+                    "$ref": "#/definitions/mcis.resourceOnTumblebug"
                 }
             }
         }

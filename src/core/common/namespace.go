@@ -197,9 +197,7 @@ func AppendIfMissing(slice []string, i string) []string {
 
 func ListNsId() ([]string, error) {
 
-	//fmt.Println("[List ns]")
 	key := "/ns"
-	//fmt.Println(key)
 
 	var nsList []string
 
@@ -241,10 +239,6 @@ func ListNsId() ([]string, error) {
 	}
 	// EOF of Implementation Option 2
 
-	//for _, v := range nsList {
-	//	fmt.Println("<" + v + "> \n")
-	//}
-	//fmt.Println("===============================================")
 	return nsList, nil
 
 }
@@ -351,10 +345,7 @@ func CheckNs(id string) (bool, error) {
 		return false, err
 	}
 
-	//fmt.Println("[Check ns] " + lowerizedId)
-
 	key := "/ns/" + id
-	//fmt.Println(key)
 
 	keyValue, _ := CBStore.Get(key)
 	if keyValue != nil {

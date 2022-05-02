@@ -53,7 +53,6 @@ func ListMcisId(nsId string) ([]string, error) {
 		return nil, err
 	}
 
-	// fmt.Println("[ListMcisId]")
 	var mcisList []string
 
 	// Check MCIS exists
@@ -95,7 +94,6 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 		return nil, err
 	}
 
-	// fmt.Println("[ListVmId]")
 	var vmList []string
 
 	// Check MCIS exists
@@ -154,7 +152,7 @@ func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error
 			common.CBLog.Error(err)
 			return nil, vmErr
 		}
-		//fmt.Println("vmObj.Label: "+ vmObj.Label)
+
 		if vmObj.Label == label {
 			fmt.Println("Found VM with " + vmObj.Label + ", VM ID: " + vmObj.Id)
 			vmListByLabel = append(vmListByLabel, vmObj.Id)
@@ -295,7 +293,6 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 	for _, v := range mcisList {
 
 		key := common.GenMcisKey(nsId, v, "")
-		//fmt.Println(key)
 		keyValue, err := common.CBStore.Get(key)
 		if err != nil {
 			common.CBLog.Error(err)
@@ -305,11 +302,8 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 		}
 
 		if keyValue == nil {
-			//mapA := map[string]string{"message": "Cannot find " + key}
-			//return c.JSON(http.StatusOK, &mapA)
 			return nil, fmt.Errorf("in CoreGetAllMcis() mcis loop; Cannot find " + key)
 		}
-		//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 		mcisTmp := TbMcisInfo{}
 		json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 		mcisId := v
@@ -338,7 +332,6 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
 		for _, v1 := range vmList {
 			vmKey := common.GenMcisKey(nsId, mcisId, v1)
-			//fmt.Println(vmKey)
 			vmKeyValue, err := common.CBStore.Get(vmKey)
 			if err != nil {
 				err = fmt.Errorf("In CoreGetAllMcis(); CBStore.Get() returned an error")
@@ -347,12 +340,8 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 			}
 
 			if vmKeyValue == nil {
-				//mapA := map[string]string{"message": "Cannot find " + key}
-				//return c.JSON(http.StatusOK, &mapA)
 				return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
 			}
-			//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
-			//vmTmp := vmOverview{}
 			vmTmp := TbVmInfo{}
 			json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 			vmTmp.Id = v1
@@ -417,10 +406,8 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 	fmt.Println("[Get MCIS-VM info for id]" + vmId)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
-	//fmt.Println(key)
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
-	//fmt.Println(vmKey)
 	vmKeyValue, err := common.CBStore.Get(vmKey)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -430,11 +417,8 @@ func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, erro
 	}
 
 	if vmKeyValue == nil {
-		//mapA := map[string]string{"message": "Cannot find " + key}
-		//return c.JSON(http.StatusOK, &mapA)
 		return nil, fmt.Errorf("Cannot find " + key)
 	}
-	//fmt.Println("<" + vmKeyValue.Key + "> \n" + vmKeyValue.Value)
 	vmTmp := TbVmInfo{}
 	json.Unmarshal([]byte(vmKeyValue.Value), &vmTmp)
 	vmTmp.Id = vmId
@@ -484,7 +468,6 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 
 // GetVmObject is func to get VM object
 func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
-	//fmt.Println("[GetVmObject] mcisId: " + mcisId + ", vmId: " + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if keyValue == nil || err != nil {
@@ -516,7 +499,7 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	fmt.Println("[GetMcisStatus]" + mcisId)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
-	//fmt.Println(key)
+
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -527,8 +510,6 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 		common.CBLog.Error(err)
 		return &McisStatusInfo{}, err
 	}
-	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	//fmt.Println("===============================================")
 
 	mcisStatus := McisStatusInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &mcisStatus)
@@ -537,7 +518,6 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 
 	vmList, err := ListVmId(nsId, mcisId)
-	//fmt.Println("=============================================== %#v", vmList)
 	if err != nil {
 		common.CBLog.Error(err)
 		return &McisStatusInfo{}, err
@@ -751,7 +731,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	errorInfo := TbVmStatusInfo{}
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil || keyValue == nil {
@@ -764,7 +743,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	if unmarshalErr != nil {
 		fmt.Println("unmarshalErr:", unmarshalErr)
 	}
-	fmt.Println("\n[Calling SPIDER]START")
+	fmt.Println("\n[Calling SPIDER] START")
 	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 
 	cspVmId := temp.CspViewVmDetail.IId.NameId
@@ -787,7 +766,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 		tempReq := VMStatusReqInfo{}
 		tempReq.ConnectionName = temp.ConnectionName
 		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-		//fmt.Println("payload: " + string(payload)) // for debug
 
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -805,7 +783,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 		req.Header.Add("Content-Type", "application/json")
 
 		res, err := client.Do(req)
-		//fmt.Println("Called CB-Spider API.")
 
 		if err != nil {
 			fmt.Println(err)
@@ -854,9 +831,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 	}
 
-	//common.PrintJsonPretty(statusResponseTmp)
 	fmt.Println(statusResponseTmp)
-	//fmt.Println("[Calling SPIDER]END\n")
 
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.PublicIp = statusResponseTmp.PublicIP
@@ -876,7 +851,6 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 
 	fmt.Printf("[GetVmIp] " + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	//fmt.Println(key)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -885,9 +859,6 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 		common.CBLog.Error(err)
 		// return nil, err
 	}
-
-	//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	//fmt.Println("===============================================")
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
@@ -947,9 +918,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	// 	}
 	// }()
 
-	//fmt.Println("[GetVmStatus]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	//fmt.Println(key)
+
 	errorInfo := TbVmStatusInfo{}
 
 	keyValue, err := common.CBStore.Get(key)
@@ -958,10 +928,6 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 		fmt.Println(err)
 		return errorInfo, err
 	}
-
-	// fmt.Println(keyValue.Value)
-	// fmt.Println("<" + keyValue.Key + "> \n")
-	// fmt.Println("===============================================")
 
 	temp := TbVmInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -1007,7 +973,6 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 			tempReq := VMStatusReqInfo{}
 			tempReq.ConnectionName = temp.ConnectionName
 			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-			//fmt.Println("payload: " + string(payload)) // for debug
 
 			client := &http.Client{
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -1140,8 +1105,6 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	vmStatusTmp.CreatedTime = temp.CreatedTime
 	vmStatusTmp.SystemMessage = temp.SystemMessage
 
-	// fmt.Println("[VM Native Status]" + temp.Id + ":" + nativeStatus)
-
 	//Correct undefined status using TargetAction
 	if vmStatusTmp.TargetAction == ActionCreate {
 		if statusResponseTmp.Status == StatusUndefined {
@@ -1265,7 +1228,6 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 	fmt.Println("[status VM]")
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
-	//fmt.Println(vmKey)
 	vmKeyValue, err := common.CBStore.Get(vmKey)
 	if err != nil {
 		err = fmt.Errorf("in CoreGetMcisVmStatus(); CBStore.Get() returned an error")
@@ -1274,8 +1236,6 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 	}
 
 	if vmKeyValue == nil {
-		//mapA := map[string]string{"message": "Cannot find " + vmKey}
-		//return c.JSON(http.StatusOK, &mapA)
 		return nil, fmt.Errorf("Cannot find " + vmKey)
 	}
 
@@ -1314,10 +1274,6 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 			common.CBLog.Error(err)
 		}
 	}
-	//fmt.Println("===========================")
-	//vmkeyValue, _ := common.CBStore.Get(key)
-	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
-	//fmt.Println("===========================")
 }
 
 // UpdateVmInfo is func to update VM Info
@@ -1340,11 +1296,6 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 			common.CBLog.Error(err)
 		}
 	}
-
-	//fmt.Println("===========================")
-	//vmkeyValue, _ := common.CBStore.Get(key)
-	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
-	//fmt.Println("===========================")
 }
 
 // [Delete MCIS and VM object]
@@ -1565,8 +1516,6 @@ func CoreDelAllMcis(nsId string, option string) (string, error) {
 	}
 
 	if len(mcisList) == 0 {
-		//mapA := map[string]string{"message": "No MCIS to delete"}
-		//return c.JSON(http.StatusOK, &mapA)
 		return "No MCIS to delete", nil
 	}
 
@@ -1574,8 +1523,6 @@ func CoreDelAllMcis(nsId string, option string) (string, error) {
 		err := DelMcis(nsId, v, option)
 		if err != nil {
 			common.CBLog.Error(err)
-			//mapA := map[string]string{"message": "Failed to delete All MCISs"}
-			//return c.JSON(http.StatusFailedDependency, &mapA)
 			return "", fmt.Errorf("Failed to delete All MCISs")
 		}
 	}
@@ -1605,7 +1552,6 @@ func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 	fmt.Println("[GetVmTemplate]" + mcisId + " by algo: " + algo)
 
 	vmList, err := ListVmId(nsId, mcisId)
-	//fmt.Println(vmList)
 	if err != nil {
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err

@@ -127,13 +127,13 @@ type TbVmInfo struct {
 // }
 
 // RegionInfo is for Region 정보 구조 정의
-// type RegionInfo struct { // Spider
+// type RegionInfo struct {
 // 	Region string `yaml:"Region" json:"Region"`
 // 	Zone   string `yaml:"Zone" json:"Zone"`
 // }
 
 // SpiderVMInfo is for VM 정보 구조 정의
-// type SpiderVMInfo struct { // Spider
+// type SpiderVMInfo struct {
 // 	// Fields for request
 // 	Name               string   `yaml:"Name" json:"Name"`
 // 	ImageName          string   `yaml:"ImageName" json:"ImageName"`

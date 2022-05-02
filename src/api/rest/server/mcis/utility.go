@@ -37,8 +37,6 @@ func RestCheckMcis(c echo.Context) error {
 
 	if err != nil {
 		common.CBLog.Error(err)
-		//mapA := map[string]string{"message": err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
 		return c.JSON(http.StatusNotFound, &content)
 	}
 
@@ -61,8 +59,6 @@ func RestCheckVm(c echo.Context) error {
 
 	if err != nil {
 		common.CBLog.Error(err)
-		//mapA := map[string]string{"message": err.Error()}
-		//return c.JSON(http.StatusFailedDependency, &mapA)
 		return c.JSON(http.StatusNotFound, &content)
 	}
 

@@ -97,7 +97,6 @@ func RestPostSpec(c echo.Context) error {
 func RestPutSpec(c echo.Context) error {
 	nsId := c.Param("nsId")
 	specId := c.Param("resourceId")
-	fmt.Printf("RestPutSpec called; nsId: %s, specId: %s \n", nsId, specId) // for debug
 
 	u := &mcir.TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
@@ -161,10 +160,6 @@ func RestLookupSpec(c echo.Context) error {
 // @Router /lookupSpecs [post]
 func RestLookupSpecList(c echo.Context) error {
 
-	//type JsonTemplate struct {
-	//	ConnectionName string
-	//}
-
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
@@ -225,7 +220,7 @@ func RestFetchSpecs(c echo.Context) error {
 
 	mapA := map[string]string{
 		"message": "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-	return c.JSON(http.StatusCreated, &mapA) //content)
+	return c.JSON(http.StatusCreated, &mapA)
 }
 
 // RestFilterSpecsResponse is Response structure for RestFilterSpecs

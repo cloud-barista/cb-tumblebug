@@ -106,7 +106,6 @@ func OrchestrationController() {
 		return
 	}
 
-	//fmt.Println("")
 	for _, nsId := range nsList {
 
 		mcisPolicyList := ListMcisPolicyId(nsId)
@@ -118,7 +117,6 @@ func OrchestrationController() {
 		for _, v := range mcisPolicyList {
 
 			key := common.GenMcisPolicyKey(nsId, v, "")
-			//fmt.Println(key)
 			keyValue, err := common.CBStore.Get(key)
 			if err != nil {
 				common.CBLog.Error(err)
@@ -128,11 +126,8 @@ func OrchestrationController() {
 			}
 
 			if keyValue == nil {
-				//mapA := map[string]string{"message": "Cannot find " + key}
-				//return c.JSON(http.StatusOK, &mapA)
 				fmt.Println("keyValue is nil")
 			}
-			//fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 			mcisPolicyTmp := McisPolicyInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &mcisPolicyTmp)
 
@@ -180,12 +175,10 @@ func OrchestrationController() {
 							mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 							break
 						}
-						//common.PrintJsonPretty(content)
 
 						//Statistic
 						sumMcis := 0.0
 						for _, monData := range content.McisMonitoring {
-							//fmt.Println("[monData.Value: ] " + monData.Value)
 							monDataValue, _ := strconv.ParseFloat(monData.Value, 64)
 							sumMcis += monDataValue
 						}
@@ -411,10 +404,6 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 	if err != nil && !strings.Contains(err.Error(), common.CbStoreKeyNotFoundErrorString) {
 		common.CBLog.Error(err)
 	}
-	//fmt.Println("===========================")
-	//vmkeyValue, _ := common.CBStore.Get(key)
-	//fmt.Println("<" + vmkeyValue.Key + "> \n" + vmkeyValue.Value)
-	//fmt.Println("===========================")
 }
 
 // CreateMcisPolicy create McisPolicyInfo object in DB according to user's requirements.
@@ -456,8 +445,6 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 	Key := common.GenMcisPolicyKey(nsId, content.Id, "")
 	Val, _ := json.Marshal(content)
 
-	//fmt.Println("Key: ", Key)
-	//fmt.Println("Val: ", Val)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
@@ -553,7 +540,7 @@ func ListMcisPolicyId(nsId string) []string {
 		common.CBLog.Error(err)
 		return nil
 	}
-	//fmt.Println("[Get MCIS Policy ID list]")
+
 	key := "/ns/" + nsId + "/policy/mcis"
 	keyValue, err := common.CBStore.GetList(key, true)
 	if err != nil {

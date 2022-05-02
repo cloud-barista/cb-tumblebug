@@ -111,10 +111,8 @@ func RestPostCmdMcis(c echo.Context) error {
 		resultTmp.VmIp = v.VmIp
 		resultTmp.Result = v.Result
 		content.ResultArray = append(content.ResultArray, resultTmp)
-		//fmt.Println("result from goroutin " + v)
 	}
 
-	//fmt.Printf("%+v\n", content)
 	common.PrintJsonPretty(content)
 
 	return c.JSON(http.StatusOK, content)

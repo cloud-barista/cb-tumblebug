@@ -137,7 +137,6 @@ func InitConfig(id string) error {
 	if check && err == nil {
 		fmt.Println("[Init config] " + id)
 		key := "/config/" + id
-		//fmt.Println(key)
 
 		CBStore.Delete(key)
 		// if err != nil {
@@ -169,7 +168,6 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	fmt.Println("[Get config] " + id)
 	key := "/config/" + id
-	//fmt.Println(key)
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
@@ -178,7 +176,6 @@ func GetConfig(id string) (ConfigInfo, error) {
 	}
 
 	fmt.Println("<" + keyValue.Key + "> " + keyValue.Value)
-	//fmt.Println("===============================================")
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
@@ -278,7 +275,6 @@ func CheckConfig(id string) (bool, error) {
 	}
 
 	key := "/config/" + id
-	//fmt.Println(key)
 
 	keyValue, _ := CBStore.Get(key)
 	if keyValue != nil {
