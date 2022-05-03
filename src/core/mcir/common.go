@@ -779,7 +779,7 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Println("[Get " + resourceType + " list")
+	fmt.Println("[Get] " + resourceType + " list")
 	key := "/ns/" + nsId + "/resources/" + resourceType
 	fmt.Println(key)
 
