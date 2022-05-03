@@ -592,16 +592,23 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string) (RegisterResource
 		common.CBLog.Error(err)
 		return RegisterResourceAllResult{}, err
 	}
+	refinedConnectionConfigList := common.ConnConfigList{}
+	for _, k := range connectionConfigList.Connectionconfig {
+		if !strings.Contains(k.ConfigName, "gcp") {
+			refinedConnectionConfigList.Connectionconfig = append(refinedConnectionConfigList.Connectionconfig, k)
+		}
+	}
+
 	output := RegisterResourceAllResult{}
 
 	var wait sync.WaitGroup
-	for _, k := range connectionConfigList.Connectionconfig {
+	for _, k := range refinedConnectionConfigList.Connectionconfig {
 		wait.Add(1)
 		go func(k common.ConnConfig) {
 			defer wait.Done()
 
 			mcisNameForRegister := mcisId + "-" + k.ConfigName
-
+			//common.RandomSleep(300)
 			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister)
 			if err != nil {
 				common.CBLog.Error(err)
@@ -623,6 +630,8 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 	optionFlag := "register"
 	registeredStatus := ""
 	result := RegisterResourceResult{}
+
+	startTime01 := time.Now() //tmp
 
 	// bring vNet list and register all
 	inspectedResources, err := InspectResources(connConfig, common.StrVNet)
@@ -651,6 +660,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		result.RegisterationOverview.VNet++
 	}
 
+	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrVNet, int(math.Round(time.Now().Sub(startTime01).Seconds()))) //tmp
+	startTime02 := time.Now()                                                                                                    //tmp
+
 	// bring SecurityGroup list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrSecurityGroup)
 	if err != nil {
@@ -678,6 +690,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSecurityGroup+": "+req.Name+registeredStatus)
 		result.RegisterationOverview.SecurityGroup++
 	}
+
+	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSecurityGroup, int(math.Round(time.Now().Sub(startTime02).Seconds()))) //tmp
+	startTime03 := time.Now()                                                                                                             //tmp
 
 	// bring SSHKey list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrSSHKey)
@@ -710,6 +725,9 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSSHKey+": "+req.Name+registeredStatus)
 		result.RegisterationOverview.SshKey++
 	}
+
+	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSSHKey, int(math.Round(time.Now().Sub(startTime03).Seconds()))) //tmp
+	startTime04 := time.Now()                                                                                                      //tmp
 
 	// bring VM list and register all
 	inspectedResources, err = InspectResources(connConfig, common.StrVM)
@@ -755,6 +773,10 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 	}
 	result.ConnectionName = connConfig
 	result.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
+
+	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrVM, int(math.Round(time.Now().Sub(startTime04).Seconds()))) //tmp
+
+	fmt.Printf("\n\n%s [Elapsed]Total %d \n\n", connConfig, int(math.Round(time.Now().Sub(startTime).Seconds())))
 
 	return result, err
 
