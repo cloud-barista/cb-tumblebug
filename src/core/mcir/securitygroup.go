@@ -170,16 +170,17 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	// Assign random temporal ID to u.VNetId
 	if option == "register" && u.VNetId == "not defined" {
 		resourceList, err := ListResource(nsId, common.StrVNet)
-		var content struct {
-			VNet []TbVNetInfo `json:"vNet"`
-		}
-		content.VNet = resourceList.([]TbVNetInfo) // type assertion (interface{} -> array)
 
 		if err != nil {
 			common.CBLog.Error(err)
 			err := fmt.Errorf("Cannot ListResourceId securityGroup")
 			return TbSecurityGroupInfo{}, err
 		}
+
+		var content struct {
+			VNet []TbVNetInfo `json:"vNet"`
+		}
+		content.VNet = resourceList.([]TbVNetInfo) // type assertion (interface{} -> array)
 
 		if len(content.VNet) == 0 {
 			errString := "There is no " + common.StrVNet + " resource in " + nsId
