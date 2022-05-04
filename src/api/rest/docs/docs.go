@@ -3446,6 +3446,106 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/resources/securityGroup/{securityGroupId}/rules": {
+            "post": {
+                "description": "Create FirewallRules",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Network management"
+                ],
+                "summary": "Create FirewallRules",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "FirewallRules to create",
+                        "name": "firewallRuleReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbFirewallRulesWrapper"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete FirewallRules",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Network management"
+                ],
+                "summary": "Delete FirewallRules",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "FirewallRules to delete",
+                        "name": "firewallRuleReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbFirewallRulesWrapper"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/resources/spec": {
             "get": {
                 "description": "List all specs or specs' ID",
@@ -5409,30 +5509,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcir.SpiderSecurityRuleInfo": {
-            "type": "object",
-            "properties": {
-                "cidr": {
-                    "type": "string"
-                },
-                "direction": {
-                    "description": "` + "`" + `json:\"direction\"` + "`" + `",
-                    "type": "string"
-                },
-                "fromPort": {
-                    "description": "` + "`" + `json:\"fromPort\"` + "`" + `",
-                    "type": "string"
-                },
-                "ipprotocol": {
-                    "description": "` + "`" + `json:\"ipProtocol\"` + "`" + `",
-                    "type": "string"
-                },
-                "toPort": {
-                    "description": "` + "`" + `json:\"toPort\"` + "`" + `",
-                    "type": "string"
-                }
-            }
-        },
         "mcir.SpiderSpecInfo": {
             "type": "object",
             "properties": {
@@ -5482,6 +5558,48 @@ const docTemplate = `{
                 },
                 "count": {
                     "type": "string"
+                }
+            }
+        },
+        "mcir.TbFirewallRuleInfo": {
+            "type": "object",
+            "required": [
+                "direction",
+                "fromPort",
+                "ipprotocol",
+                "toPort"
+            ],
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "direction": {
+                    "description": "` + "`" + `json:\"direction\"` + "`" + `",
+                    "type": "string"
+                },
+                "fromPort": {
+                    "description": "` + "`" + `json:\"fromPort\"` + "`" + `",
+                    "type": "string"
+                },
+                "ipprotocol": {
+                    "description": "` + "`" + `json:\"ipProtocol\"` + "`" + `",
+                    "type": "string"
+                },
+                "toPort": {
+                    "description": "` + "`" + `json:\"toPort\"` + "`" + `",
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbFirewallRulesWrapper": {
+            "type": "object",
+            "properties": {
+                "firewallRules": {
+                    "description": "validate:\"required\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
+                    }
                 }
             }
         },
@@ -5589,7 +5707,7 @@ const docTemplate = `{
                 "firewallRules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcir.SpiderSecurityRuleInfo"
+                        "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
                     }
                 },
                 "id": {
@@ -5639,7 +5757,7 @@ const docTemplate = `{
                     "description": "validate:\"required\"` + "`" + `",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/mcir.SpiderSecurityRuleInfo"
+                        "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
                     }
                 },
                 "name": {

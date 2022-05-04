@@ -354,23 +354,6 @@ definitions:
           $ref: '#/definitions/mcir.SpiderImageInfo'
         type: array
     type: object
-  mcir.SpiderSecurityRuleInfo:
-    properties:
-      cidr:
-        type: string
-      direction:
-        description: '`json:"direction"`'
-        type: string
-      fromPort:
-        description: '`json:"fromPort"`'
-        type: string
-      ipprotocol:
-        description: '`json:"ipProtocol"`'
-        type: string
-      toPort:
-        description: '`json:"toPort"`'
-        type: string
-    type: object
   mcir.SpiderSpecInfo:
     properties:
       gpu:
@@ -404,6 +387,36 @@ definitions:
         type: string
       count:
         type: string
+    type: object
+  mcir.TbFirewallRuleInfo:
+    properties:
+      cidr:
+        type: string
+      direction:
+        description: '`json:"direction"`'
+        type: string
+      fromPort:
+        description: '`json:"fromPort"`'
+        type: string
+      ipprotocol:
+        description: '`json:"ipProtocol"`'
+        type: string
+      toPort:
+        description: '`json:"toPort"`'
+        type: string
+    required:
+    - direction
+    - fromPort
+    - ipprotocol
+    - toPort
+    type: object
+  mcir.TbFirewallRulesWrapper:
+    properties:
+      firewallRules:
+        description: validate:"required"`
+        items:
+          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
+        type: array
     type: object
   mcir.TbImageInfo:
     properties:
@@ -477,7 +490,7 @@ definitions:
         type: string
       firewallRules:
         items:
-          $ref: '#/definitions/mcir.SpiderSecurityRuleInfo'
+          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
         type: array
       id:
         type: string
@@ -509,7 +522,7 @@ definitions:
       firewallRules:
         description: validate:"required"`
         items:
-          $ref: '#/definitions/mcir.SpiderSecurityRuleInfo'
+          $ref: '#/definitions/mcir.TbFirewallRuleInfo'
         type: array
       name:
         type: string
@@ -4108,6 +4121,73 @@ paths:
       summary: Get Security Group
       tags:
       - '[Infra resource] MCIR Security group management'
+  /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules:
+    delete:
+      consumes:
+      - application/json
+      description: Delete FirewallRules
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: FirewallRules to delete
+        in: body
+        name: firewallRuleReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbFirewallRulesWrapper'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete FirewallRules
+      tags:
+      - '[Infra resource] MCIR Network management'
+    post:
+      consumes:
+      - application/json
+      description: Create FirewallRules
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: FirewallRules to create
+        in: body
+        name: firewallRuleReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbFirewallRulesWrapper'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbFirewallRuleInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create FirewallRules
+      tags:
+      - '[Infra resource] MCIR Network management'
   /ns/{nsId}/resources/spec:
     delete:
       consumes:
