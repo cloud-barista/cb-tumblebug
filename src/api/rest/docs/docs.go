@@ -4845,13 +4845,23 @@ const docTemplate = `{
                 "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug",
                 "parameters": [
                     {
-                        "description": "Specify connectionName and NS Id",
+                        "description": "Specify connectionName, NS Id, and MCIS Name",
                         "name": "Request",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/common.RestRegisterCspNativeResourcesRequest"
                         }
+                    },
+                    {
+                        "enum": [
+                            "onlyVm",
+                            "exceptVm"
+                        ],
+                        "type": "string",
+                        "description": "Option to specify resourceType",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4896,8 +4906,18 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/common.RestRegisterCspNativeResourcesRequest"
+                            "$ref": "#/definitions/common.RestRegisterCspNativeResourcesRequestAll"
                         }
+                    },
+                    {
+                        "enum": [
+                            "onlyVm",
+                            "exceptVm"
+                        ],
+                        "type": "string",
+                        "description": "Option to specify resourceType",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -5212,7 +5232,20 @@ const docTemplate = `{
                 },
                 "mcisName": {
                     "type": "string",
-                    "example": "mcis-csp-native"
+                    "example": "csp"
+                },
+                "nsId": {
+                    "type": "string",
+                    "example": "ns01"
+                }
+            }
+        },
+        "common.RestRegisterCspNativeResourcesRequestAll": {
+            "type": "object",
+            "properties": {
+                "mcisName": {
+                    "type": "string",
+                    "example": "csp"
                 },
                 "nsId": {
                     "type": "string",
@@ -6659,6 +6692,9 @@ const docTemplate = `{
         "mcis.RegisterResourceAllResult": {
             "type": "object",
             "properties": {
+                "elapsedTime": {
+                    "type": "integer"
+                },
                 "registerationResult": {
                     "type": "array",
                     "items": {
