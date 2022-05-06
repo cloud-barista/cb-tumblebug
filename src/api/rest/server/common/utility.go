@@ -376,7 +376,7 @@ func RestInspectResources(c echo.Context) error {
 type RestRegisterCspNativeResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`
 	NsId           string `json:"nsId" example:"ns01"`
-	McisName       string `json:"mcisName" example:"mcis-csp-native"`
+	McisName       string `json:"mcisName" example:"csp"`
 }
 
 // RestRegisterCspNativeResources godoc
@@ -385,7 +385,8 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName and NS Id"
+// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCIS Name""
+// @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Success 200 {object} mcis.RegisterResourceResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -396,8 +397,9 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
+	option := c.QueryParam("option")
 
-	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName)
+	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName, option)
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -409,13 +411,20 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 
 }
 
+// Request struct for RestRegisterCspNativeResources
+type RestRegisterCspNativeResourcesRequestAll struct {
+	NsId     string `json:"nsId" example:"ns01"`
+	McisName string `json:"mcisName" example:"csp"`
+}
+
 // RestRegisterCspNativeResourcesAll godoc
 // @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
 // @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
 // @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
-// @Param Request body RestRegisterCspNativeResourcesRequest true "Specify NS Id and MCIS Name"
+// @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCIS Name"
+// @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
 // @Success 200 {object} mcis.RegisterResourceAllResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -426,8 +435,9 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
+	option := c.QueryParam("option")
 
-	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName)
+	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName, option)
 
 	if err != nil {
 		common.CBLog.Error(err)
