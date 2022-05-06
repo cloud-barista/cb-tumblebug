@@ -562,13 +562,130 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	return result, nil
 }
 
+// InspectResourceAllResult is struct for Inspect Resource Result for All Clouds
+type InspectResourceAllResult struct {
+	ElapsedTime          int                     `json:"elapsedTime"`
+	RegisteredConnection int                     `json:"registeredConnection"`
+	AvailableConnection  int                     `json:"availableConnection"`
+	TumblebugOverview    inspectOverview         `json:"tumblebugOverview"`
+	CspTotalOverview     inspectOverview         `json:"cspTotalOverview"`
+	InspectResult        []InspectResourceResult `json:"inspectResult"`
+}
+
+// InspectResourceResult is struct for Inspect Resource Result
+type InspectResourceResult struct {
+	ConnectionName    string          `json:"connectionName"`
+	SystemMessage     string          `json:"systemMessage"`
+	ElapsedTime       int             `json:"elapsedTime"`
+	TumblebugOverview inspectOverview `json:"tumblebugOverview"`
+	CspTotalOverview  inspectOverview `json:"cspTotalOverview"`
+}
+
+type inspectOverview struct {
+	VNet          int `json:"vNet"`
+	SecurityGroup int `json:"securityGroup"`
+	SshKey        int `json:"sshKey"`
+	Vm            int `json:"vm"`
+}
+
+// InspectResourcesOverview func is to check all resources in CB-TB and CSPs
+func InspectResourcesOverview() (InspectResourceAllResult, error) {
+	startTime := time.Now()
+
+	connectionConfigList, err := common.GetConnConfigList()
+	if err != nil {
+		err := fmt.Errorf("Cannnot load ConnectionConfigList")
+		common.CBLog.Error(err)
+		return InspectResourceAllResult{}, err
+	}
+
+	output := InspectResourceAllResult{}
+
+	var wait sync.WaitGroup
+	for _, k := range connectionConfigList.Connectionconfig {
+		wait.Add(1)
+		go func(k common.ConnConfig) {
+			defer wait.Done()
+
+			common.RandomSleep(0, 60)
+			temp := InspectResourceResult{}
+			temp.ConnectionName = k.ConfigName
+			startTimeForConnection := time.Now()
+
+			inspectResult, err := InspectResources(k.ConfigName, common.StrVNet)
+			if err != nil {
+				common.CBLog.Error(err)
+				temp.SystemMessage = err.Error()
+			}
+			temp.TumblebugOverview.VNet = inspectResult.ResourceOverview.OnTumblebug
+			temp.CspTotalOverview.VNet = inspectResult.ResourceOverview.OnCspTotal
+
+			inspectResult, err = InspectResources(k.ConfigName, common.StrSecurityGroup)
+			if err != nil {
+				common.CBLog.Error(err)
+				temp.SystemMessage += err.Error()
+			}
+			temp.TumblebugOverview.SecurityGroup = inspectResult.ResourceOverview.OnTumblebug
+			temp.CspTotalOverview.SecurityGroup = inspectResult.ResourceOverview.OnCspTotal
+
+			inspectResult, err = InspectResources(k.ConfigName, common.StrSSHKey)
+			if err != nil {
+				common.CBLog.Error(err)
+				temp.SystemMessage += err.Error()
+			}
+			temp.TumblebugOverview.SshKey = inspectResult.ResourceOverview.OnTumblebug
+			temp.CspTotalOverview.SshKey = inspectResult.ResourceOverview.OnCspTotal
+
+			inspectResult, err = InspectResources(k.ConfigName, common.StrVM)
+			if err != nil {
+				common.CBLog.Error(err)
+				temp.SystemMessage += err.Error()
+			}
+			temp.TumblebugOverview.Vm = inspectResult.ResourceOverview.OnTumblebug
+			temp.CspTotalOverview.Vm = inspectResult.ResourceOverview.OnCspTotal
+			temp.ElapsedTime = int(math.Round(time.Now().Sub(startTimeForConnection).Seconds()))
+
+			output.InspectResult = append(output.InspectResult, temp)
+
+		}(k)
+	}
+	wait.Wait()
+
+	errorConnectionCnt := 0
+	for _, k := range output.InspectResult {
+		output.TumblebugOverview.VNet += k.TumblebugOverview.VNet
+		output.TumblebugOverview.SecurityGroup += k.TumblebugOverview.SecurityGroup
+		output.TumblebugOverview.SshKey += k.TumblebugOverview.SshKey
+		output.TumblebugOverview.Vm += k.TumblebugOverview.Vm
+
+		output.CspTotalOverview.VNet += k.CspTotalOverview.VNet
+		output.CspTotalOverview.SecurityGroup += k.CspTotalOverview.SecurityGroup
+		output.CspTotalOverview.SshKey += k.CspTotalOverview.SshKey
+		output.CspTotalOverview.Vm += k.CspTotalOverview.Vm
+
+		if k.SystemMessage != "" {
+			errorConnectionCnt++
+		}
+	}
+
+	sort.SliceStable(output.InspectResult, func(i, j int) bool {
+		return output.InspectResult[i].ConnectionName < output.InspectResult[j].ConnectionName
+	})
+
+	output.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
+	output.RegisteredConnection = len(connectionConfigList.Connectionconfig)
+	output.AvailableConnection = output.RegisteredConnection - errorConnectionCnt
+
+	return output, err
+}
+
 // RegisterCspNativeResourceResultAll is struct for Register Csp Native Resource Result for All Clouds
 type RegisterResourceAllResult struct {
 	ElapsedTime         int                      `json:"elapsedTime"`
 	RegisterationResult []RegisterResourceResult `json:"registerationResult"`
 }
 
-// RegisterCspNativeResourceResult is struct for Register Csp Native Resource Result
+// RegisterResourceResult is struct for Register Csp Native Resource Result
 type RegisterResourceResult struct {
 	ConnectionName        string                `json:"connectionName"`
 	SystemMessage         string                `json:"systemMessage"`
