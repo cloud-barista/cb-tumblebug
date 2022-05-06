@@ -235,19 +235,21 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	tempReq.ReqInfo.CSPId = u.CspSecurityGroupId
 
 	// tempReq.ReqInfo.SecurityRules = u.FirewallRules
-	for _, v := range *u.FirewallRules {
-		jsonBody, err := json.Marshal(v)
-		if err != nil {
-			common.CBLog.Error(err)
-		}
+	if u.FirewallRules != nil {
+		for _, v := range *u.FirewallRules {
+			jsonBody, err := json.Marshal(v)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
 
-		spiderSecurityRuleInfo := SpiderSecurityRuleInfo{}
-		err = json.Unmarshal(jsonBody, &spiderSecurityRuleInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-		}
+			spiderSecurityRuleInfo := SpiderSecurityRuleInfo{}
+			err = json.Unmarshal(jsonBody, &spiderSecurityRuleInfo)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
 
-		tempReq.ReqInfo.SecurityRules = append(tempReq.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
+			tempReq.ReqInfo.SecurityRules = append(tempReq.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
+		}
 	}
 
 	var tempSpiderSecurityInfo *SpiderSecurityInfo

@@ -779,7 +779,7 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Println("[Get " + resourceType + " list")
+	fmt.Println("[Get] " + resourceType + " list")
 	key := "/ns/" + nsId + "/resources/" + resourceType
 	fmt.Println(key)
 
@@ -1365,7 +1365,7 @@ func LoadCommonResource() (common.IdList, error) {
 			go func(i int, row []string) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(20)
+				common.RandomSleep(0, 20)
 				specReqTmp := TbSpecReq{}
 				// [0]connectionName, [1]cspSpecName, [2]CostPerHour, [3]evaluationScore01, ..., [12]evaluationScore10
 				specReqTmp.ConnectionName = row[2]
@@ -1470,7 +1470,7 @@ func LoadCommonResource() (common.IdList, error) {
 			go func(i int, row []string) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(20)
+				common.RandomSleep(0, 20)
 				imageReqTmp := TbImageReq{}
 				// row0: ProviderName
 				// row1: connectionName

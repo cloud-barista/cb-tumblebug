@@ -18,6 +18,7 @@ import (
 	//"encoding/json"
 	//uuid "github.com/google/uuid"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -563,6 +564,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 
 // RegisterCspNativeResourceResultAll is struct for Register Csp Native Resource Result for All Clouds
 type RegisterResourceAllResult struct {
+	ElapsedTime         int                      `json:"elapsedTime"`
 	RegisterationResult []RegisterResourceResult `json:"registerationResult"`
 }
 
@@ -584,7 +586,8 @@ type registerationOverview struct {
 }
 
 // RegisterCspNativeResourcesAll func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResourcesAll(nsId string, mcisId string) (RegisterResourceAllResult, error) {
+func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (RegisterResourceAllResult, error) {
+	startTime := time.Now()
 
 	connectionConfigList, err := common.GetConnConfigList()
 	if err != nil {
@@ -592,24 +595,31 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string) (RegisterResource
 		common.CBLog.Error(err)
 		return RegisterResourceAllResult{}, err
 	}
-	refinedConnectionConfigList := common.ConnConfigList{}
-	for _, k := range connectionConfigList.Connectionconfig {
-		if !strings.Contains(k.ConfigName, "gcp") {
-			refinedConnectionConfigList.Connectionconfig = append(refinedConnectionConfigList.Connectionconfig, k)
-		}
-	}
 
 	output := RegisterResourceAllResult{}
 
 	var wait sync.WaitGroup
-	for _, k := range refinedConnectionConfigList.Connectionconfig {
+	for _, k := range connectionConfigList.Connectionconfig {
 		wait.Add(1)
 		go func(k common.ConnConfig) {
 			defer wait.Done()
 
 			mcisNameForRegister := mcisId + "-" + k.ConfigName
-			//common.RandomSleep(300)
-			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister)
+			// Assign RandomSleep range by clouds
+			// This code is temporal, CB-Spider needs to be enhnaced for locking mechanism.
+			if option != "onlyVm" {
+				if strings.Contains(k.ConfigName, "alibaba") {
+					common.RandomSleep(100, 200)
+				} else if strings.Contains(k.ConfigName, "aws") {
+					common.RandomSleep(300, 500)
+				} else if strings.Contains(k.ConfigName, "gcp") {
+					common.RandomSleep(700, 900)
+				} else {
+				}
+			}
+			common.RandomSleep(0, 50)
+
+			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister, option)
 			if err != nil {
 				common.CBLog.Error(err)
 			}
@@ -620,11 +630,17 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string) (RegisterResource
 	}
 	wait.Wait()
 
+	output.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
+
+	sort.SliceStable(output.RegisterationResult, func(i, j int) bool {
+		return output.RegisterationResult[i].ConnectionName < output.RegisterationResult[j].ConnectionName
+	})
+
 	return output, err
 }
 
 // RegisterCspNativeResources func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (RegisterResourceResult, error) {
+func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, option string) (RegisterResourceResult, error) {
 	startTime := time.Now()
 
 	optionFlag := "register"
@@ -632,145 +648,153 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string) (
 	result := RegisterResourceResult{}
 
 	startTime01 := time.Now() //tmp
+	var err error
 
-	// bring vNet list and register all
-	inspectedResources, err := InspectResources(connConfig, common.StrVNet)
-	if err != nil {
-		common.CBLog.Error(err)
-		result.SystemMessage = err.Error()
-	}
-	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-		req := mcir.TbVNetReq{}
-		req.ConnectionName = connConfig
-		req.CspVNetId = r.IdByCsp
-		req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-		req.Name = req.ConnectionName + "-" + req.CspVNetId
-		req.Name = strings.ToLower(req.Name)
-
-		_, err = mcir.CreateVNet(nsId, &req, optionFlag)
-
-		registeredStatus = ""
+	if option != "onlyVm" {
+		// bring vNet list and register all
+		inspectedResources, err := InspectResources(connConfig, common.StrVNet)
 		if err != nil {
 			common.CBLog.Error(err)
-			registeredStatus = "  [Failed] " + err.Error()
-			result.RegisterationOverview.VNet--
-			result.RegisterationOverview.Failed++
+			result.SystemMessage = err.Error()
 		}
-		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVNet+": "+req.Name+registeredStatus)
-		result.RegisterationOverview.VNet++
-	}
+		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
+			req := mcir.TbVNetReq{}
+			req.ConnectionName = connConfig
+			req.CspVNetId = r.IdByCsp
+			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
+			req.Name = req.ConnectionName + "-" + req.CspVNetId
+			req.Name = strings.ToLower(req.Name)
 
-	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrVNet, int(math.Round(time.Now().Sub(startTime01).Seconds()))) //tmp
-	startTime02 := time.Now()                                                                                                    //tmp
+			_, err = mcir.CreateVNet(nsId, &req, optionFlag)
 
-	// bring SecurityGroup list and register all
-	inspectedResources, err = InspectResources(connConfig, common.StrSecurityGroup)
-	if err != nil {
-		common.CBLog.Error(err)
-		result.SystemMessage += "//" + err.Error()
-	}
-	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-		req := mcir.TbSecurityGroupReq{}
-		req.ConnectionName = connConfig
-		req.VNetId = "not defined"
-		req.CspSecurityGroupId = r.IdByCsp
-		req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-		req.Name = req.ConnectionName + "-" + req.CspSecurityGroupId
-		req.Name = strings.ToLower(req.Name)
+			registeredStatus = ""
+			if err != nil {
+				common.CBLog.Error(err)
+				registeredStatus = "  [Failed] " + err.Error()
+				result.RegisterationOverview.VNet--
+				result.RegisterationOverview.Failed++
+			}
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVNet+": "+req.Name+registeredStatus)
+			result.RegisterationOverview.VNet++
+		}
 
-		_, err = mcir.CreateSecurityGroup(nsId, &req, optionFlag)
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrVNet, int(math.Round(time.Now().Sub(startTime01).Seconds()))) //tmp
+		startTime02 := time.Now()                                                                                                    //tmp
 
-		registeredStatus = ""
+		// bring SecurityGroup list and register all
+		inspectedResources, err = InspectResources(connConfig, common.StrSecurityGroup)
 		if err != nil {
 			common.CBLog.Error(err)
-			registeredStatus = "  [Failed] " + err.Error()
-			result.RegisterationOverview.SecurityGroup--
-			result.RegisterationOverview.Failed++
+			result.SystemMessage += "//" + err.Error()
 		}
-		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSecurityGroup+": "+req.Name+registeredStatus)
-		result.RegisterationOverview.SecurityGroup++
-	}
+		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
+			req := mcir.TbSecurityGroupReq{}
+			req.ConnectionName = connConfig
+			req.VNetId = "not defined"
+			req.CspSecurityGroupId = r.IdByCsp
+			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
+			req.Name = req.ConnectionName + "-" + req.CspSecurityGroupId
+			req.Name = strings.ToLower(req.Name)
 
-	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSecurityGroup, int(math.Round(time.Now().Sub(startTime02).Seconds()))) //tmp
-	startTime03 := time.Now()                                                                                                             //tmp
+			_, err = mcir.CreateSecurityGroup(nsId, &req, optionFlag)
 
-	// bring SSHKey list and register all
-	inspectedResources, err = InspectResources(connConfig, common.StrSSHKey)
-	if err != nil {
-		common.CBLog.Error(err)
-		result.SystemMessage += "//" + err.Error()
-	}
-	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-		req := mcir.TbSshKeyReq{}
-		req.ConnectionName = connConfig
-		req.CspSshKeyId = r.IdByCsp
-		req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
-		req.Name = req.ConnectionName + "-" + req.CspSshKeyId
-		req.Name = strings.ToLower(req.Name)
+			registeredStatus = ""
+			if err != nil {
+				common.CBLog.Error(err)
+				registeredStatus = "  [Failed] " + err.Error()
+				result.RegisterationOverview.SecurityGroup--
+				result.RegisterationOverview.Failed++
+			}
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSecurityGroup+": "+req.Name+registeredStatus)
+			result.RegisterationOverview.SecurityGroup++
+		}
 
-		req.Fingerprint = "cannot retrieve"
-		req.PrivateKey = "cannot retrieve"
-		req.PublicKey = "cannot retrieve"
-		req.Username = "cannot retrieve"
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSecurityGroup, int(math.Round(time.Now().Sub(startTime02).Seconds()))) //tmp
+		startTime03 := time.Now()                                                                                                             //tmp
 
-		_, err = mcir.CreateSshKey(nsId, &req, optionFlag)
-
-		registeredStatus = ""
+		// bring SSHKey list and register all
+		inspectedResources, err = InspectResources(connConfig, common.StrSSHKey)
 		if err != nil {
 			common.CBLog.Error(err)
-			registeredStatus = "  [Failed] " + err.Error()
-			result.RegisterationOverview.SshKey--
-			result.RegisterationOverview.Failed++
+			result.SystemMessage += "//" + err.Error()
 		}
-		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSSHKey+": "+req.Name+registeredStatus)
-		result.RegisterationOverview.SshKey++
+		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
+			req := mcir.TbSshKeyReq{}
+			req.ConnectionName = connConfig
+			req.CspSshKeyId = r.IdByCsp
+			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
+			req.Name = req.ConnectionName + "-" + req.CspSshKeyId
+			req.Name = strings.ToLower(req.Name)
+
+			req.Fingerprint = "cannot retrieve"
+			req.PrivateKey = "cannot retrieve"
+			req.PublicKey = "cannot retrieve"
+			req.Username = "cannot retrieve"
+
+			_, err = mcir.CreateSshKey(nsId, &req, optionFlag)
+
+			registeredStatus = ""
+			if err != nil {
+				common.CBLog.Error(err)
+				registeredStatus = "  [Failed] " + err.Error()
+				result.RegisterationOverview.SshKey--
+				result.RegisterationOverview.Failed++
+			}
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrSSHKey+": "+req.Name+registeredStatus)
+			result.RegisterationOverview.SshKey++
+		}
+
+		fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSSHKey, int(math.Round(time.Now().Sub(startTime03).Seconds()))) //tmp
 	}
 
-	fmt.Printf("\n\n%s [Elapsed]%s %d \n\n", connConfig, common.StrSSHKey, int(math.Round(time.Now().Sub(startTime03).Seconds()))) //tmp
-	startTime04 := time.Now()                                                                                                      //tmp
+	startTime04 := time.Now() //tmp
 
-	// bring VM list and register all
-	inspectedResources, err = InspectResources(connConfig, common.StrVM)
-	if err != nil {
-		common.CBLog.Error(err)
-		result.SystemMessage += "//" + err.Error()
-	}
-	for _, r := range inspectedResources.Resources.OnCspOnly.Info {
-		req := TbMcisReq{}
-		req.Description = "MCIS for CSP managed VMs (registered to CB-TB)"
-		req.InstallMonAgent = "no"
-		req.Name = mcisId
-		req.Name = strings.ToLower(req.Name)
+	if option != "exceptVm" {
 
-		vm := TbVmReq{}
-		vm.ConnectionName = connConfig
-		vm.IdByCSP = r.IdByCsp
-		vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
-		vm.Name = vm.ConnectionName + "-" + vm.IdByCSP
-		vm.Name = strings.ToLower(vm.Name)
-		vm.Label = "not defined"
-
-		vm.ImageId = "cannot retrieve"
-		vm.SpecId = "cannot retrieve"
-		vm.SshKeyId = "cannot retrieve"
-		vm.SubnetId = "cannot retrieve"
-		vm.VNetId = "cannot retrieve"
-		vm.SecurityGroupIds = append(vm.SecurityGroupIds, "cannot retrieve")
-
-		req.Vm = append(req.Vm, vm)
-
-		_, err = CreateMcis(nsId, &req, optionFlag)
-
-		registeredStatus = ""
+		// bring VM list and register all
+		inspectedResourcesVm, err := InspectResources(connConfig, common.StrVM)
 		if err != nil {
 			common.CBLog.Error(err)
-			registeredStatus = "  [Failed] " + err.Error()
-			result.RegisterationOverview.Vm--
-			result.RegisterationOverview.Failed++
+			result.SystemMessage += "//" + err.Error()
 		}
-		result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVM+": "+vm.Name+registeredStatus)
-		result.RegisterationOverview.Vm++
+		for _, r := range inspectedResourcesVm.Resources.OnCspOnly.Info {
+			req := TbMcisReq{}
+			req.Description = "MCIS for CSP managed VMs (registered to CB-TB)"
+			req.InstallMonAgent = "no"
+			req.Name = mcisId
+			req.Name = strings.ToLower(req.Name)
+
+			vm := TbVmReq{}
+			vm.ConnectionName = connConfig
+			vm.IdByCSP = r.IdByCsp
+			vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
+			vm.Name = vm.ConnectionName + "-" + vm.IdByCSP
+			vm.Name = strings.ToLower(vm.Name)
+			vm.Label = "not defined"
+
+			vm.ImageId = "cannot retrieve"
+			vm.SpecId = "cannot retrieve"
+			vm.SshKeyId = "cannot retrieve"
+			vm.SubnetId = "cannot retrieve"
+			vm.VNetId = "cannot retrieve"
+			vm.SecurityGroupIds = append(vm.SecurityGroupIds, "cannot retrieve")
+
+			req.Vm = append(req.Vm, vm)
+
+			_, err = CreateMcis(nsId, &req, optionFlag)
+
+			registeredStatus = ""
+			if err != nil {
+				common.CBLog.Error(err)
+				registeredStatus = "  [Failed] " + err.Error()
+				result.RegisterationOverview.Vm--
+				result.RegisterationOverview.Failed++
+			}
+			result.RegisterationOutputs.IdList = append(result.RegisterationOutputs.IdList, common.StrVM+": "+vm.Name+registeredStatus)
+			result.RegisterationOverview.Vm++
+		}
 	}
+
 	result.ConnectionName = connConfig
 	result.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
 

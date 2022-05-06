@@ -50,8 +50,14 @@ func GenUid() string {
 	return uid.New().String()
 }
 
-// RandomSleep is func to make a caller waits for during random time seconds
-func RandomSleep(t int) {
+// RandomSleep is func to make a caller waits for during random time seconds (random value within x~y)
+func RandomSleep(from int, to int) {
+	if from > to {
+		tmp := from
+		from = to
+		to = tmp
+	}
+	t := to - from
 	rand.Seed(time.Now().UnixNano())
 	n := rand.Intn(t * 1000)
 	time.Sleep(time.Duration(n) * time.Millisecond)
