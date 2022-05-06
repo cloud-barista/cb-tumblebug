@@ -159,7 +159,16 @@ definitions:
         example: aws-ap-southeast-1
         type: string
       mcisName:
-        example: mcis-csp-native
+        example: csp
+        type: string
+      nsId:
+        example: ns01
+        type: string
+    type: object
+  common.RestRegisterCspNativeResourcesRequestAll:
+    properties:
+      mcisName:
+        example: csp
         type: string
       nsId:
         example: ns01
@@ -1147,6 +1156,8 @@ definitions:
     type: object
   mcis.RegisterResourceAllResult:
     properties:
+      elapsedTime:
+        type: integer
       registerationResult:
         items:
           $ref: '#/definitions/mcis.RegisterResourceResult'
@@ -5050,12 +5061,19 @@ paths:
       description: Register CSP Native Resources (vNet, securityGroup, sshKey, vm)
         to CB-Tumblebug
       parameters:
-      - description: Specify connectionName and NS Id
+      - description: Specify connectionName, NS Id, and MCIS Name
         in: body
         name: Request
         required: true
         schema:
           $ref: '#/definitions/common.RestRegisterCspNativeResourcesRequest'
+      - description: Option to specify resourceType
+        enum:
+        - onlyVm
+        - exceptVm
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
@@ -5087,7 +5105,14 @@ paths:
         name: Request
         required: true
         schema:
-          $ref: '#/definitions/common.RestRegisterCspNativeResourcesRequest'
+          $ref: '#/definitions/common.RestRegisterCspNativeResourcesRequestAll'
+      - description: Option to specify resourceType
+        enum:
+        - onlyVm
+        - exceptVm
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
