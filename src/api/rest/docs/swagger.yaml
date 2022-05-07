@@ -950,6 +950,36 @@ definitions:
       systemMessage:
         type: string
     type: object
+  mcis.InspectResourceAllResult:
+    properties:
+      availableConnection:
+        type: integer
+      cspTotalOverview:
+        $ref: '#/definitions/mcis.inspectOverview'
+      elapsedTime:
+        type: integer
+      inspectResult:
+        items:
+          $ref: '#/definitions/mcis.InspectResourceResult'
+        type: array
+      registeredConnection:
+        type: integer
+      tumblebugOverview:
+        $ref: '#/definitions/mcis.inspectOverview'
+    type: object
+  mcis.InspectResourceResult:
+    properties:
+      connectionName:
+        type: string
+      cspTotalOverview:
+        $ref: '#/definitions/mcis.inspectOverview'
+      elapsedTime:
+        type: integer
+      systemMessage:
+        type: string
+      tumblebugOverview:
+        $ref: '#/definitions/mcis.inspectOverview'
+    type: object
   mcis.JSONResult:
     type: object
   mcis.McisCmdReq:
@@ -1700,6 +1730,17 @@ definitions:
       targetStatus:
         type: string
     type: object
+  mcis.inspectOverview:
+    properties:
+      securityGroup:
+        type: integer
+      sshKey:
+        type: integer
+      vNet:
+        type: integer
+      vm:
+        type: integer
+    type: object
   mcis.registerationOverview:
     properties:
       failed:
@@ -2069,6 +2110,31 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug,
         CB-Spider, CSP
+      tags:
+      - '[Admin] System management'
+  /inspectResourcesOverview:
+    get:
+      consumes:
+      - application/json
+      description: Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered
+        in CB-Tumblebug and CSP for all connections
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.InspectResourceAllResult'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered
+        in CB-Tumblebug and CSP for all connections
       tags:
       - '[Admin] System management'
   /loadCommonResource:

@@ -376,6 +376,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/inspectResourcesOverview": {
+            "get": {
+                "description": "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.InspectResourceAllResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/loadCommonResource": {
             "get": {
                 "description": "Load Common Resources from internal asset files (Spec, Image)",
@@ -6400,6 +6435,52 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.InspectResourceAllResult": {
+            "type": "object",
+            "properties": {
+                "availableConnection": {
+                    "type": "integer"
+                },
+                "cspTotalOverview": {
+                    "$ref": "#/definitions/mcis.inspectOverview"
+                },
+                "elapsedTime": {
+                    "type": "integer"
+                },
+                "inspectResult": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.InspectResourceResult"
+                    }
+                },
+                "registeredConnection": {
+                    "type": "integer"
+                },
+                "tumblebugOverview": {
+                    "$ref": "#/definitions/mcis.inspectOverview"
+                }
+            }
+        },
+        "mcis.InspectResourceResult": {
+            "type": "object",
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspTotalOverview": {
+                    "$ref": "#/definitions/mcis.inspectOverview"
+                },
+                "elapsedTime": {
+                    "type": "integer"
+                },
+                "systemMessage": {
+                    "type": "string"
+                },
+                "tumblebugOverview": {
+                    "$ref": "#/definitions/mcis.inspectOverview"
+                }
+            }
+        },
         "mcis.JSONResult": {
             "type": "object"
         },
@@ -7430,6 +7511,23 @@ const docTemplate = `{
                 },
                 "targetStatus": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.inspectOverview": {
+            "type": "object",
+            "properties": {
+                "securityGroup": {
+                    "type": "integer"
+                },
+                "sshKey": {
+                    "type": "integer"
+                },
+                "vNet": {
+                    "type": "integer"
+                },
+                "vm": {
+                    "type": "integer"
                 }
             }
         },
