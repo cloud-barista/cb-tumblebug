@@ -372,6 +372,26 @@ func RestInspectResources(c echo.Context) error {
 
 }
 
+// RestInspectResourcesOverview godoc
+// @Summary Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
+// @Description Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
+// @Tags [Admin] System management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} mcis.InspectResourceAllResult
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /inspectResourcesOverview [get]
+func RestInspectResourcesOverview(c echo.Context) error {
+	content, err := mcis.InspectResourcesOverview()
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	return c.JSON(http.StatusOK, &content)
+}
+
 // Request struct for RestRegisterCspNativeResources
 type RestRegisterCspNativeResourcesRequest struct {
 	ConnectionName string `json:"connectionName" example:"aws-ap-southeast-1"`

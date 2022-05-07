@@ -129,6 +129,8 @@ func RunServer(port string) {
 	e.POST("/tumblebug/lookupImage", rest_mcir.RestLookupImage)
 
 	e.POST("/tumblebug/inspectResources", rest_common.RestInspectResources)
+	e.GET("/tumblebug/inspectResourcesOverview", rest_common.RestInspectResourcesOverview)
+
 	e.POST("/tumblebug/registerCspResources", rest_common.RestRegisterCspNativeResources)
 	e.POST("/tumblebug/registerCspResourcesAll", rest_common.RestRegisterCspNativeResourcesAll)
 
