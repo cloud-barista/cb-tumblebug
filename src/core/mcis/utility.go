@@ -617,6 +617,22 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 				common.CBLog.Error(err)
 				temp.SystemMessage = err.Error()
 			}
+			// retry if request rateLimitExceeded occurs. (GCP has ratelimiting)
+			rateLimitMessage := "limit"
+			maxTrials := 5
+			if strings.Contains(temp.SystemMessage, rateLimitMessage) {
+				for i := 0; i < maxTrials; i++ {
+					common.RandomSleep(40, 80)
+					inspectResult, err = InspectResources(k.ConfigName, common.StrVNet)
+					if err != nil {
+						common.CBLog.Error(err)
+						temp.SystemMessage = err.Error()
+					} else {
+						temp.SystemMessage = ""
+						break
+					}
+				}
+			}
 			temp.TumblebugOverview.VNet = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspTotalOverview.VNet = inspectResult.ResourceOverview.OnCspTotal
 
