@@ -622,12 +622,13 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			maxTrials := 5
 			if strings.Contains(temp.SystemMessage, rateLimitMessage) {
 				for i := 0; i < maxTrials; i++ {
-					common.RandomSleep(30, 60)
+					common.RandomSleep(40, 80)
 					inspectResult, err = InspectResources(k.ConfigName, common.StrVNet)
 					if err != nil {
 						common.CBLog.Error(err)
 						temp.SystemMessage = err.Error()
 					} else {
+						temp.SystemMessage = ""
 						break
 					}
 				}
