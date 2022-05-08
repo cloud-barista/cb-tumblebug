@@ -954,7 +954,7 @@ definitions:
     properties:
       availableConnection:
         type: integer
-      cspTotalOverview:
+      cspOnlyOverview:
         $ref: '#/definitions/mcis.inspectOverview'
       elapsedTime:
         type: integer
@@ -971,7 +971,7 @@ definitions:
     properties:
       connectionName:
         type: string
-      cspTotalOverview:
+      cspOnlyOverview:
         $ref: '#/definitions/mcis.inspectOverview'
       elapsedTime:
         type: integer
@@ -1186,12 +1186,18 @@ definitions:
     type: object
   mcis.RegisterResourceAllResult:
     properties:
+      availableConnection:
+        type: integer
       elapsedTime:
         type: integer
+      registerationOverview:
+        $ref: '#/definitions/mcis.registerationOverview'
       registerationResult:
         items:
           $ref: '#/definitions/mcis.RegisterResourceResult'
         type: array
+      registeredConnection:
+        type: integer
     type: object
   mcis.RegisterResourceResult:
     properties:

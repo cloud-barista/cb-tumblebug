@@ -6433,7 +6433,7 @@
                 "availableConnection": {
                     "type": "integer"
                 },
-                "cspTotalOverview": {
+                "cspOnlyOverview": {
                     "$ref": "#/definitions/mcis.inspectOverview"
                 },
                 "elapsedTime": {
@@ -6459,7 +6459,7 @@
                 "connectionName": {
                     "type": "string"
                 },
-                "cspTotalOverview": {
+                "cspOnlyOverview": {
                     "$ref": "#/definitions/mcis.inspectOverview"
                 },
                 "elapsedTime": {
@@ -6765,14 +6765,23 @@
         "mcis.RegisterResourceAllResult": {
             "type": "object",
             "properties": {
+                "availableConnection": {
+                    "type": "integer"
+                },
                 "elapsedTime": {
                     "type": "integer"
+                },
+                "registerationOverview": {
+                    "$ref": "#/definitions/mcis.registerationOverview"
                 },
                 "registerationResult": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.RegisterResourceResult"
                     }
+                },
+                "registeredConnection": {
+                    "type": "integer"
                 }
             }
         },
