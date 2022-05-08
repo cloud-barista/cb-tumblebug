@@ -6441,7 +6441,7 @@ const docTemplate = `{
                 "availableConnection": {
                     "type": "integer"
                 },
-                "cspTotalOverview": {
+                "cspOnlyOverview": {
                     "$ref": "#/definitions/mcis.inspectOverview"
                 },
                 "elapsedTime": {
@@ -6467,7 +6467,7 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string"
                 },
-                "cspTotalOverview": {
+                "cspOnlyOverview": {
                     "$ref": "#/definitions/mcis.inspectOverview"
                 },
                 "elapsedTime": {
@@ -6773,14 +6773,23 @@ const docTemplate = `{
         "mcis.RegisterResourceAllResult": {
             "type": "object",
             "properties": {
+                "availableConnection": {
+                    "type": "integer"
+                },
                 "elapsedTime": {
                     "type": "integer"
+                },
+                "registerationOverview": {
+                    "$ref": "#/definitions/mcis.registerationOverview"
                 },
                 "registerationResult": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.RegisterResourceResult"
                     }
+                },
+                "registeredConnection": {
+                    "type": "integer"
                 }
             }
         },
