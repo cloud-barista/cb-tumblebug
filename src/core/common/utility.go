@@ -63,6 +63,14 @@ func RandomSleep(from int, to int) {
 	time.Sleep(time.Duration(n) * time.Millisecond)
 }
 
+// GetFuncName is func to get the name of the running function
+func GetFuncName() string {
+	pc := make([]uintptr, 1)
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	return f.Name()
+}
+
 // CheckString is func to check string by the given rule `[a-z]([-a-z0-9]*[a-z0-9])?`
 func CheckString(name string) error {
 
@@ -88,6 +96,17 @@ func ToLower(name string) string {
 	out = strings.ReplaceAll(out, " ", "-")
 	out = strings.ToLower(out)
 	return out
+}
+
+// ChangeIdString is func to change strings in id or name (special chars to -, to lower string )
+func ChangeIdString(name string) string {
+	// Regex for letters and numbers
+	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	changedString := strings.ToLower(reg.ReplaceAllString(name, "-"))
+	if changedString[len(changedString)-1:] == "-" {
+		changedString += "r"
+	}
+	return changedString
 }
 
 // GenMcisKey is func to generate a key used in keyValue store
@@ -369,9 +388,9 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := ConnConfig{}
@@ -451,9 +470,9 @@ func GetConnConfigList() (ConnConfigList, error) {
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := ConnConfigList{}
@@ -538,9 +557,9 @@ func GetRegion(RegionName string) (Region, error) {
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := Region{}
@@ -652,9 +671,9 @@ func GetRegionList() (RegionList, error) {
 			return content, err
 		}
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 			err := fmt.Errorf(string(resp.Body()))
 			CBLog.Error(err)
 			content := RegionList{}
