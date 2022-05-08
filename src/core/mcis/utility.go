@@ -342,7 +342,6 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
 		return nullObj, err
 	}
-	// var TbResourceList []string
 	TbResourceList := resourceOnTumblebug{}
 	for _, ns := range nsList {
 
@@ -443,7 +442,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				if resource.ConnectionName == connConfig { // filtering
 					temp := resourceOnTumblebugInfo{}
 					temp.IdByTb = resource.Id
-					temp.IdByCsp = resource.CspSshKeyName
+					temp.IdByCsp = resource.CspSshKeyId
 					temp.NsId = ns
 					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
 
@@ -568,7 +567,7 @@ type InspectResourceAllResult struct {
 	RegisteredConnection int                     `json:"registeredConnection"`
 	AvailableConnection  int                     `json:"availableConnection"`
 	TumblebugOverview    inspectOverview         `json:"tumblebugOverview"`
-	CspTotalOverview     inspectOverview         `json:"cspTotalOverview"`
+	CspOnlyOverview      inspectOverview         `json:"cspOnlyOverview"`
 	InspectResult        []InspectResourceResult `json:"inspectResult"`
 }
 
@@ -578,7 +577,7 @@ type InspectResourceResult struct {
 	SystemMessage     string          `json:"systemMessage"`
 	ElapsedTime       int             `json:"elapsedTime"`
 	TumblebugOverview inspectOverview `json:"tumblebugOverview"`
-	CspTotalOverview  inspectOverview `json:"cspTotalOverview"`
+	CspOnlyOverview   inspectOverview `json:"cspOnlyOverview"`
 }
 
 type inspectOverview struct {
@@ -634,7 +633,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 				}
 			}
 			temp.TumblebugOverview.VNet = inspectResult.ResourceOverview.OnTumblebug
-			temp.CspTotalOverview.VNet = inspectResult.ResourceOverview.OnCspTotal
+			temp.CspOnlyOverview.VNet = inspectResult.ResourceOverview.OnCspOnly
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrSecurityGroup)
 			if err != nil {
@@ -642,7 +641,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.SecurityGroup = inspectResult.ResourceOverview.OnTumblebug
-			temp.CspTotalOverview.SecurityGroup = inspectResult.ResourceOverview.OnCspTotal
+			temp.CspOnlyOverview.SecurityGroup = inspectResult.ResourceOverview.OnCspOnly
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrSSHKey)
 			if err != nil {
@@ -650,7 +649,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.SshKey = inspectResult.ResourceOverview.OnTumblebug
-			temp.CspTotalOverview.SshKey = inspectResult.ResourceOverview.OnCspTotal
+			temp.CspOnlyOverview.SshKey = inspectResult.ResourceOverview.OnCspOnly
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrVM)
 			if err != nil {
@@ -658,7 +657,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.Vm = inspectResult.ResourceOverview.OnTumblebug
-			temp.CspTotalOverview.Vm = inspectResult.ResourceOverview.OnCspTotal
+			temp.CspOnlyOverview.Vm = inspectResult.ResourceOverview.OnCspOnly
 			temp.ElapsedTime = int(math.Round(time.Now().Sub(startTimeForConnection).Seconds()))
 
 			output.InspectResult = append(output.InspectResult, temp)
@@ -674,10 +673,10 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 		output.TumblebugOverview.SshKey += k.TumblebugOverview.SshKey
 		output.TumblebugOverview.Vm += k.TumblebugOverview.Vm
 
-		output.CspTotalOverview.VNet += k.CspTotalOverview.VNet
-		output.CspTotalOverview.SecurityGroup += k.CspTotalOverview.SecurityGroup
-		output.CspTotalOverview.SshKey += k.CspTotalOverview.SshKey
-		output.CspTotalOverview.Vm += k.CspTotalOverview.Vm
+		output.CspOnlyOverview.VNet += k.CspOnlyOverview.VNet
+		output.CspOnlyOverview.SecurityGroup += k.CspOnlyOverview.SecurityGroup
+		output.CspOnlyOverview.SshKey += k.CspOnlyOverview.SshKey
+		output.CspOnlyOverview.Vm += k.CspOnlyOverview.Vm
 
 		if k.SystemMessage != "" {
 			errorConnectionCnt++
@@ -695,10 +694,13 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 	return output, err
 }
 
-// RegisterCspNativeResourceResultAll is struct for Register Csp Native Resource Result for All Clouds
+// RegisterResourceAllResult is struct for Register Csp Native Resource Result for All Clouds
 type RegisterResourceAllResult struct {
-	ElapsedTime         int                      `json:"elapsedTime"`
-	RegisterationResult []RegisterResourceResult `json:"registerationResult"`
+	ElapsedTime           int                      `json:"elapsedTime"`
+	RegisteredConnection  int                      `json:"registeredConnection"`
+	AvailableConnection   int                      `json:"availableConnection"`
+	RegisterationOverview registerationOverview    `json:"registerationOverview"`
+	RegisterationResult   []RegisterResourceResult `json:"registerationResult"`
 }
 
 // RegisterResourceResult is struct for Register Csp Native Resource Result
@@ -763,7 +765,22 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (R
 	}
 	wait.Wait()
 
+	errorConnectionCnt := 0
+	for _, k := range output.RegisterationResult {
+		output.RegisterationOverview.VNet += k.RegisterationOverview.VNet
+		output.RegisterationOverview.SecurityGroup += k.RegisterationOverview.SecurityGroup
+		output.RegisterationOverview.SshKey += k.RegisterationOverview.SshKey
+		output.RegisterationOverview.Vm += k.RegisterationOverview.Vm
+		output.RegisterationOverview.Failed += k.RegisterationOverview.Failed
+
+		if k.SystemMessage != "" {
+			errorConnectionCnt++
+		}
+	}
+
 	output.ElapsedTime = int(math.Round(time.Now().Sub(startTime).Seconds()))
+	output.RegisteredConnection = len(connectionConfigList.Connectionconfig)
+	output.AvailableConnection = output.RegisteredConnection - errorConnectionCnt
 
 	sort.SliceStable(output.RegisterationResult, func(i, j int) bool {
 		return output.RegisterationResult[i].ConnectionName < output.RegisterationResult[j].ConnectionName
@@ -796,7 +813,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 			req.CspVNetId = r.IdByCsp
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 			req.Name = req.ConnectionName + "-" + req.CspVNetId
-			req.Name = strings.ToLower(req.Name)
+			req.Name = common.ChangeIdString(req.Name)
 
 			_, err = mcir.CreateVNet(nsId, &req, optionFlag)
 
@@ -827,7 +844,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 			req.CspSecurityGroupId = r.IdByCsp
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 			req.Name = req.ConnectionName + "-" + req.CspSecurityGroupId
-			req.Name = strings.ToLower(req.Name)
+			req.Name = common.ChangeIdString(req.Name)
 
 			_, err = mcir.CreateSecurityGroup(nsId, &req, optionFlag)
 
@@ -857,7 +874,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 			req.CspSshKeyId = r.IdByCsp
 			req.Description = "Ref name: " + r.RefNameOrId + ". CSP managed resource (registered to CB-TB)"
 			req.Name = req.ConnectionName + "-" + req.CspSshKeyId
-			req.Name = strings.ToLower(req.Name)
+			req.Name = common.ChangeIdString(req.Name)
 
 			req.Fingerprint = "cannot retrieve"
 			req.PrivateKey = "cannot retrieve"
@@ -895,14 +912,14 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 			req.Description = "MCIS for CSP managed VMs (registered to CB-TB)"
 			req.InstallMonAgent = "no"
 			req.Name = mcisId
-			req.Name = strings.ToLower(req.Name)
+			req.Name = common.ChangeIdString(req.Name)
 
 			vm := TbVmReq{}
 			vm.ConnectionName = connConfig
 			vm.IdByCSP = r.IdByCsp
 			vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
 			vm.Name = vm.ConnectionName + "-" + vm.IdByCSP
-			vm.Name = strings.ToLower(vm.Name)
+			vm.Name = common.ChangeIdString(vm.Name)
 			vm.Label = "not defined"
 
 			vm.ImageId = "cannot retrieve"
