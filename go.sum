@@ -238,6 +238,8 @@ github.com/cloud-barista/cb-larva v0.0.10 h1:twi6txmAhXpsji4bCrzVKgGi1x0gwr1q8wj
 github.com/cloud-barista/cb-larva v0.0.10/go.mod h1:Awo2l9VpeTfzjx6GhnAthtEMBEmhFZYvmN/GXpEuMK0=
 github.com/cloud-barista/cb-larva v0.0.13 h1:AObvwtK+IY6U2mhZrDs6zhYP9c2I6ciTIqMXhQPmJt4=
 github.com/cloud-barista/cb-larva v0.0.13/go.mod h1:5vFk/GaTodU5rLsN92syam+YXT5IBdowgvG3UjsyFAQ=
+github.com/cloud-barista/cb-larva v0.0.14 h1:F6uyBrZH98pPMUGx7dwiCsbAVIwnnnEdc1rXrw3u99w=
+github.com/cloud-barista/cb-larva v0.0.14/go.mod h1:5vFk/GaTodU5rLsN92syam+YXT5IBdowgvG3UjsyFAQ=
 github.com/cloud-barista/cb-log v0.3.1/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-log v0.4.0/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-log v0.5.0 h1:WoUnXtNNNTA7wRgQa6sFNs57O3mLAOrh4aDHC4cU0CI=
