@@ -56,7 +56,7 @@ func RestPostConfigureCloudAdaptiveNetworkToMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, contents)
 }
 
-// RestPostInjectCloudInformationForCloudAdaptiveNetwork godoc
+// RestPutInjectCloudInformationForCloudAdaptiveNetwork godoc
 // @Summary Inject Cloud Information For Cloud Adaptive Network
 // @Description Inject Cloud Information For Cloud Adaptive Network
 // @Tags [Infra service] MCIS Cloud Adaptive Network (for developer)

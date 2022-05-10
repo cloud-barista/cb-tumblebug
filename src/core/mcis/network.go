@@ -115,7 +115,7 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 
 	// Prepare the installation command
 	etcdEndpointsJSON, _ := json.Marshal(etcdEndpoints)
-	command, err := makeInstallationCommand(string(etcdEndpointsJSON), cladnetSpec.CladnetID)
+	command, err := getAgentInstallationCommand(string(etcdEndpointsJSON), cladnetSpec.CladnetID)
 	if err != nil {
 		common.CBLog.Error(err)
 		return AgentInstallContentWrapper{}, err
@@ -359,7 +359,7 @@ func createProperCloudAdaptiveNetwork(networkServiceEndpoint string, ipCIDRs []s
 	return tempSpec, nil
 }
 
-func makeInstallationCommand(etcdEndpoints, cladnetId string) (string, error) {
+func getAgentInstallationCommand(etcdEndpoints, cladnetId string) (string, error) {
 
 	if etcdEndpoints == "" || cladnetId == "" {
 		err := fmt.Sprintf("no enough parameters etcdEndpoints(%+v), cladnetId(%+v)", etcdEndpoints, cladnetId)
@@ -536,11 +536,16 @@ func InjectCloudInformationForCloudAdaptiveNetwork(nsId string, mcisId string, n
 				// Update the peer
 				updatedPeer, err := updateDetailsOfPeer(serviceEndpoint, cladnetSpec.CladnetID, peer.HostID, tempCloudInfo)
 				if err != nil {
-					return AgentInstallContentWrapper{}, err
+					common.CBLog.Error(err)
 				}
 				common.CBLog.Printf("The updated peer: %#v\n", updatedPeer)
 
-				updatedPeerBytes, _ := json.Marshal(updatedPeer)
+				updatedPeerBytes, err := json.Marshal(updatedPeer)
+				if err != nil {
+					common.CBLog.Error(err)
+					tempPeer := model.Peer{}
+					updatedPeerBytes, _ = json.Marshal(tempPeer)
+				}
 				updatedPeerString := string(updatedPeerBytes)
 
 				tempContent := AgentInstallContent{}
