@@ -466,7 +466,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 		if err != nil {
 			CBLog.Error(err)
 			content := ConnConfigList{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			err := fmt.Errorf("Error from CB-Spider: " + err.Error())
 			return content, err
 		}
 
