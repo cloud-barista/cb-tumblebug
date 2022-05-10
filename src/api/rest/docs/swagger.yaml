@@ -3437,6 +3437,47 @@ paths:
       summary: Configure Cloud Adaptive Network (cb-network agent) to MCIS
       tags:
       - '[Infra service] MCIS Cloud Adaptive Network (for developer)'
+    put:
+      consumes:
+      - application/json
+      description: Inject Cloud Information For Cloud Adaptive Network
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Details for the network request body
+        in: body
+        name: networkReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.NetworkReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.AgentInstallContentWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Inject Cloud Information For Cloud Adaptive Network
+      tags:
+      - '[Infra service] MCIS Cloud Adaptive Network (for developer)'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:
