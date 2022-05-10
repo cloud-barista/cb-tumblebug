@@ -207,6 +207,7 @@ func RunServer(port string) {
 
 	// MCIS Cloud Adaptive Network (for developer)
 	g.POST("/:nsId/network/mcis/:mcisId", rest_mcis.RestPostConfigureCloudAdaptiveNetworkToMcis)
+	g.PUT("/:nsId/network/mcis/:mcisId", rest_mcis.RestPutInjectCloudInformationForCloudAdaptiveNetwork)
 
 	//MCIR Management
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
