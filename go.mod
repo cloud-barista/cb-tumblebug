@@ -11,10 +11,10 @@ replace (
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.0.0
-	github.com/cloud-barista/cb-dragonfly v0.4.4
+	github.com/cloud-barista/cb-dragonfly v0.5.1
 	github.com/cloud-barista/cb-larva v0.0.14
 	github.com/cloud-barista/cb-log v0.5.0
-	github.com/cloud-barista/cb-spider v0.4.19
+	github.com/cloud-barista/cb-spider v0.5.3
 	github.com/cloud-barista/cb-store v0.5.0
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/go-resty/resty/v2 v2.7.0
@@ -28,7 +28,6 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.11.0
-	github.com/prometheus/common v0.29.0 // indirect
 	github.com/rs/xid v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
@@ -40,7 +39,6 @@ require (
 	github.com/tidwall/sjson v1.1.7
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	go.etcd.io/etcd v3.3.27+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	google.golang.org/grpc v1.45.0
 	gopkg.in/yaml.v2 v2.4.0
