@@ -197,30 +197,23 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 			return TbSecurityGroupInfo{}, err
 		}
 
-		if resourceList != nil {
-			var content struct {
-				VNet []TbVNetInfo `json:"vNet"`
-			}
-			content.VNet = resourceList.([]TbVNetInfo) // type assertion (interface{} -> array)
+		var content struct {
+			VNet []TbVNetInfo `json:"vNet"`
+		}
+		content.VNet = resourceList.([]TbVNetInfo) // type assertion (interface{} -> array)
 
-			if len(resourceList.([]TbVNetInfo)) == 0 {
-				errString := "There is no " + common.StrVNet + " resource in " + nsId
-				err := fmt.Errorf(errString)
-				common.CBLog.Error(err)
-				return TbSecurityGroupInfo{}, err
-			}
-
-			// Assign random temporal ID to u.VNetId (should be in the same Connection with SG)
-			for _, r := range content.VNet {
-				if r.ConnectionName == u.ConnectionName {
-					u.VNetId = r.Id
-				}
-			}
-		} else {
-			errString := "nil was returned for vNet list in " + nsId
+		if len(content.VNet) == 0 {
+			errString := "There is no " + common.StrVNet + " resource in " + nsId
 			err := fmt.Errorf(errString)
 			common.CBLog.Error(err)
 			return TbSecurityGroupInfo{}, err
+		}
+
+		// Assign random temporal ID to u.VNetId (should be in the same Connection with SG)
+		for _, r := range content.VNet {
+			if r.ConnectionName == u.ConnectionName {
+				u.VNetId = r.Id
+			}
 		}
 	}
 

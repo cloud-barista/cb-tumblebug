@@ -390,10 +390,10 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			if resourceListInNs == nil {
+			resourcesInNs := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
+			if len(resourcesInNs) == 0 {
 				continue
 			}
-			resourcesInNs := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
 					temp := resourceOnTumblebugInfo{}
@@ -412,10 +412,10 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			if resourceListInNs == nil {
+			resourcesInNs := resourceListInNs.([]mcir.TbSecurityGroupInfo) // type assertion
+			if len(resourcesInNs) == 0 {
 				continue
 			}
-			resourcesInNs := resourceListInNs.([]mcir.TbSecurityGroupInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
 					temp := resourceOnTumblebugInfo{}
@@ -434,10 +434,10 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
-			if resourceListInNs == nil {
+			resourcesInNs := resourceListInNs.([]mcir.TbSshKeyInfo) // type assertion
+			if len(resourcesInNs) == 0 {
 				continue
 			}
-			resourcesInNs := resourceListInNs.([]mcir.TbSshKeyInfo) // type assertion
 			for _, resource := range resourcesInNs {
 				if resource.ConnectionName == connConfig { // filtering
 					temp := resourceOnTumblebugInfo{}
