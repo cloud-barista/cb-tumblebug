@@ -854,10 +854,28 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 			return res, nil
 		}
 
-		//return true, nil
+	} else { //return empty object according to resourceType
+		switch resourceType {
+		case common.StrImage:
+			res := []TbImageInfo{}
+			return res, nil
+		case common.StrSecurityGroup:
+			res := []TbSecurityGroupInfo{}
+			return res, nil
+		case common.StrSpec:
+			res := []TbSpecInfo{}
+			return res, nil
+		case common.StrSSHKey:
+			res := []TbSshKeyInfo{}
+			return res, nil
+		case common.StrVNet:
+			res := []TbVNetInfo{}
+			return res, nil
+		}
 	}
 
-	return nil, nil // When err == nil && keyValue == nil
+	err = fmt.Errorf("Some exceptional case happened. Please check the references of " + common.GetFuncName())
+	return nil, err // if interface{} == nil, make err be returned. Should not come this part if there is no err.
 }
 
 // GetAssociatedObjectCount returns the number of MCIR's associated Tumblebug objects

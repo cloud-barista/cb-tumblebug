@@ -136,11 +136,6 @@ func RestGetAllResources(c echo.Context) error {
 				Image []mcir.TbImageInfo `json:"image"`
 			}
 
-			if resourceList == nil {
-				return c.JSON(http.StatusOK, &content)
-			}
-
-			// When err == nil && resourceList != nil
 			content.Image = resourceList.([]mcir.TbImageInfo) // type assertion (interface{} -> array)
 			return c.JSON(http.StatusOK, &content)
 		case common.StrSecurityGroup:
@@ -148,11 +143,6 @@ func RestGetAllResources(c echo.Context) error {
 				SecurityGroup []mcir.TbSecurityGroupInfo `json:"securityGroup"`
 			}
 
-			if resourceList == nil {
-				return c.JSON(http.StatusOK, &content)
-			}
-
-			// When err == nil && resourceList != nil
 			content.SecurityGroup = resourceList.([]mcir.TbSecurityGroupInfo) // type assertion (interface{} -> array)
 			return c.JSON(http.StatusOK, &content)
 		case common.StrSpec:
@@ -160,11 +150,6 @@ func RestGetAllResources(c echo.Context) error {
 				Spec []mcir.TbSpecInfo `json:"spec"`
 			}
 
-			if resourceList == nil {
-				return c.JSON(http.StatusOK, &content)
-			}
-
-			// When err == nil && resourceList != nil
 			content.Spec = resourceList.([]mcir.TbSpecInfo) // type assertion (interface{} -> array)
 			return c.JSON(http.StatusOK, &content)
 		case common.StrSSHKey:
@@ -172,11 +157,6 @@ func RestGetAllResources(c echo.Context) error {
 				SshKey []mcir.TbSshKeyInfo `json:"sshKey"`
 			}
 
-			if resourceList == nil {
-				return c.JSON(http.StatusOK, &content)
-			}
-
-			// When err == nil && resourceList != nil
 			content.SshKey = resourceList.([]mcir.TbSshKeyInfo) // type assertion (interface{} -> array)
 			return c.JSON(http.StatusOK, &content)
 		case common.StrVNet:
@@ -184,11 +164,6 @@ func RestGetAllResources(c echo.Context) error {
 				VNet []mcir.TbVNetInfo `json:"vNet"`
 			}
 
-			if resourceList == nil {
-				return c.JSON(http.StatusOK, &content)
-			}
-
-			// When err == nil && resourceList != nil
 			content.VNet = resourceList.([]mcir.TbVNetInfo) // type assertion (interface{} -> array)
 			return c.JSON(http.StatusOK, &content)
 		default:
