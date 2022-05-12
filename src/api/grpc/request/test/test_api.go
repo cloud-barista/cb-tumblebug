@@ -476,7 +476,7 @@ func CreateMCIRApiTest() {
 			ConnectionName: "openstack-config01",
 			VNetId:         "openstack-config01-test",
 			Description:    "test description",
-			FirewallRules: &[]core_mcir.SpiderSecurityRuleInfo{
+			FirewallRules: &[]core_mcir.TbFirewallRuleInfo{
 				{
 					FromPort:   "1",
 					ToPort:     "65535",
