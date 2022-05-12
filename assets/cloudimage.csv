@@ -57,7 +57,7 @@ AZURE,azure-southafricawest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubu
 AZURE,azure-switzerlandwest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
 AZURE,azure-germanynorth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
 AZURE,azure-uaecentral,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-norwaywestest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,azure-norwaywest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
 AZURE,azure-francesouth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
 AZURE,azure-australiacentral2,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
 GCP,gcp-asia-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-minimal-1804-bionic-v20191024,Ubuntu 18.04
