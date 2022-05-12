@@ -1,10 +1,10 @@
 #!/bin/bash
 
-source ../common-functions.sh
+source $CBTUMBLEBUG_ROOT/src/testclient/scripts/common-functions.sh
 readParametersByName "$@"
 set -- "$CSP" "$REGION" "$POSTFIX" "$TestSetFile" "$OPTION01" "$OPTION02" "$OPTION03"
 
-FILE=../../../../conf/credentials.conf
+FILE=$CBTUMBLEBUG_ROOT/conf/credentials.conf
 if [ ! -f "$FILE" ]; then
 	echo "$FILE does not exist."
 	exit
@@ -15,8 +15,8 @@ if [ ! -f "$TestSetFile" ]; then
 	exit
 fi
 source $TestSetFile
-source ../conf.env
-source ../../../../conf/credentials.conf
+source $CBTUMBLEBUG_ROOT/src/testclient/scripts/conf.env
+source $CBTUMBLEBUG_ROOT/conf/credentials.conf
 
 getCloudIndex $CSP
 MCISID=${POSTFIX}

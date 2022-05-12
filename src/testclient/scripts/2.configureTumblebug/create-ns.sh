@@ -4,8 +4,10 @@ echo "####################################################################"
 echo "## 2. Namespace: Create (-x option for NameSpace Name)"
 echo "####################################################################"
 
-source ../init.sh
+SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
+cd $SCRIPT_DIR
 
+source $CBTUMBLEBUG_ROOT/src/testclient/scripts/init.sh
 
 if [ ! -z "$OPTION01" ]; then
 	NSID=$OPTION01
