@@ -32,7 +32,7 @@ $CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/load-common-resour
 
 echo -e "${BOLD}"
 while true; do
-    read -p 'Create default namespace (ns01). Do you want to proceed ? (y/n) : ' CHECKPROCEED
+    read -p 'Create default namespace (ns01) for test. Do you want to proceed ? (y/n) : ' CHECKPROCEED
     echo -e "${NC}"
     case $CHECKPROCEED in
     [Yy]*)
@@ -51,4 +51,4 @@ while true; do
     esac
 done
 
-$CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -n tb
+$CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -x ns01
