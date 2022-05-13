@@ -105,7 +105,7 @@ ALIBABA,alibaba-cn-beijing,alibaba-cn-beijing,cn-beijing,China (Beijing) [zone:h
 ALIBABA,alibaba-cn-qingdao,alibaba-cn-qingdao,cn-qingdao,China (Qingdao) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-zhangjiakou,alibaba-cn-zhangjiakou,cn-zhangjiakou,China (Zhangjiakou) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-huhehaote,alibaba-cn-huhehaote,cn-huhehaote,China (Hohhot) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-cn-hangzhou,alibaba-cn-hangzhou,cn-hangzhou,China (HohHangzhouhot) [zone:h],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-hangzhou,alibaba-cn-hangzhou,cn-hangzhou,China (Hangzhou) [zone:g],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-shenz,alibaba-cn-shenzhen,cn-shenzhen,China (Shenzhen) [zone:e],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-heyuan,alibaba-cn-heyuan,cn-heyuan,China (Heyuan) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-chengdu,alibaba-cn-chengdu,cn-chengdu,China (Chengdu) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
@@ -141,5 +141,18 @@ KTCLOUD,kt-kr-central-b,kt-kr-central-b,KOR-Cheonan,Cheon-an - South Korea,ktclo
 KTCLOUD,kt-kr-seoul-m,kt-kr-seoul-m,KOR-Seoul,Seoul - South Korea,ktcloud-driver-v1.0.so,ktcloud-driver01
 KTCLOUD,kt-kr-seoul-m2,kt-kr-seoul-m2,KOR-Seoul,Seoul - South Korea,ktcloud-driver-v1.0.so,ktcloud-driver01
 KTCLOUD,kt-us-west,kt-us-west,US,LA - US,ktcloud-driver-v1.0.so,ktcloud-driver01
+KTCLOUD,kt-kr-kimhae,kt-kr-kimhae,KOR-Kimhae,Kimhae - South Korea,ktcloud-driver-v1.0.so,ktcloud-driver01
+IBM,ibm-us-south,ibm-us-south,us-south,Dallas (US South),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-br-sao,ibm-br-sao,br-sao,Sao Paulo (Brazil),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-ca-tor,ibm-ca-tor,ca-tor,Toronto (Canada),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-us-east,ibm-us-east,us-east,Washington DC (US East),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-eu-de,ibm-eu-de,eu-de,Frankfurt (Germany),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-eu-gb,ibm-eu-gb,eu-gb,London (United Kingdom),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-jp-osa,ibm-jp-osa,jp-osa,Osaka (Japan),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-au-syd,ibm-au-syd,au-syd,Sydney (Australia),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+IBM,ibm-jp-tok,ibm-jp-tok,jp-tok,Tokyo (Japan),ibmvpc-driver-v1.0.so,ibmvpc-driver01
+NHNCLOUD,nhncloud-kr-pangyo,nhncloud-kr-pangyo,KR1,South Korea (Pangyo),nhncloud-driver-v1.0.so,nhncloud-driver01
+NHNCLOUD,nhncloud-kr-pyeongchon,nhncloud-kr-pyeongchon,KR2,South Korea (Pyeongchon),nhncloud-driver-v1.0.so,nhncloud-driver01
+NHNCLOUD,nhncloud-jp-tokyo,nhncloud-jp-tokyo,JP1,Japan (Tokyo),nhncloud-driver-v1.0.so,nhncloud-driver01
 CLOUDTWIN,cloudtwin-region01,cloudtwin-region01,default,Korea Daejeon (Internal),cloudtwin-driver-v1.0.so,cloudtwin-driver01
 MOCK,mock-seoul,mock-seoul,default,Korea Seoul (Virtual),mock-driver-v1.0.so,mock-driver01
