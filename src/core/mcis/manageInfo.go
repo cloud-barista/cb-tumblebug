@@ -587,10 +587,11 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	}
 
 	numVm := len(mcisStatus.Vm)
-	numUnNormalStatus := statusFlag[0] + statusFlag[9]
-	numNormalStatus := numVm - numUnNormalStatus
+	//numUnNormalStatus := statusFlag[0] + statusFlag[9]
+	//numNormalStatus := numVm - numUnNormalStatus
+	runningStatus := statusFlag[2]
 
-	proportionStr := "-" + strconv.Itoa(tmpMax) + "(" + strconv.Itoa(numNormalStatus) + "/" + strconv.Itoa(numVm) + ")"
+	proportionStr := ":" + strconv.Itoa(tmpMax) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
 	if tmpMax == numVm {
 		mcisStatus.Status = statusFlagStr[tmpMaxIndex] + proportionStr
 	} else if tmpMax < numVm {
@@ -600,7 +601,7 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	}
 	// for representing Failed status in front.
 
-	proportionStr = "-" + strconv.Itoa(statusFlag[0]) + "(" + strconv.Itoa(numNormalStatus) + "/" + strconv.Itoa(numVm) + ")"
+	proportionStr = ":" + strconv.Itoa(statusFlag[0]) + " (R:" + strconv.Itoa(runningStatus) + "/" + strconv.Itoa(numVm) + ")"
 	if statusFlag[0] > 0 {
 		mcisStatus.Status = "Partial-" + statusFlagStr[0] + proportionStr
 		if statusFlag[0] == numVm {
