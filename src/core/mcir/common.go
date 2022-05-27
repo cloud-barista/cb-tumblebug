@@ -106,7 +106,6 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 			deleteStatus = ""
 
 			err := DelResource(nsId, resourceType, v, forceFlag)
-			common.CBLog.Error(err)
 
 			if err != nil {
 				deleteStatus = err.Error()
