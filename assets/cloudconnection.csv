@@ -88,7 +88,8 @@ GCP,gcp-us-west3,gcp-us-west3,us-west3,Salt Lake City Utah USA [zone:a],gcp-driv
 GCP,gcp-asia-south1,gcp-asia-south1,asia-south1,Mumbai India [zone:b],gcp-driver-v1.0.so,gcp-driver01
 GCP,gcp-asia-southeast2,gcp-asia-southeast2,asia-southeast2,Jakarta Indonesia [zone:a],gcp-driver-v1.0.so,gcp-driver01
 GCP,gcp-europe-central2,gcp-europe-central2,europe-central2,Warsaw Poland [zone:a],gcp-driver-v1.0.so,gcp-driver01
-ALIBABA,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ap-northeast-1,Japan (Tokyo) [zone:a],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-ap-northeast-2,alibaba-ap-northeast-2,ap-northeast-2,South Korea (Seoul) [zone:a],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ap-northeast-1,Japan (Tokyo) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-ap-south-1,alibaba-ap-south-1,ap-south-1,Mumbai [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-ap-southeast-1,alibaba-ap-southeast-1,ap-southeast-1,Singapore [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-ap-southeast-2,alibaba-ap-southeast-2,ap-southeast-2,Australia (Sydney) [zone:2b],alibaba-driver-v1.0.so,alibaba-driver01
@@ -100,11 +101,11 @@ ALIBABA,alibaba-eu-central-1,alibaba-eu-central-1,eu-central-1,Germany (Frankfur
 ALIBABA,alibaba-eu-west-1,alibaba-eu-west-1,eu-west-1,UK (London) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-me-east-1,alibaba-me-east-1,me-east-1,UAE (Dubai) [zone:a],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-hongkong,alibaba-cn-hongkong,cn-hongkong,China (Hong Kong) [zone:d],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-cn-shanghai,alibaba-cn-shanghai,cn-shanghai,China (Shanghai) [zone:n],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-shanghain,alibaba-cn-shanghai,cn-shanghai,China (Shanghai) [zone:n],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-beijing,alibaba-cn-beijing,cn-beijing,China (Beijing) [zone:l],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-cn-qingdao,alibaba-cn-qingdao,cn-qingdao,China (Qingdao) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-qingdao,alibaba-cn-qingdao,cn-qingdao,China (Qingdao) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-zhangjiakou,alibaba-cn-zhangjiakou,cn-zhangjiakou,China (Zhangjiakou) [zone:c],alibaba-driver-v1.0.so,alibaba-driver01
-ALIBABA,alibaba-cn-huhehaote,alibaba-cn-huhehaote,cn-huhehaote,China (Hohhot) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
+ALIBABA,alibaba-cn-huhehaote,alibaba-cn-huhehaote,cn-huhehaote,China (Huhehaote) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-hangzhou,alibaba-cn-hangzhou,cn-hangzhou,China (Hangzhou) [zone:k],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-shenz,alibaba-cn-shenzhen,cn-shenzhen,China (Shenzhen) [zone:f],alibaba-driver-v1.0.so,alibaba-driver01
 ALIBABA,alibaba-cn-heyuan,alibaba-cn-heyuan,cn-heyuan,China (Heyuan) [zone:b],alibaba-driver-v1.0.so,alibaba-driver01
