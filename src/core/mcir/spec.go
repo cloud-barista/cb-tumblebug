@@ -464,7 +464,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
 		common.CBLog.Error(err)
-		err := fmt.Errorf("an error occurred while lookup spec via CB-Spider")
+		err := fmt.Errorf("Error duing lookup spec from CB-Spider: " + err.Error())
 		emptySpecInfoObj := TbSpecInfo{}
 		return emptySpecInfoObj, err
 	}
