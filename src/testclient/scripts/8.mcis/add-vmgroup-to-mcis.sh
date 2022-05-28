@@ -9,6 +9,18 @@
 	source ../init.sh
 
 	NUMVM=${OPTION01:-1}
+
+	if [[ -z "${DISK_TYPE[$INDEX,$REGION]}" ]]; then
+		RootDiskType="default"
+	else
+		RootDiskType="${DISK_TYPE[$INDEX,$REGION]}"
+	fi
+
+	if [[ -z "${DISK_SIZE[$INDEX,$REGION]}" ]]; then
+		RootDiskSize="default"
+	else
+		RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
+	fi
 	
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vmgroup -H 'Content-Type: application/json' -d \
 		'{
@@ -25,7 +37,9 @@
 			"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
-			"vmUserPassword": ""
+			"vmUserPassword": "",
+			"rootDiskType": "'${RootDiskType}'",
+			"rootDiskSize": "'${RootDiskSize}'"
 		}' | jq '' 
 #}
 

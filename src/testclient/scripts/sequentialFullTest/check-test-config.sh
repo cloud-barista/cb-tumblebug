@@ -24,9 +24,24 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	CSP=${CSPType[$cspi]}
 	echo -e "${GREEN}${BOLD} - [$cspi] Cloud : $CSP (enabled regions : $INDEXY)${NC}"
 	for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+
+		if [[ -z "${DISK_TYPE[$cspi,$cspj]}" ]]; then
+			RootDiskType="default"
+		else
+			RootDiskType="${DISK_TYPE[$cspi,$cspj]}"
+		fi
+
+		if [[ -z "${DISK_SIZE[$cspi,$cspj]}" ]]; then
+			RootDiskSize="default"
+		else
+			RootDiskSize="${DISK_SIZE[$cspi,$cspj]}"
+		fi
+
 		echo -e "${BLUE}${BOLD}   [$cspi,$cspj] Region : ${RegionName[$cspi,$cspj]} (${RegionLocation[$cspi,$cspj]}) ${NC}" 
 		echo -e "    - VM SPEC : ${SPEC_NAME[$cspi,$cspj]} "
+		echo -e "    - VM DISK : ${RootDiskType} (${RootDiskSize} GB) "
 		echo -e "    - VM IMAGE : ${IMAGE_TYPE[$cspi,$cspj]} (${IMAGE_NAME[$cspi,$cspj]}) "
+		
 	done
 	echo ""
 done
