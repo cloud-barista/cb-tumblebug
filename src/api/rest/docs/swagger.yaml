@@ -1539,6 +1539,13 @@ definitions:
         description: '"default", Integer (GB): ["50", ..., "1000"]'
         example: default, 30, 42, ...
         type: string
+      rootDiskType:
+        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
+          ["PremiumSSD", "StandardSSD", "StandardHHD"], GCP: ["pd-standard", "pd-balanced",
+          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"],
+          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
+        example: default, TYPE1, ...
+        type: string
       vmGroupSize:
         description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
           VMs will be created accordingly.
