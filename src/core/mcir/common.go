@@ -1384,7 +1384,23 @@ func LoadCommonResource() (common.IdList, error) {
 				// RandomSleep for safe parallel executions
 				common.RandomSleep(0, 20)
 				specReqTmp := TbSpecReq{}
-				// [0]connectionName, [1]cspSpecName, [2]CostPerHour, [3]evaluationScore01, ..., [12]evaluationScore10
+				// 0	providerName
+				// 1	regionName
+				// 2	connectionName
+				// 3	cspSpecName
+				// 4	CostPerHour
+				// 5	evaluationScore01
+				// 6	evaluationScore02
+				// 7	evaluationScore03
+				// 8	evaluationScore04
+				// 9	evaluationScore05
+				// 10	evaluationScore06
+				// 11	evaluationScore07
+				// 12	evaluationScore08
+				// 13	evaluationScore09
+				// 14	evaluationScore10
+				// 15	rootDiskType
+				// 16	rootDiskSize
 				specReqTmp.ConnectionName = row[2]
 				specReqTmp.CspSpecName = row[3]
 				// Give a name for spec object by combining ConnectionName and CspSpecName
@@ -1409,9 +1425,10 @@ func LoadCommonResource() (common.IdList, error) {
 
 				// Update registered Spec object with ProviderName
 				providerName := row[0]
-
 				// Update registered Spec object with RegionName
 				regionName := row[1]
+				rootDiskType := row[15]
+				rootDiskSize := row[16]
 
 				// Update registered Spec object with Cost info
 				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
@@ -1433,6 +1450,8 @@ func LoadCommonResource() (common.IdList, error) {
 						ProviderName:      providerName,
 						RegionName:        regionName,
 						CostPerHour:       float32(costPerHour),
+						RootDiskType:      rootDiskType,
+						RootDiskSize:      rootDiskSize,
 						EvaluationScore01: float32(evaluationScore01),
 					}
 
