@@ -226,6 +226,7 @@ type TbVmDynamicReq struct {
 	// CommonImage is field for id of a image in common namespace
 	CommonImage string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
 
+	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHHD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
 
 	// if ConnectionName is given, the VM tries to use associtated credential.
@@ -1181,7 +1182,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 		vmReq.Label = k.Label
 		vmReq.VmGroupSize = k.VmGroupSize
 		vmReq.Description = k.Description
-		//vmReq.RootDiskType = k.RootDiskType
+		vmReq.RootDiskType = k.RootDiskType
 		vmReq.RootDiskSize = k.RootDiskSize
 
 		mcisReq.Vm = append(mcisReq.Vm, vmReq)

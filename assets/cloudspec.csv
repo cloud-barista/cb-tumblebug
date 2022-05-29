@@ -1,10 +1,6 @@
 providerName,regionName,connectionName,cspSpecName,CostPerHour,evaluationScore01,evaluationScore02,evaluationScore03,evaluationScore04,evaluationScore05,evaluationScore06,evaluationScore07,evaluationScore08,evaluationScore09,evaluationScore10
-alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ecs.xn4.small,0.015,34.62,,,,,,,,,
-alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ecs.t5-lc1m2.large,0.013,33.85,,,,,,,,,
-alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ecs.t5-lc1m1.small,0.013,34.07,,,,,,,,,
-alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ecs.t1.small,0.013,34.29,,,,,,,,,
-alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ecs.s6-c1m1.small,0.011,33.41,,,,,,,,,
-alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ecs.n1.tiny,0.031,33.96,,,,,,,,,
+alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-1,ecs.g6e.large,0.013,33.85,,,,,,,,,
+alibaba,alibaba-ap-northeast-1,alibaba-ap-northeast-2,ecs.g6e.large,0.013,33.85,,,,,,,,,
 alibaba,alibaba-ap-south-1,alibaba-ap-south-1,ecs.xn4.small,0.015,33.85,,,,,,,,,
 alibaba,alibaba-ap-south-1,alibaba-ap-south-1,ecs.t5-lc1m1.small,0.013,33.85,,,,,,,,,
 alibaba,alibaba-ap-south-1,alibaba-ap-south-1,ecs.t1.small,0.013,34.4,,,,,,,,,
