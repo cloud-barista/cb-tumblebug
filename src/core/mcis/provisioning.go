@@ -525,7 +525,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 
 	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
 
-	if mcisTmp.InstallMonAgent != "no" {
+	if !strings.Contains(mcisTmp.InstallMonAgent, "no") {
 
 		// Sleep for 20 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe CB-Dragonfly Agent installation.\n\n")
@@ -724,7 +724,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 	// Install CB-Dragonfly monitoring agent
 
 	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
-	if mcisTmp.InstallMonAgent != "no" {
+	if !strings.Contains(mcisTmp.InstallMonAgent, "no") {
 
 		// Sleep for 60 seconds for a safe DF agent installation.
 		fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe CB-Dragonfly Agent installation.\n\n")
@@ -979,7 +979,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	mcisTmp.InstallMonAgent = req.InstallMonAgent
 	UpdateMcisInfo(nsId, mcisTmp)
 
-	if req.InstallMonAgent != "no" || option != "register" {
+	if !strings.Contains(mcisTmp.InstallMonAgent, "no") && option != "register" {
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
