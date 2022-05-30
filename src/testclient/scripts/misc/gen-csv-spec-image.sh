@@ -28,7 +28,7 @@ INDEXX=${TotalNumCSP}
 for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	INDEXY=${TotalNumRegion[$cspi]}
 	for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-		PRINT="${ProviderName[$cspi]},${RegionName[$cspi,$cspj]},${CONN_CONFIG[$cspi,$cspj]},${SPEC_NAME[$cspi,$cspj]},,,,,,,,,,,${DISK_TYPE[$cspi,$cspj]},${DISK_SIZE[$cspi,$cspj]}"
+		PRINT="${ProviderName[$cspi]},${RegionName[$cspi,$cspj]},${CONN_CONFIG[$cspi,$cspj]},${SPEC_NAME[$cspi,$cspj]},,,,,,,,,,,,${DISK_TYPE[$cspi,$cspj]},${DISK_SIZE[$cspi,$cspj]}"
 		echo "$PRINT"
 		echo "$PRINT" >>./cloudspec.csv
 	done
