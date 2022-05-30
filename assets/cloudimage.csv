@@ -118,8 +118,8 @@ NCP,ncp-us-western,SPSW0LINUX000130,Ubuntu 18.04
 NCP,ncp-germany,SPSW0LINUX000130,Ubuntu 18.04
 NCP,ncp-singapore,SPSW0LINUX000130,Ubuntu 18.04
 NCP,ncp-japan,SPSW0LINUX000130,Ubuntu 18.04
-NCPVPC,ncpvpc-kr1,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
-NCPVPC,ncpvpc-singapore,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
+NCPVPC,ncpvpc-kr-1,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
+NCPVPC,ncpvpc-sgn-4,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
 CLOUDIT,cloudit-region01,ee441331-0872-49c3-886c-1873a6e32e09,Ubuntu 18.04
 TENCENT,tencent-ap-singapore,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-jakarta,img-pi0ii46r,Ubuntu 18.04
