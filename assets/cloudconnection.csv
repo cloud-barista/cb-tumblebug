@@ -118,8 +118,8 @@ NCP,ncp-us-western,ncp-us-western,USWN,US West,ncp-driver-v1.0.so,ncp-driver01
 NCP,ncp-germany,ncp-germany,DEN,Germany,ncp-driver-v1.0.so,ncp-driver01
 NCP,ncp-singapore,ncp-singapore,SGN,Singapore,ncp-driver-v1.0.so,ncp-driver01
 NCP,ncp-japan,ncp-japan,JPN,Japan,ncp-driver-v1.0.so,ncp-driver01
-NCPVPC,ncpvpc-kr1,ncpvpc-kr1,KR,Korea 1,ncpvpc-driver-v1.0.so,ncpvpc-driver01
-NCPVPC,ncpvpc-singapore,ncpvpc-singapore,SGN,Singapore 4,ncpvpc-driver-v1.0.so,ncpvpc-driver01
+NCPVPC,ncpvpc-kr-1,ncpvpc-kr-1,KR,Korea 1,ncpvpc-driver-v1.0.so,ncpvpc-driver01
+NCPVPC,ncpvpc-sgn-4,ncpvpc-sgn-4,SGN,Singapore 4,ncpvpc-driver-v1.0.so,ncpvpc-driver01
 CLOUDIT,cloudit-region01,cloudit-region01,default,Korea Seoul (Internal),cloudit-driver-v1.0.so,cloudit-driver01
 TENCENT,tencent-ap-singapore,tencent-ap-singapore,ap-singapore,Singapore,tencent-driver-v1.0.so,tencent-driver01
 TENCENT,tencent-ap-jakarta,tencent-ap-jakarta,ap-jakarta,Jakarta,tencent-driver-v1.0.so,tencent-driver01
