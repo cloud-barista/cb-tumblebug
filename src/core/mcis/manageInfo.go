@@ -961,8 +961,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	statusResponseTmp.Status = ""
 
 	if cspVmId != "" && temp.Status != StatusTerminated {
-		fmt.Print("[Calling SPIDER] vmstatus, ")
-		fmt.Println("CspVmId: " + cspVmId)
+		// fmt.Print("[Calling SPIDER] vmstatus, ")
+		// fmt.Println("CspVmId: " + cspVmId)
 		if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 			url := common.SpiderRestUrl + "/vmstatus/" + cspVmId
