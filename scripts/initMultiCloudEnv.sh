@@ -30,25 +30,5 @@ done
 
 $CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb
 
-echo -e "${BOLD}"
-while true; do
-    read -p 'Create default namespace (ns01) for test. Do you want to proceed ? (y/n) : ' CHECKPROCEED
-    echo -e "${NC}"
-    case $CHECKPROCEED in
-    [Yy]*)
-        break
-        ;;
-    [Nn]*)
-        echo
-        echo "Cancel [$0 $@]"
-        echo "See you soon. :)"
-        echo
-        exit 1
-        ;;
-    *)
-        echo "Please answer yes or no."
-        ;;
-    esac
-done
 
 $CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -x ns01

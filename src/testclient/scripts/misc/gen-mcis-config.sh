@@ -20,18 +20,24 @@ echo "${PRINT}"
 echo "${PRINT}" >./mcisconfig.json
 
 
-VAR1=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$nsForSystem/resources/spec?option=id -H 'Content-Type: application/json' )
+VAR1=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$nsForSystem/resources/spec -H 'Content-Type: application/json' )
 
-VMARRAY=$(jq -r '.output[]' <<<"$VAR1")
-#echo "${VMARRAY}"
+for row in $(echo "${VAR1}" | jq -r '.spec[] | @base64'); do
+	_jq() {
+		echo ${row} | base64 --decode | jq -r ${1}
+	}
 
-for d in ${VMARRAY}
-do
+  id=$(_jq '.id')
+  rootDiskType=$(_jq '.rootDiskType')
+  rootDiskSize=$(_jq '.rootDiskSize')
   echo "  {" >>./mcisconfig.json
   echo "    \"commonImage\": \"ubuntu18.04\"," >>./mcisconfig.json
-	echo "    \"commonSpec\": \"$d\""  >>./mcisconfig.json
+	echo "    \"commonSpec\": \"$id\","  >>./mcisconfig.json
+  echo "    \"rootDiskType\": \"$rootDiskType\","  >>./mcisconfig.json
+  echo "    \"rootDiskSize\": \"$rootDiskSize\""  >>./mcisconfig.json
   echo "  },"  >>./mcisconfig.json
 done
+
 sed -i '$ d' ./mcisconfig.json
 echo "  }"  >>./mcisconfig.json
 
