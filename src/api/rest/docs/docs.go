@@ -6011,6 +6011,12 @@ const docTemplate = `{
                 "regionName": {
                     "type": "string"
                 },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
                 "storageGiB": {
                     "type": "integer"
                 },
