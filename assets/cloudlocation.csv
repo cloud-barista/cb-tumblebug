@@ -114,17 +114,14 @@ alibaba,eu-west-1,UK (London),51.8000,-0.2000
 alibaba,me-east-1,UAE (Dubai),25.2770,55.2962
 alibaba,ap-northeast-2,South Korea (Seoul),37.3600,126.7800
 cloudit,default,South Korea (Seoul),37.2665,126.7780
-ncp,kr-1,South Korea (Seoul),37.4767,126.8841
-ncp,kr-2,South Korea (Seoul),37.3881,126.9705
-ncp,hk-1,Hong Kong,22.3964,114.1095
-ncp,sgn-1,Singapore,1.3400,103.7041
-ncp,jpn-1,Japan,35.6895,139.6917
-ncp,uswn-1,US Western,37.3500,-121.9600
-ncp,den-1,Germany,50.1109,8.6821
-ncpvpc,kr-1,South Korea (Seoul),37.4767,126.8841
-ncpvpc,kr-2,South Korea (Seoul),37.3881,126.9705
-ncpvpc,sgn-4,Singapore,1.3400,103.7041
-ncpvpc,sgn-5,Singapore,1.3400,103.7041
+ncp,kr,South Korea (Seoul),37.4767,126.8841
+ncp,hk,Hong Kong,22.3964,114.1095
+ncp,sgn,Singapore,1.3400,103.7041
+ncp,jpn,Japan,35.6895,139.6917
+ncp,uswn,US Western,37.3500,-121.9600
+ncp,den,Germany,50.1109,8.6821
+ncpvpc,kr,South Korea (Seoul),37.4767,126.8841
+ncpvpc,sgn,Singapore,1.3400,103.7041
 openstack,regionone,South Korea (Daejeon),36.3804,127.3650
 tencent,ap-singapore,Southeast Asia (Singapore),1.352083,103.819839
 tencent,ap-jakarta,Southeast Asia (Jakarta),-6.175110,106.865036
@@ -144,10 +141,10 @@ tencent,ap-beijing,North China (Beijing),39.9042,116.407396
 tencent,ap-chengdu,Southwest China (Chengdu),30.572815,104.066801
 tencent,ap-chongqing,Southwest China (Chongqing),29.431586,106.912251
 tencent,ap-hongkong,Hong Kong,22.396428,114.109497
-ktcloud,KOR-Cheonan,Cheon-an - South Korea,36.812583,127.107005
-ktcloud,KOR-Seoul,Seoul - South Korea,37.566535,126.977969
-ktcloud,KOR-Kimhae,Kimhae - South Korea,35.228545,128.889352
-ktcloud,US,LA - US,34.052234,-118.243685
+ktcloud,kor-cheonan,Cheon-an - South Korea,36.812583,127.107005
+ktcloud,kor-seoul,Seoul - South Korea,37.566535,126.977969
+ktcloud,kor-kimhae,Kimhae - South Korea,35.228545,128.889352
+ktcloud,us,LA - US,34.052234,-118.243685
 ibm,us-south,Dallas (US South),32.776664,-96.796988
 ibm,br-sao,Sao Paulo (Brazil),-23.55052,-46.633309
 ibm,ca-tor,Toronto (Canada),43.653226,-79.383184
