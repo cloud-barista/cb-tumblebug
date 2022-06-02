@@ -1073,6 +1073,22 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	mcisReq.InstallMonAgent = req.InstallMonAgent
 	mcisReq.Description = req.Description
 
+	emptyMcis := &TbMcisInfo{}
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyMcis, err
+	}
+	check, err := CheckMcis(nsId, req.Name)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyMcis, err
+	}
+	if check {
+		err := fmt.Errorf("The mcis " + req.Name + " already exists.")
+		return emptyMcis, err
+	}
+
 	vmRequest := req.Vm
 	// Check whether VM names meet requirement.
 	for _, k := range vmRequest {

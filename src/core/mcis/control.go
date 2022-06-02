@@ -124,7 +124,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 			return "", err
 		}
 
-		return "Terminating the MCIS", nil
+		return "Terminated the MCIS", nil
 
 	} else if action == "refine" { // refine delete VMs in StatusFailed or StatusUndefined
 		fmt.Println("[refine MCIS]")
@@ -212,7 +212,7 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 	} else if action == "terminate" {
 		fmt.Println("[terminate VM]")
 		ControlVm(nsId, mcisId, vmId, ActionTerminate)
-		return "Terminating the VM", nil
+		return "Terminated the VM", nil
 	} else {
 		return "", fmt.Errorf(action + " not supported")
 	}
