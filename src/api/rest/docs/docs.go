@@ -3551,7 +3551,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Create FirewallRules",
                 "parameters": [
@@ -3577,7 +3577,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcir.TbFirewallRuleInfo"
+                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
                         }
                     },
                     "404": {
@@ -3603,7 +3603,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Network management"
+                    "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Delete FirewallRules",
                 "parameters": [
@@ -3629,7 +3629,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/mcir.TbSecurityGroupInfo"
                         }
                     },
                     "404": {

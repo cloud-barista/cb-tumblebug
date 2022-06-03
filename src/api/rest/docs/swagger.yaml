@@ -4280,14 +4280,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete FirewallRules
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra resource] MCIR Security group management'
     post:
       consumes:
       - application/json
@@ -4311,7 +4311,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcir.TbFirewallRuleInfo'
+            $ref: '#/definitions/mcir.TbSecurityGroupInfo'
         "404":
           description: Not Found
           schema:
@@ -4322,7 +4322,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create FirewallRules
       tags:
-      - '[Infra resource] MCIR Network management'
+      - '[Infra resource] MCIR Security group management'
   /ns/{nsId}/resources/spec:
     delete:
       consumes:
