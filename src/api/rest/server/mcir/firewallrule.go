@@ -30,12 +30,12 @@ type TbFirewallRulesWrapper struct {
 // RestPostFirewallRules godoc
 // @Summary Create FirewallRules
 // @Description Create FirewallRules
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to create"
-// @Success 200 {object} mcir.TbFirewallRuleInfo
+// @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [post]
@@ -63,7 +63,7 @@ func RestPostFirewallRules(c echo.Context) error {
 // RestPutFirewallRules godoc
 // @Summary Update FirewallRules
 // @Description Update FirewallRules
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -83,7 +83,7 @@ func RestPutFirewallRules(c echo.Context) error {
 // RestGetFirewallRules godoc
 // @Summary Get FirewallRules
 // @Description Get FirewallRules
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -106,12 +106,12 @@ type RestGetAllFirewallRulesResponse struct {
 // RestDelFirewallRules godoc
 // @Summary Delete FirewallRules
 // @Description Delete FirewallRules
-// @Tags [Infra resource] MCIR Network management
+// @Tags [Infra resource] MCIR Security group management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param firewallRuleReq body TbFirewallRulesWrapper true "FirewallRules to delete"
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {object} mcir.TbSecurityGroupInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [delete]
 func RestDelFirewallRules(c echo.Context) error {
