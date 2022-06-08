@@ -2494,6 +2494,41 @@ paths:
       summary: Get namespace
       tags:
       - '[Namespace] Namespace management'
+    put:
+      consumes:
+      - application/json
+      description: Update namespace
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Details to update existing namespace
+        in: body
+        name: namespace
+        required: true
+        schema:
+          $ref: '#/definitions/common.NsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.NsInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Update namespace
+      tags:
+      - '[Namespace] Namespace management'
   /ns/{nsId}/benchmark/mcis/{mcisId}:
     post:
       consumes:
