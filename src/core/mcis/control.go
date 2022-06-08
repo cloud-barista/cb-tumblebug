@@ -593,10 +593,9 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
 		err = fmt.Errorf("In ControlVm(); CBStore.Get() returned an error.")
 		common.CBLog.Error(err)
-		// return nil, err
+		return err
 	}
 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
