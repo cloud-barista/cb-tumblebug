@@ -15,7 +15,6 @@ limitations under the License.
 package common
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -191,7 +190,6 @@ func RestPostNs(c echo.Context) error {
 		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 
-	fmt.Println("[Creating Ns]")
 	content, err := common.CreateNs(u)
 	if err != nil {
 		return SendMessage(c, http.StatusBadRequest, err.Error())
@@ -200,19 +198,27 @@ func RestPostNs(c echo.Context) error {
 
 }
 
-/* function RestPutNs not yet implemented
 // RestPutNs godoc
 // @Summary Update namespace
 // @Description Update namespace
 // @Tags [Namespace] Namespace management
 // @Accept  json
 // @Produce  json
-// @Param namespace body common.NsInfo true "Details to update existing namespace"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param namespace body common.NsReq true "Details to update existing namespace"
 // @Success 200 {object} common.NsInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId} [put]
-*/
 func RestPutNs(c echo.Context) error {
-	return nil
+	u := &common.NsReq{}
+	if err := c.Bind(u); err != nil {
+		return SendMessage(c, http.StatusBadRequest, err.Error())
+	}
+
+	content, err := common.UpdateNs(c.Param("nsId"), u)
+	if err != nil {
+		return SendMessage(c, http.StatusBadRequest, err.Error())
+	}
+	return Send(c, http.StatusOK, content)
 }

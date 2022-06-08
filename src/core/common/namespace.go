@@ -110,6 +110,72 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	return content, nil
 }
 
+// UpdateNs is func to update namespace info
+func UpdateNs(id string, u *NsReq) (NsInfo, error) {
+
+	res := NsInfo{}
+	emptyInfo := NsInfo{}
+
+	err := CheckString(id)
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+	check, err := CheckNs(id)
+
+	if !check {
+		errString := "The namespace " + id + " does not exist."
+		err := fmt.Errorf(errString)
+		return emptyInfo, err
+	}
+
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+
+	key := "/ns/" + id
+	keyValue, err := CBStore.Get(key)
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+
+	err = json.Unmarshal([]byte(keyValue.Value), &res)
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+
+	res.Id = id
+	res.Name = u.Name
+	res.Description = u.Description
+
+	Key := "/ns/" + id
+	//mapA := map[string]string{"name": content.Name, "description": content.Description}
+	Val, err := json.Marshal(res)
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+	err = CBStore.Put(Key, string(Val))
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+	keyValue, err = CBStore.Get(Key)
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+	err = json.Unmarshal([]byte(keyValue.Value), &res)
+	if err != nil {
+		CBLog.Error(err)
+		return emptyInfo, err
+	}
+	return res, nil
+}
+
 func GetNs(id string) (NsInfo, error) {
 
 	res := NsInfo{}
