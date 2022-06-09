@@ -536,12 +536,14 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 	for _, v := range vmList {
 		// set master IP of MCIS (Default rule: select 1st Running VM as master)
-		vmtmp, _ := GetVmObject(nsId, mcisId, v)
-		if vmtmp.Status == StatusRunning {
-			mcisStatus.MasterVmId = vmtmp.Id
-			mcisStatus.MasterIp = vmtmp.PublicIP
-			mcisStatus.MasterSSHPort = vmtmp.SSHPort
-			break
+		vmtmp, err := GetVmObject(nsId, mcisId, v)
+		if err == nil {
+			if vmtmp.Status == StatusRunning {
+				mcisStatus.MasterVmId = vmtmp.Id
+				mcisStatus.MasterIp = vmtmp.PublicIP
+				mcisStatus.MasterSSHPort = vmtmp.SSHPort
+				break
+			}
 		}
 	}
 
@@ -897,14 +899,17 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, results *McisStatusInfo) error {
 	defer wg.Done() //goroutine sync done
 
-	vmStatusTmp, err := GetVmStatus(nsId, mcisId, vmId)
-	if err != nil {
-		common.CBLog.Error(err)
-		vmStatusTmp.Status = StatusFailed
-		vmStatusTmp.SystemMessage = err.Error()
+	if nsId != "" && mcisId != "" && vmId != "" {
+		vmStatusTmp, err := GetVmStatus(nsId, mcisId, vmId)
+		if err != nil {
+			common.CBLog.Error(err)
+			vmStatusTmp.Status = StatusFailed
+			vmStatusTmp.SystemMessage = err.Error()
+		}
+		if vmStatusTmp != (TbVmStatusInfo{}) {
+			results.Vm = append(results.Vm, vmStatusTmp)
+		}
 	}
-
-	results.Vm = append(results.Vm, vmStatusTmp)
 	return nil
 }
 
