@@ -2800,7 +2800,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2845,7 +2845,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2898,7 +2898,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -2964,6 +2964,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Option",
                         "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex:guestOS)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: Ubuntu18.04)",
+                        "name": "filterVal",
                         "in": "query"
                     }
                 ],
@@ -3353,6 +3365,18 @@ const docTemplate = `{
                         "description": "Option",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: systemLabel)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: Registered from CSP resource)",
+                        "name": "filterVal",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3709,7 +3733,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3722,6 +3746,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Option",
                         "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: providerName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: aws)",
+                        "name": "filterVal",
                         "in": "query"
                     }
                 ],
@@ -3783,7 +3819,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3888,7 +3924,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3947,7 +3983,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -3997,7 +4033,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
@@ -4056,6 +4092,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Option",
                         "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: systemLabel)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: Registered from CSP resource)",
+                        "name": "filterVal",
                         "in": "query"
                     }
                 ],
@@ -4385,6 +4433,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Option",
                         "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: cspVNetName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)",
+                        "name": "filterVal",
                         "in": "query"
                     }
                 ],

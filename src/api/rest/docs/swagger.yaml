@@ -3759,7 +3759,7 @@ paths:
       - application/json
       description: Fetch specs
       parameters:
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -3789,7 +3789,7 @@ paths:
       - application/json
       description: Filter specs
       parameters:
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -3824,7 +3824,7 @@ paths:
       - application/json
       description: Filter specs by range
       parameters:
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -3900,6 +3900,14 @@ paths:
         - id
         in: query
         name: option
+        type: string
+      - description: Field key for filtering (ex:guestOS)
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: Ubuntu18.04)'
+        in: query
+        name: filterVal
         type: string
       produces:
       - application/json
@@ -4159,6 +4167,14 @@ paths:
         in: query
         name: option
         type: string
+      - description: 'Field key for filtering (ex: systemLabel)'
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: Registered from CSP resource)'
+        in: query
+        name: filterVal
+        type: string
       produces:
       - application/json
       responses:
@@ -4394,7 +4410,7 @@ paths:
       - application/json
       description: List all specs or specs' ID
       parameters:
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -4405,6 +4421,14 @@ paths:
         - id
         in: query
         name: option
+        type: string
+      - description: 'Field key for filtering (ex: providerName)'
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: aws)'
+        in: query
+        name: filterVal
         type: string
       produces:
       - application/json
@@ -4441,7 +4465,7 @@ paths:
         name: registeringMethod
         required: true
         type: string
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -4481,7 +4505,7 @@ paths:
       - application/json
       description: Delete spec
       parameters:
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -4511,7 +4535,7 @@ paths:
       - application/json
       description: Get spec
       parameters:
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -4551,7 +4575,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcir.TbSpecInfo'
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
@@ -4627,6 +4651,14 @@ paths:
         - id
         in: query
         name: option
+        type: string
+      - description: 'Field key for filtering (ex: systemLabel)'
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: Registered from CSP resource)'
+        in: query
+        name: filterVal
         type: string
       produces:
       - application/json
@@ -4847,6 +4879,14 @@ paths:
         - id
         in: query
         name: option
+        type: string
+      - description: 'Field key for filtering (ex: cspVNetName)'
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
+        in: query
+        name: filterVal
         type: string
       produces:
       - application/json
