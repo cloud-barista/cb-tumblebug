@@ -108,6 +108,8 @@ func RestGetAllResources(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
+	filterKey := c.QueryParam("filterKey")
+	filterVal := c.QueryParam("filterVal")
 
 	resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
@@ -124,7 +126,7 @@ func RestGetAllResources(c echo.Context) error {
 		return c.JSON(http.StatusOK, &content)
 	} else {
 
-		resourceList, err := mcir.ListResource(nsId, resourceType)
+		resourceList, err := mcir.ListResource(nsId, resourceType, filterKey, filterVal)
 		if err != nil {
 			mapA := map[string]string{"message": "Failed to list " + resourceType + "s; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)

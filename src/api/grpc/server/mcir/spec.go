@@ -81,7 +81,7 @@ func (s *MCIRService) ListSpec(ctx context.Context, req *pb.ResourceAllQryReques
 
 	logger.Debug("calling MCIRService.ListSpec()")
 
-	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType)
+	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType, "", "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSpec()")
 	}

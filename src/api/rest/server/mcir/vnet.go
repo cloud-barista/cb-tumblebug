@@ -108,6 +108,8 @@ type RestGetAllVNetResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id)
+// @Param filterKey query string false "Field key for filtering (ex: cspVNetName)"
+// @Param filterVal query string false "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)"
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllVNetResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
