@@ -1565,7 +1565,37 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	//vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
 
-	if option != "register" {
+	if option == "register" {
+
+		// Reconstuct resource IDs
+		// vNet
+		resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "cspVNetName", tempSpiderVMInfo.VpcIID.NameId)
+		if err != nil {
+			common.CBLog.Error(err)
+		} else {
+			resourcesInNs := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				if resource.ConnectionName == tempReq.ConnectionName {
+					vmInfoData.VNetId = resource.Id
+					//vmInfoData.SubnetId = resource.SubnetInfoList
+				}
+			}
+		}
+
+		// access Key
+		resourceListInNs, err = mcir.ListResource(nsId, common.StrSSHKey, "cspSshKeyName", tempSpiderVMInfo.KeyPairIId.NameId)
+		if err != nil {
+			common.CBLog.Error(err)
+		} else {
+			resourcesInNs := resourceListInNs.([]mcir.TbSshKeyInfo) // type assertion
+			for _, resource := range resourcesInNs {
+				if resource.ConnectionName == tempReq.ConnectionName {
+					vmInfoData.SshKeyId = resource.Id
+				}
+			}
+		}
+
+	} else {
 		vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 		//mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
