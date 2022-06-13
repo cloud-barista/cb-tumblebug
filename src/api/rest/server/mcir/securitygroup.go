@@ -106,6 +106,8 @@ type RestGetAllSecurityGroupResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id)
+// @Param filterKey query string false "Field key for filtering (ex: systemLabel)"
+// @Param filterVal query string false "Field value for filtering (ex: Registered from CSP resource)"
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllSecurityGroupResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

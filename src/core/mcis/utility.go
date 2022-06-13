@@ -384,7 +384,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				}
 			}
 		case common.StrVNet:
-			resourceListInNs, err := mcir.ListResource(ns, resourceType)
+			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				common.CBLog.Error(err)
 				err := fmt.Errorf("an error occurred while getting resource list")
@@ -406,7 +406,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				}
 			}
 		case common.StrSecurityGroup:
-			resourceListInNs, err := mcir.ListResource(ns, resourceType)
+			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				common.CBLog.Error(err)
 				err := fmt.Errorf("an error occurred while getting resource list")
@@ -428,7 +428,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				}
 			}
 		case common.StrSSHKey:
-			resourceListInNs, err := mcir.ListResource(ns, resourceType)
+			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
 				common.CBLog.Error(err)
 				err := fmt.Errorf("an error occurred while getting resource list")
@@ -742,6 +742,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (R
 			mcisNameForRegister := mcisId + "-" + k.ConfigName
 			// Assign RandomSleep range by clouds
 			// This code is temporal, CB-Spider needs to be enhnaced for locking mechanism.
+			// CB-SP v0.5.9 will not help with rate limit issue.
 			if option != "onlyVm" {
 				if strings.Contains(k.ConfigName, "alibaba") {
 					common.RandomSleep(100, 200)
@@ -752,6 +753,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (R
 				} else {
 				}
 			}
+
 			common.RandomSleep(0, 50)
 
 			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister, option)

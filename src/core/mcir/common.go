@@ -755,7 +755,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 }
 
 // ListResource returns the list of TB MCIR objects of given resourceType
-func ListResource(nsId string, resourceType string) (interface{}, error) {
+func ListResource(nsId string, resourceType string, filterKey string, filterVal string) (interface{}, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -794,11 +794,20 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 		case common.StrImage:
 			res := []TbImageInfo{}
 			for _, v := range keyValue {
+
 				tempObj := TbImageInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
 					common.CBLog.Error(err)
 					return nil, err
+				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
 				}
 				res = append(res, tempObj)
 			}
@@ -812,6 +821,14 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 					common.CBLog.Error(err)
 					return nil, err
 				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
+				}
 				res = append(res, tempObj)
 			}
 			return res, nil
@@ -823,6 +840,14 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 				if err != nil {
 					common.CBLog.Error(err)
 					return nil, err
+				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
 				}
 				res = append(res, tempObj)
 			}
@@ -836,6 +861,14 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 					common.CBLog.Error(err)
 					return nil, err
 				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
+				}
 				res = append(res, tempObj)
 			}
 			return res, nil
@@ -847,6 +880,14 @@ func ListResource(nsId string, resourceType string) (interface{}, error) {
 				if err != nil {
 					common.CBLog.Error(err)
 					return nil, err
+				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
 				}
 				res = append(res, tempObj)
 			}

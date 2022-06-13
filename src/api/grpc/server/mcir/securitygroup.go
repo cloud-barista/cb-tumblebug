@@ -50,7 +50,7 @@ func (s *MCIRService) ListSecurityGroup(ctx context.Context, req *pb.ResourceAll
 
 	logger.Debug("calling MCIRService.ListSecurityGroup()")
 
-	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType)
+	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType, "", "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSecurityGroup()")
 	}

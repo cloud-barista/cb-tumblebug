@@ -81,7 +81,7 @@ func (s *MCIRService) ListImage(ctx context.Context, req *pb.ResourceAllQryReque
 
 	logger.Debug("calling MCIRService.ListImage()")
 
-	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType)
+	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType, "", "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListImage()")
 	}

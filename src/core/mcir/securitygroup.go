@@ -189,7 +189,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	// Avoid retrieving vNet info if option == register
 	// Assign random temporal ID to u.VNetId
 	if option == "register" && u.VNetId == "not defined" {
-		resourceList, err := ListResource(nsId, common.StrVNet)
+		resourceList, err := ListResource(nsId, common.StrVNet, "", "")
 
 		if err != nil {
 			common.CBLog.Error(err)

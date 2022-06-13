@@ -51,7 +51,7 @@ func (s *MCIRService) ListSshKey(ctx context.Context, req *pb.ResourceAllQryRequ
 
 	logger.Debug("calling MCIRService.ListSshKey()")
 
-	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType)
+	resourceList, err := mcir.ListResource(req.NsId, req.ResourceType, "", "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCIRService.ListSshKey()")
 	}
