@@ -654,21 +654,37 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 // GetMcisStatusAll is func to get MCIS status all
 func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
-	mcisStatuslist := []McisStatusInfo{}
+	//mcisStatuslist := []McisStatusInfo{}
 	mcisList, err := ListMcisId(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return mcisStatuslist, err
+		return []McisStatusInfo{}, err
 	}
 
+	var wg sync.WaitGroup
+	chanResults := make(chan McisStatusInfo)
+	var mcisStatuslist []McisStatusInfo
+
 	for _, mcisId := range mcisList {
-		mcisStatus, err := GetMcisStatus(nsId, mcisId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return mcisStatuslist, err
-		}
-		mcisStatuslist = append(mcisStatuslist, *mcisStatus)
+		wg.Add(1)
+		go func(nsId string, mcisId string, chanResults chan McisStatusInfo) {
+			defer wg.Done()
+			mcisStatus, err := GetMcisStatus(nsId, mcisId)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
+			chanResults <- *mcisStatus
+		}(nsId, mcisId, chanResults)
 	}
+
+	go func() {
+		wg.Wait()
+		close(chanResults)
+	}()
+	for result := range chanResults {
+		mcisStatuslist = append(mcisStatuslist, result)
+	}
+
 	return mcisStatuslist, nil
 
 	//need to change status
@@ -775,6 +791,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 				return http.ErrUseLastResponse
 			},
 		}
+		defer client.CloseIdleConnections()
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 		errorInfo.Status = StatusFailed
@@ -984,7 +1001,9 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
 					return http.ErrUseLastResponse
 				},
+				Timeout: 30 * time.Second,
 			}
+			defer client.CloseIdleConnections()
 
 			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
 			retrycheck := 2
