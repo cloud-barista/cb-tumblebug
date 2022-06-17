@@ -1368,14 +1368,14 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		if strings.EqualFold(option, ActionTerminate) {
 
 			// ActionRefine
-			_, err := HandleMcisAction(nsId, mcisId, ActionRefine)
+			_, err := HandleMcisAction(nsId, mcisId, ActionRefine, true)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
 			}
 
 			// ActionTerminate
-			_, err = HandleMcisAction(nsId, mcisId, ActionTerminate)
+			_, err = HandleMcisAction(nsId, mcisId, ActionTerminate, true)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
