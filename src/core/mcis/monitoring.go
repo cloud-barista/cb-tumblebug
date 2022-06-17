@@ -132,13 +132,13 @@ func CheckDragonflyEndpoint() error {
 			fmt.Println(err)
 			return err
 		}
-		defer res.Body.Close()
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
+		defer res.Body.Close()
 
 		fmt.Println(string(body))
 		return nil
@@ -256,15 +256,16 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 			errStr += "/ " + err.Error()
 		}
 
-		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			common.CBLog.Error(err)
 			errStr += "/ " + err.Error()
 		}
+		defer res.Body.Close()
 
 		result = string(body)
 	}
+	defer res.Body.Close()
 
 	//wg.Done() //goroutin sync done
 
@@ -479,14 +480,15 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 				errStr = err1.Error()
 			}
 
-			defer res.Body.Close()
 			body, err2 := ioutil.ReadAll(res.Body)
 			if err2 != nil {
 				common.CBLog.Error(err2)
 				errStr = err2.Error()
 			}
+			defer res.Body.Close()
 			response = string(body)
 		}
+
 	} else {
 		reqParams := df_pb.VMOnDemandMonQryRequest{
 			NsId:    nsID,
