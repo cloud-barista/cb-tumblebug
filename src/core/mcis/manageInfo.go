@@ -791,7 +791,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 				return http.ErrUseLastResponse
 			},
 		}
-		defer client.CloseIdleConnections()
 		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 		errorInfo.Status = StatusFailed
@@ -809,8 +808,12 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 			return errorInfo, err
 		}
 
-		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(err)
+			return errorInfo, err
+		}
+		defer res.Body.Close()
 
 		statusResponseTmp = statusResponse{}
 
@@ -1001,12 +1004,11 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
 					return http.ErrUseLastResponse
 				},
-				Timeout: 30 * time.Second,
+				Timeout: 60 * time.Second,
 			}
-			defer client.CloseIdleConnections()
 
 			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
-			retrycheck := 2
+			retrycheck := 5
 			for i := 0; i < retrycheck; i++ {
 
 				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
@@ -1041,7 +1043,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 				if statusResponseTmp.Status != "" {
 					break
 				}
-				time.Sleep(1 * time.Second)
+				time.Sleep(5 * time.Second)
 			}
 
 		} else {
