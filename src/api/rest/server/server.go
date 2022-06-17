@@ -82,6 +82,8 @@ func RunServer(port string) {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	// limit the application to 20 requests/sec using the default in-memory store
+	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
 
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
@@ -169,8 +171,13 @@ func RunServer(port string) {
 	e.POST("/tumblebug/mcisDynamicCheckRequest", rest_mcis.RestPostMcisDynamicCheckRequest)
 
 	g.POST("/:nsId/mcisDynamic", rest_mcis.RestPostMcisDynamic)
-	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis)
-	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis)
+
+	//g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
+	//g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
+	// path specific timeout and ratelimit
+	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 60 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
+	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 60 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
+
 	g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
 	g.DELETE("/:nsId/mcis/:mcisId", rest_mcis.RestDelMcis)
 	g.DELETE("/:nsId/mcis", rest_mcis.RestDelAllMcis)
