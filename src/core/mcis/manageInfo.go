@@ -654,21 +654,37 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 // GetMcisStatusAll is func to get MCIS status all
 func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
-	mcisStatuslist := []McisStatusInfo{}
+	//mcisStatuslist := []McisStatusInfo{}
 	mcisList, err := ListMcisId(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return mcisStatuslist, err
+		return []McisStatusInfo{}, err
 	}
 
+	var wg sync.WaitGroup
+	chanResults := make(chan McisStatusInfo)
+	var mcisStatuslist []McisStatusInfo
+
 	for _, mcisId := range mcisList {
-		mcisStatus, err := GetMcisStatus(nsId, mcisId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return mcisStatuslist, err
-		}
-		mcisStatuslist = append(mcisStatuslist, *mcisStatus)
+		wg.Add(1)
+		go func(nsId string, mcisId string, chanResults chan McisStatusInfo) {
+			defer wg.Done()
+			mcisStatus, err := GetMcisStatus(nsId, mcisId)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
+			chanResults <- *mcisStatus
+		}(nsId, mcisId, chanResults)
 	}
+
+	go func() {
+		wg.Wait()
+		close(chanResults)
+	}()
+	for result := range chanResults {
+		mcisStatuslist = append(mcisStatuslist, result)
+	}
+
 	return mcisStatuslist, nil
 
 	//need to change status
@@ -792,8 +808,12 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 			return errorInfo, err
 		}
 
-		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(err)
+			return errorInfo, err
+		}
+		defer res.Body.Close()
 
 		statusResponseTmp = statusResponse{}
 
@@ -984,10 +1004,11 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
 					return http.ErrUseLastResponse
 				},
+				Timeout: 60 * time.Second,
 			}
 
 			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
-			retrycheck := 2
+			retrycheck := 5
 			for i := 0; i < retrycheck; i++ {
 
 				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
@@ -1022,7 +1043,7 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 				if statusResponseTmp.Status != "" {
 					break
 				}
-				time.Sleep(1 * time.Second)
+				time.Sleep(5 * time.Second)
 			}
 
 		} else {
@@ -1347,14 +1368,14 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		if strings.EqualFold(option, ActionTerminate) {
 
 			// ActionRefine
-			_, err := HandleMcisAction(nsId, mcisId, ActionRefine)
+			_, err := HandleMcisAction(nsId, mcisId, ActionRefine, true)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err
 			}
 
 			// ActionTerminate
-			_, err = HandleMcisAction(nsId, mcisId, ActionTerminate)
+			_, err = HandleMcisAction(nsId, mcisId, ActionTerminate, true)
 			if err != nil {
 				common.CBLog.Error(err)
 				return err

@@ -30,6 +30,7 @@ import (
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate, refine)
+// @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -39,10 +40,15 @@ func RestGetControlMcis(c echo.Context) error {
 	mcisId := c.Param("mcisId")
 
 	action := c.QueryParam("action")
+	force := c.QueryParam("force")
+	forceOption := false
+	if force == "true" {
+		forceOption = true
+	}
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
 
-		result, err := mcis.HandleMcisAction(nsId, mcisId, action)
+		result, err := mcis.HandleMcisAction(nsId, mcisId, action, forceOption)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusInternalServerError, &mapA)

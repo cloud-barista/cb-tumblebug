@@ -160,13 +160,13 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		common.CBLog.Error(err)
 		errStr = err.Error()
 	}
-	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr = err.Error()
 	}
+	defer res.Body.Close()
 	fmt.Println(string(body))
 
 	fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))

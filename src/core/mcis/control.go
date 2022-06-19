@@ -54,7 +54,7 @@ type ControlVmResultWrapper struct {
 }
 
 // HandleMcisAction is func to handle actions to MCIS
-func HandleMcisAction(nsId string, mcisId string, action string) (string, error) {
+func HandleMcisAction(nsId string, mcisId string, action string, force bool) (string, error) {
 	action = common.ToLower(action)
 
 	err := common.CheckString(nsId)
@@ -79,7 +79,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 	if action == "suspend" {
 		fmt.Println("[suspend MCIS]")
 
-		err := ControlMcisAsync(nsId, mcisId, ActionSuspend)
+		err := ControlMcisAsync(nsId, mcisId, ActionSuspend, force)
 		if err != nil {
 			return "", err
 		}
@@ -89,7 +89,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 	} else if action == "resume" {
 		fmt.Println("[resume MCIS]")
 
-		err := ControlMcisAsync(nsId, mcisId, ActionResume)
+		err := ControlMcisAsync(nsId, mcisId, ActionResume, force)
 		if err != nil {
 			return "", err
 		}
@@ -99,7 +99,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 	} else if action == "reboot" {
 		fmt.Println("[reboot MCIS]")
 
-		err := ControlMcisAsync(nsId, mcisId, ActionReboot)
+		err := ControlMcisAsync(nsId, mcisId, ActionReboot, force)
 		if err != nil {
 			return "", err
 		}
@@ -119,7 +119,7 @@ func HandleMcisAction(nsId string, mcisId string, action string) (string, error)
 			return "No VM to terminate in the MCIS", nil
 		}
 
-		err = ControlMcisAsync(nsId, mcisId, ActionTerminate)
+		err = ControlMcisAsync(nsId, mcisId, ActionTerminate, force)
 		if err != nil {
 			return "", err
 		}
@@ -252,10 +252,10 @@ func ControlMcis(nsId string, mcisId string, action string) error {
 }
 
 // ControlMcisAsync is func to control MCIS async
-func ControlMcisAsync(nsId string, mcisId string, action string) error {
+func ControlMcisAsync(nsId string, mcisId string, action string, force bool) error {
 
 	checkError := CheckAllowedTransition(nsId, mcisId, action)
-	if checkError != nil {
+	if checkError != nil || !force {
 		return checkError
 	}
 
@@ -462,12 +462,12 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 					common.CBLog.Error(err)
 					return err
 				}
-				defer res.Body.Close()
 				body, err := ioutil.ReadAll(res.Body)
 				if err != nil {
 					common.CBLog.Error(err)
 					return err
 				}
+				defer res.Body.Close()
 
 				fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 				switch {
@@ -678,8 +678,17 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 		req.Header.Add("Content-Type", "application/json")
 
 		res, err := client.Do(req)
-		defer res.Body.Close()
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
 		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		defer res.Body.Close()
 
 		fmt.Println(string(body))
 
@@ -784,7 +793,12 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 
 	UpdateMcisInfo(nsId, mcisTmp)
 
-	if strings.Contains(mcisStatusTmp.Status, StatusTerminating) || strings.Contains(mcisStatusTmp.Status, StatusResuming) || strings.Contains(mcisStatusTmp.Status, StatusSuspending) || strings.Contains(mcisStatusTmp.Status, StatusCreating) || strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
+	if strings.Contains(mcisStatusTmp.Status, StatusCreating) ||
+		strings.Contains(mcisStatusTmp.Status, StatusTerminating) ||
+		strings.Contains(mcisStatusTmp.Status, StatusResuming) ||
+		strings.Contains(mcisStatusTmp.Status, StatusSuspending) ||
+		strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
+
 		return errors.New(action + " is not allowed for MCIS under " + mcisStatusTmp.Status)
 	}
 	if !strings.Contains(mcisStatusTmp.Status, "Partial-") && strings.Contains(mcisStatusTmp.Status, StatusTerminated) {

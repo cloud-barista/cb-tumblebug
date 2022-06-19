@@ -1470,13 +1470,12 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			return err
 		}
 
-		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
-
 		if err != nil {
 			common.CBLog.Error(err)
 			return err
 		}
+		defer res.Body.Close()
 
 		tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
 		err = json.Unmarshal(body, &tempSpiderVMInfo)
