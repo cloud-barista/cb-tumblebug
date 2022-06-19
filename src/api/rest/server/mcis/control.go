@@ -30,7 +30,7 @@ import (
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate, refine)
-// @Param force query string false "Action to MCIS" Enums(false, true)
+// @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

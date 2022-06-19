@@ -793,7 +793,12 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 
 	UpdateMcisInfo(nsId, mcisTmp)
 
-	if strings.Contains(mcisStatusTmp.Status, StatusCreating) || strings.Contains(mcisStatusTmp.Status, StatusTerminating) || strings.Contains(mcisStatusTmp.Status, StatusResuming) || strings.Contains(mcisStatusTmp.Status, StatusSuspending) || strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
+	if strings.Contains(mcisStatusTmp.Status, StatusCreating) ||
+		strings.Contains(mcisStatusTmp.Status, StatusTerminating) ||
+		strings.Contains(mcisStatusTmp.Status, StatusResuming) ||
+		strings.Contains(mcisStatusTmp.Status, StatusSuspending) ||
+		strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
+
 		return errors.New(action + " is not allowed for MCIS under " + mcisStatusTmp.Status)
 	}
 	if !strings.Contains(mcisStatusTmp.Status, "Partial-") && strings.Contains(mcisStatusTmp.Status, StatusTerminated) {
