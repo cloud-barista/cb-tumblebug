@@ -1305,6 +1305,16 @@ const docTemplate = `{
                         "name": "action",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "false",
+                            "true"
+                        ],
+                        "type": "string",
+                        "description": "Force control to skip checking controllable status",
+                        "name": "force",
+                        "in": "query"
                     }
                 ],
                 "responses": {

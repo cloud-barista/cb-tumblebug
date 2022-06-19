@@ -2752,6 +2752,13 @@ paths:
         name: action
         required: true
         type: string
+      - description: Force control to skip checking controllable status
+        enum:
+        - "false"
+        - "true"
+        in: query
+        name: force
+        type: string
       produces:
       - application/json
       responses:
