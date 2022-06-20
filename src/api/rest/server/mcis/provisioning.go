@@ -121,8 +121,8 @@ func RestPostMcisDynamic(c echo.Context) error {
 }
 
 // RestPostMcisDynamicCheckRequest godoc
-// @Summary Check avaiable ConnectionConfig list for creating MCIS Dynamically
-// @Description Check avaiable ConnectionConfig list before create MCIS Dynamically from common spec and image
+// @Summary Check available ConnectionConfig list for creating MCIS Dynamically
+// @Description Check available ConnectionConfig list before create MCIS Dynamically from common spec and image
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
