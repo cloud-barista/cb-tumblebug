@@ -626,7 +626,7 @@ const docTemplate = `{
         },
         "/mcisDynamicCheckRequest": {
             "post": {
-                "description": "Check avaiable ConnectionConfig list before create MCIS Dynamically from common spec and image",
+                "description": "Check available ConnectionConfig list before create MCIS Dynamically from common spec and image",
                 "consumes": [
                     "application/json"
                 ],
@@ -636,7 +636,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra service] MCIS Provisioning management"
                 ],
-                "summary": "Check avaiable ConnectionConfig list for creating MCIS Dynamically",
+                "summary": "Check available ConnectionConfig list for creating MCIS Dynamically",
                 "parameters": [
                     {
                         "description": "Details for MCIS dynamic request information",
