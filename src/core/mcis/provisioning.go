@@ -1019,7 +1019,7 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 
 	connectionConfigList, err := common.GetConnConfigList()
 	if err != nil {
-		err := fmt.Errorf("Cannnot load ConnectionConfigList in MCIS dynamic request check.")
+		err := fmt.Errorf("Cannot load ConnectionConfigList in MCIS dynamic request check.")
 		common.CBLog.Error(err)
 		return &mcisReqInfo, err
 	}

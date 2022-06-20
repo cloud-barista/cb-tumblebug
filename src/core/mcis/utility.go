@@ -593,7 +593,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 	connectionConfigList, err := common.GetConnConfigList()
 	if err != nil {
-		err := fmt.Errorf("Cannnot load ConnectionConfigList")
+		err := fmt.Errorf("Cannot load ConnectionConfigList")
 		common.CBLog.Error(err)
 		return InspectResourceAllResult{}, err
 	}
@@ -726,7 +726,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (R
 
 	connectionConfigList, err := common.GetConnConfigList()
 	if err != nil {
-		err := fmt.Errorf("Cannnot load ConnectionConfigList")
+		err := fmt.Errorf("Cannot load ConnectionConfigList")
 		common.CBLog.Error(err)
 		return RegisterResourceAllResult{}, err
 	}
