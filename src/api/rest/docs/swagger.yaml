@@ -2297,7 +2297,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Check avaiable ConnectionConfig list before create MCIS Dynamically
+      description: Check available ConnectionConfig list before create MCIS Dynamically
         from common spec and image
       parameters:
       - description: Details for MCIS dynamic request information
@@ -2321,7 +2321,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Check avaiable ConnectionConfig list for creating MCIS Dynamically
+      summary: Check available ConnectionConfig list for creating MCIS Dynamically
       tags:
       - '[Infra service] MCIS Provisioning management'
   /mcisRecommendVm:
