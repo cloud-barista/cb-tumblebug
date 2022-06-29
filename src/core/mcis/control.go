@@ -254,11 +254,6 @@ func ControlMcis(nsId string, mcisId string, action string) error {
 // ControlMcisAsync is func to control MCIS async
 func ControlMcisAsync(nsId string, mcisId string, action string, force bool) error {
 
-	checkError := CheckAllowedTransition(nsId, mcisId, action)
-	if checkError != nil || !force {
-		return checkError
-	}
-
 	key := common.GenMcisKey(nsId, mcisId, "")
 	fmt.Println("[ControlMcisAsync] " + key + " to " + action)
 	keyValue, err := common.CBStore.Get(key)
@@ -269,6 +264,13 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 
 	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
 	fmt.Println("===============================================")
+
+	checkError := CheckAllowedTransition(nsId, mcisId, action)
+	if checkError != nil {
+		if !force {
+			return checkError
+		}
+	}
 
 	mcisTmp := TbMcisInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
@@ -283,7 +285,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 		return err
 	}
 	if len(vmList) == 0 {
-		return nil
+		return errors.New("VM list is empty")
 	}
 
 	switch action {
@@ -312,7 +314,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 		mcisTmp.Status = StatusResuming
 
 	default:
-		return errors.New(action + "is invalid actionType")
+		return errors.New(action + " is invalid actionType")
 	}
 	UpdateMcisInfo(nsId, mcisTmp)
 
@@ -432,7 +434,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 					url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
 					method = "GET"
 				default:
-					return errors.New(action + "is invalid actionType")
+					return errors.New(action + " is invalid actionType")
 				}
 
 				UpdateVmInfo(nsId, mcisId, temp)
@@ -543,7 +545,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 					result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "resume")
 
 				default:
-					return errors.New(action + "is invalid actionType")
+					return errors.New(action + " is invalid actionType")
 				}
 
 				err2 = json.Unmarshal([]byte(result), &resultTmp)
