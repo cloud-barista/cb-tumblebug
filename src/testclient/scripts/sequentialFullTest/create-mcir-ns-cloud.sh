@@ -10,7 +10,7 @@ function test_sequence() {
 
 	local CMDPATH=$6
 
-	../1.configureSpider/register-cloud.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	# ../1.configureSpider/register-cloud.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../2.configureTumblebug/create-ns.sh -n $POSTFIX -f $TestSetFile
 	../3.vNet/create-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 10
@@ -47,7 +47,7 @@ function test_sequence_allcsp_mcir() {
 	local TestSetFile=$4
 	local CMDPATH=$5
 
-	../1.configureSpider/register-cloud.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	# ../1.configureSpider/register-cloud.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	../2.configureTumblebug/create-ns.sh -n $POSTFIX -f $TestSetFile
 	../3.vNet/create-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 	dozing 10
