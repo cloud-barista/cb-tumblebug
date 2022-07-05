@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	model "github.com/cloud-barista/cb-larva/poc-cb-net/pkg/cb-network/model"
 	nethelper "github.com/cloud-barista/cb-larva/poc-cb-net/pkg/network-helper"
@@ -164,6 +165,9 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 			}
 
 		}(nsId, mcisId, vmId, mcisCmdReq, chanResults)
+
+		// Temporarily sleep 3 sec, to assign IPs consecutively to VMs in a VMgroup for a Cloud Adaptive Network
+		time.Sleep(3 * time.Second)
 	}
 
 	go func() {
@@ -367,7 +371,8 @@ func getAgentInstallationCommand(etcdEndpoints, cladnetId string) (string, error
 	}
 
 	// SSH command to install cb-network agents
-	placeHolderCommand := `wget https://raw.githubusercontent.com/cloud-barista/cb-larva/main/poc-cb-net/scripts/deploy-the-released-cb-network-agent.sh -O ~/deploy-the-released-cb-network-agent.sh; chmod +x ~/deploy-the-released-cb-network-agent.sh; source ~/deploy-the-released-cb-network-agent.sh '%s' %s`
+	placeHolderCommand := `wget https://raw.githubusercontent.com/cloud-barista/cb-larva/v0.0.15/poc-cb-net/scripts/deploy-the-released-cb-network-agent.sh -O ~/deploy-the-released-cb-network-agent.sh; chmod +x ~/deploy-the-released-cb-network-agent.sh; source ~/deploy-the-released-cb-network-agent.sh '%s' %s`
+	// placeHolderCommand := `wget https://raw.githubusercontent.com/cloud-barista/cb-larva/main/poc-cb-net/scripts/1.deploy-cb-network-agent.sh -O ~/1.deploy-cb-network-agent.sh -O ~/1.deploy-cb-network-agent.sh; chmod +x ~/1.deploy-cb-network-agent.sh; source ~/1.deploy-cb-network-agent.sh '%s' %s`
 
 	// additionalEncodedString := strings.Replace(etcdEndpoints, "\"", "\\\"", -1)
 	command := fmt.Sprintf(placeHolderCommand, etcdEndpoints, cladnetId)
