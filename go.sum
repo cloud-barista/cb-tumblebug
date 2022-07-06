@@ -254,6 +254,8 @@ github.com/cloud-barista/cb-dragonfly v0.5.1 h1:WVBvFwwnyTblFpactJI05qYyF5Gx6NjX
 github.com/cloud-barista/cb-dragonfly v0.5.1/go.mod h1:UllpEB0fBoEl5kUi7U/e5viwOFVxVA3pKhskds+vvVM=
 github.com/cloud-barista/cb-larva v0.0.14 h1:F6uyBrZH98pPMUGx7dwiCsbAVIwnnnEdc1rXrw3u99w=
 github.com/cloud-barista/cb-larva v0.0.14/go.mod h1:5vFk/GaTodU5rLsN92syam+YXT5IBdowgvG3UjsyFAQ=
+github.com/cloud-barista/cb-larva v0.0.15 h1:SLbaEwdp7b5Ugj+Mda4hnt57IVPMt/rCdAUKLNx5eHI=
+github.com/cloud-barista/cb-larva v0.0.15/go.mod h1:5vFk/GaTodU5rLsN92syam+YXT5IBdowgvG3UjsyFAQ=
 github.com/cloud-barista/cb-log v0.3.1/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-log v0.4.0/go.mod h1:C0KNV97sw8IoLSlNuSiCGDQIuS/wXJaZWV/6MOwc20c=
 github.com/cloud-barista/cb-log v0.5.0 h1:WoUnXtNNNTA7wRgQa6sFNs57O3mLAOrh4aDHC4cU0CI=
