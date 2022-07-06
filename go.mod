@@ -12,7 +12,7 @@ replace (
 require (
 	github.com/bramvdbogaerde/go-scp v1.0.0
 	github.com/cloud-barista/cb-dragonfly v0.5.1
-	github.com/cloud-barista/cb-larva v0.0.14
+	github.com/cloud-barista/cb-larva v0.0.15
 	github.com/cloud-barista/cb-log v0.5.0
 	github.com/cloud-barista/cb-spider v0.5.3
 	github.com/cloud-barista/cb-store v0.5.0
