@@ -335,6 +335,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "choryang",
+      "name": "Okhee Lee",
+      "avatar_url": "https://avatars.githubusercontent.com/u/47209678?v=4",
+      "profile": "https://github.com/choryang",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
