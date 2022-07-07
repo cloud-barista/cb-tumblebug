@@ -344,6 +344,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "joowons",
+      "name": "joowon",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85204858?v=4",
+      "profile": "https://github.com/joowons",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
