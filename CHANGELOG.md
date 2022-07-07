@@ -1,3 +1,112 @@
+# v0.6.0 (Caffè latte, 2022.07.08.)
+
+### Tested with 
+- CB-Spider (https://github.com/cloud-barista/cb-spider/releases/tag/v0.6.0)
+- CB-Dragonfly (https://github.com/cloud-barista/cb-dragonfly/releases/tag/v0.6.0)
+- (Optional: for developers) CB-MapUI (https://github.com/cloud-barista/cb-mapui/releases/tag/v0.6.0)
+- (Optional: under integration) CB-Larva network (https://github.com/cloud-barista/cb-larva/releases/tag/v0.0.15)
+
+### Note
+* Add usecase for FPS Game Xonotic by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1006
+* Fix deploy-fps-game for background mode by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1007
+* Add scripts for FPS game usecase by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1008
+* Fix wrong switched scripts by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1009
+* Support Xonotic server configuration by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1010
+* Fix response message for MCIS terminate by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1014
+* Update 'registerExistingSG' function by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1015
+* Add `registerExistingSSHKey` feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1016
+* Enhance `registerExistingVNet` feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1018
+* Enhance `registerExisting SG/SSHKey` feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1019
+* Add comments for required params for register by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1020
+* Add `UpdateSshKey` feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1023
+* Organize REST API server Go files by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1026
+* Unspecify GitHub Actions' versions by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1029
+* Fix GitHub workflows by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1030
+* Add script for remote copy file to MCIS VMs by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1031
+* Update Swagger serving URL by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1032
+* Bump actions/checkout from 2 to 3 by @dependabot in https://github.com/cloud-barista/cb-tumblebug/pull/1035
+* Update README-EN.md by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1034
+* Update cb-spider and cb-mapui version used in scripts by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1036
+* Bump actions/cache from 2 to 3 by @dependabot in https://github.com/cloud-barista/cb-tumblebug/pull/1039
+* Feat/graceful shutdown by @sypark9646 in https://github.com/cloud-barista/cb-tumblebug/pull/874
+* Align shutdown message by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1041
+* Bump peter-evans/create-pull-request from 3 to 4 by @dependabot in https://github.com/cloud-barista/cb-tumblebug/pull/1045
+* Initial codes to register existing CSP VM by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1046
+* Add support for NHN Cloud by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1048
+* Update to prepend NS prefix to SG name by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1049
+* Add RootDiskType, RootDiskSize handling feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/974
+* Wait until the graceful shutdown is processed by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1050
+* Fix bug on NS prefix of SG name by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1052
+* Enhance container run scripts by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1053
+* Add Cloud Adaptive Network configuration when creating MCIS by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1054
+* Add Docker engine installation script by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1060
+* Remove duplicated script create-single-vm-mcis.sh by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1058
+* Bump actions/setup-go from 2 to 3 by @dependabot in https://github.com/cloud-barista/cb-tumblebug/pull/1061
+* Update readme for Xonotic usecase by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1063
+* Remove duplicated script codes in cbadm by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1066
+* Update `testclient/scripts/conf.env` by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1067
+* Hotfix cb-larva package by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1068
+* Support credential selection for dynamic MCIS creation by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1069
+* Merge duplicated inspect functions for vm and mcir by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1071
+* Update InspecResource struct with csp only and cleanup by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1073
+* Fix misspelled word (#1057) by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1075
+* Register all CSP resources to CB-TB objs by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1076
+* Change struct for inspectResources and registerCspResources with Err fix by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1078
+* Add overview to inspect resources and registerCspResources for all connectionConfigs by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1080
+* Tidy redundant comments & prints by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1084
+* Temporal removal of GCP from RegisterCspResAll and hotfix by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1086
+* Add firewallRule mgmt feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1083
+* Enhance RegisterCspNativeResourcesAll mechanism by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1092
+* Add feat for Inspect Resources Overview by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1094
+* Trials for inspectResourcesOverview to prevent rateLimitExceeded from CSP by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1096
+* Enhance RegisterCspNativeResourcesAll usability by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1097
+* Hotfix for runtime err in RegisterCspNativeRes by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1101
+* Add and update cb-network APIs by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1100
+* Update CB-MapUI version to v0.5.3 by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1103
+* Enhance `ListResource()` by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1105
+* Update gomod gosum by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1106
+* Fix unmatched info in grpc test code by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1107
+* Fix create-ns.sh error (fix #1085) by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1108
+* Fix region name typo (norwaywestest) by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1109
+* Fix path issue in test scripts by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1110
+* Update image and spec managed by tb (fix #958) by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1111
+* Update GCP images to the latest by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1113
+* Add support for NCP-VPC by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1114
+* Enhance output for mcis status by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1116
+* Update predefined spec, img, connection list by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1118
+* Update configs for cloud resources by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1119
+* Enable RootDiskType for dynamic provisioning to fix Alibaba provisioning failures by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1120
+* Update to enable disk type settings by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1122
+* Update NCP-VPC metadata by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1124
+* Update NCP-VPC metadata by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1125
+* Fix problematic configurations to prepare demo by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1127
+* Provide naming rule checking for dynamic MCIS provisioning by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1128
+* Fix firewallrule description in swagger API doc by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1129
+* Add updating NS functionality by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1132
+* Fix status check nil error in GetVmStatusAsync by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1135
+* Add resource list filtering feature by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1137
+* Reconstuct resource IDs for a registered MCIS by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1139
+* Enhance stability and speed of TB by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1140
+* Add script for test-mcis-dynamic-all by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1142
+* Fix misspell by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1143
+* Fix control mcis force option error by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1146
+* Update alibaba image id by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1147
+* Extend API rate limit from 1 to 2 in a sec by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1148
+* Update Spider and MapUI container images default version by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1149
+* Staging CB-TB v0.6.0 by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1150
+* Update Cloud Adaptive Network API by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1151
+
+
+### API
+- Swagger UI URL: https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/v0.6.0/src/docs/swagger.yaml
+
+### What's Changed
+
+**Full Changelog**: https://github.com/cloud-barista/cb-tumblebug/compare/v0.5.0...v0.6.0
+
+***
+
+
 # v0.5.0 (Affogato, 2021.12.16.)
 
 ### Tested with 
