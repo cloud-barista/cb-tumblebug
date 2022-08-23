@@ -2455,6 +2455,288 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/nlb": {
+            "get": {
+                "description": "List all NLBs or NLBs' ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management"
+                ],
+                "summary": "List all NLBs or NLBs' ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: cspNLBName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)",
+                        "name": "filterVal",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Different return structures by the given option param",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcis.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcis.RestGetAllNLBResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create NLB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management"
+                ],
+                "summary": "Create NLB",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "register"
+                        ],
+                        "type": "string",
+                        "description": "Option: [required params for register] connectionName, name, cspNLBId",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Details of the NLB object",
+                        "name": "nlbReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all NLBs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management"
+                ],
+                "summary": "Delete all NLBs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Delete resources containing matched ID-substring only",
+                        "name": "match",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/nlb/{nlbId}": {
+            "get": {
+                "description": "Get NLB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management"
+                ],
+                "summary": "Get NLB",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NLB ID",
+                        "name": "nlbId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete NLB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management"
+                ],
+                "summary": "Delete NLB",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NLB ID",
+                        "name": "nlbId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/policy/mcis": {
             "get": {
                 "description": "List all MCIS policies",
@@ -6821,6 +7103,97 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.NLBHealthCheckerInfo": {
+            "type": "object",
+            "properties": {
+                "cspID": {
+                    "description": "Optional, May be Used by Driver.",
+                    "type": "string"
+                },
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "integer"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "integer"
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "integer"
+                }
+            }
+        },
+        "mcis.NLBHealthCheckerReq": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "string"
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "string"
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.NLBListenerInfo": {
+            "type": "object",
+            "properties": {
+                "cspID": {
+                    "description": "Optional, May be Used by Driver.",
+                    "type": "string"
+                },
+                "dnsname": {
+                    "description": "Optional, Auto Generated and attached",
+                    "type": "string"
+                },
+                "ip": {
+                    "description": "Auto Generated and attached",
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "1-65535",
+                    "type": "string"
+                },
+                "protocol": {
+                    "description": "TCP|UDP",
+                    "type": "string"
+                }
+            }
+        },
         "mcis.NetworkReq": {
             "type": "object",
             "properties": {
@@ -7042,6 +7415,17 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.RestGetAllNLBResponse": {
+            "type": "object",
+            "properties": {
+                "nlb": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbNLBInfo"
+                    }
+                }
+            }
+        },
         "mcis.RestGetBenchmarkRequest": {
             "type": "object",
             "properties": {
@@ -7254,6 +7638,38 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.TBNLBVMGroup": {
+            "type": "object",
+            "properties": {
+                "cspID": {
+                    "description": "Optional, May be Used by Driver.",
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "mcis": {
+                    "type": "string"
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string"
+                },
+                "vms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "mcis.TbMcisDynamicReq": {
             "type": "object",
             "required": [
@@ -7405,6 +7821,126 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmReq"
                     }
+                }
+            }
+        },
+        "mcis.TbNLBInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "type": "string"
+                },
+                "cspNLBId": {
+                    "type": "string"
+                },
+                "cspNLBName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "healthChecker": {
+                    "$ref": "#/definitions/mcis.NLBHealthCheckerInfo"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "listener": {
+                    "$ref": "#/definitions/mcis.NLBListenerInfo"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "REGION(V) | GLOBAL",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "type": {
+                    "description": "PUBLIC(V) | INTERNAL",
+                    "type": "string"
+                },
+                "vmGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBVMGroup"
+                }
+            }
+        },
+        "mcis.TbNLBReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "healthChecker",
+                "listener",
+                "name",
+                "scope",
+                "type",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspNLBId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "healthChecker": {
+                    "$ref": "#/definitions/mcis.NLBHealthCheckerReq"
+                },
+                "listener": {
+                    "$ref": "#/definitions/mcis.NLBListenerInfo"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "REGION(V) | GLOBAL",
+                    "type": "string",
+                    "enum": [
+                        "REGION",
+                        "GLOBAL"
+                    ]
+                },
+                "type": {
+                    "description": "PUBLIC(V) | INTERNAL",
+                    "type": "string",
+                    "enum": [
+                        "PUBLIC",
+                        "INTERNAL"
+                    ]
+                },
+                "vNetId": {
+                    "type": "string"
+                },
+                "vmGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBVMGroup"
                 }
             }
         },
