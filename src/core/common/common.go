@@ -66,6 +66,7 @@ const (
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"
 	StrSubnet                     string = "subnet"
+	StrNLB                        string = "nlb"
 	StrVM                         string = "vm"
 	StrDefaultResourceName        string = "-systemdefault-"
 	// StrFirewallRule               string = "firewallRule"

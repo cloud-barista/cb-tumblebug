@@ -220,6 +220,14 @@ func RunServer(port string) {
 	g.POST("/:nsId/network/mcis/:mcisId", rest_mcis.RestPostConfigureCloudAdaptiveNetworkToMcis)
 	g.PUT("/:nsId/network/mcis/:mcisId", rest_mcis.RestPutInjectCloudInformationForCloudAdaptiveNetwork)
 
+	// Network Load Balancer
+	g.POST("/:nsId/nlb", rest_mcis.RestPostNLB)
+	g.GET("/:nsId/nlb/:resourceId", rest_mcis.RestGetNLB)
+	g.GET("/:nsId/nlb", rest_mcis.RestGetAllNLB)
+	// g.PUT("/:nsId/nlb/:resourceId", rest_mcis.RestPutNLB)
+	g.DELETE("/:nsId/nlb/:resourceId", rest_mcis.RestDelNLB)
+	g.DELETE("/:nsId/nlb", rest_mcis.RestDelAllNLB)
+
 	//MCIR Management
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)
