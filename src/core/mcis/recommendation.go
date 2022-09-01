@@ -234,6 +234,9 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
+				return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+			})
+			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
 			})
 			fmt.Printf("\n distances : %v \n", distances)
@@ -260,7 +263,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				// assign nomalized priorityIdex value to EvaluationScore09
 				(*specList)[distances[i].index].EvaluationScore09 = float32((max - float32(distances[i].distance)) / (max - min + 0.0000001)) // Add small value to avoid NaN by division
 				(*specList)[distances[i].index].EvaluationScore10 = float32(distances[i].distance)
-				fmt.Printf("\n distances : %v %v %v %v %v \n", distances, max, min, float32(distances[i].distance), (*specList)[distances[i].index].EvaluationScore09)
+				// fmt.Printf("\n [%v] OrderInFilteredResult:%v, max:%v, min:%v, distance:%v, eval:%v \n", i, (*specList)[distances[i].index].OrderInFilteredResult, max, min, float32(distances[i].distance), (*specList)[distances[i].index].EvaluationScore09)
 			}
 
 		case "coordinateWithin":
@@ -278,10 +281,18 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 		//result[i].OrderInFilteredResult = uint16(i + 1)
 	}
 
+	// if evaluations for distance are same, low cost will have priolity
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
+		if result[i].OrderInFilteredResult < result[j].OrderInFilteredResult {
+			return true
+		} else if result[i].OrderInFilteredResult > result[j].OrderInFilteredResult {
+			return false
+		} else {
+			return result[i].CostPerHour < result[j].CostPerHour
+		}
+		//return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
 	})
-	fmt.Printf("\n result : %v \n", result)
+	// fmt.Printf("\n result : %v \n", result)
 
 	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
 	// content, err = mcir.SortSpecs(*specList, "memGiB", "descending")
