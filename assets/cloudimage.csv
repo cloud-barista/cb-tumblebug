@@ -2,7 +2,7 @@ ProviderName,connectionName,cspImageId,OsType
 MOCK,testcloud01-seoul,mock-vmimage-01,Ubuntu 18.04
 MOCK,testcloud02-canada,mock-vmimage-01,Ubuntu 18.04
 MOCK,testcloud03-frankfurt,mock-vmimage-01,Ubuntu 18.04
-AWS,aws-ap-southeast-1,ami-0572545e789ae06a7,Debian 10
+AWS,aws-ap-southeast-1,ami-0d55f20871d03244b,Debian 10
 AWS,aws-ca-central-1,ami-0b572790c607396bb,Debian 10
 AWS,aws-us-west-1,ami-0a2a0146cce54add1,Debian 10
 AWS,aws-us-east-1,ami-0e3370550517d663c,Debian 10
