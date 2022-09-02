@@ -32,8 +32,8 @@ else
 fi
 
 appendConfig="port $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
-sudo cp ~/Xonotic/server/server.cfg ~/Xonotic/data/
-echo -e "${appendConfig}" >>~/Xonotic/data/server.cfg
+sudo cp ~/Xonotic/server/server.cfg ~/.xonotic/data
+sudo echo -e "${appendConfig}" >> ~/.xonotic/data/server.cfg
 
 echo "Launching Xonotic dedicated server"
 
