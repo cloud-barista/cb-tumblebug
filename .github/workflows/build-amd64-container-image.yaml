@@ -23,8 +23,9 @@ jobs:
     # Job name is "Building"
     name: Building
 
-    # This job runs on Ubuntu-latest
-    runs-on: ubuntu-18.04
+    # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
+    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+    runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
 
     steps:
