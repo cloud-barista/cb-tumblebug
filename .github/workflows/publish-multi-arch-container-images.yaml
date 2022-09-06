@@ -33,8 +33,9 @@ jobs:
 
     if: github.repository == 'cloud-barista/cb-tumblebug'
 
-    # This job runs on Ubuntu-latest
-    runs-on: ubuntu-18.04
+    # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
+    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout source code

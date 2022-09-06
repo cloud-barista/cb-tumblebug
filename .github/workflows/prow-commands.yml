@@ -12,7 +12,9 @@ jobs:
   execute:
     # Execute when author_association of the comment is OWNER or MEMBER
     if: ${{ github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' }}
-    runs-on: ubuntu-18.04
+    # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
+    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+    runs-on: ubuntu-latest
     # Execute action according to commands
     steps:
       # Check author_association

@@ -11,7 +11,9 @@ jobs:
     # Apply this job if it is a PR and by OWNER with '/approve' comment
     # TODO: the section contains('seokho-son jihoon-seo hermitkim1') needs to be updated or automated
     if: ${{ github.event.issue.pull_request && (contains('seokho-son jihoon-seo hermitkim1', github.event.comment.user.login) || github.event.comment.author_association == 'OWNER') && startsWith(github.event.comment.body, '/approve') }}
-    runs-on: ubuntu-18.04
+    # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
+    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+    runs-on: ubuntu-latest
     steps:
       # Check author_association is OWNER
       - name: Check author_association
