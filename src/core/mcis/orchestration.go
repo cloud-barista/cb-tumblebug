@@ -152,11 +152,11 @@ func OrchestrationController() {
 					UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 
 					fmt.Println("[Check MCIS Policy] " + mcisPolicyTmp.Id)
-					check, _ := CheckMcis(nsId, mcisPolicyTmp.Id)
+					check, err := CheckMcis(nsId, mcisPolicyTmp.Id)
 					fmt.Println("[Check existence of MCIS] " + mcisPolicyTmp.Id)
 					//keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
 
-					if !check {
+					if !check || err != nil {
 						mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 						UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 						fmt.Println("[MCIS is not exist] " + mcisPolicyTmp.Id)
