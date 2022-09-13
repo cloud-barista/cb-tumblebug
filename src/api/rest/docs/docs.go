@@ -7112,7 +7112,8 @@ const docTemplate = `{
                 },
                 "interval": {
                     "description": "secs, Interval time between health checks.",
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 10
                 },
                 "keyValueList": {
                     "type": "array",
@@ -7122,19 +7123,23 @@ const docTemplate = `{
                 },
                 "port": {
                     "description": "Listener Port or 1-65535",
-                    "type": "string"
+                    "type": "string",
+                    "example": "22"
                 },
                 "protocol": {
                     "description": "TCP|HTTP|HTTPS",
-                    "type": "string"
+                    "type": "string",
+                    "example": "TCP"
                 },
                 "threshold": {
                     "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 3
                 },
                 "timeout": {
                     "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 10
                 }
             }
         },
@@ -7170,13 +7175,15 @@ const docTemplate = `{
                     "description": "Optional, May be Used by Driver.",
                     "type": "string"
                 },
-                "dnsname": {
+                "dnsName": {
                     "description": "Optional, Auto Generated and attached",
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "ip": {
                     "description": "Auto Generated and attached",
-                    "type": "string"
+                    "type": "string",
+                    "example": ""
                 },
                 "keyValueList": {
                     "type": "array",
@@ -7186,11 +7193,13 @@ const docTemplate = `{
                 },
                 "port": {
                     "description": "1-65535",
-                    "type": "string"
+                    "type": "string",
+                    "example": "22"
                 },
                 "protocol": {
                     "description": "TCP|UDP",
-                    "type": "string"
+                    "type": "string",
+                    "example": "TCP"
                 }
             }
         },
@@ -7652,15 +7661,18 @@ const docTemplate = `{
                     }
                 },
                 "mcis": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "mc"
                 },
                 "port": {
                     "description": "Listener Port or 1-65535",
-                    "type": "string"
+                    "type": "string",
+                    "example": "22"
                 },
                 "protocol": {
                     "description": "TCP|HTTP|HTTPS",
-                    "type": "string"
+                    "type": "string",
+                    "example": "TCP"
                 },
                 "vms": {
                     "type": "array",
@@ -7903,7 +7915,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "connectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-northeast-2"
                 },
                 "cspNLBId": {
                     "type": "string"
@@ -7918,7 +7931,8 @@ const docTemplate = `{
                     "$ref": "#/definitions/mcis.NLBListenerInfo"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "mc"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -7926,7 +7940,8 @@ const docTemplate = `{
                     "enum": [
                         "REGION",
                         "GLOBAL"
-                    ]
+                    ],
+                    "example": "REGION"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -7934,10 +7949,12 @@ const docTemplate = `{
                     "enum": [
                         "PUBLIC",
                         "INTERNAL"
-                    ]
+                    ],
+                    "example": "PUBLIC"
                 },
                 "vNetId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ns01-systemdefault-aws-ap-northeast-2"
                 },
                 "vmGroup": {
                     "$ref": "#/definitions/mcis.TBNLBVMGroup"
