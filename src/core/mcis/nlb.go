@@ -93,13 +93,13 @@ type SpiderNLBInfo struct {
 
 // SpiderSubnetInfo is a struct to handle subnet information from the CB-Spider's REST API response
 type NLBListenerInfo struct {
-	Protocol string // TCP|UDP
-	IP       string // Auto Generated and attached
-	Port     string // 1-65535
-	DNSName  string // Optional, Auto Generated and attached
+	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
+	IP       string `json:"ip" example:""`          // Auto Generated and attached
+	Port     string `json:"port" example:"22"`      // 1-65535
+	DNSName  string `json:"dnsName" example:""`     // Optional, Auto Generated and attached
 
-	CspID        string // Optional, May be Used by Driver.
-	KeyValueList []common.KeyValue
+	CspID        string            `json:"cspID"` // Optional, May be Used by Driver.
+	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
 type NLBVMGroupInfo struct { // Spider
@@ -107,19 +107,19 @@ type NLBVMGroupInfo struct { // Spider
 	Port     string // 1-65535
 	VMs      *[]common.IID
 
-	CspID        string // Optional, May be Used by Driver.
-	KeyValueList []common.KeyValue
+	CspID        string            `json:"cspID"` // Optional, May be Used by Driver.
+	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
 type NLBHealthCheckerInfo struct {
-	Protocol  string // TCP|HTTP|HTTPS
-	Port      string // Listener Port or 1-65535
-	Interval  int    // secs, Interval time between health checks.
-	Timeout   int    // secs, Waiting time to decide an unhealthy VM when no response.
-	Threshold int    // num, The number of continuous health checks to change the VM status.
+	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
+	Port      string `json:"port" example:"22"`      // Listener Port or 1-65535
+	Interval  int    `json:"interval" example:"10"`  // secs, Interval time between health checks.
+	Timeout   int    `json:"timeout" example:"10"`   // secs, Waiting time to decide an unhealthy VM when no response.
+	Threshold int    `json:"threshold" example:"3"`  // num, The number of continuous health checks to change the VM status.
 
-	CspID        string // Optional, May be Used by Driver.
-	KeyValueList []common.KeyValue
+	CspID        string            `json:"cspID"` // Optional, May be Used by Driver.
+	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
 type SpiderHealthInfo struct {
@@ -129,10 +129,10 @@ type SpiderHealthInfo struct {
 }
 
 type TBNLBVMGroup struct {
-	Protocol string // TCP|HTTP|HTTPS
-	Port     string // Listener Port or 1-65535
-	MCIS     string
-	VMs      []string
+	Protocol string   `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
+	Port     string   `json:"port" example:"22"`      // Listener Port or 1-65535
+	MCIS     string   `json:"mcis" example:"mc"`
+	VMs      []string `json:"vms"`
 
 	CspID        string // Optional, May be Used by Driver.
 	KeyValueList []common.KeyValue
@@ -140,14 +140,14 @@ type TBNLBVMGroup struct {
 
 // TbNLBReq is a struct to handle 'Create nlb' request toward CB-Tumblebug.
 type TbNLBReq struct { // Tumblebug
-	Name           string `json:"name" validate:"required"`
-	ConnectionName string `json:"connectionName" validate:"required"`
-	VNetId         string `json:"vNetId" validate:"required"`
+	Name           string `json:"name" validate:"required" example:"mc"`
+	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
+	VNetId         string `json:"vNetId" validate:"required" example:"ns01-systemdefault-aws-ap-northeast-2"`
 	Description    string `json:"description"`
 	CspNLBId       string `json:"cspNLBId"`
 
-	Type  string `json:"type" validate:"required" enums:"PUBLIC,INTERNAL"` // PUBLIC(V) | INTERNAL
-	Scope string `json:"scope" validate:"required" enums:"REGION,GLOBAL"`  // REGION(V) | GLOBAL
+	Type  string `json:"type" validate:"required" enums:"PUBLIC,INTERNAL" example:"PUBLIC"` // PUBLIC(V) | INTERNAL
+	Scope string `json:"scope" validate:"required" enums:"REGION,GLOBAL" example:"REGION"`  // REGION(V) | GLOBAL
 
 	//------ Frontend
 
