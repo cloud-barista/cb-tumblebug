@@ -56,7 +56,6 @@ type SpiderNLBReqInfo struct {
 	HealthChecker NLBHealthCheckerReq
 }
 
-//
 type NLBHealthCheckerReq struct {
 	Protocol  string // TCP|HTTP|HTTPS
 	Port      string // Listener Port or 1-65535
@@ -65,7 +64,6 @@ type NLBHealthCheckerReq struct {
 	Threshold string // num, The number of continuous health checks to change the VM status.
 }
 
-//
 type SpiderNLBVMGroupReq struct {
 	Protocol string // TCP|HTTP|HTTPS
 	Port     string // Listener Port or 1-65535
@@ -91,8 +89,8 @@ type SpiderNLBInfo struct {
 	KeyValueList []common.KeyValue
 }
 
-// SpiderSubnetInfo is a struct to handle subnet information from the CB-Spider's REST API response
-type NLBListenerInfo struct {
+// NLBListenerInfo is a struct to handle NLB Listener information from the CB-Spider's REST API response
+type NLBListenerInfo struct { // for both Spider and Tumblebug
 	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
 	IP       string `json:"ip" example:""`          // Auto Generated and attached
 	Port     string `json:"port" example:"22"`      // 1-65535
@@ -128,7 +126,7 @@ type SpiderHealthInfo struct {
 	UnHealthyVMs *[]common.IID
 }
 
-type TBNLBVMGroup struct {
+type TBNLBTargetGroup struct {
 	Protocol string   `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string   `json:"port" example:"22"`      // Listener Port or 1-65535
 	MCIS     string   `json:"mcis" example:"mc"`
@@ -155,7 +153,7 @@ type TbNLBReq struct { // Tumblebug
 
 	//------ Backend
 
-	VMGroup       TBNLBVMGroup        `json:"vmGroup"`
+	TargetGroup   TBNLBTargetGroup    `json:"targetGroup"`
 	HealthChecker NLBHealthCheckerReq `json:"healthChecker" validate:"required"`
 }
 
@@ -186,7 +184,7 @@ type TbNLBInfo struct { // Tumblebug
 
 	//------ Backend
 
-	VMGroup       TBNLBVMGroup `json:"vmGroup"`
+	TargetGroup   TBNLBTargetGroup `json:"targetGroup"`
 	HealthChecker NLBHealthCheckerInfo
 
 	CreatedTime time.Time
@@ -267,11 +265,11 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 
 	tempReq.ReqInfo.HealthChecker = u.HealthChecker
 
-	tempReq.ReqInfo.VMGroup.Port = u.VMGroup.Port
-	tempReq.ReqInfo.VMGroup.Protocol = u.VMGroup.Protocol
+	tempReq.ReqInfo.VMGroup.Port = u.TargetGroup.Port
+	tempReq.ReqInfo.VMGroup.Protocol = u.TargetGroup.Protocol
 
-	for _, v := range u.VMGroup.VMs {
-		vm, err := GetVmObject(nsId, u.VMGroup.MCIS, v)
+	for _, v := range u.TargetGroup.VMs {
+		vm, err := GetVmObject(nsId, u.TargetGroup.MCIS, v)
 		if err != nil {
 			common.CBLog.Error(err)
 			return TbNLBInfo{}, err
@@ -282,7 +280,7 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 		tempReq.ReqInfo.VMGroup.VMs = append(tempReq.ReqInfo.VMGroup.VMs, vm.CspViewVmDetail.IId.NameId)
 	}
 
-	// fmt.Printf("u.VMGroup.VMs: %s \n", u.VMGroup.VMs)                             // for debug
+	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                             // for debug
 	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMGroup.VMs) // for debug
 	/*
 		for _, v := range u.VMIDList {
@@ -411,12 +409,12 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 	content.KeyValueList = tempSpiderNLBInfo.KeyValueList
 	content.AssociatedObjectList = []string{}
 
-	content.VMGroup.Port = tempSpiderNLBInfo.VMGroup.Port
-	content.VMGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
-	content.VMGroup.MCIS = u.VMGroup.MCIS
-	content.VMGroup.VMs = u.VMGroup.VMs
-	content.VMGroup.CspID = u.VMGroup.CspID
-	content.VMGroup.KeyValueList = u.VMGroup.KeyValueList
+	content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
+	content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
+	content.TargetGroup.MCIS = u.TargetGroup.MCIS
+	content.TargetGroup.VMs = u.TargetGroup.VMs
+	content.TargetGroup.CspID = u.TargetGroup.CspID
+	content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
 
 	if option == "register" && u.CspNLBId == "" {
 		content.SystemLabel = "Registered from CB-Spider resource"

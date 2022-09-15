@@ -7647,7 +7647,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.TBNLBVMGroup": {
+        "mcis.TBNLBTargetGroup": {
             "type": "object",
             "properties": {
                 "cspID": {
@@ -7893,12 +7893,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
+                "targetGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
                     "type": "string"
-                },
-                "vmGroup": {
-                    "$ref": "#/definitions/mcis.TBNLBVMGroup"
                 }
             }
         },
@@ -7943,6 +7943,9 @@ const docTemplate = `{
                     ],
                     "example": "REGION"
                 },
+                "targetGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
                     "type": "string",
@@ -7955,9 +7958,6 @@ const docTemplate = `{
                 "vNetId": {
                     "type": "string",
                     "example": "ns01-systemdefault-aws-ap-northeast-2"
-                },
-                "vmGroup": {
-                    "$ref": "#/definitions/mcis.TBNLBVMGroup"
                 }
             }
         },

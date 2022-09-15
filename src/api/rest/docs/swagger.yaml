@@ -1473,7 +1473,7 @@ definitions:
         description: CountUndefined is for counting Undefined
         type: integer
     type: object
-  mcis.TBNLBVMGroup:
+  mcis.TBNLBTargetGroup:
     properties:
       cspID:
         description: Optional, May be Used by Driver.
@@ -1661,11 +1661,11 @@ definitions:
           can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
+      targetGroup:
+        $ref: '#/definitions/mcis.TBNLBTargetGroup'
       type:
         description: PUBLIC(V) | INTERNAL
         type: string
-      vmGroup:
-        $ref: '#/definitions/mcis.TBNLBVMGroup'
     type: object
   mcis.TbNLBReq:
     properties:
@@ -1690,6 +1690,8 @@ definitions:
         - GLOBAL
         example: REGION
         type: string
+      targetGroup:
+        $ref: '#/definitions/mcis.TBNLBTargetGroup'
       type:
         description: PUBLIC(V) | INTERNAL
         enum:
@@ -1700,8 +1702,6 @@ definitions:
       vNetId:
         example: ns01-systemdefault-aws-ap-northeast-2
         type: string
-      vmGroup:
-        $ref: '#/definitions/mcis.TBNLBVMGroup'
     required:
     - connectionName
     - healthChecker

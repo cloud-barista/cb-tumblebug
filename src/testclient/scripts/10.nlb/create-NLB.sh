@@ -16,7 +16,7 @@ function CallTB() {
 				"Port": "22",
 				"DNSName": ""
 			},
-			"vmGroup": {
+			"targetGroup": {
 				"Protocol" : "TCP",
 				"Port" : "22", 
 				"VMs" : [
@@ -30,7 +30,7 @@ function CallTB() {
 				"Protocol" : "TCP", 
 				"Port" : "22", 
 				"Interval" : "10", 
-				"Timeout" : "10", 
+				"Timeout" : "-1", 
 				"Threshold" : "3" 
 			}
 		}
