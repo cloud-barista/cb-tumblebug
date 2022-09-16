@@ -1473,7 +1473,7 @@ definitions:
         description: CountUndefined is for counting Undefined
         type: integer
     type: object
-  mcis.TBNLBVMGroup:
+  mcis.TBNLBTargetGroup:
     properties:
       cspID:
         description: Optional, May be Used by Driver.
@@ -1621,6 +1621,11 @@ definitions:
     - name
     - vm
     type: object
+  mcis.TbNLBAddRemoveVMReq:
+    properties:
+      targetGroup:
+        $ref: '#/definitions/mcis.TBNLBTargetGroup'
+    type: object
   mcis.TbNLBInfo:
     properties:
       associatedObjectList:
@@ -1661,11 +1666,11 @@ definitions:
           can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
+      targetGroup:
+        $ref: '#/definitions/mcis.TBNLBTargetGroup'
       type:
         description: PUBLIC(V) | INTERNAL
         type: string
-      vmGroup:
-        $ref: '#/definitions/mcis.TBNLBVMGroup'
     type: object
   mcis.TbNLBReq:
     properties:
@@ -1690,6 +1695,8 @@ definitions:
         - GLOBAL
         example: REGION
         type: string
+      targetGroup:
+        $ref: '#/definitions/mcis.TBNLBTargetGroup'
       type:
         description: PUBLIC(V) | INTERNAL
         enum:
@@ -1700,8 +1707,6 @@ definitions:
       vNetId:
         example: ns01-systemdefault-aws-ap-northeast-2
         type: string
-      vmGroup:
-        $ref: '#/definitions/mcis.TBNLBVMGroup'
     required:
     - connectionName
     - healthChecker
@@ -3915,6 +3920,83 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get NLB
+      tags:
+      - '[Infra resource] NLB management'
+  /ns/{nsId}/nlb/{nlbId}/vm:
+    delete:
+      consumes:
+      - application/json
+      description: Delete VMs from NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: NLB ID
+        in: path
+        name: nlbId
+        required: true
+        type: string
+      - description: VMs to add to NLB
+        in: body
+        name: nlbAddRemoveVMReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete VMs from NLB
+      tags:
+      - '[Infra resource] NLB management'
+    post:
+      consumes:
+      - application/json
+      description: Add VMs to NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: NLB ID
+        in: path
+        name: nlbId
+        required: true
+        type: string
+      - description: VMs to add to NLB
+        in: body
+        name: nlbAddRemoveVMReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbNLBInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Add VMs to NLB
       tags:
       - '[Infra resource] NLB management'
   /ns/{nsId}/policy/mcis:

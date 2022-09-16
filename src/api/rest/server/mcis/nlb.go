@@ -59,7 +59,9 @@ func RestPostNLB(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-/* function RestPutNLB not yet implemented
+/*
+	function RestPutNLB not yet implemented
+
 // RestPutNLB godoc
 // @Summary Update NLB
 // @Description Update NLB
@@ -216,4 +218,74 @@ func RestDelAllNLB(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, output)
+}
+
+// RestAddNLBVMs godoc
+// @Summary Add VMs to NLB
+// @Description Add VMs to NLB
+// @Tags [Infra resource] NLB management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nlbId path string true "NLB ID"
+// @Param nlbAddRemoveVMReq body mcis.TbNLBAddRemoveVMReq true "VMs to add to NLB"
+// @Success 200 {object} mcis.TbNLBInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/nlb/{nlbId}/vm [post]
+func RestAddNLBVMs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	resourceId := c.Param("resourceId")
+
+	u := &mcis.TbNLBAddRemoveVMReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[Add NLB VMs]")
+
+	content, err := mcis.AddNLBVMs(nsId, resourceId, u)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	return c.JSON(http.StatusCreated, content)
+}
+
+// RestRemoveNLBVMs godoc
+// @Summary Delete VMs from NLB
+// @Description Delete VMs from NLB
+// @Tags [Infra resource] NLB management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param nlbId path string true "NLB ID"
+// @Param nlbAddRemoveVMReq body mcis.TbNLBAddRemoveVMReq true "VMs to add to NLB"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/nlb/{nlbId}/vm [delete]
+func RestRemoveNLBVMs(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+
+	resourceId := c.Param("resourceId")
+
+	u := &mcis.TbNLBAddRemoveVMReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	err := mcis.RemoveNLBVMs(nsId, resourceId, u)
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	mapA := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
+	return c.JSON(http.StatusOK, &mapA)
 }

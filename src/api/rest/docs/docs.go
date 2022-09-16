@@ -2737,6 +2737,120 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/nlb/{nlbId}/vm": {
+            "post": {
+                "description": "Add VMs to NLB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management"
+                ],
+                "summary": "Add VMs to NLB",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NLB ID",
+                        "name": "nlbId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VMs to add to NLB",
+                        "name": "nlbAddRemoveVMReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBAddRemoveVMReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete VMs from NLB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management"
+                ],
+                "summary": "Delete VMs from NLB",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NLB ID",
+                        "name": "nlbId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VMs to add to NLB",
+                        "name": "nlbAddRemoveVMReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBAddRemoveVMReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/policy/mcis": {
             "get": {
                 "description": "List all MCIS policies",
@@ -7647,7 +7761,7 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.TBNLBVMGroup": {
+        "mcis.TBNLBTargetGroup": {
             "type": "object",
             "properties": {
                 "cspID": {
@@ -7836,6 +7950,14 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.TbNLBAddRemoveVMReq": {
+            "type": "object",
+            "properties": {
+                "targetGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                }
+            }
+        },
         "mcis.TbNLBInfo": {
             "type": "object",
             "properties": {
@@ -7893,12 +8015,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
                 },
+                "targetGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
                     "type": "string"
-                },
-                "vmGroup": {
-                    "$ref": "#/definitions/mcis.TBNLBVMGroup"
                 }
             }
         },
@@ -7943,6 +8065,9 @@ const docTemplate = `{
                     ],
                     "example": "REGION"
                 },
+                "targetGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
                     "type": "string",
@@ -7955,9 +8080,6 @@ const docTemplate = `{
                 "vNetId": {
                     "type": "string",
                     "example": "ns01-systemdefault-aws-ap-northeast-2"
-                },
-                "vmGroup": {
-                    "$ref": "#/definitions/mcis.TBNLBVMGroup"
                 }
             }
         },

@@ -1,37 +1,16 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Create nlb in ${MCIRRegionName}"
+	echo "- Add VM to NLB in ${MCIRRegionName}"
 
     resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/nlb -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/nlb/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}/vm -H 'Content-Type: application/json' -d @- <<EOF
         {
-			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-			"type": "PUBLIC",
-			"scope": "REGION",
-			"listener": {
-				"Protocol": "TCP",
-				"Port": "22",
-				"DNSName": ""
-			},
 			"targetGroup": {
-				"Protocol" : "TCP",
-				"Port" : "22",
 				"MCIS" : "${MCISID}",
 				"VMs" : [
-					"${CONN_CONFIG[$INDEX,$REGION]}-0",
-					"${CONN_CONFIG[$INDEX,$REGION]}-1",
-					"${CONN_CONFIG[$INDEX,$REGION]}-2"
+					"${CONN_CONFIG[$INDEX,$REGION]}-0"
 					]
-			},
-			"HealthChecker": {
-				"Protocol" : "TCP", 
-				"Port" : "22", 
-				"Interval" : "10", 
-				"Timeout" : "9", 
-				"Threshold" : "3" 
 			}
 		}
 EOF
@@ -43,7 +22,7 @@ EOF
 #function create_nlb() {
 
 	echo "####################################################################"
-	echo "## 10. NLB: Create"
+	echo "## 10. NLB: Add VM"
 	echo "####################################################################"
 
 	source ../init.sh

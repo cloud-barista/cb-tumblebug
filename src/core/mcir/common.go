@@ -101,7 +101,7 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 	}
 
 	for _, v := range resourceIdList {
-		// if subSting is provided, check the resourceId contains the subString.
+		// if subString is provided, check the resourceId contains the subString.
 		if subString == "" || strings.Contains(v, subString) {
 			deleteStatus = ""
 
@@ -687,8 +687,8 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 }
 
 // DelEleInSlice delete an element from slice by index
-//  - arr: the reference of slice
-//  - index: the index of element will be deleted
+//   - arr: the reference of slice
+//   - index: the index of element will be deleted
 func DelEleInSlice(arr interface{}, index int) {
 	vField := reflect.ValueOf(arr)
 	value := vField.Elem()
