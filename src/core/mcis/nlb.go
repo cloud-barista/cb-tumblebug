@@ -70,6 +70,12 @@ type SpiderNLBVMGroupReq struct {
 	VMs      []string
 }
 
+// SpiderNLBAddRemoveVMReqInfoWrapper is a wrapper struct to create JSON body of 'Add/Remove VMs to/from NLB' request
+type SpiderNLBAddRemoveVMReqInfoWrapper struct {
+	ConnectionName string
+	ReqInfo        SpiderNLBVMGroupReq
+}
+
 // SpiderNLBInfo is a struct to handle NLB information from the CB-Spider's REST API response
 type SpiderNLBInfo struct {
 	IId    common.IID // {NameId, SystemId}
@@ -203,6 +209,11 @@ type TbNLBInfo struct { // Tumblebug
 	// Disabled for now
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
+}
+
+// TbNLBAddRemoveVMReq is a struct to handle 'Add/Remove VMs to/from NLB' request toward CB-Tumblebug.
+type TbNLBAddRemoveVMReq struct { // Tumblebug
+	TargetGroup TBNLBTargetGroup `json:"targetGroup"`
 }
 
 // CreateNLB accepts nlb creation request, creates and returns an TB nlb object
@@ -845,7 +856,7 @@ func DelAllNLB(nsId string, subString string, forceFlag string) (common.IdList, 
 	}
 
 	for _, v := range resourceIdList {
-		// if subSting is provided, check the resourceId contains the subString.
+		// if subString is provided, check the resourceId contains the subString.
 		if subString == "" || strings.Contains(v, subString) {
 			deleteStatus = ""
 
@@ -861,4 +872,498 @@ func DelAllNLB(nsId string, subString string, forceFlag string) (common.IdList, 
 		}
 	}
 	return deletedResources, nil
+}
+
+// AddNLBVMs accepts VM addition request, adds VM to NLB, and returns an updated TB NLB object
+func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInfo, error) {
+	fmt.Println("=========================== AddNLBVMs")
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbNLBInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
+	err = validate.Struct(u)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			temp := TbNLBInfo{}
+			return temp, err
+		}
+
+		temp := TbNLBInfo{}
+		return temp, err
+	}
+
+	check, err := CheckNLB(nsId, resourceId)
+
+	if !check {
+		temp := TbNLBInfo{}
+		err := fmt.Errorf("The nlb " + resourceId + " does not exist.")
+		return temp, err
+	}
+
+	if err != nil {
+		temp := TbNLBInfo{}
+		err := fmt.Errorf("Failed to check the existence of the nlb " + resourceId + ".")
+		return temp, err
+	}
+
+	/*
+		vNetInfo := mcir.TbVNetInfo{}
+		tempInterface, err := mcir.GetResource(nsId, common.StrVNet, u.VNetId)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the TbVNetInfo " + u.VNetId + ".")
+			return TbNLBInfo{}, err
+		}
+		err = common.CopySrcToDest(&tempInterface, &vNetInfo)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the TbVNetInfo-CopySrcToDest() " + u.VNetId + ".")
+			return TbNLBInfo{}, err
+		}
+	*/
+
+	nlb, err := GetNLB(nsId, resourceId)
+	if err != nil {
+		temp := TbNLBInfo{}
+		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
+		return temp, err
+	}
+
+	tempReq := SpiderNLBAddRemoveVMReqInfoWrapper{}
+	tempReq.ConnectionName = nlb.ConnectionName
+
+	for _, v := range u.TargetGroup.VMs {
+		vm, err := GetVmObject(nsId, u.TargetGroup.MCIS, v)
+		if err != nil {
+			common.CBLog.Error(err)
+			return TbNLBInfo{}, err
+		}
+		// fmt.Println("vm:")                             // for debug
+		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
+		// fmt.Print(string(payload))                     // for debug
+		tempReq.ReqInfo.VMs = append(tempReq.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
+	}
+
+	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                             // for debug
+	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMGroup.VMs) // for debug
+	/*
+		for _, v := range u.VMIDList {
+			mcisId_vmId := strings.Split(v, "/")
+			if len(mcisId_vmId) != 2 {
+				err := fmt.Errorf("Cannot retrieve VM info: " + v)
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+			vm, err := mcis.GetVmObject(nsId, mcisId_vmId[0], mcisId_vmId[1])
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+			tempReq.ReqInfo.VMGroup = append(tempReq.ReqInfo.VMGroup, vm.IdByCSP)
+		}
+	*/
+
+	var tempSpiderNLBInfo *SpiderNLBInfo
+
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+		client := resty.New().SetCloseConnection(true)
+		client.SetAllowGetMethodPayload(true)
+
+		// fmt.Println("tempReq:")                             // for debug
+		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+		// fmt.Print(string(payload))                          // for debug
+
+		req := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+		var resp *resty.Response
+		var err error
+
+		var url string
+		url = fmt.Sprintf("%s/nlb/%s/vms", common.SpiderRestUrl, nlb.CspNLBName)
+		resp, err = req.Post(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbNLBInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
+
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			common.CBLog.Error(err)
+			content := TbNLBInfo{}
+			return content, err
+		}
+
+		tempSpiderNLBInfo = resp.Result().(*SpiderNLBInfo)
+
+	}
+	/*
+		else {
+
+			// Set CCM API
+			ccm := api.NewCloudResourceHandler()
+			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+			if err != nil {
+				common.CBLog.Error("ccm failed to set config : ", err)
+				return TbNLBInfo{}, err
+			}
+			err = ccm.Open()
+			if err != nil {
+				common.CBLog.Error("ccm api open failed : ", err)
+				return TbNLBInfo{}, err
+			}
+			defer ccm.Close()
+
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+			var result string
+
+			if option == "register" {
+				result, err = ccm.CreateNLB(string(payload))
+			} else {
+				result, err = ccm.GetNLB(string(payload))
+			}
+
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+			tempSpiderNLBInfo = &SpiderNLBInfo{}
+			err = json.Unmarshal([]byte(result), &tempSpiderNLBInfo)
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+		}
+	*/
+
+	content := TbNLBInfo{}
+	//content.Id = common.GenUid()
+	content.Id = nlb.Id
+	content.Name = nlb.Name
+	content.ConnectionName = nlb.ConnectionName
+	content.Type = tempSpiderNLBInfo.Type
+	content.Scope = tempSpiderNLBInfo.Scope
+	content.Listener = tempSpiderNLBInfo.Listener
+	content.HealthChecker = tempSpiderNLBInfo.HealthChecker
+	content.CspNLBId = tempSpiderNLBInfo.IId.SystemId
+	content.CspNLBName = tempSpiderNLBInfo.IId.NameId
+	content.Description = nlb.Description
+	content.KeyValueList = tempSpiderNLBInfo.KeyValueList
+	content.AssociatedObjectList = []string{}
+
+	content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
+	content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
+	content.TargetGroup.MCIS = u.TargetGroup.MCIS // What if oldNlb.TargetGroup.MCIS != newNlb.TargetGroup.MCIS
+	content.TargetGroup.CspID = u.TargetGroup.CspID
+	content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
+
+	// content.TargetGroup.VMs = u.TargetGroup.VMs
+	content.TargetGroup.VMs = append(content.TargetGroup.VMs, nlb.TargetGroup.VMs...)
+	content.TargetGroup.VMs = append(content.TargetGroup.VMs, u.TargetGroup.VMs...)
+
+	// cb-store
+	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
+	Key := GenNLBKey(nsId, content.Id)
+	Val, _ := json.Marshal(content)
+
+	err = common.CBStore.Put(Key, string(Val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return content, err
+	}
+
+	keyValue, err := common.CBStore.Get(Key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CreateNLB(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===========================")
+
+	result := TbNLBInfo{}
+	err = json.Unmarshal([]byte(keyValue.Value), &result)
+	if err != nil {
+		common.CBLog.Error(err)
+	}
+	return result, nil
+}
+
+// RemoveNLBVMs accepts VM removal request, removes VMs from NLB, and returns an error if occurs.
+func RemoveNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) error {
+	fmt.Println("=========================== RemoveNLBVMs")
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		// temp := TbNLBInfo{}
+		common.CBLog.Error(err)
+		return err
+	}
+
+	err = validate.Struct(u)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			// temp := TbNLBInfo{}
+			return err
+		}
+
+		// temp := TbNLBInfo{}
+		return err
+	}
+
+	check, err := CheckNLB(nsId, resourceId)
+
+	if !check {
+		// temp := TbNLBInfo{}
+		err := fmt.Errorf("The nlb " + resourceId + " does not exist.")
+		return err
+	}
+
+	if err != nil {
+		// temp := TbNLBInfo{}
+		err := fmt.Errorf("Failed to check the existence of the nlb " + resourceId + ".")
+		return err
+	}
+
+	/*
+		vNetInfo := mcir.TbVNetInfo{}
+		tempInterface, err := mcir.GetResource(nsId, common.StrVNet, u.VNetId)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the TbVNetInfo " + u.VNetId + ".")
+			return TbNLBInfo{}, err
+		}
+		err = common.CopySrcToDest(&tempInterface, &vNetInfo)
+		if err != nil {
+			err := fmt.Errorf("Failed to get the TbVNetInfo-CopySrcToDest() " + u.VNetId + ".")
+			return TbNLBInfo{}, err
+		}
+	*/
+
+	nlb, err := GetNLB(nsId, resourceId)
+	if err != nil {
+		// temp := TbNLBInfo{}
+		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
+		return err
+	}
+
+	tempReq := SpiderNLBAddRemoveVMReqInfoWrapper{}
+	tempReq.ConnectionName = nlb.ConnectionName
+
+	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs) // for debug
+
+	for _, v := range u.TargetGroup.VMs {
+		vm, err := GetVmObject(nsId, u.TargetGroup.MCIS, v)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		// fmt.Println("vm:")                             // for debug
+		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
+		// fmt.Print(string(payload))                     // for debug
+		if vm.CspViewVmDetail.IId.NameId == "" {
+			fmt.Printf("Failed to get %s; skipping;", v)
+		} else {
+			tempReq.ReqInfo.VMs = append(tempReq.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
+		}
+	}
+
+	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMs) // for debug
+	/*
+		for _, v := range u.VMIDList {
+			mcisId_vmId := strings.Split(v, "/")
+			if len(mcisId_vmId) != 2 {
+				err := fmt.Errorf("Cannot retrieve VM info: " + v)
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+			vm, err := mcis.GetVmObject(nsId, mcisId_vmId[0], mcisId_vmId[1])
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+			tempReq.ReqInfo.VMGroup = append(tempReq.ReqInfo.VMGroup, vm.IdByCSP)
+		}
+	*/
+
+	// var tempSpiderNLBInfo *SpiderNLBInfo
+
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+		client := resty.New().SetCloseConnection(true)
+		client.SetAllowGetMethodPayload(true)
+
+		// fmt.Println("tempReq:")                             // for debug
+		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+		// fmt.Print(string(payload))                          // for debug
+
+		req := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq)
+			// SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+		var resp *resty.Response
+		var err error
+
+		var url string
+		url = fmt.Sprintf("%s/nlb/%s/vms", common.SpiderRestUrl, nlb.CspNLBName)
+		resp, err = req.Delete(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			// content := TbNLBInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return err
+		}
+
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			common.CBLog.Error(err)
+			// content := TbNLBInfo{}
+			return err
+		}
+
+		// result := resp.Result().(bool)
+
+	}
+	/*
+		else {
+
+			// Set CCM API
+			ccm := api.NewCloudResourceHandler()
+			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+			if err != nil {
+				common.CBLog.Error("ccm failed to set config : ", err)
+				return TbNLBInfo{}, err
+			}
+			err = ccm.Open()
+			if err != nil {
+				common.CBLog.Error("ccm api open failed : ", err)
+				return TbNLBInfo{}, err
+			}
+			defer ccm.Close()
+
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+			var result string
+
+			if option == "register" {
+				result, err = ccm.CreateNLB(string(payload))
+			} else {
+				result, err = ccm.GetNLB(string(payload))
+			}
+
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+			tempSpiderNLBInfo = &SpiderNLBInfo{}
+			err = json.Unmarshal([]byte(result), &tempSpiderNLBInfo)
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+		}
+	*/
+
+	oldVMList := nlb.TargetGroup.VMs
+	for _, vmToDelete := range u.TargetGroup.VMs {
+		oldVMList = remove(oldVMList, vmToDelete)
+	}
+	newVMList := oldVMList
+
+	/*
+		content := TbNLBInfo{}
+		//content.Id = common.GenUid()
+		content.Id = nlb.Id
+		content.Name = nlb.Name
+		content.ConnectionName = nlb.ConnectionName
+		content.Type = tempSpiderNLBInfo.Type
+		content.Scope = tempSpiderNLBInfo.Scope
+		content.Listener = tempSpiderNLBInfo.Listener
+		content.HealthChecker = tempSpiderNLBInfo.HealthChecker
+		content.CspNLBId = tempSpiderNLBInfo.IId.SystemId
+		content.CspNLBName = tempSpiderNLBInfo.IId.NameId
+		content.Description = nlb.Description
+		content.KeyValueList = tempSpiderNLBInfo.KeyValueList
+		content.AssociatedObjectList = []string{}
+
+		content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
+		content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
+		content.TargetGroup.MCIS = u.TargetGroup.MCIS // What if oldNlb.TargetGroup.MCIS != newNlb.TargetGroup.MCIS
+		content.TargetGroup.CspID = u.TargetGroup.CspID
+		content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
+
+		// content.TargetGroup.VMs = u.TargetGroup.VMs
+		content.TargetGroup.VMs = append(content.TargetGroup.VMs, nlb.TargetGroup.VMs...)
+		content.TargetGroup.VMs = append(content.TargetGroup.VMs, u.TargetGroup.VMs...)
+	*/
+
+	nlb.TargetGroup.VMs = newVMList
+
+	// cb-store
+	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
+	Key := GenNLBKey(nsId, nlb.Id)
+	Val, _ := json.Marshal(nlb)
+
+	err = common.CBStore.Put(Key, string(Val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	keyValue, err := common.CBStore.Get(Key)
+	if err != nil {
+		common.CBLog.Error(err)
+		err = fmt.Errorf("In CreateNLB(); CBStore.Get() returned an error.")
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
+	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+	fmt.Println("===========================")
+
+	/*
+		result := TbNLBInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &result)
+		if err != nil {
+			common.CBLog.Error(err)
+		}
+	*/
+	return nil
+}
+
+func remove(l []string, item string) []string {
+	for i, other := range l {
+		if other == item {
+			return append(l[:i], l[i+1:]...)
+		}
+	}
+	return l
 }
