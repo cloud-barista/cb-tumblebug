@@ -3347,6 +3347,54 @@ paths:
       summary: 'Get MCIS object (option: status, vmID)'
       tags:
       - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcis/{mcisId}/group/{groupId}:
+    get:
+      consumes:
+      - application/json
+      description: List VMs with a VMGroup label in a specified MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: group-0
+        description: VM Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List VMs with a VMGroup label in a specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
     post:
       consumes:
