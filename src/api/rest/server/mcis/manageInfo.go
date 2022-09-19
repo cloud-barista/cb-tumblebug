@@ -340,3 +340,36 @@ func RestDelMcisVm(c echo.Context) error {
 	mapA := map[string]string{"message": "Deleted the VM info"}
 	return c.JSON(http.StatusOK, &mapA)
 }
+
+// RestGetMcisGroupVms godoc
+// @Summary List VMs with a VMGroup label in a specified MCIS
+// @Description List VMs with a VMGroup label in a specified MCIS
+// @Tags [Infra service] MCIS Provisioning management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param groupId path string true "VM Group ID" default(group-0)
+// @Param option query string false "Option" Enums(id)
+// @Success 200 {object} common.IdList
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/group/{groupId} [get]
+func RestGetMcisGroupVms(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	groupId := c.Param("groupId")
+	//option := c.QueryParam("option")
+
+	content := common.IdList{}
+	var err error
+	content.IdList, err = mcis.ListMcisGroupVms(nsId, mcisId, groupId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
