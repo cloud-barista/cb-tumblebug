@@ -162,6 +162,61 @@ func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error
 
 }
 
+// ListVmByFilter is func to get list VMs in a MCIS by a filter consist of Key and Value
+func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal string) ([]string, error) {
+
+	var vmList []string
+
+	if filterKey == "" {
+		return vmList, nil
+	}
+
+	vmList, err := ListVmId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+	if len(vmList) == 0 {
+		return nil, nil
+	}
+
+	var groupVmList []string
+
+	for _, v := range vmList {
+		vmObj, vmErr := GetVmObject(nsId, mcisId, v)
+		if vmErr != nil {
+			common.CBLog.Error(err)
+			return nil, vmErr
+		}
+		vmObjReflect := reflect.ValueOf(&vmObj)
+		elements := vmObjReflect.Elem()
+		for i := 0; i < elements.NumField(); i++ {
+			key := elements.Type().Field(i).Name
+			if strings.EqualFold(filterKey, key) {
+				fmt.Println(key)
+
+				val := elements.Field(i).Interface().(string)
+				fmt.Println(val)
+				if strings.EqualFold(filterVal, val) {
+
+					groupVmList = append(groupVmList, vmObj.Id)
+					fmt.Println(groupVmList)
+				}
+
+				break
+			}
+		}
+	}
+	return groupVmList, nil
+}
+
+// ListMcisGroupVms is func to get VM list with a VMGroup label in a specified MCIS
+func ListMcisGroupVms(nsId string, mcisId string, groupId string) ([]string, error) {
+	// VmGroupId is the Key for VmGroupId in TbVmInfo struct
+	filterKey := "VmGroupId"
+	return ListVmByFilter(nsId, mcisId, filterKey, groupId)
+}
+
 // ListVmGroupId is func to return list of VmGroups in a given MCIS
 func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 
