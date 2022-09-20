@@ -165,10 +165,10 @@ func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error
 // ListVmByFilter is func to get list VMs in a MCIS by a filter consist of Key and Value
 func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal string) ([]string, error) {
 
-	var vmList []string
-
-	if filterKey == "" {
-		return vmList, nil
+	check, err := CheckMcis(nsId, mcisId)
+	if !check {
+		err := fmt.Errorf("Not found the MCIS: " + mcisId + " from the NS: " + nsId)
+		return nil, err
 	}
 
 	vmList, err := ListVmId(nsId, mcisId)
@@ -178,6 +178,9 @@ func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal stri
 	}
 	if len(vmList) == 0 {
 		return nil, nil
+	}
+	if filterKey == "" {
+		return vmList, nil
 	}
 
 	var groupVmList []string
