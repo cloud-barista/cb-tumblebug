@@ -3489,6 +3489,41 @@ paths:
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
+    get:
+      consumes:
+      - application/json
+      description: List VMGroup IDs in a specified MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List VMGroup IDs in a specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
     post:
       consumes:
       - application/json
