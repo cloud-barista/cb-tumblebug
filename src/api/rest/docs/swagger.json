@@ -2088,6 +2088,57 @@
             }
         },
         "/ns/{nsId}/mcis/{mcisId}/vmgroup": {
+            "get": {
+                "description": "List VMGroup IDs in a specified MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "List VMGroup IDs in a specified MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create multiple VMs by VM group in specified MCIS",
                 "consumes": [

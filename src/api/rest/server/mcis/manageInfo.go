@@ -373,3 +373,33 @@ func RestGetMcisGroupVms(c echo.Context) error {
 	return c.JSON(http.StatusOK, &content)
 
 }
+
+// RestGetMcisGroupIds godoc
+// @Summary List VMGroup IDs in a specified MCIS
+// @Description List VMGroup IDs in a specified MCIS
+// @Tags [Infra service] MCIS Provisioning management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Success 200 {object} common.IdList
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vmgroup [get]
+func RestGetMcisGroupIds(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	//option := c.QueryParam("option")
+
+	content := common.IdList{}
+	var err error
+	content.IdList, err = mcis.ListVmGroupId(nsId, mcisId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
+}
