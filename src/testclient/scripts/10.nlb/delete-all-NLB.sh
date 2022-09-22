@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Delete all NLBs"
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/nlb | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/nlb | jq ''
 }
 
 #function delete_NLB() {

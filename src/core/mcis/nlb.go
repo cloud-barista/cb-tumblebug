@@ -135,7 +135,6 @@ type SpiderHealthInfo struct {
 type TBNLBTargetGroup struct {
 	Protocol string   `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string   `json:"port" example:"22"`      // Listener Port or 1-65535
-	MCIS     string   `json:"mcis" example:"mc"`
 	VMs      []string `json:"vms"`
 
 	CspID        string // Optional, May be Used by Driver.
@@ -217,10 +216,17 @@ type TbNLBAddRemoveVMReq struct { // Tumblebug
 }
 
 // CreateNLB accepts nlb creation request, creates and returns an TB nlb object
-func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
+func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 	fmt.Println("=========================== CreateNLB")
 
 	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbNLBInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
+	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := TbNLBInfo{}
 		common.CBLog.Error(err)
@@ -239,7 +245,7 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 		return temp, err
 	}
 
-	check, err := CheckNLB(nsId, u.Name)
+	check, err := CheckNLB(nsId, mcisId, u.Name)
 
 	if check {
 		temp := TbNLBInfo{}
@@ -280,7 +286,7 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 	tempReq.ReqInfo.VMGroup.Protocol = u.TargetGroup.Protocol
 
 	for _, v := range u.TargetGroup.VMs {
-		vm, err := GetVmObject(nsId, u.TargetGroup.MCIS, v)
+		vm, err := GetVmObject(nsId, mcisId, v)
 		if err != nil {
 			common.CBLog.Error(err)
 			return TbNLBInfo{}, err
@@ -288,10 +294,11 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 		// fmt.Println("vm:")                             // for debug
 		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
 		// fmt.Print(string(payload))                     // for debug
+		// fmt.Print("vm.CspViewVmDetail.IId.NameId: " + vm.CspViewVmDetail.IId.NameId) // for debug
 		tempReq.ReqInfo.VMGroup.VMs = append(tempReq.ReqInfo.VMGroup.VMs, vm.CspViewVmDetail.IId.NameId)
 	}
 
-	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                             // for debug
+	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                     // for debug
 	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMGroup.VMs) // for debug
 	/*
 		for _, v := range u.VMIDList {
@@ -422,7 +429,7 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 
 	content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
 	content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
-	content.TargetGroup.MCIS = u.TargetGroup.MCIS
+	// content.TargetGroup.MCIS = u.TargetGroup.MCIS
 	content.TargetGroup.VMs = u.TargetGroup.VMs
 	content.TargetGroup.CspID = u.TargetGroup.CspID
 	content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
@@ -435,7 +442,7 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 
 	// cb-store
 	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
-	Key := GenNLBKey(nsId, content.Id)
+	Key := GenNLBKey(nsId, mcisId, content.Id)
 	Val, _ := json.Marshal(content)
 
 	err = common.CBStore.Put(Key, string(Val))
@@ -464,7 +471,7 @@ func CreateNLB(nsId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 }
 
 // GetNLB returns the requested TB NLB object
-func GetNLB(nsId string, resourceId string) (TbNLBInfo, error) {
+func GetNLB(nsId string, mcisId string, resourceId string) (TbNLBInfo, error) {
 	res := TbNLBInfo{}
 
 	err := common.CheckString(nsId)
@@ -473,12 +480,19 @@ func GetNLB(nsId string, resourceId string) (TbNLBInfo, error) {
 		return res, err
 	}
 
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := TbNLBInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return res, err
 	}
-	check, err := CheckNLB(nsId, resourceId)
+	check, err := CheckNLB(nsId, mcisId, resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return res, err
@@ -493,7 +507,7 @@ func GetNLB(nsId string, resourceId string) (TbNLBInfo, error) {
 	fmt.Println("[Get NLB] " + resourceId)
 
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
-	key := GenNLBKey(nsId, resourceId)
+	key := GenNLBKey(nsId, mcisId, resourceId)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -515,7 +529,7 @@ func GetNLB(nsId string, resourceId string) (TbNLBInfo, error) {
 }
 
 // CheckNLB returns the existence of the TB NLB object in bool form.
-func CheckNLB(nsId string, resourceId string) (bool, error) {
+func CheckNLB(nsId string, mcisId string, resourceId string) (bool, error) {
 
 	// Check parameters' emptiness
 	if nsId == "" {
@@ -532,6 +546,12 @@ func CheckNLB(nsId string, resourceId string) (bool, error) {
 		return false, err
 	}
 
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
 	err = common.CheckString(resourceId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -541,7 +561,7 @@ func CheckNLB(nsId string, resourceId string) (bool, error) {
 	fmt.Println("[Check NLB] " + resourceId)
 
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
-	key := GenNLBKey(nsId, resourceId)
+	key := GenNLBKey(nsId, mcisId, resourceId)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -556,8 +576,14 @@ func CheckNLB(nsId string, resourceId string) (bool, error) {
 }
 
 // GenNLBKey is func to generate a key from NLB id
-func GenNLBKey(nsId string, resourceId string) string {
+func GenNLBKey(nsId string, mcisId string, resourceId string) string {
 	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "/invalidKey"
+	}
+
+	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return "/invalidKey"
@@ -569,13 +595,19 @@ func GenNLBKey(nsId string, resourceId string) string {
 		return "/invalidKey"
 	}
 
-	return fmt.Sprintf("/ns/%s/nlb/%s", nsId, resourceId)
+	return fmt.Sprintf("/ns/%s/mcis/%s/nlb/%s", nsId, mcisId, resourceId)
 }
 
 // ListNLBId returns the list of TB NLB object IDs of given nsId
-func ListNLBId(nsId string) ([]string, error) {
+func ListNLBId(nsId string, mcisId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
@@ -614,9 +646,15 @@ func ListNLBId(nsId string) ([]string, error) {
 }
 
 // ListNLB returns the list of TB NLB objects of given nsId
-func ListNLB(nsId string, filterKey string, filterVal string) (interface{}, error) {
+func ListNLB(nsId string, mcisId string, filterKey string, filterVal string) (interface{}, error) {
 
 	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
@@ -666,9 +704,15 @@ func ListNLB(nsId string, filterKey string, filterVal string) (interface{}, erro
 }
 
 // DelNLB deletes the TB NLB object
-func DelNLB(nsId string, resourceId string, forceFlag string) error {
+func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) error {
 
 	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -679,7 +723,7 @@ func DelNLB(nsId string, resourceId string, forceFlag string) error {
 		common.CBLog.Error(err)
 		return err
 	}
-	check, err := CheckNLB(nsId, resourceId)
+	check, err := CheckNLB(nsId, mcisId, resourceId)
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -692,7 +736,7 @@ func DelNLB(nsId string, resourceId string, forceFlag string) error {
 		return err
 	}
 
-	key := GenNLBKey(nsId, resourceId)
+	key := GenNLBKey(nsId, mcisId, resourceId)
 	fmt.Println("key: " + key)
 
 	keyValue, _ := common.CBStore.Get(key)
@@ -832,7 +876,7 @@ func DelNLB(nsId string, resourceId string, forceFlag string) error {
 }
 
 // DelAllNLB deletes all TB NLB object of given nsId
-func DelAllNLB(nsId string, subString string, forceFlag string) (common.IdList, error) {
+func DelAllNLB(nsId string, mcisId string, subString string, forceFlag string) (common.IdList, error) {
 
 	deletedResources := common.IdList{}
 	deleteStatus := ""
@@ -843,7 +887,13 @@ func DelAllNLB(nsId string, subString string, forceFlag string) (common.IdList, 
 		return deletedResources, err
 	}
 
-	resourceIdList, err := ListNLBId(nsId)
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return deletedResources, err
+	}
+
+	resourceIdList, err := ListNLBId(nsId, mcisId)
 	if err != nil {
 		return deletedResources, err
 	}
@@ -860,7 +910,7 @@ func DelAllNLB(nsId string, subString string, forceFlag string) (common.IdList, 
 		if subString == "" || strings.Contains(v, subString) {
 			deleteStatus = ""
 
-			err := DelNLB(nsId, v, forceFlag)
+			err := DelNLB(nsId, mcisId, v, forceFlag)
 
 			if err != nil {
 				deleteStatus = err.Error()
@@ -875,10 +925,17 @@ func DelAllNLB(nsId string, subString string, forceFlag string) (common.IdList, 
 }
 
 // AddNLBVMs accepts VM addition request, adds VM to NLB, and returns an updated TB NLB object
-func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInfo, error) {
+func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInfo, error) {
 	fmt.Println("=========================== AddNLBVMs")
 
 	err := common.CheckString(nsId)
+	if err != nil {
+		temp := TbNLBInfo{}
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
+	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := TbNLBInfo{}
 		common.CBLog.Error(err)
@@ -897,7 +954,7 @@ func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInf
 		return temp, err
 	}
 
-	check, err := CheckNLB(nsId, resourceId)
+	check, err := CheckNLB(nsId, mcisId, resourceId)
 
 	if !check {
 		temp := TbNLBInfo{}
@@ -925,7 +982,7 @@ func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInf
 		}
 	*/
 
-	nlb, err := GetNLB(nsId, resourceId)
+	nlb, err := GetNLB(nsId, mcisId, resourceId)
 	if err != nil {
 		temp := TbNLBInfo{}
 		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
@@ -936,7 +993,7 @@ func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInf
 	tempReq.ConnectionName = nlb.ConnectionName
 
 	for _, v := range u.TargetGroup.VMs {
-		vm, err := GetVmObject(nsId, u.TargetGroup.MCIS, v)
+		vm, err := GetVmObject(nsId, mcisId, v)
 		if err != nil {
 			common.CBLog.Error(err)
 			return TbNLBInfo{}, err
@@ -1070,7 +1127,7 @@ func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInf
 
 	content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
 	content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
-	content.TargetGroup.MCIS = u.TargetGroup.MCIS // What if oldNlb.TargetGroup.MCIS != newNlb.TargetGroup.MCIS
+	// content.TargetGroup.MCIS = u.TargetGroup.MCIS // What if oldNlb.TargetGroup.MCIS != newNlb.TargetGroup.MCIS
 	content.TargetGroup.CspID = u.TargetGroup.CspID
 	content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
 
@@ -1080,7 +1137,7 @@ func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInf
 
 	// cb-store
 	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
-	Key := GenNLBKey(nsId, content.Id)
+	Key := GenNLBKey(nsId, mcisId, content.Id)
 	Val, _ := json.Marshal(content)
 
 	err = common.CBStore.Put(Key, string(Val))
@@ -1109,12 +1166,18 @@ func AddNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInf
 }
 
 // RemoveNLBVMs accepts VM removal request, removes VMs from NLB, and returns an error if occurs.
-func RemoveNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) error {
+func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveVMReq) error {
 	fmt.Println("=========================== RemoveNLBVMs")
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		// temp := TbNLBInfo{}
+		common.CBLog.Error(err)
+		return err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
@@ -1131,7 +1194,7 @@ func RemoveNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) error 
 		return err
 	}
 
-	check, err := CheckNLB(nsId, resourceId)
+	check, err := CheckNLB(nsId, mcisId, resourceId)
 
 	if !check {
 		// temp := TbNLBInfo{}
@@ -1159,7 +1222,7 @@ func RemoveNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) error 
 		}
 	*/
 
-	nlb, err := GetNLB(nsId, resourceId)
+	nlb, err := GetNLB(nsId, mcisId, resourceId)
 	if err != nil {
 		// temp := TbNLBInfo{}
 		err := fmt.Errorf("Failed to get the nlb object " + resourceId + ".")
@@ -1172,7 +1235,7 @@ func RemoveNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) error 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs) // for debug
 
 	for _, v := range u.TargetGroup.VMs {
-		vm, err := GetVmObject(nsId, u.TargetGroup.MCIS, v)
+		vm, err := GetVmObject(nsId, mcisId, v)
 		if err != nil {
 			common.CBLog.Error(err)
 			return err
@@ -1329,7 +1392,7 @@ func RemoveNLBVMs(nsId string, resourceId string, u *TbNLBAddRemoveVMReq) error 
 
 	// cb-store
 	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
-	Key := GenNLBKey(nsId, nlb.Id)
+	Key := GenNLBKey(nsId, mcisId, nlb.Id)
 	Val, _ := json.Marshal(nlb)
 
 	err = common.CBStore.Put(Key, string(Val))

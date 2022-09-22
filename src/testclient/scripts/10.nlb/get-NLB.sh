@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Get NLB in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/nlb/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/nlb/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
     echo ""
 }
 

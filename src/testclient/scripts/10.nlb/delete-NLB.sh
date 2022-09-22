@@ -3,7 +3,7 @@
 function CallTB() {
 	echo "- Delete NLB in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/nlb/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/nlb/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
 }
 
 #function delete_NLB() {

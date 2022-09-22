@@ -8,7 +8,7 @@
     echo "## 10. NLB: List"
     echo "####################################################################"
 
-    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/nlb | jq ''
+    curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/nlb | jq ''
     echo ""
 #}
 

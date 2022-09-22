@@ -4,7 +4,7 @@ function CallTB() {
 	echo "- Create nlb in ${MCIRRegionName}"
 
     resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/nlb -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/nlb -H 'Content-Type: application/json' -d @- <<EOF
         {
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
@@ -19,11 +19,9 @@ function CallTB() {
 			"targetGroup": {
 				"Protocol" : "TCP",
 				"Port" : "22",
-				"MCIS" : "${MCISID}",
 				"VMs" : [
 					"${CONN_CONFIG[$INDEX,$REGION]}-0",
-					"${CONN_CONFIG[$INDEX,$REGION]}-1",
-					"${CONN_CONFIG[$INDEX,$REGION]}-2"
+					"${CONN_CONFIG[$INDEX,$REGION]}-1"
 					]
 			},
 			"HealthChecker": {
