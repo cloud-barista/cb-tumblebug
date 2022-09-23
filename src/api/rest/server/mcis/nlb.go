@@ -231,6 +231,34 @@ func RestDelAllNLB(c echo.Context) error {
 	return c.JSON(http.StatusOK, output)
 }
 
+// RestGetNLBHealth godoc
+// @Summary Get NLB Health
+// @Description Get NLB Health
+// @Tags [Infra resource] NLB management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param nlbId path string true "NLB ID"
+// @Success 200 {object} mcis.TbNLBInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/healthz [get]
+func RestGetNLBHealth(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	resourceId := c.Param("resourceId")
+
+	res, err := mcis.GetNLBHealth(nsId, mcisId, resourceId)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to get the health info of NLB " + resourceId}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		return c.JSON(http.StatusOK, &res)
+	}
+}
+
 // The REST APIs below are for dev/test only
 
 // RestAddNLBVMs godoc

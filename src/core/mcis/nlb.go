@@ -126,7 +126,11 @@ type NLBHealthCheckerInfo struct {
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-type SpiderHealthInfo struct {
+type SpiderNLBHealthInfoWrapper struct {
+	Healthinfo SpiderNLBHealthInfo
+}
+
+type SpiderNLBHealthInfo struct {
 	AllVMs       *[]common.IID
 	HealthyVMs   *[]common.IID
 	UnHealthyVMs *[]common.IID
@@ -210,6 +214,12 @@ type TbNLBInfo struct { // Tumblebug
 	// Disabled for now
 	//Region         string `json:"region"`
 	//ResourceGroupName string `json:"resourceGroupName"`
+}
+
+type TbNLBHealthInfo struct { // Tumblebug
+	AllVMs       []string
+	HealthyVMs   []string
+	UnHealthyVMs []string
 }
 
 // TbNLBAddRemoveVMReq is a struct to handle 'Add/Remove VMs to/from NLB' request toward CB-Tumblebug.
@@ -913,6 +923,187 @@ func DelAllNLB(nsId string, mcisId string, subString string, forceFlag string) (
 		}
 	}
 	return deletedResources, nil
+}
+
+// GetNLBHealth queries the health status of NLB to CB-Spider, and returns it to user
+func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, error) {
+	fmt.Println("=========================== GetNLBHealth")
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbNLBHealthInfo{}, err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbNLBHealthInfo{}, err
+	}
+
+	err = common.CheckString(nlbId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbNLBHealthInfo{}, err
+	}
+
+	check, err := CheckNLB(nsId, mcisId, nlbId)
+
+	if !check {
+		err := fmt.Errorf("The nlb " + nlbId + " does not exist.")
+		return TbNLBHealthInfo{}, err
+	}
+
+	if err != nil {
+		err := fmt.Errorf("Failed to check the existence of the nlb " + nlbId + ".")
+		return TbNLBHealthInfo{}, err
+	}
+
+	nlb, err := GetNLB(nsId, mcisId, nlbId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the NLB " + nlbId + ".")
+		return TbNLBHealthInfo{}, err
+	}
+
+	tempReq := common.SpiderConnectionName{}
+	tempReq.ConnectionName = nlb.ConnectionName
+
+	var tempSpiderNLBHealthInfo *SpiderNLBHealthInfoWrapper
+
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+		client := resty.New().SetCloseConnection(true)
+		client.SetAllowGetMethodPayload(true)
+
+		// fmt.Println("tempReq:")                             // for debug
+		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+		// fmt.Print(string(payload))                          // for debug
+
+		req := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderNLBHealthInfoWrapper{}) // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+		var resp *resty.Response
+		var err error
+
+		var url string
+		url = fmt.Sprintf("%s/nlb/%s/health", common.SpiderRestUrl, nlb.CspNLBName)
+		resp, err = req.Get(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return TbNLBHealthInfo{}, err
+		}
+
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			common.CBLog.Error(err)
+			return TbNLBHealthInfo{}, err
+		}
+
+		tempSpiderNLBHealthInfo = resp.Result().(*SpiderNLBHealthInfoWrapper)
+
+	}
+	/*
+		else {
+
+			// Set CCM API
+			ccm := api.NewCloudResourceHandler()
+			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
+			if err != nil {
+				common.CBLog.Error("ccm failed to set config : ", err)
+				return TbNLBInfo{}, err
+			}
+			err = ccm.Open()
+			if err != nil {
+				common.CBLog.Error("ccm api open failed : ", err)
+				return TbNLBInfo{}, err
+			}
+			defer ccm.Close()
+
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+			var result string
+
+			if option == "register" {
+				result, err = ccm.CreateNLB(string(payload))
+			} else {
+				result, err = ccm.GetNLB(string(payload))
+			}
+
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+			tempSpiderNLBInfo = &SpiderNLBInfo{}
+			err = json.Unmarshal([]byte(result), &tempSpiderNLBInfo)
+			if err != nil {
+				common.CBLog.Error(err)
+				return TbNLBInfo{}, err
+			}
+
+		}
+	*/
+
+	result := TbNLBHealthInfo{}
+
+	for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.HealthyVMs {
+		vm, err := FindTbVmByCspId(nsId, mcisId, v.NameId)
+		if err != nil {
+			return TbNLBHealthInfo{}, err
+		}
+
+		result.HealthyVMs = append(result.HealthyVMs, vm.Id)
+	}
+
+	for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.UnHealthyVMs {
+		vm, err := FindTbVmByCspId(nsId, mcisId, v.NameId)
+		if err != nil {
+			return TbNLBHealthInfo{}, err
+		}
+
+		result.UnHealthyVMs = append(result.UnHealthyVMs, vm.Id)
+	}
+
+	result.AllVMs = append(result.AllVMs, result.HealthyVMs...)
+	result.AllVMs = append(result.AllVMs, result.UnHealthyVMs...)
+	/*
+		// cb-store
+		// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
+		Key := GenNLBKey(nsId, mcisId, content.Id)
+		Val, _ := json.Marshal(content)
+
+		err = common.CBStore.Put(Key, string(Val))
+		if err != nil {
+			common.CBLog.Error(err)
+			return content, err
+		}
+
+		keyValue, err := common.CBStore.Get(Key)
+		if err != nil {
+			common.CBLog.Error(err)
+			err = fmt.Errorf("In CreateNLB(); CBStore.Get() returned an error.")
+			common.CBLog.Error(err)
+			// return nil, err
+		}
+
+		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
+		fmt.Println("===========================")
+
+		result := TbNLBInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &result)
+		if err != nil {
+			common.CBLog.Error(err)
+		}
+	*/
+
+	return result, nil
 }
 
 // AddNLBVMs accepts VM addition request, adds VM to NLB, and returns an updated TB NLB object
