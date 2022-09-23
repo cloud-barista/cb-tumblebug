@@ -224,15 +224,17 @@ func RunServer(port string) {
 	g.PUT("/:nsId/network/mcis/:mcisId", rest_mcis.RestPutInjectCloudInformationForCloudAdaptiveNetwork)
 
 	// Network Load Balancer
-	g.POST("/:nsId/nlb", rest_mcis.RestPostNLB)
-	g.GET("/:nsId/nlb/:resourceId", rest_mcis.RestGetNLB)
-	g.GET("/:nsId/nlb", rest_mcis.RestGetAllNLB)
-	// g.PUT("/:nsId/nlb/:resourceId", rest_mcis.RestPutNLB)
-	g.DELETE("/:nsId/nlb/:resourceId", rest_mcis.RestDelNLB)
-	g.DELETE("/:nsId/nlb", rest_mcis.RestDelAllNLB)
+	g.POST("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestPostNLB)
+	g.GET("/:nsId/mcis/:mcisId/nlb/:resourceId", rest_mcis.RestGetNLB)
+	g.GET("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestGetAllNLB)
+	// g.PUT("/:nsId/mcis/:mcisId/nlb/:resourceId", rest_mcis.RestPutNLB)
+	g.DELETE("/:nsId/mcis/:mcisId/nlb/:resourceId", rest_mcis.RestDelNLB)
+	g.DELETE("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestDelAllNLB)
+	g.GET("/:nsId/mcis/:mcisId/nlb/:resourceId/healthz", rest_mcis.RestGetNLBHealth)
 
-	g.POST("/:nsId/nlb/:resourceId/vm", rest_mcis.RestAddNLBVMs)
-	g.DELETE("/:nsId/nlb/:resourceId/vm", rest_mcis.RestRemoveNLBVMs)
+	// These REST APIs are for dev/test only
+	g.POST("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestAddNLBVMs)
+	g.DELETE("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestRemoveNLBVMs)
 
 	//MCIR Management
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)

@@ -30,15 +30,17 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param option query string false "Option: [required params for register] connectionName, name, cspNLBId" Enums(register)
 // @Param nlbReq body mcis.TbNLBReq true "Details of the NLB object"
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb [post]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb [post]
 func RestPostNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
 
 	optionFlag := c.QueryParam("option")
 
@@ -49,7 +51,7 @@ func RestPostNLB(c echo.Context) error {
 
 	fmt.Println("[POST NLB]")
 
-	content, err := mcis.CreateNLB(nsId, u, optionFlag)
+	content, err := mcis.CreateNLB(nsId, mcisId, u, optionFlag)
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -68,14 +70,17 @@ func RestPostNLB(c echo.Context) error {
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param nlbInfo body mcis.TbNLBInfo true "Details of the NLB object"
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb/{nlbId} [put]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId} [put]
 */
 func RestPutNLB(c echo.Context) error {
-	//nsId := c.Param("nsId")
+	// nsId := c.Param("nsId")
+	// mcisId := c.Param("mcisId")
 
 	return nil
 }
@@ -87,18 +92,19 @@ func RestPutNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param nlbId path string true "NLB ID"
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb/{nlbId} [get]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId} [get]
 func RestGetNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-
+	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
 
-	res, err := mcis.GetNLB(nsId, resourceId)
+	res, err := mcis.GetNLB(nsId, mcisId, resourceId)
 	if err != nil {
 		mapA := map[string]string{"message": "Failed to find the NLB " + resourceId}
 		return c.JSON(http.StatusNotFound, &mapA)
@@ -119,16 +125,18 @@ type RestGetAllNLBResponse struct {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: cspNLBName)"
 // @Param filterVal query string false "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)"
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllNLBResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb [get]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb [get]
 func RestGetAllNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
 
 	optionFlag := c.QueryParam("option")
 	filterKey := c.QueryParam("filterKey")
@@ -137,7 +145,7 @@ func RestGetAllNLB(c echo.Context) error {
 	if optionFlag == "id" {
 		content := common.IdList{}
 		var err error
-		content.IdList, err = mcis.ListNLBId(nsId)
+		content.IdList, err = mcis.ListNLBId(nsId, mcisId)
 		if err != nil {
 			mapA := map[string]string{"message": "Failed to list NLBs' ID; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -146,7 +154,7 @@ func RestGetAllNLB(c echo.Context) error {
 		return c.JSON(http.StatusOK, &content)
 	} else {
 
-		resourceList, err := mcis.ListNLB(nsId, filterKey, filterVal)
+		resourceList, err := mcis.ListNLB(nsId, mcisId, filterKey, filterVal)
 		if err != nil {
 			mapA := map[string]string{"message": "Failed to list NLBs; " + err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -169,19 +177,20 @@ func RestGetAllNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param nlbId path string true "NLB ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb/{nlbId} [delete]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId} [delete]
 func RestDelNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-
+	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
 
 	forceFlag := c.QueryParam("force")
 
-	err := mcis.DelNLB(nsId, resourceId, forceFlag)
+	err := mcis.DelNLB(nsId, mcisId, resourceId, forceFlag)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -199,18 +208,20 @@ func RestDelNLB(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param match query string false "Delete resources containing matched ID-substring only" default()
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb [delete]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb [delete]
 func RestDelAllNLB(c echo.Context) error {
 
 	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
 
 	forceFlag := c.QueryParam("force")
 	subString := c.QueryParam("match")
 
-	output, err := mcis.DelAllNLB(nsId, subString, forceFlag)
+	output, err := mcis.DelAllNLB(nsId, mcisId, subString, forceFlag)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
@@ -220,23 +231,54 @@ func RestDelAllNLB(c echo.Context) error {
 	return c.JSON(http.StatusOK, output)
 }
 
-// RestAddNLBVMs godoc
-// @Summary Add VMs to NLB
-// @Description Add VMs to NLB
+// RestGetNLBHealth godoc
+// @Summary Get NLB Health
+// @Description Get NLB Health
 // @Tags [Infra resource] NLB management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param nlbId path string true "NLB ID"
+// @Success 200 {object} mcis.TbNLBInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/healthz [get]
+func RestGetNLBHealth(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	resourceId := c.Param("resourceId")
+
+	res, err := mcis.GetNLBHealth(nsId, mcisId, resourceId)
+	if err != nil {
+		mapA := map[string]string{"message": "Failed to get the health info of NLB " + resourceId}
+		return c.JSON(http.StatusNotFound, &mapA)
+	} else {
+		return c.JSON(http.StatusOK, &res)
+	}
+}
+
+// The REST APIs below are for dev/test only
+
+// RestAddNLBVMs godoc
+// @Summary Add VMs to NLB
+// @Description Add VMs to NLB
+// @Tags [Infra resource] NLB management (for developer)
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param nlbId path string true "NLB ID"
 // @Param nlbAddRemoveVMReq body mcis.TbNLBAddRemoveVMReq true "VMs to add to NLB"
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb/{nlbId}/vm [post]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm [post]
 func RestAddNLBVMs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-
+	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
 
 	u := &mcis.TbNLBAddRemoveVMReq{}
@@ -246,7 +288,7 @@ func RestAddNLBVMs(c echo.Context) error {
 
 	fmt.Println("[Add NLB VMs]")
 
-	content, err := mcis.AddNLBVMs(nsId, resourceId, u)
+	content, err := mcis.AddNLBVMs(nsId, mcisId, resourceId, u)
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -259,19 +301,20 @@ func RestAddNLBVMs(c echo.Context) error {
 // RestRemoveNLBVMs godoc
 // @Summary Delete VMs from NLB
 // @Description Delete VMs from NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra resource] NLB management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param nlbId path string true "NLB ID"
 // @Param nlbAddRemoveVMReq body mcis.TbNLBAddRemoveVMReq true "VMs to add to NLB"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
-// @Router /ns/{nsId}/nlb/{nlbId}/vm [delete]
+// @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm [delete]
 func RestRemoveNLBVMs(c echo.Context) error {
 
 	nsId := c.Param("nsId")
-
+	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
 
 	u := &mcis.TbNLBAddRemoveVMReq{}
@@ -279,7 +322,7 @@ func RestRemoveNLBVMs(c echo.Context) error {
 		return err
 	}
 
-	err := mcis.RemoveNLBVMs(nsId, resourceId, u)
+	err := mcis.RemoveNLBVMs(nsId, mcisId, resourceId, u)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}

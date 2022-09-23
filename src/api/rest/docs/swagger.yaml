@@ -1482,9 +1482,6 @@ definitions:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
-      mcis:
-        example: mc
-        type: string
       port:
         description: Listener Port or 1-65535
         example: "22"
@@ -1492,6 +1489,8 @@ definitions:
       protocol:
         description: TCP|HTTP|HTTPS
         example: TCP
+        type: string
+      vmGroupId:
         type: string
       vms:
         items:
@@ -3347,6 +3346,354 @@ paths:
       summary: 'Get MCIS object (option: status, vmID)'
       tags:
       - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcis/{mcisId}/nlb:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all NLBs
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all NLBs
+      tags:
+      - '[Infra resource] NLB management'
+    get:
+      consumes:
+      - application/json
+      description: List all NLBs or NLBs' ID
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
+      - description: 'Field key for filtering (ex: cspNLBName)'
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
+        in: query
+        name: filterVal
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          schema:
+            allOf:
+            - $ref: '#/definitions/mcis.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcis.RestGetAllNLBResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all NLBs or NLBs' ID
+      tags:
+      - '[Infra resource] NLB management'
+    post:
+      consumes:
+      - application/json
+      description: Create NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: 'Option: [required params for register] connectionName, name,
+          cspNLBId'
+        enum:
+        - register
+        in: query
+        name: option
+        type: string
+      - description: Details of the NLB object
+        in: body
+        name: nlbReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbNLBReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbNLBInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create NLB
+      tags:
+      - '[Infra resource] NLB management'
+  /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: NLB ID
+        in: path
+        name: nlbId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete NLB
+      tags:
+      - '[Infra resource] NLB management'
+    get:
+      consumes:
+      - application/json
+      description: Get NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: NLB ID
+        in: path
+        name: nlbId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbNLBInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get NLB
+      tags:
+      - '[Infra resource] NLB management'
+  /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/healthz:
+    get:
+      consumes:
+      - application/json
+      description: Get NLB Health
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: NLB ID
+        in: path
+        name: nlbId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbNLBInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get NLB Health
+      tags:
+      - '[Infra resource] NLB management'
+  /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm:
+    delete:
+      consumes:
+      - application/json
+      description: Delete VMs from NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: NLB ID
+        in: path
+        name: nlbId
+        required: true
+        type: string
+      - description: VMs to add to NLB
+        in: body
+        name: nlbAddRemoveVMReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete VMs from NLB
+      tags:
+      - '[Infra resource] NLB management (for developer)'
+    post:
+      consumes:
+      - application/json
+      description: Add VMs to NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: NLB ID
+        in: path
+        name: nlbId
+        required: true
+        type: string
+      - description: VMs to add to NLB
+        in: body
+        name: nlbAddRemoveVMReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbNLBInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Add VMs to NLB
+      tags:
+      - '[Infra resource] NLB management (for developer)'
   /ns/{nsId}/mcis/{mcisId}/vm:
     post:
       consumes:
@@ -3817,271 +4164,6 @@ paths:
       summary: Inject Cloud Information For Cloud Adaptive Network
       tags:
       - '[Infra service] MCIS Cloud Adaptive Network (for developer)'
-  /ns/{nsId}/nlb:
-    delete:
-      consumes:
-      - application/json
-      description: Delete all NLBs
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: ""
-        description: Delete resources containing matched ID-substring only
-        in: query
-        name: match
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.IdList'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete all NLBs
-      tags:
-      - '[Infra resource] NLB management'
-    get:
-      consumes:
-      - application/json
-      description: List all NLBs or NLBs' ID
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Option
-        enum:
-        - id
-        in: query
-        name: option
-        type: string
-      - description: 'Field key for filtering (ex: cspNLBName)'
-        in: query
-        name: filterKey
-        type: string
-      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
-        in: query
-        name: filterVal
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Different return structures by the given option param
-          schema:
-            allOf:
-            - $ref: '#/definitions/mcis.JSONResult'
-            - properties:
-                '[DEFAULT]':
-                  $ref: '#/definitions/mcis.RestGetAllNLBResponse'
-                '[ID]':
-                  $ref: '#/definitions/common.IdList'
-              type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List all NLBs or NLBs' ID
-      tags:
-      - '[Infra resource] NLB management'
-    post:
-      consumes:
-      - application/json
-      description: Create NLB
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: 'Option: [required params for register] connectionName, name,
-          cspNLBId'
-        enum:
-        - register
-        in: query
-        name: option
-        type: string
-      - description: Details of the NLB object
-        in: body
-        name: nlbReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbNLBReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbNLBInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Create NLB
-      tags:
-      - '[Infra resource] NLB management'
-  /ns/{nsId}/nlb/{nlbId}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete NLB
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: NLB ID
-        in: path
-        name: nlbId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete NLB
-      tags:
-      - '[Infra resource] NLB management'
-    get:
-      consumes:
-      - application/json
-      description: Get NLB
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: NLB ID
-        in: path
-        name: nlbId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbNLBInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Get NLB
-      tags:
-      - '[Infra resource] NLB management'
-  /ns/{nsId}/nlb/{nlbId}/vm:
-    delete:
-      consumes:
-      - application/json
-      description: Delete VMs from NLB
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: NLB ID
-        in: path
-        name: nlbId
-        required: true
-        type: string
-      - description: VMs to add to NLB
-        in: body
-        name: nlbAddRemoveVMReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete VMs from NLB
-      tags:
-      - '[Infra resource] NLB management'
-    post:
-      consumes:
-      - application/json
-      description: Add VMs to NLB
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: NLB ID
-        in: path
-        name: nlbId
-        required: true
-        type: string
-      - description: VMs to add to NLB
-        in: body
-        name: nlbAddRemoveVMReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbNLBAddRemoveVMReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbNLBInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Add VMs to NLB
-      tags:
-      - '[Infra resource] NLB management'
   /ns/{nsId}/policy/mcis:
     delete:
       consumes:

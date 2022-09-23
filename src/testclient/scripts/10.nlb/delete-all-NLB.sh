@@ -1,21 +1,13 @@
 #!/bin/bash
 
-function CallTB() {
-	echo "- Delete all NLBs"
+echo "####################################################################"
+echo "## 10. NLB: Delete"
+echo "####################################################################"
 
-	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/nlb | jq ''
-}
+source ../init.sh
 
-#function delete_NLB() {
-	
-	echo "####################################################################"
-	echo "## 10. NLB: Delete"
-	echo "####################################################################"
-
-	source ../init.sh
-
-	CallTB
-
-#}
-
-#delete_NLB
+resp=$(
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/nlb
+	); echo ${resp} | jq ''
+    echo ""
+	# echo ["${CONN_CONFIG[$INDEX,$REGION]}-0"] # for debug

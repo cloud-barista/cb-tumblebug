@@ -957,3 +957,52 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 	return result, err
 
 }
+
+func FindTbVmByCspId(nsId string, mcisId string, vmIdByCsp string) (TbVmInfo, error) {
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+
+	err = common.CheckString(vmIdByCsp)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+
+	check, err := CheckMcis(nsId, mcisId)
+
+	if !check {
+		err := fmt.Errorf("The MCIS " + mcisId + " does not exist.")
+		return TbVmInfo{}, err
+	}
+
+	if err != nil {
+		err := fmt.Errorf("Failed to check the existence of the MCIS " + mcisId + ".")
+		return TbVmInfo{}, err
+	}
+
+	mcis, err := GetMcisObject(nsId, mcisId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the MCIS " + mcisId + ".")
+		return TbVmInfo{}, err
+	}
+
+	vms := mcis.Vm
+	for _, v := range vms {
+		if v.IdByCSP == vmIdByCsp || v.CspViewVmDetail.IId.NameId == vmIdByCsp {
+			return v, nil
+		}
+	}
+
+	err = fmt.Errorf("Cannot find the VM %s in %s/%s", vmIdByCsp, nsId, mcisId)
+	return TbVmInfo{}, err
+}
