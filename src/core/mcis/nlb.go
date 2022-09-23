@@ -140,7 +140,7 @@ type TBNLBTargetGroup struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"22"`      // Listener Port or 1-65535
 
-	VmGroupId string   `json:"vmGroupId"`
+	VmGroupId string  `json:"vmGroupId" example:"group"`
 	VMs       []string `json:"vms"`
 
 	CspID        string // Optional, May be Used by Driver.
