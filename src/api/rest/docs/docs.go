@@ -8022,7 +8022,8 @@ const docTemplate = `{
                     "example": "TCP"
                 },
                 "vmGroupId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "group"
                 },
                 "vms": {
                     "type": "array",

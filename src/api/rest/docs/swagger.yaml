@@ -1491,6 +1491,7 @@ definitions:
         example: TCP
         type: string
       vmGroupId:
+        example: group
         type: string
       vms:
         items:
