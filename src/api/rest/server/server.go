@@ -231,9 +231,9 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/mcis/:mcisId/nlb/:resourceId", rest_mcis.RestDelNLB)
 	g.DELETE("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestDelAllNLB)
 
-	// REST API Deprecated
-	// g.POST("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestAddNLBVMs)
-	// g.DELETE("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestRemoveNLBVMs)
+	// These REST APIs are for dev/test only
+	g.POST("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestAddNLBVMs)
+	g.DELETE("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestRemoveNLBVMs)
 
 	//MCIR Management
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)

@@ -2207,6 +2207,136 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm": {
+            "post": {
+                "description": "Add VMs to NLB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management (for developer)"
+                ],
+                "summary": "Add VMs to NLB",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NLB ID",
+                        "name": "nlbId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VMs to add to NLB",
+                        "name": "nlbAddRemoveVMReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBAddRemoveVMReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete VMs from NLB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] NLB management (for developer)"
+                ],
+                "summary": "Delete VMs from NLB",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NLB ID",
+                        "name": "nlbId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VMs to add to NLB",
+                        "name": "nlbAddRemoveVMReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNLBAddRemoveVMReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mcis/{mcisId}/vm": {
             "post": {
                 "description": "Create VM in specified MCIS",
@@ -7831,6 +7961,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "TCP"
                 },
+                "vmGroupId": {
+                    "type": "string"
+                },
                 "vms": {
                     "type": "array",
                     "items": {
@@ -7990,6 +8123,14 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmReq"
                     }
+                }
+            }
+        },
+        "mcis.TbNLBAddRemoveVMReq": {
+            "type": "object",
+            "properties": {
+                "targetGroup": {
+                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
                 }
             }
         },

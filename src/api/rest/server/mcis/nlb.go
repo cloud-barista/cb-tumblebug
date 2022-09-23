@@ -231,11 +231,12 @@ func RestDelAllNLB(c echo.Context) error {
 	return c.JSON(http.StatusOK, output)
 }
 
-/* REST API Deprecated
+// The REST APIs below are for dev/test only
+
 // RestAddNLBVMs godoc
 // @Summary Add VMs to NLB
 // @Description Add VMs to NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra resource] NLB management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -272,7 +273,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // RestRemoveNLBVMs godoc
 // @Summary Delete VMs from NLB
 // @Description Delete VMs from NLB
-// @Tags [Infra resource] NLB management
+// @Tags [Infra resource] NLB management (for developer)
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -303,4 +304,3 @@ func RestRemoveNLBVMs(c echo.Context) error {
 	mapA := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
 	return c.JSON(http.StatusOK, &mapA)
 }
-*/

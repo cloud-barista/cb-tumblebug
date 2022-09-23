@@ -133,9 +133,11 @@ type SpiderHealthInfo struct {
 }
 
 type TBNLBTargetGroup struct {
-	Protocol string   `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
-	Port     string   `json:"port" example:"22"`      // Listener Port or 1-65535
-	VMs      []string `json:"vms"`
+	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
+	Port     string `json:"port" example:"22"`      // Listener Port or 1-65535
+
+	VmGroupId string   `json:"vmGroupId"`
+	VMs       []string `json:"vms"`
 
 	CspID        string // Optional, May be Used by Driver.
 	KeyValueList []common.KeyValue
@@ -285,7 +287,13 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	tempReq.ReqInfo.VMGroup.Port = u.TargetGroup.Port
 	tempReq.ReqInfo.VMGroup.Protocol = u.TargetGroup.Protocol
 
-	for _, v := range u.TargetGroup.VMs {
+	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.VmGroupId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get VMs in the VMGroup " + u.TargetGroup.VmGroupId + ".")
+		return TbNLBInfo{}, err
+	}
+
+	for _, v := range vmIDs {
 		vm, err := GetVmObject(nsId, mcisId, v)
 		if err != nil {
 			common.CBLog.Error(err)
@@ -300,24 +308,6 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                     // for debug
 	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMGroup.VMs) // for debug
-	/*
-		for _, v := range u.VMIDList {
-			mcisId_vmId := strings.Split(v, "/")
-			if len(mcisId_vmId) != 2 {
-				err := fmt.Errorf("Cannot retrieve VM info: " + v)
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-			vm, err := mcis.GetVmObject(nsId, mcisId_vmId[0], mcisId_vmId[1])
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-			tempReq.ReqInfo.VMGroup = append(tempReq.ReqInfo.VMGroup, vm.IdByCSP)
-		}
-	*/
 
 	var tempSpiderNLBInfo *SpiderNLBInfo
 
@@ -429,8 +419,8 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 	content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
 	content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
-	// content.TargetGroup.MCIS = u.TargetGroup.MCIS
-	content.TargetGroup.VMs = u.TargetGroup.VMs
+	content.TargetGroup.VmGroupId = u.TargetGroup.VmGroupId
+	content.TargetGroup.VMs = vmIDs
 	content.TargetGroup.CspID = u.TargetGroup.CspID
 	content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
 
@@ -614,7 +604,8 @@ func ListNLBId(nsId string, mcisId string) ([]string, error) {
 	}
 
 	fmt.Println("[ListNLBId] ns: " + nsId)
-	key := "/ns/" + nsId + "/"
+	// key := "/ns/" + nsId + "/"
+	key := fmt.Sprintf("/ns/%s/mcis/%s/", nsId, mcisId)
 	fmt.Println(key)
 
 	keyValue, err := common.CBStore.GetList(key, true)
@@ -661,7 +652,7 @@ func ListNLB(nsId string, mcisId string, filterKey string, filterVal string) (in
 	}
 
 	fmt.Println("[Get] NLB list")
-	key := "/ns/" + nsId + "/nlb"
+	key := fmt.Sprintf("/ns/%s/mcis/%s/nlb", nsId, mcisId)
 	fmt.Println(key)
 
 	keyValue, err := common.CBStore.GetList(key, true)
