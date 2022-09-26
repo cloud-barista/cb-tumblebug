@@ -7922,14 +7922,6 @@ const docTemplate = `{
                 "subnetName": {
                     "type": "string"
                 },
-                "vmblockDisk": {
-                    "description": "ex)",
-                    "type": "string"
-                },
-                "vmbootDisk": {
-                    "description": "Deprecated soon // ex) /dev/sda1",
-                    "type": "string"
-                },
                 "vmspecName": {
                     "description": "Fields for both request and response",
                     "type": "string"
@@ -8476,13 +8468,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vNetId": {
-                    "type": "string"
-                },
-                "vmBlockDisk": {
-                    "type": "string"
-                },
-                "vmBootDisk": {
-                    "description": "ex) /dev/sda1",
                     "type": "string"
                 },
                 "vmGroupId": {

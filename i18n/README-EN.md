@@ -504,7 +504,6 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
          },
          "imageId" : "aws-us-east-1-shson",
          "privateDNS" : "ip-192-168-1-108.ec2.internal",
-         "vmBootDisk" : "/dev/sda1",
          "status" : "Running",
          "security_groupIds" : [
             "aws-us-east-1-shson"
@@ -518,7 +517,6 @@ Dozing for 10 : 1 2 3 4 5 6 7 8 9 10 (Back to work)
                   "NameId" : "aws-us-east-1-shson"
                }
             ],
-            "VMBootDisk" : "/dev/sda1",
             "PrivateDNS" : "ip-192-168-1-108.ec2.internal",
             "StartTime" : "2020-05-30T18:33:42Z",
             "VMBlockDisk" : "/dev/sda1",

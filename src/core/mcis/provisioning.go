@@ -304,8 +304,6 @@ type SpiderVMInfo struct {
 	PrivateIP         string
 	PrivateDNS        string
 	RootDeviceName    string // "/dev/sda1", ...
-	VMBootDisk        string // Deprecated soon // ex) /dev/sda1
-	VMBlockDisk       string // ex)
 	SSHAccessPoint    string
 	KeyValueList      []common.KeyValue
 }
@@ -370,8 +368,6 @@ type TbVmInfo struct {
 	RootDiskType   string     `json:"rootDiskType"`
 	RootDiskSize   string     `json:"rootDiskSize"`
 	RootDeviceName string     `json:"rootDeviceName"`
-	VMBootDisk     string     `json:"vmBootDisk"` // ex) /dev/sda1
-	VMBlockDisk    string     `json:"vmBlockDisk"`
 
 	ConnectionName   string   `json:"connectionName"`
 	SpecId           string   `json:"specId"`
@@ -1557,8 +1553,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	vmInfoData.RootDiskType = tempSpiderVMInfo.RootDiskType
 	vmInfoData.RootDiskSize = tempSpiderVMInfo.RootDiskSize
 	vmInfoData.RootDeviceName = tempSpiderVMInfo.RootDeviceName
-	vmInfoData.VMBootDisk = tempSpiderVMInfo.VMBootDisk
-	vmInfoData.VMBlockDisk = tempSpiderVMInfo.VMBlockDisk
 	//vmInfoData.KeyValueList = temp.KeyValueList
 
 	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
