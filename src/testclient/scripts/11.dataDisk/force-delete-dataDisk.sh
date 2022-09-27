@@ -1,22 +1,15 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"resourceType": "securityGroup"
-		}
-EOF
-    ); echo ${resp} | jq ''
-    echo ""
+	echo "- Delete dataDisk in ${MCIRRegionName}"
+
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true | jq ''
 }
 
-#function create_securityGroup() {
+#function delete_dataDisk() {
 
 	echo "####################################################################"
-	echo "## 4. securityGroup: Status"
+	echo "## 11. dataDisk: Delete"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -42,12 +35,13 @@ EOF
 
 	else
 		echo ""
-
+		
 		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 
 	fi
+	
 #}
 
-#create_securityGroup
+#delete_dataDisk

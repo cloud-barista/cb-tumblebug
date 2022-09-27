@@ -171,7 +171,8 @@ func GenResourceKey(nsId string, resourceType string, resourceId string) string 
 		resourceType == StrSSHKey ||
 		resourceType == StrSpec ||
 		resourceType == StrVNet ||
-		resourceType == StrSecurityGroup {
+		resourceType == StrSecurityGroup ||
+		resourceType == StrDataDisk {
 		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" {
@@ -207,6 +208,8 @@ type mcirIds struct { // Tumblebug
 	CspPublicIpName      string
 	CspVNicId            string
 	CspVNicName          string
+	CspDataDiskId        string
+	CspDataDiskName      string
 
 	ConnectionName string
 }
@@ -253,6 +256,10 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspSecurityGroupName, nil
+	case StrDataDisk:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspDataDiskName, nil
 	/*
 		case "publicIp":
 			content := mcirIds{}

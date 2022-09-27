@@ -352,7 +352,7 @@ func RestInspectResources(c echo.Context) error {
 		return err
 	}
 
-	fmt.Printf("[List Resource Status: %s]", u.ResourceType)
+	fmt.Printf("[List Resource Status: %s] \n", u.ResourceType)
 	var content interface{}
 	var err error
 	// if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {

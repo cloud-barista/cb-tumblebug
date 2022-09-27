@@ -69,6 +69,7 @@ func init() {
 	// register validation for 'Tb*Req'
 	// NOTE: only have to register a non-pointer type for 'Tb*Req', validator
 	// internally dereferences during it's type checks.
+	validate.RegisterStructValidation(TbDataDiskReqStructLevelValidation, TbDataDiskReq{})
 	validate.RegisterStructValidation(TbImageReqStructLevelValidation, TbImageReq{})
 	validate.RegisterStructValidation(TbSecurityGroupReqStructLevelValidation, TbSecurityGroupReq{})
 	validate.RegisterStructValidation(TbSpecReqStructLevelValidation, TbSpecReq{})
@@ -250,6 +251,15 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 			tempReq.ConnectionName = temp.ConnectionName
 			url = common.SpiderRestUrl + "/securitygroup/" + temp.CspSecurityGroupName
+		case common.StrDataDisk:
+			temp := TbDataDiskInfo{}
+			err = json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			tempReq.ConnectionName = temp.ConnectionName
+			url = common.SpiderRestUrl + "/disk/" + temp.CspDataDiskName
 		/*
 			case "subnet":
 				temp := subnetInfo{}
@@ -429,6 +439,22 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				common.CBLog.Error(err)
 				return err
 			}
+
+		/*
+			case common.StrDataDisk:
+				temp := TbSecurityGroupInfo{}
+				err := json.Unmarshal([]byte(keyValue.Value), &temp)
+				if err != nil {
+					common.CBLog.Error(err)
+					return err
+				}
+
+				_, err = ccm.DeleteDataDiskByParam(temp.ConnectionName, temp.Name, forceFlag)
+				if err != nil {
+					common.CBLog.Error(err)
+					return err
+				}
+		*/
 
 		default:
 			err := fmt.Errorf("invalid resourceType")
@@ -714,7 +740,8 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" ||
-		resourceType == common.StrSecurityGroup {
+		resourceType == common.StrSecurityGroup ||
+		resourceType == common.StrDataDisk {
 		// continue
 	} else {
 		err = fmt.Errorf("invalid resource type")
@@ -770,7 +797,8 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" ||
-		resourceType == common.StrSecurityGroup {
+		resourceType == common.StrSecurityGroup ||
+		resourceType == common.StrDataDisk {
 		// continue
 	} else {
 		errString := "Cannot list " + resourceType + "s."
@@ -892,25 +920,42 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				res = append(res, tempObj)
 			}
 			return res, nil
+		case common.StrDataDisk:
+			res := []TbDataDiskInfo{}
+			for _, v := range keyValue {
+				tempObj := TbDataDiskInfo{}
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
+				}
+				res = append(res, tempObj)
+			}
+			return res, nil
 		}
 
 	} else { //return empty object according to resourceType
 		switch resourceType {
 		case common.StrImage:
-			res := []TbImageInfo{}
-			return res, nil
+			return []TbImageInfo{}, nil
 		case common.StrSecurityGroup:
-			res := []TbSecurityGroupInfo{}
-			return res, nil
+			return []TbSecurityGroupInfo{}, nil
 		case common.StrSpec:
-			res := []TbSpecInfo{}
-			return res, nil
+			return []TbSpecInfo{}, nil
 		case common.StrSSHKey:
-			res := []TbSshKeyInfo{}
-			return res, nil
+			return []TbSshKeyInfo{}, nil
 		case common.StrVNet:
-			res := []TbVNetInfo{}
-			return res, nil
+			return []TbVNetInfo{}, nil
+		case common.StrDataDisk:
+			return []TbDataDiskInfo{}, nil
 		}
 	}
 
@@ -1146,7 +1191,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	}
 
 	if !check {
-		errString := "The " + resourceType + " " + resourceId + " does not exist."
+		errString := fmt.Sprintf("The %s %s does not exist.", resourceType, resourceId)
 		err := fmt.Errorf(errString)
 		return nil, err
 	}
@@ -1202,6 +1247,14 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return nil, err
 			}
 			return res, nil
+		case common.StrDataDisk:
+			res := TbDataDiskInfo{}
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
+			return res, nil
 		}
 
 		//return true, nil
@@ -1231,7 +1284,8 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		resourceType == common.StrSSHKey ||
 		resourceType == common.StrSpec ||
 		resourceType == common.StrVNet ||
-		resourceType == common.StrSecurityGroup {
+		resourceType == common.StrSecurityGroup ||
+		resourceType == common.StrDataDisk {
 		//resourceType == "subnet" ||
 		//resourceType == "publicIp" ||
 		//resourceType == "vNic" {

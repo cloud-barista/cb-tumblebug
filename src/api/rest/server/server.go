@@ -237,6 +237,13 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestRemoveNLBVMs)
 
 	//MCIR Management
+	g.POST("/:nsId/resources/dataDisk", rest_mcir.RestPostDataDisk)
+	g.GET("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/dataDisk", rest_mcir.RestGetAllResources)
+	// g.PUT("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestPutDataDisk)
+	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestDelResource)
+	g.DELETE("/:nsId/resources/dataDisk", rest_mcir.RestDelAllResources)
+
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)
 	g.GET("/:nsId/resources/image", rest_mcir.RestGetAllResources)

@@ -1,22 +1,21 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"resourceType": "securityGroup"
-		}
-EOF
-    ); echo ${resp} | jq ''
-    echo ""
+	echo "- Create dataDisk in ${MCIRRegionName}"
+
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk -H 'Content-Type: application/json' -d \
+		'{ 
+			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
+			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
+			"diskType": "gp2",
+			"diskSize": "77"
+		}' | jq ''
 }
 
-#function create_securityGroup() {
+#function create_dataDisk() {
 
 	echo "####################################################################"
-	echo "## 4. securityGroup: Status"
+	echo "## 11. dataDisk: Create"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -42,12 +41,13 @@ EOF
 
 	else
 		echo ""
-
+		
 		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 
 	fi
+	
 #}
 
-#create_securityGroup
+#create_dataDisk
