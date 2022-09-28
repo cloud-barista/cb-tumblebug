@@ -3619,6 +3619,65 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "description": "Upsize Data Disk",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Data Disk management"
+                ],
+                "summary": "Upsize Data Disk",
+                "parameters": [
+                    {
+                        "description": "Request body to upsize the dataDisk",
+                        "name": "dataDiskUpsizeReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbDataDiskUpsizeReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DataDisk ID",
+                        "name": "dataDiskId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbDataDiskInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete Data Disk",
                 "consumes": [
@@ -6761,6 +6820,12 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "diskSize": {
+                    "type": "string"
+                },
+                "diskType": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -6813,6 +6878,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcir.TbDataDiskUpsizeReq": {
+            "type": "object",
+            "required": [
+                "diskSize"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "diskSize": {
                     "type": "string"
                 }
             }

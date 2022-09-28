@@ -17,6 +17,7 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -35,6 +36,17 @@ const (
 	DiskDeleting  DiskStatus = "Deleting"
 	DiskError     DiskStatus = "Error"
 )
+
+// SpiderDiskUpsizeReqWrapper is a wrapper struct to create JSON body of 'Upsize disk request'
+type SpiderDiskUpsizeReqWrapper struct {
+	ConnectionName string
+	ReqInfo        SpiderDiskUpsizeReq
+}
+
+// SpiderDiskUpsizeReq is a struct to create JSON body of 'Upsize disk request'
+type SpiderDiskUpsizeReq struct {
+	Size string // "", "default", "50", "1000"  # (GB)
+}
 
 // SpiderDiskReqInfoWrapper is a wrapper struct to create JSON body of 'Get disk request'
 type SpiderDiskReqInfoWrapper struct {
@@ -91,6 +103,8 @@ type TbDataDiskInfo struct {
 	Id                   string            `json:"id,omitempty"`
 	Name                 string            `json:"name,omitempty"`
 	ConnectionName       string            `json:"connectionName,omitempty"`
+	DiskType             string            `json:"diskType"`
+	DiskSize             string            `json:"diskSize"`
 	CspDataDiskId        string            `json:"cspDataDiskId,omitempty"`
 	CspDataDiskName      string            `json:"cspDataDiskName,omitempty"`
 	Status               DiskStatus        `json:"status,omitempty"` // available, unavailable
@@ -161,10 +175,6 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 			DiskSize: u.DiskSize,
 		},
 	}
-	// tempReq.ConnectionName = u.ConnectionName
-	// tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
-	// tempReq.ReqInfo.DiskType = u.DiskType
-	// tempReq.ReqInfo.DiskSize = u.DiskSize
 
 	var tempSpiderDiskInfo *SpiderDiskInfo
 
@@ -218,6 +228,8 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		Id:                   u.Name,
 		Name:                 u.Name,
 		ConnectionName:       u.ConnectionName,
+		DiskType:             tempSpiderDiskInfo.DiskType,
+		DiskSize:             tempSpiderDiskInfo.DiskSize,
 		CspDataDiskId:        tempSpiderDiskInfo.IId.SystemId,
 		CspDataDiskName:      tempSpiderDiskInfo.IId.NameId,
 		Status:               tempSpiderDiskInfo.Status,
@@ -238,6 +250,131 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 
 	// cb-store
 	fmt.Println("=========================== PUT CreateDataDisk")
+	Key := common.GenResourceKey(nsId, resourceType, content.Id)
+	Val, _ := json.Marshal(content)
+	err = common.CBStore.Put(Key, string(Val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return content, err
+	}
+	return content, nil
+}
+
+// TbDataDiskUpsizeReq is a struct to handle 'Upsize dataDisk' request toward CB-Tumblebug.
+type TbDataDiskUpsizeReq struct {
+	DiskSize    string `json:"diskSize" validate:"required"`
+	Description string `json:"description"`
+}
+
+// UpsizeDataDisk accepts DataDisk upsize request, creates and returns an TB dataDisk object
+func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbDataDiskInfo, error) {
+
+	resourceType := common.StrDataDisk
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbDataDiskInfo{}, err
+	}
+
+	err = validate.Struct(u)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return TbDataDiskInfo{}, err
+		}
+
+		return TbDataDiskInfo{}, err
+	}
+
+	check, err := CheckResource(nsId, resourceType, resourceId)
+
+	if !check {
+		err := fmt.Errorf("The dataDisk %s does not exist.", resourceId)
+		return TbDataDiskInfo{}, err
+	}
+
+	if err != nil {
+		err := fmt.Errorf("Failed to check the existence of the dataDisk %s.", resourceId)
+		return TbDataDiskInfo{}, err
+	}
+
+	dataDiskInterface, err := GetResource(nsId, resourceType, resourceId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the dataDisk object %s.", resourceId)
+		return TbDataDiskInfo{}, err
+	}
+
+	dataDisk := dataDiskInterface.(TbDataDiskInfo)
+
+	diskSize_as_is, _ := strconv.Atoi(dataDisk.DiskSize)
+	diskSize_to_be, err := strconv.Atoi(u.DiskSize)
+	if err != nil {
+		err := fmt.Errorf("Failed to convert the desired disk size (%s) into int.", u.DiskSize)
+		return TbDataDiskInfo{}, err
+	}
+
+	if !(diskSize_as_is < diskSize_to_be) {
+		err := fmt.Errorf("Desired disk size (%s GB) should be > %s GB.", u.DiskSize, dataDisk.DiskSize)
+		return TbDataDiskInfo{}, err
+	}
+
+	tempReq := SpiderDiskUpsizeReqWrapper{
+		ConnectionName: dataDisk.ConnectionName,
+		ReqInfo: SpiderDiskUpsizeReq{
+			Size: u.DiskSize,
+		},
+	}
+
+	// if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
+
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq)
+		// SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+	var resp *resty.Response
+	// var err error
+
+	url := fmt.Sprintf("%s/disk/%s/size", common.SpiderRestUrl, fmt.Sprintf("%s-%s", nsId, resourceId))
+	resp, err = req.Put(url)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return TbDataDiskInfo{}, err
+	}
+
+	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		fmt.Println("body: ", string(resp.Body()))
+		common.CBLog.Error(err)
+		return TbDataDiskInfo{}, err
+	}
+
+	/*
+		isSuccessful := resp.Result().(bool)
+		if isSuccessful == false {
+			err := fmt.Errorf("Failed to upsize the dataDisk %s", resourceId)
+			return TbDataDiskInfo{}, err
+		}
+	*/
+
+	// } else { // gRPC
+	// } // gRPC
+
+	content := dataDisk
+	content.DiskSize = u.DiskSize
+	content.Description = u.Description
+
+	// cb-store
+	fmt.Println("=========================== PUT UpsizeDataDisk")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))

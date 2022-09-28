@@ -1,18 +1,19 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Update dataDisk in ${MCIRRegionName}"
+	echo "- Upsize dataDisk in ${MCIRRegionName}"
 
 	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
-		'{ 
-			"description": "UpdateDataDisk() test"
+		'{
+			"diskSize": "81",
+			"description": "UpsizeDataDisk() test"
 		}' | jq ''
 }
 
 #function update_dataDisk() {
 
 	echo "####################################################################"
-	echo "## 11. dataDisk: Update"
+	echo "## 11. dataDisk: Upsize"
 	echo "####################################################################"
 
 	source ../init.sh

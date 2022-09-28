@@ -57,14 +57,13 @@ func RestPostDataDisk(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
-/* UpdateDataDisk not implemented
 // RestPutDataDisk godoc
-// @Summary Update Data Disk
-// @Description Update Data Disk
+// @Summary Upsize Data Disk
+// @Description Upsize Data Disk
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
-// @Param dataDiskInfo body mcir.TbDataDiskInfo true "Details for an Data Disk object"
+// @Param dataDiskUpsizeReq body mcir.TbDataDiskUpsizeReq true "Request body to upsize the dataDisk"
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param dataDiskId path string true "DataDisk ID"
 // @Success 200 {object} mcir.TbDataDiskInfo
@@ -75,12 +74,12 @@ func RestPutDataDisk(c echo.Context) error {
 	nsId := c.Param("nsId")
 	dataDiskId := c.Param("resourceId")
 
-	u := &mcir.TbDataDiskInfo{}
+	u := &mcir.TbDataDiskUpsizeReq{}
 	if err := c.Bind(u); err != nil {
 		return err
 	}
 
-	updatedDataDisk, err := mcir.UpdateDataDisk(nsId, dataDiskId, *u)
+	updatedDataDisk, err := mcir.UpsizeDataDisk(nsId, dataDiskId, u)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{
@@ -89,7 +88,6 @@ func RestPutDataDisk(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, updatedDataDisk)
 }
-*/
 
 // RestGetDataDisk godoc
 // @Summary Get Data Disk
