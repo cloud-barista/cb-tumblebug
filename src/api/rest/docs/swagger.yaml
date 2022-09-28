@@ -1436,6 +1436,14 @@ definitions:
       cspid:
         description: VM ID given by CSP (required for registering VM)
         type: string
+      dataDiskIIDs:
+        items:
+          $ref: '#/definitions/common.IID'
+        type: array
+      dataDiskNames:
+        items:
+          type: string
+        type: array
       iid:
         $ref: '#/definitions/common.IID'
         description: Fields for response
@@ -1489,7 +1497,6 @@ definitions:
       sshaccessPoint:
         type: string
       startTime:
-        description: 'Timezone: based on cloud-barista server location.'
         type: string
       subnetIID:
         $ref: '#/definitions/common.IID'
@@ -1844,6 +1851,10 @@ definitions:
         type: string
       cspViewVmDetail:
         $ref: '#/definitions/mcis.SpiderVMInfo'
+      dataDiskIds:
+        items:
+          type: string
+        type: array
       description:
         type: string
       id:
@@ -1922,6 +1933,10 @@ definitions:
       connectionName:
         example: testcloud01-seoul
         type: string
+      dataDiskIds:
+        items:
+          type: string
+        type: array
       description:
         example: Description
         type: string

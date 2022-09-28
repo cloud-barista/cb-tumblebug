@@ -42,6 +42,9 @@ curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis -H 'C
 					"securityGroupIds": [
 						"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 					],
+					"dataDiskIds": [
+						"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
+					],
 					"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 					"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 					"description": "description",

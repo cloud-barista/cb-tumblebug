@@ -8289,6 +8289,18 @@ const docTemplate = `{
                     "description": "VM ID given by CSP (required for registering VM)",
                     "type": "string"
                 },
+                "dataDiskIIDs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.IID"
+                    }
+                },
+                "dataDiskNames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "iid": {
                     "description": "Fields for response",
                     "$ref": "#/definitions/common.IID"
@@ -8364,7 +8376,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "startTime": {
-                    "description": "Timezone: based on cloud-barista server location.",
                     "type": "string"
                 },
                 "subnetIID": {
@@ -8829,6 +8840,12 @@ const docTemplate = `{
                 "cspViewVmDetail": {
                     "$ref": "#/definitions/mcis.SpiderVMInfo"
                 },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -8950,6 +8967,12 @@ const docTemplate = `{
                 "connectionName": {
                     "type": "string",
                     "example": "testcloud01-seoul"
+                },
+                "dataDiskIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "description": {
                     "type": "string",

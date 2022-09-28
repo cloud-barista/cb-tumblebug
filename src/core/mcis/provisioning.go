@@ -207,6 +207,7 @@ type TbVmReq struct {
 	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
 	RootDiskType     string   `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize     string   `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
+	DataDiskIds      []string `json:"dataDiskIds"`
 }
 
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
@@ -281,6 +282,7 @@ type SpiderVMInfo struct {
 	SecurityGroupNames []string
 	KeyPairName        string
 	CSPid              string // VM ID given by CSP (required for registering VM)
+	DataDiskNames      []string
 
 	// Fields for both request and response
 	VMSpecName   string // instance type or flavour, etc... ex) t2.micro or f1.micro
@@ -296,7 +298,8 @@ type SpiderVMInfo struct {
 	SubnetIID         common.IID   // AWS, ex) subnet-8c4a53e4
 	SecurityGroupIIds []common.IID // AWS, ex) sg-0b7452563e1121bb6
 	KeyPairIId        common.IID
-	StartTime         time.Time  // Timezone: based on cloud-barista server location.
+	DataDiskIIDs      []common.IID
+	StartTime         time.Time
 	Region            RegionInfo //  ex) {us-east1, us-east1-c} or {ap-northeast-2}
 	NetworkInterface  string     // ex) eth0
 	PublicIP          string
@@ -375,6 +378,7 @@ type TbVmInfo struct {
 	VNetId           string   `json:"vNetId"`
 	SubnetId         string   `json:"subnetId"`
 	SecurityGroupIds []string `json:"securityGroupIds"`
+	DataDiskIds      []string `json:"dataDiskIds"`
 	SshKeyId         string   `json:"sshKeyId"`
 	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
 	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
@@ -529,7 +533,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
-			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
+			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
@@ -682,6 +686,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 		//vmInfoData.VnicId = vmRequest.VnicId
 		//vmInfoData.PublicIpId = vmRequest.PublicIpId
 		vmInfoData.SecurityGroupIds = vmRequest.SecurityGroupIds
+		vmInfoData.DataDiskIds = vmRequest.DataDiskIds
 		vmInfoData.SshKeyId = vmRequest.SshKeyId
 		vmInfoData.Description = vmRequest.Description
 
@@ -728,7 +733,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq) (*TbMcisI
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
-			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
+			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
@@ -846,9 +851,8 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	for _, k := range vmRequest {
 		err = common.CheckString(k.Name)
 		if err != nil {
-			temp := &TbMcisInfo{}
 			common.CBLog.Error(err)
-			return temp, err
+			return &TbMcisInfo{}, err
 		}
 	}
 
@@ -924,6 +928,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			vmInfoData.VNetId = k.VNetId
 			vmInfoData.SubnetId = k.SubnetId
 			vmInfoData.SecurityGroupIds = k.SecurityGroupIds
+			vmInfoData.DataDiskIds = k.DataDiskIds
 			vmInfoData.SshKeyId = k.SshKeyId
 			vmInfoData.Description = k.Description
 			vmInfoData.VmUserAccount = k.VmUserAccount
@@ -979,7 +984,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 		check := CheckDragonflyEndpoint()
 		if check != nil {
-			fmt.Printf("\n\n[Warring] CB-Dragonfly is not available\n\n")
+			fmt.Printf("\n\n[Warning] CB-Dragonfly is not available\n\n")
 		} else {
 			reqToMon := &McisCmdReq{}
 			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
@@ -1412,6 +1417,18 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		}
 		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
+		var DataDiskIdsTmp []string
+		for _, v := range vmInfoData.DataDiskIds {
+			CspDataDiskId, err := common.GetCspResourceId(nsId, common.StrDataDisk, v)
+			if CspDataDiskId == "" {
+				common.CBLog.Error(err)
+				return err
+			}
+
+			DataDiskIdsTmp = append(DataDiskIdsTmp, CspDataDiskId)
+		}
+		tempReq.ReqInfo.DataDiskNames = DataDiskIdsTmp
+
 		tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
 		if tempReq.ReqInfo.KeyPairName == "" {
 			common.CBLog.Error(err)
@@ -1425,7 +1442,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	tempReq.ReqInfo.RootDiskType = vmInfoData.RootDiskType
 	tempReq.ReqInfo.RootDiskSize = vmInfoData.RootDiskSize
 
-	fmt.Printf("\n[Request body to CB-SPIDER for Creating VM]\n")
+	fmt.Printf("\n[Request body to CB-Spider for Creating VM]\n")
 	common.PrintJsonPretty(tempReq)
 
 	payload, _ := json.Marshal(tempReq)
@@ -1433,7 +1450,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	// Randomly sleep within 30 Secs to avoid rateLimit from CSP
 	common.RandomSleep(0, 30)
 
-	// Call cb-spider API by REST or gRPC
+	// Call CB-Spider API by REST or gRPC
 	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
 		url := common.SpiderRestUrl + "/vm"
@@ -1443,7 +1460,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			method = "POST"
 		}
 
-		fmt.Println("\n[Calling SPIDER]START")
+		fmt.Println("\n[Calling CB-Spider]")
 		fmt.Println("url: " + url + " method: " + method)
 
 		client := &http.Client{
@@ -1507,7 +1524,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		}
 		defer ccm.Close()
 
-		fmt.Println("\n[Calling SPIDER]START")
+		fmt.Println("\n[Calling CB-Spider]")
 
 		result, err := ccm.StartVM(string(payload))
 		if err != nil {
@@ -1523,9 +1540,9 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			return err
 		}
 	}
-	fmt.Println("[Response from SPIDER]")
+	fmt.Println("[Response from CB-Spider]")
 	common.PrintJsonPretty(tempSpiderVMInfo)
-	fmt.Println("[Calling SPIDER]END")
+	fmt.Println("[Finished calling CB-Spider]")
 
 	// Fill vmInfoData from the cb-spider response
 	vmInfoData.CspViewVmDetail = tempSpiderVMInfo
@@ -1590,14 +1607,17 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	} else {
 		vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-		//mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfoData.VNetId, common.StrAdd, vmKey)
 
-		for _, v2 := range vmInfoData.SecurityGroupIds {
-			mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrAdd, vmKey)
+		for _, v := range vmInfoData.SecurityGroupIds {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v, common.StrAdd, vmKey)
+		}
+
+		for _, v := range vmInfoData.DataDiskIds {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v, common.StrAdd, vmKey)
 		}
 	}
 
@@ -1605,5 +1625,3 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	return nil
 }
-
-// [Etc used in provisioning]
