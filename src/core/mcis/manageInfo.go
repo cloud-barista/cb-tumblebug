@@ -40,6 +40,7 @@ import (
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/go-resty/resty/v2"
 )
 
 // [MCIS and VM object information managemenet]
@@ -1383,6 +1384,184 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	}
 }
 
+// AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
+func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command string, dataDiskId string) (TbVmInfo, error) {
+	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
+
+	// Check existence of the key. If no key, no update.
+	keyValue, err := common.CBStore.Get(vmKey)
+	if keyValue == nil || err != nil {
+		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+
+	vm := TbVmInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &vm)
+
+	isDataDiskAttached := common.CheckElement(dataDiskId, vm.DataDiskIds)
+	if command == "detachDataDisk" && isDataDiskAttached == false {
+		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	} else if command == "attachDataDisk" && isDataDiskAttached == true {
+		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list.", dataDiskId)
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+
+	dataDiskKey := common.GenResourceKey(nsId, common.StrDataDisk, dataDiskId)
+
+	// Check existence of the key. If no key, no update.
+	keyValue, err = common.CBStore.Get(dataDiskKey)
+	if keyValue == nil || err != nil {
+		return TbVmInfo{}, err
+	}
+
+	dataDisk := mcir.TbDataDiskInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &dataDisk)
+
+	tempReq := mcir.SpiderDiskAttachDetachReqWrapper{
+		ConnectionName: vm.ConnectionName,
+		ReqInfo: mcir.SpiderDiskAttachDetachReq{
+			VMName: vm.CspViewVmDetail.IId.NameId,
+		},
+	}
+
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
+
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq)
+		// SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+	var url string
+	var cmdToUpdateAsso string
+
+	switch command {
+	case "attachDataDisk":
+		req = req.SetResult(&mcir.SpiderDiskInfo{})
+		url = fmt.Sprintf("%s/disk/%s/attach", common.SpiderRestUrl, dataDisk.CspDataDiskName)
+
+		cmdToUpdateAsso = common.StrAdd
+	case "detachDataDisk":
+		// req = req.SetResult(&bool)
+		url = fmt.Sprintf("%s/disk/%s/detach", common.SpiderRestUrl, dataDisk.CspDataDiskName)
+
+		cmdToUpdateAsso = common.StrDelete
+	default:
+
+	}
+
+	resp, err := req.Put(url)
+
+	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		fmt.Println("body: ", string(resp.Body()))
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+
+	switch command {
+	case "attachDataDisk":
+		vm.DataDiskIds = append(vm.DataDiskIds, dataDiskId)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDiskId, common.StrAdd, vmKey)
+	case "detachDataDisk":
+		oldDataDiskIds := vm.DataDiskIds
+		newDataDiskIds := oldDataDiskIds
+
+		found_flag := false
+
+		for i, oldDataDisk := range oldDataDiskIds {
+			if oldDataDisk == dataDiskId {
+				found_flag = true
+				newDataDiskIds = append(oldDataDiskIds[:i], oldDataDiskIds[i+1:]...)
+				break
+			}
+		}
+
+		// Actually, in here, 'found_flag' cannot be false,
+		// since isDataDiskAttached is confirmed to be 'true' in the beginning of this function.
+		// Below is just a code snippet of 'defensive programming'.
+		if found_flag == false {
+			err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
+			common.CBLog.Error(err)
+			return TbVmInfo{}, err
+		} else {
+			vm.DataDiskIds = newDataDiskIds
+		}
+	}
+
+	// Update 'cspViewVmDetail' field
+	url = fmt.Sprintf("%s/vm/%s", common.SpiderRestUrl, vm.CspViewVmDetail.IId.NameId)
+
+	connectionName := common.SpiderConnectionName{
+		ConnectionName: vm.ConnectionName,
+	}
+
+	req = client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(connectionName).
+		SetResult(&SpiderVMInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+	time.Sleep(8 * time.Second)
+	resp, err = req.Get(url)
+
+	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		fmt.Println("body: ", string(resp.Body()))
+		common.CBLog.Error(err)
+		return vm, err
+	}
+
+	updatedSpiderVM := resp.Result().(*SpiderVMInfo)
+	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderVM.DataDiskIIDs: %s", updatedSpiderVM.DataDiskIIDs) // for debug
+	vm.CspViewVmDetail = *updatedSpiderVM
+
+	UpdateVmInfo(nsId, mcisId, vm)
+
+	// Update TB DataDisk object's 'associatedObjects' field
+	mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDiskId, cmdToUpdateAsso, vmKey)
+
+	// Update TB DataDisk object's 'status' field
+	// Just calling GetResource(dataDisk) once will update TB DataDisk object's 'status' field
+	mcir.GetResource(nsId, common.StrDataDisk, dataDiskId)
+	/*
+		url = fmt.Sprintf("%s/disk/%s", common.SpiderRestUrl, dataDisk.CspDataDiskName)
+
+		req = client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(connectionName).
+			SetResult(&mcir.SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+		resp, err = req.Get(url)
+
+		fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			fmt.Println("body: ", string(resp.Body()))
+			common.CBLog.Error(err)
+			return vm, err
+		}
+
+		updatedSpiderDisk := resp.Result().(*mcir.SpiderDiskInfo)
+		dataDisk.Status = updatedSpiderDisk.Status
+		fmt.Printf("dataDisk.Status: %s \n", dataDisk.Status) // for debug
+		mcir.UpdateResourceObject(nsId, common.StrDataDisk, dataDisk)
+	*/
+
+	return vm, nil
+}
+
 // [Delete MCIS and VM object]
 
 // DelMcis is func to delete MCIS object
@@ -1491,6 +1670,10 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		for _, v2 := range vmInfo.SecurityGroupIds {
 			mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrDelete, vmKey)
 		}
+
+		for _, v2 := range vmInfo.DataDiskIds {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v2, common.StrDelete, vmKey)
+		}
 	}
 
 	// delete vm group info
@@ -1578,8 +1761,12 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 	mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, key)
 	mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfo.VNetId, common.StrDelete, key)
 
-	for _, v2 := range vmInfo.SecurityGroupIds {
-		mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v2, common.StrDelete, key)
+	for _, v := range vmInfo.SecurityGroupIds {
+		mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v, common.StrDelete, key)
+	}
+
+	for _, v := range vmInfo.DataDiskIds {
+		mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v, common.StrDelete, key)
 	}
 
 	return nil

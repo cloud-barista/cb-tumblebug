@@ -194,6 +194,8 @@ func RunServer(port string) {
 
 	//g.GET("/:nsId/mcis/:mcisId/vm", rest_mcis.RestGetAllMcisVm)
 	//g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)
+	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/attachDataDisk", rest_mcis.RestPutMcisVm)
+	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/detachDataDisk", rest_mcis.RestPutMcisVm)
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
 	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 

@@ -37,6 +37,22 @@ const (
 	DiskError     DiskStatus = "Error"
 )
 
+// TbAttachDetachDataDiskReq is a wrapper struct to create JSON body of 'Attach/Detach disk request'
+type TbAttachDetachDataDiskReq struct {
+	DataDiskId string `json:"dataDiskId" validate:"required"`
+}
+
+// SpiderDiskAttachDetachReqWrapper is a wrapper struct to create JSON body of 'Attach/Detach disk request'
+type SpiderDiskAttachDetachReqWrapper struct {
+	ConnectionName string
+	ReqInfo        SpiderDiskAttachDetachReq
+}
+
+// SpiderDiskAttachDetachReq is a struct to create JSON body of 'Attach/Detach disk request'
+type SpiderDiskAttachDetachReq struct {
+	VMName string
+}
+
 // SpiderDiskUpsizeReqWrapper is a wrapper struct to create JSON body of 'Upsize disk request'
 type SpiderDiskUpsizeReqWrapper struct {
 	ConnectionName string
@@ -108,7 +124,7 @@ type TbDataDiskInfo struct {
 	CspDataDiskId        string            `json:"cspDataDiskId,omitempty"`
 	CspDataDiskName      string            `json:"cspDataDiskName,omitempty"`
 	Status               DiskStatus        `json:"status,omitempty"` // available, unavailable
-	AssociatedObjectList []string          `json:"associatedObjectList,omitempty"`
+	AssociatedObjectList []string          `json:"associatedObjectList"`
 	CreatedTime          time.Time         `json:"createdTime,omitempty"`
 	KeyValueList         []common.KeyValue `json:"keyValueList,omitempty"`
 	Description          string            `json:"description,omitempty"`

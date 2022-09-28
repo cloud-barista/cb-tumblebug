@@ -404,6 +404,13 @@ definitions:
       count:
         type: string
     type: object
+  mcir.TbAttachDetachDataDiskReq:
+    properties:
+      dataDiskId:
+        type: string
+    required:
+    - dataDiskId
+    type: object
   mcir.TbDataDiskInfo:
     properties:
       associatedObjectList:
@@ -3920,6 +3927,62 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VM in specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command}:
+    put:
+      consumes:
+      - application/json
+      description: Attach/Detach data disk to/from VM
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vm01
+        description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Command to perform
+        enum:
+        - attachDataDisk
+        - detachDataDisk
+        in: path
+        name: command
+        required: true
+        type: string
+      - description: Data disk ID to attach/detach
+        in: body
+        name: dataDisk
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbAttachDetachDataDiskReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbVmInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Attach/Detach data disk to/from VM
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
