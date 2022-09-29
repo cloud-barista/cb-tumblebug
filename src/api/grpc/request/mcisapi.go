@@ -101,8 +101,6 @@ type TbVmInfo struct {
 	PublicDNS        string               `yaml:"publicDNS" json:"publicDNS"`
 	PrivateIP        string               `yaml:"privateIP" json:"privateIP"`
 	PrivateDNS       string               `yaml:"privateDNS" json:"privateDNS"`
-	VMBootDisk       string               `yaml:"vmBootDisk" json:"vmBootDisk"`
-	VMBlockDisk      string               `yaml:"vmBlockDisk" json:"vmBlockDisk"`
 	ConnectionName   string               `yaml:"connectionName" json:"connectionName"`
 	SpecId           string               `yaml:"specId" json:"specId"`
 	ImageId          string               `yaml:"imageId" json:"imageId"`
@@ -161,8 +159,6 @@ type TbVmInfo struct {
 // 	PublicDNS         string     `yaml:"PublicDNS" json:"PublicDNS"`
 // 	PrivateIP         string     `yaml:"PrivateIP" json:"PrivateIP"`
 // 	PrivateDNS        string     `yaml:"PrivateDNS" json:"PrivateDNS"`
-// 	VMBootDisk        string     `yaml:"VMBootDisk" json:"VMBootDisk"`
-// 	VMBlockDisk       string     `yaml:"VMBlockDisk" json:"VMBlockDisk"`
 // 	SSHAccessPoint    string     `yaml:"SSHAccessPoint" json:"SSHAccessPoint"`
 // 	KeyValueList      []KeyValue `yaml:"KeyValueList" json:"KeyValueList"`
 // }

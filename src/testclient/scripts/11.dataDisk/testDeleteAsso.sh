@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#function get_dataDisk() {
+
+
 	TestSetFile=${4:-../testSet.env}
     if [ ! -f "$TestSetFile" ]; then
         echo "$TestSetFile does not exist."
@@ -9,7 +12,7 @@
     source ../conf.env
 	
 	echo "####################################################################"
-	echo "## 8. vm: inspect"
+	echo "## 11. dataDisk: Delete test association"
 	echo "####################################################################"
 
 	CSP=${1}
@@ -19,14 +22,7 @@
 	source ../common-functions.sh
 	getCloudIndex $CSP
 
-    resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"resourceType": "vm"
-		}
-EOF
-    ); echo ${resp} | jq ''
-    echo ""
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/testDeleteObjectAssociation/dataDisk/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
 #}
 
+#get_dataDisk

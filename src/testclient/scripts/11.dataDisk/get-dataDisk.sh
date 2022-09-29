@@ -1,22 +1,16 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"resourceType": "securityGroup"
-		}
-EOF
-    ); echo ${resp} | jq ''
+	echo "- Get dataDisk in ${MCIRRegionName}"
+
+	curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
     echo ""
 }
 
-#function create_securityGroup() {
+#function get_dataDisk() {
 
 	echo "####################################################################"
-	echo "## 4. securityGroup: Status"
+	echo "## 11. dataDisk: Get"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -42,12 +36,13 @@ EOF
 
 	else
 		echo ""
-
+		
 		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 
 	fi
+    
 #}
 
-#create_securityGroup
+#get_dataDisk

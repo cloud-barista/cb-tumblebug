@@ -1,22 +1,19 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"resourceType": "securityGroup"
-		}
-EOF
-    ); echo ${resp} | jq ''
-    echo ""
+	echo "- Upsize dataDisk in ${MCIRRegionName}"
+
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d \
+		'{
+			"diskSize": "81",
+			"description": "UpsizeDataDisk() test"
+		}' | jq ''
 }
 
-#function create_securityGroup() {
+#function update_dataDisk() {
 
 	echo "####################################################################"
-	echo "## 4. securityGroup: Status"
+	echo "## 11. dataDisk: Upsize"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -42,12 +39,13 @@ EOF
 
 	else
 		echo ""
-
+		
 		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 
 	fi
+	
 #}
 
-#create_securityGroup
+#update_dataDisk

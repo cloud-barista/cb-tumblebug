@@ -347,6 +347,42 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 
 		// Bring TB resources
 		switch resourceType {
+		case common.StrNLB:
+			mcisListinNs, _ := ListMcisId(ns)
+			if mcisListinNs == nil {
+				continue
+			}
+			for _, mcis := range mcisListinNs {
+				nlbListInMcis, err := ListNLBId(ns, mcis)
+				if err != nil {
+					common.CBLog.Error(err)
+					err := fmt.Errorf("an error occurred while getting resource list")
+					return nullObj, err
+				}
+				if nlbListInMcis == nil {
+					continue
+				}
+
+				for _, nlbId := range nlbListInMcis {
+					nlb, err := GetNLB(ns, mcis, nlbId)
+					if err != nil {
+						common.CBLog.Error(err)
+						err := fmt.Errorf("an error occurred while getting resource list")
+						return nullObj, err
+					}
+
+					if nlb.ConnectionName == connConfig { // filtering
+						temp := resourceOnTumblebugInfo{}
+						temp.IdByTb = nlb.Id
+						temp.IdByCsp = nlb.CspNLBId
+						temp.NsId = ns
+						temp.McisId = mcis
+						temp.ObjectKey = GenNLBKey(ns, mcis, nlb.Id)
+
+						TbResourceList.Info = append(TbResourceList.Info, temp)
+					}
+				}
+			}
 		case common.StrVM:
 			mcisListinNs, _ := ListMcisId(ns)
 			if mcisListinNs == nil {
@@ -449,6 +485,31 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 					TbResourceList.Info = append(TbResourceList.Info, temp)
 				}
 			}
+		case common.StrDataDisk:
+			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
+			if err != nil {
+				common.CBLog.Error(err)
+				err := fmt.Errorf("an error occurred while getting resource list")
+				return nullObj, err
+			}
+			resourcesInNs := resourceListInNs.([]mcir.TbDataDiskInfo) // type assertion
+			if len(resourcesInNs) == 0 {
+				continue
+			}
+			for _, resource := range resourcesInNs {
+				if resource.ConnectionName == connConfig { // filtering
+					temp := resourceOnTumblebugInfo{}
+					temp.IdByTb = resource.Id
+					temp.IdByCsp = resource.CspDataDiskId
+					temp.NsId = ns
+					temp.ObjectKey = common.GenResourceKey(ns, resourceType, resource.Id)
+
+					TbResourceList.Info = append(TbResourceList.Info, temp)
+				}
+			}
+		default:
+			err = fmt.Errorf("Invalid resourceType: " + resourceType)
+			return nullObj, err
 		}
 	}
 
@@ -464,6 +525,8 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 
 	var spiderRequestURL string
 	switch resourceType {
+	case common.StrNLB:
+		spiderRequestURL = common.SpiderRestUrl + "/allnlb"
 	case common.StrVM:
 		spiderRequestURL = common.SpiderRestUrl + "/allvm"
 	case common.StrVNet:
@@ -472,6 +535,11 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		spiderRequestURL = common.SpiderRestUrl + "/allsecuritygroup"
 	case common.StrSSHKey:
 		spiderRequestURL = common.SpiderRestUrl + "/allkeypair"
+	case common.StrDataDisk:
+		spiderRequestURL = common.SpiderRestUrl + "/alldisk"
+	default:
+		err = fmt.Errorf("Invalid resourceType: " + resourceType)
+		return nullObj, err
 	}
 
 	resp, err := client.R().
@@ -584,7 +652,9 @@ type inspectOverview struct {
 	VNet          int `json:"vNet"`
 	SecurityGroup int `json:"securityGroup"`
 	SshKey        int `json:"sshKey"`
+	DataDisk      int `json:"dataDisk"`
 	Vm            int `json:"vm"`
+	NLB           int `json:"nlb"`
 }
 
 // InspectResourcesOverview func is to check all resources in CB-TB and CSPs
@@ -651,6 +721,14 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			temp.TumblebugOverview.SshKey = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.SshKey = inspectResult.ResourceOverview.OnCspOnly
 
+			inspectResult, err = InspectResources(k.ConfigName, common.StrDataDisk)
+			if err != nil {
+				common.CBLog.Error(err)
+				temp.SystemMessage += err.Error()
+			}
+			temp.TumblebugOverview.DataDisk = inspectResult.ResourceOverview.OnTumblebug
+			temp.CspOnlyOverview.DataDisk = inspectResult.ResourceOverview.OnCspOnly
+
 			inspectResult, err = InspectResources(k.ConfigName, common.StrVM)
 			if err != nil {
 				common.CBLog.Error(err)
@@ -658,6 +736,15 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 			}
 			temp.TumblebugOverview.Vm = inspectResult.ResourceOverview.OnTumblebug
 			temp.CspOnlyOverview.Vm = inspectResult.ResourceOverview.OnCspOnly
+
+			inspectResult, err = InspectResources(k.ConfigName, common.StrNLB)
+			if err != nil {
+				common.CBLog.Error(err)
+				temp.SystemMessage += err.Error()
+			}
+			temp.TumblebugOverview.NLB = inspectResult.ResourceOverview.OnTumblebug
+			temp.CspOnlyOverview.NLB = inspectResult.ResourceOverview.OnCspOnly
+
 			temp.ElapsedTime = int(math.Round(time.Now().Sub(startTimeForConnection).Seconds()))
 
 			output.InspectResult = append(output.InspectResult, temp)

@@ -168,6 +168,13 @@ func RestGetAllResources(c echo.Context) error {
 
 			content.VNet = resourceList.([]mcir.TbVNetInfo) // type assertion (interface{} -> array)
 			return c.JSON(http.StatusOK, &content)
+		case common.StrDataDisk:
+			var content struct {
+				DataDisk []mcir.TbDataDiskInfo `json:"dataDisk"`
+			}
+
+			content.DataDisk = resourceList.([]mcir.TbDataDiskInfo) // type assertion (interface{} -> array)
+			return c.JSON(http.StatusOK, &content)
 		default:
 			return c.JSON(http.StatusBadRequest, nil)
 

@@ -1,22 +1,26 @@
 #!/bin/bash
 
-function CallTB() {
-	echo "{CONN_CONFIG[$INDEX,$REGION]}: ${CONN_CONFIG[$INDEX,$REGION]}"
-	resp=$(
-        curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
-        {
-			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"resourceType": "securityGroup"
+function CallSpider() {
+    echo "- Get dataDisk in ${MCIRRegionName}"
+
+    resp=$(
+        curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/regdisk -H 'Content-Type: application/json' -d @- <<EOF
+        { 
+			"ConnectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
+			"ReqInfo": { 
+				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}", 
+				"CSPId": "jhseo-test"
+			}
 		}
 EOF
     ); echo ${resp} | jq ''
     echo ""
 }
 
-#function create_securityGroup() {
+#function spider_get_dataDisk() {
 
-	echo "####################################################################"
-	echo "## 4. securityGroup: Status"
+    echo "####################################################################"
+	echo "## 11. dataDisk: Get"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -33,7 +37,7 @@ EOF
 
 				MCIRRegionName=${RegionName[$cspi,$cspj]}
 
-				CallTB
+				CallSpider
 
 			done
 
@@ -42,12 +46,13 @@ EOF
 
 	else
 		echo ""
-
+		
 		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
-		CallTB
+		CallSpider
 
 	fi
+    
 #}
 
-#create_securityGroup
+#spider_get_dataDisk

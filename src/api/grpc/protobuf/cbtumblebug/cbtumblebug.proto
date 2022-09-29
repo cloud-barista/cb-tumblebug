@@ -671,8 +671,8 @@ message TbVmInfo {
 	string public_dns = 16 [json_name="publicDNS", (gogoproto.jsontag) = "publicDNS", (gogoproto.moretags) = "yaml:\"publicDNS\""];
 	string private_ip = 17 [json_name="privateIP", (gogoproto.jsontag) = "privateIP", (gogoproto.moretags) = "yaml:\"privateIP\""];
 	string private_dns = 18 [json_name="privateDNS", (gogoproto.jsontag) = "privateDNS", (gogoproto.moretags) = "yaml:\"privateDNS\""];
-	string vm_boot_disk = 19 [json_name="vmBootDisk", (gogoproto.jsontag) = "vmBootDisk", (gogoproto.moretags) = "yaml:\"vmBootDisk\""];
-	string vm_block_disk = 20 [json_name="vmBlockDisk", (gogoproto.jsontag) = "vmBlockDisk", (gogoproto.moretags) = "yaml:\"vmBlockDisk\""];
+	
+
 	string connection_name = 21 [json_name="connectionName", (gogoproto.jsontag) = "connectionName", (gogoproto.moretags) = "yaml:\"connectionName\""];
 	string spec_id = 22 [json_name="specId", (gogoproto.jsontag) = "specId", (gogoproto.moretags) = "yaml:\"specId\""];
 	string image_id = 23 [json_name="imageId", (gogoproto.jsontag) = "imageId", (gogoproto.moretags) = "yaml:\"imageId\""];
@@ -726,8 +726,8 @@ message SpiderVMInfo {
 	string public_dns = 20 [json_name="PublicDNS", (gogoproto.jsontag) = "PublicDNS", (gogoproto.moretags) = "yaml:\"PublicDNS\""];
 	string private_ip = 21 [json_name="PrivateIP", (gogoproto.jsontag) = "PrivateIP", (gogoproto.moretags) = "yaml:\"PrivateIP\""];
 	string private_dns = 22 [json_name="PrivateDNS", (gogoproto.jsontag) = "PrivateDNS", (gogoproto.moretags) = "yaml:\"PrivateDNS\""];
-	string vm_boot_disk = 23 [json_name="VMBootDisk", (gogoproto.jsontag) = "VMBootDisk", (gogoproto.moretags) = "yaml:\"VMBootDisk\""];
-	string vm_block_disk = 24 [json_name="VMBlockDisk", (gogoproto.jsontag) = "VMBlockDisk", (gogoproto.moretags) = "yaml:\"VMBlockDisk\""];
+	
+	
 	string ssh_access_point = 25 [json_name="SSHAccessPoint", (gogoproto.jsontag) = "SSHAccessPoint", (gogoproto.moretags) = "yaml:\"SSHAccessPoint\""];
 	repeated KeyValue key_value_list = 26 [json_name="KeyValueList", (gogoproto.jsontag) = "KeyValueList", (gogoproto.moretags) = "yaml:\"KeyValueList\""];
 }

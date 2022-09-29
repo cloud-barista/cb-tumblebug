@@ -6,7 +6,7 @@ function CallTB() {
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/inspectResources -H 'Content-Type: application/json' -d @- <<EOF
         {
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"type": "vNet"
+			"resourceType": "vNet"
 		}
 EOF
     ); echo ${resp} | jq ''

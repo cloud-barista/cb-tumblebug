@@ -66,6 +66,7 @@ const (
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"
 	StrSubnet                     string = "subnet"
+	StrDataDisk                   string = "dataDisk"
 	StrNLB                        string = "nlb"
 	StrVM                         string = "vm"
 	StrDefaultResourceName        string = "-systemdefault-"

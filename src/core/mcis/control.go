@@ -37,6 +37,7 @@ import (
 
 	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 )
 
 // MCIS Control
@@ -218,6 +219,7 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 	}
 }
 
+/* Deprecated
 // ControlMcis is func to control MCIS
 func ControlMcis(nsId string, mcisId string, action string) error {
 
@@ -250,6 +252,7 @@ func ControlMcis(nsId string, mcisId string, action string) error {
 	//need to change status
 
 }
+*/
 
 // ControlMcisAsync is func to control MCIS async
 func ControlMcisAsync(nsId string, mcisId string, action string, force bool) error {
@@ -573,6 +576,19 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			if action != ActionTerminate {
 				//When VM is restared, temporal PublicIP will be chanaged. Need update.
 				UpdateVmPublicIp(nsId, mcisId, temp)
+			} else { // if action == ActionTerminate
+				mcir.UpdateAssociatedObjectList(nsId, common.StrImage, temp.ImageId, common.StrDelete, key)
+				mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, temp.SpecId, common.StrDelete, key)
+				mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, temp.SshKeyId, common.StrDelete, key)
+				mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, temp.VNetId, common.StrDelete, key)
+
+				for _, v := range temp.SecurityGroupIds {
+					mcir.UpdateAssociatedObjectList(nsId, common.StrSecurityGroup, v, common.StrDelete, key)
+				}
+
+				for _, v := range temp.DataDiskIds {
+					mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v, common.StrDelete, key)
+				}
 			}
 		}
 
