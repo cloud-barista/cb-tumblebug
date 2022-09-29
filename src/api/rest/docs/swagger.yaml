@@ -1718,12 +1718,12 @@ definitions:
     type: object
   mcis.TbScaleOutVmGroupReq:
     properties:
-      vmGroupSize:
+      numVMsToAdd:
         description: Define addtional VMs to scaleOut
         example: "2"
         type: string
     required:
-    - vmGroupSize
+    - numVMsToAdd
     type: object
   mcis.TbVmDynamicReq:
     properties:

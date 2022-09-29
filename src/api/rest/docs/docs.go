@@ -8391,10 +8391,10 @@ const docTemplate = `{
         "mcis.TbScaleOutVmGroupReq": {
             "type": "object",
             "required": [
-                "vmGroupSize"
+                "numVMsToAdd"
             ],
             "properties": {
-                "vmGroupSize": {
+                "numVMsToAdd": {
                     "description": "Define addtional VMs to scaleOut",
                     "type": "string",
                     "example": "2"
