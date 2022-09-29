@@ -242,7 +242,7 @@ func RestPostMcisVmGroupScaleOut(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.ScaleOutMcisVmGroup(nsId, mcisId, vmgroupId, scaleOutReq.VmGroupSize)
+	result, err := mcis.ScaleOutMcisVmGroup(nsId, mcisId, vmgroupId, scaleOutReq.NumVMsToAdd)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)

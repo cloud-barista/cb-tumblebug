@@ -212,7 +212,7 @@ type TbVmReq struct {
 // TbVmReq is struct to get requirements to create a new server instance
 type TbScaleOutVmGroupReq struct {
 	// Define addtional VMs to scaleOut
-	VmGroupSize string `json:"vmGroupSize" validate:"required" example:"2"`
+	NumVMsToAdd string `json:"numVMsToAdd" validate:"required" example:"2"`
 
 	//tobe added accoring to new future capability
 }
@@ -561,7 +561,7 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 }
 
 // ScaleOutMcisVmGroup is func to create MCIS groupVM
-func ScaleOutMcisVmGroup(nsId string, mcisId string, vmGroupId string, numAddition string) (*TbMcisInfo, error) {
+func ScaleOutMcisVmGroup(nsId string, mcisId string, vmGroupId string, numVMsToAdd string) (*TbMcisInfo, error) {
 	vmIdList, err := ListMcisGroupVms(nsId, mcisId, vmGroupId)
 	if err != nil {
 		temp := &TbMcisInfo{}
@@ -586,7 +586,7 @@ func ScaleOutMcisVmGroup(nsId string, mcisId string, vmGroupId string, numAdditi
 	vmTemplate.RootDiskSize = vmObj.RootDiskSize
 	vmTemplate.Description = vmObj.Description
 
-	vmTemplate.VmGroupSize = numAddition
+	vmTemplate.VmGroupSize = numVMsToAdd
 
 	result, err := CreateMcisGroupVm(nsId, mcisId, vmTemplate, true)
 	if err != nil {
@@ -690,7 +690,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newVmGrou
 				}
 				// add the number of existing VMs in the VMGroup with requested number for additions
 				vmGroupInfoData.VmGroupSize = strconv.Itoa(existingVmSize + vmGroupSize)
-				vmStartIndex = vmStartIndex + existingVmSize + 1
+				vmStartIndex = existingVmSize + 1
 			} else {
 				err = fmt.Errorf("Duplicated VMGroup ID")
 				common.CBLog.Error(err)
