@@ -207,7 +207,42 @@ func RestPostMcisVmGroup(c echo.Context) error {
 	}
 	common.PrintJsonPretty(*vmInfoData)
 
-	result, err := mcis.CreateMcisGroupVm(nsId, mcisId, vmInfoData)
+	result, err := mcis.CreateMcisGroupVm(nsId, mcisId, vmInfoData, true)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusCreated, result)
+}
+
+// RestPostMcisVmGroupScaleOut godoc
+// @Summary ScaleOut VM group in specified MCIS
+// @Description ScaleOut VM group in specified MCIS
+// @Tags [Infra service] MCIS Provisioning management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmgroupId path string true "VM Group ID" default(group-0)
+// @Param vmReq body mcis.TbScaleOutVmGroupReq true "VM Group scaleOut request"
+// @Success 200 {object} mcis.TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vmgroup/{vmgroupId} [post]
+func RestPostMcisVmGroupScaleOut(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmgroupId := c.Param("vmgroupId")
+
+	scaleOutReq := &mcis.TbScaleOutVmGroupReq{}
+	if err := c.Bind(scaleOutReq); err != nil {
+		return err
+	}
+
+	result, err := mcis.ScaleOutMcisVmGroup(nsId, mcisId, vmgroupId, scaleOutReq.NumVMsToAdd)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)

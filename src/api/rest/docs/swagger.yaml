@@ -1716,6 +1716,15 @@ definitions:
     - type
     - vNetId
     type: object
+  mcis.TbScaleOutVmGroupReq:
+    properties:
+      vmGroupSize:
+        description: Define addtional VMs to scaleOut
+        example: "2"
+        type: string
+    required:
+    - vmGroupSize
+    type: object
   mcis.TbVmDynamicReq:
     properties:
       commonImage:
@@ -3959,6 +3968,53 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List VMs with a VMGroup label in a specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+    post:
+      consumes:
+      - application/json
+      description: ScaleOut VM group in specified MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: group-0
+        description: VM Group ID
+        in: path
+        name: vmgroupId
+        required: true
+        type: string
+      - description: VM Group scaleOut request
+        in: body
+        name: vmReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbScaleOutVmGroupReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: ScaleOut VM group in specified MCIS
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcisDynamic:

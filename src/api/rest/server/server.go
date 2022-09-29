@@ -188,6 +188,7 @@ func RunServer(port string) {
 
 	g.POST("/:nsId/mcis/:mcisId/vm", rest_mcis.RestPostMcisVm)
 	g.POST("/:nsId/mcis/:mcisId/vmgroup", rest_mcis.RestPostMcisVmGroup)
+	g.POST("/:nsId/mcis/:mcisId/vmgroup/:vmgroupId", rest_mcis.RestPostMcisVmGroupScaleOut)
 	g.GET("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetMcisVm)
 	g.GET("/:nsId/mcis/:mcisId/vmgroup", rest_mcis.RestGetMcisGroupIds)
 	g.GET("/:nsId/mcis/:mcisId/vmgroup/:vmgroupId", rest_mcis.RestGetMcisGroupVms)

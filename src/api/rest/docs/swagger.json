@@ -2780,6 +2780,74 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "ScaleOut VM group in specified MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "ScaleOut VM group in specified MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "group-0",
+                        "description": "VM Group ID",
+                        "name": "vmgroupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "VM Group scaleOut request",
+                        "name": "vmReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbScaleOutVmGroupReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
             }
         },
         "/ns/{nsId}/mcisDynamic": {
@@ -8309,6 +8377,19 @@
                 "vNetId": {
                     "type": "string",
                     "example": "ns01-systemdefault-aws-ap-northeast-2"
+                }
+            }
+        },
+        "mcis.TbScaleOutVmGroupReq": {
+            "type": "object",
+            "required": [
+                "vmGroupSize"
+            ],
+            "properties": {
+                "vmGroupSize": {
+                    "description": "Define addtional VMs to scaleOut",
+                    "type": "string",
+                    "example": "2"
                 }
             }
         },
