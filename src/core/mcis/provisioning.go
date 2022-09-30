@@ -394,6 +394,14 @@ type TbVmInfo struct {
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail,omitempty"`
 }
 
+// TbVmIdNameInDetailInfo is struct for details related with ID and Name
+type TbIdNameInDetailInfo struct {
+	IdInTb    string `json:"idInTb"`
+	IdInSp    string `json:"idInSp"`
+	IdInCsp   string `json:"idInCsp"`
+	NameInCsp string `json:"nameInCsp"`
+}
+
 // StatusCountInfo is struct to count the number of VMs in each status. ex: Running=4, Suspended=8.
 type StatusCountInfo struct {
 

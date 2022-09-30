@@ -2492,7 +2492,8 @@
                     {
                         "enum": [
                             "default",
-                            "status"
+                            "status",
+                            "idsInDetail"
                         ],
                         "type": "string",
                         "description": "Option for MCIS",
@@ -2513,6 +2514,9 @@
                                     "properties": {
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbVmInfo"
+                                        },
+                                        "[IDNAME]": {
+                                            "$ref": "#/definitions/mcis.TbIdNameInDetailInfo"
                                         },
                                         "[STATUS]": {
                                             "$ref": "#/definitions/mcis.TbVmStatusInfo"
@@ -8637,6 +8641,23 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "mcis.TbIdNameInDetailInfo": {
+            "type": "object",
+            "properties": {
+                "idInCsp": {
+                    "type": "string"
+                },
+                "idInSp": {
+                    "type": "string"
+                },
+                "idInTb": {
+                    "type": "string"
+                },
+                "nameInCsp": {
+                    "type": "string"
                 }
             }
         },
