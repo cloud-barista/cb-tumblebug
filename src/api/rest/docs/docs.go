@@ -2500,7 +2500,8 @@ const docTemplate = `{
                     {
                         "enum": [
                             "default",
-                            "status"
+                            "status",
+                            "idsInDetail"
                         ],
                         "type": "string",
                         "description": "Option for MCIS",
@@ -2521,6 +2522,9 @@ const docTemplate = `{
                                     "properties": {
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbVmInfo"
+                                        },
+                                        "[IDNAME]": {
+                                            "$ref": "#/definitions/mcis.TbIdNameInDetailInfo"
                                         },
                                         "[STATUS]": {
                                             "$ref": "#/definitions/mcis.TbVmStatusInfo"
@@ -8645,6 +8649,23 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "mcis.TbIdNameInDetailInfo": {
+            "type": "object",
+            "properties": {
+                "idInCsp": {
+                    "type": "string"
+                },
+                "idInSp": {
+                    "type": "string"
+                },
+                "idInTb": {
+                    "type": "string"
+                },
+                "nameInCsp": {
+                    "type": "string"
                 }
             }
         },

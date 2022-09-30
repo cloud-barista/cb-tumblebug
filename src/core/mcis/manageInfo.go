@@ -538,6 +538,87 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	return vmTmp, nil
 }
 
+// GetVmIdNameInDetail is func to get ID and Name details
+func GetVmIdNameInDetail(nsId string, mcisId string, vmId string) (*TbIdNameInDetailInfo, error) {
+	key := common.GenMcisKey(nsId, mcisId, vmId)
+	keyValue, err := common.CBStore.Get(key)
+	if keyValue == nil || err != nil {
+		common.CBLog.Error(err)
+		return &TbIdNameInDetailInfo{}, err
+	}
+	vmTmp := TbVmInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
+
+	var idDetails TbIdNameInDetailInfo
+
+	idDetails.IdInTb = vmTmp.Id
+	idDetails.IdInSp = vmTmp.CspViewVmDetail.IId.NameId
+	idDetails.IdInCsp = vmTmp.CspViewVmDetail.IId.SystemId
+	idDetails.NameInCsp = "TBD"
+
+	type spiderReqTmp struct {
+		ConnectionName string `json:"ConnectionName"`
+		ResourceType   string `json:"ResourceType"`
+	}
+	type spiderResTmp struct {
+		Name string `json:"Name"`
+	}
+
+	var tempReq spiderReqTmp
+	tempReq.ConnectionName = vmTmp.ConnectionName
+	tempReq.ResourceType = "vm"
+
+	var tempRes *spiderResTmp
+
+	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+
+		client := resty.New().SetCloseConnection(true)
+		client.SetAllowGetMethodPayload(true)
+
+		// fmt.Println("tempReq:")                             // for debug
+		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+		fmt.Println(tempReq) // for debug
+
+		req := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&spiderResTmp{}) // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+		var resp *resty.Response
+		var err error
+
+		var url string
+		url = fmt.Sprintf("%s/cspresourcename/%s", common.SpiderRestUrl, idDetails.IdInSp)
+		resp, err = req.Get(url)
+
+		if err != nil {
+			common.CBLog.Error(err)
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return &TbIdNameInDetailInfo{}, err
+		}
+
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			common.CBLog.Error(err)
+			return &TbIdNameInDetailInfo{}, err
+		}
+
+		tempRes = resp.Result().(*spiderResTmp)
+		fmt.Println(tempRes)
+
+	} else {
+		err = fmt.Errorf("gRPC for GetVmIdNameInDetail() is not supported")
+		common.CBLog.Error(err)
+		return &TbIdNameInDetailInfo{}, err
+	}
+	idDetails.NameInCsp = tempRes.Name
+
+	return &idDetails, nil
+}
+
 // [MCIS and VM status management]
 
 // GetMcisStatus is func to Get Mcis Status

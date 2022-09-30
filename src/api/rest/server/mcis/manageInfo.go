@@ -253,8 +253,8 @@ func RestDelAllMcis(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmId path string true "VM ID" default(vm01)
-// @Param option query string false "Option for MCIS" Enums(default, status)
-// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbVmInfo,[STATUS]=mcis.TbVmStatusInfo} "Different return structures by the given option param"
+// @Param option query string false "Option for MCIS" Enums(default, status, idsInDetail)
+// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbVmInfo,[STATUS]=mcis.TbVmStatusInfo,[IDNAME]=mcis.TbIdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [get]
@@ -276,6 +276,17 @@ func RestGetMcisVm(c echo.Context) error {
 		}
 
 		common.PrintJsonPretty(*result)
+
+		return c.JSON(http.StatusOK, result)
+
+	} else if option == "idsInDetail" {
+
+		result, err := mcis.GetVmIdNameInDetail(nsId, mcisId, vmId)
+		if err != nil {
+			common.CBLog.Error(err)
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusInternalServerError, &mapA)
+		}
 
 		return c.JSON(http.StatusOK, result)
 

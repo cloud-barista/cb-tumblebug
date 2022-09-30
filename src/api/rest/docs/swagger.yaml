@@ -1584,6 +1584,17 @@ definitions:
           type: string
         type: array
     type: object
+  mcis.TbIdNameInDetailInfo:
+    properties:
+      idInCsp:
+        type: string
+      idInSp:
+        type: string
+      idInTb:
+        type: string
+      nameInCsp:
+        type: string
+    type: object
   mcis.TbMcisDynamicReq:
     properties:
       description:
@@ -3910,6 +3921,7 @@ paths:
         enum:
         - default
         - status
+        - idsInDetail
         in: query
         name: option
         type: string
@@ -3924,6 +3936,8 @@ paths:
             - properties:
                 '[DEFAULT]':
                   $ref: '#/definitions/mcis.TbVmInfo'
+                '[IDNAME]':
+                  $ref: '#/definitions/mcis.TbIdNameInDetailInfo'
                 '[STATUS]':
                   $ref: '#/definitions/mcis.TbVmStatusInfo'
               type: object
