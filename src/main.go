@@ -24,6 +24,7 @@ import (
 
 	//_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/spf13/viper"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -35,6 +36,29 @@ import (
 	"xorm.io/xorm"
 	"xorm.io/xorm/names"
 )
+
+// init for main
+func init() {
+	profile := "cloud_conf"
+	setConfig(profile)
+}
+
+// setConfig get cloud settings from a config file
+func setConfig(profile string) {
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("./conf/")
+	viper.AddConfigPath("../conf/")
+	viper.SetConfigName(profile)
+	viper.SetConfigType("yaml")
+	err := viper.ReadInConfig()
+	if err != nil { // Handle errors reading the config file
+		panic(fmt.Errorf("fatal error config file: %w", err))
+	}
+	err = viper.Unmarshal(&common.RuntimeConf)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // Main Body
 
@@ -175,6 +199,8 @@ func main() {
 		//fmt.Println("gRPC server started on " + grpcserver.Port)
 		wg.Done()
 	}()
+
+	fmt.Println("RuntimeConf: ", common.RuntimeConf.Cloud)
 
 	wg.Wait()
 }
