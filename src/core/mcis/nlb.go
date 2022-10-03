@@ -140,7 +140,7 @@ type TBNLBTargetGroup struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"22"`      // Listener Port or 1-65535
 
-	VmGroupId string  `json:"vmGroupId" example:"group"`
+	VmGroupId string   `json:"vmGroupId" example:"group"`
 	VMs       []string `json:"vms"`
 
 	CspID        string // Optional, May be Used by Driver.
@@ -296,6 +296,23 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 	tempReq.ReqInfo.VMGroup.Port = u.TargetGroup.Port
 	tempReq.ReqInfo.VMGroup.Protocol = u.TargetGroup.Protocol
+
+	// // TODO: update this part to assign availble values for each CSP (current code does not work)
+	fmt.Println("NLB available values (AWS): ", common.RuntimeConf.Cloud.Aws)
+	fmt.Println("NLB available values (Azure): ", common.RuntimeConf.Cloud.Azure)
+	// if cloud-type == aws {
+	// 	tempReq.ReqInfo.HealthChecker.Interval = common.RuntimeConf.Cloud.Aws.Nlb.Interval
+	// 	tempReq.ReqInfo.HealthChecker.Timeout = common.RuntimeConf.Cloud.Aws.Nlb.Timeout
+	// 	tempReq.ReqInfo.HealthChecker.Threshold = common.RuntimeConf.Cloud.Aws.Nlb.Threshold
+	// } else if cloud-type == azure {
+	// 	tempReq.ReqInfo.HealthChecker.Interval = common.RuntimeConf.Cloud.Azure.Nlb.Interval
+	// 	tempReq.ReqInfo.HealthChecker.Timeout = common.RuntimeConf.Cloud.Azure.Nlb.Timeout
+	// 	tempReq.ReqInfo.HealthChecker.Threshold = common.RuntimeConf.Cloud.Azure.Nlb.Threshold
+	// } else {
+	// 	tempReq.ReqInfo.HealthChecker.Interval = common.RuntimeConf.Cloud.Common.Nlb.Interval
+	// 	tempReq.ReqInfo.HealthChecker.Timeout = common.RuntimeConf.Cloud.Common.Nlb.Timeout
+	// 	tempReq.ReqInfo.HealthChecker.Threshold = common.RuntimeConf.Cloud.Common.Nlb.Threshold
+	// }
 
 	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.VmGroupId)
 	if err != nil {
