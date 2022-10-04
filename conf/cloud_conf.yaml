@@ -1,0 +1,66 @@
+cloud:
+  common:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+  aws:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "-1"
+      threshold: "3"
+  azure:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+  gcp:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+  alibaba:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+  tencent:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+  ibm:
+    enable: "y"
+    nlb:
+      enable: "y"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+  openstack:
+    enable: "y"
+    nlb:
+      enable: "n"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+  cloudit	:
+    enable: "y"
+    nlb:
+      enable: "n"
+      interval: "10"
+      timeout: "9"
+      threshold: "3"
+global:
+  port: 8080
