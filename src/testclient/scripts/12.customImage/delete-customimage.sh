@@ -1,20 +1,15 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Register dataDisk in ${MCIRRegionName}"
+	echo "- Unregister image in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk?option=register -H 'Content-Type: application/json' -d \
-		'{ 
-			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
-			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"cspDataDiskId": "vol-xxxx"
-		}' | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/customImage/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
 }
 
-#function register_dataDisk() {
+#function unregister_image() {
 
 	echo "####################################################################"
-	echo "## 11. dataDisk: Register"
+	echo "## 6. image: Unregister"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -49,4 +44,4 @@ function CallTB() {
 	
 #}
 
-#register_dataDisk
+#unregister_image

@@ -210,28 +210,24 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbImageInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return TbImageInfo{}, err
 	}
 	err = common.CheckString(content.Name)
 	if err != nil {
-		temp := TbImageInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return TbImageInfo{}, err
 	}
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if check {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("The image " + content.Name + " already exists.")
-		return temp, err
+		return TbImageInfo{}, err
 	}
 
 	if err != nil {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("Failed to check the existence of the image " + content.Name + ".")
-		return temp, err
+		return TbImageInfo{}, err
 	}
 
 	content.Namespace = nsId
@@ -245,7 +241,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
-		return *content, err
+		return TbImageInfo{}, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {

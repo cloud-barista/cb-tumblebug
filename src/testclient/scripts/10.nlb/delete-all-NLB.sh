@@ -10,4 +10,3 @@ resp=$(
 	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/nlb
 	); echo ${resp} | jq ''
     echo ""
-	# echo ["${CONN_CONFIG[$INDEX,$REGION]}-0"] # for debug

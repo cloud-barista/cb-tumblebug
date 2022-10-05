@@ -35,4 +35,3 @@ resp=$(
 EOF
     ); echo ${resp} | jq ''
     echo ""
-	# echo ["${CONN_CONFIG[$INDEX,$REGION]}-0"] # for debug

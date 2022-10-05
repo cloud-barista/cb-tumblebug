@@ -7,7 +7,7 @@ function CallTB() {
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"diskType": "gp2",
+			"diskType": "default",
 			"diskSize": "77"
 		}' | jq ''
 }

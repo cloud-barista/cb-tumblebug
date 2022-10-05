@@ -165,6 +165,13 @@ func main() {
 		fmt.Println("Table image set successfully..")
 	}
 
+	err = common.ORM.Sync2(new(mcir.TbCustomImageInfo))
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Table customImage set successfully..")
+	}
+
 	//defer db.Close()
 
 	//Ticker for MCIS Orchestration Policy
