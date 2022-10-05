@@ -182,7 +182,7 @@ func RunServer(port string) {
 		middleware.TimeoutConfig{Timeout: 60 * time.Second}),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
 
-	g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
+	// g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
 	g.DELETE("/:nsId/mcis/:mcisId", rest_mcis.RestDelMcis)
 	g.DELETE("/:nsId/mcis", rest_mcis.RestDelAllMcis)
 
@@ -195,8 +195,8 @@ func RunServer(port string) {
 
 	//g.GET("/:nsId/mcis/:mcisId/vm", rest_mcis.RestGetAllMcisVm)
 	//g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)
-	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/attachDataDisk", rest_mcis.RestPutMcisVm)
-	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/detachDataDisk", rest_mcis.RestPutMcisVm)
+	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/attachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
+	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/detachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
 	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 
@@ -235,6 +235,9 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestDelAllNLB)
 	g.GET("/:nsId/mcis/:mcisId/nlb/:resourceId/healthz", rest_mcis.RestGetNLBHealth)
 
+	// VM snapshot -> creates one customImage and 'n' dataDisks
+	g.POST("/:nsId/mcis/:mcisId/vm/:vmId/snapshot", rest_mcis.RestPostMcisVmWithCmd)
+
 	// These REST APIs are for dev/test only
 	g.POST("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestAddNLBVMs)
 	g.DELETE("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestRemoveNLBVMs)
@@ -253,6 +256,13 @@ func RunServer(port string) {
 	g.PUT("/:nsId/resources/image/:resourceId", rest_mcir.RestPutImage)
 	g.DELETE("/:nsId/resources/image/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/image", rest_mcir.RestDelAllResources)
+
+	g.POST("/:nsId/resources/customImage", rest_mcir.RestPostCustomImage)
+	g.GET("/:nsId/resources/customImage/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/customImage", rest_mcir.RestGetAllResources)
+	// g.PUT("/:nsId/resources/customImage/:resourceId", rest_mcir.RestPutCustomImage)
+	g.DELETE("/:nsId/resources/customImage/:resourceId", rest_mcir.RestDelResource)
+	g.DELETE("/:nsId/resources/customImage", rest_mcir.RestDelAllResources)
 
 	g.POST("/:nsId/resources/sshKey", rest_mcir.RestPostSshKey)
 	g.GET("/:nsId/resources/sshKey/:resourceId", rest_mcir.RestGetResource)

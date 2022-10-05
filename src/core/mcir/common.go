@@ -71,6 +71,7 @@ func init() {
 	// internally dereferences during it's type checks.
 	validate.RegisterStructValidation(TbDataDiskReqStructLevelValidation, TbDataDiskReq{})
 	validate.RegisterStructValidation(TbImageReqStructLevelValidation, TbImageReq{})
+	validate.RegisterStructValidation(TbCustomImageReqStructLevelValidation, TbImageReq{})
 	validate.RegisterStructValidation(TbSecurityGroupReqStructLevelValidation, TbSecurityGroupReq{})
 	validate.RegisterStructValidation(TbSpecReqStructLevelValidation, TbSpecReq{})
 	validate.RegisterStructValidation(TbSshKeyReqStructLevelValidation, TbSshKeyReq{})
@@ -196,6 +197,34 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			return nil
+		case common.StrCustomImage:
+			temp := TbCustomImageInfo{}
+			err = json.Unmarshal([]byte(keyValue.Value), &temp)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			tempReq.ConnectionName = temp.ConnectionName
+			url = common.SpiderRestUrl + "/myimage/" + temp.CspCustomImageName
+
+			/*
+				// delete image info
+				err := common.CBStore.Delete(key)
+				if err != nil {
+					common.CBLog.Error(err)
+					return err
+				}
+
+				// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
+				_, err = common.ORM.Delete(&TbCustomImageInfo{Namespace: nsId, Id: resourceId})
+				if err != nil {
+					fmt.Println(err.Error())
+				} else {
+					fmt.Println("Data deleted successfully..")
+				}
+
+				return nil
+			*/
 		case common.StrSpec:
 			// delete spec info
 
@@ -482,6 +511,14 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 				// return err
 			}
 		}
+	} else if resourceType == common.StrCustomImage {
+		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
+		_, err = common.ORM.Delete(&TbCustomImageInfo{Namespace: nsId, Id: resourceId})
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println("Data deleted successfully..")
+		}
 	}
 
 	err = common.CBStore.Delete(key)
@@ -734,6 +771,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 	}
 
 	if resourceType == common.StrImage ||
+		resourceType == common.StrCustomImage ||
 		resourceType == common.StrSSHKey ||
 		resourceType == common.StrSpec ||
 		resourceType == common.StrVNet ||
@@ -791,6 +829,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 	}
 
 	if resourceType == common.StrImage ||
+		resourceType == common.StrCustomImage ||
 		resourceType == common.StrSSHKey ||
 		resourceType == common.StrSpec ||
 		resourceType == common.StrVNet ||
@@ -829,6 +868,37 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 					common.CBLog.Error(err)
 					return nil, err
 				}
+				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
+				if filterKey != "" {
+					// If not inclues both, do not append current item to the list result.
+					itemValueForCompare := strings.ToLower(v.Value)
+					if !(strings.Contains(itemValueForCompare, strings.ToLower(filterKey)) && strings.Contains(itemValueForCompare, strings.ToLower(filterVal))) {
+						continue
+					}
+				}
+				res = append(res, tempObj)
+			}
+			return res, nil
+		case common.StrCustomImage:
+			res := []TbCustomImageInfo{}
+			for _, v := range keyValue {
+
+				tempObj := TbCustomImageInfo{}
+				err = json.Unmarshal([]byte(v.Value), &tempObj)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
+
+				// Update TB CustomImage object's 'status' field
+				// Just calling GetResource(customImage) once will update TB CustomImage object's 'status' field
+				newObj, err := GetResource(nsId, common.StrCustomImage, tempObj.Id)
+				if err != nil {
+					common.CBLog.Error(err)
+					return nil, err
+				}
+				tempObj = newObj.(TbCustomImageInfo)
+
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
 				if filterKey != "" {
 					// If not inclues both, do not append current item to the list result.
@@ -956,6 +1026,8 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		switch resourceType {
 		case common.StrImage:
 			return []TbImageInfo{}, nil
+		case common.StrCustomImage:
+			return []TbCustomImageInfo{}, nil
 		case common.StrSecurityGroup:
 			return []TbSecurityGroupInfo{}, nil
 		case common.StrSpec:
@@ -1225,6 +1297,51 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				return nil, err
 			}
 			return res, nil
+		case common.StrCustomImage:
+			res := TbCustomImageInfo{}
+			err = json.Unmarshal([]byte(keyValue.Value), &res)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
+
+			// Update TB CustomImage object's 'status' field
+			url := fmt.Sprintf("%s/myimage/%s", common.SpiderRestUrl, res.CspCustomImageName)
+
+			client := resty.New().SetCloseConnection(true)
+			client.SetAllowGetMethodPayload(true)
+
+			connectionName := common.SpiderConnectionName{
+				ConnectionName: res.ConnectionName,
+			}
+
+			req := client.R().
+				SetHeader("Content-Type", "application/json").
+				SetBody(connectionName).
+				SetResult(&SpiderMyImageInfo{}) // or SetResult(AuthSuccess{}).
+				//SetError(&AuthError{}).       // or SetError(AuthError{}).
+
+			resp, err := req.Get(url)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
+
+			fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+			switch {
+			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+				err := fmt.Errorf(string(resp.Body()))
+				fmt.Println("body: ", string(resp.Body()))
+				common.CBLog.Error(err)
+				return nil, err
+			}
+
+			updatedSpiderMyImage := resp.Result().(*SpiderMyImageInfo)
+			res.Status = updatedSpiderMyImage.Status
+			fmt.Printf("res.Status: %s \n", res.Status) // for debug
+			UpdateResourceObject(nsId, common.StrCustomImage, res)
+
+			return res, nil
 		case common.StrSecurityGroup:
 			res := TbSecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
@@ -1328,6 +1445,7 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 
 	// Check resourceType's validity
 	if resourceType == common.StrImage ||
+		resourceType == common.StrCustomImage ||
 		resourceType == common.StrSSHKey ||
 		resourceType == common.StrSpec ||
 		resourceType == common.StrVNet ||

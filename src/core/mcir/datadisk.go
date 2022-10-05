@@ -73,7 +73,8 @@ type SpiderDiskReqInfoWrapper struct {
 // SpiderDiskInfo is a struct to create JSON body of 'Get disk request'
 type SpiderDiskInfo struct {
 	// Fields for request
-	Name string
+	Name  string
+	CSPid string
 
 	// Fields for both request and response
 	DiskType string // "", "SSD(gp2)", "Premium SSD", ...
@@ -93,7 +94,7 @@ type SpiderDiskInfo struct {
 type TbDataDiskReq struct {
 	Name           string `json:"name" validate:"required"`
 	ConnectionName string `json:"connectionName" validate:"required"`
-	DiskType       string `json:"diskType" validate:"required"`
+	DiskType       string `json:"diskType"`
 	DiskSize       string `json:"diskSize" validate:"required"`
 	Description    string `json:"description,omitempty"`
 
@@ -145,30 +146,16 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		return TbDataDiskInfo{}, err
 	}
 
-	if option == "register" { // fields validation
-		errs := []error{}
-		// errs = append(errs, validate.Var(u.Username, "required"))
-		// errs = append(errs, validate.Var(u.PrivateKey, "required"))
-
-		for _, err := range errs {
-			if err != nil {
-				if _, ok := err.(*validator.InvalidValidationError); ok {
-					fmt.Println(err)
-					return TbDataDiskInfo{}, err
-				}
+	if option != "register" { // fields validation
+		err = validate.Struct(u)
+		if err != nil {
+			if _, ok := err.(*validator.InvalidValidationError); ok {
+				fmt.Println(err)
 				return TbDataDiskInfo{}, err
 			}
-		}
-	}
 
-	err = validate.Struct(u)
-	if err != nil {
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
 			return TbDataDiskInfo{}, err
 		}
-
-		return TbDataDiskInfo{}, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
@@ -187,6 +174,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		ConnectionName: u.ConnectionName,
 		ReqInfo: SpiderDiskInfo{
 			Name:     fmt.Sprintf("%s-%s", nsId, u.Name),
+			CSPid:    u.CspDataDiskId, // for option=register
 			DiskType: u.DiskType,
 			DiskSize: u.DiskSize,
 		},

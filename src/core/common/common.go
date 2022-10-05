@@ -62,6 +62,7 @@ const (
 	StrDelete                     string = "delete"
 	StrSSHKey                     string = "sshKey"
 	StrImage                      string = "image"
+	StrCustomImage                string = "customImage"
 	StrSecurityGroup              string = "securityGroup"
 	StrSpec                       string = "spec"
 	StrVNet                       string = "vNet"

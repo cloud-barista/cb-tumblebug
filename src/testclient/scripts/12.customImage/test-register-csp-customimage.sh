@@ -1,20 +1,20 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Register dataDisk in ${MCIRRegionName}"
+	echo "- Register customImage in ${MCIRRegionName}"
 
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/dataDisk?option=register -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/customImage?option=register -H 'Content-Type: application/json' -d \
 		'{ 
 			"connectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'", 
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'", 
-			"cspDataDiskId": "vol-xxxx"
+			"cspCustomImageId": "ami-04f77645a3b0b07c5"
 		}' | jq ''
 }
 
-#function register_dataDisk() {
+#function register_customImage() {
 
 	echo "####################################################################"
-	echo "## 11. dataDisk: Register"
+	echo "## 11. customImage: Register"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -49,4 +49,4 @@ function CallTB() {
 	
 #}
 
-#register_dataDisk
+#register_customImage

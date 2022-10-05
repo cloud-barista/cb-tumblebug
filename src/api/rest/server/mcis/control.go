@@ -16,7 +16,9 @@ package mcis
 
 import (
 	"net/http"
+	"strings"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
@@ -100,4 +102,99 @@ func RestGetControlMcisVm(c echo.Context) error {
 		mapA := map[string]string{"message": "'action' should be one of these: suspend, resume, reboot, terminate"}
 		return c.JSON(http.StatusBadRequest, &mapA)
 	}
+}
+
+// RestPutMcisVmWithCmd godoc
+// @Summary Attach/Detach data disk to/from VM
+// @Description Attach/Detach data disk to/from VM
+// @Tags [Infra resource] MCIR Data Disk management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
+// @Param command path string true "Command to perform" Enums(attachDataDisk, detachDataDisk)
+// @Param dataDisk body mcir.TbAttachDetachDataDiskReq true "Data disk ID to attach/detach"
+// @Success 200 {object} mcis.TbVmInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command} [put]
+func RestPutMcisVmWithCmd(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	command := strings.Split(c.Path(), "/")[8]
+	// c.Path(): /tumblebug/ns/:nsId/mcis/{mcisId}/vm/{vmId}/attachDataDisk
+
+	u := &mcir.TbAttachDetachDataDiskReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	switch command {
+	case "attachDataDisk":
+		fallthrough
+	case "detachDataDisk":
+		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, command, u.DataDiskId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+
+		// common.PrintJsonPretty(result)
+
+		return c.JSON(http.StatusOK, result)
+	default:
+		mapA := map[string]string{"message": "Supported commands: attachDataDisk, detachDataDisk"}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+	return nil
+}
+
+// RestPostMcisVmWithCmd godoc
+// @Summary Create VM snapshot
+// @Description Create VM snapshot
+// @Tags [Infra resource] VM snapshot management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
+// @Param command path string true "Command to perform" Enums(snapshot)
+// @Success 200 {object} mcir.TbCustomImageInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command} [post]
+func RestPostMcisVmWithCmd(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	command := strings.Split(c.Path(), "/")[8]
+	// c.Path(): /tumblebug/ns/:nsId/mcis/{mcisId}/vm/{vmId}/snapshot
+
+	u := &mcis.TbVmSnapshotReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	switch command {
+	case "snapshot":
+		result, err := mcis.CreateVmSnapshot(nsId, mcisId, vmId, u.Name)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+
+		// common.PrintJsonPretty(result)
+
+		return c.JSON(http.StatusOK, result)
+	default:
+		mapA := map[string]string{"message": "Supported commands: snapshot"}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+	return nil
 }

@@ -168,6 +168,7 @@ func PrintJsonPretty(v interface{}) {
 func GenResourceKey(nsId string, resourceType string, resourceId string) string {
 
 	if resourceType == StrImage ||
+		resourceType == StrCustomImage ||
 		resourceType == StrSSHKey ||
 		resourceType == StrSpec ||
 		resourceType == StrVNet ||
@@ -198,6 +199,8 @@ func GenChildResourceKey(nsId string, resourceType string, parentResourceId stri
 type mcirIds struct { // Tumblebug
 	CspImageId           string
 	CspImageName         string
+	CspCustomImageId     string
+	CspCustomImageName   string
 	CspSshKeyName        string
 	CspSpecName          string
 	CspVNetId            string
@@ -236,6 +239,10 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
 		return content.CspImageId, nil
+	case StrCustomImage:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspCustomImageId, nil
 	case StrSSHKey:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)

@@ -17,10 +17,8 @@ package mcis
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
@@ -182,10 +180,10 @@ func RestGetAllMcis(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [put]
-*/
 func RestPutMcis(c echo.Context) error {
 	return nil
 }
+*/
 
 // RestDelMcis godoc
 // @Summary Delete MCIS
@@ -242,7 +240,7 @@ func RestDelAllMcis(c echo.Context) error {
 }
 
 // TODO: swag does not support multiple response types (success 200) in an API.
-// Annotation for API documention Need to be revised.
+// Annotation for API documention needs to be revised.
 
 // RestGetMcisVm godoc
 // @Summary Get VM in specified MCIS
@@ -305,54 +303,27 @@ func RestGetMcisVm(c echo.Context) error {
 	}
 }
 
-// RestPutMcisVm godoc
-// @Summary Attach/Detach data disk to/from VM
-// @Description Attach/Detach data disk to/from VM
+/*
+	RestPutMcisVm function not yet implemented
+
+// RestPutSshKey godoc
+// @Summary Update MCIS
+// @Description Update MCIS
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmId path string true "VM ID" default(vm01)
-// @Param command path string true "Command to perform" Enums(attachDataDisk, detachDataDisk)
-// @Param dataDisk body mcir.TbAttachDetachDataDiskReq true "Data disk ID to attach/detach"
+// @Param vmInfo body mcis.TbVmInfo true "Details for an VM object"
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command} [put]
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [put]
 func RestPutMcisVm(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
-	vmId := c.Param("vmId")
-
-	command := strings.Split(c.Path(), "/")[8]
-	// c.Path(): /tumblebug/ns/:nsId/mcis/{mcisId}/vm/{vmId}/attachDataDisk
-
-	u := &mcir.TbAttachDetachDataDiskReq{}
-	if err := c.Bind(u); err != nil {
-		return err
-	}
-
-	switch command {
-	case "attachDataDisk":
-		fallthrough
-	case "detachDataDisk":
-		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, command, u.DataDiskId)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		// common.PrintJsonPretty(result)
-
-		return c.JSON(http.StatusOK, result)
-	default:
-		mapA := map[string]string{"message": "Supported commands: attachDataDisk, detachDataDisk"}
-		return c.JSON(http.StatusNotFound, &mapA)
-	}
 	return nil
 }
+*/
 
 // RestDelMcisVm godoc
 // @Summary Delete VM in specified MCIS

@@ -2621,7 +2621,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra service] MCIS Provisioning management"
+                    "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Attach/Detach data disk to/from VM",
                 "parameters": [
@@ -2675,6 +2675,75 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcis.TbVmInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create VM snapshot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] VM snapshot management"
+                ],
+                "summary": "Create VM snapshot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vm01",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "snapshot"
+                        ],
+                        "type": "string",
+                        "description": "Command to perform",
+                        "name": "command",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbCustomImageInfo"
                         }
                     },
                     "404": {
@@ -3518,6 +3587,69 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/resources/customImage": {
+            "post": {
+                "description": "Create Custom Image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Custom Image management"
+                ],
+                "summary": "Create Custom Image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "register"
+                        ],
+                        "type": "string",
+                        "description": "Option: ",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Details for an Custom Image object",
+                        "name": "customImageInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbCustomImageReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbCustomImageInfo"
                         }
                     },
                     "404": {
@@ -6960,6 +7092,90 @@ const docTemplate = `{
                 }
             }
         },
+        "mcir.TbCustomImageInfo": {
+            "type": "object",
+            "properties": {
+                "associatedObjectList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "creationDate": {
+                    "type": "string"
+                },
+                "cspCustomImageId": {
+                    "type": "string"
+                },
+                "cspCustomImageName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "guestOS": {
+                    "description": "Windows7, Ubuntu etc.",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAutoGenerated": {
+                    "type": "boolean"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "description": "required to save in RDB",
+                    "type": "string"
+                },
+                "sourceVmId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                }
+            }
+        },
+        "mcir.TbCustomImageReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "connectionName": {
+                    "type": "string"
+                },
+                "cspCustomImageId": {
+                    "description": "This field is for 'Register existing custom image'",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sourceVmId": {
+                    "type": "string"
+                }
+            }
+        },
         "mcir.TbDataDiskInfo": {
             "type": "object",
             "properties": {
@@ -7021,7 +7237,6 @@ const docTemplate = `{
             "required": [
                 "connectionName",
                 "diskSize",
-                "diskType",
                 "name"
             ],
             "properties": {
@@ -9285,6 +9500,9 @@ const docTemplate = `{
         "mcis.inspectOverview": {
             "type": "object",
             "properties": {
+                "customImage": {
+                    "type": "integer"
+                },
                 "dataDisk": {
                     "type": "integer"
                 },
@@ -9308,7 +9526,16 @@ const docTemplate = `{
         "mcis.registerationOverview": {
             "type": "object",
             "properties": {
+                "customImage": {
+                    "type": "integer"
+                },
+                "dataDisk": {
+                    "type": "integer"
+                },
                 "failed": {
+                    "type": "integer"
+                },
+                "nlb": {
                     "type": "integer"
                 },
                 "securityGroup": {

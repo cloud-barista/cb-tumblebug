@@ -11,11 +11,10 @@ resp=$(
 	{
 		"targetGroup": {
 			"VMs" : [
-				"${CONN_CONFIG[$INDEX,$REGION]}-0"
+				"${CONN_CONFIG[$INDEX,$REGION]}-1"
 				]
 		}
 	}
 EOF
     ); echo ${resp} | jq ''
     echo ""
-	# echo ["${CONN_CONFIG[$INDEX,$REGION]}-0"] # for debug
