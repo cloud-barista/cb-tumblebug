@@ -1,32 +1,26 @@
 #!/bin/bash
 
-#function add-vm-to-mcis() {
+echo "####################################################################"
+echo "## 8. vm: Add VM to MCIS"
+echo "####################################################################"
 
+source ../init.sh
 
-	TestSetFile=${5:-../testSet.env}
-    
-    if [ ! -f "$TestSetFile" ]; then
-        echo "$TestSetFile does not exist."
-        exit
-    fi
-	source $TestSetFile
-    source ../conf.env
-	
-	echo "####################################################################"
-	echo "## 8. vm: Create MCIS"
-	echo "####################################################################"
+# NUMVM=${OPTION01:-1}
 
-	CSP=${1}
-	REGION=${2:-1}
-	POSTFIX=${3:-developer}
-	MCISPREFIX=${4:-avengers}
-	MCISID=${POSTFIX}
+if [[ -z "${DISK_TYPE[$INDEX,$REGION]}" ]]; then
+	RootDiskType="default"
+else
+	RootDiskType="${DISK_TYPE[$INDEX,$REGION]}"
+fi
 
-	source ../common-functions.sh
-	getCloudIndex $CSP
+if [[ -z "${DISK_SIZE[$INDEX,$REGION]}" ]]; then
+	RootDiskSize="default"
+else
+	RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
+fi
 
-	
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vm -H 'Content-Type: application/json' -d \
+curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vm -H 'Content-Type: application/json' -d \
 		'{
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
@@ -41,7 +35,4 @@
 			"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"description": "description",
 			"vmUserPassword": ""
-		}' | jq '' 
-#}
-
-#add-vm-to-mcis
+		}' | jq ''

@@ -17,8 +17,6 @@ package mcis
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
-	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -45,7 +43,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	if snapshotName == "" {
-		snapshotName = fmt.Sprintf("%s-%s", vm.Name, GenerateNewRandomString(5))
+		snapshotName = fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5))
 	}
 
 	tempReq := mcir.SpiderMyImageReq{
@@ -134,7 +132,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	// // create 'n' dataDisks
 	// for _, v := range difference_dataDisks {
 	// 	tempTbDataDiskReq := mcir.TbDataDiskReq{
-	// 		Name:           fmt.Sprintf("%s-%s", vm.Name, GenerateNewRandomString(5)),
+	// 		Name:           fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5)),
 	// 		ConnectionName: vm.ConnectionName,
 	// 		CspDataDiskId:  v.IdByCsp,
 	// 	}
@@ -162,30 +160,4 @@ func Difference_dataDisks(a, b []resourceOnTumblebugInfo) []resourceOnTumblebugI
 		}
 	}
 	return diff
-}
-
-const (
-	// Random string generation
-	letterBytes   = "abcdefghijklmnopqrstuvwxyz1234567890"
-	letterIdxBits = 6
-	letterIdxMask = 1<<letterIdxBits - 1
-	letterIdxMax  = 63 / letterIdxBits
-)
-
-/* generate a random string (from CB-MCKS source code) */
-func GenerateNewRandomString(n int) string {
-	randSrc := rand.NewSource(time.Now().UnixNano()) //Random source by nano time
-	b := make([]byte, n)
-	for i, cache, remain := n-1, randSrc.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = randSrc.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-	return string(b)
 }

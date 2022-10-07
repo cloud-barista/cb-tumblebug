@@ -196,8 +196,9 @@ type TbVmReq struct {
 
 	Description string `json:"description" example:"Description"`
 
-	ConnectionName   string   `json:"connectionName" validate:"required" example:"testcloud01-seoul"`
-	SpecId           string   `json:"specId" validate:"required"`
+	ConnectionName string `json:"connectionName" validate:"required" example:"testcloud01-seoul"`
+	SpecId         string `json:"specId" validate:"required"`
+	// ImageType        string   `json:"imageType"`
 	ImageId          string   `json:"imageId" validate:"required"`
 	VNetId           string   `json:"vNetId" validate:"required"`
 	SubnetId         string   `json:"subnetId" validate:"required"`
@@ -280,6 +281,14 @@ type SpiderVMReqInfoWrapper struct {
 	ReqInfo        SpiderVMInfo
 }
 
+type SpiderImageType string
+
+const (
+	PublicImage SpiderImageType = "PublicImage"
+	MyImage     SpiderImageType = "MyImage"
+)
+
+// Ref: cb-spider/cloud-control-manager/cloud-driver/interfaces/resources/VMHandler.go
 // SpiderVMInfo is struct from CB-Spider for VM information
 type SpiderVMInfo struct {
 	// Fields for request
@@ -298,6 +307,7 @@ type SpiderVMInfo struct {
 	VMUserPasswd string
 	RootDiskType string // "SSD(gp2)", "Premium SSD", ...
 	RootDiskSize string // "default", "50", "1000" (GB)
+	ImageType    SpiderImageType
 
 	// Fields for response
 	IId               common.IID // {NameId, SystemId}
@@ -1443,20 +1453,30 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s-%s", nsId, mcisId, vmInfoData.Name)
 
 	err := fmt.Errorf("")
+	customImageFlag := false
 
 	if option == "register" {
 		tempReq.ReqInfo.CSPid = vmInfoData.IdByCSP
 
 	} else {
-		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
+		// Try lookup customImage
+		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
 		if tempReq.ReqInfo.ImageName == "" || err != nil {
 			common.CBLog.Error(err)
-			// If cannot find the resource, use common resource
-			tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
+			// If customImage doesn't exist, then try lookup image
+			tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
 			if tempReq.ReqInfo.ImageName == "" || err != nil {
 				common.CBLog.Error(err)
-				return err
+				// If cannot find the resource, use common resource
+				tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
+				if tempReq.ReqInfo.ImageName == "" || err != nil {
+					common.CBLog.Error(err)
+					return err
+				}
 			}
+		} else {
+			customImageFlag = true
+			tempReq.ReqInfo.ImageType = MyImage
 		}
 
 		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
@@ -1568,7 +1588,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		}
 		defer res.Body.Close()
 
-		tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
+		// tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
 		err = json.Unmarshal(body, &tempSpiderVMInfo)
 
 		if err != nil {
@@ -1622,21 +1642,14 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	common.PrintJsonPretty(tempSpiderVMInfo)
 	fmt.Println("[Finished calling CB-Spider]")
 
-	// Fill vmInfoData from the cb-spider response
 	vmInfoData.CspViewVmDetail = tempSpiderVMInfo
 	vmInfoData.VmUserAccount = tempSpiderVMInfo.VMUserId
 	vmInfoData.VmUserPassword = tempSpiderVMInfo.VMUserPasswd
 
 	//vmInfoData.Location = vmInfoData.Location
 
-	//vmInfoData.VcpuSize = vmInfoData.VcpuSize
-	//vmInfoData.MemorySize = vmInfoData.MemorySize
-	//vmInfoData.DiskSize = vmInfoData.DiskSize
-	//vmInfoData.Disk_type = vmInfoData.Disk_type
-
 	//vmInfoData.PlacementAlgo = vmInfoData.PlacementAlgo
 
-	// 2. Provided by CB-Spider
 	//vmInfoData.CspVmId = temp.Id
 	//vmInfoData.StartTime = temp.StartTime
 	vmInfoData.Region = tempSpiderVMInfo.Region
@@ -1649,6 +1662,12 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	vmInfoData.RootDiskSize = tempSpiderVMInfo.RootDiskSize
 	vmInfoData.RootDeviceName = tempSpiderVMInfo.RootDeviceName
 	//vmInfoData.KeyValueList = temp.KeyValueList
+
+	/* Dummy code
+	if customImageFlag == true {
+		vmInfoData.ImageType = "custom"
+	}
+	*/
 
 	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	//vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
@@ -1685,7 +1704,13 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	} else {
 		vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-		mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
+
+		if customImageFlag == false {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfoData.ImageId, common.StrAdd, vmKey)
+		} else {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfoData.ImageId, common.StrAdd, vmKey)
+		}
+
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfoData.VNetId, common.StrAdd, vmKey)
@@ -1697,6 +1722,26 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		for _, v := range vmInfoData.DataDiskIds {
 			mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v, common.StrAdd, vmKey)
 		}
+	}
+
+	// Register dataDisks which are created with the creation of VM
+	for _, v := range tempSpiderVMInfo.DataDiskIIDs {
+		tbDataDiskReq := mcir.TbDataDiskReq{
+			Name:           v.NameId,
+			ConnectionName: vmInfoData.ConnectionName,
+			// CspDataDiskId:  v.NameId, // v.SystemId ? IdByCsp ?
+		}
+
+		dataDisk, err := mcir.CreateDataDisk(nsId, &tbDataDiskReq, "register")
+		if err != nil {
+			err = fmt.Errorf("After starting VM %s, failed to register dataDisk %s. \n", vmInfoData.Name, v.NameId)
+			// continue
+		}
+
+		vmInfoData.DataDiskIds = append(vmInfoData.DataDiskIds, dataDisk.Id)
+
+		vmKey := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+		mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDisk.Id, common.StrAdd, vmKey)
 	}
 
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)
