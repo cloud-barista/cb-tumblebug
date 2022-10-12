@@ -297,22 +297,62 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	tempReq.ReqInfo.VMGroup.Port = u.TargetGroup.Port
 	tempReq.ReqInfo.VMGroup.Protocol = u.TargetGroup.Protocol
 
-	// // TODO: update this part to assign availble values for each CSP (current code does not work)
-	fmt.Println("NLB available values (AWS): ", common.RuntimeConf.Cloud.Aws)
-	fmt.Println("NLB available values (Azure): ", common.RuntimeConf.Cloud.Azure)
-	// if cloud-type == aws {
-	// 	tempReq.ReqInfo.HealthChecker.Interval = common.RuntimeConf.Cloud.Aws.Nlb.Interval
-	// 	tempReq.ReqInfo.HealthChecker.Timeout = common.RuntimeConf.Cloud.Aws.Nlb.Timeout
-	// 	tempReq.ReqInfo.HealthChecker.Threshold = common.RuntimeConf.Cloud.Aws.Nlb.Threshold
-	// } else if cloud-type == azure {
-	// 	tempReq.ReqInfo.HealthChecker.Interval = common.RuntimeConf.Cloud.Azure.Nlb.Interval
-	// 	tempReq.ReqInfo.HealthChecker.Timeout = common.RuntimeConf.Cloud.Azure.Nlb.Timeout
-	// 	tempReq.ReqInfo.HealthChecker.Threshold = common.RuntimeConf.Cloud.Azure.Nlb.Threshold
-	// } else {
-	// 	tempReq.ReqInfo.HealthChecker.Interval = common.RuntimeConf.Cloud.Common.Nlb.Interval
-	// 	tempReq.ReqInfo.HealthChecker.Timeout = common.RuntimeConf.Cloud.Common.Nlb.Timeout
-	// 	tempReq.ReqInfo.HealthChecker.Threshold = common.RuntimeConf.Cloud.Common.Nlb.Threshold
-	// }
+	connConfig, err := common.GetConnConfig(u.ConnectionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the connConfig " + u.ConnectionName + ".")
+		return TbNLBInfo{}, err
+	}
+
+	cloudType := connConfig.ProviderName
+
+	valuesFromYaml := NLBHealthCheckerInfo{}
+
+	switch cloudType {
+	case "AWS":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Aws.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Aws.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Aws.Nlb.Threshold)
+	case "AZURE":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Azure.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Azure.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Azure.Nlb.Threshold)
+	case "GCP":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Gcp.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Gcp.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Gcp.Nlb.Threshold)
+	case "ALIBABA":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Alibaba.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Alibaba.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Alibaba.Nlb.Threshold)
+	case "TENCENT":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Tencent.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Tencent.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Tencent.Nlb.Threshold)
+	case "IBM":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Ibm.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Ibm.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Ibm.Nlb.Threshold)
+	case "OPENSTACK":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Openstack.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Openstack.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Openstack.Nlb.Threshold)
+	case "CLOUDIT":
+		valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Cloudit.Nlb.Interval)
+		valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Cloudit.Nlb.Timeout)
+		valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Cloudit.Nlb.Threshold)
+	default:
+
+	}
+
+	if u.HealthChecker.Interval == "default" || u.HealthChecker.Interval == "" {
+		tempReq.ReqInfo.HealthChecker.Interval = strconv.Itoa(valuesFromYaml.Interval)
+	}
+	if u.HealthChecker.Timeout == "default" || u.HealthChecker.Timeout == "" {
+		tempReq.ReqInfo.HealthChecker.Timeout = strconv.Itoa(valuesFromYaml.Timeout)
+	}
+	if u.HealthChecker.Threshold == "default" || u.HealthChecker.Threshold == "" {
+		tempReq.ReqInfo.HealthChecker.Threshold = strconv.Itoa(valuesFromYaml.Threshold)
+	}
 
 	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.VmGroupId)
 	if err != nil {

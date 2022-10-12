@@ -27,9 +27,9 @@ resp=$(
 		"HealthChecker": {
 			"Protocol" : "TCP",
 			"Port" : "22",
-			"Interval" : "10",
-			"Timeout" : "9",
-			"Threshold" : "3"
+			"Interval" : "default",
+			"Timeout" : "default",
+			"Threshold" : "default"
 		}
 	}
 EOF

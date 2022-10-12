@@ -71,7 +71,7 @@ func init() {
 	// internally dereferences during it's type checks.
 	validate.RegisterStructValidation(TbDataDiskReqStructLevelValidation, TbDataDiskReq{})
 	validate.RegisterStructValidation(TbImageReqStructLevelValidation, TbImageReq{})
-	validate.RegisterStructValidation(TbCustomImageReqStructLevelValidation, TbImageReq{})
+	validate.RegisterStructValidation(TbCustomImageReqStructLevelValidation, TbCustomImageReq{})
 	validate.RegisterStructValidation(TbSecurityGroupReqStructLevelValidation, TbSecurityGroupReq{})
 	validate.RegisterStructValidation(TbSpecReqStructLevelValidation, TbSpecReq{})
 	validate.RegisterStructValidation(TbSshKeyReqStructLevelValidation, TbSshKeyReq{})
