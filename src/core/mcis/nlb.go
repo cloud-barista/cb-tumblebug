@@ -57,11 +57,11 @@ type SpiderNLBReqInfo struct {
 }
 
 type NLBHealthCheckerReq struct {
-	Protocol  string // TCP|HTTP|HTTPS
-	Port      string // Listener Port or 1-65535
-	Interval  string // secs, Interval time between health checks.
-	Timeout   string // secs, Waiting time to decide an unhealthy VM when no response.
-	Threshold string // num, The number of continuous health checks to change the VM status.
+	Protocol  string `json:"protocol" example:"TCP"`      // TCP|HTTP|HTTPS
+	Port      string `json:"port" example:"22"`           // Listener Port or 1-65535
+	Interval  string `json:"interval" example:"default"`  // secs, Interval time between health checks.
+	Timeout   string `json:"timeout" example:"default"`   // secs, Waiting time to decide an unhealthy VM when no response.
+	Threshold string `json:"threshold" example:"default"` // num, The number of continuous health checks to change the VM status.
 }
 
 type SpiderNLBVMGroupReq struct {
@@ -140,7 +140,7 @@ type TBNLBTargetGroup struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"22"`      // Listener Port or 1-65535
 
-	VmGroupId string   `json:"vmGroupId" example:"group"`
+	VmGroupId string   `json:"vmGroupId" example:"group-1"`
 	VMs       []string `json:"vms"`
 
 	CspID        string // Optional, May be Used by Driver.
@@ -164,7 +164,7 @@ type TbNLBReq struct { // Tumblebug
 
 	//------ Backend
 
-	TargetGroup   TBNLBTargetGroup    `json:"targetGroup"`
+	TargetGroup   TBNLBTargetGroup    `json:"targetGroup" validate:"required"`
 	HealthChecker NLBHealthCheckerReq `json:"healthChecker" validate:"required"`
 }
 

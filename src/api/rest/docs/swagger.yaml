@@ -1268,19 +1268,24 @@ definitions:
     properties:
       interval:
         description: secs, Interval time between health checks.
+        example: default
         type: string
       port:
         description: Listener Port or 1-65535
+        example: "22"
         type: string
       protocol:
         description: TCP|HTTP|HTTPS
+        example: TCP
         type: string
       threshold:
         description: num, The number of continuous health checks to change the VM
           status.
+        example: default
         type: string
       timeout:
         description: secs, Waiting time to decide an unhealthy VM when no response.
+        example: default
         type: string
     type: object
   mcis.NLBListenerInfo:
@@ -1636,7 +1641,7 @@ definitions:
         example: TCP
         type: string
       vmGroupId:
-        example: group
+        example: group-1
         type: string
       vms:
         items:
@@ -1869,6 +1874,7 @@ definitions:
     - listener
     - name
     - scope
+    - targetGroup
     - type
     - vNetId
     type: object

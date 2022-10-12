@@ -8330,23 +8330,28 @@ const docTemplate = `{
             "properties": {
                 "interval": {
                     "description": "secs, Interval time between health checks.",
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 },
                 "port": {
                     "description": "Listener Port or 1-65535",
-                    "type": "string"
+                    "type": "string",
+                    "example": "22"
                 },
                 "protocol": {
                     "description": "TCP|HTTP|HTTPS",
-                    "type": "string"
+                    "type": "string",
+                    "example": "TCP"
                 },
                 "threshold": {
                     "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 },
                 "timeout": {
                     "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 }
             }
         },
@@ -8860,7 +8865,7 @@ const docTemplate = `{
                 },
                 "vmGroupId": {
                     "type": "string",
-                    "example": "group"
+                    "example": "group-1"
                 },
                 "vms": {
                     "type": "array",
@@ -9123,6 +9128,7 @@ const docTemplate = `{
                 "listener",
                 "name",
                 "scope",
+                "targetGroup",
                 "type",
                 "vNetId"
             ],
