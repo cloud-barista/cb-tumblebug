@@ -41,6 +41,7 @@ type Cloud struct {
 	Tencent   CloudSetting `yaml:"tencent"`
 	Ibm       CloudSetting `yaml:"ibm"`
 	Openstack CloudSetting `yaml:"openstack"`
+	Cloudit   CloudSetting `yaml:"cloudit"`
 }
 
 // CloudSetting is structure for cloud settings per CSP in details
