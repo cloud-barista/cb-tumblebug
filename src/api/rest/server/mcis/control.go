@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
@@ -104,6 +103,7 @@ func RestGetControlMcisVm(c echo.Context) error {
 	}
 }
 
+/* Moved to RestPutMcisVm()
 // RestPutMcisVmWithCmd godoc
 // @Summary Attach/Detach data disk to/from VM
 // @Description Attach/Detach data disk to/from VM
@@ -124,8 +124,9 @@ func RestPutMcisVmWithCmd(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
+	command := c.Param("command")
 
-	command := strings.Split(c.Path(), "/")[8]
+	// command := strings.Split(c.Path(), "/")[8]
 	// c.Path(): /tumblebug/ns/:nsId/mcis/{mcisId}/vm/{vmId}/attachDataDisk
 
 	u := &mcir.TbAttachDetachDataDiskReq{}
@@ -152,6 +153,58 @@ func RestPutMcisVmWithCmd(c echo.Context) error {
 	}
 	return nil
 }
+*/
+
+/* Integrated into RestGetMcisVm()
+// RestGetMcisVmWithCmd godoc
+// @Summary Get available data disks attachable to VM
+// @Description Get available data disks attachable to VM
+// @Tags [Infra resource] MCIR Data Disk management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
+// @Param command path string true "Command to perform" Enums(availableDataDisk)
+// @Success 200 {object} RestGetMcisVmWithCmdResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command} [get]
+func RestGetMcisVmWithCmd(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+	command := c.Param("command")
+
+	// command := strings.Split(c.Path(), "/")[8]
+	// c.Path(): /tumblebug/ns/:nsId/mcis/{mcisId}/vm/{vmId}/attachDataDisk
+
+	switch command {
+	case "availableDataDisk":
+		dataDiskIDs, err := mcis.GetAvailableDataDiskIDs(nsId, mcisId, vmId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+
+		// common.PrintJsonPretty(result)
+		// var content struct {
+		// 	DataDisk []string `json:"dataDisk"`
+		// }
+		content := RestGetMcisVmWithCmdResponse{
+			DataDisk: dataDiskIDs,
+		}
+
+		return c.JSON(http.StatusOK, &content)
+
+	default:
+		mapA := map[string]string{"message": "Supported commands: availableDataDisk"}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+	return nil
+}
+*/
 
 // RestPostMcisVmWithCmd godoc
 // @Summary Create VM snapshot

@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
@@ -239,6 +240,10 @@ func RestDelAllMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, &mapA)
 }
 
+type RestGetAvailableDataDisksResponse struct {
+	DataDisk []string `json:"dataDisk"`
+}
+
 // TODO: swag does not support multiple response types (success 200) in an API.
 // Annotation for API documention needs to be revised.
 
@@ -251,8 +256,8 @@ func RestDelAllMcis(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmId path string true "VM ID" default(vm01)
-// @Param option query string false "Option for MCIS" Enums(default, status, idsInDetail)
-// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbVmInfo,[STATUS]=mcis.TbVmStatusInfo,[IDNAME]=mcis.TbIdNameInDetailInfo} "Different return structures by the given option param"
+// @Param option query string false "Option for MCIS" Enums(default, status, idsInDetail, availableDataDisk)
+// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbVmInfo,[STATUS]=mcis.TbVmStatusInfo,[IDNAME]=mcis.TbIdNameInDetailInfo,[AVAILABLEDATADISK]=RestGetAvailableDataDisksResponse} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [get]
@@ -264,8 +269,8 @@ func RestGetMcisVm(c echo.Context) error {
 
 	option := c.QueryParam("option")
 
-	if option == "status" {
-
+	switch option {
+	case "status":
 		result, err := mcis.CoreGetMcisVmStatus(nsId, mcisId, vmId)
 		if err != nil {
 			common.CBLog.Error(err)
@@ -277,8 +282,7 @@ func RestGetMcisVm(c echo.Context) error {
 
 		return c.JSON(http.StatusOK, result)
 
-	} else if option == "idsInDetail" {
-
+	case "idsInDetail":
 		result, err := mcis.GetVmIdNameInDetail(nsId, mcisId, vmId)
 		if err != nil {
 			common.CBLog.Error(err)
@@ -288,8 +292,24 @@ func RestGetMcisVm(c echo.Context) error {
 
 		return c.JSON(http.StatusOK, result)
 
-	} else {
+	case "availableDataDisk":
+		dataDiskIDs, err := mcis.GetAvailableDataDiskIDs(nsId, mcisId, vmId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
 
+		// common.PrintJsonPretty(result)
+		// var content struct {
+		// 	DataDisk []string `json:"dataDisk"`
+		// }
+		content := RestGetAvailableDataDisksResponse{
+			DataDisk: dataDiskIDs,
+		}
+
+		return c.JSON(http.StatusOK, &content)
+
+	default:
 		result, err := mcis.CoreGetMcisVmInfo(nsId, mcisId, vmId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
@@ -299,31 +319,55 @@ func RestGetMcisVm(c echo.Context) error {
 		common.PrintJsonPretty(*result)
 
 		return c.JSON(http.StatusOK, result)
-
 	}
 }
 
-/*
-	RestPutMcisVm function not yet implemented
-
-// RestPutSshKey godoc
-// @Summary Update MCIS
-// @Description Update MCIS
+// RestPutMcisVm godoc
+// @Summary Update MCIS VM
+// @Description Update MCIS VM
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmId path string true "VM ID" default(vm01)
-// @Param vmInfo body mcis.TbVmInfo true "Details for an VM object"
+// @Param option query string false "Option for MCIS" Enums(attachDataDisk, detachDataDisk)
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [put]
 func RestPutMcisVm(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	option := c.QueryParam("option")
+
+	u := &mcir.TbAttachDetachDataDiskReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	switch option {
+	case mcis.AttachDataDisk:
+		fallthrough
+	case mcis.DetachDataDisk:
+		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, option, u.DataDiskId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+
+		// common.PrintJsonPretty(result)
+
+		return c.JSON(http.StatusOK, result)
+	default:
+		mapA := map[string]string{"message": "Supported options: attachDataDisk, detachDataDisk"}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
 	return nil
 }
-*/
 
 // RestDelMcisVm godoc
 // @Summary Delete VM in specified MCIS

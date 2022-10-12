@@ -194,9 +194,11 @@ func RunServer(port string) {
 	g.GET("/:nsId/mcis/:mcisId/vmgroup/:vmgroupId", rest_mcis.RestGetMcisGroupVms)
 
 	//g.GET("/:nsId/mcis/:mcisId/vm", rest_mcis.RestGetAllMcisVm)
-	//g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)
-	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/attachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
-	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/detachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
+	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)
+	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/attachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
+	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/detachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
+	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/:command", rest_mcis.RestPutMcisVmWithCmd)
+	// g.GET("/:nsId/mcis/:mcisId/vm/:vmId/:command", rest_mcis.RestGetMcisVmWithCmd)
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
 	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 
