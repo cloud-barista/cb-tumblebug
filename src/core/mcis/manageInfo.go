@@ -1465,6 +1465,12 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	}
 }
 
+// type DataDiskCmd string
+const (
+	AttachDataDisk string = "attachDataDisk"
+	DetachDataDisk string = "detachDataDisk"
+)
+
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
 func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command string, dataDiskId string) (TbVmInfo, error) {
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
@@ -1481,11 +1487,11 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	isDataDiskAttached := common.CheckElement(dataDiskId, vm.DataDiskIds)
-	if command == "detachDataDisk" && isDataDiskAttached == false {
+	if command == DetachDataDisk && isDataDiskAttached == false {
 		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
-	} else if command == "attachDataDisk" && isDataDiskAttached == true {
+	} else if command == AttachDataDisk && isDataDiskAttached == true {
 		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list.", dataDiskId)
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
@@ -1520,23 +1526,26 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 
 	var url string
 	var cmdToUpdateAsso string
+	var resp *resty.Response
 
 	switch command {
-	case "attachDataDisk":
+	case AttachDataDisk:
 		req = req.SetResult(&mcir.SpiderDiskInfo{})
 		url = fmt.Sprintf("%s/disk/%s/attach", common.SpiderRestUrl, dataDisk.CspDataDiskName)
 
 		cmdToUpdateAsso = common.StrAdd
-	case "detachDataDisk":
+
+	case DetachDataDisk:
 		// req = req.SetResult(&bool)
 		url = fmt.Sprintf("%s/disk/%s/detach", common.SpiderRestUrl, dataDisk.CspDataDiskName)
 
 		cmdToUpdateAsso = common.StrDelete
+
 	default:
 
 	}
 
-	resp, err := req.Put(url)
+	resp, err = req.Put(url)
 
 	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
 	switch {
@@ -1548,10 +1557,10 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	}
 
 	switch command {
-	case "attachDataDisk":
+	case AttachDataDisk:
 		vm.DataDiskIds = append(vm.DataDiskIds, dataDiskId)
-		mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDiskId, common.StrAdd, vmKey)
-	case "detachDataDisk":
+		// mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDiskId, common.StrAdd, vmKey)
+	case DetachDataDisk:
 		oldDataDiskIds := vm.DataDiskIds
 		newDataDiskIds := oldDataDiskIds
 
@@ -1743,7 +1752,11 @@ func DelMcis(nsId string, mcisId string, option string) error {
 			return err
 		}
 
-		mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, vmKey)
+		_, err = mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, vmKey)
+		if err != nil {
+			mcir.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfo.ImageId, common.StrDelete, vmKey)
+		}
+
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfo.VNetId, common.StrDelete, vmKey)
@@ -1837,7 +1850,11 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 		return err
 	}
 
-	mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, key)
+	_, err = mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, key)
+	if err != nil {
+		mcir.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfo.ImageId, common.StrDelete, key)
+	}
+
 	mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, key)
 	mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, key)
 	mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfo.VNetId, common.StrDelete, key)

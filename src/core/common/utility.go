@@ -242,7 +242,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	case StrCustomImage:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
-		return content.CspCustomImageId, nil
+		return content.CspCustomImageName, nil
 	case StrSSHKey:
 		content := mcirIds{}
 		json.Unmarshal([]byte(keyValue.Value), &content)
@@ -933,4 +933,30 @@ func CheckElement(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+const (
+	// Random string generation
+	letterBytes   = "abcdefghijklmnopqrstuvwxyz1234567890"
+	letterIdxBits = 6
+	letterIdxMask = 1<<letterIdxBits - 1
+	letterIdxMax  = 63 / letterIdxBits
+)
+
+/* generate a random string (from CB-MCKS source code) */
+func GenerateNewRandomString(n int) string {
+	randSrc := rand.NewSource(time.Now().UnixNano()) //Random source by nano time
+	b := make([]byte, n)
+	for i, cache, remain := n-1, randSrc.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = randSrc.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+	return string(b)
 }

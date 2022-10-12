@@ -8690,6 +8690,9 @@ const docTemplate = `{
                 "imageName": {
                     "type": "string"
                 },
+                "imageType": {
+                    "type": "string"
+                },
                 "keyPairIId": {
                     "$ref": "#/definitions/common.IID"
                 },
@@ -9393,6 +9396,7 @@ const docTemplate = `{
                     "example": "i-014fa6ede6ada0b2c"
                 },
                 "imageId": {
+                    "description": "ImageType        string   ` + "`" + `json:\"imageType\"` + "`" + `",
                     "type": "string"
                 },
                 "label": {

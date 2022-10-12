@@ -1515,6 +1515,8 @@ definitions:
         $ref: '#/definitions/common.IID'
       imageName:
         type: string
+      imageType:
+        type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
       keyPairName:
@@ -2029,6 +2031,7 @@ definitions:
         example: i-014fa6ede6ada0b2c
         type: string
       imageId:
+        description: ImageType        string   `json:"imageType"`
         type: string
       label:
         type: string

@@ -155,6 +155,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	// In CheckResource() above, calling 'CBStore.Get()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
+	/* Disabled the deletion protection feature
 	associatedList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
 	if len(associatedList) == 0 {
 		// continue
@@ -164,6 +165,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		common.CBLog.Error(err)
 		return err
 	}
+	*/
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 

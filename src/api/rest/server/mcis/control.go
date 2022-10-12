@@ -134,9 +134,9 @@ func RestPutMcisVmWithCmd(c echo.Context) error {
 	}
 
 	switch command {
-	case "attachDataDisk":
+	case mcis.AttachDataDisk:
 		fallthrough
-	case "detachDataDisk":
+	case mcis.DetachDataDisk:
 		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, command, u.DataDiskId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
