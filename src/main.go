@@ -207,7 +207,7 @@ func main() {
 		wg.Done()
 	}()
 
-	fmt.Println("RuntimeConf: ", common.RuntimeConf.Cloud)
+	// fmt.Println("RuntimeConf: ", common.RuntimeConf.Cloud)
 
 	wg.Wait()
 }
