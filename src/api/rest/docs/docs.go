@@ -8285,99 +8285,9 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.NLBHealthCheckerInfo": {
+        "mcis.NLBListenerReq": {
             "type": "object",
             "properties": {
-                "cspID": {
-                    "description": "Optional, May be Used by Driver.",
-                    "type": "string"
-                },
-                "interval": {
-                    "description": "secs, Interval time between health checks.",
-                    "type": "integer",
-                    "example": 10
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "22"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "integer",
-                    "example": 3
-                },
-                "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "integer",
-                    "example": 10
-                }
-            }
-        },
-        "mcis.NLBHealthCheckerReq": {
-            "type": "object",
-            "properties": {
-                "interval": {
-                    "description": "secs, Interval time between health checks.",
-                    "type": "string",
-                    "example": "default"
-                },
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "22"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "threshold": {
-                    "description": "num, The number of continuous health checks to change the VM status.",
-                    "type": "string",
-                    "example": "default"
-                },
-                "timeout": {
-                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
-                    "type": "string",
-                    "example": "default"
-                }
-            }
-        },
-        "mcis.NLBListenerInfo": {
-            "type": "object",
-            "properties": {
-                "cspID": {
-                    "description": "Optional, May be Used by Driver.",
-                    "type": "string"
-                },
-                "dnsName": {
-                    "description": "Optional, Auto Generated and attached",
-                    "type": "string",
-                    "example": ""
-                },
-                "ip": {
-                    "description": "Auto Generated and attached",
-                    "type": "string",
-                    "example": ""
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
                 "port": {
                     "description": "1-65535",
                     "type": "string",
@@ -8840,41 +8750,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.TBNLBTargetGroup": {
-            "type": "object",
-            "properties": {
-                "cspID": {
-                    "description": "Optional, May be Used by Driver.",
-                    "type": "string"
-                },
-                "keyValueList": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "port": {
-                    "description": "Listener Port or 1-65535",
-                    "type": "string",
-                    "example": "22"
-                },
-                "protocol": {
-                    "description": "TCP|HTTP|HTTPS",
-                    "type": "string",
-                    "example": "TCP"
-                },
-                "vmGroupId": {
-                    "type": "string",
-                    "example": "group-1"
-                },
-                "vms": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "mcis.TbIdNameInDetailInfo": {
             "type": "object",
             "properties": {
@@ -9050,7 +8925,63 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "targetGroup": {
-                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                    "$ref": "#/definitions/mcis.TbNLBTargetGroupInfo"
+                }
+            }
+        },
+        "mcis.TbNLBHealthCheckerInfo": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "integer",
+                    "example": 10
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "22"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "integer",
+                    "example": 3
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "mcis.TbNLBHealthCheckerReq": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "secs, Interval time between health checks.",
+                    "type": "string",
+                    "example": "default"
+                },
+                "threshold": {
+                    "description": "num, The number of continuous health checks to change the VM status.",
+                    "type": "string",
+                    "example": "default"
+                },
+                "timeout": {
+                    "description": "secs, Waiting time to decide an unhealthy VM when no response.",
+                    "type": "string",
+                    "example": "default"
                 }
             }
         },
@@ -9079,7 +9010,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "healthChecker": {
-                    "$ref": "#/definitions/mcis.NLBHealthCheckerInfo"
+                    "$ref": "#/definitions/mcis.TbNLBHealthCheckerInfo"
                 },
                 "id": {
                     "type": "string"
@@ -9094,7 +9025,7 @@ const docTemplate = `{
                     }
                 },
                 "listener": {
-                    "$ref": "#/definitions/mcis.NLBListenerInfo"
+                    "$ref": "#/definitions/mcis.TbNLBListenerInfo"
                 },
                 "name": {
                     "type": "string"
@@ -9112,7 +9043,7 @@ const docTemplate = `{
                     "example": "Managed by CB-Tumblebug"
                 },
                 "targetGroup": {
-                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                    "$ref": "#/definitions/mcis.TbNLBTargetGroupInfo"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -9120,23 +9051,47 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.TbNLBListenerInfo": {
+            "type": "object",
+            "properties": {
+                "dnsName": {
+                    "description": "Optional, Auto Generated and attached",
+                    "type": "string",
+                    "example": ""
+                },
+                "ip": {
+                    "description": "Auto Generated and attached",
+                    "type": "string",
+                    "example": ""
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "port": {
+                    "description": "1-65535",
+                    "type": "string",
+                    "example": "22"
+                },
+                "protocol": {
+                    "description": "TCP|UDP",
+                    "type": "string",
+                    "example": "TCP"
+                }
+            }
+        },
         "mcis.TbNLBReq": {
             "type": "object",
             "required": [
-                "connectionName",
                 "healthChecker",
                 "listener",
-                "name",
                 "scope",
                 "targetGroup",
-                "type",
-                "vNetId"
+                "type"
             ],
             "properties": {
-                "connectionName": {
-                    "type": "string",
-                    "example": "aws-ap-northeast-2"
-                },
                 "cspNLBId": {
                     "type": "string"
                 },
@@ -9144,14 +9099,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "healthChecker": {
-                    "$ref": "#/definitions/mcis.NLBHealthCheckerReq"
+                    "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
                 },
                 "listener": {
-                    "$ref": "#/definitions/mcis.NLBListenerInfo"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "mc"
+                    "$ref": "#/definitions/mcis.NLBListenerReq"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -9163,7 +9114,7 @@ const docTemplate = `{
                     "example": "REGION"
                 },
                 "targetGroup": {
-                    "$ref": "#/definitions/mcis.TBNLBTargetGroup"
+                    "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -9173,10 +9124,56 @@ const docTemplate = `{
                         "INTERNAL"
                     ],
                     "example": "PUBLIC"
+                }
+            }
+        },
+        "mcis.TbNLBTargetGroupInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
                 },
-                "vNetId": {
+                "port": {
+                    "description": "Listener Port or 1-65535",
                     "type": "string",
-                    "example": "ns01-systemdefault-aws-ap-northeast-2"
+                    "example": "22"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "vmGroupId": {
+                    "type": "string",
+                    "example": "group-1"
+                },
+                "vms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "mcis.TbNLBTargetGroupReq": {
+            "type": "object",
+            "properties": {
+                "port": {
+                    "description": "Listener Port or 1-65535",
+                    "type": "string",
+                    "example": "22"
+                },
+                "protocol": {
+                    "description": "TCP|HTTP|HTTPS",
+                    "type": "string",
+                    "example": "TCP"
+                },
+                "vmGroupId": {
+                    "type": "string",
+                    "example": "group-1"
                 }
             }
         },

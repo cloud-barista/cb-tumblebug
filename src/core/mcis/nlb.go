@@ -49,17 +49,26 @@ type SpiderNLBReqInfo struct {
 
 	//------ Frontend
 
-	Listener NLBListenerInfo
+	Listener NLBListenerReq
 
 	//------ Backend
 
 	VMGroup       SpiderNLBVMGroupReq
-	HealthChecker NLBHealthCheckerReq
+	HealthChecker SpiderNLBHealthCheckerReq
 }
 
-type NLBHealthCheckerReq struct {
+type SpiderNLBHealthCheckerReq struct {
 	Protocol  string `json:"protocol" example:"TCP"`      // TCP|HTTP|HTTPS
 	Port      string `json:"port" example:"22"`           // Listener Port or 1-65535
+	Interval  string `json:"interval" example:"default"`  // secs, Interval time between health checks.
+	Timeout   string `json:"timeout" example:"default"`   // secs, Waiting time to decide an unhealthy VM when no response.
+	Threshold string `json:"threshold" example:"default"` // num, The number of continuous health checks to change the VM status.
+}
+
+type TbNLBHealthCheckerReq struct {
+	// Protocol  string `json:"protocol" example:"TCP"`      // TCP|HTTP|HTTPS
+	// Port      string `json:"port" example:"22"`           // Listener Port or 1-65535
+
 	Interval  string `json:"interval" example:"default"`  // secs, Interval time between health checks.
 	Timeout   string `json:"timeout" example:"default"`   // secs, Waiting time to decide an unhealthy VM when no response.
 	Threshold string `json:"threshold" example:"default"` // num, The number of continuous health checks to change the VM status.
@@ -86,18 +95,24 @@ type SpiderNLBInfo struct {
 	Scope string // REGION(V) | GLOBAL
 
 	//------ Frontend
-	Listener NLBListenerInfo
+	Listener SpiderNLBListenerInfo
 
 	//------ Backend
-	VMGroup       NLBVMGroupInfo
-	HealthChecker NLBHealthCheckerInfo
+	VMGroup       SpiderNLBVMGroupInfo
+	HealthChecker SpiderNLBHealthCheckerInfo
 
 	CreatedTime  time.Time
 	KeyValueList []common.KeyValue
 }
 
-// NLBListenerInfo is a struct to handle NLB Listener information from the CB-Spider's REST API response
-type NLBListenerInfo struct { // for both Spider and Tumblebug
+// NLBListenerReq is a struct to handle NLB Listener information of the CB-Spider's & CB-Tumblebug's REST API request
+type NLBListenerReq struct { // for both Spider and Tumblebug
+	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
+	Port     string `json:"port" example:"22"`      // 1-65535
+}
+
+// SpiderNLBListenerInfo is a struct to handle NLB Listener information from the CB-Spider's REST API response
+type SpiderNLBListenerInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
 	IP       string `json:"ip" example:""`          // Auto Generated and attached
 	Port     string `json:"port" example:"22"`      // 1-65535
@@ -107,7 +122,17 @@ type NLBListenerInfo struct { // for both Spider and Tumblebug
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-type NLBVMGroupInfo struct { // Spider
+// TbNLBListenerInfo is a struct to handle NLB Listener information from the CB-Tumblebug's REST API response
+type TbNLBListenerInfo struct {
+	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
+	IP       string `json:"ip" example:""`          // Auto Generated and attached
+	Port     string `json:"port" example:"22"`      // 1-65535
+	DNSName  string `json:"dnsName" example:""`     // Optional, Auto Generated and attached
+
+	KeyValueList []common.KeyValue `json:"keyValueList"`
+}
+
+type SpiderNLBVMGroupInfo struct {
 	Protocol string // TCP|UDP|HTTP|HTTPS
 	Port     string // 1-65535
 	VMs      *[]common.IID
@@ -116,7 +141,7 @@ type NLBVMGroupInfo struct { // Spider
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-type NLBHealthCheckerInfo struct {
+type SpiderNLBHealthCheckerInfo struct {
 	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port      string `json:"port" example:"22"`      // Listener Port or 1-65535
 	Interval  int    `json:"interval" example:"10"`  // secs, Interval time between health checks.
@@ -124,6 +149,16 @@ type NLBHealthCheckerInfo struct {
 	Threshold int    `json:"threshold" example:"3"`  // num, The number of continuous health checks to change the VM status.
 
 	CspID        string            `json:"cspID"` // Optional, May be Used by Driver.
+	KeyValueList []common.KeyValue `json:"keyValueList"`
+}
+
+type TbNLBHealthCheckerInfo struct {
+	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
+	Port      string `json:"port" example:"22"`      // Listener Port or 1-65535
+	Interval  int    `json:"interval" example:"10"`  // secs, Interval time between health checks.
+	Timeout   int    `json:"timeout" example:"10"`   // secs, Waiting time to decide an unhealthy VM when no response.
+	Threshold int    `json:"threshold" example:"3"`  // num, The number of continuous health checks to change the VM status.
+
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
@@ -137,36 +172,42 @@ type SpiderNLBHealthInfo struct {
 	UnHealthyVMs *[]common.IID
 }
 
-type TBNLBTargetGroup struct {
+type TbNLBTargetGroupReq struct {
+	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
+	Port      string `json:"port" example:"22"`      // Listener Port or 1-65535
+	VmGroupId string `json:"vmGroupId" example:"group-1"`
+}
+
+type TbNLBTargetGroupInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"22"`      // Listener Port or 1-65535
 
 	VmGroupId string   `json:"vmGroupId" example:"group-1"`
 	VMs       []string `json:"vms"`
 
-	CspID        string // Optional, May be Used by Driver.
 	KeyValueList []common.KeyValue
 }
 
 // TbNLBReq is a struct to handle 'Create nlb' request toward CB-Tumblebug.
 type TbNLBReq struct { // Tumblebug
-	Name           string `json:"name" validate:"required" example:"mc"`
-	ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
-	VNetId         string `json:"vNetId" validate:"required" example:"ns01-systemdefault-aws-ap-northeast-2"`
-	Description    string `json:"description"`
-	CspNLBId       string `json:"cspNLBId"`
+	// Name           string `json:"name" validate:"required" example:"mc"`
+	// ConnectionName string `json:"connectionName" validate:"required" example:"aws-ap-northeast-2"`
+	// VNetId         string `json:"vNetId" validate:"required" example:"ns01-systemdefault-aws-ap-northeast-2"`
+
+	Description string `json:"description"`
+	CspNLBId    string `json:"cspNLBId"`
 
 	Type  string `json:"type" validate:"required" enums:"PUBLIC,INTERNAL" example:"PUBLIC"` // PUBLIC(V) | INTERNAL
 	Scope string `json:"scope" validate:"required" enums:"REGION,GLOBAL" example:"REGION"`  // REGION(V) | GLOBAL
 
 	//------ Frontend
 
-	Listener NLBListenerInfo `json:"listener" validate:"required"`
+	Listener NLBListenerReq `json:"listener" validate:"required"`
 
 	//------ Backend
 
-	TargetGroup   TBNLBTargetGroup    `json:"targetGroup" validate:"required"`
-	HealthChecker NLBHealthCheckerReq `json:"healthChecker" validate:"required"`
+	TargetGroup   TbNLBTargetGroupReq   `json:"targetGroup" validate:"required"`
+	HealthChecker TbNLBHealthCheckerReq `json:"healthChecker" validate:"required"`
 }
 
 // TbNLBReqStructLevelValidation is a function to validate 'TbNLBReq' object.
@@ -174,10 +215,10 @@ func TbNLBReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbNLBReq)
 
-	err := common.CheckString(u.Name)
+	err := common.CheckString(u.TargetGroup.VmGroupId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.Name, "name", "Name", err.Error(), "")
+		sl.ReportError(u.TargetGroup.VmGroupId, "name", "Name", err.Error(), "")
 	}
 }
 
@@ -192,12 +233,12 @@ type TbNLBInfo struct { // Tumblebug
 
 	//------ Frontend
 
-	Listener NLBListenerInfo
+	Listener TbNLBListenerInfo `json:"listener"`
 
 	//------ Backend
 
-	TargetGroup   TBNLBTargetGroup `json:"targetGroup"`
-	HealthChecker NLBHealthCheckerInfo
+	TargetGroup   TbNLBTargetGroupInfo   `json:"targetGroup"`
+	HealthChecker TbNLBHealthCheckerInfo `json:"healthChecker"`
 
 	CreatedTime time.Time
 
@@ -225,7 +266,7 @@ type TbNLBHealthInfo struct { // Tumblebug
 
 // TbNLBAddRemoveVMReq is a struct to handle 'Add/Remove VMs to/from NLB' request toward CB-Tumblebug.
 type TbNLBAddRemoveVMReq struct { // Tumblebug
-	TargetGroup TBNLBTargetGroup `json:"targetGroup"`
+	TargetGroup TbNLBTargetGroupInfo `json:"targetGroup"`
 }
 
 // CreateNLB accepts nlb creation request, creates and returns an TB nlb object
@@ -258,49 +299,73 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		return temp, err
 	}
 
-	check, err := CheckNLB(nsId, mcisId, u.Name)
+	check, err := CheckNLB(nsId, mcisId, u.TargetGroup.VmGroupId)
 
 	if check {
 		temp := TbNLBInfo{}
-		err := fmt.Errorf("The nlb " + u.Name + " already exists.")
+		err := fmt.Errorf("The nlb " + u.TargetGroup.VmGroupId + " already exists.")
 		return temp, err
 	}
 
 	if err != nil {
 		temp := TbNLBInfo{}
-		err := fmt.Errorf("Failed to check the existence of the nlb " + u.Name + ".")
+		err := fmt.Errorf("Failed to check the existence of the nlb " + u.TargetGroup.VmGroupId + ".")
 		return temp, err
 	}
 
-	vNetInfo := mcir.TbVNetInfo{}
-	tempInterface, err := mcir.GetResource(nsId, common.StrVNet, u.VNetId)
+	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.VmGroupId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the TbVNetInfo " + u.VNetId + ".")
+		err := fmt.Errorf("Failed to get VMs in the VMGroup " + u.TargetGroup.VmGroupId + ".")
+		return TbNLBInfo{}, err
+	}
+	if len(vmIDs) == 0 {
+		err := fmt.Errorf("There is no VMs in the VMGroup " + u.TargetGroup.VmGroupId + ".")
+		return TbNLBInfo{}, err
+	}
+
+	vm, err := GetVmObject(nsId, mcisId, vmIDs[0])
+	if err != nil {
+		err := fmt.Errorf("Failed to get VM " + vmIDs[0] + ".")
+		return TbNLBInfo{}, err
+	}
+
+	vNetInfo := mcir.TbVNetInfo{}
+	tempInterface, err := mcir.GetResource(nsId, common.StrVNet, vm.VNetId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the TbVNetInfo " + vm.VNetId + ".")
 		return TbNLBInfo{}, err
 	}
 	err = common.CopySrcToDest(&tempInterface, &vNetInfo)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the TbVNetInfo-CopySrcToDest() " + u.VNetId + ".")
+		err := fmt.Errorf("Failed to get the TbVNetInfo-CopySrcToDest() " + vm.VNetId + ".")
 		return TbNLBInfo{}, err
 	}
 
-	tempReq := SpiderNLBReqInfoWrapper{}
-	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
-	tempReq.ReqInfo.VPCName = vNetInfo.CspVNetName
-	tempReq.ReqInfo.Type = u.Type
-	tempReq.ReqInfo.Scope = u.Scope
+	tempReq := SpiderNLBReqInfoWrapper{
+		ConnectionName: vm.ConnectionName,
+		ReqInfo: SpiderNLBReqInfo{
+			Name:     fmt.Sprintf("%s-%s", nsId, u.TargetGroup.VmGroupId),
+			VPCName:  vNetInfo.CspVNetName,
+			Type:     u.Type,
+			Scope:    u.Scope,
+			Listener: u.Listener,
+			HealthChecker: SpiderNLBHealthCheckerReq{
+				Protocol:  u.TargetGroup.Protocol,
+				Port:      u.TargetGroup.Port,
+				Interval:  u.HealthChecker.Interval,
+				Timeout:   u.HealthChecker.Timeout,
+				Threshold: u.HealthChecker.Threshold,
+			},
+			VMGroup: SpiderNLBVMGroupReq{
+				Protocol: u.TargetGroup.Protocol,
+				Port:     u.TargetGroup.Port,
+			},
+		},
+	}
 
-	tempReq.ReqInfo.Listener = u.Listener
-
-	tempReq.ReqInfo.HealthChecker = u.HealthChecker
-
-	tempReq.ReqInfo.VMGroup.Port = u.TargetGroup.Port
-	tempReq.ReqInfo.VMGroup.Protocol = u.TargetGroup.Protocol
-
-	connConfig, err := common.GetConnConfig(u.ConnectionName)
+	connConfig, err := common.GetConnConfig(vm.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the connConfig " + u.ConnectionName + ".")
+		err := fmt.Errorf("Failed to get the connConfig " + vm.ConnectionName + ".")
 		return TbNLBInfo{}, err
 	}
 
@@ -314,7 +379,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	cloudSetting := reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fieldName).Interface().(common.CloudSetting)
 
 	// Set nlb health checker info
-	valuesFromYaml := NLBHealthCheckerInfo{}
+	valuesFromYaml := TbNLBHealthCheckerInfo{}
 	valuesFromYaml.Interval, _ = strconv.Atoi(cloudSetting.Nlb.Interval)
 	valuesFromYaml.Timeout, _ = strconv.Atoi(cloudSetting.Nlb.Timeout)
 	valuesFromYaml.Threshold, _ = strconv.Atoi(cloudSetting.Nlb.Threshold)
@@ -366,12 +431,6 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		tempReq.ReqInfo.HealthChecker.Threshold = strconv.Itoa(valuesFromYaml.Threshold)
 	}
 
-	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.VmGroupId)
-	if err != nil {
-		err := fmt.Errorf("Failed to get VMs in the VMGroup " + u.TargetGroup.VmGroupId + ".")
-		return TbNLBInfo{}, err
-	}
-
 	for _, v := range vmIDs {
 		vm, err := GetVmObject(nsId, mcisId, v)
 		if err != nil {
@@ -410,7 +469,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 		var url string
 		if option == "register" && u.CspNLBId == "" {
-			url = fmt.Sprintf("%s/nlb/%s", common.SpiderRestUrl, u.Name)
+			url = fmt.Sprintf("%s/nlb/%s", common.SpiderRestUrl, u.TargetGroup.VmGroupId)
 			resp, err = req.Get(url)
 		} else if option == "register" && u.CspNLBId != "" {
 			url = fmt.Sprintf("%s/regnlb", common.SpiderRestUrl)
@@ -481,27 +540,41 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		}
 	*/
 
-	content := TbNLBInfo{}
-	//content.Id = common.GenUid()
-	content.Id = u.Name
-	content.Name = u.Name
-	content.ConnectionName = u.ConnectionName
-	content.Type = tempSpiderNLBInfo.Type
-	content.Scope = tempSpiderNLBInfo.Scope
-	content.Listener = tempSpiderNLBInfo.Listener
-	content.HealthChecker = tempSpiderNLBInfo.HealthChecker
-	content.CspNLBId = tempSpiderNLBInfo.IId.SystemId
-	content.CspNLBName = tempSpiderNLBInfo.IId.NameId
-	content.Description = u.Description
-	content.KeyValueList = tempSpiderNLBInfo.KeyValueList
-	content.AssociatedObjectList = []string{}
-
-	content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
-	content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
-	content.TargetGroup.VmGroupId = u.TargetGroup.VmGroupId
-	content.TargetGroup.VMs = vmIDs
-	content.TargetGroup.CspID = u.TargetGroup.CspID
-	content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
+	content := TbNLBInfo{
+		Id:             u.TargetGroup.VmGroupId,
+		Name:           u.TargetGroup.VmGroupId,
+		ConnectionName: vm.ConnectionName,
+		Type:           tempSpiderNLBInfo.Type,
+		Scope:          tempSpiderNLBInfo.Scope,
+		Listener: TbNLBListenerInfo{
+			Protocol:     tempSpiderNLBInfo.Listener.Protocol,
+			IP:           tempSpiderNLBInfo.Listener.IP,
+			Port:         tempSpiderNLBInfo.Listener.Port,
+			DNSName:      tempSpiderNLBInfo.Listener.DNSName,
+			KeyValueList: tempSpiderNLBInfo.Listener.KeyValueList,
+		},
+		HealthChecker: TbNLBHealthCheckerInfo{
+			Protocol:     tempSpiderNLBInfo.HealthChecker.Protocol,
+			Port:         tempSpiderNLBInfo.HealthChecker.Port,
+			Interval:     tempSpiderNLBInfo.HealthChecker.Interval,
+			Timeout:      tempSpiderNLBInfo.HealthChecker.Timeout,
+			Threshold:    tempSpiderNLBInfo.HealthChecker.Threshold,
+			KeyValueList: tempSpiderNLBInfo.HealthChecker.KeyValueList,
+		},
+		CspNLBId:             tempSpiderNLBInfo.IId.SystemId,
+		CspNLBName:           tempSpiderNLBInfo.IId.NameId,
+		CreatedTime:          tempSpiderNLBInfo.CreatedTime,
+		Description:          u.Description,
+		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
+		AssociatedObjectList: []string{},
+		TargetGroup: TbNLBTargetGroupInfo{
+			Protocol:     tempSpiderNLBInfo.VMGroup.Protocol,
+			Port:         tempSpiderNLBInfo.VMGroup.Port,
+			VmGroupId:    u.TargetGroup.VmGroupId,
+			VMs:          vmIDs,
+			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
+		},
+	}
 
 	if option == "register" && u.CspNLBId == "" {
 		content.SystemLabel = "Registered from CB-Spider resource"
@@ -1361,28 +1434,41 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 		}
 	*/
 
-	content := TbNLBInfo{}
-	//content.Id = common.GenUid()
-	content.Id = nlb.Id
-	content.Name = nlb.Name
-	content.ConnectionName = nlb.ConnectionName
-	content.Type = tempSpiderNLBInfo.Type
-	content.Scope = tempSpiderNLBInfo.Scope
-	content.Listener = tempSpiderNLBInfo.Listener
-	content.HealthChecker = tempSpiderNLBInfo.HealthChecker
-	content.CspNLBId = tempSpiderNLBInfo.IId.SystemId
-	content.CspNLBName = tempSpiderNLBInfo.IId.NameId
-	content.Description = nlb.Description
-	content.KeyValueList = tempSpiderNLBInfo.KeyValueList
-	content.AssociatedObjectList = []string{}
-
-	content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
-	content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
-	// content.TargetGroup.MCIS = u.TargetGroup.MCIS // What if oldNlb.TargetGroup.MCIS != newNlb.TargetGroup.MCIS
-	content.TargetGroup.CspID = u.TargetGroup.CspID
-	content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList
-
-	// content.TargetGroup.VMs = u.TargetGroup.VMs
+	content := TbNLBInfo{
+		Id:             nlb.Name,
+		Name:           nlb.Name,
+		ConnectionName: nlb.ConnectionName,
+		Type:           tempSpiderNLBInfo.Type,
+		Scope:          tempSpiderNLBInfo.Scope,
+		Listener: TbNLBListenerInfo{
+			Protocol:     tempSpiderNLBInfo.Listener.Protocol,
+			IP:           tempSpiderNLBInfo.Listener.IP,
+			Port:         tempSpiderNLBInfo.Listener.Port,
+			DNSName:      tempSpiderNLBInfo.Listener.DNSName,
+			KeyValueList: tempSpiderNLBInfo.Listener.KeyValueList,
+		},
+		HealthChecker: TbNLBHealthCheckerInfo{
+			Protocol:     tempSpiderNLBInfo.HealthChecker.Protocol,
+			Port:         tempSpiderNLBInfo.HealthChecker.Port,
+			Interval:     tempSpiderNLBInfo.HealthChecker.Interval,
+			Timeout:      tempSpiderNLBInfo.HealthChecker.Timeout,
+			Threshold:    tempSpiderNLBInfo.HealthChecker.Threshold,
+			KeyValueList: tempSpiderNLBInfo.HealthChecker.KeyValueList,
+		},
+		CspNLBId:             tempSpiderNLBInfo.IId.SystemId,
+		CspNLBName:           tempSpiderNLBInfo.IId.NameId,
+		CreatedTime:          tempSpiderNLBInfo.CreatedTime,
+		Description:          nlb.Description,
+		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
+		AssociatedObjectList: []string{},
+		TargetGroup: TbNLBTargetGroupInfo{
+			Protocol:  tempSpiderNLBInfo.VMGroup.Protocol,
+			Port:      tempSpiderNLBInfo.VMGroup.Port,
+			VmGroupId: nlb.TargetGroup.VmGroupId,
+			// VMs:          vmIDs,
+			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
+		},
+	}
 	content.TargetGroup.VMs = append(content.TargetGroup.VMs, nlb.TargetGroup.VMs...)
 	content.TargetGroup.VMs = append(content.TargetGroup.VMs, u.TargetGroup.VMs...)
 
