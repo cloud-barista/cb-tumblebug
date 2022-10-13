@@ -384,42 +384,6 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	valuesFromYaml.Timeout, _ = strconv.Atoi(cloudSetting.Nlb.Timeout)
 	valuesFromYaml.Threshold, _ = strconv.Atoi(cloudSetting.Nlb.Threshold)
 
-	// switch cloudType {
-	// case "AWS":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Aws.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Aws.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Aws.Nlb.Threshold)
-	// case "AZURE":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Azure.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Azure.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Azure.Nlb.Threshold)
-	// case "GCP":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Gcp.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Gcp.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Gcp.Nlb.Threshold)
-	// case "ALIBABA":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Alibaba.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Alibaba.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Alibaba.Nlb.Threshold)
-	// case "TENCENT":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Tencent.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Tencent.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Tencent.Nlb.Threshold)
-	// case "IBM":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Ibm.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Ibm.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Ibm.Nlb.Threshold)
-	// case "OPENSTACK":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Openstack.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Openstack.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Openstack.Nlb.Threshold)
-	// case "CLOUDIT":
-	// 	valuesFromYaml.Interval, _ = strconv.Atoi(common.RuntimeConf.Cloud.Cloudit.Nlb.Interval)
-	// 	valuesFromYaml.Timeout, _ = strconv.Atoi(common.RuntimeConf.Cloud.Cloudit.Nlb.Timeout)
-	// 	valuesFromYaml.Threshold, _ = strconv.Atoi(common.RuntimeConf.Cloud.Cloudit.Nlb.Threshold)
-	// default:
-
-	// }
 
 	if u.HealthChecker.Interval == "default" || u.HealthChecker.Interval == "" {
 		tempReq.ReqInfo.HealthChecker.Interval = strconv.Itoa(valuesFromYaml.Interval)
