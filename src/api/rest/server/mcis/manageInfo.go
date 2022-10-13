@@ -194,7 +194,7 @@ func RestPutMcis(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param option query string false "Option for delete MCIS (support force delete)" Enums(terminate,force)
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [delete]
 func RestDelMcis(c echo.Context) error {
@@ -203,15 +203,14 @@ func RestDelMcis(c echo.Context) error {
 	mcisId := c.Param("mcisId")
 	option := c.QueryParam("option")
 
-	err := mcis.DelMcis(nsId, mcisId, option)
+	output, err := mcis.DelMcis(nsId, mcisId, option)
 	if err != nil {
 		common.CBLog.Error(err)
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	mapA := map[string]string{"message": "Deleted the MCIS " + mcisId}
-	return c.JSON(http.StatusOK, &mapA)
+	return c.JSON(http.StatusOK, output)
 }
 
 // RestDelAllMcis godoc
