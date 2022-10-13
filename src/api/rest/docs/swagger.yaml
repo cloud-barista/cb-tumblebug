@@ -1589,6 +1589,7 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
+        example: ""
         type: string
       vm:
         items:
@@ -1676,6 +1677,7 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
+        example: ""
         type: string
       vm:
         items:
