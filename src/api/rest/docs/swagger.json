@@ -2119,6 +2119,7 @@
                     },
                     {
                         "type": "string",
+                        "default": "group-0",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -2231,6 +2232,7 @@
                     },
                     {
                         "type": "string",
+                        "default": "group-0",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -2291,6 +2293,7 @@
                     },
                     {
                         "type": "string",
+                        "default": "group-0",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -2358,6 +2361,7 @@
                     },
                     {
                         "type": "string",
+                        "default": "group-0",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -8283,7 +8287,7 @@
                 "port": {
                     "description": "1-65535",
                     "type": "string",
-                    "example": "22"
+                    "example": "80"
                 },
                 "protocol": {
                     "description": "TCP|UDP",
@@ -8791,8 +8795,7 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
+                    "type": "string"
                 },
                 "vm": {
                     "type": "array",
@@ -8902,8 +8905,7 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
+                    "type": "string"
                 },
                 "vm": {
                     "type": "array",
@@ -9049,12 +9051,12 @@
                 "dnsName": {
                     "description": "Optional, Auto Generated and attached",
                     "type": "string",
-                    "example": ""
+                    "example": "ns01-group-cd3.elb.ap-northeast-2.amazonaws.com"
                 },
                 "ip": {
                     "description": "Auto Generated and attached",
                     "type": "string",
-                    "example": ""
+                    "example": "x.x.x.x"
                 },
                 "keyValueList": {
                     "type": "array",
@@ -9065,7 +9067,7 @@
                 "port": {
                     "description": "1-65535",
                     "type": "string",
-                    "example": "22"
+                    "example": "80"
                 },
                 "protocol": {
                     "description": "TCP|UDP",
@@ -9085,15 +9087,18 @@
             ],
             "properties": {
                 "cspNLBId": {
+                    "description": "Existing NLB (used only for option=register)",
                     "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
                 "healthChecker": {
+                    "description": "HealthChecker",
                     "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
                 },
                 "listener": {
+                    "description": "Frontend",
                     "$ref": "#/definitions/mcis.NLBListenerReq"
                 },
                 "scope": {
@@ -9106,6 +9111,7 @@
                     "example": "REGION"
                 },
                 "targetGroup": {
+                    "description": "Backend",
                     "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
                 },
                 "type": {
@@ -9131,7 +9137,7 @@
                 "port": {
                     "description": "Listener Port or 1-65535",
                     "type": "string",
-                    "example": "22"
+                    "example": "80"
                 },
                 "protocol": {
                     "description": "TCP|HTTP|HTTPS",
@@ -9140,7 +9146,7 @@
                 },
                 "vmGroupId": {
                     "type": "string",
-                    "example": "group-1"
+                    "example": "group-0"
                 },
                 "vms": {
                     "type": "array",
@@ -9156,7 +9162,7 @@
                 "port": {
                     "description": "Listener Port or 1-65535",
                     "type": "string",
-                    "example": "22"
+                    "example": "80"
                 },
                 "protocol": {
                     "description": "TCP|HTTP|HTTPS",
@@ -9165,7 +9171,7 @@
                 },
                 "vmGroupId": {
                     "type": "string",
-                    "example": "group-1"
+                    "example": "group-0"
                 }
             }
         },

@@ -108,14 +108,14 @@ type SpiderNLBInfo struct {
 // NLBListenerReq is a struct to handle NLB Listener information of the CB-Spider's & CB-Tumblebug's REST API request
 type NLBListenerReq struct { // for both Spider and Tumblebug
 	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
-	Port     string `json:"port" example:"22"`      // 1-65535
+	Port     string `json:"port" example:"80"`      // 1-65535
 }
 
 // SpiderNLBListenerInfo is a struct to handle NLB Listener information from the CB-Spider's REST API response
 type SpiderNLBListenerInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
 	IP       string `json:"ip" example:""`          // Auto Generated and attached
-	Port     string `json:"port" example:"22"`      // 1-65535
+	Port     string `json:"port" example:"80"`      // 1-65535
 	DNSName  string `json:"dnsName" example:""`     // Optional, Auto Generated and attached
 
 	CspID        string            `json:"cspID"` // Optional, May be Used by Driver.
@@ -124,14 +124,15 @@ type SpiderNLBListenerInfo struct {
 
 // TbNLBListenerInfo is a struct to handle NLB Listener information from the CB-Tumblebug's REST API response
 type TbNLBListenerInfo struct {
-	Protocol string `json:"protocol" example:"TCP"` // TCP|UDP
-	IP       string `json:"ip" example:""`          // Auto Generated and attached
-	Port     string `json:"port" example:"22"`      // 1-65535
-	DNSName  string `json:"dnsName" example:""`     // Optional, Auto Generated and attached
+	Protocol string `json:"protocol" example:"TCP"`                                            // TCP|UDP
+	IP       string `json:"ip" example:"x.x.x.x"`                                              // Auto Generated and attached
+	Port     string `json:"port" example:"80"`                                                 // 1-65535
+	DNSName  string `json:"dnsName" example:"ns01-group-cd3.elb.ap-northeast-2.amazonaws.com"` // Optional, Auto Generated and attached
 
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
+// SpiderNLBVMGroupInfo is a struct from NLBVMGroupInfo from Spider
 type SpiderNLBVMGroupInfo struct {
 	Protocol string // TCP|UDP|HTTP|HTTPS
 	Port     string // 1-65535
@@ -174,15 +175,15 @@ type SpiderNLBHealthInfo struct {
 
 type TbNLBTargetGroupReq struct {
 	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
-	Port      string `json:"port" example:"22"`      // Listener Port or 1-65535
-	VmGroupId string `json:"vmGroupId" example:"group-1"`
+	Port      string `json:"port" example:"80"`      // Listener Port or 1-65535
+	VmGroupId string `json:"vmGroupId" example:"group-0"`
 }
 
 type TbNLBTargetGroupInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
-	Port     string `json:"port" example:"22"`      // Listener Port or 1-65535
+	Port     string `json:"port" example:"80"`      // Listener Port or 1-65535
 
-	VmGroupId string   `json:"vmGroupId" example:"group-1"`
+	VmGroupId string   `json:"vmGroupId" example:"group-0"`
 	VMs       []string `json:"vms"`
 
 	KeyValueList []common.KeyValue
@@ -195,18 +196,17 @@ type TbNLBReq struct { // Tumblebug
 	// VNetId         string `json:"vNetId" validate:"required" example:"ns01-systemdefault-aws-ap-northeast-2"`
 
 	Description string `json:"description"`
-	CspNLBId    string `json:"cspNLBId"`
+	// Existing NLB (used only for option=register)
+	CspNLBId string `json:"cspNLBId"`
 
 	Type  string `json:"type" validate:"required" enums:"PUBLIC,INTERNAL" example:"PUBLIC"` // PUBLIC(V) | INTERNAL
 	Scope string `json:"scope" validate:"required" enums:"REGION,GLOBAL" example:"REGION"`  // REGION(V) | GLOBAL
 
-	//------ Frontend
-
+	// Frontend
 	Listener NLBListenerReq `json:"listener" validate:"required"`
-
-	//------ Backend
-
-	TargetGroup   TbNLBTargetGroupReq   `json:"targetGroup" validate:"required"`
+	// Backend
+	TargetGroup TbNLBTargetGroupReq `json:"targetGroup" validate:"required"`
+	// HealthChecker
 	HealthChecker TbNLBHealthCheckerReq `json:"healthChecker" validate:"required"`
 }
 
@@ -383,7 +383,6 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	valuesFromYaml.Interval, _ = strconv.Atoi(cloudSetting.Nlb.Interval)
 	valuesFromYaml.Timeout, _ = strconv.Atoi(cloudSetting.Nlb.Timeout)
 	valuesFromYaml.Threshold, _ = strconv.Atoi(cloudSetting.Nlb.Threshold)
-
 
 	if u.HealthChecker.Interval == "default" || u.HealthChecker.Interval == "" {
 		tempReq.ReqInfo.HealthChecker.Interval = strconv.Itoa(valuesFromYaml.Interval)

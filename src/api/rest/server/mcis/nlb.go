@@ -72,6 +72,7 @@ func RestPostNLB(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param nlbId path string true "NLB ID" default(group-0)
 // @Param nlbInfo body mcis.TbNLBInfo true "Details of the NLB object"
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -93,7 +94,7 @@ func RestPutNLB(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param nlbId path string true "NLB ID"
+// @Param nlbId path string true "NLB ID" default(group-0)
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -239,7 +240,7 @@ func RestDelAllNLB(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param nlbId path string true "NLB ID"
+// @Param nlbId path string true "NLB ID" default(group-0)
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -269,7 +270,7 @@ func RestGetNLBHealth(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param nlbId path string true "NLB ID"
+// @Param nlbId path string true "NLB ID" default(group-0)
 // @Param nlbAddRemoveVMReq body mcis.TbNLBAddRemoveVMReq true "VMs to add to NLB"
 // @Success 200 {object} mcis.TbNLBInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -306,7 +307,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param nlbId path string true "NLB ID"
+// @Param nlbId path string true "NLB ID" default(group-0)
 // @Param nlbAddRemoveVMReq body mcis.TbNLBAddRemoveVMReq true "VMs to add to NLB"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg

@@ -1237,7 +1237,7 @@ definitions:
     properties:
       port:
         description: 1-65535
-        example: "22"
+        example: "80"
         type: string
       protocol:
         description: TCP|UDP
@@ -1589,7 +1589,6 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
-        example: ""
         type: string
       vm:
         items:
@@ -1677,7 +1676,6 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
-        example: ""
         type: string
       vm:
         items:
@@ -1786,11 +1784,11 @@ definitions:
     properties:
       dnsName:
         description: Optional, Auto Generated and attached
-        example: ""
+        example: ns01-group-cd3.elb.ap-northeast-2.amazonaws.com
         type: string
       ip:
         description: Auto Generated and attached
-        example: ""
+        example: x.x.x.x
         type: string
       keyValueList:
         items:
@@ -1798,7 +1796,7 @@ definitions:
         type: array
       port:
         description: 1-65535
-        example: "22"
+        example: "80"
         type: string
       protocol:
         description: TCP|UDP
@@ -1808,13 +1806,16 @@ definitions:
   mcis.TbNLBReq:
     properties:
       cspNLBId:
+        description: Existing NLB (used only for option=register)
         type: string
       description:
         type: string
       healthChecker:
         $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
+        description: HealthChecker
       listener:
         $ref: '#/definitions/mcis.NLBListenerReq'
+        description: Frontend
       scope:
         description: REGION(V) | GLOBAL
         enum:
@@ -1824,6 +1825,7 @@ definitions:
         type: string
       targetGroup:
         $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
+        description: Backend
       type:
         description: PUBLIC(V) | INTERNAL
         enum:
@@ -1846,14 +1848,14 @@ definitions:
         type: array
       port:
         description: Listener Port or 1-65535
-        example: "22"
+        example: "80"
         type: string
       protocol:
         description: TCP|HTTP|HTTPS
         example: TCP
         type: string
       vmGroupId:
-        example: group-1
+        example: group-0
         type: string
       vms:
         items:
@@ -1864,14 +1866,14 @@ definitions:
     properties:
       port:
         description: Listener Port or 1-65535
-        example: "22"
+        example: "80"
         type: string
       protocol:
         description: TCP|HTTP|HTTPS
         example: TCP
         type: string
       vmGroupId:
-        example: group-1
+        example: group-0
         type: string
     type: object
   mcis.TbScaleOutVmGroupReq:
@@ -3725,7 +3727,8 @@ paths:
         name: mcisId
         required: true
         type: string
-      - description: NLB ID
+      - default: group-0
+        description: NLB ID
         in: path
         name: nlbId
         required: true
@@ -3766,7 +3769,8 @@ paths:
         name: mcisId
         required: true
         type: string
-      - description: NLB ID
+      - default: group-0
+        description: NLB ID
         in: path
         name: nlbId
         required: true
@@ -3807,7 +3811,8 @@ paths:
         name: mcisId
         required: true
         type: string
-      - description: NLB ID
+      - default: group-0
+        description: NLB ID
         in: path
         name: nlbId
         required: true
@@ -3849,7 +3854,8 @@ paths:
         name: mcisId
         required: true
         type: string
-      - description: NLB ID
+      - default: group-0
+        description: NLB ID
         in: path
         name: nlbId
         required: true
