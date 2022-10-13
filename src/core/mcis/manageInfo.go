@@ -1655,26 +1655,28 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 // [Delete MCIS and VM object]
 
 // DelMcis is func to delete MCIS object
-func DelMcis(nsId string, mcisId string, option string) error {
+func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 
 	option = common.ToLower(option)
+	deletedResources := common.IdList{}
+	deleteStatus := " [Done]"
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		return deletedResources, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		return deletedResources, err
 	}
 	check, _ := CheckMcis(nsId, mcisId)
 
 	if !check {
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
-		return err
+		return deletedResources, err
 	}
 
 	fmt.Println("[Delete MCIS] " + mcisId)
@@ -1685,7 +1687,7 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		err := fmt.Errorf("MCIS " + mcisId + " status nil, Deletion is not allowed (use option=force for force deletion)")
 		common.CBLog.Error(err)
 		if option != "force" {
-			return err
+			return deletedResources, err
 		}
 	}
 
@@ -1698,14 +1700,14 @@ func DelMcis(nsId string, mcisId string, option string) error {
 			_, err := HandleMcisAction(nsId, mcisId, ActionRefine, true)
 			if err != nil {
 				common.CBLog.Error(err)
-				return err
+				return deletedResources, err
 			}
 
 			// ActionTerminate
 			_, err = HandleMcisAction(nsId, mcisId, ActionTerminate, true)
 			if err != nil {
 				common.CBLog.Error(err)
-				return err
+				return deletedResources, err
 			}
 			// for deletion, need to wait until termination is finished
 			// Sleep for 5 seconds
@@ -1721,7 +1723,7 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		err := fmt.Errorf("MCIS " + mcisId + " is " + mcisStatus.Status + " and not " + StatusTerminated + "/" + StatusUndefined + "/" + StatusFailed + ", Deletion is not allowed (use option=force for force deletion)")
 		common.CBLog.Error(err)
 		if option != "force" {
-			return err
+			return deletedResources, err
 		}
 	}
 
@@ -1731,7 +1733,7 @@ func DelMcis(nsId string, mcisId string, option string) error {
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		return deletedResources, err
 	}
 
 	// delete vms info
@@ -1743,13 +1745,13 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		vmInfo, err := GetVmObject(nsId, mcisId, v)
 		if err != nil {
 			common.CBLog.Error(err)
-			return err
+			return deletedResources, err
 		}
 
 		err = common.CBStore.Delete(vmKey)
 		if err != nil {
 			common.CBLog.Error(err)
-			return err
+			return deletedResources, err
 		}
 
 		_, err = mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, vmKey)
@@ -1768,13 +1770,14 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		for _, v2 := range vmInfo.DataDiskIds {
 			mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v2, common.StrDelete, vmKey)
 		}
+		deletedResources.IdList = append(deletedResources.IdList, "VM: "+v+deleteStatus)
 	}
 
 	// delete vm group info
 	vmGroupList, err := ListVmGroupId(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		return deletedResources, err
 	}
 	for _, v := range vmGroupList {
 		vmGroupKey := common.GenMcisVmGroupKey(nsId, mcisId, v)
@@ -1782,18 +1785,32 @@ func DelMcis(nsId string, mcisId string, option string) error {
 		err := common.CBStore.Delete(vmGroupKey)
 		if err != nil {
 			common.CBLog.Error(err)
-			return err
+			return deletedResources, err
 		}
+		deletedResources.IdList = append(deletedResources.IdList, "vmGroup: "+v+deleteStatus)
 	}
+
+	// delete associated CSP NLBs
+	forceFlag := "false"
+	if option == "force" {
+		forceFlag = "true"
+	}
+	output, err := DelAllNLB(nsId, mcisId, "", forceFlag)
+	if err != nil {
+		common.CBLog.Error(err)
+		return deletedResources, err
+	}
+	deletedResources.IdList = append(deletedResources.IdList, output.IdList...)
 
 	// delete mcis info
 	err = common.CBStore.Delete(key)
 	if err != nil {
 		common.CBLog.Error(err)
-		return err
+		return deletedResources, err
 	}
+	deletedResources.IdList = append(deletedResources.IdList, "MCIS: "+mcisId+deleteStatus)
 
-	return nil
+	return deletedResources, nil
 }
 
 // DelMcisVm is func to delete VM object
@@ -1890,7 +1907,7 @@ func CoreDelAllMcis(nsId string, option string) (string, error) {
 	}
 
 	for _, v := range mcisList {
-		err := DelMcis(nsId, v, option)
+		_, err := DelMcis(nsId, v, option)
 		if err != nil {
 			common.CBLog.Error(err)
 			return "", fmt.Errorf("Failed to delete All MCISs")
