@@ -1652,6 +1652,56 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	return vm, nil
 }
 
+func GetAvailableDataDiskIDs(nsId string, mcisId string, vmId string) ([]string, error) {
+	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
+
+	// Check existence of the key. If no key, no update.
+	keyValue, err := common.CBStore.Get(vmKey)
+	if keyValue == nil || err != nil {
+		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	vm := TbVmInfo{}
+	json.Unmarshal([]byte(keyValue.Value), &vm)
+
+	tbDataDisksInterface, err := mcir.ListResource(nsId, common.StrDataDisk, "", "")
+	if err != nil {
+		err := fmt.Errorf("Failed to get dataDisk List. \n")
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	jsonString, err := json.Marshal(tbDataDisksInterface)
+	if err != nil {
+		err := fmt.Errorf("Failed to marshal dataDisk list into JSON string. \n")
+		common.CBLog.Error(err)
+		return nil, err
+	}
+
+	tbDataDisks := []mcir.TbDataDiskInfo{}
+	json.Unmarshal(jsonString, &tbDataDisks)
+
+	idList := []string{}
+
+	for _, v := range tbDataDisks {
+		// Update Tb dataDisk object's status
+		newObj, err := mcir.GetResource(nsId, common.StrDataDisk, v.Id)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
+		tempObj := newObj.(mcir.TbDataDiskInfo)
+
+		if v.ConnectionName == vm.ConnectionName && tempObj.Status == "Available" {
+			idList = append(idList, v.Id)
+		}
+	}
+
+	return idList, nil
+}
+
 // [Delete MCIS and VM object]
 
 // DelMcis is func to delete MCIS object

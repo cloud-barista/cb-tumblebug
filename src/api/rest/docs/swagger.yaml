@@ -404,13 +404,6 @@ definitions:
       count:
         type: string
     type: object
-  mcir.TbAttachDetachDataDiskReq:
-    properties:
-      dataDiskId:
-        type: string
-    required:
-    - dataDiskId
-    type: object
   mcir.TbCustomImageInfo:
     properties:
       associatedObjectList:
@@ -1400,6 +1393,13 @@ definitions:
       nlb:
         items:
           $ref: '#/definitions/mcis.TbNLBInfo'
+        type: array
+    type: object
+  mcis.RestGetAvailableDataDisksResponse:
+    properties:
+      dataDisk:
+        items:
+          type: string
         type: array
     type: object
   mcis.RestGetBenchmarkRequest:
@@ -4000,6 +4000,7 @@ paths:
         - default
         - status
         - idsInDetail
+        - availableDataDisk
         in: query
         name: option
         type: string
@@ -4012,6 +4013,8 @@ paths:
             allOf:
             - $ref: '#/definitions/mcis.JSONResult'
             - properties:
+                '[AVAILABLEDATADISK]':
+                  $ref: '#/definitions/mcis.RestGetAvailableDataDisksResponse'
                 '[DEFAULT]':
                   $ref: '#/definitions/mcis.TbVmInfo'
                 '[IDNAME]':
@@ -4028,6 +4031,54 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get VM in specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+    put:
+      consumes:
+      - application/json
+      description: Update MCIS VM
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vm01
+        description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      - description: Option for MCIS
+        enum:
+        - attachDataDisk
+        - detachDataDisk
+        in: query
+        name: option
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbVmInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Update MCIS VM
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command}:
@@ -4079,61 +4130,6 @@ paths:
       summary: Create VM snapshot
       tags:
       - '[Infra resource] VM snapshot management'
-    put:
-      consumes:
-      - application/json
-      description: Attach/Detach data disk to/from VM
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: mcis01
-        description: MCIS ID
-        in: path
-        name: mcisId
-        required: true
-        type: string
-      - default: vm01
-        description: VM ID
-        in: path
-        name: vmId
-        required: true
-        type: string
-      - description: Command to perform
-        enum:
-        - attachDataDisk
-        - detachDataDisk
-        in: path
-        name: command
-        required: true
-        type: string
-      - description: Data disk ID to attach/detach
-        in: body
-        name: dataDisk
-        required: true
-        schema:
-          $ref: '#/definitions/mcir.TbAttachDetachDataDiskReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbVmInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Attach/Detach data disk to/from VM
-      tags:
-      - '[Infra resource] MCIR Data Disk management'
   /ns/{nsId}/mcis/{mcisId}/vmgroup:
     get:
       consumes:

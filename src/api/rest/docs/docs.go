@@ -2505,7 +2505,8 @@ const docTemplate = `{
                         "enum": [
                             "default",
                             "status",
-                            "idsInDetail"
+                            "idsInDetail",
+                            "availableDataDisk"
                         ],
                         "type": "string",
                         "description": "Option for MCIS",
@@ -2524,6 +2525,9 @@ const docTemplate = `{
                                 {
                                     "type": "object",
                                     "properties": {
+                                        "[AVAILABLEDATADISK]": {
+                                            "$ref": "#/definitions/mcis.RestGetAvailableDataDisksResponse"
+                                        },
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbVmInfo"
                                         },
@@ -2536,6 +2540,75 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update MCIS VM",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Update MCIS VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vm01",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "attachDataDisk",
+                            "detachDataDisk"
+                        ],
+                        "type": "string",
+                        "description": "Option for MCIS",
+                        "name": "option",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbVmInfo"
                         }
                     },
                     "404": {
@@ -2616,85 +2689,6 @@ const docTemplate = `{
             }
         },
         "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command}": {
-            "put": {
-                "description": "Attach/Detach data disk to/from VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra resource] MCIR Data Disk management"
-                ],
-                "summary": "Attach/Detach data disk to/from VM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vm01",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "attachDataDisk",
-                            "detachDataDisk"
-                        ],
-                        "type": "string",
-                        "description": "Command to perform",
-                        "name": "command",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Data disk ID to attach/detach",
-                        "name": "dataDisk",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcir.TbAttachDetachDataDiskReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbVmInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
             "post": {
                 "description": "Create VM snapshot",
                 "consumes": [
@@ -7085,17 +7079,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcir.TbAttachDetachDataDiskReq": {
-            "type": "object",
-            "required": [
-                "dataDiskId"
-            ],
-            "properties": {
-                "dataDiskId": {
-                    "type": "string"
-                }
-            }
-        },
         "mcir.TbCustomImageInfo": {
             "type": "object",
             "properties": {
@@ -8532,6 +8515,17 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.TbNLBInfo"
+                    }
+                }
+            }
+        },
+        "mcis.RestGetAvailableDataDisksResponse": {
+            "type": "object",
+            "properties": {
+                "dataDisk": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 }
             }
