@@ -1004,12 +1004,13 @@ func DelAllNLB(nsId string, mcisId string, subString string, forceFlag string) (
 		return deletedResources, err
 	}
 
-	if len(resourceIdList) == 0 {
-		errString := "There is no NLB in " + nsId
-		err := fmt.Errorf(errString)
-		common.CBLog.Error(err)
-		return deletedResources, err
-	}
+	// Do not return error when len(resourceIdList) == 0
+	// if len(resourceIdList) == 0 {
+	// 	errString := "There is no NLB in " + nsId
+	// 	err := fmt.Errorf(errString)
+	// 	common.CBLog.Error(err)
+	// 	return deletedResources, err
+	// }
 
 	for _, v := range resourceIdList {
 		// if subString is provided, check the resourceId contains the subString.
