@@ -124,10 +124,10 @@ func GenMcisKey(nsId string, mcisId string, vmId string) string {
 
 }
 
-// GenMcisVmGroupKey is func to generate a key from vmGroupId used in keyValue store
-func GenMcisVmGroupKey(nsId string, mcisId string, groupId string) string {
+// GenMcisSubGroupKey is func to generate a key from subGroupId used in keyValue store
+func GenMcisSubGroupKey(nsId string, mcisId string, groupId string) string {
 
-	return "/ns/" + nsId + "/mcis/" + mcisId + "/vmgroup/" + groupId
+	return "/ns/" + nsId + "/mcis/" + mcisId + "/subgroup/" + groupId
 
 }
 

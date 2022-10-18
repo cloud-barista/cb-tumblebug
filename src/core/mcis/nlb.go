@@ -53,7 +53,7 @@ type SpiderNLBReqInfo struct {
 
 	//------ Backend
 
-	VMGroup       SpiderNLBVMGroupReq
+	VMGroup       SpiderNLBSubGroupReq
 	HealthChecker SpiderNLBHealthCheckerReq
 }
 
@@ -74,7 +74,7 @@ type TbNLBHealthCheckerReq struct {
 	Threshold string `json:"threshold" example:"default"` // num, The number of continuous health checks to change the VM status.
 }
 
-type SpiderNLBVMGroupReq struct {
+type SpiderNLBSubGroupReq struct {
 	Protocol string // TCP|HTTP|HTTPS
 	Port     string // Listener Port or 1-65535
 	VMs      []string
@@ -83,7 +83,7 @@ type SpiderNLBVMGroupReq struct {
 // SpiderNLBAddRemoveVMReqInfoWrapper is a wrapper struct to create JSON body of 'Add/Remove VMs to/from NLB' request
 type SpiderNLBAddRemoveVMReqInfoWrapper struct {
 	ConnectionName string
-	ReqInfo        SpiderNLBVMGroupReq
+	ReqInfo        SpiderNLBSubGroupReq
 }
 
 // SpiderNLBInfo is a struct to handle NLB information from the CB-Spider's REST API response
@@ -98,7 +98,7 @@ type SpiderNLBInfo struct {
 	Listener SpiderNLBListenerInfo
 
 	//------ Backend
-	VMGroup       SpiderNLBVMGroupInfo
+	VMGroup       SpiderNLBSubGroupInfo
 	HealthChecker SpiderNLBHealthCheckerInfo
 
 	CreatedTime  time.Time
@@ -132,8 +132,8 @@ type TbNLBListenerInfo struct {
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-// SpiderNLBVMGroupInfo is a struct from NLBVMGroupInfo from Spider
-type SpiderNLBVMGroupInfo struct {
+// SpiderNLBSubGroupInfo is a struct from NLBSubGroupInfo from Spider
+type SpiderNLBSubGroupInfo struct {
 	Protocol string // TCP|UDP|HTTP|HTTPS
 	Port     string // 1-65535
 	VMs      *[]common.IID
@@ -174,17 +174,17 @@ type SpiderNLBHealthInfo struct {
 }
 
 type TbNLBTargetGroupReq struct {
-	Protocol  string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
-	Port      string `json:"port" example:"80"`      // Listener Port or 1-65535
-	VmGroupId string `json:"vmGroupId" example:"group-0"`
+	Protocol   string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
+	Port       string `json:"port" example:"80"`      // Listener Port or 1-65535
+	SubGroupId string `json:"subGroupId" example:"group-0"`
 }
 
 type TbNLBTargetGroupInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"80"`      // Listener Port or 1-65535
 
-	VmGroupId string   `json:"vmGroupId" example:"group-0"`
-	VMs       []string `json:"vms"`
+	SubGroupId string   `json:"subGroupId" example:"group-0"`
+	VMs        []string `json:"vms"`
 
 	KeyValueList []common.KeyValue
 }
@@ -215,10 +215,10 @@ func TbNLBReqStructLevelValidation(sl validator.StructLevel) {
 
 	u := sl.Current().Interface().(TbNLBReq)
 
-	err := common.CheckString(u.TargetGroup.VmGroupId)
+	err := common.CheckString(u.TargetGroup.SubGroupId)
 	if err != nil {
 		// ReportError(field interface{}, fieldName, structFieldName, tag, param string)
-		sl.ReportError(u.TargetGroup.VmGroupId, "name", "Name", err.Error(), "")
+		sl.ReportError(u.TargetGroup.SubGroupId, "name", "Name", err.Error(), "")
 	}
 }
 
@@ -299,27 +299,27 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		return temp, err
 	}
 
-	check, err := CheckNLB(nsId, mcisId, u.TargetGroup.VmGroupId)
+	check, err := CheckNLB(nsId, mcisId, u.TargetGroup.SubGroupId)
 
 	if check {
 		temp := TbNLBInfo{}
-		err := fmt.Errorf("The nlb " + u.TargetGroup.VmGroupId + " already exists.")
+		err := fmt.Errorf("The nlb " + u.TargetGroup.SubGroupId + " already exists.")
 		return temp, err
 	}
 
 	if err != nil {
 		temp := TbNLBInfo{}
-		err := fmt.Errorf("Failed to check the existence of the nlb " + u.TargetGroup.VmGroupId + ".")
+		err := fmt.Errorf("Failed to check the existence of the nlb " + u.TargetGroup.SubGroupId + ".")
 		return temp, err
 	}
 
-	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.VmGroupId)
+	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.SubGroupId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get VMs in the VMGroup " + u.TargetGroup.VmGroupId + ".")
+		err := fmt.Errorf("Failed to get VMs in the SubGroup " + u.TargetGroup.SubGroupId + ".")
 		return TbNLBInfo{}, err
 	}
 	if len(vmIDs) == 0 {
-		err := fmt.Errorf("There is no VMs in the VMGroup " + u.TargetGroup.VmGroupId + ".")
+		err := fmt.Errorf("There is no VMs in the SubGroup " + u.TargetGroup.SubGroupId + ".")
 		return TbNLBInfo{}, err
 	}
 
@@ -344,7 +344,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	tempReq := SpiderNLBReqInfoWrapper{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: SpiderNLBReqInfo{
-			Name:     fmt.Sprintf("%s-%s", nsId, u.TargetGroup.VmGroupId),
+			Name:     fmt.Sprintf("%s-%s", nsId, u.TargetGroup.SubGroupId),
 			VPCName:  vNetInfo.CspVNetName,
 			Type:     u.Type,
 			Scope:    u.Scope,
@@ -356,7 +356,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 				Timeout:   u.HealthChecker.Timeout,
 				Threshold: u.HealthChecker.Threshold,
 			},
-			VMGroup: SpiderNLBVMGroupReq{
+			VMGroup: SpiderNLBSubGroupReq{
 				Protocol: u.TargetGroup.Protocol,
 				Port:     u.TargetGroup.Port,
 			},
@@ -408,7 +408,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	}
 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                     // for debug
-	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMGroup.VMs) // for debug
+	// fmt.Printf("tempReq.ReqInfo.SubGroup.VMs: %s \n", tempReq.ReqInfo.SubGroup.VMs) // for debug
 
 	var tempSpiderNLBInfo *SpiderNLBInfo
 
@@ -432,7 +432,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 		var url string
 		if option == "register" && u.CspNLBId == "" {
-			url = fmt.Sprintf("%s/nlb/%s", common.SpiderRestUrl, u.TargetGroup.VmGroupId)
+			url = fmt.Sprintf("%s/nlb/%s", common.SpiderRestUrl, u.TargetGroup.SubGroupId)
 			resp, err = req.Get(url)
 		} else if option == "register" && u.CspNLBId != "" {
 			url = fmt.Sprintf("%s/regnlb", common.SpiderRestUrl)
@@ -504,8 +504,8 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	*/
 
 	content := TbNLBInfo{
-		Id:             u.TargetGroup.VmGroupId,
-		Name:           u.TargetGroup.VmGroupId,
+		Id:             u.TargetGroup.SubGroupId,
+		Name:           u.TargetGroup.SubGroupId,
 		ConnectionName: vm.ConnectionName,
 		Type:           tempSpiderNLBInfo.Type,
 		Scope:          tempSpiderNLBInfo.Scope,
@@ -533,7 +533,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		TargetGroup: TbNLBTargetGroupInfo{
 			Protocol:     tempSpiderNLBInfo.VMGroup.Protocol,
 			Port:         tempSpiderNLBInfo.VMGroup.Port,
-			VmGroupId:    u.TargetGroup.VmGroupId,
+			SubGroupId:   u.TargetGroup.SubGroupId,
 			VMs:          vmIDs,
 			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
 		},
@@ -1293,7 +1293,7 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 	}
 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                             // for debug
-	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMGroup.VMs) // for debug
+	// fmt.Printf("tempReq.ReqInfo.SubGroup.VMs: %s \n", tempReq.ReqInfo.SubGroup.VMs) // for debug
 	/*
 		for _, v := range u.VMIDList {
 			mcisId_vmId := strings.Split(v, "/")
@@ -1309,7 +1309,7 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 				return TbNLBInfo{}, err
 			}
 
-			tempReq.ReqInfo.VMGroup = append(tempReq.ReqInfo.VMGroup, vm.IdByCSP)
+			tempReq.ReqInfo.SubGroup = append(tempReq.ReqInfo.SubGroup, vm.IdByCSP)
 		}
 	*/
 
@@ -1426,9 +1426,9 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
 		AssociatedObjectList: []string{},
 		TargetGroup: TbNLBTargetGroupInfo{
-			Protocol:  tempSpiderNLBInfo.VMGroup.Protocol,
-			Port:      tempSpiderNLBInfo.VMGroup.Port,
-			VmGroupId: nlb.TargetGroup.VmGroupId,
+			Protocol:   tempSpiderNLBInfo.VMGroup.Protocol,
+			Port:       tempSpiderNLBInfo.VMGroup.Port,
+			SubGroupId: nlb.TargetGroup.SubGroupId,
 			// VMs:          vmIDs,
 			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
 		},
@@ -1551,7 +1551,7 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 		}
 	}
 
-	// fmt.Printf("tempReq.ReqInfo.VMGroup.VMs: %s \n", tempReq.ReqInfo.VMs) // for debug
+	// fmt.Printf("tempReq.ReqInfo.SubGroup.VMs: %s \n", tempReq.ReqInfo.VMs) // for debug
 	/*
 		for _, v := range u.VMIDList {
 			mcisId_vmId := strings.Split(v, "/")
@@ -1567,7 +1567,7 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 				return TbNLBInfo{}, err
 			}
 
-			tempReq.ReqInfo.VMGroup = append(tempReq.ReqInfo.VMGroup, vm.IdByCSP)
+			tempReq.ReqInfo.SubGroup = append(tempReq.ReqInfo.SubGroup, vm.IdByCSP)
 		}
 	*/
 
@@ -1678,8 +1678,8 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 		content.KeyValueList = tempSpiderNLBInfo.KeyValueList
 		content.AssociatedObjectList = []string{}
 
-		content.TargetGroup.Port = tempSpiderNLBInfo.VMGroup.Port
-		content.TargetGroup.Protocol = tempSpiderNLBInfo.VMGroup.Protocol
+		content.TargetGroup.Port = tempSpiderNLBInfo.SubGroup.Port
+		content.TargetGroup.Protocol = tempSpiderNLBInfo.SubGroup.Protocol
 		content.TargetGroup.MCIS = u.TargetGroup.MCIS // What if oldNlb.TargetGroup.MCIS != newNlb.TargetGroup.MCIS
 		content.TargetGroup.CspID = u.TargetGroup.CspID
 		content.TargetGroup.KeyValueList = u.TargetGroup.KeyValueList

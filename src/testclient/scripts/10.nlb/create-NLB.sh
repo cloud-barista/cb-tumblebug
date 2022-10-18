@@ -18,7 +18,7 @@ resp=$(
 		"targetGroup": {
 			"Protocol" : "TCP",
 			"Port" : "22",
-			"vmGroupId": "${CONN_CONFIG[$INDEX,$REGION]}"
+			"subGroupId": "${CONN_CONFIG[$INDEX,$REGION]}"
 		},
 		"HealthChecker": {
 			"Interval" : "default",

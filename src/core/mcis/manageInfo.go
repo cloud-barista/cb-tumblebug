@@ -214,15 +214,15 @@ func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal stri
 	return groupVmList, nil
 }
 
-// ListMcisGroupVms is func to get VM list with a VMGroup label in a specified MCIS
+// ListMcisGroupVms is func to get VM list with a SubGroup label in a specified MCIS
 func ListMcisGroupVms(nsId string, mcisId string, groupId string) ([]string, error) {
-	// VmGroupId is the Key for VmGroupId in TbVmInfo struct
-	filterKey := "VmGroupId"
+	// SubGroupId is the Key for SubGroupId in TbVmInfo struct
+	filterKey := "SubGroupId"
 	return ListVmByFilter(nsId, mcisId, filterKey, groupId)
 }
 
-// ListVmGroupId is func to return list of VmGroups in a given MCIS
-func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
+// ListSubGroupId is func to return list of SubGroups in a given MCIS
+func ListSubGroupId(nsId string, mcisId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -236,7 +236,7 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Println("[ListVmGroupId]")
+	fmt.Println("[ListSubGroupId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
 	key += "/"
 
@@ -245,17 +245,17 @@ func ListVmGroupId(nsId string, mcisId string) ([]string, error) {
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	var vmGroupList []string
+	var subGroupList []string
 	for _, v := range keyValue {
-		if strings.Contains(v.Key, "/vmgroup/") {
-			trimmedString := strings.TrimPrefix(v.Key, (key + "vmgroup/"))
+		if strings.Contains(v.Key, "/subgroup/") {
+			trimmedString := strings.TrimPrefix(v.Key, (key + "subgroup/"))
 			// prevent malformed key (if key for vm id includes '/', the key does not represent VM ID)
 			if !strings.Contains(trimmedString, "/") {
-				vmGroupList = append(vmGroupList, trimmedString)
+				subGroupList = append(subGroupList, trimmedString)
 			}
 		}
 	}
-	return vmGroupList, nil
+	return subGroupList, nil
 }
 
 // GetMcisInfo is func to return MCIS information with the current status update
@@ -1824,21 +1824,21 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 		deletedResources.IdList = append(deletedResources.IdList, "VM: "+v+deleteStatus)
 	}
 
-	// delete vm group info
-	vmGroupList, err := ListVmGroupId(nsId, mcisId)
+	// delete subGroup info
+	subGroupList, err := ListSubGroupId(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return deletedResources, err
 	}
-	for _, v := range vmGroupList {
-		vmGroupKey := common.GenMcisVmGroupKey(nsId, mcisId, v)
-		fmt.Println(vmGroupKey)
-		err := common.CBStore.Delete(vmGroupKey)
+	for _, v := range subGroupList {
+		subGroupKey := common.GenMcisSubGroupKey(nsId, mcisId, v)
+		fmt.Println(subGroupKey)
+		err := common.CBStore.Delete(subGroupKey)
 		if err != nil {
 			common.CBLog.Error(err)
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, "vmGroup: "+v+deleteStatus)
+		deletedResources.IdList = append(deletedResources.IdList, "subGroup: "+v+deleteStatus)
 	}
 
 	// delete associated CSP NLBs

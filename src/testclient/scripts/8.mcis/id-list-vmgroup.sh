@@ -14,7 +14,7 @@ fi
 
 echo "${MCISID}"
 
-curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/vmgroup | jq ''
+curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/mcis/${MCISID}/subgroup | jq ''
 
 
 #get_mcis

@@ -585,7 +585,7 @@ func CreateMCISApiTest() {
 			Label:           "",
 			Vm: []core_mcis.TbVmReq{
 				{
-					VmGroupSize:    "0",
+					SubGroupSize:   "0",
 					Name:           "openstack-config01-test-01",
 					ConnectionName: "openstack-config01",
 					SpecId:         "openstack-config01-test",
@@ -602,7 +602,7 @@ func CreateMCISApiTest() {
 					Label:          "label",
 				},
 				{
-					VmGroupSize:    "0",
+					SubGroupSize:   "0",
 					Name:           "openstack-config01-test-02",
 					ConnectionName: "openstack-config01",
 					SpecId:         "openstack-config01-test",

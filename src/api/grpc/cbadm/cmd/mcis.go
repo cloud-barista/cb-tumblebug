@@ -40,7 +40,7 @@ func NewMcisCmd() *cobra.Command {
 	mcisCmd.AddCommand(NewMcisTerminateCmd())
 
 	mcisCmd.AddCommand(NewMcisVmAddCmd())
-	mcisCmd.AddCommand(NewMcisVmGroupCmd())
+	mcisCmd.AddCommand(NewMcisSubGroupCmd())
 	mcisCmd.AddCommand(NewMcisVmListCmd())
 	mcisCmd.AddCommand(NewMcisVmListIdCmd())
 	mcisCmd.AddCommand(NewMcisVmGetCmd())
@@ -436,10 +436,10 @@ func NewMcisVmAddCmd() *cobra.Command {
 	return vmAddCmd
 }
 
-// NewMcisVmGroupCmd : "cbadm mcis group-vm"
-func NewMcisVmGroupCmd() *cobra.Command {
+// NewMcisSubGroupCmd : "cbadm mcis group-vm"
+func NewMcisSubGroupCmd() *cobra.Command {
 
-	vmGroupCmd := &cobra.Command{
+	subGroupCmd := &cobra.Command{
 		Use:   "group-vm",
 		Short: "This is group-vm command for mcis",
 		Long:  "This is group-vm command for mcis",
@@ -457,10 +457,10 @@ func NewMcisVmGroupCmd() *cobra.Command {
 		},
 	}
 
-	vmGroupCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
-	vmGroupCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
+	subGroupCmd.PersistentFlags().StringVarP(&inData, "indata", "d", "", "input string data")
+	subGroupCmd.PersistentFlags().StringVarP(&inFile, "infile", "f", "", "input file path")
 
-	return vmGroupCmd
+	return subGroupCmd
 }
 
 // NewMcisVmListCmd : "cbadm mcis list-vm"

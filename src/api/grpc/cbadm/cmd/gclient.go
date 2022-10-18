@@ -395,7 +395,7 @@ func SetupAndRun(cmd *cobra.Command, args []string) {
 		case "add-vm":
 			result, err = mcis.CreateMcisVM(inData)
 		case "group-vm":
-			result, err = mcis.CreateMcisVMGroup(inData)
+			result, err = mcis.CreateMcisSubGroup(inData)
 		case "list-vm":
 			result, err = proc.ListMcisVM(mcis, nameSpaceID, mcisID)
 		case "list-vm-id":

@@ -22,9 +22,9 @@
 		RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
 	fi
 	
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vmgroup -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/subgroup -H 'Content-Type: application/json' -d \
 		'{
-			"vmGroupSize": "'${NUMVM}'",
+			"subGroupSize": "'${NUMVM}'",
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
 			"imageId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
 			"vmUserAccount": "cb-user",

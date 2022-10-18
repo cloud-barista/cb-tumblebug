@@ -187,11 +187,11 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/mcis", rest_mcis.RestDelAllMcis)
 
 	g.POST("/:nsId/mcis/:mcisId/vm", rest_mcis.RestPostMcisVm)
-	g.POST("/:nsId/mcis/:mcisId/vmgroup", rest_mcis.RestPostMcisVmGroup)
-	g.POST("/:nsId/mcis/:mcisId/vmgroup/:vmgroupId", rest_mcis.RestPostMcisVmGroupScaleOut)
+	g.POST("/:nsId/mcis/:mcisId/subgroup", rest_mcis.RestPostMcisSubGroup)
+	g.POST("/:nsId/mcis/:mcisId/subgroup/:subgroupId", rest_mcis.RestPostMcisSubGroupScaleOut)
 	g.GET("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestGetMcisVm)
-	g.GET("/:nsId/mcis/:mcisId/vmgroup", rest_mcis.RestGetMcisGroupIds)
-	g.GET("/:nsId/mcis/:mcisId/vmgroup/:vmgroupId", rest_mcis.RestGetMcisGroupVms)
+	g.GET("/:nsId/mcis/:mcisId/subgroup", rest_mcis.RestGetMcisGroupIds)
+	g.GET("/:nsId/mcis/:mcisId/subgroup/:subgroupId", rest_mcis.RestGetMcisGroupVms)
 
 	//g.GET("/:nsId/mcis/:mcisId/vm", rest_mcis.RestGetAllMcisVm)
 	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)

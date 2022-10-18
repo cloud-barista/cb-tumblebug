@@ -58,7 +58,7 @@ function test_sequence_allcsp_mcis_vm() {
 	local TestSetFile=$4
 	local NUMVM=$5
 
-	../8.mcis/add-vmgroup-to-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
+	../8.mcis/add-subgroup-to-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
 
 }
 SECONDS=0
@@ -92,7 +92,7 @@ if [ "${INDEX}" == "0" ]; then
 			#echo $CSP
 			#echo $REGION
 			TOTALVM=$((INDEXX * INDEXY * NUMVM))
-			echo "[Create MCIS] VMs($TOTALVM) = Cloud($INDEXX) * Region($INDEXY) * VMgroup($NUMVM)"
+			echo "[Create MCIS] VMs($TOTALVM) = Cloud($INDEXX) * Region($INDEXY) * subGroup($NUMVM)"
 			echo "- Create VM in ${CONN_CONFIG[$cspi, $REGION]}"
 
 			if [ "${cspi}" -eq 1 ] && [ "${cspj}" -eq 1 ]; then
@@ -134,7 +134,7 @@ if [ "${INDEX}" == "0" ]; then
 else
 	echo ""
 	TOTALVM=$((1 * 1 * NUMVM))
-	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * VMgroup($NUMVM)"
+	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * subGroup($NUMVM)"
 
 	MCISID=${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}
 
