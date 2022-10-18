@@ -24,7 +24,7 @@ import (
 )
 
 type TbVmSnapshotReq struct {
-	Name string `json:"name"`
+	Name string `json:"name" example:"aws-ap-southeast-1-snapshot"`
 }
 
 // CreateVmSnapshot is func to create VM snapshot

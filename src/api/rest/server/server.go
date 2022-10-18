@@ -194,11 +194,7 @@ func RunServer(port string) {
 	g.GET("/:nsId/mcis/:mcisId/vmgroup/:vmgroupId", rest_mcis.RestGetMcisGroupVms)
 
 	//g.GET("/:nsId/mcis/:mcisId/vm", rest_mcis.RestGetAllMcisVm)
-	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)
-	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/attachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
-	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/detachDataDisk", rest_mcis.RestPutMcisVmWithCmd)
-	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/:command", rest_mcis.RestPutMcisVmWithCmd)
-	// g.GET("/:nsId/mcis/:mcisId/vm/:vmId/:command", rest_mcis.RestGetMcisVmWithCmd)
+	// g.PUT("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMcisVm)
 	g.DELETE("/:nsId/mcis/:mcisId/vm/:vmId", rest_mcis.RestDelMcisVm)
 	//g.DELETE("/:nsId/mcis/:mcisId/vm", rest_mcis.RestDelAllMcisVm)
 
@@ -238,7 +234,7 @@ func RunServer(port string) {
 	g.GET("/:nsId/mcis/:mcisId/nlb/:resourceId/healthz", rest_mcis.RestGetNLBHealth)
 
 	// VM snapshot -> creates one customImage and 'n' dataDisks
-	g.POST("/:nsId/mcis/:mcisId/vm/:vmId/snapshot", rest_mcis.RestPostMcisVmWithCmd)
+	g.POST("/:nsId/mcis/:mcisId/vm/:vmId/snapshot", rest_mcis.RestPostMcisVmSnapshot)
 
 	// These REST APIs are for dev/test only
 	g.POST("/:nsId/mcis/:mcisId/nlb/:resourceId/vm", rest_mcis.RestAddNLBVMs)
@@ -251,6 +247,7 @@ func RunServer(port string) {
 	g.PUT("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestPutDataDisk)
 	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/dataDisk", rest_mcir.RestDelAllResources)
+	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/dataDisk", rest_mcir.RestPutVmDataDisk)
 
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)
 	g.GET("/:nsId/resources/image/:resourceId", rest_mcir.RestGetResource)

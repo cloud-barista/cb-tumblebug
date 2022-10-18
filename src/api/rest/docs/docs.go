@@ -2505,8 +2505,7 @@ const docTemplate = `{
                         "enum": [
                             "default",
                             "status",
-                            "idsInDetail",
-                            "availableDataDisk"
+                            "idsInDetail"
                         ],
                         "type": "string",
                         "description": "Option for MCIS",
@@ -2525,9 +2524,6 @@ const docTemplate = `{
                                 {
                                     "type": "object",
                                     "properties": {
-                                        "[AVAILABLEDATADISK]": {
-                                            "$ref": "#/definitions/mcis.RestGetAvailableDataDisksResponse"
-                                        },
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbVmInfo"
                                         },
@@ -2540,75 +2536,6 @@ const docTemplate = `{
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update MCIS VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "Update MCIS VM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vm01",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "attachDataDisk",
-                            "detachDataDisk"
-                        ],
-                        "type": "string",
-                        "description": "Option for MCIS",
-                        "name": "option",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbVmInfo"
                         }
                     },
                     "404": {
@@ -2688,9 +2615,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/{command}": {
-            "post": {
-                "description": "Create VM snapshot",
+        "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk": {
+            "put": {
+                "description": "Attach/Detach/Get available dataDisks",
                 "consumes": [
                     "application/json"
                 ],
@@ -2698,10 +2625,18 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] VM snapshot management"
+                    "[Infra resource] MCIR Data Disk management"
                 ],
-                "summary": "Create VM snapshot",
+                "summary": "Attach/Detach/Get available dataDisks",
                 "parameters": [
+                    {
+                        "description": "Request body to attach/detach dataDisk",
+                        "name": "attachDetachDataDiskReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbAttachDetachDataDiskReq"
+                        }
+                    },
                     {
                         "type": "string",
                         "default": "ns01",
@@ -2728,11 +2663,83 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
-                            "snapshot"
+                            "attach",
+                            "detach",
+                            "available"
                         ],
                         "type": "string",
-                        "description": "Command to perform",
-                        "name": "command",
+                        "description": "Option for MCIS",
+                        "name": "option",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbVmInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot": {
+            "post": {
+                "description": "Create VM snapshot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] VM snapshot management"
+                ],
+                "summary": "Create VM snapshot",
+                "parameters": [
+                    {
+                        "description": "Request body to create VM snapshot",
+                        "name": "vmSnapshotReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbVmSnapshotReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vm01",
+                        "description": "VM ID",
+                        "name": "vmId",
                         "in": "path",
                         "required": true
                     }
@@ -7079,6 +7086,17 @@ const docTemplate = `{
                 }
             }
         },
+        "mcir.TbAttachDetachDataDiskReq": {
+            "type": "object",
+            "required": [
+                "dataDiskId"
+            ],
+            "properties": {
+                "dataDiskId": {
+                    "type": "string"
+                }
+            }
+        },
         "mcir.TbCustomImageInfo": {
             "type": "object",
             "properties": {
@@ -7089,16 +7107,20 @@ const docTemplate = `{
                     }
                 },
                 "connectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "creationDate": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2022-10-18T08:12:48Z"
                 },
                 "cspCustomImageId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ami-06eb41e14121c550a"
                 },
                 "cspCustomImageName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
                 },
                 "description": {
                     "type": "string"
@@ -7108,7 +7130,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -7120,17 +7143,21 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
                 },
                 "namespace": {
                     "description": "required to save in RDB",
-                    "type": "string"
+                    "type": "string",
+                    "example": "ns01"
                 },
                 "sourceVmId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-1"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Available"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
@@ -7173,28 +7200,36 @@ const docTemplate = `{
                     }
                 },
                 "connectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "createdTime": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2022-10-12T05:09:51.05Z"
                 },
                 "cspDataDiskId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "vol-0d397c3239629bd43"
                 },
                 "cspDataDiskName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ns01-aws-ap-southeast-1-datadisk"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Available"
                 },
                 "diskSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "77"
                 },
                 "diskType": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "standard"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
                 },
                 "isAutoGenerated": {
                     "type": "boolean"
@@ -7206,11 +7241,13 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
                 },
                 "status": {
-                    "description": "available, unavailable",
-                    "type": "string"
+                    "description": "Available, Unavailable, Attached, ...",
+                    "type": "string",
+                    "example": "Available"
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
@@ -7228,7 +7265,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "connectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1"
                 },
                 "cspDataDiskId": {
                     "description": "Fields for \"Register existing dataDisk\" feature\nCspDataDiskId is required to register object from CSP (option=register)",
@@ -7238,13 +7276,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "diskSize": {
-                    "type": "string"
+                    "type": "string",
+                    "default": "100",
+                    "example": "77"
                 },
                 "diskType": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "default"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
                 }
             }
         },
@@ -8519,17 +8561,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.RestGetAvailableDataDisksResponse": {
-            "type": "object",
-            "properties": {
-                "dataDisk": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "mcis.RestGetBenchmarkRequest": {
             "type": "object",
             "properties": {
@@ -9450,6 +9481,15 @@ const docTemplate = `{
                 },
                 "vmUserPassword": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.TbVmSnapshotReq": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-snapshot"
                 }
             }
         },
