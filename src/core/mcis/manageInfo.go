@@ -1467,8 +1467,9 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 // type DataDiskCmd string
 const (
-	AttachDataDisk string = "attachDataDisk"
-	DetachDataDisk string = "detachDataDisk"
+	AttachDataDisk    string = "attach"
+	DetachDataDisk    string = "detach"
+	AvailableDataDisk string = "available"
 )
 
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from VM

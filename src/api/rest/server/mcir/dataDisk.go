@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
 
@@ -159,5 +160,75 @@ func RestDelDataDisk(c echo.Context) error {
 // @Router /ns/{nsId}/resources/dataDisk [delete]
 func RestDelAllDataDisk(c echo.Context) error {
 	// This is a dummy function for Swagger.
+	return nil
+}
+
+type RestGetAvailableDataDisksResponse struct {
+	DataDisk []string `json:"dataDisk"`
+}
+
+// RestPutVmDataDisk godoc
+// @Summary Attach/Detach/Get available dataDisks
+// @Description Attach/Detach/Get available dataDisks
+// @Tags [Infra resource] MCIR Data Disk management
+// @Accept  json
+// @Produce  json
+// @Param attachDetachDataDiskReq body mcir.TbAttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
+// @Param option query string true "Option for MCIS" Enums(attach, detach, available)
+// @Success 200 {object} mcis.TbVmInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [put]
+func RestPutVmDataDisk(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	option := c.QueryParam("option")
+
+	u := &mcir.TbAttachDetachDataDiskReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	switch option {
+	case mcis.AttachDataDisk:
+		fallthrough
+	case mcis.DetachDataDisk:
+		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, option, u.DataDiskId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+
+		// common.PrintJsonPretty(result)
+
+		return c.JSON(http.StatusOK, result)
+
+	case mcis.AvailableDataDisk:
+		dataDiskIDs, err := mcis.GetAvailableDataDiskIDs(nsId, mcisId, vmId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusNotFound, &mapA)
+		}
+
+		// common.PrintJsonPretty(result)
+		// var content struct {
+		// 	DataDisk []string `json:"dataDisk"`
+		// }
+		content := RestGetAvailableDataDisksResponse{
+			DataDisk: dataDiskIDs,
+		}
+
+		return c.JSON(http.StatusOK, &content)
+
+	default:
+		mapA := map[string]string{"message": fmt.Sprintf("Supported options: %s, %s, %s", mcis.AttachDataDisk, mcis.DetachDataDisk, mcis.AvailableDataDisk)}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
 	return nil
 }
