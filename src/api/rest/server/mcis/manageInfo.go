@@ -358,7 +358,7 @@ func RestDelMcisVm(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param subgroupId path string true "subGroup ID" default(group-0)
+// @Param subgroupId path string true "subGroup ID" default(g1)
 // @Param option query string false "Option" Enums(id)
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg

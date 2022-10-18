@@ -176,14 +176,14 @@ type SpiderNLBHealthInfo struct {
 type TbNLBTargetGroupReq struct {
 	Protocol   string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port       string `json:"port" example:"80"`      // Listener Port or 1-65535
-	SubGroupId string `json:"subGroupId" example:"group-0"`
+	SubGroupId string `json:"subGroupId" example:"g1"`
 }
 
 type TbNLBTargetGroupInfo struct {
 	Protocol string `json:"protocol" example:"TCP"` // TCP|HTTP|HTTPS
 	Port     string `json:"port" example:"80"`      // Listener Port or 1-65535
 
-	SubGroupId string   `json:"subGroupId" example:"group-0"`
+	SubGroupId string   `json:"subGroupId" example:"g1"`
 	VMs        []string `json:"vms"`
 
 	KeyValueList []common.KeyValue

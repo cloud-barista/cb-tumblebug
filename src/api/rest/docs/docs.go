@@ -2452,66 +2452,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Create multiple VMs by subGroup in specified MCIS",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "Create multiple VMs by subGroup in specified MCIS",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Details for subGroup",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbVmReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
             }
         },
         "/ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId}": {
@@ -2546,7 +2486,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "group-0",
+                        "default": "g1",
                         "description": "subGroup ID",
                         "name": "subgroupId",
                         "in": "path",
@@ -2614,7 +2554,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "group-0",
+                        "default": "g1",
                         "description": "subGroup ID",
                         "name": "subgroupId",
                         "in": "path",
@@ -2654,7 +2594,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/mcis/{mcisId}/vm": {
             "post": {
-                "description": "Create VM in specified MCIS",
+                "description": "Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2664,7 +2604,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra service] MCIS Provisioning management"
                 ],
-                "summary": "Create VM in specified MCIS",
+                "summary": "Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2683,7 +2623,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an VM object",
+                        "description": "Details for VMs(subGroup)",
                         "name": "vmReq",
                         "in": "body",
                         "required": true,
@@ -2696,7 +2636,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbVmInfo"
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
                         }
                     },
                     "404": {
@@ -9181,7 +9121,7 @@ const docTemplate = `{
                 },
                 "subGroupId": {
                     "type": "string",
-                    "example": "group-0"
+                    "example": "g1"
                 },
                 "vms": {
                     "type": "array",
@@ -9206,7 +9146,7 @@ const docTemplate = `{
                 },
                 "subGroupId": {
                     "type": "string",
-                    "example": "group-0"
+                    "example": "g1"
                 }
             }
         },
