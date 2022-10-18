@@ -53,7 +53,7 @@ type SpiderNLBReqInfo struct {
 
 	//------ Backend
 
-	SubGroup      SpiderNLBSubGroupReq
+	VMGroup       SpiderNLBSubGroupReq
 	HealthChecker SpiderNLBHealthCheckerReq
 }
 
@@ -98,7 +98,7 @@ type SpiderNLBInfo struct {
 	Listener SpiderNLBListenerInfo
 
 	//------ Backend
-	SubGroup      SpiderNLBSubGroupInfo
+	VMGroup       SpiderNLBSubGroupInfo
 	HealthChecker SpiderNLBHealthCheckerInfo
 
 	CreatedTime  time.Time
@@ -356,7 +356,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 				Timeout:   u.HealthChecker.Timeout,
 				Threshold: u.HealthChecker.Threshold,
 			},
-			SubGroup: SpiderNLBSubGroupReq{
+			VMGroup: SpiderNLBSubGroupReq{
 				Protocol: u.TargetGroup.Protocol,
 				Port:     u.TargetGroup.Port,
 			},
@@ -404,7 +404,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
 		// fmt.Print(string(payload))                     // for debug
 		// fmt.Print("vm.CspViewVmDetail.IId.NameId: " + vm.CspViewVmDetail.IId.NameId) // for debug
-		tempReq.ReqInfo.SubGroup.VMs = append(tempReq.ReqInfo.SubGroup.VMs, vm.CspViewVmDetail.IId.NameId)
+		tempReq.ReqInfo.VMGroup.VMs = append(tempReq.ReqInfo.VMGroup.VMs, vm.CspViewVmDetail.IId.NameId)
 	}
 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                     // for debug
@@ -531,11 +531,11 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
 		AssociatedObjectList: []string{},
 		TargetGroup: TbNLBTargetGroupInfo{
-			Protocol:     tempSpiderNLBInfo.SubGroup.Protocol,
-			Port:         tempSpiderNLBInfo.SubGroup.Port,
+			Protocol:     tempSpiderNLBInfo.VMGroup.Protocol,
+			Port:         tempSpiderNLBInfo.VMGroup.Port,
 			SubGroupId:   u.TargetGroup.SubGroupId,
 			VMs:          vmIDs,
-			KeyValueList: tempSpiderNLBInfo.SubGroup.KeyValueList,
+			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
 		},
 	}
 
@@ -1426,11 +1426,11 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 		KeyValueList:         tempSpiderNLBInfo.KeyValueList,
 		AssociatedObjectList: []string{},
 		TargetGroup: TbNLBTargetGroupInfo{
-			Protocol:   tempSpiderNLBInfo.SubGroup.Protocol,
-			Port:       tempSpiderNLBInfo.SubGroup.Port,
+			Protocol:   tempSpiderNLBInfo.VMGroup.Protocol,
+			Port:       tempSpiderNLBInfo.VMGroup.Port,
 			SubGroupId: nlb.TargetGroup.SubGroupId,
 			// VMs:          vmIDs,
-			KeyValueList: tempSpiderNLBInfo.SubGroup.KeyValueList,
+			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
 		},
 	}
 	content.TargetGroup.VMs = append(content.TargetGroup.VMs, nlb.TargetGroup.VMs...)
