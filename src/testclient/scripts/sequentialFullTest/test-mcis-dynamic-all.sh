@@ -10,10 +10,10 @@ source ../init.sh
 
 # create or delete
 option=${OPTION01}
-vmGroupSizeInput=${OPTION02:-1}
+subGroupSizeInput=${OPTION02:-1}
 
 
-PRINT="index,mcisName,connectionName,specId,image,vmGroupSize,startTime,endTime,elapsedTime,option"
+PRINT="index,mcisName,connectionName,specId,image,subGroupSize,startTime,endTime,elapsedTime,option"
 echo "${PRINT}" >./mcisTest-$option.csv
 
 
@@ -37,13 +37,13 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
             rootDiskType=$(_jq '.rootDiskType')
             rootDiskSize=$(_jq '.rootDiskSize')
             image="ubuntu18.04"
-            vmGroupSize=$vmGroupSizeInput
+            subGroupSize=$subGroupSizeInput
             mcisName=$specId
 
             if [ "${option}" == "create" ]; then
-                echo "[$i] connection: $connectionName / specId: $specId / image: $image / replica: $vmGroupSize "
+                echo "[$i] connection: $connectionName / specId: $specId / image: $image / replica: $subGroupSize "
             elif [ "${option}" == "delete" ]; then
-                echo "[$i] mcisName: $mcisName / replica: $vmGroupSize "
+                echo "[$i] mcisName: $mcisName / replica: $subGroupSize "
             fi
             ((i++))
         }
@@ -51,7 +51,7 @@ done
 
 echo
 echo "[Test] will $option MCISs using all common Specs sequentially"
-echo "[options] Operation: $option , mcisSize: $vmGroupSizeInput , fileName: mcisTest-$option.csv"
+echo "[options] Operation: $option , mcisSize: $subGroupSizeInput , fileName: mcisTest-$option.csv"
 echo
 
 while true; do
@@ -92,11 +92,11 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
         rootDiskType=$(_jq '.rootDiskType')
         rootDiskSize=$(_jq '.rootDiskSize')
         image="ubuntu18.04"
-        vmGroupSize=$vmGroupSizeInput
+        subGroupSize=$subGroupSizeInput
         mcisName=$specId
 
         echo
-        echo "mcisName: $mcisName   specId: $specId   image: $image   connectionName: $connectionName   rootDiskType: $rootDiskType   rootDiskSize: $rootDiskSize  vmGroupSize: $vmGroupSize "
+        echo "mcisName: $mcisName   specId: $specId   image: $image   connectionName: $connectionName   rootDiskType: $rootDiskType   rootDiskSize: $rootDiskSize  subGroupSize: $subGroupSize "
         sleepDuration=$((1 + RANDOM % 600))
         echo "sleepDuration: $sleepDuration"
         sleep $sleepDuration
@@ -121,7 +121,7 @@ for row in $(echo "${specArray}" | jq -r '.[] | @base64'); do
                             "commonSpec": "${specId}",
                             "rootDiskType": "${rootDiskType}",
                             "rootDiskSize": "${rootDiskSize}",
-                            "vmGroupSize": "${vmGroupSize}"
+                            "subGroupSize": "${subGroupSize}"
                         }
                     ]
             }
@@ -134,7 +134,7 @@ EOF
         endTime=$SECONDS
         elapsedTime=$(($endTime-$startTime))
 
-        PRINT="${i},${mcisName},${connectionName},${specId},${image},${vmGroupSize},${startTime},${endTime},${elapsedTime},${option}"
+        PRINT="${i},${mcisName},${connectionName},${specId},${image},${subGroupSize},${startTime},${endTime},${elapsedTime},${option}"
         echo "$PRINT"
         echo "$PRINT" >>./mcisTest-$option.csv
 

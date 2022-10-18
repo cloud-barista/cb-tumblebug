@@ -2393,6 +2393,257 @@
                 }
             }
         },
+        "/ns/{nsId}/mcis/{mcisId}/subgroup": {
+            "get": {
+                "description": "List SubGroup IDs in a specified MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "List SubGroup IDs in a specified MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create multiple VMs by subGroup in specified MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Create multiple VMs by subGroup in specified MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details for subGroup",
+                        "name": "vmReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbVmReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId}": {
+            "get": {
+                "description": "List VMs with a SubGroup label in a specified MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "List VMs with a SubGroup label in a specified MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "group-0",
+                        "description": "subGroup ID",
+                        "name": "subgroupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "ScaleOut subGroup in specified MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "ScaleOut subGroup in specified MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "group-0",
+                        "description": "subGroup ID",
+                        "name": "subgroupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "subGroup scaleOut request",
+                        "name": "vmReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbScaleOutSubGroupReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mcis/{mcisId}/vm": {
             "post": {
                 "description": "Create VM in specified MCIS",
@@ -2741,257 +2992,6 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcir.TbCustomImageInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/mcis/{mcisId}/vmgroup": {
-            "get": {
-                "description": "List VMGroup IDs in a specified MCIS",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "List VMGroup IDs in a specified MCIS",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.IdList"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create multiple VMs by VM group in specified MCIS",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "Create multiple VMs by VM group in specified MCIS",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Details for VM Group",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbVmReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/mcis/{mcisId}/vmgroup/{vmgroupId}": {
-            "get": {
-                "description": "List VMs with a VMGroup label in a specified MCIS",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "List VMs with a VMGroup label in a specified MCIS",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "group-0",
-                        "description": "VM Group ID",
-                        "name": "vmgroupId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "enum": [
-                            "id"
-                        ],
-                        "type": "string",
-                        "description": "Option",
-                        "name": "option",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.IdList"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "ScaleOut VM group in specified MCIS",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Provisioning management"
-                ],
-                "summary": "ScaleOut VM group in specified MCIS",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "group-0",
-                        "description": "VM Group ID",
-                        "name": "vmgroupId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "VM Group scaleOut request",
-                        "name": "vmReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbScaleOutVmGroupReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
                         }
                     },
                     "404": {
@@ -8820,8 +8820,7 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
+                    "type": "string"
                 },
                 "vm": {
                     "type": "array",
@@ -8931,8 +8930,7 @@
                 },
                 "systemLabel": {
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
-                    "type": "string",
-                    "example": ""
+                    "type": "string"
                 },
                 "vm": {
                     "type": "array",
@@ -9171,7 +9169,7 @@
                     "type": "string",
                     "example": "TCP"
                 },
-                "vmGroupId": {
+                "subGroupId": {
                     "type": "string",
                     "example": "group-0"
                 },
@@ -9196,13 +9194,13 @@
                     "type": "string",
                     "example": "TCP"
                 },
-                "vmGroupId": {
+                "subGroupId": {
                     "type": "string",
                     "example": "group-0"
                 }
             }
         },
-        "mcis.TbScaleOutVmGroupReq": {
+        "mcis.TbScaleOutSubGroupReq": {
             "type": "object",
             "required": [
                 "numVMsToAdd"
@@ -9245,7 +9243,7 @@
                     "example": "DynamicVM"
                 },
                 "name": {
-                    "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
+                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
                     "type": "string",
                     "example": "vm01"
                 },
@@ -9259,8 +9257,8 @@
                     "type": "string",
                     "example": "default, TYPE1, ..."
                 },
-                "vmGroupSize": {
-                    "description": "if vmGroupSize is (not empty) \u0026\u0026 (\u003e 0), VM group will be gernetad. VMs will be created accordingly.",
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
                     "type": "string",
                     "example": "3"
                 }
@@ -9362,6 +9360,10 @@
                     "description": "Required by CB-Tumblebug",
                     "type": "string"
                 },
+                "subGroupId": {
+                    "description": "defined if the VM is in a group",
+                    "type": "string"
+                },
                 "subnetId": {
                     "type": "string"
                 },
@@ -9377,10 +9379,6 @@
                     "type": "string"
                 },
                 "vNetId": {
-                    "type": "string"
-                },
-                "vmGroupId": {
-                    "description": "defined if the VM is in a group",
                     "type": "string"
                 },
                 "vmUserAccount": {
@@ -9431,7 +9429,7 @@
                     "type": "string"
                 },
                 "name": {
-                    "description": "VM name or VM group name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
+                    "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
                     "type": "string",
                     "example": "vm01"
                 },
@@ -9457,16 +9455,16 @@
                 "sshKeyId": {
                     "type": "string"
                 },
+                "subGroupSize": {
+                    "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
+                    "type": "string",
+                    "example": "3"
+                },
                 "subnetId": {
                     "type": "string"
                 },
                 "vNetId": {
                     "type": "string"
-                },
-                "vmGroupSize": {
-                    "description": "if vmGroupSize is (not empty) \u0026\u0026 (\u003e 0), VM group will be gernetad. VMs will be created accordingly.",
-                    "type": "string",
-                    "example": "3"
                 },
                 "vmUserAccount": {
                     "type": "string"

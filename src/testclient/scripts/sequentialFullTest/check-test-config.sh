@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## Check test config file (-n deveoperPrefix -f ../testSetCustom.env -x numOfVMsInEachVMGroup)"
+echo "## Check test config file (-n deveoperPrefix -f ../testSetCustom.env -x numOfVMsInEachSubGroup)"
 echo "####################################################################"
 
 source ../init.sh

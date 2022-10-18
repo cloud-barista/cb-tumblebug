@@ -166,7 +166,7 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 
 		}(nsId, mcisId, vmId, mcisCmdReq, chanResults)
 
-		// Temporarily sleep 3 sec, to assign IPs consecutively to VMs in a VMgroup for a Cloud Adaptive Network
+		// Temporarily sleep 3 sec, to assign IPs consecutively to VMs in a subGroup for a Cloud Adaptive Network
 		time.Sleep(3 * time.Second)
 	}
 

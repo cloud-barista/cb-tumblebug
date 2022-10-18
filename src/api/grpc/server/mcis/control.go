@@ -252,29 +252,29 @@ func (s *MCISService) CreateMcisVM(ctx context.Context, req *pb.TbVmCreateReques
 	return resp, nil
 }
 
-// CreateMcisVMGroup is to MCIS VM 그룹 생성
-func (s *MCISService) CreateMcisVMGroup(ctx context.Context, req *pb.TbVmGroupCreateRequest) (*pb.TbMcisInfoResponse, error) {
+// CreateMcisSubGroup is to MCIS VM 그룹 생성
+func (s *MCISService) CreateMcisSubGroup(ctx context.Context, req *pb.TbSubGroupCreateRequest) (*pb.TbMcisInfoResponse, error) {
 	logger := logger.NewLogger()
 
-	logger.Debug("calling MCISService.CreateMcisVMGroup()")
+	logger.Debug("calling MCISService.CreateMcisSubGroup()")
 
 	// GRPC 메시지에서 MCIS 객체로 복사
 	var mcisObj mcis.TbVmReq
 	err := gc.CopySrcToDest(&req.Item, &mcisObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisSubGroup()")
 	}
 
 	result, err := mcis.CreateMcisGroupVm(req.NsId, req.McisId, &mcisObj, true)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisSubGroup()")
 	}
 
 	// MCIS 객체에서 GRPC 메시지로 복사
 	var grpcObj pb.TbMcisInfo
 	err = gc.CopySrcToDest(&result, &grpcObj)
 	if err != nil {
-		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisVMGroup()")
+		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisSubGroup()")
 	}
 
 	resp := &pb.TbMcisInfoResponse{Item: &grpcObj}

@@ -183,14 +183,14 @@ type TbMcisInfo struct {
 
 // TbVmReq is struct to get requirements to create a new server instance
 type TbVmReq struct {
-	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
+	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
 	Name string `json:"name" validate:"required" example:"vm01"`
 
 	// CSP managed ID or Name (required for option=register)
 	IdByCSP string `json:"idByCsp,omitempty" example:"i-014fa6ede6ada0b2c"`
 
-	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
-	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
+	// if subGroupSize is (not empty) && (> 0), subGroup will be gernetad. VMs will be created accordingly.
+	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
 
 	Label string `json:"label"`
 
@@ -212,7 +212,7 @@ type TbVmReq struct {
 }
 
 // TbVmReq is struct to get requirements to create a new server instance
-type TbScaleOutVmGroupReq struct {
+type TbScaleOutSubGroupReq struct {
 	// Define addtional VMs to scaleOut
 	NumVMsToAdd string `json:"numVMsToAdd" validate:"required" example:"2"`
 
@@ -221,11 +221,11 @@ type TbScaleOutVmGroupReq struct {
 
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
 type TbVmDynamicReq struct {
-	// VM name or VM group name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
+	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
 	Name string `json:"name" example:"vm01"`
 
-	// if vmGroupSize is (not empty) && (> 0), VM group will be gernetad. VMs will be created accordingly.
-	VmGroupSize string `json:"vmGroupSize" example:"3" default:""`
+	// if subGroupSize is (not empty) && (> 0), subGroup will be gernetad. VMs will be created accordingly.
+	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
 
 	Label string `json:"label" example:"DynamicVM"`
 
@@ -341,12 +341,12 @@ func TbVmReqStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
-// TbVmGroupInfo is struct to define an object that includes homogeneous VMs
-type TbVmGroupInfo struct {
-	Id          string   `json:"id"`
-	Name        string   `json:"name"`
-	VmId        []string `json:"vmId"`
-	VmGroupSize string   `json:"vmGroupSize"`
+// TbSubGroupInfo is struct to define an object that includes homogeneous VMs
+type TbSubGroupInfo struct {
+	Id           string   `json:"id"`
+	Name         string   `json:"name"`
+	VmId         []string `json:"vmId"`
+	SubGroupSize string   `json:"subGroupSize"`
 }
 
 // TbVmInfo is struct to define a server instance object
@@ -356,7 +356,7 @@ type TbVmInfo struct {
 	IdByCSP string `json:"idByCSP"` // CSP managed ID or Name
 
 	// defined if the VM is in a group
-	VmGroupId string `json:"vmGroupId"`
+	SubGroupId string `json:"subGroupId"`
 
 	Location common.GeoLocation `json:"location"`
 
@@ -578,9 +578,9 @@ func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo
 	return vmInfoData, nil
 }
 
-// ScaleOutMcisVmGroup is func to create MCIS groupVM
-func ScaleOutMcisVmGroup(nsId string, mcisId string, vmGroupId string, numVMsToAdd string) (*TbMcisInfo, error) {
-	vmIdList, err := ListMcisGroupVms(nsId, mcisId, vmGroupId)
+// ScaleOutMcisSubGroup is func to create MCIS groupVM
+func ScaleOutMcisSubGroup(nsId string, mcisId string, subGroupId string, numVMsToAdd string) (*TbMcisInfo, error) {
+	vmIdList, err := ListMcisGroupVms(nsId, mcisId, subGroupId)
 	if err != nil {
 		temp := &TbMcisInfo{}
 		return temp, err
@@ -590,7 +590,7 @@ func ScaleOutMcisVmGroup(nsId string, mcisId string, vmGroupId string, numVMsToA
 	vmTemplate := &TbVmReq{}
 
 	// only take template required to create VM
-	vmTemplate.Name = vmObj.VmGroupId
+	vmTemplate.Name = vmObj.SubGroupId
 	vmTemplate.ConnectionName = vmObj.ConnectionName
 	vmTemplate.ImageId = vmObj.ImageId
 	vmTemplate.SpecId = vmObj.SpecId
@@ -604,7 +604,7 @@ func ScaleOutMcisVmGroup(nsId string, mcisId string, vmGroupId string, numVMsToA
 	vmTemplate.RootDiskSize = vmObj.RootDiskSize
 	vmTemplate.Description = vmObj.Description
 
-	vmTemplate.VmGroupSize = numVMsToAdd
+	vmTemplate.SubGroupSize = numVMsToAdd
 
 	result, err := CreateMcisGroupVm(nsId, mcisId, vmTemplate, true)
 	if err != nil {
@@ -616,7 +616,7 @@ func ScaleOutMcisVmGroup(nsId string, mcisId string, vmGroupId string, numVMsToA
 }
 
 // CreateMcisGroupVm is func to create MCIS groupVM
-func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newVmGroup bool) (*TbMcisInfo, error) {
+func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGroup bool) (*TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -677,55 +677,55 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newVmGrou
 	//goroutin
 	var wg sync.WaitGroup
 
-	// VM Group handling
-	vmGroupSize, _ := strconv.Atoi(vmRequest.VmGroupSize)
-	fmt.Printf("vmGroupSize: %v\n", vmGroupSize)
+	// subGroup handling
+	subGroupSize, _ := strconv.Atoi(vmRequest.SubGroupSize)
+	fmt.Printf("subGroupSize: %v\n", subGroupSize)
 
 	vmStartIndex := 1
 
-	if vmGroupSize > 0 {
+	if subGroupSize > 0 {
 
-		fmt.Println("=========================== Create MCIS VM Group object")
+		fmt.Println("=========================== Create MCIS subGroup object")
 
-		vmGroupInfoData := TbVmGroupInfo{}
-		vmGroupInfoData.Id = vmRequest.Name
-		vmGroupInfoData.Name = vmRequest.Name
-		vmGroupInfoData.VmGroupSize = vmRequest.VmGroupSize
+		subGroupInfoData := TbSubGroupInfo{}
+		subGroupInfoData.Id = vmRequest.Name
+		subGroupInfoData.Name = vmRequest.Name
+		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
 
-		key := common.GenMcisVmGroupKey(nsId, mcisId, vmRequest.Name)
+		key := common.GenMcisSubGroupKey(nsId, mcisId, vmRequest.Name)
 		keyValue, err := common.CBStore.Get(key)
 		if err != nil {
 			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
 			common.CBLog.Error(err)
 		}
 		if keyValue != nil {
-			if newVmGroup {
-				json.Unmarshal([]byte(keyValue.Value), &vmGroupInfoData)
-				existingVmSize, err := strconv.Atoi(vmGroupInfoData.VmGroupSize)
+			if newSubGroup {
+				json.Unmarshal([]byte(keyValue.Value), &subGroupInfoData)
+				existingVmSize, err := strconv.Atoi(subGroupInfoData.SubGroupSize)
 				if err != nil {
 					err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
 					common.CBLog.Error(err)
 				}
-				// add the number of existing VMs in the VMGroup with requested number for additions
-				vmGroupInfoData.VmGroupSize = strconv.Itoa(existingVmSize + vmGroupSize)
+				// add the number of existing VMs in the SubGroup with requested number for additions
+				subGroupInfoData.SubGroupSize = strconv.Itoa(existingVmSize + subGroupSize)
 				vmStartIndex = existingVmSize + 1
 			} else {
-				err = fmt.Errorf("Duplicated VMGroup ID")
+				err = fmt.Errorf("Duplicated SubGroup ID")
 				common.CBLog.Error(err)
 				return nil, err
 			}
 		}
 
-		for i := vmStartIndex; i < vmGroupSize+vmStartIndex; i++ {
-			vmGroupInfoData.VmId = append(vmGroupInfoData.VmId, vmGroupInfoData.Id+"-"+strconv.Itoa(i))
+		for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
+			subGroupInfoData.VmId = append(subGroupInfoData.VmId, subGroupInfoData.Id+"-"+strconv.Itoa(i))
 		}
 
-		val, _ := json.Marshal(vmGroupInfoData)
+		val, _ := json.Marshal(subGroupInfoData)
 		err = common.CBStore.Put(key, string(val))
 		if err != nil {
 			common.CBLog.Error(err)
 		}
-		// check stored vmGroup object
+		// check stored subGroup object
 		keyValue, err = common.CBStore.Get(key)
 		if err != nil {
 			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
@@ -738,17 +738,17 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newVmGrou
 
 	}
 
-	for i := vmStartIndex; i <= vmGroupSize+vmStartIndex; i++ {
+	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
 		vmInfoData := TbVmInfo{}
 
-		if vmGroupSize == 0 { // for VM (not in a group)
+		if subGroupSize == 0 { // for VM (not in a group)
 			vmInfoData.Name = vmRequest.Name
 		} else { // for VM (in a group)
-			if i == vmGroupSize+vmStartIndex {
+			if i == subGroupSize+vmStartIndex {
 				break
 			}
-			vmInfoData.VmGroupId = vmRequest.Name
-			// TODO: Enhancement Required. Need to check existing VM Group. Need to update it if exist.
+			vmInfoData.SubGroupId = vmRequest.Name
+			// TODO: Enhancement Required. Need to check existing subGroup. Need to update it if exist.
 			vmInfoData.Name = vmRequest.Name + "-" + strconv.Itoa(i)
 			fmt.Println("===========================")
 			fmt.Println("vmInfoData.Name: " + vmInfoData.Name)
@@ -949,25 +949,25 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 	for _, k := range vmRequest {
 
-		// VM Group handling
-		vmGroupSize, _ := strconv.Atoi(k.VmGroupSize)
-		fmt.Printf("vmGroupSize: %v\n", vmGroupSize)
+		// subGroup handling
+		subGroupSize, _ := strconv.Atoi(k.SubGroupSize)
+		fmt.Printf("subGroupSize: %v\n", subGroupSize)
 
-		if vmGroupSize > 0 {
+		if subGroupSize > 0 {
 
-			fmt.Println("=========================== Create MCIS VM Group object")
-			key := common.GenMcisVmGroupKey(nsId, mcisId, k.Name)
+			fmt.Println("=========================== Create MCIS subGroup object")
+			key := common.GenMcisSubGroupKey(nsId, mcisId, k.Name)
 
-			vmGroupInfoData := TbVmGroupInfo{}
-			vmGroupInfoData.Id = common.ToLower(k.Name)
-			vmGroupInfoData.Name = common.ToLower(k.Name)
-			vmGroupInfoData.VmGroupSize = k.VmGroupSize
+			subGroupInfoData := TbSubGroupInfo{}
+			subGroupInfoData.Id = common.ToLower(k.Name)
+			subGroupInfoData.Name = common.ToLower(k.Name)
+			subGroupInfoData.SubGroupSize = k.SubGroupSize
 
-			for i := vmStartIndex; i < vmGroupSize+vmStartIndex; i++ {
-				vmGroupInfoData.VmId = append(vmGroupInfoData.VmId, vmGroupInfoData.Id+"-"+strconv.Itoa(i))
+			for i := vmStartIndex; i < subGroupSize+vmStartIndex; i++ {
+				subGroupInfoData.VmId = append(subGroupInfoData.VmId, subGroupInfoData.Id+"-"+strconv.Itoa(i))
 			}
 
-			val, _ := json.Marshal(vmGroupInfoData)
+			val, _ := json.Marshal(subGroupInfoData)
 			err := common.CBStore.Put(key, string(val))
 			if err != nil {
 				common.CBLog.Error(err)
@@ -985,16 +985,16 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 		}
 
-		for i := vmStartIndex; i <= vmGroupSize+vmStartIndex; i++ {
+		for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
 			vmInfoData := TbVmInfo{}
 
-			if vmGroupSize == 0 { // for VM (not in a group)
+			if subGroupSize == 0 { // for VM (not in a group)
 				vmInfoData.Name = common.ToLower(k.Name)
 			} else { // for VM (in a group)
-				if i == vmGroupSize+vmStartIndex {
+				if i == subGroupSize+vmStartIndex {
 					break
 				}
-				vmInfoData.VmGroupId = common.ToLower(k.Name)
+				vmInfoData.SubGroupId = common.ToLower(k.Name)
 				vmInfoData.Name = common.ToLower(k.Name) + "-" + strconv.Itoa(i)
 				fmt.Println("===========================")
 				fmt.Println("vmInfoData.Name: " + vmInfoData.Name)
@@ -1285,7 +1285,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 			vmReq.Name = common.GenUid()
 		}
 		vmReq.Label = k.Label
-		vmReq.VmGroupSize = k.VmGroupSize
+		vmReq.SubGroupSize = k.SubGroupSize
 		vmReq.Description = k.Description
 		vmReq.RootDiskType = k.RootDiskType
 		vmReq.RootDiskSize = k.RootDiskSize

@@ -119,7 +119,7 @@ if [ "${INDEX}" == "0" ]; then
 else
 	echo ""
 	TOTALVM=$((1 * 1 * NUMVM))
-	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * VMgroup($NUMVM)"
+	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * subGroup($NUMVM)"
 	MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
 
 	test_sequence $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/}

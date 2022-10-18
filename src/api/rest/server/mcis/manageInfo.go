@@ -351,29 +351,29 @@ func RestDelMcisVm(c echo.Context) error {
 }
 
 // RestGetMcisGroupVms godoc
-// @Summary List VMs with a VMGroup label in a specified MCIS
-// @Description List VMs with a VMGroup label in a specified MCIS
+// @Summary List VMs with a SubGroup label in a specified MCIS
+// @Description List VMs with a SubGroup label in a specified MCIS
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmgroupId path string true "VM Group ID" default(group-0)
+// @Param subgroupId path string true "subGroup ID" default(group-0)
 // @Param option query string false "Option" Enums(id)
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vmgroup/{vmgroupId} [get]
+// @Router /ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId} [get]
 func RestGetMcisGroupVms(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
-	vmgroupId := c.Param("vmgroupId")
+	subgroupId := c.Param("subgroupId")
 	//option := c.QueryParam("option")
 
 	content := common.IdList{}
 	var err error
-	content.IdList, err = mcis.ListMcisGroupVms(nsId, mcisId, vmgroupId)
+	content.IdList, err = mcis.ListMcisGroupVms(nsId, mcisId, subgroupId)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)
@@ -384,8 +384,8 @@ func RestGetMcisGroupVms(c echo.Context) error {
 }
 
 // RestGetMcisGroupIds godoc
-// @Summary List VMGroup IDs in a specified MCIS
-// @Description List VMGroup IDs in a specified MCIS
+// @Summary List SubGroup IDs in a specified MCIS
+// @Description List SubGroup IDs in a specified MCIS
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
@@ -394,7 +394,7 @@ func RestGetMcisGroupVms(c echo.Context) error {
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/vmgroup [get]
+// @Router /ns/{nsId}/mcis/{mcisId}/subgroup [get]
 func RestGetMcisGroupIds(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -403,7 +403,7 @@ func RestGetMcisGroupIds(c echo.Context) error {
 
 	content := common.IdList{}
 	var err error
-	content.IdList, err = mcis.ListVmGroupId(nsId, mcisId)
+	content.IdList, err = mcis.ListSubGroupId(nsId, mcisId)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)

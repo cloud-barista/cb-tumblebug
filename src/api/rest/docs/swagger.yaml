@@ -1613,7 +1613,6 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
-        example: ""
         type: string
       vm:
         items:
@@ -1701,7 +1700,6 @@ definitions:
       systemLabel:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
-        example: ""
         type: string
       vm:
         items:
@@ -1880,7 +1878,7 @@ definitions:
         description: TCP|HTTP|HTTPS
         example: TCP
         type: string
-      vmGroupId:
+      subGroupId:
         example: group-0
         type: string
       vms:
@@ -1898,11 +1896,11 @@ definitions:
         description: TCP|HTTP|HTTPS
         example: TCP
         type: string
-      vmGroupId:
+      subGroupId:
         example: group-0
         type: string
     type: object
-  mcis.TbScaleOutVmGroupReq:
+  mcis.TbScaleOutSubGroupReq:
     properties:
       numVMsToAdd:
         description: Define addtional VMs to scaleOut
@@ -1933,7 +1931,7 @@ definitions:
         example: DynamicVM
         type: string
       name:
-        description: VM name or VM group name if is (not empty) && (> 0). If it is
+        description: VM name or subGroup name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
         example: vm01
         type: string
@@ -1948,8 +1946,8 @@ definitions:
           TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
         example: default, TYPE1, ...
         type: string
-      vmGroupSize:
-        description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
+      subGroupSize:
+        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
           VMs will be created accordingly.
         example: "3"
         type: string
@@ -2024,6 +2022,9 @@ definitions:
       status:
         description: Required by CB-Tumblebug
         type: string
+      subGroupId:
+        description: defined if the VM is in a group
+        type: string
       subnetId:
         type: string
       systemMessage:
@@ -2035,9 +2036,6 @@ definitions:
       targetStatus:
         type: string
       vNetId:
-        type: string
-      vmGroupId:
-        description: defined if the VM is in a group
         type: string
       vmUserAccount:
         type: string
@@ -2066,7 +2064,7 @@ definitions:
       label:
         type: string
       name:
-        description: VM name or VM group name if is (not empty) && (> 0). If it is
+        description: VM name or subGroup name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
         example: vm01
         type: string
@@ -2089,14 +2087,14 @@ definitions:
         type: string
       sshKeyId:
         type: string
+      subGroupSize:
+        description: if subGroupSize is (not empty) && (> 0), subGroup will be gernetad.
+          VMs will be created accordingly.
+        example: "3"
+        type: string
       subnetId:
         type: string
       vNetId:
-        type: string
-      vmGroupSize:
-        description: if vmGroupSize is (not empty) && (> 0), VM group will be gernetad.
-          VMs will be created accordingly.
-        example: "3"
         type: string
       vmUserAccount:
         type: string
@@ -3916,6 +3914,178 @@ paths:
       summary: Add VMs to NLB
       tags:
       - '[Infra resource] NLB management (for developer)'
+  /ns/{nsId}/mcis/{mcisId}/subgroup:
+    get:
+      consumes:
+      - application/json
+      description: List SubGroup IDs in a specified MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List SubGroup IDs in a specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+    post:
+      consumes:
+      - application/json
+      description: Create multiple VMs by subGroup in specified MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Details for subGroup
+        in: body
+        name: vmReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbVmReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create multiple VMs by subGroup in specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId}:
+    get:
+      consumes:
+      - application/json
+      description: List VMs with a SubGroup label in a specified MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: group-0
+        description: subGroup ID
+        in: path
+        name: subgroupId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List VMs with a SubGroup label in a specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
+    post:
+      consumes:
+      - application/json
+      description: ScaleOut subGroup in specified MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: group-0
+        description: subGroup ID
+        in: path
+        name: subgroupId
+        required: true
+        type: string
+      - description: subGroup scaleOut request
+        in: body
+        name: vmReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbScaleOutSubGroupReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: ScaleOut subGroup in specified MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm:
     post:
       consumes:
@@ -4164,178 +4334,6 @@ paths:
       summary: Create VM snapshot
       tags:
       - '[Infra resource] VM snapshot management'
-  /ns/{nsId}/mcis/{mcisId}/vmgroup:
-    get:
-      consumes:
-      - application/json
-      description: List VMGroup IDs in a specified MCIS
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: mcis01
-        description: MCIS ID
-        in: path
-        name: mcisId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.IdList'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List VMGroup IDs in a specified MCIS
-      tags:
-      - '[Infra service] MCIS Provisioning management'
-    post:
-      consumes:
-      - application/json
-      description: Create multiple VMs by VM group in specified MCIS
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: mcis01
-        description: MCIS ID
-        in: path
-        name: mcisId
-        required: true
-        type: string
-      - description: Details for VM Group
-        in: body
-        name: vmReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbVmReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Create multiple VMs by VM group in specified MCIS
-      tags:
-      - '[Infra service] MCIS Provisioning management'
-  /ns/{nsId}/mcis/{mcisId}/vmgroup/{vmgroupId}:
-    get:
-      consumes:
-      - application/json
-      description: List VMs with a VMGroup label in a specified MCIS
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: mcis01
-        description: MCIS ID
-        in: path
-        name: mcisId
-        required: true
-        type: string
-      - default: group-0
-        description: VM Group ID
-        in: path
-        name: vmgroupId
-        required: true
-        type: string
-      - description: Option
-        enum:
-        - id
-        in: query
-        name: option
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.IdList'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List VMs with a VMGroup label in a specified MCIS
-      tags:
-      - '[Infra service] MCIS Provisioning management'
-    post:
-      consumes:
-      - application/json
-      description: ScaleOut VM group in specified MCIS
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: mcis01
-        description: MCIS ID
-        in: path
-        name: mcisId
-        required: true
-        type: string
-      - default: group-0
-        description: VM Group ID
-        in: path
-        name: vmgroupId
-        required: true
-        type: string
-      - description: VM Group scaleOut request
-        in: body
-        name: vmReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbScaleOutVmGroupReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: ScaleOut VM group in specified MCIS
-      tags:
-      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcisDynamic:
     post:
       consumes:

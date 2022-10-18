@@ -311,15 +311,15 @@ func (r *MCISRequest) CreateMcisVM() (string, error) {
 	return gc.ConvertToOutput(r.OutType, &resp.Item)
 }
 
-// CreateMcisVMGroup
-func (r *MCISRequest) CreateMcisVMGroup() (string, error) {
+// CreateMcisSubGroup
+func (r *MCISRequest) CreateMcisSubGroup() (string, error) {
 	// Check input data
 	if r.InData == "" {
 		return "", errors.New("input data required")
 	}
 
 	// Unmarshal (json/yaml -> Request Input)
-	var item pb.TbVmGroupCreateRequest
+	var item pb.TbSubGroupCreateRequest
 	err := gc.ConvertToMessage(r.InType, r.InData, &item)
 	if err != nil {
 		return "", err
@@ -329,7 +329,7 @@ func (r *MCISRequest) CreateMcisVMGroup() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.Timeout)
 	defer cancel()
 
-	resp, err := r.Client.CreateMcisVMGroup(ctx, &item)
+	resp, err := r.Client.CreateMcisSubGroup(ctx, &item)
 	if err != nil {
 		return "", err
 	}
