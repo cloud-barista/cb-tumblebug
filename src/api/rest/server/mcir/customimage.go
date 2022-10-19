@@ -30,7 +30,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param option query string false "Option: " Enums(register)
+// @Param option query string true "Option: " Enums(register)
 // @Param customImageInfo body mcir.TbCustomImageReq true "Details for an Custom Image object"
 // @Success 200 {object} mcir.TbCustomImageInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -60,4 +60,77 @@ func RestPostCustomImage(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 	return c.JSON(http.StatusCreated, content)
+}
+
+// RestGetCustomImage godoc
+// @Summary Get customImage
+// @Description Get customImage
+// @Tags [Infra resource] MCIR Custom Image management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param customImageId path string true "customImage ID"
+// @Success 200 {object} mcir.TbCustomImageInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/customImage/{customImageId} [get]
+func RestGetCustomImage(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
+// Response structure for RestGetAllCustomImage
+type RestGetAllCustomImageResponse struct {
+	CustomImage []mcir.TbCustomImageInfo `json:"customImage"`
+}
+
+// RestGetAllCustomImage godoc
+// @Summary List all customImages or customImages' ID
+// @Description List all customImages or customImages' ID
+// @Tags [Infra resource] MCIR Custom Image management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param option query string false "Option" Enums(id)
+// @Param filterKey query string false "Field key for filtering (ex:guestOS)"
+// @Param filterVal query string false "Field value for filtering (ex: Ubuntu18.04)"
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllCustomImageResponse,[ID]=common.IdList} "Different return structures by the given option param"
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/customImage [get]
+func RestGetAllCustomImage(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
+// RestDelCustomImage godoc
+// @Summary Delete customImage
+// @Description Delete customImage
+// @Tags [Infra resource] MCIR Custom Image management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param customImageId path string true "customImage ID"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/customImage/{customImageId} [delete]
+func RestDelCustomImage(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
+}
+
+// RestDelAllCustomImage godoc
+// @Summary Delete all customImages
+// @Description Delete all customImages
+// @Tags [Infra resource] MCIR Custom Image management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param match query string false "Delete resources containing matched ID-substring only" default()
+// @Success 200 {object} common.IdList
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/resources/customImage [delete]
+func RestDelAllCustomcustomImage(c echo.Context) error {
+	// This is a dummy function for Swagger.
+	return nil
 }
