@@ -1224,7 +1224,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
+                        "default": "g1-1",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -1371,7 +1371,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
+                        "default": "g1-1",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -2686,7 +2686,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
+                        "default": "g1-1",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -2774,7 +2774,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
+                        "default": "g1-1",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -2838,7 +2838,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
+                        "default": "g1-1",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -2905,7 +2905,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
+                        "default": "g1-1",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -2986,7 +2986,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "vm01",
+                        "default": "g1-1",
                         "description": "VM ID",
                         "name": "vmId",
                         "in": "path",
@@ -9495,7 +9495,7 @@ const docTemplate = `{
                 "name": {
                     "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
                     "type": "string",
-                    "example": "vm01"
+                    "example": "g1-1"
                 },
                 "rootDiskSize": {
                     "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
@@ -9681,7 +9681,7 @@ const docTemplate = `{
                 "name": {
                     "description": "VM name or subGroup name if is (not empty) \u0026\u0026 (\u003e 0). If it is a group, actual VM name will be generated with -N postfix.",
                     "type": "string",
-                    "example": "vm01"
+                    "example": "g1-1"
                 },
                 "rootDiskSize": {
                     "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",

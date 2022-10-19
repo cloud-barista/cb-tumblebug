@@ -1949,7 +1949,7 @@ definitions:
       name:
         description: VM name or subGroup name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
-        example: vm01
+        example: g1-1
         type: string
       rootDiskSize:
         description: '"default", Integer (GB): ["50", ..., "1000"]'
@@ -2082,7 +2082,7 @@ definitions:
       name:
         description: VM name or subGroup name if is (not empty) && (> 0). If it is
           a group, actual VM name will be generated with -N postfix.
-        example: vm01
+        example: g1-1
         type: string
       rootDiskSize:
         description: '"default", Integer (GB): ["50", ..., "1000"]'
@@ -3126,7 +3126,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: vm01
+      - default: g1-1
         description: VM ID
         in: path
         name: vmId
@@ -3229,7 +3229,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: vm01
+      - default: g1-1
         description: VM ID
         in: path
         name: vmId
@@ -4123,7 +4123,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: vm01
+      - default: g1-1
         description: VM ID
         in: path
         name: vmId
@@ -4166,7 +4166,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: vm01
+      - default: g1-1
         description: VM ID
         in: path
         name: vmId
@@ -4225,7 +4225,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: vm01
+      - default: g1-1
         description: VM ID
         in: path
         name: vmId
@@ -4271,7 +4271,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: vm01
+      - default: g1-1
         description: VM ID
         in: path
         name: vmId
@@ -4327,7 +4327,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: vm01
+      - default: g1-1
         description: VM ID
         in: path
         name: vmId
