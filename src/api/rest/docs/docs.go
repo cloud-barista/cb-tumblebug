@@ -1788,6 +1788,20 @@ const docTemplate = `{
                         "description": "Option",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "connectionName",
+                        "description": "(for option==id) Field key for filtering (ex: connectionName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "aws-ap-northeast-2",
+                        "description": "(for option==id) Field value for filtering (ex: aws-ap-northeast-2)",
+                        "name": "filterVal",
+                        "in": "query"
                     }
                 ],
                 "responses": {
