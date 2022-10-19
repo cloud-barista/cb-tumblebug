@@ -168,16 +168,16 @@ type RestGetAvailableDataDisksResponse struct {
 }
 
 // RestPutVmDataDisk godoc
-// @Summary Attach/Detach/Get available dataDisks
-// @Description Attach/Detach/Get available dataDisks
+// @Summary Attach/Detach available dataDisk
+// @Description Attach/Detach available dataDisk
 // @Tags [Infra resource] MCIR Data Disk management
 // @Accept  json
 // @Produce  json
 // @Param attachDetachDataDiskReq body mcir.TbAttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
-// @Param option query string true "Option for MCIS" Enums(attach, detach, available)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Param option query string true "Option for MCIS" Enums(attach, detach)
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -209,26 +209,42 @@ func RestPutVmDataDisk(c echo.Context) error {
 
 		return c.JSON(http.StatusOK, result)
 
-	case mcis.AvailableDataDisk:
-		dataDiskIDs, err := mcis.GetAvailableDataDiskIDs(nsId, mcisId, vmId)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		// common.PrintJsonPretty(result)
-		// var content struct {
-		// 	DataDisk []string `json:"dataDisk"`
-		// }
-		content := RestGetAvailableDataDisksResponse{
-			DataDisk: dataDiskIDs,
-		}
-
-		return c.JSON(http.StatusOK, &content)
-
 	default:
 		mapA := map[string]string{"message": fmt.Sprintf("Supported options: %s, %s, %s", mcis.AttachDataDisk, mcis.DetachDataDisk, mcis.AvailableDataDisk)}
 		return c.JSON(http.StatusNotFound, &mapA)
 	}
 	return nil
+}
+
+// RestGetVmDataDisk godoc
+// @Summary Get available dataDisks for a VM
+// @Description Get available dataDisks for a VM
+// @Tags [Infra resource] MCIR Data Disk management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Success 200 {object} RestGetAvailableDataDisksResponse
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [get]
+func RestGetVmDataDisk(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	dataDiskIDs, err := mcis.GetAvailableDataDiskIDs(nsId, mcisId, vmId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+
+	content := RestGetAvailableDataDisksResponse{
+		DataDisk: dataDiskIDs,
+	}
+
+	return c.JSON(http.StatusOK, &content)
+
 }

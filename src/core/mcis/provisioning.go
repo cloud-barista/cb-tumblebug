@@ -184,7 +184,7 @@ type TbMcisInfo struct {
 // TbVmReq is struct to get requirements to create a new server instance
 type TbVmReq struct {
 	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" validate:"required" example:"vm01"`
+	Name string `json:"name" validate:"required" example:"g1-1"`
 
 	// CSP managed ID or Name (required for option=register)
 	IdByCSP string `json:"idByCsp,omitempty" example:"i-014fa6ede6ada0b2c"`
@@ -222,7 +222,7 @@ type TbScaleOutSubGroupReq struct {
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)
 type TbVmDynamicReq struct {
 	// VM name or subGroup name if is (not empty) && (> 0). If it is a group, actual VM name will be generated with -N postfix.
-	Name string `json:"name" example:"vm01"`
+	Name string `json:"name" example:"g1-1"`
 
 	// if subGroupSize is (not empty) && (> 0), subGroup will be gernetad. VMs will be created accordingly.
 	SubGroupSize string `json:"subGroupSize" example:"3" default:""`

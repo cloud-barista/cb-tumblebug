@@ -24,14 +24,14 @@ import (
 )
 
 // RestPostCustomImage godoc
-// @Summary Create Custom Image
-// @Description Create Custom Image
-// @Tags [Infra resource] MCIR Custom Image management
+// @Summary Register existing Custom Image in a CSP
+// @Description Register existing Custom Image in a CSP (option==register)
+// @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string true "Option: " Enums(register)
-// @Param customImageInfo body mcir.TbCustomImageReq true "Details for an Custom Image object"
+// @Param customImageRegisterReq body mcir.TbCustomImageReq true "Request to Register existing Custom Image in a CSP"
 // @Success 200 {object} mcir.TbCustomImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -65,7 +65,7 @@ func RestPostCustomImage(c echo.Context) error {
 // RestGetCustomImage godoc
 // @Summary Get customImage
 // @Description Get customImage
-// @Tags [Infra resource] MCIR Custom Image management
+// @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -87,7 +87,7 @@ type RestGetAllCustomImageResponse struct {
 // RestGetAllCustomImage godoc
 // @Summary List all customImages or customImages' ID
 // @Description List all customImages or customImages' ID
-// @Tags [Infra resource] MCIR Custom Image management
+// @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -106,7 +106,7 @@ func RestGetAllCustomImage(c echo.Context) error {
 // RestDelCustomImage godoc
 // @Summary Delete customImage
 // @Description Delete customImage
-// @Tags [Infra resource] MCIR Custom Image management
+// @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -122,7 +122,7 @@ func RestDelCustomImage(c echo.Context) error {
 // RestDelAllCustomImage godoc
 // @Summary Delete all customImages
 // @Description Delete all customImages
-// @Tags [Infra resource] MCIR Custom Image management
+// @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)

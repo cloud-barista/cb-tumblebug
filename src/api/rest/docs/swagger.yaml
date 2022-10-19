@@ -319,6 +319,13 @@ definitions:
           $ref: '#/definitions/mcir.TbVNetInfo'
         type: array
     type: object
+  mcir.RestGetAvailableDataDisksResponse:
+    properties:
+      dataDisk:
+        items:
+          type: string
+        type: array
+    type: object
   mcir.RestLookupImageRequest:
     properties:
       connectionName:
@@ -3766,7 +3773,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: group-0
+      - default: g1
         description: NLB ID
         in: path
         name: nlbId
@@ -3808,7 +3815,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: group-0
+      - default: g1
         description: NLB ID
         in: path
         name: nlbId
@@ -3850,7 +3857,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: group-0
+      - default: g1
         description: NLB ID
         in: path
         name: nlbId
@@ -3893,7 +3900,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: group-0
+      - default: g1
         description: NLB ID
         in: path
         name: nlbId
@@ -4201,10 +4208,51 @@ paths:
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk:
+    get:
+      consumes:
+      - application/json
+      description: Get available dataDisks for a VM
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vm01
+        description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.RestGetAvailableDataDisksResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get available dataDisks for a VM
+      tags:
+      - '[Infra resource] MCIR Data Disk management'
     put:
       consumes:
       - application/json
-      description: Attach/Detach/Get available dataDisks
+      description: Attach/Detach available dataDisk
       parameters:
       - description: Request body to attach/detach dataDisk
         in: body
@@ -4233,7 +4281,6 @@ paths:
         enum:
         - attach
         - detach
-        - available
         in: query
         name: option
         required: true
@@ -4253,14 +4300,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Attach/Detach/Get available dataDisks
+      summary: Attach/Detach available dataDisk
       tags:
       - '[Infra resource] MCIR Data Disk management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot:
     post:
       consumes:
       - application/json
-      description: Create VM snapshot
+      description: Snapshot VM and create a Custom Image Object using the Snapshot
       parameters:
       - description: Request body to create VM snapshot
         in: body
@@ -4301,9 +4348,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create VM snapshot
+      summary: Snapshot VM and create a Custom Image Object using the Snapshot
       tags:
-      - '[Infra resource] VM snapshot management'
+      - '[Infra resource] Snapshot and Custom Image Management'
   /ns/{nsId}/mcisDynamic:
     post:
       consumes:
@@ -4737,7 +4784,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete all customImages
       tags:
-      - '[Infra resource] MCIR Custom Image management'
+      - '[Infra resource] Snapshot and Custom Image Management'
     get:
       consumes:
       - application/json
@@ -4787,11 +4834,11 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: List all customImages or customImages' ID
       tags:
-      - '[Infra resource] MCIR Custom Image management'
+      - '[Infra resource] Snapshot and Custom Image Management'
     post:
       consumes:
       - application/json
-      description: Create Custom Image
+      description: Register existing Custom Image in a CSP (option==register)
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4806,9 +4853,9 @@ paths:
         name: option
         required: true
         type: string
-      - description: Details for an Custom Image object
+      - description: Request to Register existing Custom Image in a CSP
         in: body
-        name: customImageInfo
+        name: customImageRegisterReq
         required: true
         schema:
           $ref: '#/definitions/mcir.TbCustomImageReq'
@@ -4827,9 +4874,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create Custom Image
+      summary: Register existing Custom Image in a CSP
       tags:
-      - '[Infra resource] MCIR Custom Image management'
+      - '[Infra resource] Snapshot and Custom Image Management'
   /ns/{nsId}/resources/customImage/{customImageId}:
     delete:
       consumes:
@@ -4860,7 +4907,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Delete customImage
       tags:
-      - '[Infra resource] MCIR Custom Image management'
+      - '[Infra resource] Snapshot and Custom Image Management'
     get:
       consumes:
       - application/json
@@ -4894,7 +4941,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get customImage
       tags:
-      - '[Infra resource] MCIR Custom Image management'
+      - '[Infra resource] Snapshot and Custom Image Management'
   /ns/{nsId}/resources/dataDisk:
     delete:
       consumes:

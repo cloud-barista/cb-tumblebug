@@ -34,7 +34,7 @@ type RestPostCmdMcisVmResponse struct {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Success 200 {object} RestPostCmdMcisVmResponse
 // @Failure 404 {object} common.SimpleMsg
