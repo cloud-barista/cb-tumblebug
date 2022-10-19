@@ -404,6 +404,30 @@ type TbVmInfo struct {
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail,omitempty"`
 }
 
+// McisAccessInfo is struct to retrieve overall access information of a MCIS
+type McisAccessInfo struct {
+	McisId                 string
+	McisSubGroupAccessInfo []McisSubGroupAccessInfo
+}
+
+// McisSubGroupAccessInfo is struct for McisSubGroupAccessInfo
+type McisSubGroupAccessInfo struct {
+	SubGroupId       string
+	NlbListener      TbNLBListenerInfo `json:"nlbListener"`
+	McisVmAccessInfo []McisVmAccessInfo
+}
+
+// McisVmAccessInfo is struct for McisVmAccessInfo
+type McisVmAccessInfo struct {
+	VmId           string `json:"vmId"`
+	PublicIP       string `json:"publicIP"`
+	PrivateIP      string `json:"privateIP"`
+	SSHPort        string `json:"sshPort"`
+	PrivateKey     string `json:"privateKey,omitempty"`
+	VmUserAccount  string `json:"vmUserAccount,omitempty"`
+	VmUserPassword string `json:"vmUserPassword,omitempty"`
+}
+
 // TbVmIdNameInDetailInfo is struct for details related with ID and Name
 type TbIdNameInDetailInfo struct {
 	IdInTb    string `json:"idInTb"`

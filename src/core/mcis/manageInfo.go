@@ -324,6 +324,72 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 	return &mcisObj, nil
 }
 
+// GetMcisAccessInfo is func to retrieve MCIS Access information
+func GetMcisAccessInfo(nsId string, mcisId string) (*McisAccessInfo, error) {
+
+	output := &McisAccessInfo{}
+	temp := &McisAccessInfo{}
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return temp, err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	check, _ := CheckMcis(nsId, mcisId)
+
+	if !check {
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
+
+	output.McisId = mcisId
+	subGroupList, err := ListSubGroupId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return temp, err
+	}
+	for _, groupId := range subGroupList {
+		subGroupAccessInfo := McisSubGroupAccessInfo{}
+		subGroupAccessInfo.SubGroupId = groupId
+		nlb, err := GetNLB(nsId, mcisId, groupId)
+		if err == nil {
+			subGroupAccessInfo.NlbListener = nlb.Listener
+		}
+		vmList, err := ListMcisGroupVms(nsId, mcisId, groupId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return temp, err
+		}
+		for _, vmId := range vmList {
+			vmInfo, err := GetVmCurrentPublicIp(nsId, mcisId, vmId)
+			if err != nil {
+				common.CBLog.Error(err)
+				return temp, err
+			}
+			vmAccessInfo := McisVmAccessInfo{}
+			vmAccessInfo.VmId = vmId
+			vmAccessInfo.PublicIP = vmInfo.PublicIp
+			vmAccessInfo.PrivateIP = vmInfo.PrivateIp
+			vmAccessInfo.SSHPort = vmInfo.SSHPort
+
+			_, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
+			vmAccessInfo.PrivateKey = privateKey
+			vmAccessInfo.VmUserAccount = verifiedUserName
+			//vmAccessInfo.VmUserPassword
+
+			subGroupAccessInfo.McisVmAccessInfo = append(subGroupAccessInfo.McisVmAccessInfo, vmAccessInfo)
+		}
+		output.McisSubGroupAccessInfo = append(output.McisSubGroupAccessInfo, subGroupAccessInfo)
+	}
+
+	return output, nil
+}
+
 // CoreGetAllMcis is func to get all MCIS objects
 func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 
@@ -910,6 +976,9 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	type statusResponse struct {
 		Status         string
 		PublicIP       string
+		PublicDNS      string
+		PrivateIP      string
+		PrivateDNS     string
 		SSHAccessPoint string
 	}
 	var statusResponseTmp statusResponse
@@ -998,6 +1067,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 
 	vmStatusTmp := TbVmStatusInfo{}
 	vmStatusTmp.PublicIp = statusResponseTmp.PublicIP
+	vmStatusTmp.PrivateIp = statusResponseTmp.PrivateIP
 	vmStatusTmp.SSHPort, _ = TrimIP(statusResponseTmp.SSHAccessPoint)
 
 	return vmStatusTmp, nil
