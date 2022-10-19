@@ -249,7 +249,7 @@ func RestDelAllMcis(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string false "Option for MCIS" Enums(default, status, idsInDetail)
 // @success 200 {object} JSONResult{[DEFAULT]=mcis.TbVmInfo,[STATUS]=mcis.TbVmStatusInfo,[IDNAME]=mcis.TbIdNameInDetailInfo} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
@@ -308,7 +308,7 @@ func RestGetMcisVm(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Param vmInfo body mcis.TbVmInfo true "Details for an VM object"
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -327,7 +327,7 @@ func RestPutMcisVm(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string false "Option for delete VM (support force delete)" Enums(force)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg

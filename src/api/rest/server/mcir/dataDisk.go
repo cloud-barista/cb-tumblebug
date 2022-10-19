@@ -176,7 +176,7 @@ type RestGetAvailableDataDisksResponse struct {
 // @Param attachDetachDataDiskReq body mcir.TbAttachDetachDataDiskReq false "Request body to attach/detach dataDisk"
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string true "Option for MCIS" Enums(attach, detach)
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -224,7 +224,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} RestGetAvailableDataDisksResponse
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg

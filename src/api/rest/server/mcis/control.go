@@ -71,7 +71,7 @@ func RestGetControlMcis(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -111,7 +111,7 @@ func RestGetControlMcisVm(c echo.Context) error {
 // @Param vmSnapshotReq body mcis.TbVmSnapshotReq true "Request body to create VM snapshot"
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(vm01)
+// @Param vmId path string true "VM ID" default(g1-1)
 // @Success 200 {object} mcir.TbCustomImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
