@@ -270,6 +270,13 @@ definitions:
           $ref: '#/definitions/mcir.TbSpecInfo'
         type: array
     type: object
+  mcir.RestGetAllCustomImageResponse:
+    properties:
+      customImage:
+        items:
+          $ref: '#/definitions/mcir.TbCustomImageInfo'
+        type: array
+    type: object
   mcir.RestGetAllDataDiskResponse:
     properties:
       dataDisk:
@@ -4701,6 +4708,86 @@ paths:
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/resources/customImage:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all customImages
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all customImages
+      tags:
+      - '[Infra resource] MCIR Custom Image management'
+    get:
+      consumes:
+      - application/json
+      description: List all customImages or customImages' ID
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
+      - description: Field key for filtering (ex:guestOS)
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: Ubuntu18.04)'
+        in: query
+        name: filterVal
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          schema:
+            allOf:
+            - $ref: '#/definitions/mcir.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcir.RestGetAllCustomImageResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all customImages or customImages' ID
+      tags:
+      - '[Infra resource] MCIR Custom Image management'
     post:
       consumes:
       - application/json
@@ -4717,6 +4804,7 @@ paths:
         - register
         in: query
         name: option
+        required: true
         type: string
       - description: Details for an Custom Image object
         in: body
@@ -4740,6 +4828,71 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Create Custom Image
+      tags:
+      - '[Infra resource] MCIR Custom Image management'
+  /ns/{nsId}/resources/customImage/{customImageId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete customImage
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: customImage ID
+        in: path
+        name: customImageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete customImage
+      tags:
+      - '[Infra resource] MCIR Custom Image management'
+    get:
+      consumes:
+      - application/json
+      description: Get customImage
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: customImage ID
+        in: path
+        name: customImageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcir.TbCustomImageInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get customImage
       tags:
       - '[Infra resource] MCIR Custom Image management'
   /ns/{nsId}/resources/dataDisk:
