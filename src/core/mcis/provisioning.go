@@ -678,8 +678,13 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 	var wg sync.WaitGroup
 
 	// subGroup handling
-	subGroupSize, _ := strconv.Atoi(vmRequest.SubGroupSize)
+	subGroupSize, err := strconv.Atoi(vmRequest.SubGroupSize)
 	fmt.Printf("subGroupSize: %v\n", subGroupSize)
+
+	// make subGroup default (any VM going to be in a subGroup)
+	if subGroupSize < 1 || err != nil {
+		subGroupSize = 1
+	}
 
 	vmStartIndex := 1
 

@@ -150,53 +150,19 @@ func RestPostMcisDynamicCheckRequest(c echo.Context) error {
 }
 
 // RestPostMcisVm godoc
-// @Summary Create VM in specified MCIS
-// @Description Create VM in specified MCIS
+// @Summary Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)
+// @Description Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmReq body mcis.TbVmReq true "Details for an VM object"
-// @Success 200 {object} mcis.TbVmInfo
+// @Param vmReq body mcis.TbVmReq true "Details for VMs(subGroup)"
+// @Success 200 {object} mcis.TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm [post]
 func RestPostMcisVm(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
-
-	vmInfoData := &mcis.TbVmInfo{}
-	if err := c.Bind(vmInfoData); err != nil {
-		return err
-	}
-	common.PrintJsonPretty(*vmInfoData)
-
-	result, err := mcis.CorePostMcisVm(nsId, mcisId, vmInfoData)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
-}
-
-// RestPostMcisSubGroup godoc
-// @Summary Create multiple VMs by subGroup in specified MCIS
-// @Description Create multiple VMs by subGroup in specified MCIS
-// @Tags [Infra service] MCIS Provisioning management
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmReq body mcis.TbVmReq true "Details for subGroup"
-// @Success 200 {object} mcis.TbMcisInfo
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/mcis/{mcisId}/subgroup [post]
-func RestPostMcisSubGroup(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -225,7 +191,7 @@ func RestPostMcisSubGroup(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param subgroupId path string true "subGroup ID" default(group-0)
+// @Param subgroupId path string true "subGroup ID" default(g1)
 // @Param vmReq body mcis.TbScaleOutSubGroupReq true "subGroup scaleOut request"
 // @Success 200 {object} mcis.TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg

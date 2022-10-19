@@ -1881,7 +1881,7 @@ definitions:
         example: TCP
         type: string
       subGroupId:
-        example: group-0
+        example: g1
         type: string
       vms:
         items:
@@ -1899,7 +1899,7 @@ definitions:
         example: TCP
         type: string
       subGroupId:
-        example: group-0
+        example: g1
         type: string
     type: object
   mcis.TbScaleOutSubGroupReq:
@@ -3952,47 +3952,6 @@ paths:
       summary: List SubGroup IDs in a specified MCIS
       tags:
       - '[Infra service] MCIS Provisioning management'
-    post:
-      consumes:
-      - application/json
-      description: Create multiple VMs by subGroup in specified MCIS
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: mcis01
-        description: MCIS ID
-        in: path
-        name: mcisId
-        required: true
-        type: string
-      - description: Details for subGroup
-        in: body
-        name: vmReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbVmReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbMcisInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Create multiple VMs by subGroup in specified MCIS
-      tags:
-      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId}:
     get:
       consumes:
@@ -4011,7 +3970,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: group-0
+      - default: g1
         description: subGroup ID
         in: path
         name: subgroupId
@@ -4058,7 +4017,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - default: group-0
+      - default: g1
         description: subGroup ID
         in: path
         name: subgroupId
@@ -4092,7 +4051,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create VM in specified MCIS
+      description: Create and add homogeneous VMs(subGroup) to a specified MCIS (Set
+        subGroupSize for multiple VMs)
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4106,7 +4066,7 @@ paths:
         name: mcisId
         required: true
         type: string
-      - description: Details for an VM object
+      - description: Details for VMs(subGroup)
         in: body
         name: vmReq
         required: true
@@ -4118,7 +4078,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.TbVmInfo'
+            $ref: '#/definitions/mcis.TbMcisInfo'
         "404":
           description: Not Found
           schema:
@@ -4127,7 +4087,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: Create VM in specified MCIS
+      summary: Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize
+        for multiple VMs)
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
