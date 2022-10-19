@@ -246,6 +246,7 @@ func RunServer(port string) {
 	g.PUT("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestPutDataDisk)
 	g.DELETE("/:nsId/resources/dataDisk/:resourceId", rest_mcir.RestDelResource)
 	g.DELETE("/:nsId/resources/dataDisk", rest_mcir.RestDelAllResources)
+	g.GET("/:nsId/mcis/:mcisId/vm/:vmId/dataDisk", rest_mcir.RestGetVmDataDisk)
 	g.PUT("/:nsId/mcis/:mcisId/vm/:vmId/dataDisk", rest_mcir.RestPutVmDataDisk)
 
 	g.POST("/:nsId/resources/image", rest_mcir.RestPostImage)

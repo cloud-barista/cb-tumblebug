@@ -103,9 +103,9 @@ func RestGetControlMcisVm(c echo.Context) error {
 }
 
 // RestPostMcisVmSnapshot godoc
-// @Summary Create VM snapshot
-// @Description Create VM snapshot
-// @Tags [Infra resource] VM snapshot management
+// @Summary Snapshot VM and create a Custom Image Object using the Snapshot
+// @Description Snapshot VM and create a Custom Image Object using the Snapshot
+// @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json
 // @Param vmSnapshotReq body mcis.TbVmSnapshotReq true "Request body to create VM snapshot"

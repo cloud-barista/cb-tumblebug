@@ -2127,7 +2127,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "group-0",
+                        "default": "g1",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -2240,7 +2240,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "group-0",
+                        "default": "g1",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -2301,7 +2301,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "group-0",
+                        "default": "g1",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -2369,7 +2369,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "group-0",
+                        "default": "g1",
                         "description": "NLB ID",
                         "name": "nlbId",
                         "in": "path",
@@ -2807,8 +2807,8 @@ const docTemplate = `{
             }
         },
         "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk": {
-            "put": {
-                "description": "Attach/Detach/Get available dataDisks",
+            "get": {
+                "description": "Get available dataDisks for a VM",
                 "consumes": [
                     "application/json"
                 ],
@@ -2818,7 +2818,66 @@ const docTemplate = `{
                 "tags": [
                     "[Infra resource] MCIR Data Disk management"
                 ],
-                "summary": "Attach/Detach/Get available dataDisks",
+                "summary": "Get available dataDisks for a VM",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vm01",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcir.RestGetAvailableDataDisksResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Attach/Detach available dataDisk",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Data Disk management"
+                ],
+                "summary": "Attach/Detach available dataDisk",
                 "parameters": [
                     {
                         "description": "Request body to attach/detach dataDisk",
@@ -2855,8 +2914,7 @@ const docTemplate = `{
                     {
                         "enum": [
                             "attach",
-                            "detach",
-                            "available"
+                            "detach"
                         ],
                         "type": "string",
                         "description": "Option for MCIS",
@@ -2889,7 +2947,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot": {
             "post": {
-                "description": "Create VM snapshot",
+                "description": "Snapshot VM and create a Custom Image Object using the Snapshot",
                 "consumes": [
                     "application/json"
                 ],
@@ -2897,9 +2955,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] VM snapshot management"
+                    "[Infra resource] Snapshot and Custom Image Management"
                 ],
-                "summary": "Create VM snapshot",
+                "summary": "Snapshot VM and create a Custom Image Object using the Snapshot",
                 "parameters": [
                     {
                         "description": "Request body to create VM snapshot",
@@ -3559,7 +3617,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Custom Image management"
+                    "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "List all customImages or customImages' ID",
                 "parameters": [
@@ -3630,7 +3688,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create Custom Image",
+                "description": "Register existing Custom Image in a CSP (option==register)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3638,9 +3696,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Custom Image management"
+                    "[Infra resource] Snapshot and Custom Image Management"
                 ],
-                "summary": "Create Custom Image",
+                "summary": "Register existing Custom Image in a CSP",
                 "parameters": [
                     {
                         "type": "string",
@@ -3661,8 +3719,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an Custom Image object",
-                        "name": "customImageInfo",
+                        "description": "Request to Register existing Custom Image in a CSP",
+                        "name": "customImageRegisterReq",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -3700,7 +3758,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Custom Image management"
+                    "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Delete all customImages",
                 "parameters": [
@@ -3746,7 +3804,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Custom Image management"
+                    "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Get customImage",
                 "parameters": [
@@ -3796,7 +3854,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Infra resource] MCIR Custom Image management"
+                    "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Delete customImage",
                 "parameters": [
@@ -7113,6 +7171,17 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcir.TbVNetInfo"
+                    }
+                }
+            }
+        },
+        "mcir.RestGetAvailableDataDisksResponse": {
+            "type": "object",
+            "properties": {
+                "dataDisk": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 }
             }
