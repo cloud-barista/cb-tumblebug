@@ -413,7 +413,7 @@ type McisAccessInfo struct {
 // McisSubGroupAccessInfo is struct for McisSubGroupAccessInfo
 type McisSubGroupAccessInfo struct {
 	SubGroupId       string
-	NlbListener      TbNLBListenerInfo `json:"nlbListener"`
+	NlbListener      *TbNLBListenerInfo `json:"nlbListener,omitempty"`
 	McisVmAccessInfo []McisVmAccessInfo
 }
 
