@@ -1166,6 +1166,15 @@ definitions:
     type: object
   mcis.JSONResult:
     type: object
+  mcis.McisAccessInfo:
+    properties:
+      mcisId:
+        type: string
+      mcisSubGroupAccessInfo:
+        items:
+          $ref: '#/definitions/mcis.McisSubGroupAccessInfo'
+        type: array
+    type: object
   mcis.McisCmdReq:
     properties:
       command:
@@ -1248,6 +1257,34 @@ definitions:
         items:
           $ref: '#/definitions/mcis.TbVmStatusInfo'
         type: array
+    type: object
+  mcis.McisSubGroupAccessInfo:
+    properties:
+      mcisVmAccessInfo:
+        items:
+          $ref: '#/definitions/mcis.McisVmAccessInfo'
+        type: array
+      nlbListener:
+        $ref: '#/definitions/mcis.TbNLBListenerInfo'
+      subGroupId:
+        type: string
+    type: object
+  mcis.McisVmAccessInfo:
+    properties:
+      privateIP:
+        type: string
+      privateKey:
+        type: string
+      publicIP:
+        type: string
+      sshPort:
+        type: string
+      vmId:
+        type: string
+      vmUserAccount:
+        type: string
+      vmUserPassword:
+        type: string
     type: object
   mcis.MonResultSimple:
     properties:
@@ -3529,7 +3566,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 'Get MCIS object (option: status, vmID)'
+      description: 'Get MCIS object (option: status, accessInfo, vmId)'
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3548,6 +3585,7 @@ paths:
         - default
         - id
         - status
+        - accessinfo
         in: query
         name: option
         type: string
@@ -3570,6 +3608,8 @@ paths:
             allOf:
             - $ref: '#/definitions/mcis.JSONResult'
             - properties:
+                '[AccessInfo]':
+                  $ref: '#/definitions/mcis.McisAccessInfo'
                 '[DEFAULT]':
                   $ref: '#/definitions/mcis.TbMcisInfo'
                 '[ID]':
@@ -3585,7 +3625,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/common.SimpleMsg'
-      summary: 'Get MCIS object (option: status, vmID)'
+      summary: 'Get MCIS object (option: status, accessInfo, vmId)'
       tags:
       - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcis/{mcisId}/nlb:

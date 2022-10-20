@@ -1750,7 +1750,7 @@ const docTemplate = `{
         },
         "/ns/{nsId}/mcis/{mcisId}": {
             "get": {
-                "description": "Get MCIS object (option: status, vmID)",
+                "description": "Get MCIS object (option: status, accessInfo, vmId)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1760,7 +1760,7 @@ const docTemplate = `{
                 "tags": [
                     "[Infra service] MCIS Provisioning management"
                 ],
-                "summary": "Get MCIS object (option: status, vmID)",
+                "summary": "Get MCIS object (option: status, accessInfo, vmId)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1782,7 +1782,8 @@ const docTemplate = `{
                         "enum": [
                             "default",
                             "id",
-                            "status"
+                            "status",
+                            "accessinfo"
                         ],
                         "type": "string",
                         "description": "Option",
@@ -1815,6 +1816,9 @@ const docTemplate = `{
                                 {
                                     "type": "object",
                                     "properties": {
+                                        "[AccessInfo]": {
+                                            "$ref": "#/definitions/mcis.McisAccessInfo"
+                                        },
                                         "[DEFAULT]": {
                                             "$ref": "#/definitions/mcis.TbMcisInfo"
                                         },
@@ -8419,6 +8423,20 @@ const docTemplate = `{
         "mcis.JSONResult": {
             "type": "object"
         },
+        "mcis.McisAccessInfo": {
+            "type": "object",
+            "properties": {
+                "mcisId": {
+                    "type": "string"
+                },
+                "mcisSubGroupAccessInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.McisSubGroupAccessInfo"
+                    }
+                }
+            }
+        },
         "mcis.McisCmdReq": {
             "type": "object",
             "required": [
@@ -8531,6 +8549,49 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/mcis.TbVmStatusInfo"
                     }
+                }
+            }
+        },
+        "mcis.McisSubGroupAccessInfo": {
+            "type": "object",
+            "properties": {
+                "mcisVmAccessInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.McisVmAccessInfo"
+                    }
+                },
+                "nlbListener": {
+                    "$ref": "#/definitions/mcis.TbNLBListenerInfo"
+                },
+                "subGroupId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.McisVmAccessInfo": {
+            "type": "object",
+            "properties": {
+                "privateIP": {
+                    "type": "string"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "publicIP": {
+                    "type": "string"
+                },
+                "sshPort": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                },
+                "vmUserAccount": {
+                    "type": "string"
+                },
+                "vmUserPassword": {
+                    "type": "string"
                 }
             }
         },

@@ -34,17 +34,17 @@ type JSONResult struct {
 // Annotation for API documention Need to be revised.
 
 // RestGetMcis godoc
-// @Summary Get MCIS object (option: status, vmID)
-// @Description Get MCIS object (option: status, vmID)
+// @Summary Get MCIS object (option: status, accessInfo, vmId)
+// @Description Get MCIS object (option: status, accessInfo, vmId)
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param option query string false "Option" Enums(default, id, status)
+// @Param option query string false "Option" Enums(default, id, status, accessinfo)
 // @Param filterKey query string false "(for option==id) Field key for filtering (ex: connectionName)" default(connectionName)
 // @Param filterVal query string false "(for option==id) Field value for filtering (ex: aws-ap-northeast-2)" default(aws-ap-northeast-2)
-// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[ID]=common.IdList,[STATUS]=mcis.McisStatusInfo} "Different return structures by the given action param"
+// @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[ID]=common.IdList,[STATUS]=mcis.McisStatusInfo,[AccessInfo]=mcis.McisAccessInfo} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [get]
@@ -82,6 +82,17 @@ func RestGetMcis(c echo.Context) error {
 
 		common.PrintJsonPretty(content)
 		return c.JSON(http.StatusOK, &content)
+
+	} else if option == "accessinfo" {
+
+		result, err := mcis.GetMcisAccessInfo(nsId, mcisId)
+		if err != nil {
+			mapA := map[string]string{"message": err.Error()}
+			return c.JSON(http.StatusInternalServerError, &mapA)
+		}
+
+		common.PrintJsonPretty(result)
+		return c.JSON(http.StatusOK, &result)
 
 	} else {
 
