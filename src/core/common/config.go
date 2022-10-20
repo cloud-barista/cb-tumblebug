@@ -29,6 +29,7 @@ var RuntimeConf = RuntimeConfig{}
 // RuntimeConfig is structure for global variable for cloud config
 type RuntimeConfig struct {
 	Cloud Cloud `yaml:"cloud"`
+	Nlbsw Nlbsw `yaml:"nlbsw"`
 }
 
 // Cloud is structure for cloud settings per CSP
@@ -56,6 +57,15 @@ type NlbSetting struct {
 	Interval  string `yaml:"interval"`
 	Timeout   string `yaml:"timeout"`
 	Threshold string `yaml:"threshold"`
+}
+
+// Nlbsw is structure for NLB setting
+type Nlbsw struct {
+	Sw                   string `yaml:"sw"`
+	Version              string `yaml:"version"`
+	CommandDeployNlb     string `yaml:"commandDeployNlb"`
+	CommandAddTargetNode string `yaml:"commandAddTargetNode"`
+	CommandApplyConfig   string `yaml:"commandApplyConfig"`
 }
 
 // swagger:request ConfigReq
