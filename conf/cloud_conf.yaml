@@ -62,5 +62,11 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-global:
-  port: 8080
+nlbsw:
+  sw: "HAProxy"
+  version: "latest"
+  command: 
+    deployNlb: "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/deployNlb.sh chmod +x ~/deployNlb.sh; sudo ~/deployNlb.sh"
+    addTargetNode: "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/addTargetNode.sh chmod +x ~/addTargetNode.sh; sudo ~/addTargetNode.sh"
+    applyConfig: "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/applyConfig.sh chmod +x ~/applyConfig.sh; sudo ~/applyConfig.sh"
+
