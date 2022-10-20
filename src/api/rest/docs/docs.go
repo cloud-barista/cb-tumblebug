@@ -1792,19 +1792,19 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "(For option==id) Field key for filtering (ex: connectionName)",
+                        "description": "(For option=id) Field key for filtering (ex: connectionName)",
                         "name": "filterKey",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "(For option==id) Field value for filtering (ex: aws-ap-northeast-2)",
+                        "description": "(For option=id) Field value for filtering (ex: aws-ap-northeast-2)",
                         "name": "filterVal",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "(For option==accessinfo) accessInfoOption (showSshKey)",
+                        "description": "(For option=accessinfo) accessInfoOption (showSshKey)",
                         "name": "accessInfoOption",
                         "in": "query"
                     }

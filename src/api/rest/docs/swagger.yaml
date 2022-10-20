@@ -3589,15 +3589,15 @@ paths:
         in: query
         name: option
         type: string
-      - description: '(For option==id) Field key for filtering (ex: connectionName)'
+      - description: '(For option=id) Field key for filtering (ex: connectionName)'
         in: query
         name: filterKey
         type: string
-      - description: '(For option==id) Field value for filtering (ex: aws-ap-northeast-2)'
+      - description: '(For option=id) Field value for filtering (ex: aws-ap-northeast-2)'
         in: query
         name: filterVal
         type: string
-      - description: (For option==accessinfo) accessInfoOption (showSshKey)
+      - description: (For option=accessinfo) accessInfoOption (showSshKey)
         in: query
         name: accessInfoOption
         type: string
