@@ -42,8 +42,9 @@ type JSONResult struct {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param option query string false "Option" Enums(default, id, status, accessinfo)
-// @Param filterKey query string false "(for option==id) Field key for filtering (ex: connectionName)" default(connectionName)
-// @Param filterVal query string false "(for option==id) Field value for filtering (ex: aws-ap-northeast-2)" default(aws-ap-northeast-2)
+// @Param filterKey query string false "(For option=id) Field key for filtering (ex: connectionName)"
+// @Param filterVal query string false "(For option=id) Field value for filtering (ex: aws-ap-northeast-2)"
+// @Param accessInfoOption query string false "(For option=accessinfo) accessInfoOption (showSshKey)"
 // @success 200 {object} JSONResult{[DEFAULT]=mcis.TbMcisInfo,[ID]=common.IdList,[STATUS]=mcis.McisStatusInfo,[AccessInfo]=mcis.McisAccessInfo} "Different return structures by the given action param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -56,6 +57,7 @@ func RestGetMcis(c echo.Context) error {
 	option := c.QueryParam("option")
 	filterKey := c.QueryParam("filterKey")
 	filterVal := c.QueryParam("filterVal")
+	accessInfoOption := c.QueryParam("accessInfoOption")
 
 	if option == "id" {
 		content := common.IdList{}
@@ -85,7 +87,7 @@ func RestGetMcis(c echo.Context) error {
 
 	} else if option == "accessinfo" {
 
-		result, err := mcis.GetMcisAccessInfo(nsId, mcisId)
+		result, err := mcis.GetMcisAccessInfo(nsId, mcisId, accessInfoOption)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusInternalServerError, &mapA)
