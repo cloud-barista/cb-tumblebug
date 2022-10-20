@@ -358,7 +358,7 @@ func GetMcisAccessInfo(nsId string, mcisId string) (*McisAccessInfo, error) {
 		subGroupAccessInfo.SubGroupId = groupId
 		nlb, err := GetNLB(nsId, mcisId, groupId)
 		if err == nil {
-			subGroupAccessInfo.NlbListener = nlb.Listener
+			subGroupAccessInfo.NlbListener = &nlb.Listener
 		}
 		vmList, err := ListMcisGroupVms(nsId, mcisId, groupId)
 		if err != nil {
