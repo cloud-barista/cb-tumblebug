@@ -325,7 +325,7 @@ func GetMcisInfo(nsId string, mcisId string) (*TbMcisInfo, error) {
 }
 
 // GetMcisAccessInfo is func to retrieve MCIS Access information
-func GetMcisAccessInfo(nsId string, mcisId string) (*McisAccessInfo, error) {
+func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessInfo, error) {
 
 	output := &McisAccessInfo{}
 	temp := &McisAccessInfo{}
@@ -378,7 +378,11 @@ func GetMcisAccessInfo(nsId string, mcisId string) (*McisAccessInfo, error) {
 			vmAccessInfo.SSHPort = vmInfo.SSHPort
 
 			_, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
-			vmAccessInfo.PrivateKey = privateKey
+
+			if strings.EqualFold(option, "showSshKey") {
+				vmAccessInfo.PrivateKey = privateKey
+			}
+
 			vmAccessInfo.VmUserAccount = verifiedUserName
 			//vmAccessInfo.VmUserPassword
 
