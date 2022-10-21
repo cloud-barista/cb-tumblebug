@@ -245,7 +245,7 @@ func RestDelAllMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
-	result, err := mcis.CoreDelAllMcis(nsId, option)
+	result, err := mcis.DelAllMcis(nsId, option)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)

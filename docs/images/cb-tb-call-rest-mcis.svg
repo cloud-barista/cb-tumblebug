@@ -963,16 +963,16 @@
 <ellipse fill="#add8e6" stroke="#000000" stroke-width="1.5" cx="439.986" cy="-2741.8" rx="55.914" ry="18"/>
 <text text-anchor="middle" x="439.986" y="-2737.6" font-family="Verdana" font-size="14.00" fill="#000000">RestDelAllMcis</text>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis -->
 <g id="node17" class="node">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis</title>
 <ellipse fill="#ffe4b5" stroke="#000000" stroke-width="1.5" cx="758.2312" cy="-575.8" rx="71.7683" ry="23.52"/>
 <text text-anchor="middle" x="758.2312" y="-580" font-family="Verdana" font-size="14.00" fill="#000000">mcis</text>
-<text text-anchor="middle" x="758.2312" y="-563.2" font-family="Verdana" font-size="14.00" fill="#000000">CoreDelAllMcis</text>
+<text text-anchor="middle" x="758.2312" y="-563.2" font-family="Verdana" font-size="14.00" fill="#000000">DelAllMcis</text>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis -->
 <g id="edge90" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis</title>
 <path fill="none" stroke="#8b4513" d="M468.6695,-2726.141C498.2138,-2708.2084 542.5853,-2675.8048 561.8951,-2633.8 588.0502,-2576.9048 553.2646,-423.7234 597.8951,-379.8 649.6072,-328.9073 585.3857,-485.7621 634.8951,-538.8 646.8819,-551.6411 663.1303,-560.0851 679.8949,-565.6216"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="679.2145,-569.0704 689.7969,-568.5566 681.2039,-562.359 679.2145,-569.0704"/>
 </g>

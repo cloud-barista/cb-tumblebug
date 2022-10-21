@@ -2012,8 +2012,8 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 	return nil
 }
 
-// CoreDelAllMcis is func to delete all MCIS objects
-func CoreDelAllMcis(nsId string, option string) (string, error) {
+// DelAllMcis is func to delete all MCIS objects
+func DelAllMcis(nsId string, option string) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
