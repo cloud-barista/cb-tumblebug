@@ -2799,7 +2799,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Recommend MCIS plan (filter and priority)
+      description: Recommend MCIS plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
       parameters:
       - description: Recommend MCIS plan (filter and priority)
         in: body

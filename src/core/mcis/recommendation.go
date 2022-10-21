@@ -269,7 +269,80 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 		case "coordinateWithin":
 			//
 		case "coordinateFair":
-			//
+			var err error
+
+			// Calculate centroid of coordinate clusters
+			latitudeSum := 0.0
+			longitudeSum := 0.0
+			for _, coordinateStr := range v.Val {
+				slice := strings.Split(coordinateStr, "/")
+				latitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
+				if err != nil {
+					common.CBLog.Error(err)
+					return []mcir.TbSpecInfo{}, err
+				}
+				longitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
+				if err != nil {
+					common.CBLog.Error(err)
+					return []mcir.TbSpecInfo{}, err
+				}
+				latitudeSum += latitudeEach
+				longitudeSum += longitudeEach
+			}
+			latitude := latitudeSum / (float64)(len(v.Val))
+			longitude := longitudeSum / (float64)(len(v.Val))
+
+			// Sorting, closes to the centroid.
+
+			type distanceType struct {
+				distance      float64
+				index         int
+				priorityIndex int
+			}
+			distances := []distanceType{}
+
+			for i := range *specList {
+				distances = append(distances, distanceType{})
+				distances[i].distance, err = getDistance(latitude, longitude, (*specList)[i].ConnectionName)
+				if err != nil {
+					common.CBLog.Error(err)
+					return []mcir.TbSpecInfo{}, err
+				}
+				distances[i].index = i
+			}
+
+			sort.Slice(distances, func(i, j int) bool {
+				return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+			})
+			sort.Slice(distances, func(i, j int) bool {
+				return distances[i].distance < distances[j].distance
+			})
+			fmt.Printf("\n distances : %v \n", distances)
+
+			priorityCnt := 1
+			for i := range distances {
+
+				// priorityIndex++ if two distances are not equal (give the same priorityIndex if two variables are same)
+				if i != 0 {
+					if distances[i].distance > distances[i-1].distance {
+						priorityCnt++
+					}
+				}
+				distances[i].priorityIndex = priorityCnt
+
+			}
+
+			max := float32(distances[len(*specList)-1].distance)
+			min := float32(distances[0].distance)
+
+			for i := range *specList {
+				// update OrderInFilteredResult based on calculated priorityIndex
+				(*specList)[distances[i].index].OrderInFilteredResult = uint16(distances[i].priorityIndex)
+				// assign nomalized priorityIdex value to EvaluationScore09
+				(*specList)[distances[i].index].EvaluationScore09 = float32((max - float32(distances[i].distance)) / (max - min + 0.0000001)) // Add small value to avoid NaN by division
+				(*specList)[distances[i].index].EvaluationScore10 = float32(distances[i].distance)
+				// fmt.Printf("\n [%v] OrderInFilteredResult:%v, max:%v, min:%v, distance:%v, eval:%v \n", i, (*specList)[distances[i].index].OrderInFilteredResult, max, min, float32(distances[i].distance), (*specList)[distances[i].index].EvaluationScore09)
+			}
 		default:
 			// fmt.Println("[Checking] Not available metric " + metric)
 		}
