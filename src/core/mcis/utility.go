@@ -142,6 +142,34 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 
 }
 
+// CheckSubGroup func is to check given subGroupId is duplicated with existing
+func CheckSubGroup(nsId string, mcisId string, subGroupId string) (bool, error) {
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+
+	subGroupList, err := ListSubGroupId(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return false, err
+	}
+	for _, v := range subGroupList {
+		if strings.EqualFold(v, subGroupId) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 
 	// Check parameters' emptiness

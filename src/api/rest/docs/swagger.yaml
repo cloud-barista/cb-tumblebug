@@ -4403,6 +4403,48 @@ paths:
       summary: Snapshot VM and create a Custom Image Object using the Snapshot
       tags:
       - '[Infra resource] Snapshot and Custom Image Management'
+  /ns/{nsId}/mcis/{mcisId}/vmDynamic:
+    post:
+      consumes:
+      - application/json
+      description: Create VM Dynamically and add it to MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Details for Vm dynamic request
+        in: body
+        name: vmReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbVmDynamicReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create VM Dynamically and add it to MCIS
+      tags:
+      - '[Infra service] MCIS Provisioning management'
   /ns/{nsId}/mcisDynamic:
     post:
       consumes:
