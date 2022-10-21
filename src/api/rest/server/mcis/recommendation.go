@@ -24,7 +24,7 @@ import (
 
 // RestRecommendVm godoc
 // @Summary Recommend MCIS plan (filter and priority)
-// @Description Recommend MCIS plan (filter and priority)
+// @Description Recommend MCIS plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
 // @Tags [Infra service] MCIS Provisioning management
 // @Accept  json
 // @Produce  json

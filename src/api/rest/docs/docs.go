@@ -672,7 +672,7 @@ const docTemplate = `{
         },
         "/mcisRecommendVm": {
             "post": {
-                "description": "Recommend MCIS plan (filter and priority)",
+                "description": "Recommend MCIS plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
                 "consumes": [
                     "application/json"
                 ],
