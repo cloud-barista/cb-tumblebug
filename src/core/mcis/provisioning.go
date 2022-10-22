@@ -1182,8 +1182,6 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 // CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
 func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) {
 
-	onDemand := true
-
 	mcisReq := TbMcisReq{}
 	mcisReq.Name = req.Name
 	mcisReq.Label = req.Label
@@ -1210,117 +1208,12 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	vmRequest := req.Vm
 	// Check whether VM names meet requirement.
 	for _, k := range vmRequest {
-
-		vmReq := TbVmReq{}
-		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k.CommonSpec)
+		vmReq, err := getVmReqFromDynamicReq(nsId, &k)
 		if err != nil {
-			err := fmt.Errorf("Failed to get the spec " + k.CommonSpec)
 			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
+			return emptyMcis, err
 		}
-		specInfo := mcir.TbSpecInfo{}
-		err = common.CopySrcToDest(&tempInterface, &specInfo)
-		if err != nil {
-			err := fmt.Errorf("Failed to CopySrcToDest() " + k.CommonSpec)
-			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
-		}
-
-		// remake vmReqest from given input and check resource availability
-		vmReq.ConnectionName = specInfo.ConnectionName
-
-		// If ConnectionName is specified by the request, Use ConnectionName from the request
-		if k.ConnectionName != "" {
-			vmReq.ConnectionName = k.ConnectionName
-		}
-		// validate the region for spec
-		_, err = common.GetConnConfig(specInfo.RegionName)
-		if err != nil {
-			err := fmt.Errorf("Failed to get RegionName (" + specInfo.RegionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
-		}
-		// validate the GetConnConfig for spec
-		_, err = common.GetConnConfig(vmReq.ConnectionName)
-		if err != nil {
-			err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
-		}
-
-		// Default resource name has this pattern (nsId + "-systemdefault-" + vmReq.ConnectionName)
-		resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
-
-		vmReq.SpecId = specInfo.Id
-		vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
-		tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
-		if err != nil {
-			err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
-			common.CBLog.Error(err)
-			return &TbMcisInfo{}, err
-		}
-
-		vmReq.VNetId = resourceName
-		tempInterface, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
-		if err != nil {
-			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-			common.CBLog.Info(err)
-			if !onDemand {
-				return &TbMcisInfo{}, err
-			}
-			err2 := mcir.LoadDefaultResource(nsId, common.StrVNet, vmReq.ConnectionName)
-			if err2 != nil {
-				common.CBLog.Error(err2)
-				err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
-				return &TbMcisInfo{}, err2
-			}
-		}
-		vmReq.SubnetId = resourceName
-
-		vmReq.SshKeyId = resourceName
-		tempInterface, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
-		if err != nil {
-			err := fmt.Errorf("Failed to get the SshKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-			common.CBLog.Info(err)
-			if !onDemand {
-				return &TbMcisInfo{}, err
-			}
-			err2 := mcir.LoadDefaultResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
-			if err2 != nil {
-				common.CBLog.Error(err2)
-				err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
-				return &TbMcisInfo{}, err2
-			}
-		}
-		securityGroup := resourceName
-		vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
-		tempInterface, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
-		if err != nil {
-			err := fmt.Errorf("Failed to get the SecurityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-			common.CBLog.Info(err)
-			if !onDemand {
-				return &TbMcisInfo{}, err
-			}
-			err2 := mcir.LoadDefaultResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
-			if err2 != nil {
-				common.CBLog.Error(err2)
-				err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
-				return &TbMcisInfo{}, err2
-			}
-		}
-
-		vmReq.Name = k.Name
-		if vmReq.Name == "" {
-			vmReq.Name = common.GenUid()
-		}
-		vmReq.Label = k.Label
-		vmReq.SubGroupSize = k.SubGroupSize
-		vmReq.Description = k.Description
-		vmReq.RootDiskType = k.RootDiskType
-		vmReq.RootDiskSize = k.RootDiskSize
-
-		mcisReq.Vm = append(mcisReq.Vm, vmReq)
-
+		mcisReq.Vm = append(mcisReq.Vm, *vmReq)
 	}
 
 	common.PrintJsonPretty(mcisReq)
@@ -1328,6 +1221,152 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	// Run create MCIS with the generated MCIS request (option != register)
 	option := "create"
 	return CreateMcis(nsId, &mcisReq, option)
+}
+
+// CreateMcisVmDynamic is func to create requested VM in a dynamic way and add it to MCIS
+func CreateMcisVmDynamic(nsId string, mcisId string, req *TbVmDynamicReq) (*TbMcisInfo, error) {
+
+	emptyMcis := &TbMcisInfo{}
+	subGroupId := req.Name
+	check, err := CheckSubGroup(nsId, mcisId, subGroupId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyMcis, err
+	}
+	if check {
+		err := fmt.Errorf("The name for SubGroup (prefix of VM Id) " + req.Name + " already exists.")
+		return emptyMcis, err
+	}
+
+	vmReq, err := getVmReqFromDynamicReq(nsId, req)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyMcis, err
+	}
+
+	return CreateMcisGroupVm(nsId, mcisId, vmReq, true)
+}
+
+// getVmReqForDynamicMcis is func to getVmReqFromDynamicReq
+func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) {
+
+	onDemand := true
+
+	vmRequest := req
+	// Check whether VM names meet requirement.
+	k := vmRequest
+
+	vmReq := &TbVmReq{}
+	tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k.CommonSpec)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the spec " + k.CommonSpec)
+		common.CBLog.Error(err)
+		return &TbVmReq{}, err
+	}
+	specInfo := mcir.TbSpecInfo{}
+	err = common.CopySrcToDest(&tempInterface, &specInfo)
+	if err != nil {
+		err := fmt.Errorf("Failed to CopySrcToDest() " + k.CommonSpec)
+		common.CBLog.Error(err)
+		return &TbVmReq{}, err
+	}
+
+	// remake vmReqest from given input and check resource availability
+	vmReq.ConnectionName = specInfo.ConnectionName
+
+	// If ConnectionName is specified by the request, Use ConnectionName from the request
+	if k.ConnectionName != "" {
+		vmReq.ConnectionName = k.ConnectionName
+	}
+	// validate the region for spec
+	_, err = common.GetConnConfig(specInfo.RegionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get RegionName (" + specInfo.RegionName + ") for Spec (" + k.CommonSpec + ") is not found.")
+		common.CBLog.Error(err)
+		return &TbVmReq{}, err
+	}
+	// validate the GetConnConfig for spec
+	_, err = common.GetConnConfig(vmReq.ConnectionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
+		common.CBLog.Error(err)
+		return &TbVmReq{}, err
+	}
+
+	// Default resource name has this pattern (nsId + "-systemdefault-" + vmReq.ConnectionName)
+	resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
+
+	vmReq.SpecId = specInfo.Id
+	vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
+	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
+		common.CBLog.Error(err)
+		return &TbVmReq{}, err
+	}
+
+	vmReq.VNetId = resourceName
+	tempInterface, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
+		common.CBLog.Info(err)
+		if !onDemand {
+			return &TbVmReq{}, err
+		}
+		err2 := mcir.LoadDefaultResource(nsId, common.StrVNet, vmReq.ConnectionName)
+		if err2 != nil {
+			common.CBLog.Error(err2)
+			err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+			return &TbVmReq{}, err2
+		}
+	}
+	vmReq.SubnetId = resourceName
+
+	vmReq.SshKeyId = resourceName
+	tempInterface, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the SshKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
+		common.CBLog.Info(err)
+		if !onDemand {
+			return &TbVmReq{}, err
+		}
+		err2 := mcir.LoadDefaultResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
+		if err2 != nil {
+			common.CBLog.Error(err2)
+			err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+			return &TbVmReq{}, err2
+		}
+	}
+	securityGroup := resourceName
+	vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
+	tempInterface, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the SecurityGroup " + securityGroup + " from " + vmReq.ConnectionName)
+		common.CBLog.Info(err)
+		if !onDemand {
+			return &TbVmReq{}, err
+		}
+		err2 := mcir.LoadDefaultResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
+		if err2 != nil {
+			common.CBLog.Error(err2)
+			err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+			return &TbVmReq{}, err2
+		}
+	}
+
+	vmReq.Name = k.Name
+	if vmReq.Name == "" {
+		vmReq.Name = common.GenUid()
+	}
+	vmReq.Label = k.Label
+	vmReq.SubGroupSize = k.SubGroupSize
+	vmReq.Description = k.Description
+	vmReq.RootDiskType = k.RootDiskType
+	vmReq.RootDiskSize = k.RootDiskSize
+
+	common.PrintJsonPretty(vmReq)
+
+	return vmReq, nil
 }
 
 // AddVmToMcis is func to add VM to MCIS
