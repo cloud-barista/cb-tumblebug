@@ -45,8 +45,8 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 		return err
 	}
 
-	mcisTmpSystemLabel := mcis.DefaultSystemLabel
-	content, err := mcis.InstallMonitorAgentToMcis(nsId, mcisId, mcisTmpSystemLabel, req)
+	// mcisTmpSystemLabel := mcis.DefaultSystemLabel
+	content, err := mcis.InstallMonitorAgentToMcis(nsId, mcisId, common.StrVM, req)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
