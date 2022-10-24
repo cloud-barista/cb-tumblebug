@@ -1839,6 +1839,8 @@ definitions:
         type: array
       listener:
         $ref: '#/definitions/mcis.TbNLBListenerInfo'
+      location:
+        $ref: '#/definitions/common.GeoLocation'
       name:
         type: string
       scope:
@@ -4932,7 +4934,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register existing Custom Image in a CSP (option==register)
+      description: Register existing Custom Image in a CSP (option=register)
       parameters:
       - default: ns01
         description: Namespace ID

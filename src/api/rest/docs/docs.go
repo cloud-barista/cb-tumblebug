@@ -3772,7 +3772,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Register existing Custom Image in a CSP (option==register)",
+                "description": "Register existing Custom Image in a CSP (option=register)",
                 "consumes": [
                     "application/json"
                 ],
@@ -9436,6 +9436,9 @@ const docTemplate = `{
                 },
                 "listener": {
                     "$ref": "#/definitions/mcis.TbNLBListenerInfo"
+                },
+                "location": {
+                    "$ref": "#/definitions/common.GeoLocation"
                 },
                 "name": {
                     "type": "string"

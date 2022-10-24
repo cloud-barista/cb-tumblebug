@@ -4,7 +4,7 @@ function CallSpider() {
     echo "- Get dataDisk in ${MCIRRegionName}"
 
     resp=$(
-        curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/disk/${NSID}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d @- <<EOF
+        curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/disk/${NSID}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} -H 'Content-Type: application/json' -d @- <<EOF
         { 
 			"ConnectionName": "${CONN_CONFIG[$INDEX,$REGION]}"
 		}
