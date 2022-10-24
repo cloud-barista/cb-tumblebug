@@ -25,7 +25,7 @@ import (
 
 // RestPostCustomImage godoc
 // @Summary Register existing Custom Image in a CSP
-// @Description Register existing Custom Image in a CSP (option==register)
+// @Description Register existing Custom Image in a CSP (option=register)
 // @Tags [Infra resource] Snapshot and Custom Image Management
 // @Accept  json
 // @Produce  json

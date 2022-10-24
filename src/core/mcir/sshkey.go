@@ -103,13 +103,14 @@ type TbSshKeyInfo struct {
 // CreateSshKey accepts SSH key creation request, creates and returns an TB sshKey object
 func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, error) {
 
+	emptyObj := TbSshKeyInfo{}
+
 	resourceType := common.StrSSHKey
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbSshKeyInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return emptyObj, err
 	}
 
 	if option == "register" { // fields validation
@@ -119,12 +120,11 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 
 		for _, err := range errs {
 			if err != nil {
-				temp := TbSshKeyInfo{}
 				if _, ok := err.(*validator.InvalidValidationError); ok {
 					fmt.Println(err)
-					return temp, err
+					return emptyObj, err
 				}
-				return temp, err
+				return emptyObj, err
 			}
 		}
 	}
@@ -133,26 +133,22 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			fmt.Println(err)
-			temp := TbSshKeyInfo{}
-			return temp, err
+			return emptyObj, err
 		}
 
-		temp := TbSshKeyInfo{}
-		return temp, err
+		return emptyObj, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
-		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey %s already exists.", u.Name)
-		return temp, err
+		return emptyObj, err
 	}
 
 	if err != nil {
-		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("Failed to check the existence of the sshKey %s.", u.Name)
-		return temp, err
+		return emptyObj, err
 	}
 
 	tempReq := SpiderKeyPairReqInfoWrapper{}
@@ -190,9 +186,8 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 
 		if err != nil {
 			common.CBLog.Error(err)
-			content := TbSshKeyInfo{}
 			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
+			return emptyObj, err
 		}
 
 		fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
@@ -201,8 +196,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 			err := fmt.Errorf(string(resp.Body()))
 			fmt.Println("body: ", string(resp.Body()))
 			common.CBLog.Error(err)
-			content := TbSshKeyInfo{}
-			return content, err
+			return emptyObj, err
 		}
 
 		tempSpiderKeyPairInfo = resp.Result().(*SpiderKeyPairInfo)
@@ -214,12 +208,12 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
 		if err != nil {
 			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbSshKeyInfo{}, err
+			return emptyObj, err
 		}
 		err = ccm.Open()
 		if err != nil {
 			common.CBLog.Error("ccm api open failed : ", err)
-			return TbSshKeyInfo{}, err
+			return emptyObj, err
 		}
 		defer ccm.Close()
 
@@ -228,14 +222,14 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 		result, err := ccm.CreateKey(string(payload))
 		if err != nil {
 			common.CBLog.Error(err)
-			return TbSshKeyInfo{}, err
+			return emptyObj, err
 		}
 
 		tempSpiderKeyPairInfo = &SpiderKeyPairInfo{}
 		err = json.Unmarshal([]byte(result), &tempSpiderKeyPairInfo)
 		if err != nil {
 			common.CBLog.Error(err)
-			return TbSshKeyInfo{}, err
+			return emptyObj, err
 		}
 
 	}
@@ -285,48 +279,45 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 // UpdateSshKey accepts to-be TB sshKey objects,
 // updates and returns the updated TB sshKey objects
 func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (TbSshKeyInfo, error) {
+
+	emptyObj := TbSshKeyInfo{}
+
 	resourceType := common.StrSSHKey
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbSshKeyInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return emptyObj, err
 	}
 
 	if len(fieldsToUpdate.Id) > 0 {
-		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
 		common.CBLog.Error(err)
-		return temp, err
+		return emptyObj, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, sshKeyId)
 
 	if err != nil {
-		temp := TbSshKeyInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return emptyObj, err
 	}
 
 	if !check {
-		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("The sshKey %s does not exist.", sshKeyId)
-		return temp, err
+		return emptyObj, err
 	}
 
 	tempInterface, err := GetResource(nsId, resourceType, sshKeyId)
 	if err != nil {
-		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("Failed to get the sshKey %s.", sshKeyId)
-		return temp, err
+		return emptyObj, err
 	}
 	asIsSshKey := TbSshKeyInfo{}
 	err = common.CopySrcToDest(&tempInterface, &asIsSshKey)
 	if err != nil {
-		temp := TbSshKeyInfo{}
 		err := fmt.Errorf("Failed to CopySrcToDest() %s.", sshKeyId)
-		return temp, err
+		return emptyObj, err
 	}
 
 	// Update specified fields only
@@ -340,9 +331,8 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (Tb
 	Val, _ := json.Marshal(toBeSshKey)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		temp := TbSshKeyInfo{}
 		common.CBLog.Error(err)
-		return temp, err
+		return emptyObj, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
@@ -354,13 +344,6 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (Tb
 
 	fmt.Printf("<%s> \n %s \n", keyValue.Key, keyValue.Value)
 	fmt.Println("===========================")
-
-	_, err = common.ORM.Update(&toBeSshKey, &TbSshKeyInfo{Id: sshKeyId})
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("SQL data updated successfully..")
-	}
 
 	return toBeSshKey, nil
 }
