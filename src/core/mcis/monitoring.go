@@ -192,7 +192,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	UpdateVmInfo(nsID, mcisID, vmInfoTmp)
 
 	if mcisServiceType == "" {
-		mcisServiceType = "default"
+		mcisServiceType = common.StrVM
 	}
 
 	url := common.DragonflyRestUrl + cmd
