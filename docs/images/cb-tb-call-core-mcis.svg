@@ -3930,33 +3930,33 @@
 <path fill="none" stroke="#8b4513" d="M808.0672,-11415.795C877.3613,-11418.2017 992.2083,-11422.1904 1053.8826,-11424.3324"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="1053.918,-11427.8356 1064.0335,-11424.6849 1054.161,-11420.8398 1053.918,-11427.8356"/>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis -->
 <g id="node74" class="node">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis</title>
 <ellipse fill="#add8e6" stroke="#000000" stroke-width="1.5" cx="750.6244" cy="-11507.8" rx="57.0441" ry="18"/>
-<text text-anchor="middle" x="750.6244" y="-11503.6" font-family="Verdana" font-size="14.00" fill="#000000">CoreDelAllMcis</text>
+<text text-anchor="middle" x="750.6244" y="-11503.6" font-family="Verdana" font-size="14.00" fill="#000000">DelAllMcis</text>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.ListMcisId -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.ListMcisId -->
 <g id="edge464" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.ListMcisId</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.ListMcisId</title>
 <path fill="none" stroke="#000000" d="M807.8977,-11508.7766C1043.0872,-11511.4466 1930.243,-11507.951 2099.9709,-11307.8 2156.9775,-11240.5751 2077.1845,-10978.4742 2135.9709,-10912.8 2161.3318,-10884.4676 2204.9743,-10877.9739 2238.9721,-10877.8389"/>
 <polygon fill="#000000" stroke="#000000" points="2239.1339,-10881.3414 2249.1826,-10877.984 2239.2334,-10874.3421 2239.1339,-10881.3414"/>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.CheckString -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.CheckString -->
 <g id="edge462" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.CheckString</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.CheckString</title>
 <path fill="none" stroke="#8b4513" d="M755.2081,-11525.7566C776.0742,-11606.5237 865.8373,-11943.6626 976.1056,-12206.8 1148.973,-12619.3198 1153.8172,-12847.033 1565.1099,-13022.8 1769.303,-13110.0624 1857.2393,-13148.3707 2062.9709,-13064.8 2152.5757,-13028.4014 2067.834,-12928.4385 2135.9709,-12859.8 2233.3144,-12761.7398 2330.8105,-12878.0448 2439.5528,-12792.8 2513.6501,-12734.714 2501.1583,-12522.4957 2512.5528,-12479.8 2539.4272,-12379.1003 2589.0773,-12265.9798 2614.2726,-12211.5404"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="2617.4876,-12212.9273 2618.5362,-12202.3845 2611.1419,-12209.9723 2617.4876,-12212.9273"/>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelMcis -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelMcis -->
 <g id="edge465" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelMcis</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelMcis</title>
 <path fill="none" stroke="#000000" d="M796.5062,-11496.911C864.9852,-11480.6592 992.7396,-11450.3397 1057.0407,-11435.0793"/>
 <polygon fill="#000000" stroke="#000000" points="1057.8755,-11438.4785 1066.7971,-11432.7639 1056.2591,-11431.6677 1057.8755,-11438.4785"/>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;(*github.com/sirupsen/logrus.Logger).Error -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;(*github.com/sirupsen/logrus.Logger).Error -->
 <g id="edge463" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis&#45;&gt;(*github.com/sirupsen/logrus.Logger).Error</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis&#45;&gt;(*github.com/sirupsen/logrus.Logger).Error</title>
 <path fill="none" stroke="#8b4513" d="M805.4844,-11502.2021C839.585,-11495.5881 881.0087,-11481.1776 903.1056,-11449.8 962.1025,-11366.0245 907.2668,-7837.696 976.1056,-7761.8 995.5709,-7740.3392 1465.5932,-7706.2506 1494.0494,-7700.8 1526.1576,-7694.6499 1533.3912,-7689.7172 1565.1099,-7681.8 1664.3365,-7657.0325 1711.6726,-7696.4216 1789.2672,-7629.8 1791.2868,-7628.066 1858.1921,-7453.3892 1860.3276,-7451.8 1896.5956,-7424.8093 2029.8589,-7464.5809 2062.9709,-7433.8 2099.9098,-7399.4615 2097.5476,-7018.4691 2135.9709,-6985.8 2161.669,-6963.9503 2412.1345,-6966.1522 2439.5528,-6985.8 2509.2708,-7035.7594 2457.3738,-7299.1355 2512.5528,-7364.8 2531.3446,-7387.1627 2563.5487,-7396.1901 2589.4581,-7399.7489"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="2589.0618,-7403.2263 2599.3971,-7400.8955 2589.8641,-7396.2725 2589.0618,-7403.2263"/>
 </g>
@@ -3967,9 +3967,9 @@
 <text text-anchor="middle" x="407.3132" y="-12300" font-family="Verdana" font-size="14.00" fill="#000000">mcis</text>
 <text text-anchor="middle" x="407.3132" y="-12283.2" font-family="Verdana" font-size="14.00" fill="#000000">RestDelAllMcis</text>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis -->
 <g id="edge466" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestDelAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis</title>
 <path fill="none" stroke="#8b4513" d="M425.5406,-12272.8185C450.2944,-12241.4667 495.7441,-12183.398 533.1432,-12132.8 546.41,-12114.8511 552.1564,-12111.7609 562.1432,-12091.8 663.1612,-11889.8935 726.0887,-11622.0877 744.7674,-11535.8326"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="748.2003,-11536.5166 746.8733,-11526.0052 741.3556,-11535.0498 748.2003,-11536.5166"/>
 </g>
@@ -6516,9 +6516,9 @@
 <text text-anchor="middle" x="407.3132" y="-11355" font-family="Verdana" font-size="14.00" fill="#000000">mcis</text>
 <text text-anchor="middle" x="407.3132" y="-11338.2" font-family="Verdana" font-size="14.00" fill="#000000">DeleteAllMcis</text>
 </g>
-<!-- (*github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/grpc/server/mcis.MCISService).DeleteAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis -->
+<!-- (*github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/grpc/server/mcis.MCISService).DeleteAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis -->
 <g id="edge738" class="edge">
-<title>(*github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/grpc/server/mcis.MCISService).DeleteAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CoreDelAllMcis</title>
+<title>(*github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/grpc/server/mcis.MCISService).DeleteAllMcis&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.DelAllMcis</title>
 <path fill="none" stroke="#8b4513" d="M466.3538,-11360.2204C488.6362,-11365.7383 513.3593,-11374.375 533.1432,-11387.8 571.9141,-11414.1092 558.7529,-11445.4275 598.1432,-11470.8 623.9551,-11487.4262 656.5957,-11496.5844 685.0486,-11501.6276"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="684.4856,-11505.082 694.92,-11503.2454 685.6177,-11498.1741 684.4856,-11505.082"/>
 </g>
