@@ -315,7 +315,7 @@ func OrchestrationController() {
 
 						// ScaleOut MCIS according to the VM requirement.
 						fmt.Println("[Generating VM]")
-						result, vmCreateErr := CorePostMcisVm(nsId, mcisPolicyTmp.Id, &autoAction.Vm)
+						result, vmCreateErr := CreateMcisVm(nsId, mcisPolicyTmp.Id, &autoAction.Vm)
 						if vmCreateErr != nil {
 							mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 							UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
