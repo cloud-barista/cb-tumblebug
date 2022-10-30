@@ -306,7 +306,7 @@ func OrchestrationController() {
 								mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 							}
-							autoAction.Vm.Name = autoAction.Vm.Name + "-Random"
+							autoAction.Vm.Name = autoAction.Vm.Name + "-random"
 							autoAction.Vm.Label = labelAutoGen
 						}
 
