@@ -32,7 +32,7 @@ for rowi in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 		KEYFILENAME="${VMKEYID}"
 
 
-		VAR1=$(scp -i ./sshkey-tmp/$KEYFILENAME.pem ${SOURCEPATH} $USERNAME@$publicIP:${DESTPATH})
+		VAR1=$(scp -o StrictHostKeyChecking=no -i ./sshkey-tmp/$KEYFILENAME.pem ${SOURCEPATH} $USERNAME@$publicIP:${DESTPATH})
 		echo "${VAR1}" 
 
 	} &
