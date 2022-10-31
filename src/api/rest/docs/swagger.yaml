@@ -319,13 +319,6 @@ definitions:
           $ref: '#/definitions/mcir.TbVNetInfo'
         type: array
     type: object
-  mcir.RestGetAvailableDataDisksResponse:
-    properties:
-      dataDisk:
-        items:
-          type: string
-        type: array
-    type: object
   mcir.RestLookupImageRequest:
     properties:
       connectionName:
@@ -4289,9 +4282,16 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Different return structures by the given option param
           schema:
-            $ref: '#/definitions/mcir.RestGetAvailableDataDisksResponse'
+            allOf:
+            - $ref: '#/definitions/mcir.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcir.RestGetAllDataDiskResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
         "404":
           description: Not Found
           schema:
