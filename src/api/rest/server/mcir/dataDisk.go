@@ -163,10 +163,6 @@ func RestDelAllDataDisk(c echo.Context) error {
 	return nil
 }
 
-type RestGetAvailableDataDisksResponse struct {
-	DataDisk []string `json:"dataDisk"`
-}
-
 // RestPutVmDataDisk godoc
 // @Summary Attach/Detach available dataDisk
 // @Description Attach/Detach available dataDisk
@@ -225,7 +221,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmId path string true "VM ID" default(g1-1)
-// @Success 200 {object} RestGetAvailableDataDisksResponse
+// @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllDataDiskResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [get]
@@ -234,17 +230,24 @@ func RestGetVmDataDisk(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
+	optionFlag := c.QueryParam("option")
 
-	dataDiskIDs, err := mcis.GetAvailableDataDiskIDs(nsId, mcisId, vmId)
+	result, err := mcis.GetAvailableDataDisks(nsId, mcisId, vmId, optionFlag)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)
 	}
 
-	content := RestGetAvailableDataDisksResponse{
-		DataDisk: dataDiskIDs,
+	var content interface{}
+	if optionFlag == "id" {
+		content = common.IdList{
+			IdList: result.([]string),
+		}
+	} else {
+		content = RestGetAllDataDiskResponse{
+			DataDisk: result.([]mcir.TbDataDiskInfo),
+		}
 	}
 
 	return c.JSON(http.StatusOK, &content)
-
 }

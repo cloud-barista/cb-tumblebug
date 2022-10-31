@@ -2869,9 +2869,24 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Different return structures by the given option param",
                         "schema": {
-                            "$ref": "#/definitions/mcir.RestGetAvailableDataDisksResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcir.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcir.RestGetAllDataDiskResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -7255,17 +7270,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcir.TbVNetInfo"
-                    }
-                }
-            }
-        },
-        "mcir.RestGetAvailableDataDisksResponse": {
-            "type": "object",
-            "properties": {
-                "dataDisk": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
                     }
                 }
             }

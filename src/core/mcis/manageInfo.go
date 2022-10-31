@@ -1727,7 +1727,7 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	return vm, nil
 }
 
-func GetAvailableDataDiskIDs(nsId string, mcisId string, vmId string) ([]string, error) {
+func GetAvailableDataDisks(nsId string, mcisId string, vmId string, option string) (interface{}, error) {
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
 
 	// Check existence of the key. If no key, no update.
@@ -1758,23 +1758,27 @@ func GetAvailableDataDiskIDs(nsId string, mcisId string, vmId string) ([]string,
 	tbDataDisks := []mcir.TbDataDiskInfo{}
 	json.Unmarshal(jsonString, &tbDataDisks)
 
-	idList := []string{}
+	if option != "id" {
+		return tbDataDisks, nil
+	} else { // option == "id"
+		idList := []string{}
 
-	for _, v := range tbDataDisks {
-		// Update Tb dataDisk object's status
-		newObj, err := mcir.GetResource(nsId, common.StrDataDisk, v.Id)
-		if err != nil {
-			common.CBLog.Error(err)
-			return nil, err
-		}
-		tempObj := newObj.(mcir.TbDataDiskInfo)
+		for _, v := range tbDataDisks {
+			// Update Tb dataDisk object's status
+			newObj, err := mcir.GetResource(nsId, common.StrDataDisk, v.Id)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
+			tempObj := newObj.(mcir.TbDataDiskInfo)
 
-		if v.ConnectionName == vm.ConnectionName && tempObj.Status == "Available" {
-			idList = append(idList, v.Id)
+			if v.ConnectionName == vm.ConnectionName && tempObj.Status == "Available" {
+				idList = append(idList, v.Id)
+			}
 		}
+
+		return idList, nil
 	}
-
-	return idList, nil
 }
 
 // [Delete MCIS and VM object]
