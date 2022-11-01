@@ -44,6 +44,18 @@ EOF
                  {
                      "Key" : "${CredentialKey05[$INDEX]:-NULL}",
                      "Value" : "${CredentialVal05[$INDEX]:-NULL}"
+                 },
+                 {
+                     "Key" : "${CredentialKey06[$INDEX]:-NULL}",
+                     "Value" : "${CredentialVal06[$INDEX]:-NULL}"
+                 },
+                 {
+                     "Key" : "${CredentialKey07[$INDEX]:-NULL}",
+                     "Value" : "${CredentialVal07[$INDEX]:-NULL}"
+                 },
+                 {
+                     "Key" : "${CredentialKey08[$INDEX]:-NULL}",
+                     "Value" : "${CredentialVal08[$INDEX]:-NULL}"
                  }
              ]
          }
