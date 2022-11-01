@@ -511,8 +511,8 @@ type TbVmRecommendInfo struct {
 
 // MCIS and VM Provisioning
 
-// CorePostMcisVm is func to post (create) McisVm
-func CorePostMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
+// CreateMcisVm is func to post (create) McisVm
+func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
