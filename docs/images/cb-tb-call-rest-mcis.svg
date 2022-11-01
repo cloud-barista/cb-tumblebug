@@ -1090,16 +1090,16 @@
 <path fill="none" stroke="#8b4513" d="M453.988,-5154.1291C478.6631,-5122.288 530.2661,-5052.4703 561.8951,-4986.8 607.3311,-4892.4627 557.5355,-4833.3651 634.8951,-4762.8 647.9135,-4750.9251 664.8899,-4743.7436 682.0636,-4739.4801"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="683.1358,-4742.8291 692.1695,-4737.2935 681.6555,-4735.9875 683.1358,-4742.8291"/>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CorePostMcisVm -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateMcisVm -->
 <g id="node19" class="node">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CorePostMcisVm</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateMcisVm</title>
 <ellipse fill="#ffe4b5" stroke="#000000" stroke-width="1.5" cx="758.2312" cy="-5711.8" rx="76.6894" ry="23.52"/>
 <text text-anchor="middle" x="758.2312" y="-5716" font-family="Verdana" font-size="14.00" fill="#000000">mcis</text>
-<text text-anchor="middle" x="758.2312" y="-5699.2" font-family="Verdana" font-size="14.00" fill="#000000">CorePostMcisVm</text>
+<text text-anchor="middle" x="758.2312" y="-5699.2" font-family="Verdana" font-size="14.00" fill="#000000">CreateMcisVm</text>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestPostMcisVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CorePostMcisVm -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestPostMcisVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateMcisVm -->
 <g id="edge110" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestPostMcisVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CorePostMcisVm</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/api/rest/server/mcis.RestPostMcisVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateMcisVm</title>
 <path fill="none" stroke="#8b4513" d="M452.3477,-5189.4645C476.6359,-5224.9179 530.9088,-5307.9392 561.8951,-5384.8 611.591,-5508.0692 543.0448,-5578.7349 634.8951,-5674.8 646.2177,-5686.6421 661.1658,-5694.7362 676.7356,-5700.2578"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="675.8926,-5703.6628 686.4835,-5703.3739 678.0241,-5696.9952 675.8926,-5703.6628"/>
 </g>
