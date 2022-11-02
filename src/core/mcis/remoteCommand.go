@@ -150,7 +150,7 @@ func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmd
 }
 
 // RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
-func RemoteCommandToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
+func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -221,6 +221,18 @@ func RemoteCommandToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdR
 	if err != nil {
 		common.CBLog.Error(err)
 		return nil, err
+	}
+	if subGroupId != "" {
+		vmListInGroup, err := ListMcisGroupVms(nsId, mcisId, subGroupId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
+		if vmListInGroup == nil {
+			err := fmt.Errorf("No VM in " + subGroupId)
+			return nil, err
+		}
+		vmList = vmListInGroup
 	}
 
 	//goroutine sync wg
