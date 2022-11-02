@@ -61,10 +61,10 @@ const (
 
 // AutoCondition is struct for MCIS auto-control condition.
 type AutoCondition struct {
-	Metric           string   `json:"metric"`
-	Operator         string   `json:"operator"`         // <, <=, >, >=, ...
-	Operand          string   `json:"operand"`          // 10, 70, 80, 98, ...
-	EvaluationPeriod string   `json:"evaluationPeriod"` // evaluationPeriod
+	Metric           string   `json:"metric" example:"cpu"`
+	Operator         string   `json:"operator" example:">=" enums:"<,<=,>,>="` // <, <=, >, >=, ...
+	Operand          string   `json:"operand" example:"80"`                    // 10, 70, 80, 98, ...
+	EvaluationPeriod string   `json:"evaluationPeriod" example:"10"`           // evaluationPeriod
 	EvaluationValue  []string `json:"evaluationValue"`
 	//InitTime	   string 	  `json:"initTime"`  // to check start of duration
 	//Duration	   string 	  `json:"duration"`  // duration for checking
@@ -72,10 +72,10 @@ type AutoCondition struct {
 
 // AutoAction is struct for MCIS auto-control action.
 type AutoAction struct {
-	ActionType    string     `json:"actionType"`
-	Vm            TbVmInfo   `json:"vm"`
-	PostCommand   McisCmdReq `json:"postCommand"`
-	PlacementAlgo string     `json:"placementAlgo"`
+	ActionType    string         `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
+	VmDynamicReq  TbVmDynamicReq `json:"vmDynamicReq"`
+	PostCommand   McisCmdReq     `json:"postCommand"` //example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
+	PlacementAlgo string         `json:"placementAlgo" example:"random"`
 }
 
 // Policy is struct for MCIS auto-control Policy request that includes AutoCondition, AutoAction, Status.
@@ -92,7 +92,13 @@ type McisPolicyInfo struct {
 	Policy []Policy `json:"policy"`
 
 	ActionLog   string `json:"actionLog"`
-	Description string `json:"description"`
+	Description string `json:"description" example:"Description"`
+}
+
+// McisPolicyReq is struct for MCIS auto-control Policy Request.
+type McisPolicyReq struct {
+	Policy      []Policy `json:"policy"`
+	Description string   `json:"description" example:"Description"`
 }
 
 // OrchestrationController is responsible for executing MCIS automation policy.
@@ -293,39 +299,57 @@ func OrchestrationController() {
 					switch {
 					case autoAction.ActionType == AutoActionScaleOut:
 
-						autoAction.Vm.Label = labelAutoGen
+						autoAction.VmDynamicReq.Label = labelAutoGen
 						// append UUID to given vm name to avoid duplicated vm ID.
-						autoAction.Vm.Name = autoAction.Vm.Name + "-" + common.GenUid()
+						autoAction.VmDynamicReq.Name = common.ToLower(autoAction.VmDynamicReq.Name) + "-" + common.GenUid()
 						//vmReqTmp := autoAction.Vm
+						// autoAction.VmDynamicReq.SubGroupSize = "1"
 
 						if autoAction.PlacementAlgo == "random" {
 							fmt.Println("[autoAction.PlacementAlgo] " + autoAction.PlacementAlgo)
-							var vmTmpErr error
-							autoAction.Vm, vmTmpErr = GetVmTemplate(nsId, mcisPolicyTmp.Id, autoAction.PlacementAlgo)
-							if vmTmpErr != nil {
+							// var vmTmpErr error
+							// existingVm, vmTmpErr := GetVmTemplate(nsId, mcisPolicyTmp.Id, autoAction.PlacementAlgo)
+							// if vmTmpErr != nil {
+							// 	mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
+							// 	UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
+							// }
+
+							autoAction.VmDynamicReq.CommonImage = "ubuntu18.04"                // temporal default value. will be changed
+							autoAction.VmDynamicReq.CommonSpec = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
+
+							deploymentPlan := DeploymentPlan{}
+
+							deploymentPlan.Priority.Policy = append(deploymentPlan.Priority.Policy, PriorityCondition{Metric: "random"})
+							specList, err := RecommendVm(common.SystemCommonNs, deploymentPlan)
+							if err != nil {
 								mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 							}
-							autoAction.Vm.Name = autoAction.Vm.Name + "-random"
-							autoAction.Vm.Label = labelAutoGen
+							if len(specList) != 0 {
+								recommendedSpec := specList[0].Id
+								autoAction.VmDynamicReq.CommonSpec = recommendedSpec
+							}
+
+							// autoAction.VmDynamicReq.Name = autoAction.VmDynamicReq.Name + "-random"
+							// autoAction.VmDynamicReq.Label = labelAutoGen
 						}
 
-						common.PrintJsonPretty(autoAction.Vm)
+						common.PrintJsonPretty(autoAction.VmDynamicReq)
 						fmt.Println("[Action] " + autoAction.ActionType)
 
 						// ScaleOut MCIS according to the VM requirement.
 						fmt.Println("[Generating VM]")
-						result, vmCreateErr := CreateMcisVm(nsId, mcisPolicyTmp.Id, &autoAction.Vm)
+						result, vmCreateErr := CreateMcisVmDynamic(nsId, mcisPolicyTmp.Id, &autoAction.VmDynamicReq)
 						if vmCreateErr != nil {
 							mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 							UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
 						}
-						common.PrintJsonPretty(*result)
+						common.PrintJsonPretty(result)
 
 						nullMcisCmdReq := McisCmdReq{}
 						if autoAction.PostCommand != nullMcisCmdReq {
 							fmt.Println("[Post Command to VM] " + autoAction.PostCommand.Command)
-							_, cmdErr := RemoteCommandToMcisVm(nsId, mcisPolicyTmp.Id, autoAction.Vm.Name, &autoAction.PostCommand)
+							_, cmdErr := RemoteCommandToMcis(nsId, mcisPolicyTmp.Id, common.ToLower(autoAction.VmDynamicReq.Name), &autoAction.PostCommand)
 							if cmdErr != nil {
 								mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 								UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
@@ -407,7 +431,7 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 }
 
 // CreateMcisPolicy create McisPolicyInfo object in DB according to user's requirements.
-func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicyInfo, error) {
+func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyReq) (McisPolicyInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -424,13 +448,11 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 	}
 	check, _ := CheckMcisPolicy(nsId, mcisId)
 
-	u.Name = mcisId
-	u.Id = mcisId
 	//u.Status = AutoStatusReady
 
 	if check {
 		temp := McisPolicyInfo{}
-		err := fmt.Errorf("The MCIS Policy Obj " + u.Name + " already exists.")
+		err := fmt.Errorf("The MCIS Policy Obj " + mcisId + " already exists.")
 		return temp, err
 	}
 
@@ -438,17 +460,21 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 		u.Policy[policyIndex].Status = AutoStatusReady
 	}
 
-	content := *u
+	req := *u
+	obj := McisPolicyInfo{}
+	obj.Name = mcisId
+	obj.Id = mcisId
+	obj.Policy = req.Policy
+	obj.Description = req.Description
 
 	// cb-store
-	fmt.Println("=========================== PUT CreateMcisPolicy")
-	Key := common.GenMcisPolicyKey(nsId, content.Id, "")
-	Val, _ := json.Marshal(content)
+	Key := common.GenMcisPolicyKey(nsId, obj.Id, "")
+	Val, _ := json.Marshal(obj)
 
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		common.CBLog.Error(err)
-		return content, err
+		return obj, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
@@ -459,9 +485,8 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyInfo) (McisPolicy
 	}
 
 	fmt.Println("<KEY>\n" + keyValue.Key + "\n<VAL>\n" + keyValue.Value)
-	fmt.Println("===========================")
 
-	return content, nil
+	return obj, nil
 }
 
 // GetMcisPolicyObject returns McisPolicyInfo object.
