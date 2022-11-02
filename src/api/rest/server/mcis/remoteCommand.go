@@ -81,6 +81,7 @@ type RestPostCmdMcisResponseWrapper struct {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
+// @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default("")
 // @Success 200 {object} RestPostCmdMcisResponseWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -89,13 +90,14 @@ func RestPostCmdMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
+	subGroupId := c.QueryParam("subGroupId")
 
 	req := &mcis.McisCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	resultArray, err := mcis.RemoteCommandToMcis(nsId, mcisId, req)
+	resultArray, err := mcis.RemoteCommandToMcis(nsId, mcisId, subGroupId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)

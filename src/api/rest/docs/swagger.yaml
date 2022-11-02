@@ -1001,30 +1001,46 @@ definitions:
   mcis.AutoAction:
     properties:
       actionType:
+        enum:
+        - ScaleOut
+        - ScaleIn
+        example: ScaleOut
         type: string
       placementAlgo:
+        example: random
         type: string
       postCommand:
         $ref: '#/definitions/mcis.McisCmdReq'
-      vm:
-        $ref: '#/definitions/mcis.TbVmInfo'
+        description: example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
+          -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
+      vmDynamicReq:
+        $ref: '#/definitions/mcis.TbVmDynamicReq'
     type: object
   mcis.AutoCondition:
     properties:
       evaluationPeriod:
         description: evaluationPeriod
+        example: "10"
         type: string
       evaluationValue:
         items:
           type: string
         type: array
       metric:
+        example: cpu
         type: string
       operand:
         description: 10, 70, 80, 98, ...
+        example: "80"
         type: string
       operator:
         description: <, <=, >, >=, ...
+        enum:
+        - <
+        - <=
+        - '>'
+        - '>='
+        example: '>='
         type: string
     type: object
   mcis.BenchmarkInfo:
@@ -1203,6 +1219,17 @@ definitions:
       actionLog:
         type: string
       description:
+        example: Description
+        type: string
+      policy:
+        items:
+          $ref: '#/definitions/mcis.Policy'
+        type: array
+    type: object
+  mcis.McisPolicyReq:
+    properties:
+      description:
+        example: Description
         type: string
       policy:
         items:
@@ -1379,6 +1406,8 @@ definitions:
         enum:
         - location
         - cost
+        - random
+        - performance
         - latency
         example: location
         type: string
@@ -1698,6 +1727,12 @@ definitions:
         type: string
       name:
         type: string
+      newVmList:
+        description: List of IDs for new VMs. Return IDs if the VMs are newly added.
+          This field should be used for return body only.
+        items:
+          type: string
+        type: array
       placementAlgo:
         type: string
       status:
@@ -1708,6 +1743,10 @@ definitions:
         description: SystemLabel is for describing the mcis in a keyword (any string
           can be used) for special System purpose
         example: Managed by CB-Tumblebug
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
         type: string
       targetAction:
         type: string
@@ -3122,6 +3161,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcis.McisCmdReq'
+      - default: '""'
+        description: subGroupId to apply the command only for VMs in subGroup of MCIS
+        in: query
+        name: subGroupId
+        type: string
       produces:
       - application/json
       responses:
@@ -4790,12 +4834,12 @@ paths:
         name: mcisId
         required: true
         type: string
-      - description: Details for an MCIS object
+      - description: Details for an MCIS automation policy request
         in: body
-        name: mcisInfo
+        name: mcisPolicyReq
         required: true
         schema:
-          $ref: '#/definitions/mcis.McisPolicyInfo'
+          $ref: '#/definitions/mcis.McisPolicyReq'
       produces:
       - application/json
       responses:

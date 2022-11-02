@@ -1168,6 +1168,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/mcis.McisCmdReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"\"",
+                        "description": "subGroupId to apply the command only for VMs in subGroup of MCIS",
+                        "name": "subGroupId",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3576,12 +3583,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an MCIS object",
-                        "name": "mcisInfo",
+                        "description": "Details for an MCIS automation policy request",
+                        "name": "mcisPolicyReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/mcis.McisPolicyInfo"
+                            "$ref": "#/definitions/mcis.McisPolicyReq"
                         }
                     }
                 ],
@@ -8257,16 +8264,23 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "actionType": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "ScaleOut",
+                        "ScaleIn"
+                    ],
+                    "example": "ScaleOut"
                 },
                 "placementAlgo": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "random"
                 },
                 "postCommand": {
+                    "description": "example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
                     "$ref": "#/definitions/mcis.McisCmdReq"
                 },
-                "vm": {
-                    "$ref": "#/definitions/mcis.TbVmInfo"
+                "vmDynamicReq": {
+                    "$ref": "#/definitions/mcis.TbVmDynamicReq"
                 }
             }
         },
@@ -8275,7 +8289,8 @@ const docTemplate = `{
             "properties": {
                 "evaluationPeriod": {
                     "description": "evaluationPeriod",
-                    "type": "string"
+                    "type": "string",
+                    "example": "10"
                 },
                 "evaluationValue": {
                     "type": "array",
@@ -8284,15 +8299,24 @@ const docTemplate = `{
                     }
                 },
                 "metric": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "cpu"
                 },
                 "operand": {
                     "description": "10, 70, 80, 98, ...",
-                    "type": "string"
+                    "type": "string",
+                    "example": "80"
                 },
                 "operator": {
                     "description": "\u003c, \u003c=, \u003e, \u003e=, ...",
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "\u003c",
+                        "\u003c=",
+                        "\u003e",
+                        "\u003e="
+                    ],
+                    "example": "\u003e="
                 }
             }
         },
@@ -8557,7 +8581,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Description"
+                },
+                "policy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.Policy"
+                    }
+                }
+            }
+        },
+        "mcis.McisPolicyReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description"
                 },
                 "policy": {
                     "type": "array",
@@ -8807,6 +8847,8 @@ const docTemplate = `{
                     "enum": [
                         "location",
                         "cost",
+                        "random",
+                        "performance",
                         "latency"
                     ],
                     "example": "location"
@@ -9261,6 +9303,13 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "newVmList": {
+                    "description": "List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "placementAlgo": {
                     "type": "string"
                 },
@@ -9274,6 +9323,11 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
                 },
                 "targetAction": {
                     "type": "string"
