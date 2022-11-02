@@ -18,9 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -59,8 +61,8 @@ type PriorityInfo struct {
 
 // FilterCondition is struct for .
 type PriorityCondition struct {
-	Metric    string            `json:"metric" example:"location" enums:"location,cost,latency"` // location,cost,latency
-	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`                // 0.3
+	Metric    string            `json:"metric" example:"location" enums:"location,cost,random,performance,latency"` // location,cost,latency
+	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`                                   // 0.3
 	Parameter []ParameterKeyVal `json:"parameter,omitempty"`
 }
 
@@ -169,6 +171,8 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			prioritySpecs, err = RecommendVmPerformance(nsId, &filteredSpecs)
 		case "cost":
 			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
+		case "random":
+			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
 		default:
 			// fmt.Println("[Checking] Not available metric " + metric)
 		}
@@ -415,6 +419,31 @@ func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (dista
 
 	earthRadius := float64(6371)
 	return (earthRadius * c)
+}
+
+// RecommendVmRandom func prioritize specs randomly
+func RecommendVmRandom(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInfo, error) {
+
+	result := []mcir.TbSpecInfo{}
+
+	for i := range *specList {
+		result = append(result, (*specList)[i])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(result), func(i, j int) { result[i], result[j] = result[j], result[i] })
+
+	Max := float32(result[len(result)-1].CostPerHour)
+	Min := float32(result[0].CostPerHour)
+
+	for i := range result {
+		result[i].OrderInFilteredResult = uint16(i + 1)
+		result[i].EvaluationScore09 = float32((Max - result[i].CostPerHour) / (Max - Min + 0.0000001)) // Add small value to avoid NaN by division
+	}
+
+	fmt.Printf("\n result : %v \n", result)
+
+	return result, nil
 }
 
 // RecommendVmCost func prioritize specs based on given Cost
