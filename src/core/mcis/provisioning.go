@@ -176,9 +176,15 @@ type TbMcisInfo struct {
 	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
 	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
 
+	// Latest system message such as error message
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+
 	PlacementAlgo string     `json:"placementAlgo,omitempty"`
 	Description   string     `json:"description"`
 	Vm            []TbVmInfo `json:"vm"`
+
+	// List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
+	NewVmList []string `json:"newVmList"`
 }
 
 // TbVmReq is struct to get requirements to create a new server instance
@@ -712,13 +718,21 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 
 	vmStartIndex := 1
 
+	tentativeVmId := common.ToLower(vmRequest.Name)
+
+	err = common.CheckString(tentativeVmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return &TbMcisInfo{}, err
+	}
+
 	if subGroupSize > 0 {
 
 		fmt.Println("=========================== Create MCIS subGroup object")
 
 		subGroupInfoData := TbSubGroupInfo{}
-		subGroupInfoData.Id = vmRequest.Name
-		subGroupInfoData.Name = vmRequest.Name
+		subGroupInfoData.Id = tentativeVmId
+		subGroupInfoData.Name = tentativeVmId
 		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
 
 		key := common.GenMcisSubGroupKey(nsId, mcisId, vmRequest.Name)
@@ -863,6 +877,16 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 			//mcisTmp.InstallMonAgent = "yes"
 		}
 	}
+
+	vmList, err := ListMcisGroupVms(nsId, mcisId, tentativeVmId)
+
+	if err != nil {
+		mcisTmp.SystemMessage = err.Error()
+	}
+	if vmList != nil {
+		mcisTmp.NewVmList = vmList
+	}
+
 	return &mcisTmp, nil
 
 }
