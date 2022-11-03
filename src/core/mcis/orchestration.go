@@ -72,10 +72,12 @@ type AutoCondition struct {
 
 // AutoAction is struct for MCIS auto-control action.
 type AutoAction struct {
-	ActionType    string         `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
-	VmDynamicReq  TbVmDynamicReq `json:"vmDynamicReq"`
-	PostCommand   McisCmdReq     `json:"postCommand"` //example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
-	PlacementAlgo string         `json:"placementAlgo" example:"random"`
+	ActionType   string         `json:"actionType" example:"ScaleOut" enums:"ScaleOut,ScaleIn"`
+	VmDynamicReq TbVmDynamicReq `json:"vmDynamicReq"`
+
+	// PostCommand is field for providing command to VMs after its creation. example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
+	PostCommand   McisCmdReq `json:"postCommand"`
+	PlacementAlgo string     `json:"placementAlgo" example:"random"`
 }
 
 // Policy is struct for MCIS auto-control Policy request that includes AutoCondition, AutoAction, Status.

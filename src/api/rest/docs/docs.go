@@ -8276,7 +8276,7 @@ const docTemplate = `{
                     "example": "random"
                 },
                 "postCommand": {
-                    "description": "example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
+                    "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
                     "$ref": "#/definitions/mcis.McisCmdReq"
                 },
                 "vmDynamicReq": {
