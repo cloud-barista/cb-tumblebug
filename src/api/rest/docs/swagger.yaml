@@ -1020,7 +1020,6 @@ definitions:
   mcis.AutoCondition:
     properties:
       evaluationPeriod:
-        description: evaluationPeriod
         example: "10"
         type: string
       evaluationValue:
@@ -1031,11 +1030,9 @@ definitions:
         example: cpu
         type: string
       operand:
-        description: 10, 70, 80, 98, ...
         example: "80"
         type: string
       operator:
-        description: <, <=, >, >=, ...
         enum:
         - <
         - <=
@@ -1403,7 +1400,6 @@ definitions:
   mcis.PriorityCondition:
     properties:
       metric:
-        description: location,cost,latency
         enum:
         - location
         - cost
@@ -1417,7 +1413,6 @@ definitions:
           $ref: '#/definitions/mcis.ParameterKeyVal'
         type: array
       weight:
-        description: "0.3"
         enum:
         - "0.1"
         - "0.2"
