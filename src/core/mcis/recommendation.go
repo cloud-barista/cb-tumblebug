@@ -61,8 +61,8 @@ type PriorityInfo struct {
 
 // FilterCondition is struct for .
 type PriorityCondition struct {
-	Metric    string            `json:"metric" example:"location" enums:"location,cost,random,performance,latency"` // location,cost,latency
-	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`                                   // 0.3
+	Metric    string            `json:"metric" example:"location" enums:"location,cost,random,performance,latency"`
+	Weight    string            `json:"weight" example:"0.3" enums:"0.1,0.2,..."`
 	Parameter []ParameterKeyVal `json:"parameter,omitempty"`
 }
 
