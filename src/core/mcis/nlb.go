@@ -270,6 +270,95 @@ type TbNLBAddRemoveVMReq struct { // Tumblebug
 	TargetGroup TbNLBTargetGroupInfo `json:"targetGroup"`
 }
 
+// CreateMcSwNlb func create a special purpose MCIS for NLB and depoly and setting SW NLB
+func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (TbMcisInfo, error) {
+	fmt.Println("=========================== CreateMcSwNlb")
+
+	emptyObj := TbMcisInfo{}
+
+	err := common.CheckString(nsId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	nlbPostfix := "-nlb"
+	nlbMcisId := mcisId + nlbPostfix
+
+	// create a special MCIS for (SW)NLB
+
+	mcisDynamicReq := TbMcisDynamicReq{Name: nlbMcisId, InstallMonAgent: "no", Label: "McSwNlb"}
+
+	// get vm requst from cloud_conf.yaml
+	vmGroupName := "nlb"
+	commonSpec := common.RuntimeConf.Nlbsw.NlbMcisCommonSpec
+	commonImage := common.RuntimeConf.Nlbsw.NlbMcisCommonImage
+	subGroupSize := common.RuntimeConf.Nlbsw.NlbMcisSubGroupSize
+	vmDynamicReq := TbVmDynamicReq{Name: vmGroupName, CommonSpec: commonSpec, CommonImage: commonImage, SubGroupSize: subGroupSize}
+	mcisDynamicReq.Vm = append(mcisDynamicReq.Vm, vmDynamicReq)
+
+	mcisInfo, err := CreateMcisDynamic(nsId, &mcisDynamicReq)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	// Sleep for 60 seconds for a safe NLB installation.
+	fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe NLB installation.\n\n")
+	time.Sleep(60 * time.Second)
+
+	// Deploy SW NLB
+	cmd := common.RuntimeConf.Nlbsw.CommandNlbPrepare
+	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", &McisCmdReq{Command: cmd})
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+	cmd = common.RuntimeConf.Nlbsw.CommandNlbDeploy + " " + mcisId + " " + common.ToLower(req.Listener.Protocol) + " " + req.Listener.Port
+	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", &McisCmdReq{Command: cmd})
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	// nodeId=${1:-vm}
+	// nodeIp=${2:-127.0.0.1}
+	// targetPort=${3:-80}
+	accessList, err := GetMcisAccessInfo(nsId, mcisId, "")
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+	for _, v := range accessList.McisSubGroupAccessInfo {
+		for _, k := range v.McisVmAccessInfo {
+
+			cmd = common.RuntimeConf.Nlbsw.CommandNlbAddTargetNode + " " + k.VmId + " " + k.PublicIP + " " + req.TargetGroup.Port
+			_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", &McisCmdReq{Command: cmd})
+			if err != nil {
+				common.CBLog.Error(err)
+				return emptyObj, err
+			}
+
+		}
+	}
+
+	cmd = common.RuntimeConf.Nlbsw.CommandNlbApplyConfig
+	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", &McisCmdReq{Command: cmd})
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	return *mcisInfo, err
+
+}
+
 // CreateNLB accepts nlb creation request, creates and returns an TB nlb object
 func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
 	fmt.Println("=========================== CreateNLB")

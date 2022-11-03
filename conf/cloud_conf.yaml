@@ -65,8 +65,10 @@ cloud:
 nlbsw:
   sw: "HAProxy"
   version: "latest"
-  command: 
-    deployNlb: "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/deployNlb.sh chmod +x ~/deployNlb.sh; sudo ~/deployNlb.sh"
-    addTargetNode: "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/addTargetNode.sh chmod +x ~/addTargetNode.sh; sudo ~/addTargetNode.sh"
-    applyConfig: "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/applyConfig.sh chmod +x ~/applyConfig.sh; sudo ~/applyConfig.sh"
-
+  commandNlbPrepare: "wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/deployNlb.sh; wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/addTargetNode.sh; wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/nlb/applyConfig.sh; chmod +x ~/deployNlb.sh ~/addTargetNode.sh ~/applyConfig.sh"
+  commandNlbDeploy: "sudo ~/deployNlb.sh"
+  commandNlbAddTargetNode: "sudo ~/addTargetNode.sh"
+  commandNlbApplyConfig: "sudo ~/applyConfig.sh"
+  nlbMcisCommonSpec: "aws-ap-northeast-2-t2-small"
+  nlbMcisCommonImage: "ubuntu18.04"
+  nlbMcisSubGroupSize: "1"
