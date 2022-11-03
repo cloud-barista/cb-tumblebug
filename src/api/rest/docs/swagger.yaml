@@ -3665,6 +3665,49 @@ paths:
       summary: 'Get MCIS object (option: status, accessInfo, vmId)'
       tags:
       - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcis/{mcisId}/mcSwNlb:
+    post:
+      consumes:
+      - application/json
+      description: Create a special purpose MCIS for NLB and depoly and setting SW
+        NLB
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - description: Details of the NLB object
+        in: body
+        name: nlbReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbNLBReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create a special purpose MCIS for NLB and depoly and setting SW NLB
+      tags:
+      - '[Infra resource] NLB management'
   /ns/{nsId}/mcis/{mcisId}/nlb:
     delete:
       consumes:

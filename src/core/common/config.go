@@ -61,11 +61,15 @@ type NlbSetting struct {
 
 // Nlbsw is structure for NLB setting
 type Nlbsw struct {
-	Sw                   string `yaml:"sw"`
-	Version              string `yaml:"version"`
-	CommandDeployNlb     string `yaml:"commandDeployNlb"`
-	CommandAddTargetNode string `yaml:"commandAddTargetNode"`
-	CommandApplyConfig   string `yaml:"commandApplyConfig"`
+	Sw                      string `yaml:"sw"`
+	Version                 string `yaml:"version"`
+	CommandNlbPrepare       string `yaml:"commandNlbPrepare"`
+	CommandNlbDeploy        string `yaml:"commandNlbDeploy"`
+	CommandNlbAddTargetNode string `yaml:"commandNlbAddTargetNode"`
+	CommandNlbApplyConfig   string `yaml:"commandNlbApplyConfig"`
+	NlbMcisCommonSpec       string `yaml:"nlbMcisCommonSpec"`
+	NlbMcisCommonImage      string `yaml:"nlbMcisCommonImage"`
+	NlbMcisSubGroupSize     string `yaml:"nlbMcisSubGroupSize"`
 }
 
 // swagger:request ConfigReq

@@ -125,24 +125,6 @@ type TbMcisReq struct {
 	Vm []TbVmReq `json:"vm" validate:"required"`
 }
 
-// TbMcisDynamicReq is sturct for requirements to create MCIS dynamically (with default resource option)
-type TbMcisDynamicReq struct {
-	Name string `json:"name" validate:"required" example:"mcis01"`
-
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
-
-	// Label is for describing the mcis in a keyword (any string can be used)
-	Label string `json:"label" example:"DynamicVM" default:""`
-
-	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"" default:""`
-
-	Description string `json:"description" example:"Made in CB-TB"`
-
-	Vm []TbVmDynamicReq `json:"vm" validate:"required"`
-}
-
 // TbMcisReqStructLevelValidation is func to validate fields in TbMcisReqStruct
 func TbMcisReqStructLevelValidation(sl validator.StructLevel) {
 
@@ -223,6 +205,24 @@ type TbScaleOutSubGroupReq struct {
 	NumVMsToAdd string `json:"numVMsToAdd" validate:"required" example:"2"`
 
 	//tobe added accoring to new future capability
+}
+
+// TbMcisDynamicReq is sturct for requirements to create MCIS dynamically (with default resource option)
+type TbMcisDynamicReq struct {
+	Name string `json:"name" validate:"required" example:"mcis01"`
+
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
+
+	// Label is for describing the mcis in a keyword (any string can be used)
+	Label string `json:"label" example:"DynamicVM" default:""`
+
+	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"" default:""`
+
+	Description string `json:"description" example:"Made in CB-TB"`
+
+	Vm []TbVmDynamicReq `json:"vm" validate:"required"`
 }
 
 // TbVmDynamicReq is struct to get requirements to create a new server instance dynamically (with default resource option)

@@ -61,6 +61,39 @@ func RestPostNLB(c echo.Context) error {
 	return c.JSON(http.StatusCreated, content)
 }
 
+// RestPostMcNLB godoc
+// @Summary Create a special purpose MCIS for NLB and depoly and setting SW NLB
+// @Description Create a special purpose MCIS for NLB and depoly and setting SW NLB
+// @Tags [Infra resource] NLB management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param nlbReq body mcis.TbNLBReq true "Details of the NLB object"
+// @Success 200 {object} mcis.TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/mcSwNlb [post]
+func RestPostMcNLB(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+
+	u := &mcis.TbNLBReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	content, err := mcis.CreateMcSwNlb(nsId, mcisId, u, "")
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+	return c.JSON(http.StatusCreated, content)
+}
+
 /*
 	function RestPutNLB not yet implemented
 

@@ -225,6 +225,7 @@ func RunServer(port string) {
 	g.PUT("/:nsId/network/mcis/:mcisId", rest_mcis.RestPutInjectCloudInformationForCloudAdaptiveNetwork)
 
 	// Network Load Balancer
+	g.POST("/:nsId/mcis/:mcisId/mcSwNlb", rest_mcis.RestPostMcNLB)
 	g.POST("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestPostNLB)
 	g.GET("/:nsId/mcis/:mcisId/nlb/:resourceId", rest_mcis.RestGetNLB)
 	g.GET("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestGetAllNLB)
