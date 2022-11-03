@@ -8288,7 +8288,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "evaluationPeriod": {
-                    "description": "evaluationPeriod",
                     "type": "string",
                     "example": "10"
                 },
@@ -8303,12 +8302,10 @@ const docTemplate = `{
                     "example": "cpu"
                 },
                 "operand": {
-                    "description": "10, 70, 80, 98, ...",
                     "type": "string",
                     "example": "80"
                 },
                 "operator": {
-                    "description": "\u003c, \u003c=, \u003e, \u003e=, ...",
                     "type": "string",
                     "enum": [
                         "\u003c",
@@ -8842,7 +8839,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "metric": {
-                    "description": "location,cost,latency",
                     "type": "string",
                     "enum": [
                         "location",
@@ -8860,7 +8856,6 @@ const docTemplate = `{
                     }
                 },
                 "weight": {
-                    "description": "0.3",
                     "type": "string",
                     "enum": [
                         "0.1",
