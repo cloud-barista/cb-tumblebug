@@ -62,9 +62,9 @@ const (
 // AutoCondition is struct for MCIS auto-control condition.
 type AutoCondition struct {
 	Metric           string   `json:"metric" example:"cpu"`
-	Operator         string   `json:"operator" example:">=" enums:"<,<=,>,>="` // <, <=, >, >=, ...
-	Operand          string   `json:"operand" example:"80"`                    // 10, 70, 80, 98, ...
-	EvaluationPeriod string   `json:"evaluationPeriod" example:"10"`           // evaluationPeriod
+	Operator         string   `json:"operator" example:">=" enums:"<,<=,>,>="`
+	Operand          string   `json:"operand" example:"80"`
+	EvaluationPeriod string   `json:"evaluationPeriod" example:"10"`
 	EvaluationValue  []string `json:"evaluationValue"`
 	//InitTime	   string 	  `json:"initTime"`  // to check start of duration
 	//Duration	   string 	  `json:"duration"`  // duration for checking
