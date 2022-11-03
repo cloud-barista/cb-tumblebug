@@ -379,7 +379,24 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	fieldName := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
 
 	// Get cloud setting with field name
-	cloudSetting := reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fieldName).Interface().(common.CloudSetting)
+	cloudSetting := common.CloudSetting{}
+
+	getCloudSetting := func() {
+		// cloudSetting := common.CloudSetting{}
+
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println(err)
+				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
+			}
+		}()
+
+		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fieldName).Interface().(common.CloudSetting)
+
+		// return cloudSetting
+	}
+
+	getCloudSetting()
 
 	// Set nlb health checker info
 	valuesFromYaml := TbNLBHealthCheckerInfo{}
@@ -1172,22 +1189,26 @@ func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, er
 
 	result := TbNLBHealthInfo{}
 
-	for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.HealthyVMs {
-		vm, err := FindTbVmByCspId(nsId, mcisId, v.NameId)
-		if err != nil {
-			return TbNLBHealthInfo{}, err
-		}
+	if tempSpiderNLBHealthInfo.Healthinfo.HealthyVMs != nil {
+		for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.HealthyVMs {
+			vm, err := FindTbVmByCspId(nsId, mcisId, v.NameId)
+			if err != nil {
+				return TbNLBHealthInfo{}, err
+			}
 
-		result.HealthyVMs = append(result.HealthyVMs, vm.Id)
+			result.HealthyVMs = append(result.HealthyVMs, vm.Id)
+		}
 	}
 
-	for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.UnHealthyVMs {
-		vm, err := FindTbVmByCspId(nsId, mcisId, v.NameId)
-		if err != nil {
-			return TbNLBHealthInfo{}, err
-		}
+	if tempSpiderNLBHealthInfo.Healthinfo.UnHealthyVMs != nil {
+		for _, v := range *tempSpiderNLBHealthInfo.Healthinfo.UnHealthyVMs {
+			vm, err := FindTbVmByCspId(nsId, mcisId, v.NameId)
+			if err != nil {
+				return TbNLBHealthInfo{}, err
+			}
 
-		result.UnHealthyVMs = append(result.UnHealthyVMs, vm.Id)
+			result.UnHealthyVMs = append(result.UnHealthyVMs, vm.Id)
+		}
 	}
 
 	result.AllVMs = append(result.AllVMs, result.HealthyVMs...)
