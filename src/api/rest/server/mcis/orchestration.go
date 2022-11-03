@@ -31,7 +31,7 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param mcisInfo body mcis.McisPolicyInfo true "Details for an MCIS object"
+// @Param mcisPolicyReq body mcis.McisPolicyReq true "Details for an MCIS automation policy request"
 // @Success 200 {object} mcis.McisPolicyInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -41,7 +41,7 @@ func RestPostMcisPolicy(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	req := &mcis.McisPolicyInfo{}
+	req := &mcis.McisPolicyReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}

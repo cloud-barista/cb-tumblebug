@@ -402,7 +402,7 @@ func (s *MCISService) CmdMcis(ctx context.Context, req *pb.McisCmdCreateRequest)
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CmdMcis()")
 	}
 
-	result, err := mcis.RemoteCommandToMcis(req.NsId, req.McisId, &mcisObj)
+	result, err := mcis.RemoteCommandToMcis(req.NsId, req.McisId, "", &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CmdMcis()")
 	}

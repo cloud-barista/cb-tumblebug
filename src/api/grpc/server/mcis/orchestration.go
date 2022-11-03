@@ -23,7 +23,7 @@ func (s *MCISService) CreateMcisPolicy(ctx context.Context, req *pb.McisPolicyCr
 	logger.Debug("calling MCISService.CreateMcisPolicy()")
 
 	// GRPC 메시지에서 MCIS 객체로 복사
-	var mcisObj mcis.McisPolicyInfo
+	var mcisObj mcis.McisPolicyReq
 	err := gc.CopySrcToDest(&req.Item, &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.CreateMcisPolicy()")
