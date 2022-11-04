@@ -155,36 +155,37 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		fmt.Println(err)
 	}
 	errStr := ""
+	resultTmp := BenchmarkInfo{}
+
 	res, err := client.Do(req)
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr = err.Error()
-	}
+	} else {
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			common.CBLog.Error(err)
+			errStr = err.Error()
+		}
+		defer res.Body.Close()
+		fmt.Println(string(body))
 
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		common.CBLog.Error(err)
-		errStr = err.Error()
-	}
-	defer res.Body.Close()
-	fmt.Println(string(body))
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err := fmt.Errorf(string(body))
+			common.CBLog.Error(err)
+			errStr = err.Error()
+		}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		common.CBLog.Error(err)
-		errStr = err.Error()
-	}
+		//benchInfoTmp := BenchmarkInfo{}
 
-	//benchInfoTmp := BenchmarkInfo{}
-	resultTmp := BenchmarkInfo{}
-	err2 := json.Unmarshal(body, &resultTmp)
-	if err2 != nil {
-		common.CBLog.Error(err2)
-		errStr = err2.Error()
+		err2 := json.Unmarshal(body, &resultTmp)
+		if err2 != nil {
+			common.CBLog.Error(err2)
+			errStr = err2.Error()
+		}
 	}
-	//benchInfoTmp.ResultArray =  resultTmp.ResultArray
 	if errStr != "" {
 		resultTmp.Result = errStr
 	}
