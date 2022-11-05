@@ -6956,6 +6956,36 @@ paths:
         all Clouds to CB-Tumblebug
       tags:
       - '[Admin] System management'
+  /systemMcis:
+    post:
+      consumes:
+      - application/json
+      description: Create System MCIS Dynamically for Special Purpose
+      parameters:
+      - description: Option for the purpose of system MCIS
+        enum:
+        - probe
+        in: query
+        name: option
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbMcisInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns
+      tags:
+      - '[Infra service] MCIS Provisioning management'
 securityDefinitions:
   BasicAuth:
     type: basic
