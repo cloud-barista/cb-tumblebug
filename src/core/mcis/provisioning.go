@@ -1619,13 +1619,15 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		var DataDiskIdsTmp []string
 		for _, v := range vmInfoData.DataDiskIds {
-			CspDataDiskId, err := common.GetCspResourceId(nsId, common.StrDataDisk, v)
-			if CspDataDiskId == "" {
-				common.CBLog.Error(err)
-				return err
+			// ignore DataDiskIds == "", assume it is ignorable mistake
+			if v != "" {
+				CspDataDiskId, err := common.GetCspResourceId(nsId, common.StrDataDisk, v)
+				if err != nil || CspDataDiskId == "" {
+					common.CBLog.Error(err)
+					return err
+				}
+				DataDiskIdsTmp = append(DataDiskIdsTmp, CspDataDiskId)
 			}
-
-			DataDiskIdsTmp = append(DataDiskIdsTmp, CspDataDiskId)
 		}
 		tempReq.ReqInfo.DataDiskNames = DataDiskIdsTmp
 
