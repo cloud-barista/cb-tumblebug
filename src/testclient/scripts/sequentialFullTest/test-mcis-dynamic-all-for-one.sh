@@ -167,9 +167,9 @@ EOF
 
                 echo
                 echo "mcisName: $mcisName   specId: $specId   image: $image   connectionName: $connectionName   rootDiskType: $rootDiskType   rootDiskSize: $rootDiskSize  subGroupSize: $subGroupSize "
-                sleepDuration=$((1 + RANDOM % 600))
+                sleepDuration=$((1 + $RANDOM% 1000))
                 echo "sleepDuration: $sleepDuration"
-                sleep $sleepDuration
+                #sleep $sleepDuration
 
                 startTime=$SECONDS
 
@@ -198,10 +198,10 @@ EOF
                 echo "[$i] Elapsed time: $elapsedTime s"
                 ((i++))
             fi
-        } &
+        } #&
 
     done
-    wait
+    #wait
 
 
 fi
