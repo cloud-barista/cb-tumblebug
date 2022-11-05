@@ -362,6 +362,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Rohit-R2000",
+      "name": "Rohit Rajput",
+      "avatar_url": "https://avatars.githubusercontent.com/u/83547290?v=4",
+      "profile": "https://github.com/Rohit-R2000",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -369,5 +378,6 @@
   "projectOwner": "cloud-barista",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "skipCi": true
+  "skipCi": true,
+  "commitConvention": "angular"
 }
