@@ -1916,7 +1916,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 			common.CBLog.Error(err)
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, "subGroup: "+v+deleteStatus)
+		deletedResources.IdList = append(deletedResources.IdList, "SubGroup: "+v+deleteStatus)
 	}
 
 	// delete associated CSP NLBs
