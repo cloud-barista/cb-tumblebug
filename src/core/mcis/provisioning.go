@@ -1625,14 +1625,16 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		// Try lookup customImage
 		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
 		if tempReq.ReqInfo.ImageName == "" || err != nil {
-			common.CBLog.Error(err)
+			errAgg := err.Error()
 			// If customImage doesn't exist, then try lookup image
 			tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
 			if tempReq.ReqInfo.ImageName == "" || err != nil {
-				common.CBLog.Error(err)
+				errAgg += err.Error()
 				// If cannot find the resource, use common resource
 				tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
 				if tempReq.ReqInfo.ImageName == "" || err != nil {
+					errAgg += err.Error()
+					err = fmt.Errorf(errAgg)
 					common.CBLog.Error(err)
 					return err
 				}
