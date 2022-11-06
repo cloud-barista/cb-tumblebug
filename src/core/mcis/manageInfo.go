@@ -1931,6 +1931,18 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	}
 	deletedResources.IdList = append(deletedResources.IdList, output.IdList...)
 
+	// delete associated MCIS NLBs
+	mcisNlbId := mcisId + "-nlb"
+	check, _ = CheckMcis(nsId, mcisNlbId)
+	if check {
+		mcisNlbDeleteResult, err := DelMcis(nsId, mcisNlbId, option)
+		if err != nil {
+			common.CBLog.Error(err)
+			return deletedResources, err
+		}
+		deletedResources.IdList = append(deletedResources.IdList, mcisNlbDeleteResult.IdList...)
+	}
+
 	// delete mcis info
 	err = common.CBStore.Delete(key)
 	if err != nil {
