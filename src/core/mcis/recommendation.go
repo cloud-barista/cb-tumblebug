@@ -176,12 +176,12 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 		case "random":
 			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
 		default:
-			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
+			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 		}
 
 	}
 	if plan.Priority.Policy == nil {
-		prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
+		prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 	}
 
 	// limit the number of items in result list
