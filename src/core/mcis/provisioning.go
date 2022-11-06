@@ -396,16 +396,17 @@ type TbVmInfo struct {
 	RootDiskSize   string     `json:"rootDiskSize"`
 	RootDeviceName string     `json:"rootDeviceName"`
 
-	ConnectionName   string   `json:"connectionName"`
-	SpecId           string   `json:"specId"`
-	ImageId          string   `json:"imageId"`
-	VNetId           string   `json:"vNetId"`
-	SubnetId         string   `json:"subnetId"`
-	SecurityGroupIds []string `json:"securityGroupIds"`
-	DataDiskIds      []string `json:"dataDiskIds"`
-	SshKeyId         string   `json:"sshKeyId"`
-	VmUserAccount    string   `json:"vmUserAccount,omitempty"`
-	VmUserPassword   string   `json:"vmUserPassword,omitempty"`
+	ConnectionName   string            `json:"connectionName"`
+	ConnectionConfig common.ConnConfig `json:"connectionConfig"`
+	SpecId           string            `json:"specId"`
+	ImageId          string            `json:"imageId"`
+	VNetId           string            `json:"vNetId"`
+	SubnetId         string            `json:"subnetId"`
+	SecurityGroupIds []string          `json:"securityGroupIds"`
+	DataDiskIds      []string          `json:"dataDiskIds"`
+	SshKeyId         string            `json:"sshKeyId"`
+	VmUserAccount    string            `json:"vmUserAccount,omitempty"`
+	VmUserPassword   string            `json:"vmUserPassword,omitempty"`
 
 	CspViewVmDetail SpiderVMInfo `json:"cspViewVmDetail,omitempty"`
 }
@@ -808,6 +809,11 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		vmInfoData.TargetStatus = targetStatus
 
 		vmInfoData.ConnectionName = vmRequest.ConnectionName
+		vmInfoData.ConnectionConfig, err = common.GetConnConfig(vmRequest.ConnectionName)
+		if err != nil {
+			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+			common.CBLog.Error(err)
+		}
 		vmInfoData.SpecId = vmRequest.SpecId
 		vmInfoData.ImageId = vmRequest.ImageId
 		vmInfoData.VNetId = vmRequest.VNetId
@@ -1067,6 +1073,11 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			vmInfoData.TargetStatus = targetStatus
 
 			vmInfoData.ConnectionName = k.ConnectionName
+			vmInfoData.ConnectionConfig, err = common.GetConnConfig(k.ConnectionName)
+			if err != nil {
+				err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
+				common.CBLog.Error(err)
+			}
 			vmInfoData.SpecId = k.SpecId
 			vmInfoData.ImageId = k.ImageId
 			vmInfoData.VNetId = k.VNetId
@@ -1650,10 +1661,13 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
 		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
-			common.CBLog.Error(err)
+			common.CBLog.Info(err)
+			errAgg := err.Error()
 			// If cannot find the resource, use common resource
 			tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
 			if tempReq.ReqInfo.ImageName == "" || err != nil {
+				errAgg += err.Error()
+				err = fmt.Errorf(errAgg)
 				common.CBLog.Error(err)
 				return err
 			}
