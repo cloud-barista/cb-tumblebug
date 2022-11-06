@@ -23,6 +23,9 @@ import (
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
+// RuntimeLatancyMap is global variable for LatancyMap
+var RuntimeLatancyMap = [][]string{}
+
 // RuntimeConf is global variable for cloud config
 var RuntimeConf = RuntimeConfig{}
 
