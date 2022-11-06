@@ -15,6 +15,8 @@ limitations under the License.
 package main
 
 import (
+	"bufio"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"os"
@@ -58,6 +60,23 @@ func setConfig(profile string) {
 	if err != nil {
 		panic(err)
 	}
+
+	// const mrttArrayXMax = 300
+	// const mrttArrayYMax = 300
+	// common.RuntimeLatancyMap = make([][]string, mrttArrayXMax)
+
+	// cloudlatencymap.csv
+	file, fileErr := os.Open("../assets/cloudlatencymap.csv")
+	defer file.Close()
+	if fileErr != nil {
+		common.CBLog.Error(fileErr)
+		panic(fileErr)
+	}
+	rdr := csv.NewReader(bufio.NewReader(file))
+	common.RuntimeLatancyMap, _ = rdr.ReadAll()
+
+	fmt.Printf("RuntimeLatancyMap: %v\n", common.RuntimeLatancyMap)
+
 }
 
 // Main Body
