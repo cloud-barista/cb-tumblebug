@@ -1003,7 +1003,10 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	for _, k := range vmRequest {
 
 		// subGroup handling
-		subGroupSize, _ := strconv.Atoi(k.SubGroupSize)
+		subGroupSize, err := strconv.Atoi(k.SubGroupSize)
+		if err != nil {
+			subGroupSize = 1
+		}
 		fmt.Printf("subGroupSize: %v\n", subGroupSize)
 
 		if subGroupSize > 0 {
@@ -1201,6 +1204,68 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 	}
 
 	return &mcisReqInfo, err
+}
+
+// CreateSystemMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
+func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
+	nsId := common.SystemCommonNs
+	req := &TbMcisDynamicReq{}
+
+	// special purpose MCIS
+	req.Name = option
+	req.Label = option
+	req.SystemLabel = option
+	req.Description = option
+	req.InstallMonAgent = "no"
+
+	switch option {
+	case "probe":
+		connections, err := common.GetConnConfigList()
+		if err != nil {
+			common.CBLog.Error(err)
+			return nil, err
+		}
+		for _, v := range connections.Connectionconfig {
+
+			vmReq := &TbVmDynamicReq{}
+			vmReq.CommonImage = "ubuntu18.04"                // temporal default value. will be changed
+			vmReq.CommonSpec = "aws-ap-northeast-2-t2-small" // temporal default value. will be changed
+
+			deploymentPlan := DeploymentPlan{}
+			condition := []Operation{}
+			condition = append(condition, Operation{Operand: v.RegionName})
+
+			fmt.Println(" - v.RegionName: " + v.RegionName)
+
+			deploymentPlan.Filter.Policy = append(deploymentPlan.Filter.Policy, FilterCondition{Metric: "region", Condition: condition})
+			deploymentPlan.Limit = "1"
+			common.PrintJsonPretty(deploymentPlan)
+
+			specList, err := RecommendVm(common.SystemCommonNs, deploymentPlan)
+			if err != nil {
+				common.CBLog.Error(err)
+				return nil, err
+			}
+			if len(specList) != 0 {
+				recommendedSpec := specList[0].Id
+				vmReq.CommonSpec = recommendedSpec
+
+				vmReq.Label = vmReq.CommonSpec
+				vmReq.Name = vmReq.CommonSpec
+				req.Vm = append(req.Vm, *vmReq)
+			}
+		}
+
+	default:
+		err := fmt.Errorf("Not available option. Try (option=probe)")
+		return nil, err
+	}
+	if req.Vm == nil {
+		err := fmt.Errorf("No VM is defined")
+		return nil, err
+	}
+
+	return CreateMcisDynamic(nsId, req)
 }
 
 // CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way

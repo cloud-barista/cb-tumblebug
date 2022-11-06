@@ -90,59 +90,61 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 	fmt.Println("[Filtering specs]")
 
 	for _, v := range plan.Filter.Policy {
-		metric := v.Metric
+		metric := mcir.ToNamingRuleCompatible(v.Metric)
 		conditions := v.Condition
 		for _, condition := range conditions {
 
-			operand64, err := strconv.ParseFloat(strings.ReplaceAll(condition.Operand, " ", ""), 32)
-			operand := float32(operand64)
-			if err != nil {
-				common.CBLog.Error(err)
-				return []mcir.TbSpecInfo{}, err
+			var operand64 float64
+			var operand float32
+			var err error
+			if metric == "cpu" || metric == "memory" || metric == "cost" {
+				operand64, err = strconv.ParseFloat(strings.ReplaceAll(condition.Operand, " ", ""), 32)
+				operand = float32(operand64)
+				if err != nil {
+					common.CBLog.Error(err)
+					return []mcir.TbSpecInfo{}, err
+				}
 			}
 
-			switch condition.Operator {
-			case "<=":
-
-				switch metric {
-				case "cpu":
+			switch metric {
+			case "cpu":
+				switch condition.Operator {
+				case "<=":
 					u.NumvCPU.Max = operand
-				case "memory":
-					u.MemGiB.Max = operand
-				case "cost":
-					u.CostPerHour.Max = operand
-				default:
-					fmt.Println("[Checking] Not available metric " + metric)
-				}
-
-			case ">=":
-
-				switch metric {
-				case "cpu":
+				case ">=":
 					u.NumvCPU.Min = operand
-				case "memory":
-					u.MemGiB.Min = operand
-				case "cost":
-					u.CostPerHour.Min = operand
-				default:
-					fmt.Println("[Checking] Not available metric " + metric)
-				}
-
-			case "==":
-
-				switch metric {
-				case "cpu":
+				case "==":
 					u.NumvCPU.Max = operand
 					u.NumvCPU.Min = operand
-				case "memory":
+				}
+			case "memory":
+				switch condition.Operator {
+				case "<=":
+					u.MemGiB.Max = operand
+				case ">=":
+					u.MemGiB.Min = operand
+				case "==":
 					u.MemGiB.Max = operand
 					u.MemGiB.Min = operand
-				case "cost":
+				}
+			case "cost":
+				switch condition.Operator {
+				case "<=":
+					u.CostPerHour.Max = operand
+				case ">=":
+					u.CostPerHour.Min = operand
+				case "==":
 					u.CostPerHour.Max = operand
 					u.CostPerHour.Min = operand
-				default:
-					fmt.Println("[Checking] Not available metric " + metric)
 				}
+			case "region":
+				u.RegionName = condition.Operand
+			case "provider":
+				u.ProviderName = condition.Operand
+			case "specname":
+				u.CspSpecName = condition.Operand
+			default:
+				fmt.Println("[Checking] Not available metric " + metric)
 			}
 		}
 	}
@@ -174,16 +176,19 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 		case "random":
 			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
 		default:
-			// fmt.Println("[Checking] Not available metric " + metric)
+			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
 		}
 
+	}
+	if plan.Priority.Policy == nil {
+		prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
 	}
 
 	// limit the number of items in result list
 	result := []mcir.TbSpecInfo{}
 	limitNum, err := strconv.Atoi(plan.Limit)
 	if err != nil {
-		limitNum = 65535
+		limitNum = math.MaxInt
 	}
 	for i, v := range prioritySpecs {
 		result = append(result, v)

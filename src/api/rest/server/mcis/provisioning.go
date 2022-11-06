@@ -88,6 +88,37 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 	return c.JSON(http.StatusCreated, result)
 }
 
+// RestPostSystemMcis godoc
+// @Summary Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns
+// @Description Create System MCIS Dynamically for Special Purpose
+// @Tags [Infra service] MCIS Provisioning management
+// @Accept  json
+// @Produce  json
+// @Param option query string false "Option for the purpose of system MCIS" Enums(probe)
+// @Success 200 {object} TbMcisInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /systemMcis [post]
+func RestPostSystemMcis(c echo.Context) error {
+
+	option := c.QueryParam("option")
+
+	req := &mcis.TbMcisDynamicReq{}
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	result, err := mcis.CreateSystemMcisDynamic(option)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusCreated, result)
+}
+
 // RestPostMcisDynamic godoc
 // @Summary Create MCIS Dynamically
 // @Description Create MCIS Dynamically from common spec and image

@@ -169,6 +169,7 @@ func RunServer(port string) {
 
 	e.POST("/tumblebug/mcisRecommendVm", rest_mcis.RestRecommendVm)
 	e.POST("/tumblebug/mcisDynamicCheckRequest", rest_mcis.RestPostMcisDynamicCheckRequest)
+	e.POST("/tumblebug/systemMcis", rest_mcis.RestPostSystemMcis)
 
 	g.POST("/:nsId/mcisDynamic", rest_mcis.RestPostMcisDynamic)
 	g.POST("/:nsId/mcis/:mcisId/vmDynamic", rest_mcis.RestPostMcisVmDynamic)

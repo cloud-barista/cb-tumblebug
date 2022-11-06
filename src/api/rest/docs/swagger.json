@@ -6801,6 +6801,52 @@
                 }
             }
         },
+        "/systemMcis": {
+            "post": {
+                "description": "Create System MCIS Dynamically for Special Purpose",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Provisioning management"
+                ],
+                "summary": "Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns",
+                "parameters": [
+                    {
+                        "enum": [
+                            "probe"
+                        ],
+                        "type": "string",
+                        "description": "Option for the purpose of system MCIS",
+                        "name": "option",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/{nsId}/checkResource/{resourceType}/{resourceId}": {
             "get": {
                 "description": "Check resources' existence",
