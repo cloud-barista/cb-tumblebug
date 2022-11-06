@@ -2040,6 +2040,8 @@ definitions:
     type: object
   mcis.TbVmInfo:
     properties:
+      connectionConfig:
+        $ref: '#/definitions/common.ConnConfig'
       connectionName:
         type: string
       createdTime:
