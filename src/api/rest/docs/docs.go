@@ -9822,6 +9822,9 @@ const docTemplate = `{
         "mcis.TbVmInfo": {
             "type": "object",
             "properties": {
+                "connectionConfig": {
+                    "$ref": "#/definitions/common.ConnConfig"
+                },
                 "connectionName": {
                     "type": "string"
                 },
