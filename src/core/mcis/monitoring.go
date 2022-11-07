@@ -265,7 +265,6 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 		result = string(body)
 	}
-	defer res.Body.Close()
 
 	//wg.Done() //goroutin sync done
 
