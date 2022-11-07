@@ -1047,6 +1047,8 @@ definitions:
         type: string
       elapsed:
         type: string
+      regionName:
+        type: string
       result:
         type: string
       resultarray:

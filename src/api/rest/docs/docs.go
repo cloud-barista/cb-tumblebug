@@ -8434,6 +8434,9 @@ const docTemplate = `{
                 "elapsed": {
                     "type": "string"
                 },
+                "regionName": {
+                    "type": "string"
+                },
                 "result": {
                     "type": "string"
                 },
