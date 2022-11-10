@@ -240,36 +240,9 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, req *Mci
 
 	var resultArray []SshCmdResult
 
-	for _, v := range vmList {
-
-		vmId := v
-		vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
-
-		cmd := req.Command
-
-		// userName, sshKey := GetVmSshKey(nsId, mcisId, vmId)
-		// if (userName == "") {
-		// 	userName = req.UserName
-		// }
-		// if (userName == "") {
-		// 	userName = sshDefaultUserName
-		// }
-		// find vaild username
-		userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
-		// Eventhough VerifySshUserName is not complete, Try RunRemoteCommand
-		// With RunRemoteCommand, error will be checked again
-		if err == nil {
-			// Just logging the error (but it is net a faultal )
-			common.CBLog.Info(err)
-		}
-		fmt.Println("")
-		fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName: " + userName)
-		fmt.Println("[CMD] " + cmd)
-		fmt.Println("")
-
+	for _, vmId := range vmList {
 		wg.Add(1)
-		go RunRemoteCommandAsync(&wg, vmId, vmIp, sshPort, userName, sshKey, cmd, &resultArray)
-
+		go RunRemoteCommandAsync(&wg, nsId, mcisId, vmId, req.UserName, req.Command, &resultArray)
 	}
 	wg.Wait() //goroutine sync wg
 
@@ -297,17 +270,27 @@ func RunRemoteCommand(vmIP string, sshPort string, userName string, privateKey s
 }
 
 // RunRemoteCommandAsync is func to execute a SSH command to a VM (async call)
-func RunRemoteCommandAsync(wg *sync.WaitGroup, vmID string, vmIP string, sshPort string, userName string, privateKey string, cmd string, returnResult *[]SshCmdResult) {
+func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, givenUserName string, cmd string, returnResult *[]SshCmdResult) {
 
 	defer wg.Done() //goroutin sync done
 
+	vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
+	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, givenUserName)
+	// Eventhough VerifySshUserName is not complete, Try RunRemoteCommand
+	// With RunRemoteCommand, error will be checked again
+
+	fmt.Println("")
+	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName: " + userName)
+	fmt.Println("[CMD] " + cmd)
+	fmt.Println("")
+
 	// RunRemoteCommand
-	result, err := RunRemoteCommand(vmIP, sshPort, userName, privateKey, cmd)
+	result, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, cmd)
 
 	sshResultTmp := SshCmdResult{}
 	sshResultTmp.McisId = ""
-	sshResultTmp.VmId = vmID
-	sshResultTmp.VmIp = vmIP
+	sshResultTmp.VmId = vmId
+	sshResultTmp.VmIp = vmIp
 
 	if err != nil {
 		sshResultTmp.Result = ("[ERROR: " + err.Error() + "]\n " + *result)
