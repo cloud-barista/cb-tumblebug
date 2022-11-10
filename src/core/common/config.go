@@ -26,6 +26,9 @@ import (
 // RuntimeLatancyMap is global variable for LatancyMap
 var RuntimeLatancyMap = [][]string{}
 
+// RuntimeLatancyMapIndex is global variable for LatancyMap (index)
+var RuntimeLatancyMapIndex = make(map[string]int)
+
 // RuntimeConf is global variable for cloud config
 var RuntimeConf = RuntimeConfig{}
 
