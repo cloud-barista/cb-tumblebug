@@ -297,9 +297,37 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 
 	// get vm requst from cloud_conf.yaml
 	vmGroupName := "nlb"
+	// default commonSpec
 	commonSpec := common.RuntimeConf.Nlbsw.NlbMcisCommonSpec
 	commonImage := common.RuntimeConf.Nlbsw.NlbMcisCommonImage
 	subGroupSize := common.RuntimeConf.Nlbsw.NlbMcisSubGroupSize
+
+	// Option can be applied
+	// get recommended location and spec for the NLB host based on existing MCIS
+	deploymentPlan := DeploymentPlan{}
+	deploymentPlan.Priority.Policy = append(deploymentPlan.Priority.Policy, PriorityCondition{Metric: "latency"})
+	deploymentPlan.Priority.Policy[0].Parameter = append(deploymentPlan.Priority.Policy[0].Parameter, ParameterKeyVal{Key: "latencyMinimal"})
+
+	mcis, err := GetMcisObject(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+	for _, vm := range mcis.Vm {
+		regionOfVm := vm.ConnectionConfig.RegionName
+		deploymentPlan.Priority.Policy[0].Parameter[0].Val = append(deploymentPlan.Priority.Policy[0].Parameter[0].Val, regionOfVm)
+	}
+
+	specList, err := RecommendVm(common.SystemCommonNs, deploymentPlan)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+	if len(specList) != 0 {
+		recommendedSpec := specList[0].Id
+		commonSpec = recommendedSpec
+	}
+
 	vmDynamicReq := TbVmDynamicReq{Name: vmGroupName, CommonSpec: commonSpec, CommonImage: commonImage, SubGroupSize: subGroupSize}
 	mcisDynamicReq.Vm = append(mcisDynamicReq.Vm, vmDynamicReq)
 
@@ -310,8 +338,8 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 	}
 
 	// Sleep for 60 seconds for a safe NLB installation.
-	fmt.Printf("\n\n[Info] Sleep for 60 seconds for safe NLB installation.\n\n")
-	time.Sleep(60 * time.Second)
+	fmt.Printf("\n\n[Info] Sleep for 30 seconds for safe NLB installation.\n\n")
+	time.Sleep(30 * time.Second)
 
 	// Deploy SW NLB
 	cmd := common.RuntimeConf.Nlbsw.CommandNlbPrepare
