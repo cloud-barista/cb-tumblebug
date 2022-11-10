@@ -302,11 +302,11 @@ TENCENT,tencent-ap-jakarta,tencent-ap-jakarta,S5.MEDIUM4,0.03,59.98,,,,,,,,,,def
 TENCENT,tencent-ap-mumbai,tencent-ap-mumbai,S5.MEDIUM4,0.03,59.98,,,,,,,,,,default,default
 TENCENT,tencent-ap-nanjing,tencent-ap-nanjing,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default
 TENCENT,tencent-ap-seoul,tencent-ap-seoul,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
-TENCENT,tencent-ap-shanghai,tencent-ap-shanghai,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
+TENCENT,tencent-ap-shanghai,tencent-ap-shanghai,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default
 TENCENT,tencent-ap-singapore,tencent-ap-singapore,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default
 TENCENT,tencent-ap-tokyo,tencent-ap-tokyo,S5.MEDIUM4,0.03,59.98,,,,,,,,,,default,default
 TENCENT,tencent-eu-frankfurt,tencent-eu-frankfurt,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default
-TENCENT,tencent-eu-moscow,tencent-eu-moscow,S5.MEDIUM4,0.05,59.98,,,,,,,,,,default,default
+TENCENT,tencent-eu-moscow,tencent-eu-moscow,S2.MEDIUM4,0.06,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-ashburn,tencent-na-ashburn,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-siliconvalley,tencent-na-siliconvalley,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-toronto,tencent-na-toronto,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
