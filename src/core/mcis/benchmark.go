@@ -95,10 +95,16 @@ type AgentInstallContent struct {
 }
 
 // InstallBenchmarkAgentToMcis is func to install milkyway agents in MCIS
-func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq) ([]SshCmdResult, error) {
+func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq, option string) ([]SshCmdResult, error) {
 
 	// SSH command to install benchmarking agent
-	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & netstat -tulpn | grep milkyway"
+	cmd := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & sudo netstat -tulpn | grep milkyway"
+
+	if option == "update" {
+		cmd = "killall milkyway; rm ~/milkyway; wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/milkyway -O ~/milkyway; chmod +x ~/milkyway; ~/milkyway > /dev/null 2>&1 & sudo netstat -tulpn | grep milkyway"
+
+	}
+
 	// Replace given parameter with the installation cmd
 	req.Command = cmd
 
@@ -382,6 +388,146 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 
 	// Fill empty with transpose matix
 	for i := 1; i < len(mrttArray[0]); i++ {
+		firstValue := mrttArray[i][1]
+		if firstValue == empty {
+			for j := 1; j < len(mrttArray[0]); j++ {
+				mrttArray[i][j] = mrttArray[j][i]
+			}
+		}
+	}
+
+	file2, err := os.OpenFile("cloudlatencymap.csv", os.O_CREATE|os.O_WRONLY, 0777)
+	defer file2.Close()
+	csvWriter2 := csv.NewWriter(file2)
+	csvWriter2.WriteAll(mrttArray)
+	csvWriter2.Flush()
+
+	if err != nil {
+		return nil, fmt.Errorf("Benchmark Error")
+	}
+
+	return &content, nil
+}
+
+// RunLatencyBenchmark is func to get MCIS benchmark for network latency
+func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInfoArray, error) {
+
+	var err error
+
+	err = common.CheckString(nsId)
+	if err != nil {
+		temp := BenchmarkInfoArray{}
+		common.CBLog.Error(err)
+		return &temp, err
+	}
+
+	err = common.CheckString(mcisId)
+	if err != nil {
+		temp := BenchmarkInfoArray{}
+		common.CBLog.Error(err)
+		return &temp, err
+	}
+	check, _ := CheckMcis(nsId, mcisId)
+
+	if !check {
+		temp := &BenchmarkInfoArray{}
+		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
+		return temp, err
+	}
+
+	target := host
+	option := target
+
+	content := BenchmarkInfoArray{}
+
+	const empty = ""
+
+	const mrttArrayXMax = 300
+	const mrttArrayYMax = 300
+	mrttArray := make([][]string, mrttArrayXMax)
+	for i := 0; i < mrttArrayXMax; i++ {
+		mrttArray[i] = make([]string, mrttArrayYMax)
+		for j := 0; j < mrttArrayYMax; j++ {
+			mrttArray[i][j] = empty
+		}
+	}
+
+	rttIndexMapX := make(map[string]int)
+	cntTargetX := 1
+	rttIndexMapY := make(map[string]int)
+	cntTargetY := 1
+
+	action := "mrtt"
+	fmt.Println("[Benchmark] " + action)
+	content, err = BenchmarkAction(nsId, mcisId, action, option)
+	for _, k := range content.ResultArray {
+		SpecId := k.SpecId
+		iX, exist := rttIndexMapX[SpecId]
+		if !exist {
+			rttIndexMapX[SpecId] = cntTargetX
+			iX = cntTargetX
+			mrttArray[iX][0] = SpecId
+			cntTargetX++
+		}
+		for _, m := range k.ResultArray {
+			tagetSpecId := m.SpecId
+			tagetRtt := m.Result
+			iY, exist2 := rttIndexMapY[tagetSpecId]
+			if !exist2 {
+				rttIndexMapY[tagetSpecId] = cntTargetY
+				iY = cntTargetY
+				mrttArray[0][iY] = tagetSpecId
+				cntTargetY++
+			}
+			mrttArray[iX][iY] = tagetRtt
+		}
+	}
+	// ordering
+
+	// fmt.Printf("mrttArray[0]: %v", mrttArray[0])
+	// fmt.Printf("rttIndexMapX: %v", rttIndexMapX)
+	// fmt.Printf("rttIndexMapY: %v", rttIndexMapY)
+
+	for refIndex, refVal := range mrttArray[0] {
+		if refIndex == 0 {
+			continue
+		}
+		if refVal == empty {
+			break
+		}
+		orgIndex := rttIndexMapX[refVal]
+
+		// fmt.Printf("[Replace] refIndex:%v (refVal:%v), mrttArray[refIndex]:%v \n", refIndex, refVal, mrttArray[refIndex])
+		// fmt.Printf("[Replace] orgIndex:%v, mrttArray[orgIndex]:%v \n", orgIndex, mrttArray[orgIndex])
+
+		tmp := mrttArray[refIndex]
+		mrttArray[refIndex] = mrttArray[orgIndex]
+		mrttArray[orgIndex] = tmp
+
+		rttIndexMapX[refVal] = refIndex
+		rttIndexMapX[mrttArray[orgIndex][0]] = orgIndex
+
+	}
+	// change index name from specId to regionName
+	for i := 1; i < len(mrttArray[0]); i++ {
+		targetSpecId := mrttArray[0][i]
+		if targetSpecId == empty {
+			break
+		}
+		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, targetSpecId)
+		if err == nil {
+			specInfo := mcir.TbSpecInfo{}
+			err = common.CopySrcToDest(&tempInterface, &specInfo)
+			mrttArray[0][i] = specInfo.RegionName
+			mrttArray[i][0] = specInfo.RegionName
+		}
+	}
+
+	// Fill empty with transpose matix
+	for i := 1; i < len(mrttArray[0]); i++ {
+		if mrttArray[i][0] == empty {
+			break
+		}
 		firstValue := mrttArray[i][1]
 		if firstValue == empty {
 			for j := 1; j < len(mrttArray[0]); j++ {
