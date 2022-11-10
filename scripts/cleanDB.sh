@@ -17,7 +17,7 @@ echo
 echo ==========================================================
 echo "[Info]"
 echo ==========================================================
-echo "This script will ${LGREEN}remove all MetaDate in Local DataBases.${NC}"
+echo -e "This script will ${LGREEN}remove all MetaDate in Local DataBases.${NC}"
 echo "(MetaData from both CB-Tumblebug and CB-Spider container)"
 echo
 echo -e "Will remove following directories and files"

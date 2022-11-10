@@ -231,7 +231,7 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 
 	content := BenchmarkInfoArray{}
 
-	allBenchCmd := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW", "dbR", "dbW", "rtt"}
+	allBenchCmd := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW", "dbR", "dbW"}
 
 	resultMap := make(map[string]SpecBenchmarkInfo)
 
@@ -297,13 +297,15 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 		csvWriter.Flush()
 	}
 
+	const empty = ""
+
 	const mrttArrayXMax = 300
 	const mrttArrayYMax = 300
 	mrttArray := make([][]string, mrttArrayXMax)
 	for i := 0; i < mrttArrayXMax; i++ {
 		mrttArray[i] = make([]string, mrttArrayYMax)
 		for j := 0; j < mrttArrayYMax; j++ {
-			mrttArray[i][j] = ""
+			mrttArray[i][j] = empty
 		}
 	}
 
@@ -347,7 +349,7 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 		if refIndex == 0 {
 			continue
 		}
-		if refVal == "" {
+		if refVal == empty {
 			break
 		}
 		orgIndex := rttIndexMapX[refVal]
@@ -366,7 +368,7 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 	// change index name from specId to regionName
 	for i := 1; i < len(mrttArray[0]); i++ {
 		targetSpecId := mrttArray[0][i]
-		if targetSpecId == "" {
+		if targetSpecId == empty {
 			break
 		}
 		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, targetSpecId)
@@ -375,6 +377,16 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 			err = common.CopySrcToDest(&tempInterface, &specInfo)
 			mrttArray[0][i] = specInfo.RegionName
 			mrttArray[i][0] = specInfo.RegionName
+		}
+	}
+
+	// Fill empty with transpose matix
+	for i := 1; i < len(mrttArray[0]); i++ {
+		firstValue := mrttArray[i][1]
+		if firstValue == empty {
+			for j := 1; j < len(mrttArray[0]); j++ {
+				mrttArray[i][j] = mrttArray[j][i]
+			}
 		}
 	}
 
