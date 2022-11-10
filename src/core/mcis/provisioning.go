@@ -1263,6 +1263,9 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 
 				vmReq.Label = vmReq.CommonSpec
 				vmReq.Name = vmReq.CommonSpec
+
+				vmReq.RootDiskType = specList[0].RootDiskType
+				vmReq.RootDiskSize = specList[0].RootDiskSize
 				req.Vm = append(req.Vm, *vmReq)
 			}
 		}
