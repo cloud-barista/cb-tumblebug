@@ -175,6 +175,8 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 		case "random":
 			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
+		case "latency":
+			prioritySpecs, err = RecommendVmLatency(nsId, &filteredSpecs, &v.Parameter)
 		default:
 			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 		}
@@ -199,6 +201,99 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
 	return result, nil
 
+}
+
+// RecommendVmLatency func prioritize specs by latency based on given MCIS (fair)
+func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]ParameterKeyVal) ([]mcir.TbSpecInfo, error) {
+
+	result := []mcir.TbSpecInfo{}
+
+	for _, v := range *param {
+
+		switch v.Key {
+		case "latencyMinimal":
+
+			// distance (in terms of latency)
+			type distanceType struct {
+				distance      float64
+				index         int
+				priorityIndex int
+			}
+			distances := []distanceType{}
+
+			// Evaluate
+			for i, k := range *specList {
+				sumLatancy := 0.0
+				for _, region := range v.Val {
+					l, _ := GetLatency(region, k.RegionName)
+					sumLatancy += l
+				}
+
+				distances = append(distances, distanceType{})
+				distances[i].distance = sumLatancy
+				distances[i].index = i
+			}
+
+			// Sort
+			sort.Slice(distances, func(i, j int) bool {
+				return (*specList)[i].CostPerHour < (*specList)[j].CostPerHour
+			})
+			sort.Slice(distances, func(i, j int) bool {
+				return distances[i].distance < distances[j].distance
+			})
+			fmt.Printf("\n[Latency]\n %v \n", distances)
+
+			priorityCnt := 1
+			for i := range distances {
+
+				// priorityIndex++ if two distances are not equal (give the same priorityIndex if two variables are same)
+				if i != 0 {
+					if distances[i].distance > distances[i-1].distance {
+						priorityCnt++
+					}
+				}
+				distances[i].priorityIndex = priorityCnt
+
+			}
+
+			max := float32(distances[len(*specList)-1].distance)
+			min := float32(distances[0].distance)
+
+			for i := range *specList {
+				// update OrderInFilteredResult based on calculated priorityIndex
+				(*specList)[distances[i].index].OrderInFilteredResult = uint16(distances[i].priorityIndex)
+				// assign nomalized priorityIdex value to EvaluationScore09
+				(*specList)[distances[i].index].EvaluationScore09 = float32((max - float32(distances[i].distance)) / (max - min + 0.0000001)) // Add small value to avoid NaN by division
+				(*specList)[distances[i].index].EvaluationScore10 = float32(distances[i].distance)
+				// fmt.Printf("\n [%v] OrderInFilteredResult:%v, max:%v, min:%v, distance:%v, eval:%v \n", i, (*specList)[distances[i].index].OrderInFilteredResult, max, min, float32(distances[i].distance), (*specList)[distances[i].index].EvaluationScore09)
+			}
+		default:
+			// fmt.Println("[Checking] Not available metric " + metric)
+		}
+
+	}
+
+	for i := range *specList {
+		result = append(result, (*specList)[i])
+		//result[i].OrderInFilteredResult = uint16(i + 1)
+	}
+
+	// if evaluations for distance are same, low cost will have priolity
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].OrderInFilteredResult < result[j].OrderInFilteredResult {
+			return true
+		} else if result[i].OrderInFilteredResult > result[j].OrderInFilteredResult {
+			return false
+		} else {
+			return result[i].CostPerHour < result[j].CostPerHour
+		}
+		//return result[i].OrderInFilteredResult < result[j].OrderInFilteredResult
+	})
+	// fmt.Printf("\n result : %v \n", result)
+
+	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
+	// content, err = mcir.SortSpecs(*specList, "memGiB", "descending")
+	return result, nil
 }
 
 // RecommendVmLocation func prioritize specs based on given location
@@ -411,6 +506,17 @@ func getDistance(latitude float64, longitude float64, ConnectionName string) (fl
 	// return math.Sqrt(first + second), nil
 	return getHaversineDistance(cloudLatitude, cloudLongitude, latitude, longitude), nil
 
+}
+
+// GetLatency func get latency between given two regions
+func GetLatency(src string, dest string) (float64, error) {
+	latencyString := common.RuntimeLatancyMap[common.RuntimeLatancyMapIndex[src]][common.RuntimeLatancyMapIndex[dest]]
+	latency, err := strconv.ParseFloat(strings.ReplaceAll(latencyString, " ", ""), 32)
+	if err != nil {
+		common.CBLog.Error(err)
+		return 999999, err
+	}
+	return latency, nil
 }
 
 // getHaversineDistance func return HaversineDistance
