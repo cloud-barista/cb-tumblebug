@@ -75,7 +75,19 @@ func setConfig(profile string) {
 	rdr := csv.NewReader(bufio.NewReader(file))
 	common.RuntimeLatancyMap, _ = rdr.ReadAll()
 
-	fmt.Printf("RuntimeLatancyMap: %v\n", common.RuntimeLatancyMap)
+	for i, v := range common.RuntimeLatancyMap {
+		if i == 0 {
+			continue
+		}
+		if v[0] == "" {
+			break
+		}
+		common.RuntimeLatancyMapIndex[v[0]] = i
+	}
+
+	//fmt.Printf("RuntimeLatancyMap: %v\n\n", common.RuntimeLatancyMap)
+
+	fmt.Printf("[RuntimeLatancyMapIndex]\n %v\n", common.RuntimeLatancyMapIndex)
 
 }
 

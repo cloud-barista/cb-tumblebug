@@ -209,6 +209,7 @@ func RunServer(port string) {
 	g.POST("/:nsId/installBenchmarkAgent/mcis/:mcisId", rest_mcis.RestPostInstallBenchmarkAgentToMcis)
 	g.POST("/:nsId/benchmark/mcis/:mcisId", rest_mcis.RestGetBenchmark)
 	g.POST("/:nsId/benchmarkAll/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
+	g.GET("/:nsId/benchmarkLatency/mcis/:mcisId", rest_mcis.RestGetBenchmarkLatency)
 
 	//MCIS AUTO Policy
 	g.POST("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPostMcisPolicy)

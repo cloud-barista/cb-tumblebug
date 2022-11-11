@@ -457,7 +457,7 @@ func (s *MCISService) InstallBenchmarkAgentToMcis(ctx context.Context, req *pb.M
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallBenchmarkAgentToMcis()")
 	}
 
-	content, err := mcis.InstallBenchmarkAgentToMcis(req.NsId, req.McisId, &mcisObj)
+	content, err := mcis.InstallBenchmarkAgentToMcis(req.NsId, req.McisId, &mcisObj, "")
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallBenchmarkAgentToMcis()")
 	}

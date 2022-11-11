@@ -1130,6 +1130,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/benchmarkLatency/mcis/{mcisId}": {
+            "get": {
+                "description": "Run MCIS benchmark for network latency",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra service] MCIS Performance benchmarking (WIP)"
+                ],
+                "summary": "Run MCIS benchmark for network latency",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "system-purpose-common-ns",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "probe",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.BenchmarkInfoArray"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/cmd/mcis/{mcisId}": {
             "post": {
                 "description": "Send a command to specified MCIS",
@@ -1497,6 +1550,15 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/mcis.McisCmdReq"
                         }
+                    },
+                    {
+                        "enum": [
+                            "update"
+                        ],
+                        "type": "string",
+                        "description": "Option for checking update",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {

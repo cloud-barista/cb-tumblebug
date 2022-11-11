@@ -31,6 +31,7 @@ import (
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
+// @Param option query string false "Option for checking update" Enums(update)
 // @Success 200 {object} mcis.RestPostCmdMcisResponseWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -39,13 +40,14 @@ func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
+	option := c.QueryParam("option")
 
 	req := &mcis.McisCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	resultArray, err := mcis.InstallBenchmarkAgentToMcis(nsId, mcisId, req)
+	resultArray, err := mcis.InstallBenchmarkAgentToMcis(nsId, mcisId, req, option)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
@@ -99,6 +101,33 @@ func RestGetAllBenchmark(c echo.Context) error {
 	}
 
 	result, err := mcis.RunAllBenchmarks(nsId, mcisId, req.Host)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	common.PrintJsonPretty(*result)
+	return c.JSON(http.StatusOK, result)
+}
+
+// RestGetLatencyBenchmark godoc
+// @Summary Run MCIS benchmark for network latency
+// @Description Run MCIS benchmark for network latency
+// @Tags [Infra service] MCIS Performance benchmarking (WIP)
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param mcisId path string true "MCIS ID" default(probe)
+// @Success 200 {object} mcis.BenchmarkInfoArray
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/benchmarkLatency/mcis/{mcisId} [get]
+func RestGetBenchmarkLatency(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+
+	result, err := mcis.RunLatencyBenchmark(nsId, mcisId, "")
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)

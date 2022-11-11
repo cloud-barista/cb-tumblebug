@@ -3137,6 +3137,42 @@ paths:
       summary: Run MCIS benchmark for all performance metrics and return results
       tags:
       - '[Infra service] MCIS Performance benchmarking (WIP)'
+  /ns/{nsId}/benchmarkLatency/mcis/{mcisId}:
+    get:
+      consumes:
+      - application/json
+      description: Run MCIS benchmark for network latency
+      parameters:
+      - default: system-purpose-common-ns
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: probe
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.BenchmarkInfoArray'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Run MCIS benchmark for network latency
+      tags:
+      - '[Infra service] MCIS Performance benchmarking (WIP)'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
@@ -3389,6 +3425,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcis.McisCmdReq'
+      - description: Option for checking update
+        enum:
+        - update
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:
