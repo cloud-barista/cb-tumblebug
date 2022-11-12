@@ -1179,6 +1179,8 @@ definitions:
     properties:
       mcisId:
         type: string
+      mcisNlbListener:
+        $ref: '#/definitions/mcis.McisAccessInfo'
       mcisSubGroupAccessInfo:
         items:
           $ref: '#/definitions/mcis.McisSubGroupAccessInfo'

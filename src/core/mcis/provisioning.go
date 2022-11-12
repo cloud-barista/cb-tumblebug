@@ -414,6 +414,7 @@ type TbVmInfo struct {
 // McisAccessInfo is struct to retrieve overall access information of a MCIS
 type McisAccessInfo struct {
 	McisId                 string
+	McisNlbListener        *McisAccessInfo `json:"mcisNlbListener,omitempty"`
 	McisSubGroupAccessInfo []McisSubGroupAccessInfo
 }
 

@@ -30,6 +30,8 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+const nlbPostfix = "-nlb"
+
 // 2022-07-15 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/NLBHandler.go
 
 // SpiderNLBReqInfoWrapper is a wrapper struct to create JSON body of 'Create NLB request'
@@ -288,7 +290,6 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 		return emptyObj, err
 	}
 
-	nlbPostfix := "-nlb"
 	nlbMcisId := mcisId + nlbPostfix
 
 	// create a special MCIS for (SW)NLB
@@ -778,6 +779,12 @@ func GetNLB(nsId string, mcisId string, resourceId string) (TbNLBInfo, error) {
 	errString := "Cannot get the NLB " + resourceId + "."
 	err = fmt.Errorf(errString)
 	return res, err
+}
+
+// GetMcNlbAccess returns the requested TB G-NLB access info (currenly MCIS)
+func GetMcNlbAccess(nsId string, mcisId string) (*McisAccessInfo, error) {
+	nlbMcisId := mcisId + nlbPostfix
+	return GetMcisAccessInfo(nsId, nlbMcisId, "")
 }
 
 // CheckNLB returns the existence of the TB NLB object in bool form.
