@@ -8693,6 +8693,9 @@ const docTemplate = `{
                 "mcisId": {
                     "type": "string"
                 },
+                "mcisNlbListener": {
+                    "$ref": "#/definitions/mcis.McisAccessInfo"
+                },
                 "mcisSubGroupAccessInfo": {
                     "type": "array",
                     "items": {

@@ -348,11 +348,18 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 	}
 
 	output.McisId = mcisId
+
+	mcNlbAccess, err := GetMcNlbAccess(nsId, mcisId)
+	if err == nil {
+		output.McisNlbListener = mcNlbAccess
+	}
+
 	subGroupList, err := ListSubGroupId(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return temp, err
 	}
+	// TODO: make in parallel
 	for _, groupId := range subGroupList {
 		subGroupAccessInfo := McisSubGroupAccessInfo{}
 		subGroupAccessInfo.SubGroupId = groupId

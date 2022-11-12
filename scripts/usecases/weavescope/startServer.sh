@@ -5,8 +5,7 @@ echo "[Start Weave Scope Cluster Monitoring]"
 
 SECONDS=0
 
-PublicIPs=${1}
-PrivateIPs=${2}
+PublicIPs=$@
 
 echo "Installing Weavescope to MCIS..."
 
@@ -19,7 +18,7 @@ FILE="/usr/local/bin/scope"
 
 echo "Installing prerequisite"
 sudo apt-get update > /dev/null
-sudo apt install docker.io -y
+sudo apt install docker.io -y > /dev/null
 
 PID=$(ps -ef | grep scope | awk '{print $2}')
 
@@ -30,7 +29,7 @@ fi
 
 echo "Launching Weavescope"
 
-sudo scope launch $PublicIPs $PrivateIPs
+sudo scope launch $PublicIPs
 
 echo "Done! elapsed time: $SECONDS"
 
@@ -40,4 +39,4 @@ PID=$(ps -ef | grep scope | awk '{print $2}')
 
 
 echo "[Start Scope: complete] PID=$PID"
-echo "$IP:4040/#!/state/{\"contrastMode\":true,\"topologyId\":\"containers-by-hostname\"}"
+echo "$IP:4040"
