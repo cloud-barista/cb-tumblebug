@@ -360,6 +360,7 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 		return temp, err
 	}
 	// TODO: make in parallel
+
 	for _, groupId := range subGroupList {
 		subGroupAccessInfo := McisSubGroupAccessInfo{}
 		subGroupAccessInfo.SubGroupId = groupId
@@ -372,29 +373,46 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 			common.CBLog.Error(err)
 			return temp, err
 		}
+		var wg sync.WaitGroup
+		chanResults := make(chan McisVmAccessInfo)
+
 		for _, vmId := range vmList {
-			vmInfo, err := GetVmCurrentPublicIp(nsId, mcisId, vmId)
-			if err != nil {
-				common.CBLog.Error(err)
-				return temp, err
-			}
-			vmAccessInfo := McisVmAccessInfo{}
-			vmAccessInfo.VmId = vmId
-			vmAccessInfo.PublicIP = vmInfo.PublicIp
-			vmAccessInfo.PrivateIP = vmInfo.PrivateIp
-			vmAccessInfo.SSHPort = vmInfo.SSHPort
+			wg.Add(1)
+			go func(nsId string, mcisId string, vmId string, option string, chanResults chan McisVmAccessInfo) {
+				defer wg.Done()
+				vmInfo, err := GetVmCurrentPublicIp(nsId, mcisId, vmId)
+				vmAccessInfo := McisVmAccessInfo{}
+				if err != nil {
+					common.CBLog.Error(err)
+					vmAccessInfo.PublicIP = ""
+					vmAccessInfo.PrivateIP = ""
+					vmAccessInfo.SSHPort = ""
+				} else {
+					vmAccessInfo.PublicIP = vmInfo.PublicIp
+					vmAccessInfo.PrivateIP = vmInfo.PrivateIp
+					vmAccessInfo.SSHPort = vmInfo.SSHPort
+				}
+				vmAccessInfo.VmId = vmId
 
-			_, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
+				_, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
 
-			if strings.EqualFold(option, "showSshKey") {
-				vmAccessInfo.PrivateKey = privateKey
-			}
+				if strings.EqualFold(option, "showSshKey") {
+					vmAccessInfo.PrivateKey = privateKey
+				}
 
-			vmAccessInfo.VmUserAccount = verifiedUserName
-			//vmAccessInfo.VmUserPassword
-
-			subGroupAccessInfo.McisVmAccessInfo = append(subGroupAccessInfo.McisVmAccessInfo, vmAccessInfo)
+				vmAccessInfo.VmUserAccount = verifiedUserName
+				//vmAccessInfo.VmUserPassword
+				chanResults <- vmAccessInfo
+			}(nsId, mcisId, vmId, option, chanResults)
 		}
+		go func() {
+			wg.Wait()
+			close(chanResults)
+		}()
+		for result := range chanResults {
+			subGroupAccessInfo.McisVmAccessInfo = append(subGroupAccessInfo.McisVmAccessInfo, result)
+		}
+
 		output.McisSubGroupAccessInfo = append(output.McisSubGroupAccessInfo, subGroupAccessInfo)
 	}
 
@@ -1865,6 +1883,13 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 	fmt.Println(key)
+
+	// delete associated MCIS Policy
+	err = DelMcisPolicy(nsId, mcisId)
+	if err == nil {
+		common.CBLog.Error(err)
+		deletedResources.IdList = append(deletedResources.IdList, "Policy: "+mcisId+deleteStatus)
+	}
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
