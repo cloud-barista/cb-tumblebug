@@ -8,7 +8,7 @@ sudo service nginx start
 
 sudo sed -i "s/<\/title>/<\/title><meta http-equiv=\"refresh\" content=\"1\">/g" /var/www/html/index.nginx-debian.html
 
-sudo sed -i "s/<h1>Welcome to nginx!/<h1><br><br>Welcome to Cloud-Barista<br><br><br>My IP is `curl https://api.ipify.org`<br><br>/g" /var/www/html/index.nginx-debian.html
+sudo sed -i "s/<h1>Welcome to nginx!/<h1><br><br>Welcome to Cloud-Barista<br><br>Host IP is<br>`curl https://api.ipify.org`<br><br>/g" /var/www/html/index.nginx-debian.html
 
 sudo sed -i "s/Commercial support is available at/<h2>Check CB-Tumblebug MCIS VM Location<\/h2>/g" /var/www/html/index.nginx-debian.html
 
