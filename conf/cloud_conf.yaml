@@ -71,4 +71,4 @@ nlbsw:
   commandNlbApplyConfig: "sudo ~/applyConfig.sh"
   nlbMcisCommonSpec: "aws-ap-northeast-2-t2-small"
   nlbMcisCommonImage: "ubuntu18.04"
-  nlbMcisSubGroupSize: "1"
+  nlbMcisSubGroupSize: "2"
