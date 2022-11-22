@@ -895,11 +895,17 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				// Update TB CustomImage object's 'status' field
 				// Just calling GetResource(customImage) once will update TB CustomImage object's 'status' field
 				newObj, err := GetResource(nsId, common.StrCustomImage, tempObj.Id)
+				// do not return here to gather whole list. leave error message in the return body.
+				if newObj != nil {
+					tempObj = newObj.(TbCustomImageInfo)
+				} else {
+					tempObj.Id = tempObj.Id
+				}
 				if err != nil {
 					common.CBLog.Error(err)
-					return nil, err
+					tempObj.Description = err.Error()
+					tempObj.Status = "Error"
 				}
-				tempObj = newObj.(TbCustomImageInfo)
 
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
 				if filterKey != "" {
