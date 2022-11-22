@@ -1,3 +1,119 @@
+# v0.7.0 (Cortado, 2022.11.25.)
+
+### Tested with 
+- CB-Spider [v0.7.0](https://github.com/cloud-barista/cb-spider/releases/tag/v0.7.0) 
+- CB-Dragonfly [v0.7.0](https://github.com/cloud-barista/cb-dragonfly/releases/tag/v0.7.0)
+- (for developers) CB-MapUI [v0.7.0](https://github.com/cloud-barista/cb-mapui/releases/tag/v0.7.0)
+- (under integration) CB-Larva Network [v0.0.15](https://github.com/cloud-barista/cb-larva/releases/tag/v0.0.15)
+
+### What's Changed
+* Update outdated Alibaba Ubuntu images by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1155
+* Update xonotic usecase release v0.8.5 by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1156
+* Add NLB mgmt feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1158
+* Bump to go 1.19 & Update `go.mod` by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1160
+* Add test VM image set by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1162
+* Update Xonotic 0.8.5 script for ubuntu 22.04 dist by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1163
+* Fix image id for EC2 debian 10 by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1164
+* Update and fix spec list by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1165
+* Add cost priority for specs in same location by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1166
+* Update OS and Go in workflows by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1167
+* Update import pkg versions by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1168
+* Enhance error handling in MCIS Policy check by @bconfiden2 in https://github.com/cloud-barista/cb-tumblebug/pull/1170
+* docs: add bconfiden2 as a contributor for code by @allcontributors in https://github.com/cloud-barista/cb-tumblebug/pull/1171
+* Provide default values for NLB API by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1172
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1173
+* Update MapUI version by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1174
+* Add 'NLB VM addition/removal' feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1175
+* Add get VM list in a VMGroup within a MCIS by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1176
+* Add API to get VMGroup list in a MCIS by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1177
+* Enhance NLB mgmt feature (2) by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1178
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1179
+* Update NCP-VPC & NHN Cloud regions & zones by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1180
+* Add scaleOut feature for VMGroup in a MCIS by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1181
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1183
+* Add 'DataDisk mgmt' feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1182
+* Fix Echo vulnerability CVE-2022-40083 by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1185
+* Update CB-Spider version for runContainer by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1186
+* Add get VM ID Name info in detail by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1187
+* Add yaml config feature to handle different available values for each cloud by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1188
+* Update runSpider version to 0.6.11 by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1189
+* Add customImage mgmt and snapshot features by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1190
+* Add dev-api-diff.html info by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1191
+* Feat: StartVmWithSnapshot + RegisterConsequentVolumes by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1192
+* Implement `cloud_conf.yaml` manifest handling feat. for NLB by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1193
+* Add example values for NLB request by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1194
+* Tidy `TbNLBReq` fields by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1197
+* Set NLB health checker info by reflection by @yunkon-kim in https://github.com/cloud-barista/cb-tumblebug/pull/1196
+* Provide one-stop values for nlb api by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1198
+* Simplify docker install script by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1200
+* Remove associated NLBs with MCIS del by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1201
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1202
+* Add 'GetAvailableDataDisks' feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1195
+* HotFix for delete mcis err due to nlb by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1203
+* Provide defaults/examples for dataDisk & snapshot by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1205
+* Change vmGroup to subGroup by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1206
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1207
+* Test and update associated FWs by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1209
+* Remove historic add VM way by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1210
+* Ignore rootDiskType for creating VM with customIMG by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1211
+* Add Swagger godoc for CustomImage REST APIs by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1212
+* Enhance API for nlb disk customimg by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1213
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1214
+* Remove old api documents by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1215
+* Add vm (id) list filtering feature by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1216
+* Add get mcis access info feature by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1218
+* Apply omitempty for nlb obj in mcisAccessInfo by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1221
+* Provide show or hide option for sshKey in access info by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1222
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1223
+* Add scripts to command SW NLB-HAProxy by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1224
+* Add SW NLB config for PoC by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1225
+* Enable coordinateFair option for recommend by location by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1235
+* feat: add VM to MCIS dynamically by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1237
+* Add 'Location' field in NLB object by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1238
+* Modify 'serviceType' value in InstallMonAgentReq by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1239
+* fix:CoreDelAllMcis to  DelAllMcis by @arshad-k7 in https://github.com/cloud-barista/cb-tumblebug/pull/1236
+* Add StrictHostKeyChecking=no for mcis file copy by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1240
+* Update deprecated image IDs by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1241
+* Fix orchestration scaleout err by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1242
+* Add test-mcis-dynamic-all-for-one.sh by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1243
+* Update `availableDataDisk` REST API by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1244
+* Change func name `CorePostMcisVm` into `CreateMcisVm` by @Rohit-R2000 in https://github.com/cloud-barista/cb-tumblebug/pull/1219
+* Hotfix for register-cloud-interactive.sh for CloudIt credential registration by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1245
+* Enhance orchestration mechanism with various features by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1246
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1247
+* Fix bugs on NLB mgmt feature by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1248
+* Add MC NLB service feature poc by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1249
+* Fix nil reference error by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1250
+* Enhance error handling for DataDiskIds in mcis provision by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1251
+* docs: add Rohit-R2000 as a contributor for code by @allcontributors in https://github.com/cloud-barista/cb-tumblebug/pull/1252
+* docs: add arshad-k7 as a contributor for code by @allcontributors in https://github.com/cloud-barista/cb-tumblebug/pull/1253
+* Add CreateSystemMcisDynamic for network probe by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1254
+* Change default recommendation rule by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1255
+* Change message for nginx index by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1256
+* Enhance mRTT benchmark to gen latency Map by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1257
+* [Workflow] Update Swagger REST API doc by @cloud-barista-hub in https://github.com/cloud-barista/cb-tumblebug/pull/1258
+* Hotfix for runtime err in monitoring agent by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1259
+* Validate and update assets data by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1261
+* Enhance latency map creation by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1262
+* Auto NLB deployment feature by global clouds latency evaluation by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1265
+* Make nginx demo page refresh by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1266
+* Fix error in refresh web demo by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1267
+* Add weavescope script by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1268
+* Show access info of Global-NLB by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1269
+* Get access info in parallel by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1270
+* Update assets (spec & image) by @jihoon-seo in https://github.com/cloud-barista/cb-tumblebug/pull/1263
+* Update Spider version by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1271
+* Fix not available image ids by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1272
+* Enhance error handling for listing custom img by @seokho-son in https://github.com/cloud-barista/cb-tumblebug/pull/1273
+
+### API
+- Swagger UI URL: https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/v0.7.0/src/docs/swagger.yaml
+
+### What's Changed
+
+**Full Changelog**: https://github.com/cloud-barista/cb-tumblebug/compare/v0.6.0...v0.7.0
+
+
 # v0.6.0 (Caffè latte, 2022.07.08.)
 
 ### Tested with 

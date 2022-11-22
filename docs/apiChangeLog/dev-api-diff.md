@@ -2,6 +2,8 @@
 ---
 ### What's New
 ---
+* `GET` /ns/{nsId}/benchmarkLatency/mcis/{mcisId} Run MCIS benchmark for network latency
+* `POST` /ns/{nsId}/mcis/{mcisId}/mcSwNlb Create a special purpose MCIS for NLB and depoly and setting SW NLB
 * `GET` /ns/{nsId}/mcis/{mcisId}/nlb List all NLBs or NLBs' ID
 * `POST` /ns/{nsId}/mcis/{mcisId}/nlb Create NLB
 * `DELETE` /ns/{nsId}/mcis/{mcisId}/nlb Delete all NLBs
@@ -16,6 +18,7 @@
 * `GET` /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk Get available dataDisks for a VM
 * `PUT` /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk Attach/Detach available dataDisk
 * `POST` /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot Snapshot VM and create a Custom Image Object using the Snapshot
+* `POST` /ns/{nsId}/mcis/{mcisId}/vmDynamic Create VM Dynamically and add it to MCIS
 * `GET` /ns/{nsId}/resources/customImage List all customImages or customImages' ID
 * `POST` /ns/{nsId}/resources/customImage Register existing Custom Image in a CSP
 * `DELETE` /ns/{nsId}/resources/customImage Delete all customImages
@@ -27,6 +30,7 @@
 * `GET` /ns/{nsId}/resources/dataDisk/{dataDiskId} Get Data Disk
 * `PUT` /ns/{nsId}/resources/dataDisk/{dataDiskId} Upsize Data Disk
 * `DELETE` /ns/{nsId}/resources/dataDisk/{dataDiskId} Delete Data Disk
+* `POST` /systemMcis Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns
 
 ### What's Deprecated
 ---
@@ -49,6 +53,23 @@
         Insert tumblebugOverview.customImage
         Insert tumblebugOverview.dataDisk
         Insert tumblebugOverview.nlb
+`POST` /mcisRecommendVm Recommend MCIS plan (filter and priority)  
+    Parameters
+
+        Modify deploymentPlan.priority.policy.metric //location,cost,latency
+        Modify deploymentPlan.priority.policy.weight //0.3
+`POST` /ns/{nsId}/benchmark/mcis/{mcisId} Run MCIS benchmark for a single performance metric and return results  
+    Return Type
+
+        Insert resultarray.regionName
+`POST` /ns/{nsId}/benchmarkAll/mcis/{mcisId} Run MCIS benchmark for all performance metrics and return results  
+    Return Type
+
+        Insert resultarray.regionName
+`POST` /ns/{nsId}/cmd/mcis/{mcisId} Send a command to specified MCIS  
+    Parameters
+
+        Add subGroupId //subGroupId to apply the command only for VMs in subGroup of MCIS
 `POST` /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId} Send a command to specified VM  
     Parameters
 
@@ -57,6 +78,10 @@
     Parameters
 
         Modify vmId //VM ID
+`POST` /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId} Install the benchmark agent to specified MCIS  
+    Parameters
+
+        Add option //Option for checking update
 `POST` /ns/{nsId}/mcis Create MCIS  
     Parameters
 
@@ -68,6 +93,9 @@
         Modify mcisReq.vm.rootDiskType //"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHHD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
     Return Type
 
+        Insert newVmList //List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
+        Insert systemMessage //Latest system message such as error message
+        Insert vm.connectionConfig
         Insert vm.dataDiskIds
         Insert vm.subGroupId //defined if the VM is in a group
         Insert vm.cspViewVmDetail.dataDiskIIDs
@@ -105,6 +133,7 @@
 
         Insert configureCloudAdaptiveNetwork //ConfigureCloudAdaptiveNetwork is an option to configure Cloud Adaptive Network (CLADNet) ([yes/no] default:yes)
         Insert installMonAgent //InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+        Insert newVmList //List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
         Insert placementAlgo
         Insert statusCount
         Insert systemLabel //SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
@@ -130,7 +159,6 @@
         Delete sshKeyId
         Delete sshPort
         Delete subnetId
-        Delete systemMessage //Latest system message such as error message
         Delete vNetId
         Delete vmBlockDisk
         Delete vmBootDisk //ex) /dev/sda1
@@ -157,6 +185,9 @@
         Modify mcisReq.vm.rootDiskType //"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHHD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
     Return Type
 
+        Insert newVmList //List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
+        Insert systemMessage //Latest system message such as error message
+        Insert vm.connectionConfig
         Insert vm.dataDiskIds
         Insert vm.subGroupId //defined if the VM is in a group
         Insert vm.cspViewVmDetail.dataDiskIIDs
@@ -171,58 +202,43 @@
 `GET` /ns/{nsId}/policy/mcis List all MCIS policies  
     Return Type
 
-        Insert mcisPolicy.policy.autoAction.vm.dataDiskIds
-        Insert mcisPolicy.policy.autoAction.vm.subGroupId //defined if the VM is in a group
-        Insert mcisPolicy.policy.autoAction.vm.cspViewVmDetail.dataDiskIIDs
-        Insert mcisPolicy.policy.autoAction.vm.cspViewVmDetail.dataDiskNames
-        Insert mcisPolicy.policy.autoAction.vm.cspViewVmDetail.imageType
-        Delete mcisPolicy.policy.autoAction.vm.vmBlockDisk
-        Delete mcisPolicy.policy.autoAction.vm.vmBootDisk //ex) /dev/sda1
-        Delete mcisPolicy.policy.autoAction.vm.vmGroupId //defined if the VM is in a group
-        Delete mcisPolicy.policy.autoAction.vm.cspViewVmDetail.vmblockDisk //ex)
-        Delete mcisPolicy.policy.autoAction.vm.cspViewVmDetail.vmbootDisk //Deprecated soon // ex) /dev/sda1
-        Modify mcisPolicy.policy.autoAction.vm.cspViewVmDetail.startTime //Timezone: based on cloud-barista server location.
-`GET` /ns/{nsId}/policy/mcis/{mcisId} Get MCIS Policy  
-    Return Type
-
-        Insert policy.autoAction.vm.dataDiskIds
-        Insert policy.autoAction.vm.subGroupId //defined if the VM is in a group
-        Insert policy.autoAction.vm.cspViewVmDetail.dataDiskIIDs
-        Insert policy.autoAction.vm.cspViewVmDetail.dataDiskNames
-        Insert policy.autoAction.vm.cspViewVmDetail.imageType
-        Delete policy.autoAction.vm.vmBlockDisk
-        Delete policy.autoAction.vm.vmBootDisk //ex) /dev/sda1
-        Delete policy.autoAction.vm.vmGroupId //defined if the VM is in a group
-        Delete policy.autoAction.vm.cspViewVmDetail.vmblockDisk //ex)
-        Delete policy.autoAction.vm.cspViewVmDetail.vmbootDisk //Deprecated soon // ex) /dev/sda1
-        Modify policy.autoAction.vm.cspViewVmDetail.startTime //Timezone: based on cloud-barista server location.
+        Insert mcisPolicy.policy.autoAction.vmDynamicReq
+        Delete mcisPolicy.policy.autoAction.vm
+        Modify mcisPolicy.description
+        Modify mcisPolicy.policy.autoAction.actionType
+        Modify mcisPolicy.policy.autoAction.placementAlgo
+        Modify mcisPolicy.policy.autoCondition.evaluationPeriod //evaluationPeriod
+        Modify mcisPolicy.policy.autoCondition.metric
+        Modify mcisPolicy.policy.autoCondition.operand //10, 70, 80, 98, ...
+        Modify mcisPolicy.policy.autoCondition.operator //<, <=, >, >=, ...
 `POST` /ns/{nsId}/policy/mcis/{mcisId} Create MCIS Automation policy  
     Parameters
 
-        Insert mcisInfo.policy.autoAction.vm.dataDiskIds
-        Insert mcisInfo.policy.autoAction.vm.subGroupId //defined if the VM is in a group
-        Insert mcisInfo.policy.autoAction.vm.cspViewVmDetail.dataDiskIIDs
-        Insert mcisInfo.policy.autoAction.vm.cspViewVmDetail.dataDiskNames
-        Insert mcisInfo.policy.autoAction.vm.cspViewVmDetail.imageType
-        Delete mcisInfo.policy.autoAction.vm.vmBlockDisk
-        Delete mcisInfo.policy.autoAction.vm.vmBootDisk //ex) /dev/sda1
-        Delete mcisInfo.policy.autoAction.vm.vmGroupId //defined if the VM is in a group
-        Delete mcisInfo.policy.autoAction.vm.cspViewVmDetail.vmblockDisk //ex)
-        Delete mcisInfo.policy.autoAction.vm.cspViewVmDetail.vmbootDisk //Deprecated soon // ex) /dev/sda1
-        Modify mcisInfo.policy.autoAction.vm.cspViewVmDetail.startTime //Timezone: based on cloud-barista server location.
+        Add mcisPolicyReq //Details for an MCIS automation policy request
+        Delete mcisInfo //Details for an MCIS object
     Return Type
 
-        Insert policy.autoAction.vm.dataDiskIds
-        Insert policy.autoAction.vm.subGroupId //defined if the VM is in a group
-        Insert policy.autoAction.vm.cspViewVmDetail.dataDiskIIDs
-        Insert policy.autoAction.vm.cspViewVmDetail.dataDiskNames
-        Insert policy.autoAction.vm.cspViewVmDetail.imageType
-        Delete policy.autoAction.vm.vmBlockDisk
-        Delete policy.autoAction.vm.vmBootDisk //ex) /dev/sda1
-        Delete policy.autoAction.vm.vmGroupId //defined if the VM is in a group
-        Delete policy.autoAction.vm.cspViewVmDetail.vmblockDisk //ex)
-        Delete policy.autoAction.vm.cspViewVmDetail.vmbootDisk //Deprecated soon // ex) /dev/sda1
-        Modify policy.autoAction.vm.cspViewVmDetail.startTime //Timezone: based on cloud-barista server location.
+        Insert policy.autoAction.vmDynamicReq
+        Delete policy.autoAction.vm
+        Modify description
+        Modify policy.autoAction.actionType
+        Modify policy.autoAction.placementAlgo
+        Modify policy.autoCondition.evaluationPeriod //evaluationPeriod
+        Modify policy.autoCondition.metric
+        Modify policy.autoCondition.operand //10, 70, 80, 98, ...
+        Modify policy.autoCondition.operator //<, <=, >, >=, ...
+`GET` /ns/{nsId}/policy/mcis/{mcisId} Get MCIS Policy  
+    Return Type
+
+        Insert policy.autoAction.vmDynamicReq
+        Delete policy.autoAction.vm
+        Modify description
+        Modify policy.autoAction.actionType
+        Modify policy.autoAction.placementAlgo
+        Modify policy.autoCondition.evaluationPeriod //evaluationPeriod
+        Modify policy.autoCondition.metric
+        Modify policy.autoCondition.operand //10, 70, 80, 98, ...
+        Modify policy.autoCondition.operator //<, <=, >, >=, ...
 `POST` /ns/{nsId}/registerCspVm Register existing VM in a CSP to Cloud-Barista MCIS  
     Parameters
 
@@ -234,6 +250,9 @@
         Modify mcisReq.vm.rootDiskType //"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHHD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
     Return Type
 
+        Insert newVmList //List of IDs for new VMs. Return IDs if the VMs are newly added. This field should be used for return body only.
+        Insert systemMessage //Latest system message such as error message
+        Insert vm.connectionConfig
         Insert vm.dataDiskIds
         Insert vm.subGroupId //defined if the VM is in a group
         Insert vm.cspViewVmDetail.dataDiskIIDs
