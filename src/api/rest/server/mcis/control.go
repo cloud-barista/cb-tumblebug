@@ -136,6 +136,4 @@ func RestPostMcisVmSnapshot(c echo.Context) error {
 	// common.PrintJsonPretty(result)
 
 	return c.JSON(http.StatusOK, result)
-
-	return nil
 }
