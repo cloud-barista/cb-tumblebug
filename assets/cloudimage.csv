@@ -152,86 +152,86 @@ AZURE,azure-uaecentral,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.20
 AZURE,azure-norwaywest,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
 AZURE,azure-francesouth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
 AZURE,azure-australiacentral2,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-westus,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-eastus,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-northeurope,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-westeurope,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-eastasia,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-southeastasia,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-northcentralus,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-southcentralus,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-centralus,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-eastus2,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-japaneast,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-japanwest,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-brazilsouth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-australiaeast,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-australiasoutheast,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-centralindia,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-canadacentral,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-canadaeast,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-westcentralus,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-westus2,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-ukwest,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-uksouth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-koreacentral,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-koreasouth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-francecentral,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-australiacentral,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-southafricanorth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-uaenorth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-switzerlandnorth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-germanywestcentral,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-norwayeast,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-southindia,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-westindia,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-southafricawest,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-switzerlandwest,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-germanynorth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-uaecentral,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-norwaywest,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-francesouth,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-australiacentral2,Debian:debian-10:10:latest,Debian 10
-AZURE,azure-westus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-eastus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-northeurope,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-westeurope,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-eastasia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-southeastasia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-northcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-southcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-centralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-eastus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-japaneast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-japanwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-brazilsouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-australiaeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-australiasoutheast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-centralindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-canadacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-canadaeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-westcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-westus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-ukwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-uksouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-koreacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-koreasouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-francecentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-australiacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-southafricanorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-uaenorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-switzerlandnorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-germanywestcentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-norwayeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-southindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-westindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-southafricawest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-switzerlandwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-germanynorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-uaecentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-norwaywest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-francesouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
-AZURE,azure-australiacentral2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:latest,Windows Server 2012 R2
+AZURE,azure-westus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-eastus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-northeurope,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-westeurope,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-eastasia,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-southeastasia,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-northcentralus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-southcentralus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-centralus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-eastus2,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-japaneast,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-japanwest,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-brazilsouth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-australiaeast,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-australiasoutheast,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-centralindia,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-canadacentral,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-canadaeast,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-westcentralus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-westus2,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-ukwest,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-uksouth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-koreacentral,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-koreasouth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-francecentral,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-australiacentral,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-southafricanorth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-uaenorth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-switzerlandnorth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-germanywestcentral,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-norwayeast,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-southindia,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-westindia,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-southafricawest,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-switzerlandwest,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-germanynorth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-uaecentral,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-norwaywest,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-francesouth,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-australiacentral2,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,azure-westus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-eastus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-northeurope,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-westeurope,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-eastasia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-southeastasia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-northcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-southcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-centralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-eastus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-japaneast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-japanwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-brazilsouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-australiaeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-australiasoutheast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-centralindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-canadacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-canadaeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-westcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-westus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-ukwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-uksouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-koreacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-koreasouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-francecentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-australiacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-southafricanorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-uaenorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-switzerlandnorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-germanywestcentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-norwayeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-southindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-westindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-southafricawest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-switzerlandwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-germanynorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-uaecentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-norwaywest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-francesouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,azure-australiacentral2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
 GCP,gcp-asia-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
 GCP,gcp-europe-west3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
 GCP,gcp-asia-east2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
