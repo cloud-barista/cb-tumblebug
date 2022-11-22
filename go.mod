@@ -10,11 +10,11 @@ replace (
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.0.0
-	github.com/cloud-barista/cb-dragonfly v0.6.0
+	github.com/cloud-barista/cb-dragonfly v0.6.9
 	github.com/cloud-barista/cb-larva v0.0.15
-	github.com/cloud-barista/cb-log v0.6.3
-	github.com/cloud-barista/cb-spider v0.6.8
-	github.com/cloud-barista/cb-store v0.6.2
+	github.com/cloud-barista/cb-log v0.6.4
+	github.com/cloud-barista/cb-spider v0.6.16
+	github.com/cloud-barista/cb-store v0.6.3
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
@@ -37,7 +37,7 @@ require (
 	github.com/tidwall/gjson v1.11.0
 	github.com/tidwall/sjson v1.1.7
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
-	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
+	golang.org/x/crypto v0.0.0-20220511200225-c6db032c6c88
 	google.golang.org/grpc v1.49.0
 	gopkg.in/yaml.v2 v2.4.0
 	xorm.io/xorm v1.1.2
