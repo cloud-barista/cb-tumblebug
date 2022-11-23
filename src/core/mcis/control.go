@@ -813,8 +813,6 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 
 	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
 
-	UpdateMcisInfo(nsId, mcisTmp)
-
 	if strings.Contains(mcisStatusTmp.Status, StatusCreating) ||
 		strings.Contains(mcisStatusTmp.Status, StatusTerminating) ||
 		strings.Contains(mcisStatusTmp.Status, StatusResuming) ||
@@ -827,7 +825,7 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 		return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
 	}
 	if strings.Contains(mcisStatusTmp.Status, StatusSuspended) {
-		if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionSuspend) {
+		if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionSuspend) || strings.EqualFold(action, ActionTerminate) {
 			return nil
 		} else {
 			return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
