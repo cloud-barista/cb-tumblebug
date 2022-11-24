@@ -31,7 +31,7 @@ func (s *MCISService) InstallMonitorAgentToMcis(ctx context.Context, req *pb.Mci
 	}
 
 	// mcisTmpSystemLabel := mcis.DefaultSystemLabel
-	content, err := mcis.InstallMonitorAgentToMcis(req.NsId, req.McisId, common.StrVM, &mcisObj)
+	content, err := mcis.InstallMonitorAgentToMcis(req.NsId, req.McisId, common.StrMCIS, &mcisObj)
 	if err != nil {
 		return nil, gc.ConvGrpcStatusErr(err, "", "MCISService.InstallMonitorAgentToMcis()")
 	}
