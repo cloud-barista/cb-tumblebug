@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 
@@ -373,7 +374,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		tempReq := common.SpiderConnectionName{}
 		tempReq.ConnectionName = connConfig
 
-		client := resty.New().SetCloseConnection(true)
+		client := resty.New().SetTimeout(2 * time.Minute).SetCloseConnection(true)
 		client.SetAllowGetMethodPayload(true)
 
 		resp, err := client.R().
