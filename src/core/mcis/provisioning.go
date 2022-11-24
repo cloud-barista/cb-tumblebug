@@ -597,7 +597,7 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrVM, reqToMon)
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
 			if err != nil {
 				common.CBLog.Error(err)
 				//mcisTmp.InstallMonAgent = "no"
@@ -875,7 +875,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 			reqToMon.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrVM, reqToMon)
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
 			if err != nil {
 				common.CBLog.Error(err)
 				//mcisTmp.InstallMonAgent = "no"
@@ -1151,7 +1151,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			time.Sleep(60 * time.Second)
 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
-			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrVM, reqToMon)
+			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
 			if err != nil {
 				common.CBLog.Error(err)
 				//mcisTmp.InstallMonAgent = "no"

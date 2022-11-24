@@ -1654,14 +1654,15 @@ func LoadCommonResource() (common.IdList, error) {
 	waitSpecImg.Add(1)
 	go func(rows [][]string) {
 		defer waitSpecImg.Done()
+		lenSpecs := len(rows[1:])
 		for i, row := range rows[1:] {
 			wait.Add(1)
 			fmt.Printf("[%d] i, row := range rows[1:] %s\n", i, row)
 			// goroutine
-			go func(i int, row []string) {
+			go func(i int, row []string, lenSpecs int) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(0, 20)
+				common.RandomSleep(0, lenSpecs/8)
 				specReqTmp := TbSpecReq{}
 				// 0	providerName
 				// 1	regionName
@@ -1759,7 +1760,7 @@ func LoadCommonResource() (common.IdList, error) {
 					}
 				}
 				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrSpec+": "+specObjId+regiesteredStatus)
-			}(i, row)
+			}(i, row, lenSpecs)
 		}
 		wait.Wait()
 	}(rows)
@@ -1778,14 +1779,15 @@ func LoadCommonResource() (common.IdList, error) {
 	waitSpecImg.Add(1)
 	go func(rows [][]string) {
 		defer waitSpecImg.Done()
+		lenImages := len(rows[1:])
 		for i, row := range rows[1:] {
 			wait.Add(1)
 			fmt.Printf("[%d] i, row := range rows[1:] %s\n", i, row)
 			// goroutine
-			go func(i int, row []string) {
+			go func(i int, row []string, lenImages int) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(0, 20)
+				common.RandomSleep(0, lenImages/8)
 				imageReqTmp := TbImageReq{}
 				// row0: ProviderName
 				// row1: connectionName
@@ -1838,7 +1840,7 @@ func LoadCommonResource() (common.IdList, error) {
 				}
 				//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)
 				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrImage+": "+imageObjId+regiesteredStatus)
-			}(i, row)
+			}(i, row, lenImages)
 		}
 		wait.Wait()
 	}(rows)

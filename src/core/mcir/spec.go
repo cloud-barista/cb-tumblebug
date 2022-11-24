@@ -20,6 +20,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
 	//"strings"
 
@@ -300,7 +301,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		client := resty.New().SetCloseConnection(true)
 		client.SetAllowGetMethodPayload(true)
 
-		resp, err := client.R().
+		resp, err := client.SetTimeout(2*time.Minute).R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
