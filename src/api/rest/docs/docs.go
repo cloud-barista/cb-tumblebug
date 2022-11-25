@@ -9963,6 +9963,9 @@ const docTemplate = `{
                     "description": "if subGroupSize is (not empty) \u0026\u0026 (\u003e 0), subGroup will be gernetad. VMs will be created accordingly.",
                     "type": "string",
                     "example": "3"
+                },
+                "vmUserPassword default:": {
+                    "type": "string"
                 }
             }
         },
