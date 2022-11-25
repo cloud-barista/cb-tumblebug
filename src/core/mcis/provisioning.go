@@ -245,6 +245,7 @@ type TbVmDynamicReq struct {
 	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
 	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
 
+	VmUserPassword string `json:"vmUserPassword default:""`
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
 	ConnectionName string `json:"connectionName,omitempty" default:""`
@@ -1467,6 +1468,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	vmReq.Description = k.Description
 	vmReq.RootDiskType = k.RootDiskType
 	vmReq.RootDiskSize = k.RootDiskSize
+	vmReq.VmUserPassword = k.VmUserPassword
 
 	common.PrintJsonPretty(vmReq)
 
@@ -1629,6 +1631,11 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	tempReq.ReqInfo.VMUserId = vmInfoData.VmUserAccount
 	tempReq.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
+	// provide a random passwd, if it is not provided by user (the passwd required for Windows)
+	if tempReq.ReqInfo.VMUserPasswd == "" {
+		// assign random string (mixed Uid style)
+		tempReq.ReqInfo.VMUserPasswd = common.GenRandomPassword()
+	}
 
 	tempReq.ReqInfo.RootDiskType = vmInfoData.RootDiskType
 	tempReq.ReqInfo.RootDiskSize = vmInfoData.RootDiskSize

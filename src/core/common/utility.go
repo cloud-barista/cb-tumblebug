@@ -50,6 +50,21 @@ func GenUid() string {
 	return uid.New().String()
 }
 
+// GenRandomPassword is func to return a RandomPassword
+func GenRandomPassword() string {
+	rand.Seed(time.Now().Unix())
+
+	charset := "ABCDEFG*!$"
+	shuff := []rune(charset)
+	rand.Shuffle(len(shuff), func(i, j int) {
+		shuff[i], shuff[j] = shuff[j], shuff[i]
+	})
+
+	pw := uid.New().String() + string(shuff)
+
+	return pw
+}
+
 // RandomSleep is func to make a caller waits for during random time seconds (random value within x~y)
 func RandomSleep(from int, to int) {
 	if from > to {
