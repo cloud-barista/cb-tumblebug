@@ -2078,6 +2078,8 @@ definitions:
           VMs will be created accordingly.
         example: "3"
         type: string
+      'vmUserPassword default:':
+        type: string
     required:
     - commonImage
     - commonSpec
