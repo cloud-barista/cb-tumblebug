@@ -437,6 +437,7 @@ NCP,ncp-japan,SPSW0LINUX000130,Ubuntu 18.04
 NCPVPC,ncpvpc-kr-1,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
 NCPVPC,ncpvpc-sgn-4,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
 CLOUDIT,cloudit-region01,ee441331-0872-49c3-886c-1873a6e32e09,Ubuntu 18.04
+CLOUDIT,cloudit-region01,14e7d45f-8ff7-4ba9-84e9-924552b4e202,Windows Server 2012 R2
 TENCENT,tencent-ap-singapore,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-jakarta,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-seoul,img-pi0ii46r,Ubuntu 18.04
@@ -455,6 +456,7 @@ TENCENT,tencent-ap-beijing,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-chengdu,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-chongqing,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-hongkong,img-pi0ii46r,Ubuntu 18.04
+TENCENT,tencent-ap-hongkong,img-2tddq003,Windows Server 2012 R2
 KTCLOUD,kt-kr-central-a,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 18.04
 KTCLOUD,kt-kr-central-b,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 18.04
 KTCLOUD,kt-kr-seoul-m,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 18.04
@@ -462,6 +464,7 @@ KTCLOUD,kt-kr-seoul-m2,63de6d04-7f1b-4924-8e95-1acd6581ca0c,Ubuntu 18.04
 KTCLOUD,kt-us-west,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 18.04
 KTCLOUD,kt-kr-kimhae,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 18.04
 IBM,ibm-us-south,r006-9de77234-3189-42f8-982d-f2266477cfe0,Ubuntu 18.04
+IBM,ibm-us-south,r006-b4d8d8d4-7768-4a1b-9434-9483ca821a0d,Windows Server 2012 R2
 IBM,ibm-br-sao,r042-92d1cd12-f014-4b9a-abf8-c5ca6494a9e5,Ubuntu 18.04
 IBM,ibm-ca-tor,r038-e92647cf-8be9-438a-b94c-251cc86bc99a,Ubuntu 18.04
 IBM,ibm-us-east,r014-dc446598-a1b5-41c3-a1d6-add3afaf264e,Ubuntu 18.04
