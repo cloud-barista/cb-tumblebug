@@ -3,7 +3,7 @@
 #function add-vm-to-mcis() {
 
 	echo "####################################################################"
-	echo "## 8. vm: Create MCIS"
+	echo "## 9. Create vm on MCIS"
 	echo "####################################################################"
 
 	source ../init.sh
@@ -22,7 +22,7 @@
 		RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
 	fi
 	
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/subgroup -H 'Content-Type: application/json' -d \
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis/$MCISID/vm -H 'Content-Type: application/json' -d \
 		'{
 			"subGroupSize": "'${NUMVM}'",
 			"name": "'${CONN_CONFIG[$INDEX,$REGION]}'",
