@@ -1634,7 +1634,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	// provide a random passwd, if it is not provided by user (the passwd required for Windows)
 	if tempReq.ReqInfo.VMUserPasswd == "" {
 		// assign random string (mixed Uid style)
-		tempReq.ReqInfo.VMUserPasswd = common.GenRandomPassword()
+		tempReq.ReqInfo.VMUserPasswd = common.GenRandomPassword(14)
 	}
 
 	tempReq.ReqInfo.RootDiskType = vmInfoData.RootDiskType
