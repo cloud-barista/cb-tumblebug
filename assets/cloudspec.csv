@@ -893,3 +893,5 @@ TENCENT,tencent-eu-moscow,tencent-eu-moscow,S2.MEDIUM4,0.06,59.98,,,,,,,,,,defau
 TENCENT,tencent-na-ashburn,tencent-na-ashburn,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-siliconvalley,tencent-na-siliconvalley,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-toronto,tencent-na-toronto,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
+CLOUDIT,cloudit-region01,cloudit-region01,small-1,0.02,33.96,,,,,,,,,,default,default
+CLOUDIT,cloudit-region01,cloudit-region01,small-2,0.03,33.96,,,,,,,,,,default,default

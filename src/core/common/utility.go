@@ -51,16 +51,27 @@ func GenUid() string {
 }
 
 // GenRandomPassword is func to return a RandomPassword
-func GenRandomPassword() string {
+func GenRandomPassword(length int) string {
 	rand.Seed(time.Now().Unix())
 
-	charset := "ABCDEFG*!$"
+	charset := "A1!$"
 	shuff := []rune(charset)
 	rand.Shuffle(len(shuff), func(i, j int) {
 		shuff[i], shuff[j] = shuff[j], shuff[i]
 	})
+	randomString := GenUid()
+	if len(randomString) < length {
+		randomString = randomString + GenUid()
+	}
+	reducedString := randomString[0 : length-len(charset)]
+	reducedString = reducedString + string(shuff)
 
-	pw := uid.New().String() + string(shuff)
+	shuff = []rune(reducedString)
+	rand.Shuffle(len(shuff), func(i, j int) {
+		shuff[i], shuff[j] = shuff[j], shuff[i]
+	})
+
+	pw := string(shuff)
 
 	return pw
 }
