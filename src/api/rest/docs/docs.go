@@ -4752,8 +4752,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "registerWithInfo or registerWithId",
-                        "name": "registeringMethod",
+                        "description": "registeringMethod (registerWithInfo or registerWithId)",
+                        "name": "action",
                         "in": "query",
                         "required": true
                     },
@@ -7245,34 +7245,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcir.CustomImageStatus": {
-            "type": "string",
-            "enum": [
-                "Available",
-                "Unavailable"
-            ],
-            "x-enum-varnames": [
-                "MyImageAvailable",
-                "MyImageUnavailable"
-            ]
-        },
-        "mcir.DiskStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Available",
-                "Attached",
-                "Deleting",
-                "Error"
-            ],
-            "x-enum-varnames": [
-                "DiskCreating",
-                "DiskAvailable",
-                "DiskAttached",
-                "DiskDeleting",
-                "DiskError"
-            ]
-        },
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
             "properties": {
@@ -7538,11 +7510,7 @@ const docTemplate = `{
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
                     "type": "array",
@@ -7693,11 +7661,7 @@ const docTemplate = `{
                     "example": "aws-ap-southeast-1-1"
                 },
                 "status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.CustomImageStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -7787,11 +7751,7 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "Available, Unavailable, Attached, ...",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.DiskStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -8487,11 +8447,7 @@ const docTemplate = `{
                 },
                 "postCommand": {
                     "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.McisCmdReq"
                 },
                 "vmDynamicReq": {
                     "$ref": "#/definitions/mcis.TbVmDynamicReq"
@@ -9247,17 +9203,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.SpiderImageType": {
-            "type": "string",
-            "enum": [
-                "PublicImage",
-                "MyImage"
-            ],
-            "x-enum-varnames": [
-                "PublicImage",
-                "MyImage"
-            ]
-        },
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
@@ -9279,11 +9224,7 @@ const docTemplate = `{
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
                     "$ref": "#/definitions/common.IID"
@@ -9292,7 +9233,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "imageType": {
-                    "$ref": "#/definitions/mcis.SpiderImageType"
+                    "type": "string"
                 },
                 "keyPairIId": {
                     "$ref": "#/definitions/common.IID"
@@ -9328,11 +9269,7 @@ const docTemplate = `{
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "description": "\"/dev/sda1\", ...",
@@ -9367,11 +9304,7 @@ const docTemplate = `{
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
                     "type": "string"
@@ -9810,19 +9743,11 @@ const docTemplate = `{
                 },
                 "healthChecker": {
                     "description": "HealthChecker",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
                 },
                 "listener": {
                     "description": "Frontend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.NLBListenerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.NLBListenerReq"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -9835,11 +9760,7 @@ const docTemplate = `{
                 },
                 "targetGroup": {
                     "description": "Backend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -10038,11 +9959,7 @@ const docTemplate = `{
                 },
                 "region": {
                     "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "type": "string"

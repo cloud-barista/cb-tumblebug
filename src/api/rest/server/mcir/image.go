@@ -29,7 +29,7 @@ import (
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param registeringMethod query string true "registerWithInfo or registerWithId"
+// @Param action query string true "registeringMethod (registerWithInfo or registerWithId)"
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param imageInfo body mcir.TbImageInfo false "Details for an image object"
 // @Param imageId body mcir.TbImageReq false "name, connectionName and cspImageId"
