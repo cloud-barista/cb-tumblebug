@@ -1895,6 +1895,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 			fmt.Println("Found a line for the connectionName from file: " + row[1])
 		}
 
+		provider := row[0]
 		connectionName := row[1]
 		//resourceName := connectionName
 		// Default resource name has this pattern (nsId + "-systemdefault-" + connectionName)
@@ -1912,6 +1913,24 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				// set isolated private address space for each cloud region (192.168.xxx.0/24)
 				reqTmp.CidrBlock = "192.168." + strconv.Itoa(i+1) + ".0/24"
+				if strings.EqualFold(provider, "cloudit") {
+					// CLOUDIT: the list of subnets that can be created is
+					// 10.0.4.0/22,10.0.8.0/22,10.0.12.0/22,10.0.28.0/22,10.0.32.0/22,
+					// 10.0.36.0/22,10.0.40.0/22,10.0.44.0/22,10.0.48.0/22,10.0.52.0/22,
+					// 10.0.56.0/22,10.0.60.0/22,10.0.64.0/22,10.0.68.0/22,10.0.72.0/22,
+					// 10.0.76.0/22,10.0.80.0/22,10.0.84.0/22,10.0.88.0/22,10.0.92.0/22,
+					// 10.0.96.0/22,10.0.100.0/22,10.0.104.0/22,10.0.108.0/22,10.0.112.0/22,
+					// 10.0.116.0/22,10.0.120.0/22,10.0.124.0/22,10.0.132.0/22,10.0.136.0/22,
+					// 10.0.140.0/22,10.0.144.0/22,10.0.148.0/22,10.0.152.0/22,10.0.156.0/22,
+					// 10.0.160.0/22,10.0.164.0/22,10.0.168.0/22,10.0.172.0/22,10.0.176.0/22,
+					// 10.0.180.0/22,10.0.184.0/22,10.0.188.0/22,10.0.192.0/22,10.0.196.0/22,
+					// 10.0.200.0/22,10.0.204.0/22,10.0.208.0/22,10.0.212.0/22,10.0.216.0/22,
+					// 10.0.220.0/22,10.0.224.0/22,10.0.228.0/22,10.0.232.0/22,10.0.236.0/22,
+					// 10.0.240.0/22,10.0.244.0/22,10.0.248.0/22
+
+					// temporally assign 10.0.40.0/22 until new policy.
+					reqTmp.CidrBlock = "10.0.40.0/22"
+				}
 
 				// subnet := SpiderSubnetReqInfo{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
 				subnet := TbSubnetReq{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
@@ -1945,8 +1964,12 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 				ruleList = append(ruleList, rule)
 				rule = TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
 				ruleList = append(ruleList, rule)
-				rule = TbFirewallRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-				ruleList = append(ruleList, rule)
+				// CloudIt only offers tcp, udp Protocols
+				if !strings.EqualFold(provider, "cloudit") {
+					rule = TbFirewallRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+					ruleList = append(ruleList, rule)
+				}
+
 				common.PrintJsonPretty(ruleList)
 				reqTmp.FirewallRules = &ruleList
 
