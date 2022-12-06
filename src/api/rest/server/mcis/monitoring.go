@@ -47,12 +47,50 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 
 	// mcisTmpSystemLabel := mcis.DefaultSystemLabel
 	content, err := mcis.InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, req)
+
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
 
 	return c.JSON(http.StatusOK, content)
+}
+
+// RestPutMonitorAgentStatusInstalled godoc
+// @Summary Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
+// @Description Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
+// @Tags [Infra service] MCIS Resource monitor (for developer)
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(vm01)
+// @Success 200 {object} mcis.TbVmInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/monitoring/status/mcis/{mcisId}/vm/{vmId} [put]
+func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	// mcisTmpSystemLabel := mcis.DefaultSystemLabel
+	err := mcis.SetMonitoringAgentStatusInstalled(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	result, err := mcis.CoreGetMcisVmInfo(nsId, mcisId, vmId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusNotFound, &mapA)
+	}
+
+	common.PrintJsonPretty(*result)
+
+	return c.JSON(http.StatusOK, result)
 }
 
 // RestGetMonitorData godoc

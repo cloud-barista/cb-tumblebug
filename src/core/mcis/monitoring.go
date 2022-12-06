@@ -372,6 +372,30 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 
 }
 
+// SetMonitoringAgentStatusInstalled is func to Set Monitoring Agent Status Installed
+func SetMonitoringAgentStatusInstalled(nsId string, mcisId string, vmId string) error {
+	targetStatus := "installed"
+	return UpdateMonitoringAgentStatusManually(nsId, mcisId, vmId, targetStatus)
+}
+
+// UpdateMonitoringAgentStatusManually is func to Update Monitoring Agent Installation Status Manually
+func UpdateMonitoringAgentStatusManually(nsId string, mcisId string, vmId string, targetStatus string) error {
+
+	vmInfoTmp, err := GetVmObject(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	// set vm MonAgentStatus
+	vmInfoTmp.MonAgentStatus = targetStatus
+	UpdateVmInfo(nsId, mcisId, vmInfoTmp)
+
+	//TODO: add validation for monitoring
+
+	return nil
+}
+
 // GetMonitoringData func retrieves monitoring data from cb-dragonfly
 func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimpleResponse, error) {
 

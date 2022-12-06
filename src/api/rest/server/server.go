@@ -221,6 +221,7 @@ func RunServer(port string) {
 
 	g.POST("/:nsId/monitoring/install/mcis/:mcisId", rest_mcis.RestPostInstallMonitorAgentToMcis)
 	g.GET("/:nsId/monitoring/mcis/:mcisId/metric/:metric", rest_mcis.RestGetMonitorData)
+	g.PUT("/:nsId/monitoring/status/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMonitorAgentStatusInstalled)
 
 	// MCIS Cloud Adaptive Network (for developer)
 	g.POST("/:nsId/network/mcis/:mcisId", rest_mcis.RestPostConfigureCloudAdaptiveNetworkToMcis)
