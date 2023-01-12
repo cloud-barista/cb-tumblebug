@@ -51,7 +51,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt install jitsi-meet -y > /dev/null
 
 echo "[letsencrypt-certificate (will need actual DNS record)]"
 sudo apt install certbot -y &> /dev/null
-sudo echo "$EMAIL" | sudo DEBIAN_FRONTEND=noninteractive /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh
+sudo echo "$EMAIL" | sudo DEBIAN_FRONTEND=noninteractive /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh > /dev/null
 
 echo "[Config Jitsi]"
 sudo -- sh -c "echo DefaultLimitNOFILE=65000 >> /etc/systemd/system.conf"
