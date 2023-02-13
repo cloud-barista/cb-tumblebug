@@ -878,7 +878,7 @@ type registerationOverview struct {
 }
 
 // RegisterCspNativeResourcesAll func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (RegisterResourceAllResult, error) {
+func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mcisFlag string) (RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
 	connectionConfigList, err := common.GetConnConfigList()
@@ -913,7 +913,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (R
 
 			common.RandomSleep(0, 50)
 
-			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister, option)
+			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister, option, mcisFlag)
 			if err != nil {
 				common.CBLog.Error(err)
 			}
@@ -952,7 +952,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string) (R
 }
 
 // RegisterCspNativeResources func registers all CSP-native resources into CB-TB
-func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, option string) (RegisterResourceResult, error) {
+func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, option string, mcisFlag string) (RegisterResourceResult, error) {
 	startTime := time.Now()
 
 	optionFlag := "register"
@@ -1142,8 +1142,12 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 			vm.ConnectionName = connConfig
 			vm.IdByCSP = r.IdByCsp
 			vm.Description = "Ref name: " + r.RefNameOrId + ". CSP managed VM (registered to CB-TB)"
-			vm.Name = vm.ConnectionName + "-" + vm.IdByCSP
+			vm.Name = vm.ConnectionName + "-" + r.RefNameOrId + "-" + vm.IdByCSP
 			vm.Name = common.ChangeIdString(vm.Name)
+			if mcisFlag == "n" {
+				// (if mcisFlag == "n") create a mcis for each vm
+				req.Name = vm.Name
+			}
 			vm.Label = "not defined"
 
 			vm.ImageId = "cannot retrieve"
