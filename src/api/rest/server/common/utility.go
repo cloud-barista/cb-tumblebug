@@ -407,6 +407,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequest true "Specify connectionName, NS Id, and MCIS Name""
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
+// @Param mcisFlag query string false "Flag to show VMs in a collective MCIS form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} mcis.RegisterResourceResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -418,8 +419,9 @@ func RestRegisterCspNativeResources(c echo.Context) error {
 		return err
 	}
 	option := c.QueryParam("option")
+	mcisFlag := c.QueryParam("mcisFlag")
 
-	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName, option)
+	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName, option, mcisFlag)
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -445,6 +447,7 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Produce  json
 // @Param Request body RestRegisterCspNativeResourcesRequestAll true "Specify NS Id and MCIS Name"
 // @Param option query string false "Option to specify resourceType" Enums(onlyVm, exceptVm)
+// @Param mcisFlag query string false "Flag to show VMs in a collective MCIS form (y,n)" Enums(y, n) default(y)
 // @Success 200 {object} mcis.RegisterResourceAllResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -456,8 +459,9 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 		return err
 	}
 	option := c.QueryParam("option")
+	mcisFlag := c.QueryParam("mcisFlag")
 
-	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName, option)
+	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName, option, mcisFlag)
 
 	if err != nil {
 		common.CBLog.Error(err)
