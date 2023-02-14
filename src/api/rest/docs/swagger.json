@@ -6844,6 +6844,17 @@
                         "description": "Option to specify resourceType",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "y",
+                            "n"
+                        ],
+                        "type": "string",
+                        "default": "y",
+                        "description": "Flag to show VMs in a collective MCIS form (y,n)",
+                        "name": "mcisFlag",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -6899,6 +6910,17 @@
                         "type": "string",
                         "description": "Option to specify resourceType",
                         "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "y",
+                            "n"
+                        ],
+                        "type": "string",
+                        "default": "y",
+                        "description": "Flag to show VMs in a collective MCIS form (y,n)",
+                        "name": "mcisFlag",
                         "in": "query"
                     }
                 ],

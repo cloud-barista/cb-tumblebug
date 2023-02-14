@@ -7033,6 +7033,14 @@ paths:
         in: query
         name: option
         type: string
+      - default: "y"
+        description: Flag to show VMs in a collective MCIS form (y,n)
+        enum:
+        - "y"
+        - "n"
+        in: query
+        name: mcisFlag
+        type: string
       produces:
       - application/json
       responses:
@@ -7071,6 +7079,14 @@ paths:
         - exceptVm
         in: query
         name: option
+        type: string
+      - default: "y"
+        description: Flag to show VMs in a collective MCIS form (y,n)
+        enum:
+        - "y"
+        - "n"
+        in: query
+        name: mcisFlag
         type: string
       produces:
       - application/json
