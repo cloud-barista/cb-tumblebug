@@ -558,6 +558,10 @@ definitions:
           can be used) for special System purpose
         example: Managed by CB-Tumblebug
         type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
     type: object
   mcir.TbDataDiskReq:
     properties:
