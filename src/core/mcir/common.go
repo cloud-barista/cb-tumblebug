@@ -1013,9 +1013,11 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				newObj, err := GetResource(nsId, common.StrDataDisk, tempObj.Id)
 				if err != nil {
 					common.CBLog.Error(err)
-					return nil, err
+					tempObj.Status = "Failed"
+					tempObj.SystemMessage = err.Error()
+				} else {
+					tempObj = newObj.(TbDataDiskInfo)
 				}
-				tempObj = newObj.(TbDataDiskInfo)
 
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
 				if filterKey != "" {
@@ -1387,7 +1389,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
 				common.CBLog.Error(err)
-				return nil, err
+				return res, err
 			}
 
 			// Update TB DataDisk object's 'status' field
@@ -1409,7 +1411,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			resp, err := req.Get(url)
 			if err != nil {
 				common.CBLog.Error(err)
-				return nil, err
+				return res, err
 			}
 
 			fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
@@ -1418,7 +1420,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 				err := fmt.Errorf(string(resp.Body()))
 				fmt.Println("body: ", string(resp.Body()))
 				common.CBLog.Error(err)
-				return nil, err
+				return res, err
 			}
 
 			updatedSpiderDisk := resp.Result().(*SpiderDiskInfo)
