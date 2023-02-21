@@ -7880,6 +7880,11 @@ const docTemplate = `{
                     "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
                 }
             }
         },
