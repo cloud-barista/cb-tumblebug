@@ -219,41 +219,6 @@ func CoreGetMcisVmAction(nsId string, mcisId string, vmId string, action string)
 	}
 }
 
-/* Deprecated
-// ControlMcis is func to control MCIS
-func ControlMcis(nsId string, mcisId string, action string) error {
-
-	key := common.GenMcisKey(nsId, mcisId, "")
-	fmt.Println("[ControlMcis] " + key + " to " + action)
-	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-
-	vmList, err := ListVmId(nsId, mcisId)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-	if len(vmList) == 0 {
-		return nil
-	}
-	fmt.Println("vmList ", vmList)
-
-	for _, v := range vmList {
-		ControlVm(nsId, mcisId, v, action)
-	}
-	return nil
-
-	//need to change status
-
-}
-*/
-
 // ControlMcisAsync is func to control MCIS async
 func ControlMcisAsync(nsId string, mcisId string, action string, force bool) error {
 

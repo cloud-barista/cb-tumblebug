@@ -32,6 +32,7 @@ else
 fi
 
 appendConfig="port $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
+sudo mkdir -p ~/.xonotic/data
 sudo cp ~/Xonotic/server/server.cfg ~/.xonotic/data
 sudo echo -e "${appendConfig}" >> ~/.xonotic/data/server.cfg
 
