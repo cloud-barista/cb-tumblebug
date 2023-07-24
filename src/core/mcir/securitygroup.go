@@ -17,10 +17,8 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -255,89 +253,46 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 
 	var tempSpiderSecurityInfo *SpiderSecurityInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderSecurityInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderSecurityInfo{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
-
-		var url string
-		if option == "register" && u.CspSecurityGroupId == "" {
-			url = fmt.Sprintf("%s/securitygroup/%s", common.SpiderRestUrl, u.Name)
-			resp, err = req.Get(url)
-		} else if option == "register" && u.CspSecurityGroupId != "" {
-			url = fmt.Sprintf("%s/regsecuritygroup", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		} else { // option != "register"
-			url = fmt.Sprintf("%s/securitygroup", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		}
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			return content, err
-		}
-
-		tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		defer ccm.Close()
-
-		payload, _ := json.Marshal(tempReq)
-
-		//result, err := ccm.CreateSecurity(string(payload))
-		var result string
-
-		if option == "register" {
-			result, err = ccm.CreateVPC(string(payload))
-		} else {
-			result, err = ccm.GetVPC(string(payload))
-		}
-
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
-
-		tempSpiderSecurityInfo = &SpiderSecurityInfo{}
-		err = json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
+	var url string
+	if option == "register" && u.CspSecurityGroupId == "" {
+		url = fmt.Sprintf("%s/securitygroup/%s", common.SpiderRestUrl, u.Name)
+		resp, err = req.Get(url)
+	} else if option == "register" && u.CspSecurityGroupId != "" {
+		url = fmt.Sprintf("%s/regsecuritygroup", common.SpiderRestUrl)
+		resp, err = req.Post(url)
+	} else { // option != "register"
+		url = fmt.Sprintf("%s/securitygroup", common.SpiderRestUrl)
+		resp, err = req.Post(url)
 	}
+
+	if err != nil {
+		common.CBLog.Error(err)
+		content := TbSecurityGroupInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
+	}
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := TbSecurityGroupInfo{}
+		return content, err
+	}
+
+	tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
 
 	content := TbSecurityGroupInfo{}
 	content.Id = u.Name

@@ -16,7 +16,6 @@ package mcis
 
 import (
 	"encoding/json"
-	"os"
 	"time"
 
 	validator "github.com/go-playground/validator/v10"
@@ -34,9 +33,6 @@ import (
 	"net/http"
 
 	"sync"
-
-	df_pb "github.com/cloud-barista/cb-dragonfly/pkg/api/grpc/protobuf/cbdragonfly"
-	df_api "github.com/cloud-barista/cb-dragonfly/pkg/api/grpc/request"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
@@ -114,49 +110,35 @@ type MonResultSimpleResponse struct {
 
 // Module for checking CB-Dragonfly endpoint (call get config)
 func CheckDragonflyEndpoint() error {
-	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
-		cmd := "/config"
 
-		url := common.DragonflyRestUrl + cmd
-		method := "GET"
+	cmd := "/config"
 
-		client := &http.Client{}
-		req, err := http.NewRequest(method, url, nil)
+	url := common.DragonflyRestUrl + cmd
+	method := "GET"
 
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-		res, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, nil)
 
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-		defer res.Body.Close()
-
-		fmt.Println(string(body))
-		return nil
-	} else {
-		monApi := df_api.InitMonitoringAPI()
-		err := monApi.Open()
-		if err != nil {
-			common.CBLog.Error("failed to initialize grpc client, %s", err.Error())
-		}
-		defer monApi.Close()
-
-		result, err := monApi.GetMonitoringConfig()
-		if err != nil {
-			return err
-		}
-		fmt.Println(result)
-		return nil
+	if err != nil {
+		fmt.Println(err)
+		return err
 	}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	defer res.Body.Close()
+
+	fmt.Println(string(body))
+	return nil
+
 }
 
 // monAgentInstallReq is struct for CB-Dragonfly monitoring agent installation request
@@ -472,67 +454,45 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	var errStr string
 	var result string
 	var err error
-	if os.Getenv("DRAGONFLY_CALL_METHOD") == "REST" {
-		url := common.DragonflyRestUrl + cmd
-		fmt.Println("URL: " + url)
 
-		responseLimit := 8
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-			Timeout: time.Duration(responseLimit) * time.Minute,
-		}
-		req, err := http.NewRequest(method, url, nil)
-		if err != nil {
-			common.CBLog.Error(err)
-			errStr = err.Error()
-		}
+	url := common.DragonflyRestUrl + cmd
+	fmt.Println("URL: " + url)
 
-		fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
-		res, err := client.Do(req)
+	responseLimit := 8
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Timeout: time.Duration(responseLimit) * time.Minute,
+	}
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		common.CBLog.Error(err)
+		errStr = err.Error()
+	}
 
-		if err != nil {
-			common.CBLog.Error(err)
-			errStr = err.Error()
-		} else {
-			fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-			switch {
-			case res.StatusCode >= 400 || res.StatusCode < 200:
-				err1 := fmt.Errorf("HTTP Status: not in 200-399")
-				common.CBLog.Error(err1)
-				errStr = err1.Error()
-			}
+	fmt.Print("[Call CB-DF Result (" + mcisID + "," + vmID + ")] ")
+	res, err := client.Do(req)
 
-			body, err2 := ioutil.ReadAll(res.Body)
-			if err2 != nil {
-				common.CBLog.Error(err2)
-				errStr = err2.Error()
-			}
-			defer res.Body.Close()
-			response = string(body)
-		}
-
+	if err != nil {
+		common.CBLog.Error(err)
+		errStr = err.Error()
 	} else {
-		reqParams := df_pb.VMOnDemandMonQryRequest{
-			NsId:    nsID,
-			McisId:  mcisID,
-			VmId:    vmID,
-			AgentIp: vmIP,
+		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+		switch {
+		case res.StatusCode >= 400 || res.StatusCode < 200:
+			err1 := fmt.Errorf("HTTP Status: not in 200-399")
+			common.CBLog.Error(err1)
+			errStr = err1.Error()
 		}
 
-		monApi := df_api.InitMonitoringAPI()
-		err := monApi.Open()
-		if err != nil {
-			common.CBLog.Error("failed to initialize grpc client, %s", err.Error())
+		body, err2 := ioutil.ReadAll(res.Body)
+		if err2 != nil {
+			common.CBLog.Error(err2)
+			errStr = err2.Error()
 		}
-		defer monApi.Close()
-
-		result, err := monApi.GetVMOnDemandMonInfo(metric, reqParams)
-		if err != nil {
-			common.CBLog.Error(err)
-		}
-		response = result
+		defer res.Body.Close()
+		response = string(body)
 	}
 
 	if !gjson.Valid(response) {

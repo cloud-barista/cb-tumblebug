@@ -27,8 +27,6 @@ import (
 
 	//csv file handling
 
-	"os"
-
 	"math/rand"
 	"sort"
 
@@ -37,7 +35,6 @@ import (
 
 	"sync"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/go-resty/resty/v2"
@@ -665,50 +662,42 @@ func GetVmIdNameInDetail(nsId string, mcisId string, vmId string) (*TbIdNameInDe
 
 	var tempRes *spiderResTmp
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	// fmt.Println("tempReq:")                             // for debug
+	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	fmt.Println(tempReq) // for debug
 
-		// fmt.Println("tempReq:")                             // for debug
-		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
-		fmt.Println(tempReq) // for debug
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&spiderResTmp{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&spiderResTmp{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
+	var url string
+	url = fmt.Sprintf("%s/cspresourcename/%s", common.SpiderRestUrl, idDetails.IdInSp)
+	resp, err = req.Get(url)
 
-		var url string
-		url = fmt.Sprintf("%s/cspresourcename/%s", common.SpiderRestUrl, idDetails.IdInSp)
-		resp, err = req.Get(url)
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return &TbIdNameInDetailInfo{}, err
+	}
 
-		if err != nil {
-			common.CBLog.Error(err)
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return &TbIdNameInDetailInfo{}, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			return &TbIdNameInDetailInfo{}, err
-		}
-
-		tempRes = resp.Result().(*spiderResTmp)
-		fmt.Println(tempRes)
-
-	} else {
-		err = fmt.Errorf("gRPC for GetVmIdNameInDetail() is not supported")
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
 		common.CBLog.Error(err)
 		return &TbIdNameInDetailInfo{}, err
 	}
+
+	tempRes = resp.Result().(*spiderResTmp)
+	fmt.Println(tempRes)
+
 	idDetails.NameInCsp = tempRes.Name
 
 	return &idDetails, nil
@@ -1012,84 +1001,51 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	}
 	var statusResponseTmp statusResponse
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := common.SpiderRestUrl + "/vm/" + cspVmId
+	method := "GET"
 
-		url := common.SpiderRestUrl + "/vm/" + cspVmId
-		method := "GET"
+	type VMStatusReqInfo struct {
+		ConnectionName string
+	}
+	tempReq := VMStatusReqInfo{}
+	tempReq.ConnectionName = temp.ConnectionName
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
 
-		type VMStatusReqInfo struct {
-			ConnectionName string
-		}
-		tempReq := VMStatusReqInfo{}
-		tempReq.ConnectionName = temp.ConnectionName
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+	errorInfo.Status = StatusFailed
 
-		errorInfo.Status = StatusFailed
+	if err != nil {
+		fmt.Println(err)
+		return errorInfo, err
+	}
+	req.Header.Add("Content-Type", "application/json")
 
-		if err != nil {
-			fmt.Println(err)
-			return errorInfo, err
-		}
-		req.Header.Add("Content-Type", "application/json")
+	res, err := client.Do(req)
 
-		res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return errorInfo, err
+	}
 
-		if err != nil {
-			fmt.Println(err)
-			return errorInfo, err
-		}
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return errorInfo, err
+	}
+	defer res.Body.Close()
 
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			fmt.Println(err)
-			return errorInfo, err
-		}
-		defer res.Body.Close()
+	statusResponseTmp = statusResponse{}
 
-		statusResponseTmp = statusResponse{}
-
-		err2 := json.Unmarshal(body, &statusResponseTmp)
-		if err2 != nil {
-			fmt.Println(err2)
-			return errorInfo, err2
-		}
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return errorInfo, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return errorInfo, err
-		}
-		defer ccm.Close()
-
-		result, err := ccm.GetVMByParam(temp.ConnectionName, cspVmId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return errorInfo, err
-		}
-
-		statusResponseTmp = statusResponse{}
-		err2 := json.Unmarshal([]byte(result), &statusResponseTmp)
-		if err2 != nil {
-			common.CBLog.Error(err2)
-			return errorInfo, err2
-		}
-
+	err2 := json.Unmarshal(body, &statusResponseTmp)
+	if err2 != nil {
+		fmt.Println(err2)
+		return errorInfo, err2
 	}
 
 	fmt.Println(statusResponseTmp)
@@ -1227,102 +1183,61 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	if cspVmId != "" && temp.Status != StatusTerminated {
 		// fmt.Print("[Calling SPIDER] vmstatus, ")
 		// fmt.Println("CspVmId: " + cspVmId)
-		if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-			url := common.SpiderRestUrl + "/vmstatus/" + cspVmId
-			method := "GET"
+		url := common.SpiderRestUrl + "/vmstatus/" + cspVmId
+		method := "GET"
 
-			type VMStatusReqInfo struct {
-				ConnectionName string
+		type VMStatusReqInfo struct {
+			ConnectionName string
+		}
+		tempReq := VMStatusReqInfo{}
+		tempReq.ConnectionName = temp.ConnectionName
+		payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+			Timeout: 60 * time.Second,
+		}
+
+		// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
+		retrycheck := 5
+		for i := 0; i < retrycheck; i++ {
+
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+			errorInfo.Status = StatusFailed
+			if err != nil {
+				fmt.Println(err)
+				return errorInfo, err
 			}
-			tempReq := VMStatusReqInfo{}
-			tempReq.ConnectionName = temp.ConnectionName
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+			req.Header.Add("Content-Type", "application/json")
 
-			client := &http.Client{
-				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-				Timeout: 60 * time.Second,
-			}
-
-			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
-			retrycheck := 5
-			for i := 0; i < retrycheck; i++ {
-
-				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-				errorInfo.Status = StatusFailed
+			res, err := client.Do(req)
+			if err != nil {
+				fmt.Println(err)
+				errorInfo.SystemMessage = err.Error()
+				//return errorInfo, err
+			} else {
+				body, err := ioutil.ReadAll(res.Body)
 				if err != nil {
 					fmt.Println(err)
+					errorInfo.SystemMessage = err.Error()
 					return errorInfo, err
 				}
-				req.Header.Add("Content-Type", "application/json")
-
-				res, err := client.Do(req)
+				err = json.Unmarshal(body, &statusResponseTmp)
 				if err != nil {
 					fmt.Println(err)
 					errorInfo.SystemMessage = err.Error()
-					//return errorInfo, err
-				} else {
-					body, err := ioutil.ReadAll(res.Body)
-					if err != nil {
-						fmt.Println(err)
-						errorInfo.SystemMessage = err.Error()
-						return errorInfo, err
-					}
-					err = json.Unmarshal(body, &statusResponseTmp)
-					if err != nil {
-						fmt.Println(err)
-						errorInfo.SystemMessage = err.Error()
-						return errorInfo, err
-					}
-					defer res.Body.Close()
+					return errorInfo, err
 				}
-
-				if statusResponseTmp.Status != "" {
-					break
-				}
-				time.Sleep(5 * time.Second)
+				defer res.Body.Close()
 			}
 
-		} else {
-
-			// Set CCM gRPC API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return errorInfo, err
+			if statusResponseTmp.Status != "" {
+				break
 			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return errorInfo, err
-			}
-			defer ccm.Close()
-
-			// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
-			retrycheck := 2
-			for i := 0; i < retrycheck; i++ {
-				result, err := ccm.GetVMStatusByParam(temp.ConnectionName, cspVmId)
-				if err != nil {
-					common.CBLog.Error(err)
-					errorInfo.SystemMessage = err.Error()
-					//return errorInfo, err
-				} else {
-					err = json.Unmarshal([]byte(result), &statusResponseTmp)
-					if err != nil {
-						common.CBLog.Error(err)
-						errorInfo.SystemMessage = err.Error()
-						return errorInfo, err
-					}
-				}
-
-				if statusResponseTmp.Status != "" {
-					break
-				}
-				time.Sleep(1 * time.Second)
-			}
+			time.Sleep(5 * time.Second)
 		}
 
 	} else {

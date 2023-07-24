@@ -65,13 +65,9 @@ ENV SELF_ENDPOINT localhost:1323
 
 # Environment variables that you don't need to touch
 
-# Ignore a protocol buffer namespace conflict 
-ENV GOLANG_PROTOBUF_REGISTRATION_CONFLICT ignore
-
 # Swagger UI API document file path 
 ENV API_DOC_PATH /app/src/api/rest/docs/swagger.json
 
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
 
 EXPOSE 1323
-EXPOSE 50252

@@ -17,10 +17,8 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -101,70 +99,31 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 		tempReq.ReqInfo.Name = req.Name
 		tempReq.ReqInfo.IPv4_CIDR = req.IPv4_CIDR
 
-		var tempSpiderVPCInfo *SpiderVPCInfo
+		url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, vNetId)
 
-		if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+		client := resty.New().SetCloseConnection(true)
 
-			url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, vNetId)
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Post(url)
 
-			client := resty.New().SetCloseConnection(true)
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbVNetInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
+		}
 
-			resp, err := client.R().
-				SetHeader("Content-Type", "application/json").
-				SetBody(tempReq).
-				SetResult(&SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
-				//SetError(&AuthError{}).       // or SetError(AuthError{}).
-				Post(url)
-
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbVNetInfo{}
-				err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-				return content, err
-			}
-
-			fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-			switch {
-			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-				err := fmt.Errorf(string(resp.Body()))
-				common.CBLog.Error(err)
-				content := TbVNetInfo{}
-				return content, err
-			}
-
-			tempSpiderVPCInfo = resp.Result().(*SpiderVPCInfo)
-
-		} else {
-
-			// Set CCM API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return TbVNetInfo{}, err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return TbVNetInfo{}, err
-			}
-			defer ccm.Close()
-
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-			result, err := ccm.AddSubnet(string(payload))
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbVNetInfo{}, err
-			}
-
-			tempSpiderVPCInfo = &SpiderVPCInfo{}
-			err = json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbVNetInfo{}, err
-			}
-
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			common.CBLog.Error(err)
+			content := TbVNetInfo{}
+			return content, err
 		}
 
 	}

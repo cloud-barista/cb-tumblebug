@@ -17,14 +17,12 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"time"
 
 	//"strings"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -202,76 +200,43 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 		return content, err
 	}
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := common.SpiderRestUrl + "/vmspec"
 
-		url := common.SpiderRestUrl + "/vmspec"
+	// Create Req body
+	tempReq := common.SpiderConnectionName{}
+	tempReq.ConnectionName = connConfig
 
-		// Create Req body
-		tempReq := common.SpiderConnectionName{}
-		tempReq.ConnectionName = connConfig
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderSpecList{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderSpecList{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Get(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := SpiderSpecList{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println(string(resp.Body()))
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := SpiderSpecList{}
-			return content, err
-		}
-
-		temp := resp.Result().(*SpiderSpecList)
-		return *temp, nil
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return SpiderSpecList{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return SpiderSpecList{}, err
-		}
-		defer ccm.Close()
-
-		result, err := ccm.ListVMSpecByParam(connConfig)
-		if err != nil {
-			common.CBLog.Error(err)
-			return SpiderSpecList{}, err
-		}
-
-		temp := SpiderSpecList{}
-		err = json.Unmarshal([]byte(result), &temp)
-		if err != nil {
-			common.CBLog.Error(err)
-			return SpiderSpecList{}, err
-		}
-		return temp, nil
-
+	if err != nil {
+		common.CBLog.Error(err)
+		content := SpiderSpecList{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
+
+	fmt.Println(string(resp.Body()))
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := SpiderSpecList{}
+		return content, err
+	}
+
+	temp := resp.Result().(*SpiderSpecList)
+	return *temp, nil
+
 }
 
 // LookupSpec accepts Spider conn config and CSP spec name, lookups and returns the Spider spec object
@@ -289,76 +254,44 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		return content, err
 	}
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	//url := common.SPIDER_REST_URL + "/vmspec/" + u.CspSpecName
+	url := common.SpiderRestUrl + "/vmspec/" + specName
 
-		//url := common.SPIDER_REST_URL + "/vmspec/" + u.CspSpecName
-		url := common.SpiderRestUrl + "/vmspec/" + specName
+	// Create Req body
+	tempReq := common.SpiderConnectionName{}
+	tempReq.ConnectionName = connConfig
 
-		// Create Req body
-		tempReq := common.SpiderConnectionName{}
-		tempReq.ConnectionName = connConfig
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	resp, err := client.SetTimeout(2*time.Minute).R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Get(url)
 
-		resp, err := client.SetTimeout(2*time.Minute).R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Get(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := SpiderSpecInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println(string(resp.Body()))
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := SpiderSpecInfo{}
-			return content, err
-		}
-
-		temp := resp.Result().(*SpiderSpecInfo)
-		return *temp, nil
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return SpiderSpecInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return SpiderSpecInfo{}, err
-		}
-		defer ccm.Close()
-
-		result, err := ccm.GetVMSpecByParam(connConfig, specName)
-		if err != nil {
-			common.CBLog.Error(err)
-			return SpiderSpecInfo{}, err
-		}
-
-		temp := SpiderSpecInfo{}
-		err2 := json.Unmarshal([]byte(result), &temp)
-		if err2 != nil {
-			fmt.Errorf("an error occurred while unmarshaling: " + err2.Error())
-		}
-		return temp, nil
-
+	if err != nil {
+		common.CBLog.Error(err)
+		content := SpiderSpecInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
+
+	fmt.Println(string(resp.Body()))
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := SpiderSpecInfo{}
+		return content, err
+	}
+
+	temp := resp.Result().(*SpiderSpecInfo)
+	return *temp, nil
+
 }
 
 // FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects

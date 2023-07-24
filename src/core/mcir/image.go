@@ -18,13 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
 	validator "github.com/go-playground/validator/v10"
@@ -279,76 +277,43 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 		return content, err
 	}
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := common.SpiderRestUrl + "/vmimage"
 
-		url := common.SpiderRestUrl + "/vmimage"
+	// Create Req body
+	tempReq := common.SpiderConnectionName{}
+	tempReq.ConnectionName = connConfig
 
-		// Create Req body
-		tempReq := common.SpiderConnectionName{}
-		tempReq.ConnectionName = connConfig
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderImageList{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderImageList{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Get(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := SpiderImageList{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println(string(resp.Body()))
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := SpiderImageList{}
-			return content, err
-		}
-
-		temp := resp.Result().(*SpiderImageList)
-		return *temp, nil
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return SpiderImageList{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return SpiderImageList{}, err
-		}
-		defer ccm.Close()
-
-		result, err := ccm.ListImageByParam(connConfig)
-		if err != nil {
-			common.CBLog.Error(err)
-			return SpiderImageList{}, err
-		}
-
-		temp := SpiderImageList{}
-		err = json.Unmarshal([]byte(result), &temp)
-		if err != nil {
-			common.CBLog.Error(err)
-			return SpiderImageList{}, err
-		}
-		return temp, nil
-
+	if err != nil {
+		common.CBLog.Error(err)
+		content := SpiderImageList{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
+
+	fmt.Println(string(resp.Body()))
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := SpiderImageList{}
+		return content, err
+	}
+
+	temp := resp.Result().(*SpiderImageList)
+	return *temp, nil
+
 }
 
 // LookupImage accepts Spider conn config and CSP image ID, lookups and returns the Spider image object
@@ -366,75 +331,43 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		return content, err
 	}
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := common.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
 
-		url := common.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
+	// Create Req body
+	tempReq := common.SpiderConnectionName{}
+	tempReq.ConnectionName = connConfig
 
-		// Create Req body
-		tempReq := common.SpiderConnectionName{}
-		tempReq.ConnectionName = connConfig
+	client := resty.New().SetTimeout(2 * time.Minute).SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetTimeout(2 * time.Minute).SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderImageInfo{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderImageInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Get(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := SpiderImageInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println(string(resp.Body()))
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := SpiderImageInfo{}
-			return content, err
-		}
-
-		temp := resp.Result().(*SpiderImageInfo)
-		return *temp, nil
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return SpiderImageInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return SpiderImageInfo{}, err
-		}
-		defer ccm.Close()
-
-		result, err := ccm.GetImageByParam(connConfig, imageId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return SpiderImageInfo{}, err
-		}
-
-		temp := SpiderImageInfo{}
-		err = json.Unmarshal([]byte(result), &temp)
-		if err != nil {
-			common.CBLog.Error(err)
-		}
-		return temp, nil
-
+	if err != nil {
+		common.CBLog.Error(err)
+		content := SpiderImageInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
+
+	fmt.Println(string(resp.Body()))
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := SpiderImageInfo{}
+		return content, err
+	}
+
+	temp := resp.Result().(*SpiderImageInfo)
+	return *temp, nil
+
 }
 
 // FetchImagesForAllConnConfigs gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects

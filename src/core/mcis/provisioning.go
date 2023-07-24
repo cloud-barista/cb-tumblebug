@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 	"sync"
 
@@ -32,7 +31,6 @@ import (
 
 	// REST API (echo)
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	validator "github.com/go-playground/validator/v10"
@@ -1738,96 +1736,61 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	// Randomly sleep within 30 Secs to avoid rateLimit from CSP
 	common.RandomSleep(0, 30)
 
-	// Call CB-Spider API by REST or gRPC
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
-		url := common.SpiderRestUrl + "/vm"
-		method := "POST"
-		if option == "register" {
-			url = common.SpiderRestUrl + "/regvm"
-			method = "POST"
-		}
-
-		fmt.Println("\n[Calling CB-Spider]")
-		fmt.Println("url: " + url + " method: " + method)
-
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-		defer res.Body.Close()
-
-		// tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
-		err = json.Unmarshal(body, &tempSpiderVMInfo)
-
-		if err != nil {
-			common.PrintJsonPretty(err)
-			common.CBLog.Error(err)
-			return err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-		switch {
-		case res.StatusCode >= 400 || res.StatusCode < 200:
-			err := fmt.Errorf(string(body))
-			fmt.Println("body: ", string(body))
-			common.CBLog.Error(err)
-			return err
-		}
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return err
-		}
-		defer ccm.Close()
-
-		fmt.Println("\n[Calling CB-Spider]")
-
-		result, err := ccm.StartVM(string(payload))
-		if err != nil {
-			common.CBLog.Error(err)
-			return err
-		}
-
-		tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
-		err2 := json.Unmarshal([]byte(result), &tempSpiderVMInfo)
-		if err2 != nil {
-			fmt.Println(err)
-			common.CBLog.Error(err)
-			return err
-		}
+	url := common.SpiderRestUrl + "/vm"
+	method := "POST"
+	if option == "register" {
+		url = common.SpiderRestUrl + "/regvm"
+		method = "POST"
 	}
+
+	fmt.Println("\n[Calling CB-Spider]")
+	fmt.Println("url: " + url + " method: " + method)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+	defer res.Body.Close()
+
+	// tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
+	err = json.Unmarshal(body, &tempSpiderVMInfo)
+
+	if err != nil {
+		common.PrintJsonPretty(err)
+		common.CBLog.Error(err)
+		return err
+	}
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+	switch {
+	case res.StatusCode >= 400 || res.StatusCode < 200:
+		err := fmt.Errorf(string(body))
+		fmt.Println("body: ", string(body))
+		common.CBLog.Error(err)
+		return err
+	}
+
 	fmt.Println("[Response from CB-Spider]")
 	common.PrintJsonPretty(tempSpiderVMInfo)
 	fmt.Println("[Finished calling CB-Spider]")

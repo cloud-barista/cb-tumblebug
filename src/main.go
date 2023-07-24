@@ -32,7 +32,6 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 
-	grpcServer "github.com/cloud-barista/cb-tumblebug/src/api/grpc/server"
 	restServer "github.com/cloud-barista/cb-tumblebug/src/api/rest/server"
 
 	"xorm.io/xorm"
@@ -221,9 +220,9 @@ func main() {
 	}()
 	defer ticker.Stop()
 
-	// Launch API servers (REST and gRPC)
+	// Launch API servers (REST)
 	wg := new(sync.WaitGroup)
-	wg.Add(2)
+	wg.Add(1)
 
 	// Start REST Server
 	go func() {
@@ -231,13 +230,12 @@ func main() {
 		wg.Done()
 	}()
 
+	// Note: Deprecated gRPC server
 	// Start gRPC Server
-	go func() {
-		grpcServer.RunServer()
-		//fmt.Println("gRPC server started on " + grpcserver.Port)
-		wg.Done()
-	}()
-
+	// go func() {
+	// 	grpcServer.RunServer()
+	// 	wg.Done()
+	// }()
 	// fmt.Println("RuntimeConf: ", common.RuntimeConf.Cloud)
 
 	wg.Wait()
