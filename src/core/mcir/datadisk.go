@@ -186,8 +186,6 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 
 	var tempSpiderDiskInfo *SpiderDiskInfo
 
-	// if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
@@ -228,9 +226,6 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 	}
 
 	tempSpiderDiskInfo = resp.Result().(*SpiderDiskInfo)
-
-	// } else { // gRPC
-	// } // gRPC
 
 	content := TbDataDiskInfo{
 		Id:                   u.Name,
@@ -334,8 +329,6 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 		},
 	}
 
-	// if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
@@ -373,9 +366,6 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 			return TbDataDiskInfo{}, err
 		}
 	*/
-
-	// } else { // gRPC
-	// } // gRPC
 
 	content := dataDisk
 	content.DiskSize = u.DiskSize

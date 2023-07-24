@@ -17,10 +17,8 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -207,89 +205,46 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 
 	var tempSpiderVPCInfo *SpiderVPCInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderVPCInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderVPCInfo{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
-
-		var url string
-		if option == "register" && u.CspVNetId == "" {
-			url = fmt.Sprintf("%s/vpc/%s", common.SpiderRestUrl, u.Name)
-			resp, err = req.Get(url)
-		} else if option == "register" && u.CspVNetId != "" {
-			url = fmt.Sprintf("%s/regvpc", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		} else { // option != "register"
-			url = fmt.Sprintf("%s/vpc", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		}
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbVNetInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := TbVNetInfo{}
-			return content, err
-		}
-
-		tempSpiderVPCInfo = resp.Result().(*SpiderVPCInfo)
-
-	} else {
-
-		// Set CCM API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbVNetInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return TbVNetInfo{}, err
-		}
-		defer ccm.Close()
-
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-		var result string
-
-		if option == "register" {
-			result, err = ccm.CreateVPC(string(payload))
-		} else {
-			result, err = ccm.GetVPC(string(payload))
-		}
-
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbVNetInfo{}, err
-		}
-
-		tempSpiderVPCInfo = &SpiderVPCInfo{}
-		err = json.Unmarshal([]byte(result), &tempSpiderVPCInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbVNetInfo{}, err
-		}
-
+	var url string
+	if option == "register" && u.CspVNetId == "" {
+		url = fmt.Sprintf("%s/vpc/%s", common.SpiderRestUrl, u.Name)
+		resp, err = req.Get(url)
+	} else if option == "register" && u.CspVNetId != "" {
+		url = fmt.Sprintf("%s/regvpc", common.SpiderRestUrl)
+		resp, err = req.Post(url)
+	} else { // option != "register"
+		url = fmt.Sprintf("%s/vpc", common.SpiderRestUrl)
+		resp, err = req.Post(url)
 	}
+
+	if err != nil {
+		common.CBLog.Error(err)
+		content := TbVNetInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
+	}
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := TbVNetInfo{}
+		return content, err
+	}
+
+	tempSpiderVPCInfo = resp.Result().(*SpiderVPCInfo)
 
 	content := TbVNetInfo{}
 	//content.Id = common.GenUid()

@@ -173,8 +173,6 @@ func LookupMyImage(connConfig string, myImageId string) (SpiderMyImageInfo, erro
 		return SpiderMyImageInfo{}, err
 	}
 
-	// if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
 	url := common.SpiderRestUrl + "/myimage/" + url.QueryEscape(myImageId)
 
 	// Create Req body
@@ -210,37 +208,6 @@ func LookupMyImage(connConfig string, myImageId string) (SpiderMyImageInfo, erro
 	temp := resp.Result().(*SpiderMyImageInfo)
 	return *temp, nil
 
-	/*
-		} else { // if os.Getenv("SPIDER_CALL_METHOD") != "REST"
-
-			// Set CCM gRPC API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return SpiderImageInfo{}, err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return SpiderImageInfo{}, err
-			}
-			defer ccm.Close()
-
-			result, err := ccm.GetImageByParam(connConfig, imageId)
-			if err != nil {
-				common.CBLog.Error(err)
-				return SpiderImageInfo{}, err
-			}
-
-			temp := SpiderImageInfo{}
-			err = json.Unmarshal([]byte(result), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-			}
-			return temp, nil
-		}
-	*/
 }
 
 // ConvertSpiderMyImageToTumblebugCustomImage accepts an Spider MyImage object, converts to and returns an TB customImage object

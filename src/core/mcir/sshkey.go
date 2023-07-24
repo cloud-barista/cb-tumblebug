@@ -17,9 +17,7 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -158,81 +156,45 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 
 	var tempSpiderKeyPairInfo *SpiderKeyPairInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderKeyPairInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderKeyPairInfo{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
-
-		var url string
-		if option == "register" && u.CspSshKeyId == "" {
-			url = fmt.Sprintf("%s/keypair/%s", common.SpiderRestUrl, u.Name)
-			resp, err = req.Get(url)
-		} else if option == "register" && u.CspSshKeyId != "" {
-			url = fmt.Sprintf("%s/regkeypair", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		} else { // option != "register"
-			url = fmt.Sprintf("%s/keypair", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		}
-
-		if err != nil {
-			common.CBLog.Error(err)
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return emptyObj, err
-		}
-
-		fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			fmt.Println("body: ", string(resp.Body()))
-			common.CBLog.Error(err)
-			return emptyObj, err
-		}
-
-		tempSpiderKeyPairInfo = resp.Result().(*SpiderKeyPairInfo)
-
-	} else { // gRPC
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return emptyObj, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return emptyObj, err
-		}
-		defer ccm.Close()
-
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-		result, err := ccm.CreateKey(string(payload))
-		if err != nil {
-			common.CBLog.Error(err)
-			return emptyObj, err
-		}
-
-		tempSpiderKeyPairInfo = &SpiderKeyPairInfo{}
-		err = json.Unmarshal([]byte(result), &tempSpiderKeyPairInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-			return emptyObj, err
-		}
-
+	var url string
+	if option == "register" && u.CspSshKeyId == "" {
+		url = fmt.Sprintf("%s/keypair/%s", common.SpiderRestUrl, u.Name)
+		resp, err = req.Get(url)
+	} else if option == "register" && u.CspSshKeyId != "" {
+		url = fmt.Sprintf("%s/regkeypair", common.SpiderRestUrl)
+		resp, err = req.Post(url)
+	} else { // option != "register"
+		url = fmt.Sprintf("%s/keypair", common.SpiderRestUrl)
+		resp, err = req.Post(url)
 	}
+
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return emptyObj, err
+	}
+
+	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		fmt.Println("body: ", string(resp.Body()))
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	tempSpiderKeyPairInfo = resp.Result().(*SpiderKeyPairInfo)
 
 	content := TbSshKeyInfo{}
 	//content.Id = common.GenUid()

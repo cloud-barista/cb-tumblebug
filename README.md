@@ -257,7 +257,6 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
    http://xxx.xxx.xxx.xxx:1323/tumblebug/swagger/index.html
 
   ⇨ http server started on [::]:1323
-  ⇨ grpc server started on [::]:50252
   ```
 
 - 알려진 에러 및 해결 방법 

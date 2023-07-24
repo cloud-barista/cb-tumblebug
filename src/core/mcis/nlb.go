@@ -17,7 +17,6 @@ package mcis
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -550,94 +549,48 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 	var tempSpiderNLBInfo *SpiderNLBInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	// fmt.Println("tempReq:")                             // for debug
+	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Print(string(payload))                          // for debug
 
-		// fmt.Println("tempReq:")                             // for debug
-		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
-		// fmt.Print(string(payload))                          // for debug
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
-
-		var url string
-		if option == "register" && u.CspNLBId == "" {
-			url = fmt.Sprintf("%s/nlb/%s", common.SpiderRestUrl, u.TargetGroup.SubGroupId)
-			resp, err = req.Get(url)
-		} else if option == "register" && u.CspNLBId != "" {
-			url = fmt.Sprintf("%s/regnlb", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		} else { // option != "register"
-			url = fmt.Sprintf("%s/nlb", common.SpiderRestUrl)
-			resp, err = req.Post(url)
-		}
-
-		if err != nil {
-			common.CBLog.Error(err)
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return emptyObj, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			return emptyObj, err
-		}
-
-		tempSpiderNLBInfo = resp.Result().(*SpiderNLBInfo)
-
+	var url string
+	if option == "register" && u.CspNLBId == "" {
+		url = fmt.Sprintf("%s/nlb/%s", common.SpiderRestUrl, u.TargetGroup.SubGroupId)
+		resp, err = req.Get(url)
+	} else if option == "register" && u.CspNLBId != "" {
+		url = fmt.Sprintf("%s/regnlb", common.SpiderRestUrl)
+		resp, err = req.Post(url)
+	} else { // option != "register"
+		url = fmt.Sprintf("%s/nlb", common.SpiderRestUrl)
+		resp, err = req.Post(url)
 	}
-	/*
-		else {
 
-			// Set CCM API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return emptyObj, err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return emptyObj, err
-			}
-			defer ccm.Close()
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return emptyObj, err
+	}
 
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
 
-			var result string
-
-			if option == "register" {
-				result, err = ccm.CreateNLB(string(payload))
-			} else {
-				result, err = ccm.GetNLB(string(payload))
-			}
-
-			if err != nil {
-				common.CBLog.Error(err)
-				return emptyObj, err
-			}
-
-			tempSpiderNLBInfo = &SpiderNLBInfo{}
-			err = json.Unmarshal([]byte(result), &tempSpiderNLBInfo)
-			if err != nil {
-				common.CBLog.Error(err)
-				return emptyObj, err
-			}
-
-		}
-	*/
+	tempSpiderNLBInfo = resp.Result().(*SpiderNLBInfo)
 
 	regionTmp, _ := common.GetRegion(connConfig.RegionName)
 	nativeRegion := ""
@@ -1022,9 +975,6 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 	// NLB has no childResources, so below line is commented.
 	// var childResources interface{}
 
-	// Disable gRPC calling for NLB
-	// if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
-
 	var url string
 
 	// Create Req body
@@ -1085,47 +1035,6 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 	default:
 
 	}
-
-	// Disable gRPC calling for NLB
-	/*
-		} else {
-
-			// Set CCM gRPC API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return err
-			}
-			defer ccm.Close()
-
-			temp := TbNLBInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			_, err = ccm.DeleteNLBByParam(temp.ConnectionName, temp.Name, forceFlag)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			// err = common.CBStore.Delete(key)
-			// if err != nil {
-			// 	common.CBLog.Error(err)
-			// 	return err
-			// }
-			// return nil
-
-		}
-	*/
 
 	err = common.CBStore.Delete(key)
 	if err != nil {
@@ -1230,86 +1139,40 @@ func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, er
 
 	var tempSpiderNLBHealthInfo *SpiderNLBHealthInfoWrapper
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	// fmt.Println("tempReq:")                             // for debug
+	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Print(string(payload))                          // for debug
 
-		// fmt.Println("tempReq:")                             // for debug
-		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
-		// fmt.Print(string(payload))                          // for debug
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderNLBHealthInfoWrapper{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderNLBHealthInfoWrapper{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
+	var url string
+	url = fmt.Sprintf("%s/nlb/%s/health", common.SpiderRestUrl, nlb.CspNLBName)
+	resp, err = req.Get(url)
 
-		var url string
-		url = fmt.Sprintf("%s/nlb/%s/health", common.SpiderRestUrl, nlb.CspNLBName)
-		resp, err = req.Get(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return TbNLBHealthInfo{}, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			return TbNLBHealthInfo{}, err
-		}
-
-		tempSpiderNLBHealthInfo = resp.Result().(*SpiderNLBHealthInfoWrapper)
-
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return TbNLBHealthInfo{}, err
 	}
-	/*
-		else {
 
-			// Set CCM API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return TbNLBInfo{}, err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return TbNLBInfo{}, err
-			}
-			defer ccm.Close()
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		return TbNLBHealthInfo{}, err
+	}
 
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-			var result string
-
-			if option == "register" {
-				result, err = ccm.CreateNLB(string(payload))
-			} else {
-				result, err = ccm.GetNLB(string(payload))
-			}
-
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-			tempSpiderNLBInfo = &SpiderNLBInfo{}
-			err = json.Unmarshal([]byte(result), &tempSpiderNLBInfo)
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-		}
-	*/
+	tempSpiderNLBHealthInfo = resp.Result().(*SpiderNLBHealthInfoWrapper)
 
 	result := TbNLBHealthInfo{}
 
@@ -1473,88 +1336,42 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 
 	var tempSpiderNLBInfo *SpiderNLBInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	// fmt.Println("tempReq:")                             // for debug
+	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Print(string(payload))                          // for debug
 
-		// fmt.Println("tempReq:")                             // for debug
-		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
-		// fmt.Print(string(payload))                          // for debug
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
+	var url string
+	url = fmt.Sprintf("%s/nlb/%s/vms", common.SpiderRestUrl, nlb.CspNLBName)
+	resp, err = req.Post(url)
 
-		var url string
-		url = fmt.Sprintf("%s/nlb/%s/vms", common.SpiderRestUrl, nlb.CspNLBName)
-		resp, err = req.Post(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbNLBInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := TbNLBInfo{}
-			return content, err
-		}
-
-		tempSpiderNLBInfo = resp.Result().(*SpiderNLBInfo)
-
+	if err != nil {
+		common.CBLog.Error(err)
+		content := TbNLBInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
-	/*
-		else {
 
-			// Set CCM API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return TbNLBInfo{}, err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return TbNLBInfo{}, err
-			}
-			defer ccm.Close()
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := TbNLBInfo{}
+		return content, err
+	}
 
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-			var result string
-
-			if option == "register" {
-				result, err = ccm.CreateNLB(string(payload))
-			} else {
-				result, err = ccm.GetNLB(string(payload))
-			}
-
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-			tempSpiderNLBInfo = &SpiderNLBInfo{}
-			err = json.Unmarshal([]byte(result), &tempSpiderNLBInfo)
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-		}
-	*/
+	tempSpiderNLBInfo = resp.Result().(*SpiderNLBInfo)
 
 	content := TbNLBInfo{
 		Id:             nlb.Name,
@@ -1731,88 +1548,42 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 
 	// var tempSpiderNLBInfo *SpiderNLBInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	client := resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	// fmt.Println("tempReq:")                             // for debug
+	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Print(string(payload))                          // for debug
 
-		// fmt.Println("tempReq:")                             // for debug
-		// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
-		// fmt.Print(string(payload))                          // for debug
+	req := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq)
+		// SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
-		req := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq)
-			// SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	var resp *resty.Response
 
-		var resp *resty.Response
-		var err error
+	var url string
+	url = fmt.Sprintf("%s/nlb/%s/vms", common.SpiderRestUrl, nlb.CspNLBName)
+	resp, err = req.Delete(url)
 
-		var url string
-		url = fmt.Sprintf("%s/nlb/%s/vms", common.SpiderRestUrl, nlb.CspNLBName)
-		resp, err = req.Delete(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			// content := TbNLBInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			// content := TbNLBInfo{}
-			return err
-		}
-
-		// result := resp.Result().(bool)
-
+	if err != nil {
+		common.CBLog.Error(err)
+		// content := TbNLBInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return err
 	}
-	/*
-		else {
 
-			// Set CCM API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return TbNLBInfo{}, err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return TbNLBInfo{}, err
-			}
-			defer ccm.Close()
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		// content := TbNLBInfo{}
+		return err
+	}
 
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-			var result string
-
-			if option == "register" {
-				result, err = ccm.CreateNLB(string(payload))
-			} else {
-				result, err = ccm.GetNLB(string(payload))
-			}
-
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-			tempSpiderNLBInfo = &SpiderNLBInfo{}
-			err = json.Unmarshal([]byte(result), &tempSpiderNLBInfo)
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbNLBInfo{}, err
-			}
-
-		}
-	*/
+	// result := resp.Result().(bool)
 
 	oldVMList := nlb.TargetGroup.VMs
 	for _, vmToDelete := range u.TargetGroup.VMs {

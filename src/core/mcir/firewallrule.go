@@ -17,7 +17,6 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -111,70 +110,35 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 			tempReq.ReqInfo.RuleInfoList = append(tempReq.ReqInfo.RuleInfoList, SpiderSecurityRuleInfo(newRule)) // Is this really works?
 		}
 
-		if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+		url := fmt.Sprintf("%s/securitygroup/%s/rules", common.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
 
-			url := fmt.Sprintf("%s/securitygroup/%s/rules", common.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
+		client := resty.New().SetCloseConnection(true)
 
-			client := resty.New().SetCloseConnection(true)
+		resp, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(tempReq).
+			SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
+			//SetError(&AuthError{}).       // or SetError(AuthError{}).
+			Post(url)
 
-			resp, err := client.R().
-				SetHeader("Content-Type", "application/json").
-				SetBody(tempReq).
-				SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
-				//SetError(&AuthError{}).       // or SetError(AuthError{}).
-				Post(url)
-
-			if err != nil {
-				common.CBLog.Error(err)
-				content := TbSecurityGroupInfo{}
-				err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-				return content, err
-			}
-
-			fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-			switch {
-			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-				err := fmt.Errorf(string(resp.Body()))
-				common.CBLog.Error(err)
-				content := TbSecurityGroupInfo{}
-				return content, err
-			}
-
-			tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
-
-		} /* else {
-
-			// Set CCM API
-			ccm := api.NewCloudResourceHandler()
-			err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-			if err != nil {
-				common.CBLog.Error("ccm failed to set config : ", err)
-				return TbSecurityGroupInfo{}, err
-			}
-			err = ccm.Open()
-			if err != nil {
-				common.CBLog.Error("ccm api open failed : ", err)
-				return TbSecurityGroupInfo{}, err
-			}
-			defer ccm.Close()
-
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-			result, err := ccm.AddFirewallRule(string(payload))
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbSecurityGroupInfo{}, err
-			}
-
-			tempSpiderSecurityInfo = &SpiderSecurityInfo{}
-			err = json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
-			if err != nil {
-				common.CBLog.Error(err)
-				return TbSecurityGroupInfo{}, err
-			}
-
+		if err != nil {
+			common.CBLog.Error(err)
+			content := TbSecurityGroupInfo{}
+			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+			return content, err
 		}
-		*/
+
+		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+		switch {
+		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+			err := fmt.Errorf(string(resp.Body()))
+			common.CBLog.Error(err)
+			content := TbSecurityGroupInfo{}
+			return content, err
+		}
+
+		tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
+
 	}
 
 	// cb-store
@@ -306,70 +270,34 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		}
 	}
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := fmt.Sprintf("%s/securitygroup/%s/rules", common.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
 
-		url := fmt.Sprintf("%s/securitygroup/%s/rules", common.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
+	client := resty.New().SetCloseConnection(true)
 
-		client := resty.New().SetCloseConnection(true)
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		SetResult(&SpiderDeleteSecurityRulesResp{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Delete(url)
 
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			SetResult(&SpiderDeleteSecurityRulesResp{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Delete(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			return content, err
-		}
-
-		spiderDeleteSecurityRulesResp = resp.Result().(*SpiderDeleteSecurityRulesResp)
-
-	} /* else {
-
-		// Set CCM API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		defer ccm.Close()
-
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-		result, err := ccm.AddFirewallRule(string(payload))
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
-
-		tempSpiderSecurityInfo = &SpiderSecurityInfo{}
-		err = json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
-
+	if err != nil {
+		common.CBLog.Error(err)
+		content := TbSecurityGroupInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
-	*/
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := TbSecurityGroupInfo{}
+		return content, err
+	}
+
+	spiderDeleteSecurityRulesResp = resp.Result().(*SpiderDeleteSecurityRulesResp)
 
 	if spiderDeleteSecurityRulesResp.Result != "true" {
 		err := fmt.Errorf("Failed to delete Security Group rules with CB-Spider.")
@@ -382,71 +310,35 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	var tempSpiderSecurityInfo *SpiderSecurityInfo
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url = fmt.Sprintf("%s/securitygroup/%s", common.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
 
-		url := fmt.Sprintf("%s/securitygroup/%s", common.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
+	client = resty.New().SetCloseConnection(true)
+	client.SetAllowGetMethodPayload(true)
 
-		client := resty.New().SetCloseConnection(true)
-		client.SetAllowGetMethodPayload(true)
+	resp, err = client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq2).
+		SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq2).
-			SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Get(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			content := TbSecurityGroupInfo{}
-			return content, err
-		}
-
-		tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
-
-	} /* else {
-
-		// Set CCM API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return TbSecurityGroupInfo{}, err
-		}
-		defer ccm.Close()
-
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-		result, err := ccm.AddFirewallRule(string(payload))
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
-
-		tempSpiderSecurityInfo = &SpiderSecurityInfo{}
-		err = json.Unmarshal([]byte(result), &tempSpiderSecurityInfo)
-		if err != nil {
-			common.CBLog.Error(err)
-			return TbSecurityGroupInfo{}, err
-		}
-
+	if err != nil {
+		common.CBLog.Error(err)
+		content := TbSecurityGroupInfo{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
-	*/
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		content := TbSecurityGroupInfo{}
+		return content, err
+	}
+
+	tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
 
 	// cb-store
 	fmt.Println("=========================== DELETE FirewallRule")

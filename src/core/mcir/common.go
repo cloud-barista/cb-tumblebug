@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	//uuid "github.com/google/uuid"
-	"github.com/cloud-barista/cb-spider/interface/api"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/go-resty/resty/v2"
 
@@ -171,18 +171,43 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	var childResources interface{}
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	var url string
 
-		var url string
+	// Create Req body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	tempReq := JsonTemplate{}
 
-		// Create Req body
-		type JsonTemplate struct {
-			ConnectionName string
+	switch resourceType {
+	case common.StrImage:
+		// delete image info
+		err := common.CBStore.Delete(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
 		}
-		tempReq := JsonTemplate{}
 
-		switch resourceType {
-		case common.StrImage:
+		// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
+		_, err = common.ORM.Delete(&TbImageInfo{Namespace: nsId, Id: resourceId})
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println("Data deleted successfully..")
+		}
+
+		return nil
+	case common.StrCustomImage:
+		temp := TbCustomImageInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		tempReq.ConnectionName = temp.ConnectionName
+		url = common.SpiderRestUrl + "/myimage/" + temp.CspCustomImageName
+
+		/*
 			// delete image info
 			err := common.CBStore.Delete(key)
 			if err != nil {
@@ -191,7 +216,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-			_, err = common.ORM.Delete(&TbImageInfo{Namespace: nsId, Id: resourceId})
+			_, err = common.ORM.Delete(&TbCustomImageInfo{Namespace: nsId, Id: resourceId})
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -199,124 +224,116 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			}
 
 			return nil
-		case common.StrCustomImage:
-			temp := TbCustomImageInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/myimage/" + temp.CspCustomImageName
-
-			/*
-				// delete image info
-				err := common.CBStore.Delete(key)
-				if err != nil {
-					common.CBLog.Error(err)
-					return err
-				}
-
-				// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-				_, err = common.ORM.Delete(&TbCustomImageInfo{Namespace: nsId, Id: resourceId})
-				if err != nil {
-					fmt.Println(err.Error())
-				} else {
-					fmt.Println("Data deleted successfully..")
-				}
-
-				return nil
-			*/
-		case common.StrSpec:
-			// delete spec info
-
-			//get related recommend spec
-			//keyValue, err := common.CBStore.Get(key)
-			content := TbSpecInfo{}
-			err := json.Unmarshal([]byte(keyValue.Value), &content)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			err = common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-			_, err = common.ORM.Delete(&TbSpecInfo{Namespace: nsId, Id: resourceId})
-			if err != nil {
-				fmt.Println(err.Error())
-			} else {
-				fmt.Println("Data deleted successfully..")
-			}
-
-			return nil
-		case common.StrSSHKey:
-			temp := TbSshKeyInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/keypair/" + temp.CspSshKeyName
-		case common.StrVNet:
-			temp := TbVNetInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/vpc/" + temp.CspVNetName
-			childResources = temp.SubnetInfoList
-		case common.StrSecurityGroup:
-			temp := TbSecurityGroupInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/securitygroup/" + temp.CspSecurityGroupName
-		case common.StrDataDisk:
-			temp := TbDataDiskInfo{}
-			err = json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			tempReq.ConnectionName = temp.ConnectionName
-			url = common.SpiderRestUrl + "/disk/" + temp.CspDataDiskName
-		/*
-			case "subnet":
-				temp := subnetInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &content)
-				return content.CspSubnetId
-			case "publicIp":
-				temp := publicIpInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &temp)
-				tempReq.ConnectionName = temp.ConnectionName
-				url = common.SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpName
-			case "vNic":
-				temp := vNicInfo{}
-				json.Unmarshal([]byte(keyValue.Value), &temp)
-				tempReq.ConnectionName = temp.ConnectionName
-				url = common.SPIDER_REST_URL + "/vnic/" + temp.CspVNicName
 		*/
-		default:
-			err := fmt.Errorf("invalid resourceType")
+	case common.StrSpec:
+		// delete spec info
+
+		//get related recommend spec
+		//keyValue, err := common.CBStore.Get(key)
+		content := TbSpecInfo{}
+		err := json.Unmarshal([]byte(keyValue.Value), &content)
+		if err != nil {
+			common.CBLog.Error(err)
 			return err
 		}
 
-		fmt.Println("url: " + url)
+		err = common.CBStore.Delete(key)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
 
-		client := resty.New().SetCloseConnection(true)
+		// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
+		_, err = common.ORM.Delete(&TbSpecInfo{Namespace: nsId, Id: resourceId})
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println("Data deleted successfully..")
+		}
 
-		resp, err := client.R().
+		return nil
+	case common.StrSSHKey:
+		temp := TbSshKeyInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		tempReq.ConnectionName = temp.ConnectionName
+		url = common.SpiderRestUrl + "/keypair/" + temp.CspSshKeyName
+	case common.StrVNet:
+		temp := TbVNetInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		tempReq.ConnectionName = temp.ConnectionName
+		url = common.SpiderRestUrl + "/vpc/" + temp.CspVNetName
+		childResources = temp.SubnetInfoList
+	case common.StrSecurityGroup:
+		temp := TbSecurityGroupInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		tempReq.ConnectionName = temp.ConnectionName
+		url = common.SpiderRestUrl + "/securitygroup/" + temp.CspSecurityGroupName
+	case common.StrDataDisk:
+		temp := TbDataDiskInfo{}
+		err = json.Unmarshal([]byte(keyValue.Value), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
+		tempReq.ConnectionName = temp.ConnectionName
+		url = common.SpiderRestUrl + "/disk/" + temp.CspDataDiskName
+	/*
+		case "subnet":
+			temp := subnetInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			return content.CspSubnetId
+		case "publicIp":
+			temp := publicIpInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+			tempReq.ConnectionName = temp.ConnectionName
+			url = common.SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpName
+		case "vNic":
+			temp := vNicInfo{}
+			json.Unmarshal([]byte(keyValue.Value), &temp)
+			tempReq.ConnectionName = temp.ConnectionName
+			url = common.SPIDER_REST_URL + "/vnic/" + temp.CspVNicName
+	*/
+	default:
+		err := fmt.Errorf("invalid resourceType")
+		return err
+	}
+
+	fmt.Println("url: " + url)
+
+	client := resty.New().SetCloseConnection(true)
+
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Delete(url)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return err
+	}
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case forceFlag == "true":
+		url += "?force=true"
+		fmt.Println("forceFlag == true; url: " + url)
+
+		_, err := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
@@ -329,176 +346,23 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case forceFlag == "true":
-			url += "?force=true"
-			fmt.Println("forceFlag == true; url: " + url)
-
-			_, err := client.R().
-				SetHeader("Content-Type", "application/json").
-				SetBody(tempReq).
-				//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-				//SetError(&AuthError{}).       // or SetError(AuthError{}).
-				Delete(url)
-
-			if err != nil {
-				common.CBLog.Error(err)
-				err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-				return err
-			}
-
-			// err = common.CBStore.Delete(key)
-			// if err != nil {
-			// 	common.CBLog.Error(err)
-			// 	return err
-			// }
-			// return nil
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			return err
-		default:
-			// err := common.CBStore.Delete(key)
-			// if err != nil {
-			// 	common.CBLog.Error(err)
-			// 	return err
-			// }
-			// return nil
-		}
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return err
-		}
-		defer ccm.Close()
-
-		switch resourceType {
-		case common.StrImage:
-			// delete image info
-			err := common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			// "DELETE FROM `image` WHERE `id` = '" + resourceId + "';"
-			_, err = common.ORM.Delete(&TbImageInfo{Namespace: nsId, Id: resourceId})
-			if err != nil {
-				fmt.Println(err.Error())
-			} else {
-				fmt.Println("Data deleted successfully..")
-			}
-
-			return nil
-		case common.StrSpec:
-			// delete spec info
-
-			//get related recommend spec
-			content := TbSpecInfo{}
-			err := json.Unmarshal([]byte(keyValue.Value), &content)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			err = common.CBStore.Delete(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
-			_, err = common.ORM.Delete(&TbSpecInfo{Namespace: nsId, Id: resourceId})
-			if err != nil {
-				fmt.Println(err.Error())
-			} else {
-				fmt.Println("Data deleted successfully..")
-			}
-
-			return nil
-
-		case common.StrSSHKey:
-			temp := TbSshKeyInfo{}
-			err := json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			_, err = ccm.DeleteKeyByParam(temp.ConnectionName, temp.Name, forceFlag)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-		case common.StrVNet:
-			temp := TbVNetInfo{}
-			err := json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			_, err = ccm.DeleteVPCByParam(temp.ConnectionName, temp.Name, forceFlag)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			childResources = temp.SubnetInfoList
-		case common.StrSecurityGroup:
-			temp := TbSecurityGroupInfo{}
-			err := json.Unmarshal([]byte(keyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			_, err = ccm.DeleteSecurityByParam(temp.ConnectionName, temp.Name, forceFlag)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-		/*
-			case common.StrDataDisk:
-				temp := TbSecurityGroupInfo{}
-				err := json.Unmarshal([]byte(keyValue.Value), &temp)
-				if err != nil {
-					common.CBLog.Error(err)
-					return err
-				}
-
-				_, err = ccm.DeleteDataDiskByParam(temp.ConnectionName, temp.Name, forceFlag)
-				if err != nil {
-					common.CBLog.Error(err)
-					return err
-				}
-		*/
-
-		default:
-			err := fmt.Errorf("invalid resourceType")
-			return err
-		}
-
 		// err = common.CBStore.Delete(key)
 		// if err != nil {
 		// 	common.CBLog.Error(err)
 		// 	return err
 		// }
 		// return nil
-
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		return err
+	default:
+		// err := common.CBStore.Delete(key)
+		// if err != nil {
+		// 	common.CBLog.Error(err)
+		// 	return err
+		// }
+		// return nil
 	}
 
 	if resourceType == common.StrVNet {
@@ -597,36 +461,53 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	var url string
 
-		var url string
+	// Create Req body
+	type JsonTemplate struct {
+		ConnectionName string
+	}
+	tempReq := JsonTemplate{}
 
-		// Create Req body
-		type JsonTemplate struct {
-			ConnectionName string
-		}
-		tempReq := JsonTemplate{}
-
-		switch resourceType {
-		case common.StrSubnet:
-			temp := TbVNetInfo{}
-			err = json.Unmarshal([]byte(parentKeyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-			tempReq.ConnectionName = temp.ConnectionName
-			url = fmt.Sprintf("%s/vpc/%s/subnet/%s", common.SpiderRestUrl, temp.Name, resourceId)
-		default:
-			err := fmt.Errorf("invalid resourceType")
+	switch resourceType {
+	case common.StrSubnet:
+		temp := TbVNetInfo{}
+		err = json.Unmarshal([]byte(parentKeyValue.Value), &temp)
+		if err != nil {
+			common.CBLog.Error(err)
 			return err
 		}
+		tempReq.ConnectionName = temp.ConnectionName
+		url = fmt.Sprintf("%s/vpc/%s/subnet/%s", common.SpiderRestUrl, temp.Name, resourceId)
+	default:
+		err := fmt.Errorf("invalid resourceType")
+		return err
+	}
 
-		fmt.Println("url: " + url)
+	fmt.Println("url: " + url)
 
-		client := resty.New().SetCloseConnection(true)
+	client := resty.New().SetCloseConnection(true)
 
-		resp, err := client.R().
+	resp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(tempReq).
+		//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
+		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+		Delete(url)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return err
+	}
+
+	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
+	switch {
+	case forceFlag == "true":
+		url += "?force=true"
+		fmt.Println("forceFlag == true; url: " + url)
+
+		_, err := client.R().
 			SetHeader("Content-Type", "application/json").
 			SetBody(tempReq).
 			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
@@ -639,67 +520,11 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 			return err
 		}
 
-		fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-		switch {
-		case forceFlag == "true":
-			url += "?force=true"
-			fmt.Println("forceFlag == true; url: " + url)
-
-			_, err := client.R().
-				SetHeader("Content-Type", "application/json").
-				SetBody(tempReq).
-				//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-				//SetError(&AuthError{}).       // or SetError(AuthError{}).
-				Delete(url)
-
-			if err != nil {
-				common.CBLog.Error(err)
-				err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-				return err
-			}
-
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
-			return err
-		default:
-
-		}
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return err
-		}
-		defer ccm.Close()
-
-		switch resourceType {
-		case common.StrSubnet:
-			temp := TbVNetInfo{}
-			err := json.Unmarshal([]byte(parentKeyValue.Value), &temp)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-			_, err = ccm.RemoveSubnetByParam(temp.ConnectionName, temp.Name, resourceId, forceFlag)
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-		default:
-			err := fmt.Errorf("invalid resourceType")
-			return err
-		}
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		err := fmt.Errorf(string(resp.Body()))
+		common.CBLog.Error(err)
+		return err
+	default:
 
 	}
 

@@ -24,11 +24,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	uid "github.com/rs/xid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+
 	"gopkg.in/yaml.v2"
 
 	"encoding/csv"
@@ -410,78 +408,46 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 // GetConnConfig is func to get connection config from CB-Spider
 func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := SpiderRestUrl + "/connectionconfig/" + ConnConfigName
 
-		url := SpiderRestUrl + "/connectionconfig/" + ConnConfigName
+	client := resty.New().SetCloseConnection(true)
 
-		client := resty.New().SetCloseConnection(true)
+	resp, err := client.R().
+		SetResult(&ConnConfig{}).
+		//SetError(&SimpleMsg{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetResult(&ConnConfig{}).
-			//SetError(&SimpleMsg{}).
-			Get(url)
-
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfig{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
-			err := fmt.Errorf(string(resp.Body()))
-			CBLog.Error(err)
-			content := ConnConfig{}
-			return content, err
-		}
-
-		temp, _ := resp.Result().(*ConnConfig)
-
-		// Get geolocation
-		nativeRegion, err := GetNativeRegion(temp.ConfigName)
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfig{}
-			return content, err
-		}
-
-		location := GetCloudLocation(strings.ToLower(temp.ProviderName), strings.ToLower(nativeRegion))
-		temp.Location = location
-
-		return *temp, nil
-
-	} else {
-
-		// CIM API init
-		cim := api.NewCloudInfoManager()
-		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			CBLog.Error("cim failed to set config : ", err)
-			return ConnConfig{}, err
-		}
-		err = cim.Open()
-		if err != nil {
-			CBLog.Error("cim api open failed : ", err)
-			return ConnConfig{}, err
-		}
-		defer cim.Close()
-
-		result, err := cim.GetConnectionConfigByParam(ConnConfigName)
-		if err != nil {
-			CBLog.Error("cim api request failed : ", err)
-			return ConnConfig{}, err
-		}
-
-		temp := ConnConfig{}
-		err = json.Unmarshal([]byte(result), &temp)
-		if err != nil {
-			CBLog.Error("cim api request failed : ", err)
-			return ConnConfig{}, err
-		}
-		return temp, nil
+	if err != nil {
+		CBLog.Error(err)
+		content := ConnConfig{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
+
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
+		err := fmt.Errorf(string(resp.Body()))
+		CBLog.Error(err)
+		content := ConnConfig{}
+		return content, err
+	}
+
+	temp, _ := resp.Result().(*ConnConfig)
+
+	// Get geolocation
+	nativeRegion, err := GetNativeRegion(temp.ConfigName)
+	if err != nil {
+		CBLog.Error(err)
+		content := ConnConfig{}
+		return content, err
+	}
+
+	location := GetCloudLocation(strings.ToLower(temp.ProviderName), strings.ToLower(nativeRegion))
+	temp.Location = location
+
+	return *temp, nil
+
 }
 
 // ConnConfigList is struct for containing a CB-Spider struct for connection config list
@@ -492,81 +458,48 @@ type ConnConfigList struct { // Spider
 // GetConnConfigList is func to list connection configs from CB-Spider
 func GetConnConfigList() (ConnConfigList, error) {
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := SpiderRestUrl + "/connectionconfig"
 
-		url := SpiderRestUrl + "/connectionconfig"
+	client := resty.New().SetCloseConnection(true)
 
-		client := resty.New().SetCloseConnection(true)
+	resp, err := client.R().
+		SetResult(&ConnConfigList{}).
+		//SetError(&SimpleMsg{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetResult(&ConnConfigList{}).
-			//SetError(&SimpleMsg{}).
-			Get(url)
-
-		if err != nil {
-			CBLog.Error(err)
-			content := ConnConfigList{}
-			err := fmt.Errorf("Error from CB-Spider: " + err.Error())
-			return content, err
-		}
-
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
-			err := fmt.Errorf(string(resp.Body()))
-			CBLog.Error(err)
-			content := ConnConfigList{}
-			return content, err
-		}
-
-		temp, _ := resp.Result().(*ConnConfigList)
-
-		// Get geolocations
-		for i, connConfig := range temp.Connectionconfig {
-			nativeRegion, err := GetNativeRegion(connConfig.ConfigName)
-			if err != nil {
-				CBLog.Error(err)
-				content := ConnConfigList{}
-				return content, err
-			}
-
-			location := GetCloudLocation(strings.ToLower(connConfig.ProviderName), strings.ToLower(nativeRegion))
-			temp.Connectionconfig[i].Location = location
-		}
-
-		return *temp, nil
-
-	} else {
-
-		// CIM API init
-		cim := api.NewCloudInfoManager()
-		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			CBLog.Error("cim failed to set config : ", err)
-			return ConnConfigList{}, err
-		}
-		err = cim.Open()
-		if err != nil {
-			CBLog.Error("cim api open failed : ", err)
-			return ConnConfigList{}, err
-		}
-		defer cim.Close()
-
-		result, err := cim.ListConnectionConfig()
-		if err != nil {
-			CBLog.Error("cim api request failed : ", err)
-			return ConnConfigList{}, err
-		}
-
-		temp := ConnConfigList{}
-		err = json.Unmarshal([]byte(result), &temp)
-		if err != nil {
-			CBLog.Error("cim api Unmarshal failed : ", err)
-			return ConnConfigList{}, err
-		}
-		return temp, nil
-
+	if err != nil {
+		CBLog.Error(err)
+		content := ConnConfigList{}
+		err := fmt.Errorf("Error from CB-Spider: " + err.Error())
+		return content, err
 	}
+
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
+		err := fmt.Errorf(string(resp.Body()))
+		CBLog.Error(err)
+		content := ConnConfigList{}
+		return content, err
+	}
+
+	temp, _ := resp.Result().(*ConnConfigList)
+
+	// Get geolocations
+	for i, connConfig := range temp.Connectionconfig {
+		nativeRegion, err := GetNativeRegion(connConfig.ConfigName)
+		if err != nil {
+			CBLog.Error(err)
+			content := ConnConfigList{}
+			return content, err
+		}
+
+		location := GetCloudLocation(strings.ToLower(connConfig.ProviderName), strings.ToLower(nativeRegion))
+		temp.Connectionconfig[i].Location = location
+	}
+
+	return *temp, nil
+
 }
 
 // Region is struct for containing region struct of CB-Spider
@@ -579,67 +512,34 @@ type Region struct {
 // GetRegion is func to get region from CB-Spider
 func GetRegion(RegionName string) (Region, error) {
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := SpiderRestUrl + "/region/" + RegionName
 
-		url := SpiderRestUrl + "/region/" + RegionName
+	client := resty.New().SetCloseConnection(true)
 
-		client := resty.New().SetCloseConnection(true)
+	resp, err := client.R().
+		SetResult(&Region{}).
+		//SetError(&SimpleMsg{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetResult(&Region{}).
-			//SetError(&SimpleMsg{}).
-			Get(url)
-
-		if err != nil {
-			CBLog.Error(err)
-			content := Region{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
-			err := fmt.Errorf(string(resp.Body()))
-			CBLog.Error(err)
-			content := Region{}
-			return content, err
-		}
-
-		temp, _ := resp.Result().(*Region)
-		return *temp, nil
-
-	} else {
-
-		// CIM API init
-		cim := api.NewCloudInfoManager()
-		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			CBLog.Error("cim failed to set config : ", err)
-			return Region{}, err
-		}
-		err = cim.Open()
-		if err != nil {
-			CBLog.Error("cim api open failed : ", err)
-			return Region{}, err
-		}
-		defer cim.Close()
-
-		result, err := cim.GetRegionByParam(RegionName)
-		if err != nil {
-			CBLog.Error("cim api request failed : ", err)
-			return Region{}, err
-		}
-
-		temp := Region{}
-		err = json.Unmarshal([]byte(result), &temp)
-		if err != nil {
-			CBLog.Error("cim api Unmarshal failed : ", err)
-			return Region{}, err
-		}
-		return temp, nil
-
+	if err != nil {
+		CBLog.Error(err)
+		content := Region{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
+
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
+		err := fmt.Errorf(string(resp.Body()))
+		CBLog.Error(err)
+		content := Region{}
+		return content, err
+	}
+
+	temp, _ := resp.Result().(*Region)
+	return *temp, nil
+
 }
 
 // GetRegion is func to get NativRegion from file
@@ -693,67 +593,34 @@ type RegionList struct {
 // GetRegionList is func to retrieve region list
 func GetRegionList() (RegionList, error) {
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := SpiderRestUrl + "/region"
 
-		url := SpiderRestUrl + "/region"
+	client := resty.New().SetCloseConnection(true)
 
-		client := resty.New().SetCloseConnection(true)
+	resp, err := client.R().
+		SetResult(&RegionList{}).
+		//SetError(&SimpleMsg{}).
+		Get(url)
 
-		resp, err := client.R().
-			SetResult(&RegionList{}).
-			//SetError(&SimpleMsg{}).
-			Get(url)
-
-		if err != nil {
-			CBLog.Error(err)
-			content := RegionList{}
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return content, err
-		}
-
-		switch {
-		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-			fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
-			err := fmt.Errorf(string(resp.Body()))
-			CBLog.Error(err)
-			content := RegionList{}
-			return content, err
-		}
-
-		temp, _ := resp.Result().(*RegionList)
-		return *temp, nil
-
-	} else {
-
-		// CIM API init
-		cim := api.NewCloudInfoManager()
-		err := cim.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			CBLog.Error("cim failed to set config : ", err)
-			return RegionList{}, err
-		}
-		err = cim.Open()
-		if err != nil {
-			CBLog.Error("cim api open failed : ", err)
-			return RegionList{}, err
-		}
-		defer cim.Close()
-
-		result, err := cim.ListRegion()
-		if err != nil {
-			CBLog.Error("cim api request failed : ", err)
-			return RegionList{}, err
-		}
-
-		temp := RegionList{}
-		err = json.Unmarshal([]byte(result), &temp)
-		if err != nil {
-			CBLog.Error("cim api Unmarshal failed : ", err)
-			return RegionList{}, err
-		}
-		return temp, nil
-
+	if err != nil {
+		CBLog.Error(err)
+		content := RegionList{}
+		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
+		return content, err
 	}
+
+	switch {
+	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
+		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
+		err := fmt.Errorf(string(resp.Body()))
+		CBLog.Error(err)
+		content := RegionList{}
+		return content, err
+	}
+
+	temp, _ := resp.Result().(*RegionList)
+	return *temp, nil
+
 }
 
 // ConvertToMessage is func to change input data to gRPC message
@@ -842,34 +709,6 @@ func CopySrcToDest(src interface{}, dest interface{}) error {
 	//logger.Debug("target value : \n", string(j))
 
 	return nil
-}
-
-// ConvGrpcStatusErr is func to convert error code into GRPC status code
-func ConvGrpcStatusErr(err error, tag string, method string) error {
-	//logger := logging.NewLogger()
-
-	//_, fn, line, _ := runtime.Caller(1)
-	runtime.Caller(1)
-	if err != nil {
-		if errStatus, ok := status.FromError(err); ok {
-			//logger.Error(tag, " error while calling ", method, " method: [", fn, ":", line, "] ", errStatus.Message())
-			return status.Errorf(errStatus.Code(), "%s error while calling %s method: %v ", tag, method, errStatus.Message())
-		}
-		//logger.Error(tag, " error while calling ", method, " method: [", fn, ":", line, "] ", err)
-		return status.Errorf(codes.Internal, "%s error while calling %s method: %v ", tag, method, err)
-	}
-
-	return nil
-}
-
-// NewGrpcStatusErr is func to generate GRPC status error code
-func NewGrpcStatusErr(msg string, tag string, method string) error {
-	//logger := logging.NewLogger()
-
-	//_, fn, line, _ := runtime.Caller(1)
-	runtime.Caller(1)
-	//logger.Error(tag, " error while calling ", method, " method: [", fn, ":", line, "] ", msg)
-	return status.Errorf(codes.Internal, "%s error while calling %s method: %s ", tag, method, msg)
 }
 
 // NVL is func for null value logic

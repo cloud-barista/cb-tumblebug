@@ -28,14 +28,11 @@ import (
 
 	//csv file handling
 
-	"os"
-
 	// REST API (echo)
 	"net/http"
 
 	"sync"
 
-	"github.com/cloud-barista/cb-spider/interface/api"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 )
@@ -364,161 +361,89 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			UpdateVmInfo(nsId, mcisId, temp)
 			//return err
 		} else {
-			if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
 
-				url := ""
-				method := ""
-				switch action {
-				case ActionTerminate:
+			url := ""
+			method := ""
+			switch action {
+			case ActionTerminate:
 
-					temp.TargetAction = ActionTerminate
-					temp.TargetStatus = StatusTerminated
-					temp.Status = StatusTerminating
+				temp.TargetAction = ActionTerminate
+				temp.TargetStatus = StatusTerminated
+				temp.Status = StatusTerminating
 
-					url = common.SpiderRestUrl + "/vm/" + cspVmId
-					method = "DELETE"
-				case ActionReboot:
+				url = common.SpiderRestUrl + "/vm/" + cspVmId
+				method = "DELETE"
+			case ActionReboot:
 
-					temp.TargetAction = ActionReboot
-					temp.TargetStatus = StatusRunning
-					temp.Status = StatusRebooting
+				temp.TargetAction = ActionReboot
+				temp.TargetStatus = StatusRunning
+				temp.Status = StatusRebooting
 
-					url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
-					method = "GET"
-				case ActionSuspend:
+				url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
+				method = "GET"
+			case ActionSuspend:
 
-					temp.TargetAction = ActionSuspend
-					temp.TargetStatus = StatusSuspended
-					temp.Status = StatusSuspending
+				temp.TargetAction = ActionSuspend
+				temp.TargetStatus = StatusSuspended
+				temp.Status = StatusSuspending
 
-					url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
-					method = "GET"
-				case ActionResume:
+				url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
+				method = "GET"
+			case ActionResume:
 
-					temp.TargetAction = ActionResume
-					temp.TargetStatus = StatusRunning
-					temp.Status = StatusResuming
+				temp.TargetAction = ActionResume
+				temp.TargetStatus = StatusRunning
+				temp.Status = StatusResuming
 
-					url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
-					method = "GET"
-				default:
-					return errors.New(action + " is invalid actionType")
-				}
-
-				UpdateVmInfo(nsId, mcisId, temp)
-
-				type ControlVMReqInfo struct {
-					ConnectionName string
-				}
-				tempReq := ControlVMReqInfo{}
-				tempReq.ConnectionName = temp.ConnectionName
-				payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-				client := &http.Client{
-					CheckRedirect: func(req *http.Request, via []*http.Request) error {
-						return http.ErrUseLastResponse
-					},
-				}
-				req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-				if err != nil {
-					common.CBLog.Error(err)
-					return err
-				}
-				req.Header.Add("Content-Type", "application/json")
-
-				res, err := client.Do(req)
-				if err != nil {
-					common.CBLog.Error(err)
-					return err
-				}
-				body, err := ioutil.ReadAll(res.Body)
-				if err != nil {
-					common.CBLog.Error(err)
-					return err
-				}
-				defer res.Body.Close()
-
-				fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-				switch {
-				case res.StatusCode >= 400 || res.StatusCode < 200:
-					err := fmt.Errorf(string(body))
-					common.CBLog.Error(err)
-					errTmp = err
-				}
-
-				err2 = json.Unmarshal(body, &resultTmp)
-
-			} else {
-
-				// Set CCM gRPC API
-				ccm := api.NewCloudResourceHandler()
-				err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-				if err != nil {
-					common.CBLog.Error("ccm failed to set config : ", err)
-					temp.Status = StatusFailed
-					UpdateVmInfo(nsId, mcisId, temp)
-					return err
-				}
-				err = ccm.Open()
-				if err != nil {
-					common.CBLog.Error("ccm api open failed : ", err)
-					temp.Status = StatusFailed
-					UpdateVmInfo(nsId, mcisId, temp)
-					return err
-				}
-				defer ccm.Close()
-
-				var result string
-
-				switch action {
-				case ActionTerminate:
-
-					temp.TargetAction = ActionTerminate
-					temp.TargetStatus = StatusTerminated
-					temp.Status = StatusTerminating
-
-					UpdateVmInfo(nsId, mcisId, temp)
-
-					result, err = ccm.TerminateVMByParam(temp.ConnectionName, cspVmId, "false")
-
-				case ActionReboot:
-
-					temp.TargetAction = ActionReboot
-					temp.TargetStatus = StatusRunning
-					temp.Status = StatusRebooting
-
-					UpdateVmInfo(nsId, mcisId, temp)
-
-					result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "reboot")
-
-				case ActionSuspend:
-
-					temp.TargetAction = ActionSuspend
-					temp.TargetStatus = StatusSuspended
-					temp.Status = StatusSuspending
-
-					UpdateVmInfo(nsId, mcisId, temp)
-
-					result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "suspend")
-
-				case ActionResume:
-
-					temp.TargetAction = ActionResume
-					temp.TargetStatus = StatusRunning
-					temp.Status = StatusResuming
-
-					UpdateVmInfo(nsId, mcisId, temp)
-
-					result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "resume")
-
-				default:
-					return errors.New(action + " is invalid actionType")
-				}
-
-				err2 = json.Unmarshal([]byte(result), &resultTmp)
-
+				url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
+				method = "GET"
+			default:
+				return errors.New(action + " is invalid actionType")
 			}
+
+			UpdateVmInfo(nsId, mcisId, temp)
+
+			type ControlVMReqInfo struct {
+				ConnectionName string
+			}
+			tempReq := ControlVMReqInfo{}
+			tempReq.ConnectionName = temp.ConnectionName
+			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+			}
+			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			req.Header.Add("Content-Type", "application/json")
+
+			res, err := client.Do(req)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				common.CBLog.Error(err)
+				return err
+			}
+			defer res.Body.Close()
+
+			fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
+			switch {
+			case res.StatusCode >= 400 || res.StatusCode < 200:
+				err := fmt.Errorf(string(body))
+				common.CBLog.Error(err)
+				errTmp = err
+			}
+
+			err2 = json.Unmarshal(body, &resultTmp)
 
 			if err2 != nil {
 				fmt.Println(err2)
@@ -601,162 +526,100 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	cspVmId := temp.CspViewVmDetail.IId.NameId
 	common.PrintJsonPretty(temp.CspViewVmDetail)
 
-	if os.Getenv("SPIDER_CALL_METHOD") == "REST" {
+	url := ""
+	method := ""
+	switch action {
+	case ActionTerminate:
 
-		url := ""
-		method := ""
-		switch action {
-		case ActionTerminate:
+		temp.TargetAction = ActionTerminate
+		temp.TargetStatus = StatusTerminated
+		temp.Status = StatusTerminating
 
-			temp.TargetAction = ActionTerminate
-			temp.TargetStatus = StatusTerminated
-			temp.Status = StatusTerminating
+		url = common.SpiderRestUrl + "/vm/" + cspVmId
+		method = "DELETE"
+	case ActionReboot:
 
-			url = common.SpiderRestUrl + "/vm/" + cspVmId
-			method = "DELETE"
-		case ActionReboot:
+		temp.TargetAction = ActionReboot
+		temp.TargetStatus = StatusRunning
+		temp.Status = StatusRebooting
 
-			temp.TargetAction = ActionReboot
-			temp.TargetStatus = StatusRunning
-			temp.Status = StatusRebooting
+		url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
+		method = "GET"
+	case ActionSuspend:
 
-			url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=reboot"
-			method = "GET"
-		case ActionSuspend:
+		temp.TargetAction = ActionSuspend
+		temp.TargetStatus = StatusSuspended
+		temp.Status = StatusSuspending
 
-			temp.TargetAction = ActionSuspend
-			temp.TargetStatus = StatusSuspended
-			temp.Status = StatusSuspending
+		url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
+		method = "GET"
+	case ActionResume:
 
-			url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=suspend"
-			method = "GET"
-		case ActionResume:
+		temp.TargetAction = ActionResume
+		temp.TargetStatus = StatusRunning
+		temp.Status = StatusResuming
 
-			temp.TargetAction = ActionResume
-			temp.TargetStatus = StatusRunning
-			temp.Status = StatusResuming
-
-			url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
-			method = "GET"
-		default:
-			return errors.New(action + "is invalid actionType")
-		}
-
-		UpdateVmInfo(nsId, mcisId, temp)
-
-		type ControlVMReqInfo struct {
-			ConnectionName string
-		}
-		tempReq := ControlVMReqInfo{}
-		tempReq.ConnectionName = temp.ConnectionName
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-		req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
-
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		res, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-		defer res.Body.Close()
-
-		fmt.Println(string(body))
-
-		fmt.Println("[Calling SPIDER] END vmControl\n")
-		/*
-			if strings.Compare(content.CspVmId, "Not assigned yet") == 0 {
-				return nil
-			}
-			if strings.Compare(content.CloudId, "aws") == 0 {
-				controlVmAws(content.CspVmId)
-			} else if strings.Compare(content.CloudId, "gcp") == 0 {
-				controlVmGcp(content.CspVmId)
-			} else if strings.Compare(content.CloudId, "azure") == 0 {
-				controlVmAzure(content.CspVmId)
-			} else {
-				fmt.Println("==============ERROR=no matched providerId=================")
-			}
-		*/
-
-		return nil
-
-	} else {
-
-		// Set CCM gRPC API
-		ccm := api.NewCloudResourceHandler()
-		err := ccm.SetConfigPath(os.Getenv("CBTUMBLEBUG_ROOT") + "/conf/grpc_conf.yaml")
-		if err != nil {
-			common.CBLog.Error("ccm failed to set config : ", err)
-			return err
-		}
-		err = ccm.Open()
-		if err != nil {
-			common.CBLog.Error("ccm api open failed : ", err)
-			return err
-		}
-		defer ccm.Close()
-
-		var result string
-
-		switch action {
-		case ActionTerminate:
-
-			result, err = ccm.TerminateVMByParam(temp.ConnectionName, cspVmId, "false")
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-		case ActionReboot:
-
-			result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "reboot")
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-		case ActionSuspend:
-
-			result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "suspend")
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-		case ActionResume:
-
-			result, err = ccm.ControlVMByParam(temp.ConnectionName, cspVmId, "resume")
-			if err != nil {
-				common.CBLog.Error(err)
-				return err
-			}
-
-		default:
-			return errors.New(action + "is invalid actionType")
-		}
-
-		fmt.Println(result)
-		fmt.Println("[Calling SPIDER]END vmControl\n")
-
-		return nil
+		url = common.SpiderRestUrl + "/controlvm/" + cspVmId + "?action=resume"
+		method = "GET"
+	default:
+		return errors.New(action + "is invalid actionType")
 	}
+
+	UpdateVmInfo(nsId, mcisId, temp)
+
+	type ControlVMReqInfo struct {
+		ConnectionName string
+	}
+	tempReq := ControlVMReqInfo{}
+	tempReq.ConnectionName = temp.ConnectionName
+	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	defer res.Body.Close()
+
+	fmt.Println(string(body))
+
+	fmt.Println("[Calling SPIDER] END vmControl\n")
+	/*
+		if strings.Compare(content.CspVmId, "Not assigned yet") == 0 {
+			return nil
+		}
+		if strings.Compare(content.CloudId, "aws") == 0 {
+			controlVmAws(content.CspVmId)
+		} else if strings.Compare(content.CloudId, "gcp") == 0 {
+			controlVmGcp(content.CspVmId)
+		} else if strings.Compare(content.CloudId, "azure") == 0 {
+			controlVmAzure(content.CspVmId)
+		} else {
+			fmt.Println("==============ERROR=no matched providerId=================")
+		}
+	*/
+
+	return nil
+
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
