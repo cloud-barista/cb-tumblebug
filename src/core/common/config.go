@@ -94,9 +94,7 @@ type ConfigInfo struct {
 func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 
 	if u.Name == "" {
-		temp := ConfigInfo{}
-		err := fmt.Errorf("The provided name is empty.")
-		return temp, err
+		return ConfigInfo{}, fmt.Errorf("The provided name is empty.")
 	}
 
 	content := ConfigInfo{}
@@ -107,7 +105,7 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 	key := "/config/" + content.Id
 	//mapA := map[string]string{"name": content.Name, "description": content.Description}
 	val, _ := json.Marshal(content)
-	err = CBStore.Put(key, string(val))
+	err := CBStore.Put(key, string(val))
 	if err != nil {
 		CBLog.Error(err)
 		return content, err
