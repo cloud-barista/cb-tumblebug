@@ -13,8 +13,8 @@ CB-Tumblebug welcomes improvements from both new and experienced contributors!
 ### (2) Contribution Guide
 
 - In general
-  - [Cloud-Barista Contribution Overview](https://github.com/cloud-barista/docs/blob/master/CONTRIBUTING.md#how-to-contribute)
-  - [Cloud-Barista Code of Conduct](https://github.com/cloud-barista/docs/blob/master/contributing/CODE_OF_CONDUCT.md)
+  - [Contributing Guide](https://github.com/cloud-barista/docs/blob/master/CONTRIBUTING.md)
+  - [Code of Conduct](https://github.com/cloud-barista/docs/blob/master/CODE_OF_CONDUCT.md)
 - In detail
   - [How to open and update a PR](https://github.com/cloud-barista/docs/blob/master/contributing/how_to_open_a_pull_request-ko.md)
     - **Be careful!** 
