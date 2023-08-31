@@ -333,102 +333,102 @@ GCP,gcp-us-west3,https://www.googleapis.com/compute/v1/projects/windows-cloud/gl
 GCP,gcp-asia-south1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
 GCP,gcp-asia-southeast2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
 GCP,gcp-europe-central2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-ALIBABA,alibaba-ap-northeast-2,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-northeast-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-south-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-2,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-3,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-5,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-us-west-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-us-east-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-eu-central-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-eu-west-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-me-east-1,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-hongkong,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-shanghai,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-beijing,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-qingdao,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-zhangjiakou,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-huhehaote,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-hangzhou,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-shenzhen,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-heyuan,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-chengdu,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-wulanchabu,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-guangzhou,ubuntu_18_04_x64_20G_alibase_20221104.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-northeast-2,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-northeast-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-south-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-2,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-3,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-5,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-us-west-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-us-east-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-eu-central-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-eu-west-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-me-east-1,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-hongkong,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-shanghai,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-beijing,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-qingdao,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-zhangjiakou,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-huhehaote,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-hangzhou,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-shenzhen,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-heyuan,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-chengdu,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-wulanchabu,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-guangzhou,ubuntu_22_04_x64_20G_alibase_20221104.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-northeast-2,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-ap-northeast-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-ap-south-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-2,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-3,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-5,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-us-west-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-us-east-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-eu-central-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-eu-west-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-me-east-1,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-hongkong,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-shanghai,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-beijing,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-qingdao,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-zhangjiakou,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-huhehaote,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-hangzhou,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-shenzhen,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-heyuan,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-chengdu,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-wulanchabu,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-cn-guangzhou,debian_10_13_x64_20G_alibase_20221107.vhd,Debian 10
-ALIBABA,alibaba-ap-northeast-2,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-northeast-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-south-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-2,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-3,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-5,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-us-west-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-us-east-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-eu-central-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-eu-west-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-me-east-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-hongkong,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-shanghai,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-beijing,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-qingdao,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-zhangjiakou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-huhehaote,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-hangzhou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-shenzhen,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-heyuan,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-chengdu,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-wulanchabu,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-guangzhou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20221013.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-ap-northeast-2,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-ap-northeast-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-ap-south-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-ap-southeast-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-ap-southeast-2,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-ap-southeast-3,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-ap-southeast-5,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-us-west-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-us-east-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-eu-central-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-eu-west-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-me-east-1,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-hongkong,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-shanghai,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-beijing,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-qingdao,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-zhangjiakou,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-huhehaote,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-hangzhou,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-shenzhen,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-heyuan,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-chengdu,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-wulanchabu,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-cn-guangzhou,ubuntu_18_04_x64_20G_alibase_20230315.vhd,Ubuntu 18.04
+ALIBABA,alibaba-ap-northeast-2,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-ap-northeast-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-ap-south-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-ap-southeast-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-ap-southeast-2,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-ap-southeast-3,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-ap-southeast-5,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-us-west-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-us-east-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-eu-central-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-eu-west-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-me-east-1,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-hongkong,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-shanghai,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-beijing,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-qingdao,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-zhangjiakou,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-huhehaote,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-hangzhou,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-shenzhen,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-heyuan,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-chengdu,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-wulanchabu,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-cn-guangzhou,ubuntu_22_04_x64_20G_alibase_20230613.vhd,Ubuntu 22.04
+ALIBABA,alibaba-ap-northeast-2,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-ap-northeast-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-ap-south-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-ap-southeast-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-ap-southeast-2,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-ap-southeast-3,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-ap-southeast-5,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-us-west-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-us-east-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-eu-central-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-eu-west-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-me-east-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-hongkong,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-shanghai,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-beijing,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-qingdao,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-zhangjiakou,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-huhehaote,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-hangzhou,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-shenzhen,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-heyuan,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-chengdu,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-wulanchabu,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-cn-guangzhou,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
+ALIBABA,alibaba-ap-northeast-2,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-ap-northeast-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-ap-south-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-ap-southeast-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-ap-southeast-2,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-ap-southeast-3,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-ap-southeast-5,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-us-west-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-us-east-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-eu-central-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-eu-west-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-me-east-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-hongkong,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-shanghai,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-beijing,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-qingdao,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-zhangjiakou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-huhehaote,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-hangzhou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-shenzhen,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-heyuan,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-chengdu,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-wulanchabu,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
+ALIBABA,alibaba-cn-guangzhou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230322.vhd,Windows Server 2012 R2
 OPENSTACK,openstack-region01,ubuntu-18.04,Ubuntu 18.04
 NCP,ncp-korea1,SPSW0LINUX000130,Ubuntu 18.04
 NCP,ncp-us-western,SPSW0LINUX000130,Ubuntu 18.04

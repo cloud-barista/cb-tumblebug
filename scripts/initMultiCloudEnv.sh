@@ -7,6 +7,8 @@ fi
 
 $CBTUMBLEBUG_ROOT/src/testclient/scripts/1.configureSpider/register-cloud-interactive.sh -n tb
 
+$CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -x ns01
+
 echo -e "${BOLD}"
 while true; do
     read -p 'Load common Specs and Images. Do you want to proceed ? (y/n) : ' CHECKPROCEED
@@ -29,6 +31,3 @@ while true; do
 done
 
 $CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb
-
-
-$CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -x ns01
