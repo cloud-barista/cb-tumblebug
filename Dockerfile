@@ -53,6 +53,9 @@ ENV DB_DATABASE cb_tumblebug
 ENV DB_USER cb_tumblebug
 ENV DB_PASSWORD cb_tumblebug
 
+# API Setting
+# ALLOW_ORIGINS (ex: https://cloud-barista.org,xxx.xxx.xxx.xxx or * for all)
+ENV ALLOW_ORIGINS *
 ENV API_USERNAME default
 ENV API_PASSWORD default
 

@@ -105,13 +105,13 @@ func RunServer(port string) {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
-	API_USERNAME := os.Getenv("API_USERNAME")
-	API_PASSWORD := os.Getenv("API_PASSWORD")
+	apiUser := os.Getenv("API_USERNAME")
+	apiPass := os.Getenv("API_PASSWORD")
 
 	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		// Be careful to use constant time comparison to prevent timing attacks
-		if subtle.ConstantTimeCompare([]byte(username), []byte(API_USERNAME)) == 1 &&
-			subtle.ConstantTimeCompare([]byte(password), []byte(API_PASSWORD)) == 1 {
+		if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
+			subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
 			return true, nil
 		}
 		return false, nil
@@ -356,7 +356,7 @@ func RunServer(port string) {
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html"
 
-	fmt.Println(" Access to API dashboard" + " (username: " + API_USERNAME + " / password: " + API_PASSWORD + ")")
+	fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
