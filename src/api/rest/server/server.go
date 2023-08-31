@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -93,8 +94,14 @@ func RunServer(port string) {
 	// e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
 	e.GET("/tumblebug/health", rest_common.RestGetHealth)
 
+	allowedOrigins := os.Getenv("ALLOW_ORIGINS")
+	if allowedOrigins == "" {
+		log.Fatal("ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +
+			". Please provide a proper value and source setup.env again. EXITING...")
+		// allowedOrigins = "*"
+	}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
+		AllowOrigins: []string{allowedOrigins},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
@@ -353,7 +360,7 @@ func RunServer(port string) {
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
-	// A context for graceful shutdown (It is based on the signal package)
+	// A context for graceful shutdown (It is based on the signal package)selfEndpoint := os.Getenv("SELF_ENDPOINT")
 	// NOTE -
 	// Use os.Interrupt Ctrl+C or Ctrl+Break on Windows
 	// Use syscall.KILL for Kill(can't be caught or ignored) (POSIX)
