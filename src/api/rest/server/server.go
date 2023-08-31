@@ -356,7 +356,7 @@ func RunServer(port string) {
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html"
 
-	fmt.Println(" Access to API dashboard" + " (username: " + API_USERNAME + " / password: " + API_PASSWORD + ")")
+	fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
