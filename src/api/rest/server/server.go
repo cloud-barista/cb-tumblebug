@@ -184,11 +184,16 @@ func RunServer(port string) {
 	//g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	//g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	// path specific timeout and ratelimit
-	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis, middleware.TimeoutWithConfig(
-		middleware.TimeoutConfig{Timeout: 60 * time.Second}),
+	// timeout middleware
+	timeoutConfig := middleware.TimeoutConfig{
+		Timeout:      60 * time.Second,
+		Skipper:      middleware.DefaultSkipper,
+		ErrorMessage: "Error: request time out (60s)",
+	}
+
+	g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis, middleware.TimeoutWithConfig(
-		middleware.TimeoutConfig{Timeout: 60 * time.Second}),
+	g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
 
 	// g.PUT("/:nsId/mcis/:mcisId", rest_mcis.RestPutMcis)
