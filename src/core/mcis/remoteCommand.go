@@ -502,10 +502,12 @@ type sshInfo struct {
 func clientConnect(sshInfo sshInfo) (scp.Client, error) {
 	common.CBLog.Info("SSH call clientConnect()")
 
-	clientConfig, _ := getClientConfig(sshInfo.UserName, sshInfo.PrivateKey, ssh.InsecureIgnoreHostKey())
+	clientConfig, err := getClientConfig(sshInfo.UserName, sshInfo.PrivateKey, ssh.InsecureIgnoreHostKey())
 	client := scp.NewClient(sshInfo.ServerPort, &clientConfig)
-	err := client.Connect()
-	return client, err
+	if err != nil {
+		return client, err
+	}
+	return client, client.Connect()
 }
 
 func getClientConfig(username string, privateKey []byte, keyCallBack ssh.HostKeyCallback) (ssh.ClientConfig, error) {
