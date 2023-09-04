@@ -380,6 +380,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "jongwooo",
+      "name": "Jongwoo Han",
+      "avatar_url": "https://avatars.githubusercontent.com/u/44025432?v=4",
+      "profile": "http://thearchivelog.dev",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -388,5 +397,6 @@
   "repoType": "github",
   "repoHost": "https://github.com",
   "skipCi": true,
-  "commitConvention": "angular"
+  "commitConvention": "angular",
+  "commitType": "docs"
 }
