@@ -458,14 +458,17 @@ type ConnConfigList struct { // Spider
 // GetConnConfigList is func to list connection configs from CB-Spider
 func GetConnConfigList() (ConnConfigList, error) {
 
+	var callResult ConnConfigList
+	client := resty.New()
 	url := SpiderRestUrl + "/connectionconfig"
-
-	client := resty.New().SetCloseConnection(true)
-
-	resp, err := client.R().
-		SetResult(&ConnConfigList{}).
-		//SetError(&SimpleMsg{}).
-		Get(url)
+	method := "GET"
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		nil,
+		&callResult)
 
 	if err != nil {
 		CBLog.Error(err)
@@ -474,19 +477,8 @@ func GetConnConfigList() (ConnConfigList, error) {
 		return content, err
 	}
 
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
-		err := fmt.Errorf(string(resp.Body()))
-		CBLog.Error(err)
-		content := ConnConfigList{}
-		return content, err
-	}
-
-	temp, _ := resp.Result().(*ConnConfigList)
-
 	// Get geolocations
-	for i, connConfig := range temp.Connectionconfig {
+	for i, connConfig := range callResult.Connectionconfig {
 		nativeRegion, err := GetNativeRegion(connConfig.ConfigName)
 		if err != nil {
 			CBLog.Error(err)
@@ -495,10 +487,10 @@ func GetConnConfigList() (ConnConfigList, error) {
 		}
 
 		location := GetCloudLocation(strings.ToLower(connConfig.ProviderName), strings.ToLower(nativeRegion))
-		temp.Connectionconfig[i].Location = location
+		callResult.Connectionconfig[i].Location = location
 	}
 
-	return *temp, nil
+	return callResult, nil
 
 }
 
