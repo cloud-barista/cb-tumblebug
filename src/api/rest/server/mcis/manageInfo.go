@@ -151,7 +151,7 @@ func RestGetAllMcis(c echo.Context) error {
 		return c.JSON(http.StatusOK, &content)
 	} else if option == "status" {
 		// return MCIS Status objects (diffent with MCIS objects)
-		result, err := mcis.GetMcisStatusAll(nsId)
+		result, err := mcis.ListMcisStatus(nsId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -161,7 +161,7 @@ func RestGetAllMcis(c echo.Context) error {
 		return c.JSON(http.StatusOK, &content)
 	} else if option == "simple" {
 		// MCIS in simple (without VM information)
-		result, err := mcis.CoreGetAllMcis(nsId, option)
+		result, err := mcis.ListMcisInfo(nsId, option)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -171,7 +171,7 @@ func RestGetAllMcis(c echo.Context) error {
 		return c.JSON(http.StatusOK, &content)
 	} else {
 		// MCIS in detail (with status information)
-		result, err := mcis.CoreGetAllMcis(nsId, "status")
+		result, err := mcis.ListMcisInfo(nsId, "status")
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -304,7 +304,7 @@ func RestGetMcisVm(c echo.Context) error {
 		return c.JSON(http.StatusOK, result)
 
 	default:
-		result, err := mcis.CoreGetMcisVmInfo(nsId, mcisId, vmId)
+		result, err := mcis.ListVmInfo(nsId, mcisId, vmId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusNotFound, &mapA)
@@ -390,7 +390,7 @@ func RestGetMcisGroupVms(c echo.Context) error {
 
 	content := common.IdList{}
 	var err error
-	content.IdList, err = mcis.ListMcisGroupVms(nsId, mcisId, subgroupId)
+	content.IdList, err = mcis.ListVmBySubGroup(nsId, mcisId, subgroupId)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)

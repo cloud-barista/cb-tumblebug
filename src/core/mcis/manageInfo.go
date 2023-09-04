@@ -42,6 +42,59 @@ import (
 
 // [MCIS and VM object information managemenet]
 
+// McisStatusInfo is struct to define simple information of MCIS with updated status of all VMs
+type McisStatusInfo struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+
+	Status       string          `json:"status"`
+	StatusCount  StatusCountInfo `json:"statusCount"`
+	TargetStatus string          `json:"targetStatus"`
+	TargetAction string          `json:"targetAction"`
+
+	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
+	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
+
+	MasterVmId    string `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
+	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
+	MasterSSHPort string `json:"masterSSHPort"`
+
+	// Label is for describing the mcis in a keyword (any string can be used)
+	Label string `json:"label" example:"User custom label"`
+
+	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
+	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
+
+	Vm []TbVmStatusInfo `json:"vm"`
+}
+
+// TbVmStatusInfo is to define simple information of VM with updated status
+type TbVmStatusInfo struct {
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	CspVmId string `json:"cspVmId"`
+
+	Status       string `json:"status"`
+	TargetStatus string `json:"targetStatus"`
+	TargetAction string `json:"targetAction"`
+	NativeStatus string `json:"nativeStatus"`
+
+	// Montoring agent status
+	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
+
+	// Latest system message such as error message
+	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
+
+	// Created time
+	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
+
+	PublicIp  string `json:"publicIp"`
+	PrivateIp string `json:"privateIp"`
+	SSHPort   string `json:"sshPort"`
+
+	Location common.GeoLocation `json:"location"`
+}
+
 // ListMcisId is func to list MCIS ID
 func ListMcisId(nsId string) ([]string, error) {
 
@@ -126,8 +179,8 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 }
 
-// GetVmListByLabel is func to list VM by label
-func GetVmListByLabel(nsId string, mcisId string, label string) ([]string, error) {
+// ListVmByLabel is func to list VM by label
+func ListVmByLabel(nsId string, mcisId string, label string) ([]string, error) {
 
 	fmt.Println("[GetVmListByLabel]" + mcisId + " by " + label)
 
@@ -211,8 +264,8 @@ func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal stri
 	return groupVmList, nil
 }
 
-// ListMcisGroupVms is func to get VM list with a SubGroup label in a specified MCIS
-func ListMcisGroupVms(nsId string, mcisId string, groupId string) ([]string, error) {
+// ListVmBySubGroup is func to get VM list with a SubGroup label in a specified MCIS
+func ListVmBySubGroup(nsId string, mcisId string, groupId string) ([]string, error) {
 	// SubGroupId is the Key for SubGroupId in TbVmInfo struct
 	filterKey := "SubGroupId"
 	return ListVmByFilter(nsId, mcisId, filterKey, groupId)
@@ -365,7 +418,7 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 		if err == nil {
 			subGroupAccessInfo.NlbListener = &nlb.Listener
 		}
-		vmList, err := ListMcisGroupVms(nsId, mcisId, groupId)
+		vmList, err := ListVmBySubGroup(nsId, mcisId, groupId)
 		if err != nil {
 			common.CBLog.Error(err)
 			return temp, err
@@ -416,8 +469,8 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 	return output, nil
 }
 
-// CoreGetAllMcis is func to get all MCIS objects
-func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
+// ListMcisInfo is func to get all MCIS objects
+func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -523,8 +576,8 @@ func CoreGetAllMcis(nsId string, option string) ([]TbMcisInfo, error) {
 	return Mcis, nil
 }
 
-// CoreGetMcisVmInfo is func to Get McisVm Info
-func CoreGetMcisVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
+// ListVmInfo is func to Get McisVm Info
+func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -875,8 +928,8 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 }
 
-// GetMcisStatusAll is func to get MCIS status all
-func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
+// ListMcisStatus is func to get MCIS status all
+func ListMcisStatus(nsId string) ([]McisStatusInfo, error) {
 
 	//mcisStatuslist := []McisStatusInfo{}
 	mcisList, err := ListMcisId(nsId)
@@ -913,59 +966,6 @@ func GetMcisStatusAll(nsId string) ([]McisStatusInfo, error) {
 
 	//need to change status
 
-}
-
-// McisStatusInfo is struct to define simple information of MCIS with updated status of all VMs
-type McisStatusInfo struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-
-	Status       string          `json:"status"`
-	StatusCount  StatusCountInfo `json:"statusCount"`
-	TargetStatus string          `json:"targetStatus"`
-	TargetAction string          `json:"targetAction"`
-
-	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"[yes, no]"` // yes or no
-
-	MasterVmId    string `json:"masterVmId" example:"vm-asiaeast1-cb-01"`
-	MasterIp      string `json:"masterIp" example:"32.201.134.113"`
-	MasterSSHPort string `json:"masterSSHPort"`
-
-	// Label is for describing the mcis in a keyword (any string can be used)
-	Label string `json:"label" example:"User custom label"`
-
-	// SystemLabel is for describing the mcis in a keyword (any string can be used) for special System purpose
-	SystemLabel string `json:"systemLabel" example:"Managed by CB-Tumblebug" default:""`
-
-	Vm []TbVmStatusInfo `json:"vm"`
-}
-
-// TbVmStatusInfo is to define simple information of VM with updated status
-type TbVmStatusInfo struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	CspVmId string `json:"cspVmId"`
-
-	Status       string `json:"status"`
-	TargetStatus string `json:"targetStatus"`
-	TargetAction string `json:"targetAction"`
-	NativeStatus string `json:"nativeStatus"`
-
-	// Montoring agent status
-	MonAgentStatus string `json:"monAgentStatus" example:"[installed, notInstalled, failed]"` // yes or no// installed, notInstalled, failed
-
-	// Latest system message such as error message
-	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
-
-	// Created time
-	CreatedTime string `json:"createdTime" example:"2022-11-10 23:00:00" default:""`
-
-	PublicIp  string `json:"publicIp"`
-	PrivateIp string `json:"privateIp"`
-	SSHPort   string `json:"sshPort"`
-
-	Location common.GeoLocation `json:"location"`
 }
 
 // GetVmCurrentPublicIp is func to get VM public IP
@@ -1479,13 +1479,6 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	}
 }
 
-// type DataDiskCmd string
-const (
-	AttachDataDisk    string = "attach"
-	DetachDataDisk    string = "detach"
-	AvailableDataDisk string = "available"
-)
-
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
 func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command string, dataDiskId string) (TbVmInfo, error) {
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
@@ -1502,11 +1495,11 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
 	isDataDiskAttached := common.CheckElement(dataDiskId, vm.DataDiskIds)
-	if command == DetachDataDisk && isDataDiskAttached == false {
+	if command == common.DetachDataDisk && isDataDiskAttached == false {
 		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
-	} else if command == AttachDataDisk && isDataDiskAttached == true {
+	} else if command == common.AttachDataDisk && isDataDiskAttached == true {
 		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list.", dataDiskId)
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
@@ -1544,13 +1537,13 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	var resp *resty.Response
 
 	switch command {
-	case AttachDataDisk:
+	case common.AttachDataDisk:
 		req = req.SetResult(&mcir.SpiderDiskInfo{})
 		url = fmt.Sprintf("%s/disk/%s/attach", common.SpiderRestUrl, dataDisk.CspDataDiskName)
 
 		cmdToUpdateAsso = common.StrAdd
 
-	case DetachDataDisk:
+	case common.DetachDataDisk:
 		// req = req.SetResult(&bool)
 		url = fmt.Sprintf("%s/disk/%s/detach", common.SpiderRestUrl, dataDisk.CspDataDiskName)
 
@@ -1572,10 +1565,10 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	}
 
 	switch command {
-	case AttachDataDisk:
+	case common.AttachDataDisk:
 		vm.DataDiskIds = append(vm.DataDiskIds, dataDiskId)
 		// mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, dataDiskId, common.StrAdd, vmKey)
-	case DetachDataDisk:
+	case common.DetachDataDisk:
 		oldDataDiskIds := vm.DataDiskIds
 		newDataDiskIds := oldDataDiskIds
 

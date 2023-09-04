@@ -192,9 +192,9 @@ func RestPutVmDataDisk(c echo.Context) error {
 	}
 
 	switch option {
-	case mcis.AttachDataDisk:
+	case common.AttachDataDisk:
 		fallthrough
-	case mcis.DetachDataDisk:
+	case common.DetachDataDisk:
 		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, option, u.DataDiskId)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
@@ -206,7 +206,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 		return c.JSON(http.StatusOK, result)
 
 	default:
-		mapA := map[string]string{"message": fmt.Sprintf("Supported options: %s, %s, %s", mcis.AttachDataDisk, mcis.DetachDataDisk, mcis.AvailableDataDisk)}
+		mapA := map[string]string{"message": fmt.Sprintf("Supported options: %s, %s, %s", common.AttachDataDisk, common.DetachDataDisk, common.AvailableDataDisk)}
 		return c.JSON(http.StatusNotFound, &mapA)
 	}
 	return nil

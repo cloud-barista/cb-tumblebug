@@ -363,7 +363,7 @@ func OrchestrationController() {
 
 						// ScaleIn MCIS.
 						fmt.Println("[Removing VM]")
-						vmList, vmListErr := GetVmListByLabel(nsId, mcisPolicyTmp.Id, labelAutoGen)
+						vmList, vmListErr := ListVmByLabel(nsId, mcisPolicyTmp.Id, labelAutoGen)
 						if vmListErr != nil {
 							mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 							UpdateMcisPolicyInfo(nsId, mcisPolicyTmp)
