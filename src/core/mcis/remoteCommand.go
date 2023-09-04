@@ -223,7 +223,7 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, req *Mci
 		return nil, err
 	}
 	if subGroupId != "" {
-		vmListInGroup, err := ListMcisGroupVms(nsId, mcisId, subGroupId)
+		vmListInGroup, err := ListVmBySubGroup(nsId, mcisId, subGroupId)
 		if err != nil {
 			common.CBLog.Error(err)
 			return nil, err

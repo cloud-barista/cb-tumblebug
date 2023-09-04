@@ -611,7 +611,7 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 
 // ScaleOutMcisSubGroup is func to create MCIS groupVM
 func ScaleOutMcisSubGroup(nsId string, mcisId string, subGroupId string, numVMsToAdd string) (*TbMcisInfo, error) {
-	vmIdList, err := ListMcisGroupVms(nsId, mcisId, subGroupId)
+	vmIdList, err := ListVmBySubGroup(nsId, mcisId, subGroupId)
 	if err != nil {
 		temp := &TbMcisInfo{}
 		return temp, err
@@ -884,7 +884,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		}
 	}
 
-	vmList, err := ListMcisGroupVms(nsId, mcisId, tentativeVmId)
+	vmList, err := ListVmBySubGroup(nsId, mcisId, tentativeVmId)
 
 	if err != nil {
 		mcisTmp.SystemMessage = err.Error()

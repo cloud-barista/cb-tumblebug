@@ -433,7 +433,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		return emptyObj, err
 	}
 
-	vmIDs, err := ListMcisGroupVms(nsId, mcisId, u.TargetGroup.SubGroupId)
+	vmIDs, err := ListVmBySubGroup(nsId, mcisId, u.TargetGroup.SubGroupId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get VMs in the SubGroup " + u.TargetGroup.SubGroupId + ".")
 		return emptyObj, err

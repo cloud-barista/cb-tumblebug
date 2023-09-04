@@ -82,7 +82,7 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.CoreGetMcisVmInfo(nsId, mcisId, vmId)
+	result, err := mcis.ListVmInfo(nsId, mcisId, vmId)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusNotFound, &mapA)

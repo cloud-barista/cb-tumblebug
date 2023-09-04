@@ -78,6 +78,13 @@ type Nlbsw struct {
 	NlbMcisSubGroupSize     string `yaml:"nlbMcisSubGroupSize"`
 }
 
+// type DataDiskCmd string
+const (
+	AttachDataDisk    string = "attach"
+	DetachDataDisk    string = "detach"
+	AvailableDataDisk string = "available"
+)
+
 // swagger:request ConfigReq
 type ConfigReq struct {
 	Name  string `json:"name" example:"SPIDER_REST_URL"`
@@ -224,7 +231,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		CBLog.Error(err)
+		//CBLog.Error(err)
 		return res, err
 	}
 
