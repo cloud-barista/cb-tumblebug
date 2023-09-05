@@ -16,24 +16,66 @@ package common
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 )
 
-func ExecuteHttpRequest(
+// CacheItem is a struct to store cached item
+type CacheItem[T any] struct {
+	Response  T
+	ExpiresAt time.Time
+}
+
+var clientCache = sync.Map{}
+
+const (
+	// ShortDuration is a duration for short-term cache
+	ShortDuration = 2 * time.Second
+	// MediumDuration is a duration for medium-term cache
+	MediumDuration = 5 * time.Second
+	// LongDuration is a duration for long-term cache
+	LongDuration = 10 * time.Second
+)
+
+// ExecuteHttpRequest performs the HTTP request and fills the result
+func ExecuteHttpRequest[T any](
 	client *resty.Client,
 	method string,
 	url string,
 	headers map[string]string,
 	body interface{},
-	result interface{}) error {
+	result *T, // Generic type
+	cacheDuration time.Duration,
+) error {
 
+	// Generate cache key for GET method only
+	cacheKey := ""
+	if method == "GET" {
+		cacheKey = fmt.Sprintf("%s_%s", method, url)
+		if item, found := clientCache.Load(cacheKey); found {
+			cachedItem := item.(CacheItem[T]) // Generic type
+			if time.Now().Before(cachedItem.ExpiresAt) {
+				fmt.Println("Cache hit! Expires: ", time.Now().Sub(cachedItem.ExpiresAt))
+				*result = cachedItem.Response
+				//val := reflect.ValueOf(result).Elem()
+				//cachedVal := reflect.ValueOf(cachedItem.Response)
+				//val.Set(cachedVal)
+
+				return nil
+			} else {
+				fmt.Println("Cache item expired!")
+				clientCache.Delete(cacheKey)
+			}
+		}
+	}
+
+	// Perform the HTTP request using Resty
 	req := client.R().SetResult(result)
-
 	if headers != nil {
 		req = req.SetHeaders(headers)
 	}
-
 	if body != nil {
 		req = req.SetBody(body)
 	}
@@ -41,6 +83,7 @@ func ExecuteHttpRequest(
 	var resp *resty.Response
 	var err error
 
+	// Execute HTTP method based on the given type
 	switch method {
 	case "GET":
 		resp, err = req.Get(url)
@@ -55,10 +98,26 @@ func ExecuteHttpRequest(
 	}
 
 	if err != nil {
-		return err
+		return fmt.Errorf("[Error from: %s] Message: %s", url, err.Error())
 	}
+
 	if resp.IsError() {
-		return fmt.Errorf("API error: %s", resp.Status())
+		return fmt.Errorf("[Error from: %s] Status code: %s", url, resp.Status())
+	}
+
+	// Update the cache for GET method only
+	if method == "GET" {
+
+		//val := reflect.ValueOf(result).Elem()
+		//newCacheItem := val.Interface()
+
+		// Check if result is nil
+		if result == nil {
+			fmt.Println("Warning: result is nil, not caching.")
+		} else {
+			clientCache.Store(cacheKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
+			fmt.Println("Cached successfully!")
+		}
 	}
 
 	return nil
