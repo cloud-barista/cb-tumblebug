@@ -15,6 +15,7 @@ limitations under the License.
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -39,13 +40,13 @@ const (
 	LongDuration = 10 * time.Second
 )
 
-// ExecuteHttpRequest performs the HTTP request and fills the result
-func ExecuteHttpRequest[T any](
+// ExecuteHttpRequest performs the HTTP request and fills the result (var requestBody interface{} = nil for empty body)
+func ExecuteHttpRequest[B any, T any](
 	client *resty.Client,
 	method string,
 	url string,
 	headers map[string]string,
-	body interface{},
+	body *B,
 	result *T, // Generic type
 	cacheDuration time.Duration,
 ) error {
@@ -53,7 +54,20 @@ func ExecuteHttpRequest[T any](
 	// Generate cache key for GET method only
 	cacheKey := ""
 	if method == "GET" {
-		cacheKey = fmt.Sprintf("%s_%s", method, url)
+
+		if body != nil {
+			// Serialize the body to JSON
+			bodyString, err := json.Marshal(body)
+			if err != nil {
+				return fmt.Errorf("JSON marshaling failed: %w", err)
+			}
+			// Create cache key using both URL and body
+			cacheKey = fmt.Sprintf("%s_%s_%s", method, url, string(bodyString))
+		} else {
+			// Create cache key using only URL
+			cacheKey = fmt.Sprintf("%s_%s", method, url)
+		}
+
 		if item, found := clientCache.Load(cacheKey); found {
 			cachedItem := item.(CacheItem[T]) // Generic type
 			if time.Now().Before(cachedItem.ExpiresAt) {
@@ -72,10 +86,16 @@ func ExecuteHttpRequest[T any](
 	}
 
 	// Perform the HTTP request using Resty
-	req := client.R().SetResult(result)
+	client.SetDebug(true)
+	// SetAllowGetMethodPayload should be set to true for GET method to allow payload
+	// NOTE: Need to removed when cb-spider api is stopped to use GET method with payload
+	client.SetAllowGetMethodPayload(true)
+	req := client.R().SetHeader("Content-Type", "application/json").SetResult(result)
+
 	if headers != nil {
 		req = req.SetHeaders(headers)
 	}
+
 	if body != nil {
 		req = req.SetBody(body)
 	}
@@ -94,7 +114,7 @@ func ExecuteHttpRequest[T any](
 	case "DELETE":
 		resp, err = req.Delete(url)
 	default:
-		return fmt.Errorf("unsupported method: %s", method)
+		return fmt.Errorf("Unsupported rest method: %s", method)
 	}
 
 	if err != nil {

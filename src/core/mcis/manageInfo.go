@@ -1177,93 +1177,68 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	type statusResponse struct {
 		Status string
 	}
-	statusResponseTmp := statusResponse{}
-	statusResponseTmp.Status = ""
+	callResult := statusResponse{}
+	callResult.Status = ""
 
 	if cspVmId != "" && temp.Status != StatusTerminated {
-		// fmt.Print("[Calling SPIDER] vmstatus, ")
-		// fmt.Println("CspVmId: " + cspVmId)
-
+		client := resty.New()
 		url := common.SpiderRestUrl + "/vmstatus/" + cspVmId
 		method := "GET"
+		client.SetTimeout(60 * time.Second)
 
 		type VMStatusReqInfo struct {
 			ConnectionName string
 		}
-		tempReq := VMStatusReqInfo{}
-		tempReq.ConnectionName = temp.ConnectionName
-		payload, _ := json.MarshalIndent(tempReq, "", "  ")
-
-		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-			Timeout: 60 * time.Second,
-		}
+		requestBody := VMStatusReqInfo{}
+		requestBody.ConnectionName = temp.ConnectionName
 
 		// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
 		retrycheck := 5
 		for i := 0; i < retrycheck; i++ {
-
-			req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 			errorInfo.Status = StatusFailed
-			if err != nil {
-				fmt.Println(err)
-				return errorInfo, err
-			}
-			req.Header.Add("Content-Type", "application/json")
-
-			res, err := client.Do(req)
+			err := common.ExecuteHttpRequest(
+				client,
+				method,
+				url,
+				nil,
+				&requestBody,
+				&callResult,
+				common.MediumDuration,
+			)
 			if err != nil {
 				fmt.Println(err)
 				errorInfo.SystemMessage = err.Error()
-				//return errorInfo, err
-			} else {
-				body, err := ioutil.ReadAll(res.Body)
-				if err != nil {
-					fmt.Println(err)
-					errorInfo.SystemMessage = err.Error()
-					return errorInfo, err
-				}
-				err = json.Unmarshal(body, &statusResponseTmp)
-				if err != nil {
-					fmt.Println(err)
-					errorInfo.SystemMessage = err.Error()
-					return errorInfo, err
-				}
-				defer res.Body.Close()
 			}
-
-			if statusResponseTmp.Status != "" {
+			if callResult.Status != "" {
 				break
 			}
 			time.Sleep(5 * time.Second)
 		}
 
 	} else {
-		statusResponseTmp.Status = ""
+		callResult.Status = ""
 	}
 
-	nativeStatus := statusResponseTmp.Status
+	nativeStatus := callResult.Status
 	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
 	if nativeStatus == "Creating" {
-		statusResponseTmp.Status = StatusCreating
+		callResult.Status = StatusCreating
 	} else if nativeStatus == "Running" {
-		statusResponseTmp.Status = StatusRunning
+		callResult.Status = StatusRunning
 	} else if nativeStatus == "Suspending" {
-		statusResponseTmp.Status = StatusSuspending
+		callResult.Status = StatusSuspending
 	} else if nativeStatus == "Suspended" {
-		statusResponseTmp.Status = StatusSuspended
+		callResult.Status = StatusSuspended
 	} else if nativeStatus == "Resuming" {
-		statusResponseTmp.Status = StatusResuming
+		callResult.Status = StatusResuming
 	} else if nativeStatus == "Rebooting" {
-		statusResponseTmp.Status = StatusRebooting
+		callResult.Status = StatusRebooting
 	} else if nativeStatus == "Terminating" {
-		statusResponseTmp.Status = StatusTerminating
+		callResult.Status = StatusTerminating
 	} else if nativeStatus == "Terminated" {
-		statusResponseTmp.Status = StatusTerminated
+		callResult.Status = StatusTerminated
 	} else {
-		statusResponseTmp.Status = StatusUndefined
+		callResult.Status = StatusUndefined
 	}
 	// End of Temporal CODE.
 	temp, err = GetVmObject(nsId, mcisId, vmId)
@@ -1288,44 +1263,44 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 
 	//Correct undefined status using TargetAction
 	if vmStatusTmp.TargetAction == ActionCreate {
-		if statusResponseTmp.Status == StatusUndefined {
-			statusResponseTmp.Status = StatusCreating
+		if callResult.Status == StatusUndefined {
+			callResult.Status = StatusCreating
 		}
 		if temp.Status == StatusFailed {
-			statusResponseTmp.Status = StatusFailed
+			callResult.Status = StatusFailed
 		}
 	}
 	if vmStatusTmp.TargetAction == ActionTerminate {
-		if statusResponseTmp.Status == StatusUndefined {
-			statusResponseTmp.Status = StatusTerminated
+		if callResult.Status == StatusUndefined {
+			callResult.Status = StatusTerminated
 		}
-		if statusResponseTmp.Status == StatusSuspending {
-			statusResponseTmp.Status = StatusTerminated
+		if callResult.Status == StatusSuspending {
+			callResult.Status = StatusTerminated
 		}
 	}
 	if vmStatusTmp.TargetAction == ActionResume {
-		if statusResponseTmp.Status == StatusUndefined {
-			statusResponseTmp.Status = StatusResuming
+		if callResult.Status == StatusUndefined {
+			callResult.Status = StatusResuming
 		}
-		if statusResponseTmp.Status == StatusCreating {
-			statusResponseTmp.Status = StatusResuming
+		if callResult.Status == StatusCreating {
+			callResult.Status = StatusResuming
 		}
 	}
 	// for action reboot, some csp's native status are suspending, suspended, creating, resuming
 	if vmStatusTmp.TargetAction == ActionReboot {
-		if statusResponseTmp.Status == StatusUndefined {
-			statusResponseTmp.Status = StatusRebooting
+		if callResult.Status == StatusUndefined {
+			callResult.Status = StatusRebooting
 		}
-		if statusResponseTmp.Status == StatusSuspending || statusResponseTmp.Status == StatusSuspended || statusResponseTmp.Status == StatusCreating || statusResponseTmp.Status == StatusResuming {
-			statusResponseTmp.Status = StatusRebooting
+		if callResult.Status == StatusSuspending || callResult.Status == StatusSuspended || callResult.Status == StatusCreating || callResult.Status == StatusResuming {
+			callResult.Status = StatusRebooting
 		}
 	}
 
 	if vmStatusTmp.Status == StatusTerminated {
-		statusResponseTmp.Status = StatusTerminated
+		callResult.Status = StatusTerminated
 	}
 
-	vmStatusTmp.Status = statusResponseTmp.Status
+	vmStatusTmp.Status = callResult.Status
 
 	// TODO: Alibaba Undefined status error is not resolved yet.
 	// (After Terminate action. "status": "Undefined", "targetStatus": "None", "targetAction": "None")
