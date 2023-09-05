@@ -282,7 +282,7 @@ func RestGetMcisVm(c echo.Context) error {
 
 	switch option {
 	case "status":
-		result, err := mcis.CoreGetMcisVmStatus(nsId, mcisId, vmId)
+		result, err := mcis.GetMcisVmStatus(nsId, mcisId, vmId)
 		if err != nil {
 			common.CBLog.Error(err)
 			mapA := map[string]string{"message": err.Error()}
