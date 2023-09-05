@@ -349,7 +349,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 
 	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
 
-	fmt.Printf("[GetCloudLocation] KEY: %+v\n", key)
+	//fmt.Printf("[GetCloudLocation] KEY: %+v\n", key)
 
 	keyValue, err := CBStore.Get(key)
 
@@ -468,12 +468,13 @@ func GetConnConfigList() (ConnConfigList, error) {
 		url,
 		nil,
 		nil,
-		&callResult)
+		&callResult,
+		MediumDuration,
+	)
 
 	if err != nil {
 		CBLog.Error(err)
 		content := ConnConfigList{}
-		err := fmt.Errorf("Error from CB-Spider: " + err.Error())
 		return content, err
 	}
 
@@ -560,14 +561,14 @@ func GetNativeRegion(connectionName string) (string, error) {
 			if connectionName != row[1] {
 				continue
 			}
-			fmt.Println("Found a line for the connectionName from file: " + row[1])
+			//fmt.Println("Found a line for the connectionName from file: " + row[1])
 		}
 
 		if connectionName != "" {
 			// After finish handling line for the connectionName, break
 			if connectionName == row[1] {
 				nativeRegionName = row[3]
-				fmt.Println("Handled for the connectionName from file: " + row[1])
+				//fmt.Println("Handled for the connectionName from file: " + row[1])
 				break
 			}
 		}
