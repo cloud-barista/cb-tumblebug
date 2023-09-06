@@ -567,7 +567,7 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 
 	wg.Wait()
 
-	vmStatus, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
+	vmStatus, err := FetchVmStatus(nsId, mcisId, vmInfoData.Id)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot find " + common.GenMcisKey(nsId, mcisId, vmInfoData.Id))
 	}
@@ -1535,7 +1535,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	vmInfoData.TargetStatus = StatusComplete
 
 	// get and set current vm status
-	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmInfoData.Id)
+	vmStatusInfoTmp, err := FetchVmStatus(nsId, mcisId, vmInfoData.Id)
 
 	if err != nil {
 		common.CBLog.Error(err)

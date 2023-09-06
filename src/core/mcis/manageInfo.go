@@ -552,7 +552,7 @@ func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
 
 			if option == "status" {
 				//get current vm status
-				vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, v1)
+				vmStatusInfoTmp, err := FetchVmStatus(nsId, mcisId, v1)
 				if err != nil {
 					common.CBLog.Error(err)
 				}
@@ -628,7 +628,7 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 	vmTmp.Id = vmId
 
 	//get current vm status
-	vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
+	vmStatusInfoTmp, err := FetchVmStatus(nsId, mcisId, vmId)
 	if err != nil {
 		common.CBLog.Error(err)
 	}
@@ -807,7 +807,7 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	var wg sync.WaitGroup
 	for _, v := range vmList {
 		wg.Add(1)
-		go GetVmStatusAsync(&wg, nsId, mcisId, v, &mcisStatus)
+		go FetchVmStatusAsync(&wg, nsId, mcisId, v, &mcisStatus)
 	}
 	wg.Wait() //goroutine sync wg
 
@@ -1110,12 +1110,12 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 	return content.SpecId
 }
 
-// GetVmStatusAsync is func to get VM status async
-func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, results *McisStatusInfo) error {
+// FetchVmStatusAsync is func to get VM status async
+func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, results *McisStatusInfo) error {
 	defer wg.Done() //goroutine sync done
 
 	if nsId != "" && mcisId != "" && vmId != "" {
-		vmStatusTmp, err := GetVmStatus(nsId, mcisId, vmId)
+		vmStatusTmp, err := FetchVmStatus(nsId, mcisId, vmId)
 		if err != nil {
 			common.CBLog.Error(err)
 			vmStatusTmp.Status = StatusFailed
@@ -1128,8 +1128,8 @@ func GetVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId strin
 	return nil
 }
 
-// GetVmStatus is func to get VM status
-func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
+// FetchVmStatus is func to fetch VM status (call to CSPs)
+func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
 	// defer func() {
 	// 	if runtimeErr := recover(); runtimeErr != nil {
@@ -1349,8 +1349,8 @@ func GetVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error
 	return vmStatusTmp, nil
 }
 
-// CoreGetMcisVmStatus is func to Get McisVm Status
-func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
+// GetMcisVmStatus is func to Get McisVm Status
+func GetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1395,7 +1395,7 @@ func CoreGetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusIn
 		return nil, fmt.Errorf("Cannot find " + vmKey)
 	}
 
-	vmStatusResponse, err := GetVmStatus(nsId, mcisId, vmId)
+	vmStatusResponse, err := FetchVmStatus(nsId, mcisId, vmId)
 
 	if err != nil {
 		common.CBLog.Error(err)
