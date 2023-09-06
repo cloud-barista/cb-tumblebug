@@ -40,12 +40,24 @@ const (
 	LongDuration = 10 * time.Second
 )
 
+// NoBody is a constant for empty body
+const NoBody = "NOBODY"
+
+// SetUseBody returns false if the given body is NoBody
+func SetUseBody(requestBody interface{}) bool {
+	if str, ok := requestBody.(string); ok {
+		return str != NoBody
+	}
+	return true
+}
+
 // ExecuteHttpRequest performs the HTTP request and fills the result (var requestBody interface{} = nil for empty body)
 func ExecuteHttpRequest[B any, T any](
 	client *resty.Client,
 	method string,
 	url string,
 	headers map[string]string,
+	useBody bool, // New parameter to specify if body should be used
 	body *B,
 	result *T, // Generic type
 	cacheDuration time.Duration,
@@ -55,7 +67,7 @@ func ExecuteHttpRequest[B any, T any](
 	cacheKey := ""
 	if method == "GET" {
 
-		if body != nil {
+		if useBody {
 			// Serialize the body to JSON
 			bodyString, err := json.Marshal(body)
 			if err != nil {
@@ -96,7 +108,7 @@ func ExecuteHttpRequest[B any, T any](
 		req = req.SetHeaders(headers)
 	}
 
-	if body != nil {
+	if useBody {
 		req = req.SetBody(body)
 	}
 
