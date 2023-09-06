@@ -1730,6 +1730,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		method,
 		url,
 		nil,
+		common.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
 		common.MediumDuration,

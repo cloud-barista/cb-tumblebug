@@ -462,12 +462,14 @@ func GetConnConfigList() (ConnConfigList, error) {
 	client := resty.New()
 	url := SpiderRestUrl + "/connectionconfig"
 	method := "GET"
-	var requestBody interface{} = nil
+	requestBody := NoBody
+
 	err := ExecuteHttpRequest(
 		client,
 		method,
 		url,
 		nil,
+		SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
 		MediumDuration,
