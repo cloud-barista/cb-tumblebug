@@ -1131,9 +1131,7 @@ definitions:
         enum:
         - "1"
         - "2"
-        - '...'
         - "30"
-        - '...'
         example: "5"
         type: string
       priority:
