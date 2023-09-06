@@ -17,8 +17,6 @@ package mcis
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strconv"
 	"sync"
 
@@ -34,6 +32,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	validator "github.com/go-playground/validator/v10"
+	"github.com/go-resty/resty/v2"
 )
 
 const (
@@ -1565,43 +1564,31 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 // CreateVm is func to create VM (option = "register" for register existing VM)
 func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) error {
 
-	fmt.Printf("\n\n[CreateVm(vmInfoData *TbVmInfo)]\n\n")
+	fmt.Printf("\n[CreateVm]\n")
 
+	var err error = nil
 	switch {
 	case vmInfoData.Name == "":
-		err := fmt.Errorf("vmInfoData.Name is empty")
-		common.CBLog.Error(err)
-		return err
+		err = fmt.Errorf("vmInfoData.Name is empty")
 	case vmInfoData.ImageId == "":
-		err := fmt.Errorf("vmInfoData.ImageId is empty")
-		common.CBLog.Error(err)
-		return err
+		err = fmt.Errorf("vmInfoData.ImageId is empty")
 	case vmInfoData.ConnectionName == "":
-		err := fmt.Errorf("vmInfoData.ConnectionName is empty")
-		common.CBLog.Error(err)
-		return err
+		err = fmt.Errorf("vmInfoData.ConnectionName is empty")
 	case vmInfoData.SshKeyId == "":
-		err := fmt.Errorf("vmInfoData.SshKeyId is empty")
-		common.CBLog.Error(err)
-		return err
+		err = fmt.Errorf("vmInfoData.SshKeyId is empty")
 	case vmInfoData.SpecId == "":
-		err := fmt.Errorf("vmInfoData.SpecId is empty")
-		common.CBLog.Error(err)
-		return err
+		err = fmt.Errorf("vmInfoData.SpecId is empty")
 	case vmInfoData.SecurityGroupIds == nil:
-		err := fmt.Errorf("vmInfoData.SecurityGroupIds is empty")
-		common.CBLog.Error(err)
-		return err
+		err = fmt.Errorf("vmInfoData.SecurityGroupIds is empty")
 	case vmInfoData.VNetId == "":
-		err := fmt.Errorf("vmInfoData.VNetId is empty")
-		common.CBLog.Error(err)
-		return err
+		err = fmt.Errorf("vmInfoData.VNetId is empty")
 	case vmInfoData.SubnetId == "":
-		err := fmt.Errorf("vmInfoData.SubnetId is empty")
+		err = fmt.Errorf("vmInfoData.SubnetId is empty")
+	default:
+	}
+	if err != nil {
 		common.CBLog.Error(err)
 		return err
-	default:
-
 	}
 
 	// in case of registering existing CSP VM
@@ -1614,45 +1601,44 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		}
 	}
 
-	var tempSpiderVMInfo SpiderVMInfo
+	var callResult SpiderVMInfo
 
 	// Fill VM creation reqest (request to cb-spider)
-	tempReq := SpiderVMReqInfoWrapper{}
-	tempReq.ConnectionName = vmInfoData.ConnectionName
+	requestBody := SpiderVMReqInfoWrapper{}
+	requestBody.ConnectionName = vmInfoData.ConnectionName
 
 	//generate VM ID(Name) to request to CSP(Spider)
 	//combination of nsId, mcidId, and vmName reqested from user
-	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s-%s", nsId, mcisId, vmInfoData.Name)
+	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s-%s", nsId, mcisId, vmInfoData.Name)
 
-	err := fmt.Errorf("")
 	customImageFlag := false
 
-	tempReq.ReqInfo.VMUserId = vmInfoData.VmUserAccount
-	tempReq.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
+	requestBody.ReqInfo.VMUserId = vmInfoData.VmUserAccount
+	requestBody.ReqInfo.VMUserPasswd = vmInfoData.VmUserPassword
 	// provide a random passwd, if it is not provided by user (the passwd required for Windows)
-	if tempReq.ReqInfo.VMUserPasswd == "" {
+	if requestBody.ReqInfo.VMUserPasswd == "" {
 		// assign random string (mixed Uid style)
-		tempReq.ReqInfo.VMUserPasswd = common.GenRandomPassword(14)
+		requestBody.ReqInfo.VMUserPasswd = common.GenRandomPassword(14)
 	}
 
-	tempReq.ReqInfo.RootDiskType = vmInfoData.RootDiskType
-	tempReq.ReqInfo.RootDiskSize = vmInfoData.RootDiskSize
+	requestBody.ReqInfo.RootDiskType = vmInfoData.RootDiskType
+	requestBody.ReqInfo.RootDiskSize = vmInfoData.RootDiskSize
 
 	if option == "register" {
-		tempReq.ReqInfo.CSPid = vmInfoData.IdByCSP
+		requestBody.ReqInfo.CSPid = vmInfoData.IdByCSP
 
 	} else {
 		// Try lookup customImage
-		tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
-		if tempReq.ReqInfo.ImageName == "" || err != nil {
+		requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
+		if requestBody.ReqInfo.ImageName == "" || err != nil {
 			errAgg := err.Error()
 			// If customImage doesn't exist, then try lookup image
-			tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
-			if tempReq.ReqInfo.ImageName == "" || err != nil {
+			requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
+			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				errAgg += err.Error()
 				// If cannot find the resource, use common resource
-				tempReq.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
-				if tempReq.ReqInfo.ImageName == "" || err != nil {
+				requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
+				if requestBody.ReqInfo.ImageName == "" || err != nil {
 					errAgg += err.Error()
 					err = fmt.Errorf(errAgg)
 					common.CBLog.Error(err)
@@ -1661,20 +1647,20 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			}
 		} else {
 			customImageFlag = true
-			tempReq.ReqInfo.ImageType = MyImage
+			requestBody.ReqInfo.ImageType = MyImage
 			// If the requested image is a custom image (generated by VM snapshot), RootDiskType should be empty.
 			// TB ignore inputs for RootDiskType, RootDiskSize
-			tempReq.ReqInfo.RootDiskType = ""
-			tempReq.ReqInfo.RootDiskSize = ""
+			requestBody.ReqInfo.RootDiskType = ""
+			requestBody.ReqInfo.RootDiskSize = ""
 		}
 
-		tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
-		if tempReq.ReqInfo.VMSpecName == "" || err != nil {
+		requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
+		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 			common.CBLog.Info(err)
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
-			tempReq.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
-			if tempReq.ReqInfo.ImageName == "" || err != nil {
+			requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
+			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				errAgg += err.Error()
 				err = fmt.Errorf(errAgg)
 				common.CBLog.Error(err)
@@ -1682,15 +1668,15 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			}
 		}
 
-		tempReq.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
-		if tempReq.ReqInfo.VPCName == "" {
+		requestBody.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
+		if requestBody.ReqInfo.VPCName == "" {
 			common.CBLog.Error(err)
 			return err
 		}
 
 		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
-		tempReq.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
-		if tempReq.ReqInfo.SubnetName == "" {
+		requestBody.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
+		if requestBody.ReqInfo.SubnetName == "" {
 			common.CBLog.Error(err)
 			return err
 		}
@@ -1705,7 +1691,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 			SecurityGroupIdsTmp = append(SecurityGroupIdsTmp, CspSgId)
 		}
-		tempReq.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
+		requestBody.ReqInfo.SecurityGroupNames = SecurityGroupIdsTmp
 
 		var DataDiskIdsTmp []string
 		for _, v := range vmInfoData.DataDiskIds {
@@ -1719,123 +1705,71 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 				DataDiskIdsTmp = append(DataDiskIdsTmp, CspDataDiskId)
 			}
 		}
-		tempReq.ReqInfo.DataDiskNames = DataDiskIdsTmp
+		requestBody.ReqInfo.DataDiskNames = DataDiskIdsTmp
 
-		tempReq.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
-		if tempReq.ReqInfo.KeyPairName == "" {
+		requestBody.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
+		if requestBody.ReqInfo.KeyPairName == "" {
 			common.CBLog.Error(err)
 			return err
 		}
 	}
 
-	fmt.Printf("\n[Request body to CB-Spider for Creating VM]\n")
-	common.PrintJsonPretty(tempReq)
-
-	payload, _ := json.Marshal(tempReq)
-
-	// Randomly sleep within 30 Secs to avoid rateLimit from CSP
-	common.RandomSleep(0, 30)
+	// Randomly sleep within 20 Secs to avoid rateLimit from CSP
+	common.RandomSleep(0, 20)
+	client := resty.New()
+	method := "POST"
+	client.SetTimeout(20 * time.Minute)
 
 	url := common.SpiderRestUrl + "/vm"
-	method := "POST"
 	if option == "register" {
 		url = common.SpiderRestUrl + "/regvm"
-		method = "POST"
 	}
 
-	fmt.Println("\n[Calling CB-Spider]")
-	fmt.Println("url: " + url + " method: " + method)
-
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
 
-	req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-	defer res.Body.Close()
-
-	// tempSpiderVMInfo = SpiderVMInfo{} // FYI; SpiderVMInfo: the struct in CB-Spider
-	err = json.Unmarshal(body, &tempSpiderVMInfo)
-
-	if err != nil {
-		common.PrintJsonPretty(err)
-		common.CBLog.Error(err)
-		return err
-	}
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
-	switch {
-	case res.StatusCode >= 400 || res.StatusCode < 200:
-		err := fmt.Errorf(string(body))
-		fmt.Println("body: ", string(body))
-		common.CBLog.Error(err)
-		return err
-	}
-
-	fmt.Println("[Response from CB-Spider]")
-	common.PrintJsonPretty(tempSpiderVMInfo)
-	fmt.Println("[Finished calling CB-Spider]")
-
-	vmInfoData.CspViewVmDetail = tempSpiderVMInfo
-	vmInfoData.VmUserAccount = tempSpiderVMInfo.VMUserId
-	vmInfoData.VmUserPassword = tempSpiderVMInfo.VMUserPasswd
-
+	vmInfoData.CspViewVmDetail = callResult
+	vmInfoData.VmUserAccount = callResult.VMUserId
+	vmInfoData.VmUserPassword = callResult.VMUserPasswd
 	//vmInfoData.Location = vmInfoData.Location
-
 	//vmInfoData.PlacementAlgo = vmInfoData.PlacementAlgo
-
 	//vmInfoData.CspVmId = temp.Id
 	//vmInfoData.StartTime = temp.StartTime
-	vmInfoData.Region = tempSpiderVMInfo.Region
-	vmInfoData.PublicIP = tempSpiderVMInfo.PublicIP
-	vmInfoData.SSHPort, _ = TrimIP(tempSpiderVMInfo.SSHAccessPoint)
-	vmInfoData.PublicDNS = tempSpiderVMInfo.PublicDNS
-	vmInfoData.PrivateIP = tempSpiderVMInfo.PrivateIP
-	vmInfoData.PrivateDNS = tempSpiderVMInfo.PrivateDNS
-	vmInfoData.RootDiskType = tempSpiderVMInfo.RootDiskType
-	vmInfoData.RootDiskSize = tempSpiderVMInfo.RootDiskSize
-	vmInfoData.RootDeviceName = tempSpiderVMInfo.RootDeviceName
+	vmInfoData.Region = callResult.Region
+	vmInfoData.PublicIP = callResult.PublicIP
+	vmInfoData.SSHPort, _ = TrimIP(callResult.SSHAccessPoint)
+	vmInfoData.PublicDNS = callResult.PublicDNS
+	vmInfoData.PrivateIP = callResult.PrivateIP
+	vmInfoData.PrivateDNS = callResult.PrivateDNS
+	vmInfoData.RootDiskType = callResult.RootDiskType
+	vmInfoData.RootDiskSize = callResult.RootDiskSize
+	vmInfoData.RootDeviceName = callResult.RootDeviceName
 	//vmInfoData.KeyValueList = temp.KeyValueList
-
-	/* Dummy code
-	if customImageFlag == true {
-		vmInfoData.ImageType = "custom"
-	}
-	*/
-
 	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
-	//vmInfoData.Location = GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(tempSpiderVMInfo.Region.Region))
 
 	if option == "register" {
 
 		// Reconstuct resource IDs
 		// vNet
-		resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "cspVNetName", tempSpiderVMInfo.VpcIID.NameId)
+		resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "cspVNetName", callResult.VpcIID.NameId)
 		if err != nil {
 			common.CBLog.Error(err)
 		} else {
 			resourcesInNs := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
-				if resource.ConnectionName == tempReq.ConnectionName {
+				if resource.ConnectionName == requestBody.ConnectionName {
 					vmInfoData.VNetId = resource.Id
 					//vmInfoData.SubnetId = resource.SubnetInfoList
 				}
@@ -1843,13 +1777,13 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		}
 
 		// access Key
-		resourceListInNs, err = mcir.ListResource(nsId, common.StrSSHKey, "cspSshKeyName", tempSpiderVMInfo.KeyPairIId.NameId)
+		resourceListInNs, err = mcir.ListResource(nsId, common.StrSSHKey, "cspSshKeyName", callResult.KeyPairIId.NameId)
 		if err != nil {
 			common.CBLog.Error(err)
 		} else {
 			resourcesInNs := resourceListInNs.([]mcir.TbSshKeyInfo) // type assertion
 			for _, resource := range resourcesInNs {
-				if resource.ConnectionName == tempReq.ConnectionName {
+				if resource.ConnectionName == requestBody.ConnectionName {
 					vmInfoData.SshKeyId = resource.Id
 				}
 			}
@@ -1878,7 +1812,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	}
 
 	// Register dataDisks which are created with the creation of VM
-	for _, v := range tempSpiderVMInfo.DataDiskIIDs {
+	for _, v := range callResult.DataDiskIIDs {
 		tbDataDiskReq := mcir.TbDataDiskReq{
 			Name:           v.NameId,
 			ConnectionName: vmInfoData.ConnectionName,
