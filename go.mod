@@ -21,7 +21,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/crypto v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
-	xorm.io/xorm v1.3.2
+	xorm.io/xorm v1.3.3
 )
 
 require (
