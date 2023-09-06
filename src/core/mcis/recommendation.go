@@ -34,7 +34,7 @@ import (
 type DeploymentPlan struct {
 	Filter   FilterInfo   `json:"filter"`
 	Priority PriorityInfo `json:"priority"`
-	Limit    string       `json:"limit" example:"5" enums:"1,2,...,30,..."`
+	Limit    string       `json:"limit" example:"5" enums:"1,2,30"`
 }
 
 // FilterInfo is struct for .
@@ -74,7 +74,7 @@ type ParameterKeyVal struct {
 
 ///
 
-//// Info manage for MCIS recommendation
+// // Info manage for MCIS recommendation
 func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
 	fmt.Println("RecommendVm")
