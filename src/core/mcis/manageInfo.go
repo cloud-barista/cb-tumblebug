@@ -709,49 +709,33 @@ func GetVmIdNameInDetail(nsId string, mcisId string, vmId string) (*TbIdNameInDe
 		Name string `json:"Name"`
 	}
 
-	var tempReq spiderReqTmp
-	tempReq.ConnectionName = vmTmp.ConnectionName
-	tempReq.ResourceType = "vm"
+	var requestBody spiderReqTmp
+	requestBody.ConnectionName = vmTmp.ConnectionName
+	requestBody.ResourceType = "vm"
 
-	var tempRes *spiderResTmp
+	callResult := spiderResTmp{}
 
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
+	client := resty.New()
+	url := fmt.Sprintf("%s/cspresourcename/%s", common.SpiderRestUrl, idDetails.IdInSp)
+	method := "GET"
+	client.SetTimeout(5 * time.Minute)
 
-	// fmt.Println("tempReq:")                             // for debug
-	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
-	fmt.Println(tempReq) // for debug
-
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
-		SetResult(&spiderResTmp{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
-	var resp *resty.Response
-
-	var url string
-	url = fmt.Sprintf("%s/cspresourcename/%s", common.SpiderRestUrl, idDetails.IdInSp)
-	resp, err = req.Get(url)
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 
 	if err != nil {
 		common.CBLog.Error(err)
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return &TbIdNameInDetailInfo{}, err
 	}
 
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
-		return &TbIdNameInDetailInfo{}, err
-	}
-
-	tempRes = resp.Result().(*spiderResTmp)
-	fmt.Println(tempRes)
-
-	idDetails.NameInCsp = tempRes.Name
+	idDetails.NameInCsp = callResult.Name
 
 	return &idDetails, nil
 }
