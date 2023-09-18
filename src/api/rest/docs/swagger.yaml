@@ -2649,6 +2649,30 @@ paths:
       summary: Check Tumblebug is alive
       tags:
       - '[Admin] System management'
+  /httpVersion:
+    get:
+      consumes:
+      - application/json
+      description: Checks and logs the HTTP version of the incoming request to the
+        server console.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Check HTTP version of incoming request
+      tags:
+      - '[Admin] System management'
   /inspectResources:
     post:
       consumes:
