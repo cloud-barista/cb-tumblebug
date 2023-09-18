@@ -177,7 +177,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	type JsonTemplate struct {
 		ConnectionName string
 	}
-	tempReq := JsonTemplate{}
+	requestBody := JsonTemplate{}
 
 	switch resourceType {
 	case common.StrImage:
@@ -204,7 +204,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			common.CBLog.Error(err)
 			return err
 		}
-		tempReq.ConnectionName = temp.ConnectionName
+		requestBody.ConnectionName = temp.ConnectionName
 		url = common.SpiderRestUrl + "/myimage/" + temp.CspCustomImageName
 
 		/*
@@ -259,7 +259,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			common.CBLog.Error(err)
 			return err
 		}
-		tempReq.ConnectionName = temp.ConnectionName
+		requestBody.ConnectionName = temp.ConnectionName
 		url = common.SpiderRestUrl + "/keypair/" + temp.CspSshKeyName
 	case common.StrVNet:
 		temp := TbVNetInfo{}
@@ -268,7 +268,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			common.CBLog.Error(err)
 			return err
 		}
-		tempReq.ConnectionName = temp.ConnectionName
+		requestBody.ConnectionName = temp.ConnectionName
 		url = common.SpiderRestUrl + "/vpc/" + temp.CspVNetName
 		childResources = temp.SubnetInfoList
 	case common.StrSecurityGroup:
@@ -278,7 +278,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			common.CBLog.Error(err)
 			return err
 		}
-		tempReq.ConnectionName = temp.ConnectionName
+		requestBody.ConnectionName = temp.ConnectionName
 		url = common.SpiderRestUrl + "/securitygroup/" + temp.CspSecurityGroupName
 	case common.StrDataDisk:
 		temp := TbDataDiskInfo{}
@@ -287,7 +287,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			common.CBLog.Error(err)
 			return err
 		}
-		tempReq.ConnectionName = temp.ConnectionName
+		requestBody.ConnectionName = temp.ConnectionName
 		url = common.SpiderRestUrl + "/disk/" + temp.CspDataDiskName
 	/*
 		case "subnet":
@@ -310,59 +310,28 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		return err
 	}
 
-	fmt.Println("url: " + url)
+	if forceFlag == "true" {
+		url += "?force=true"
+	}
+	var callResult interface{}
+	client := resty.New()
+	method := "DELETE"
+	//client.SetTimeout(60 * time.Second)
 
-	client := resty.New().SetCloseConnection(true)
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
-		//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Delete(url)
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.ShortDuration,
+	)
 
 	if err != nil {
 		common.CBLog.Error(err)
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return err
-	}
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case forceFlag == "true":
-		url += "?force=true"
-		fmt.Println("forceFlag == true; url: " + url)
-
-		_, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Delete(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return err
-		}
-
-		// err = common.CBStore.Delete(key)
-		// if err != nil {
-		// 	common.CBLog.Error(err)
-		// 	return err
-		// }
-		// return nil
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
-		return err
-	default:
-		// err := common.CBStore.Delete(key)
-		// if err != nil {
-		// 	common.CBLog.Error(err)
-		// 	return err
-		// }
-		// return nil
 	}
 
 	if resourceType == common.StrVNet {
@@ -467,7 +436,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 	type JsonTemplate struct {
 		ConnectionName string
 	}
-	tempReq := JsonTemplate{}
+	requestBody := JsonTemplate{}
 
 	switch resourceType {
 	case common.StrSubnet:
@@ -477,55 +446,35 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 			common.CBLog.Error(err)
 			return err
 		}
-		tempReq.ConnectionName = temp.ConnectionName
+		requestBody.ConnectionName = temp.ConnectionName
 		url = fmt.Sprintf("%s/vpc/%s/subnet/%s", common.SpiderRestUrl, temp.Name, resourceId)
 	default:
 		err := fmt.Errorf("invalid resourceType")
 		return err
 	}
 
-	fmt.Println("url: " + url)
+	if forceFlag == "true" {
+		url += "?force=true"
+	}
+	var callResult interface{}
+	client := resty.New()
+	method := "DELETE"
+	//client.SetTimeout(60 * time.Second)
 
-	client := resty.New().SetCloseConnection(true)
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
-		//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Delete(url)
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.ShortDuration,
+	)
 
 	if err != nil {
 		common.CBLog.Error(err)
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return err
-	}
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case forceFlag == "true":
-		url += "?force=true"
-		fmt.Println("forceFlag == true; url: " + url)
-
-		_, err := client.R().
-			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
-			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-			//SetError(&AuthError{}).       // or SetError(AuthError{}).
-			Delete(url)
-
-		if err != nil {
-			common.CBLog.Error(err)
-			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-			return err
-		}
-
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
-		return err
-	default:
-
 	}
 
 	err = common.CBStore.Delete(childResourceKey)
