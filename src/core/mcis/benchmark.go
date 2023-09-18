@@ -137,9 +137,9 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	type JsonTemplate struct {
 		Host string `json:"host"`
 	}
-	tempReq := JsonTemplate{}
-	tempReq.Host = option
-	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	requestBody := JsonTemplate{}
+	requestBody.Host = option
+	payload, _ := json.MarshalIndent(requestBody, "", "  ")
 
 	if action == "mrtt" {
 		reqTmp := MultihostBenchmarkReq{}

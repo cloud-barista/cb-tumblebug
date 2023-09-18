@@ -104,10 +104,10 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	var tempSpiderSecurityInfo *SpiderSecurityInfo
 
 	if objectOnly == false { // then, call CB-Spider CreateSecurityRule API
-		tempReq := SpiderSecurityRuleReqInfoWrapper{}
-		tempReq.ConnectionName = oldSecurityGroup.ConnectionName
+		requestBody := SpiderSecurityRuleReqInfoWrapper{}
+		requestBody.ConnectionName = oldSecurityGroup.ConnectionName
 		for _, newRule := range req {
-			tempReq.ReqInfo.RuleInfoList = append(tempReq.ReqInfo.RuleInfoList, SpiderSecurityRuleInfo(newRule)) // Is this really works?
+			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, SpiderSecurityRuleInfo(newRule)) // Is this really works?
 		}
 
 		url := fmt.Sprintf("%s/securitygroup/%s/rules", common.SpiderRestUrl, oldSecurityGroup.CspSecurityGroupName)
@@ -116,7 +116,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
+			SetBody(requestBody).
 			SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Post(url)
@@ -257,8 +257,8 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	var spiderDeleteSecurityRulesResp *SpiderDeleteSecurityRulesResp
 
-	tempReq := SpiderSecurityRuleReqInfoWrapper{}
-	tempReq.ConnectionName = oldSecurityGroup.ConnectionName
+	requestBody := SpiderSecurityRuleReqInfoWrapper{}
+	requestBody.ConnectionName = oldSecurityGroup.ConnectionName
 
 	if found_flag == false {
 		err := fmt.Errorf("Any of submitted firewall rules does not exist in the SG %s.", securityGroupId)
@@ -266,7 +266,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		return oldSecurityGroup, err
 	} else {
 		for _, v := range rulesToDelete {
-			tempReq.ReqInfo.RuleInfoList = append(tempReq.ReqInfo.RuleInfoList, SpiderSecurityRuleInfo(v))
+			requestBody.ReqInfo.RuleInfoList = append(requestBody.ReqInfo.RuleInfoList, SpiderSecurityRuleInfo(v))
 		}
 	}
 
@@ -276,7 +276,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderDeleteSecurityRulesResp{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Delete(url)
@@ -305,8 +305,8 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		return oldSecurityGroup, err
 	}
 
-	tempReq2 := common.SpiderConnectionName{}
-	tempReq2.ConnectionName = oldSecurityGroup.ConnectionName
+	requestBody2 := common.SpiderConnectionName{}
+	requestBody2.ConnectionName = oldSecurityGroup.ConnectionName
 
 	var tempSpiderSecurityInfo *SpiderSecurityInfo
 
@@ -317,7 +317,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	resp, err = client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq2).
+		SetBody(requestBody2).
 		SetResult(&SpiderSecurityInfo{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Get(url)

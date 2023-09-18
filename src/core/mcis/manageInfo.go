@@ -992,9 +992,9 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	type VMStatusReqInfo struct {
 		ConnectionName string
 	}
-	tempReq := VMStatusReqInfo{}
-	tempReq.ConnectionName = temp.ConnectionName
-	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	requestBody := VMStatusReqInfo{}
+	requestBody.ConnectionName = temp.ConnectionName
+	payload, _ := json.MarshalIndent(requestBody, "", "  ")
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -1477,7 +1477,7 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	dataDisk := mcir.TbDataDiskInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &dataDisk)
 
-	tempReq := mcir.SpiderDiskAttachDetachReqWrapper{
+	requestBody := mcir.SpiderDiskAttachDetachReqWrapper{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: mcir.SpiderDiskAttachDetachReq{
 			VMName: vm.CspViewVmDetail.IId.NameId,
@@ -1489,7 +1489,7 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq)
+		SetBody(requestBody)
 		// SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 

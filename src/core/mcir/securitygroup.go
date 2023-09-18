@@ -227,13 +227,13 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		return TbSecurityGroupInfo{}, err
 	}
 
-	tempReq := SpiderSecurityReqInfoWrapper{}
-	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
-	tempReq.ReqInfo.VPCName = vNetInfo.CspVNetName
-	tempReq.ReqInfo.CSPId = u.CspSecurityGroupId
+	requestBody := SpiderSecurityReqInfoWrapper{}
+	requestBody.ConnectionName = u.ConnectionName
+	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
+	requestBody.ReqInfo.VPCName = vNetInfo.CspVNetName
+	requestBody.ReqInfo.CSPId = u.CspSecurityGroupId
 
-	// tempReq.ReqInfo.SecurityRules = u.FirewallRules
+	// requestBody.ReqInfo.SecurityRules = u.FirewallRules
 	if u.FirewallRules != nil {
 		for _, v := range *u.FirewallRules {
 			jsonBody, err := json.Marshal(v)
@@ -247,7 +247,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 				common.CBLog.Error(err)
 			}
 
-			tempReq.ReqInfo.SecurityRules = append(tempReq.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
+			requestBody.ReqInfo.SecurityRules = append(requestBody.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
 		}
 	}
 
@@ -258,7 +258,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderSecurityInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 

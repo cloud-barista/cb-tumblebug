@@ -406,9 +406,9 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 			type ControlVMReqInfo struct {
 				ConnectionName string
 			}
-			tempReq := ControlVMReqInfo{}
-			tempReq.ConnectionName = temp.ConnectionName
-			payload, _ := json.MarshalIndent(tempReq, "", "  ")
+			requestBody := ControlVMReqInfo{}
+			requestBody.ConnectionName = temp.ConnectionName
+			payload, _ := json.MarshalIndent(requestBody, "", "  ")
 
 			client := &http.Client{
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -570,9 +570,9 @@ func ControlVm(nsId string, mcisId string, vmId string, action string) error {
 	type ControlVMReqInfo struct {
 		ConnectionName string
 	}
-	tempReq := ControlVMReqInfo{}
-	tempReq.ConnectionName = temp.ConnectionName
-	payload, _ := json.MarshalIndent(tempReq, "", "  ")
+	requestBody := ControlVMReqInfo{}
+	requestBody.ConnectionName = temp.ConnectionName
+	payload, _ := json.MarshalIndent(requestBody, "", "  ")
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {

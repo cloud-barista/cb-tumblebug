@@ -181,7 +181,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	fmt.Println("\n[Calling DRAGONFLY] START")
 	fmt.Println("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
 
-	tempReq := monAgentInstallReq{
+	requestBody := monAgentInstallReq{
 		NsId:        nsID,
 		McisId:      mcisID,
 		VmId:        vmID,
@@ -192,14 +192,14 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		CspType:     vmInfoTmp.Location.CloudType,
 		ServiceType: mcisServiceType,
 	}
-	if tempReq.SshKey == "" {
-		common.PrintJsonPretty(tempReq)
+	if requestBody.SshKey == "" {
+		common.PrintJsonPretty(requestBody)
 		err = fmt.Errorf("/request body to install monitoring agent: privateKey is empty/")
 		common.CBLog.Error(err)
 		errStr += "/ " + err.Error()
 	}
 
-	payload, err := json.Marshal(tempReq)
+	payload, err := json.Marshal(requestBody)
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr += "/ " + err.Error()

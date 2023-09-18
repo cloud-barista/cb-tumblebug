@@ -46,7 +46,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 		snapshotName = fmt.Sprintf("%s-%s", vm.Name, common.GenerateNewRandomString(5))
 	}
 
-	tempReq := mcir.SpiderMyImageReq{
+	requestBody := mcir.SpiderMyImageReq{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: struct {
 			Name     string
@@ -62,7 +62,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&mcir.SpiderMyImageInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 

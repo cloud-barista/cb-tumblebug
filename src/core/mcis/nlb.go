@@ -461,7 +461,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		return emptyObj, err
 	}
 
-	tempReq := SpiderNLBReqInfoWrapper{
+	requestBody := SpiderNLBReqInfoWrapper{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: SpiderNLBReqInfo{
 			Name:     fmt.Sprintf("%s-%s", nsId, u.TargetGroup.SubGroupId),
@@ -522,13 +522,13 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	valuesFromYaml.Threshold, _ = strconv.Atoi(cloudSetting.Nlb.Threshold)
 
 	if u.HealthChecker.Interval == "default" || u.HealthChecker.Interval == "" {
-		tempReq.ReqInfo.HealthChecker.Interval = strconv.Itoa(valuesFromYaml.Interval)
+		requestBody.ReqInfo.HealthChecker.Interval = strconv.Itoa(valuesFromYaml.Interval)
 	}
 	if u.HealthChecker.Timeout == "default" || u.HealthChecker.Timeout == "" {
-		tempReq.ReqInfo.HealthChecker.Timeout = strconv.Itoa(valuesFromYaml.Timeout)
+		requestBody.ReqInfo.HealthChecker.Timeout = strconv.Itoa(valuesFromYaml.Timeout)
 	}
 	if u.HealthChecker.Threshold == "default" || u.HealthChecker.Threshold == "" {
-		tempReq.ReqInfo.HealthChecker.Threshold = strconv.Itoa(valuesFromYaml.Threshold)
+		requestBody.ReqInfo.HealthChecker.Threshold = strconv.Itoa(valuesFromYaml.Threshold)
 	}
 
 	for _, v := range vmIDs {
@@ -541,24 +541,24 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
 		// fmt.Print(string(payload))                     // for debug
 		// fmt.Print("vm.CspViewVmDetail.IId.NameId: " + vm.CspViewVmDetail.IId.NameId) // for debug
-		tempReq.ReqInfo.VMGroup.VMs = append(tempReq.ReqInfo.VMGroup.VMs, vm.CspViewVmDetail.IId.NameId)
+		requestBody.ReqInfo.VMGroup.VMs = append(requestBody.ReqInfo.VMGroup.VMs, vm.CspViewVmDetail.IId.NameId)
 	}
 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                     // for debug
-	// fmt.Printf("tempReq.ReqInfo.SubGroup.VMs: %s \n", tempReq.ReqInfo.SubGroup.VMs) // for debug
+	// fmt.Printf("requestBody.ReqInfo.SubGroup.VMs: %s \n", requestBody.ReqInfo.SubGroup.VMs) // for debug
 
 	var tempSpiderNLBInfo *SpiderNLBInfo
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
-	// fmt.Println("tempReq:")                             // for debug
-	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Println("requestBody:")                             // for debug
+	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
 	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
@@ -981,7 +981,7 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 	type JsonTemplate struct {
 		ConnectionName string
 	}
-	tempReq := JsonTemplate{}
+	requestBody := JsonTemplate{}
 
 	temp := TbNLBInfo{}
 	err = json.Unmarshal([]byte(keyValue.Value), &temp)
@@ -989,7 +989,7 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 		common.CBLog.Error(err)
 		return err
 	}
-	tempReq.ConnectionName = temp.ConnectionName
+	requestBody.ConnectionName = temp.ConnectionName
 	url = common.SpiderRestUrl + "/nlb/" + temp.CspNLBName
 
 	fmt.Println("url: " + url)
@@ -998,7 +998,7 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Delete(url)
@@ -1017,7 +1017,7 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 
 		_, err := client.R().
 			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
+			SetBody(requestBody).
 			//SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Delete(url)
@@ -1134,21 +1134,21 @@ func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, er
 		return TbNLBHealthInfo{}, err
 	}
 
-	tempReq := common.SpiderConnectionName{}
-	tempReq.ConnectionName = nlb.ConnectionName
+	requestBody := common.SpiderConnectionName{}
+	requestBody.ConnectionName = nlb.ConnectionName
 
 	var tempSpiderNLBHealthInfo *SpiderNLBHealthInfoWrapper
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
-	// fmt.Println("tempReq:")                             // for debug
-	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Println("requestBody:")                             // for debug
+	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
 	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderNLBHealthInfoWrapper{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
@@ -1298,8 +1298,8 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 		return temp, err
 	}
 
-	tempReq := SpiderNLBAddRemoveVMReqInfoWrapper{}
-	tempReq.ConnectionName = nlb.ConnectionName
+	requestBody := SpiderNLBAddRemoveVMReqInfoWrapper{}
+	requestBody.ConnectionName = nlb.ConnectionName
 
 	for _, v := range u.TargetGroup.VMs {
 		vm, err := GetVmObject(nsId, mcisId, v)
@@ -1310,11 +1310,11 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 		// fmt.Println("vm:")                             // for debug
 		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
 		// fmt.Print(string(payload))                     // for debug
-		tempReq.ReqInfo.VMs = append(tempReq.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
+		requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
 	}
 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                             // for debug
-	// fmt.Printf("tempReq.ReqInfo.SubGroup.VMs: %s \n", tempReq.ReqInfo.SubGroup.VMs) // for debug
+	// fmt.Printf("requestBody.ReqInfo.SubGroup.VMs: %s \n", requestBody.ReqInfo.SubGroup.VMs) // for debug
 	/*
 		for _, v := range u.VMIDList {
 			mcisId_vmId := strings.Split(v, "/")
@@ -1330,7 +1330,7 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 				return TbNLBInfo{}, err
 			}
 
-			tempReq.ReqInfo.SubGroup = append(tempReq.ReqInfo.SubGroup, vm.IdByCSP)
+			requestBody.ReqInfo.SubGroup = append(requestBody.ReqInfo.SubGroup, vm.IdByCSP)
 		}
 	*/
 
@@ -1339,13 +1339,13 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
-	// fmt.Println("tempReq:")                             // for debug
-	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Println("requestBody:")                             // for debug
+	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
 	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
@@ -1505,8 +1505,8 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 		return err
 	}
 
-	tempReq := SpiderNLBAddRemoveVMReqInfoWrapper{}
-	tempReq.ConnectionName = nlb.ConnectionName
+	requestBody := SpiderNLBAddRemoveVMReqInfoWrapper{}
+	requestBody.ConnectionName = nlb.ConnectionName
 
 	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs) // for debug
 
@@ -1522,11 +1522,11 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 		if vm.CspViewVmDetail.IId.NameId == "" {
 			fmt.Printf("Failed to get %s; skipping;", v)
 		} else {
-			tempReq.ReqInfo.VMs = append(tempReq.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
+			requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
 		}
 	}
 
-	// fmt.Printf("tempReq.ReqInfo.SubGroup.VMs: %s \n", tempReq.ReqInfo.VMs) // for debug
+	// fmt.Printf("requestBody.ReqInfo.SubGroup.VMs: %s \n", requestBody.ReqInfo.VMs) // for debug
 	/*
 		for _, v := range u.VMIDList {
 			mcisId_vmId := strings.Split(v, "/")
@@ -1542,7 +1542,7 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 				return TbNLBInfo{}, err
 			}
 
-			tempReq.ReqInfo.SubGroup = append(tempReq.ReqInfo.SubGroup, vm.IdByCSP)
+			requestBody.ReqInfo.SubGroup = append(requestBody.ReqInfo.SubGroup, vm.IdByCSP)
 		}
 	*/
 
@@ -1551,13 +1551,13 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
-	// fmt.Println("tempReq:")                             // for debug
-	// payload, _ := json.MarshalIndent(tempReq, "", "  ") // for debug
+	// fmt.Println("requestBody:")                             // for debug
+	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
 	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq)
+		SetBody(requestBody)
 		// SetResult(&SpiderNLBInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 

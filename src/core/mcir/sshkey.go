@@ -149,10 +149,10 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 		return emptyObj, err
 	}
 
-	tempReq := SpiderKeyPairReqInfoWrapper{}
-	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
-	tempReq.ReqInfo.CSPId = u.CspSshKeyId
+	requestBody := SpiderKeyPairReqInfoWrapper{}
+	requestBody.ConnectionName = u.ConnectionName
+	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
+	requestBody.ReqInfo.CSPId = u.CspSshKeyId
 
 	var tempSpiderKeyPairInfo *SpiderKeyPairInfo
 
@@ -161,7 +161,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderKeyPairInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
