@@ -85,6 +85,27 @@ func RestGetHealth(c echo.Context) error {
 	return c.JSON(http.StatusOK, &okMessage)
 }
 
+// RestCheckHTTPVersion godoc
+// @Summary Check HTTP version of incoming request
+// @Description Checks and logs the HTTP version of the incoming request to the server console.
+// @Tags [Admin] System management
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /httpVersion [get]
+func RestCheckHTTPVersion(c echo.Context) error {
+	// Access the *http.Request object from the echo.Context
+	req := c.Request()
+
+	// Determine the HTTP protocol version of the request
+	okMessage := common.SimpleMsg{}
+	okMessage.Message = req.Proto
+
+	return c.JSON(http.StatusOK, &okMessage)
+}
+
 /*
 // RestGetSwagger func is to get API document web.
 // RestGetSwagger godoc

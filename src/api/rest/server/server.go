@@ -93,6 +93,7 @@ func RunServer(port string) {
 	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
 	// e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
 	e.GET("/tumblebug/health", rest_common.RestGetHealth)
+	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
 
 	allowedOrigins := os.Getenv("ALLOW_ORIGINS")
 	if allowedOrigins == "" {
