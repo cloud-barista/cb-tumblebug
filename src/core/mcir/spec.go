@@ -200,42 +200,33 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 		return content, err
 	}
 
+	var callResult SpiderSpecList
+	client := resty.New()
+	client.SetTimeout(10 * time.Minute)
 	url := common.SpiderRestUrl + "/vmspec"
+	method := "GET"
+	requestBody := common.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig
 
-	// Create Req body
-	tempReq := common.SpiderConnectionName{}
-	tempReq.ConnectionName = connConfig
-
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
-		SetResult(&SpiderSpecList{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Get(url)
+	err := common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 
 	if err != nil {
 		common.CBLog.Error(err)
 		content := SpiderSpecList{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
 	}
 
-	fmt.Println(string(resp.Body()))
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
-		content := SpiderSpecList{}
-		return content, err
-	}
-
-	temp := resp.Result().(*SpiderSpecList)
-	return *temp, nil
+	temp := callResult
+	return temp, nil
 
 }
 
@@ -254,44 +245,33 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		return content, err
 	}
 
-	//url := common.SPIDER_REST_URL + "/vmspec/" + u.CspSpecName
+	var callResult SpiderSpecInfo
+	client := resty.New()
+	client.SetTimeout(2 * time.Minute)
 	url := common.SpiderRestUrl + "/vmspec/" + specName
+	method := "GET"
+	requestBody := common.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig
 
-	// Create Req body
-	tempReq := common.SpiderConnectionName{}
-	tempReq.ConnectionName = connConfig
-
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	resp, err := client.SetTimeout(2*time.Minute).R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
-		SetResult(&SpiderSpecInfo{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Get(url)
+	err := common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 
 	if err != nil {
 		common.CBLog.Error(err)
 		content := SpiderSpecInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
 	}
 
-	fmt.Println(string(resp.Body()))
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
-		content := SpiderSpecInfo{}
-		return content, err
-	}
-
-	temp := resp.Result().(*SpiderSpecInfo)
-	return *temp, nil
-
+	temp := callResult
+	return temp, nil
 }
 
 // FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects

@@ -297,12 +297,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		case "publicIp":
 			temp := publicIpInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
-			tempReq.ConnectionName = temp.ConnectionName
+			requestBody.ConnectionName = temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpName
 		case "vNic":
 			temp := vNicInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
-			tempReq.ConnectionName = temp.ConnectionName
+			requestBody.ConnectionName = temp.ConnectionName
 			url = common.SPIDER_REST_URL + "/vnic/" + temp.CspVNicName
 	*/
 	default:

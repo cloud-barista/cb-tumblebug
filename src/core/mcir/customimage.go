@@ -176,15 +176,15 @@ func LookupMyImage(connConfig string, myImageId string) (SpiderMyImageInfo, erro
 	url := common.SpiderRestUrl + "/myimage/" + url.QueryEscape(myImageId)
 
 	// Create Req body
-	tempReq := common.SpiderConnectionName{}
-	tempReq.ConnectionName = connConfig
+	requestBody := common.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderMyImageInfo{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Get(url)

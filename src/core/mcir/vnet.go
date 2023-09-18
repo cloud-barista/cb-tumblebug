@@ -181,13 +181,13 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		return temp, err
 	}
 
-	tempReq := SpiderVPCReqInfoWrapper{}
-	tempReq.ConnectionName = u.ConnectionName
-	tempReq.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
-	tempReq.ReqInfo.IPv4_CIDR = u.CidrBlock
-	tempReq.ReqInfo.CSPId = u.CspVNetId
+	requestBody := SpiderVPCReqInfoWrapper{}
+	requestBody.ConnectionName = u.ConnectionName
+	requestBody.ReqInfo.Name = fmt.Sprintf("%s-%s", nsId, u.Name)
+	requestBody.ReqInfo.IPv4_CIDR = u.CidrBlock
+	requestBody.ReqInfo.CSPId = u.CspVNetId
 
-	// tempReq.ReqInfo.SubnetInfoList = u.SubnetInfoList
+	// requestBody.ReqInfo.SubnetInfoList = u.SubnetInfoList
 	for _, v := range u.SubnetInfoList {
 		jsonBody, err := json.Marshal(v)
 		if err != nil {
@@ -200,7 +200,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 			common.CBLog.Error(err)
 		}
 
-		tempReq.ReqInfo.SubnetInfoList = append(tempReq.ReqInfo.SubnetInfoList, spiderSubnetInfo)
+		requestBody.ReqInfo.SubnetInfoList = append(requestBody.ReqInfo.SubnetInfoList, spiderSubnetInfo)
 	}
 
 	var tempSpiderVPCInfo *SpiderVPCInfo
@@ -210,7 +210,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderVPCInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 

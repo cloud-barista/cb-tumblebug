@@ -570,8 +570,8 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	type JsonTemplate struct {
 		ConnectionName string
 	}
-	tempReq := JsonTemplate{}
-	tempReq.ConnectionName = connConfig
+	requestBody := JsonTemplate{}
+	requestBody.ConnectionName = connConfig
 
 	var spiderRequestURL string
 	switch resourceType {
@@ -596,7 +596,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderAllListWrapper{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Get(spiderRequestURL)

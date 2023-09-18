@@ -280,15 +280,15 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 	url := common.SpiderRestUrl + "/vmimage"
 
 	// Create Req body
-	tempReq := common.SpiderConnectionName{}
-	tempReq.ConnectionName = connConfig
+	requestBody := common.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderImageList{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Get(url)
@@ -334,15 +334,15 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	url := common.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
 
 	// Create Req body
-	tempReq := common.SpiderConnectionName{}
-	tempReq.ConnectionName = connConfig
+	requestBody := common.SpiderConnectionName{}
+	requestBody.ConnectionName = connConfig
 
 	client := resty.New().SetTimeout(2 * time.Minute).SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderImageInfo{}). // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 		Get(url)

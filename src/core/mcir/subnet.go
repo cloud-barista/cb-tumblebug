@@ -94,10 +94,10 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	}
 
 	if objectOnly == false { // then, call CB-Spider CreateSubnet API
-		tempReq := SpiderSubnetReqInfoWrapper{}
-		tempReq.ConnectionName = oldVNet.ConnectionName
-		tempReq.ReqInfo.Name = req.Name
-		tempReq.ReqInfo.IPv4_CIDR = req.IPv4_CIDR
+		requestBody := SpiderSubnetReqInfoWrapper{}
+		requestBody.ConnectionName = oldVNet.ConnectionName
+		requestBody.ReqInfo.Name = req.Name
+		requestBody.ReqInfo.IPv4_CIDR = req.IPv4_CIDR
 
 		url := fmt.Sprintf("%s/vpc/%s/subnet", common.SpiderRestUrl, vNetId)
 
@@ -105,7 +105,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 
 		resp, err := client.R().
 			SetHeader("Content-Type", "application/json").
-			SetBody(tempReq).
+			SetBody(requestBody).
 			SetResult(&SpiderVPCInfo{}). // or SetResult(AuthSuccess{}).
 			//SetError(&AuthError{}).       // or SetError(AuthError{}).
 			Post(url)

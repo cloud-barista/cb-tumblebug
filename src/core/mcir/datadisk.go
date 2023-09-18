@@ -174,7 +174,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		return TbDataDiskInfo{}, err
 	}
 
-	tempReq := SpiderDiskReqInfoWrapper{
+	requestBody := SpiderDiskReqInfoWrapper{
 		ConnectionName: u.ConnectionName,
 		ReqInfo: SpiderDiskInfo{
 			Name:     fmt.Sprintf("%s-%s", nsId, u.Name),
@@ -191,7 +191,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq).
+		SetBody(requestBody).
 		SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
@@ -322,7 +322,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 		return TbDataDiskInfo{}, err
 	}
 
-	tempReq := SpiderDiskUpsizeReqWrapper{
+	requestBody := SpiderDiskUpsizeReqWrapper{
 		ConnectionName: dataDisk.ConnectionName,
 		ReqInfo: SpiderDiskUpsizeReq{
 			Size: u.DiskSize,
@@ -334,7 +334,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(tempReq)
+		SetBody(requestBody)
 		// SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
 		//SetError(&AuthError{}).       // or SetError(AuthError{}).
 
