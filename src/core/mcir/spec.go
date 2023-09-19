@@ -245,7 +245,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		return content, err
 	}
 
-	var callResult SpiderSpecInfo
+	callResult := SpiderSpecInfo{}
 	client := resty.New()
 	client.SetTimeout(2 * time.Minute)
 	url := common.SpiderRestUrl + "/vmspec/" + specName
@@ -266,12 +266,10 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
 	if err != nil {
 		common.CBLog.Error(err)
-		content := SpiderSpecInfo{}
-		return content, err
+		return callResult, err
 	}
 
-	temp := callResult
-	return temp, nil
+	return callResult, nil
 }
 
 // FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects

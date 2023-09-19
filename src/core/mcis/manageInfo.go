@@ -17,7 +17,6 @@ package mcis
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 
 	//"log"
@@ -31,7 +30,6 @@ import (
 	"sort"
 
 	// REST API (echo)
-	"net/http"
 
 	"sync"
 
@@ -984,64 +982,39 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 		PrivateDNS     string
 		SSHAccessPoint string
 	}
-	var statusResponseTmp statusResponse
 
+	client := resty.New()
+	client.SetTimeout(2 * time.Minute)
 	url := common.SpiderRestUrl + "/vm/" + cspVmId
 	method := "GET"
-
-	type VMStatusReqInfo struct {
-		ConnectionName string
-	}
-	requestBody := VMStatusReqInfo{}
+	requestBody := common.SpiderConnectionName{}
 	requestBody.ConnectionName = temp.ConnectionName
-	payload, _ := json.MarshalIndent(requestBody, "", "  ")
+	callResult := statusResponse{}
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 
 	errorInfo.Status = StatusFailed
 
 	if err != nil {
-		fmt.Println(err)
+		common.CBLog.Error(err)
 		return errorInfo, err
 	}
-	req.Header.Add("Content-Type", "application/json")
-
-	res, err := client.Do(req)
-
-	if err != nil {
-		fmt.Println(err)
-		return errorInfo, err
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-		return errorInfo, err
-	}
-	defer res.Body.Close()
-
-	statusResponseTmp = statusResponse{}
-
-	err2 := json.Unmarshal(body, &statusResponseTmp)
-	if err2 != nil {
-		fmt.Println(err2)
-		return errorInfo, err2
-	}
-
-	fmt.Println(statusResponseTmp)
 
 	vmStatusTmp := TbVmStatusInfo{}
-	vmStatusTmp.PublicIp = statusResponseTmp.PublicIP
-	vmStatusTmp.PrivateIp = statusResponseTmp.PrivateIP
-	vmStatusTmp.SSHPort, _ = TrimIP(statusResponseTmp.SSHAccessPoint)
+	vmStatusTmp.PublicIp = callResult.PublicIP
+	vmStatusTmp.PrivateIp = callResult.PrivateIP
+	vmStatusTmp.SSHPort, _ = TrimIP(callResult.SSHAccessPoint)
 
 	return vmStatusTmp, nil
-
 }
 
 // GetVmIp is func to get VM IP
