@@ -3,7 +3,6 @@ module github.com/cloud-barista/cb-tumblebug
 go 1.19
 
 require (
-	github.com/bramvdbogaerde/go-scp v1.2.1
 	github.com/cloud-barista/cb-larva v0.0.16
 	github.com/cloud-barista/cb-store v0.7.1
 	github.com/go-playground/validator/v10 v10.14.1
