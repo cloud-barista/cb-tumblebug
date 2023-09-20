@@ -245,13 +245,13 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 		return content, err
 	}
 
-	callResult := SpiderSpecInfo{}
 	client := resty.New()
 	client.SetTimeout(2 * time.Minute)
 	url := common.SpiderRestUrl + "/vmspec/" + specName
 	method := "GET"
 	requestBody := common.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig
+	callResult := SpiderSpecInfo{}
 
 	err := common.ExecuteHttpRequest(
 		client,

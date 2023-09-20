@@ -15,19 +15,13 @@ limitations under the License.
 package mcis
 
 import (
-
-	//"github.com/sirupsen/logrus"
-
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"os"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/bramvdbogaerde/go-scp"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	validator "github.com/go-playground/validator/v10"
@@ -311,33 +305,6 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 // VerifySshUserName is func to verify SSH username
 func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
 
-	fmt.Println("")
-	fmt.Println("[Start SSH checking squence]")
-
-	// verify if vm is running with a public ip.
-	/*
-		if vmIp == "" {
-			return "", "", fmt.Errorf("Cannot ssh, VM IP is null")
-		}
-		vmStatusInfoTmp, err := GetVmStatus(nsId, mcisId, vmId)
-		if err != nil {
-			common.CBLog.Error(err)
-			return "", "", err
-		}
-		if vmStatusInfoTmp.Status != StatusRunning || vmIp == "" {
-			return "", "", fmt.Errorf("Cannot ssh, VM is not Running")
-		}
-	*/
-
-	/* Code to check endpoint and port connectivity. (disabled for better speed)
-	// CheckConnectivity func checks if given port is open and ready.
-	// retry: 5 times, sleep: 5 seconds. timeout for each Dial: 20 seconds
-	conErr := CheckConnectivity(vmIp, sshPort)
-	if conErr != nil {
-		return "", "", conErr
-	}
-	*/
-
 	// find vaild username
 	userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
 	userNames := []string{
@@ -487,7 +454,6 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 }
 
 // Internal functions for SSH
-
 func init() {
 	//cblog = config.Cblogger
 }
@@ -499,81 +465,48 @@ type sshInfo struct {
 	ServerPort string // ex) "node12:22"
 }
 
-func clientConnect(sshInfo sshInfo) (scp.Client, error) {
-	common.CBLog.Info("SSH call clientConnect()")
-
-	clientConfig, err := getClientConfig(sshInfo.UserName, sshInfo.PrivateKey, ssh.InsecureIgnoreHostKey())
-	client := scp.NewClient(sshInfo.ServerPort, &clientConfig)
-	if err != nil {
-		return client, err
-	}
-	return client, client.Connect()
-}
-
-func getClientConfig(username string, privateKey []byte, keyCallBack ssh.HostKeyCallback) (ssh.ClientConfig, error) {
-
-	signer, err := ssh.ParsePrivateKey(privateKey)
-	if err != nil {
-		return ssh.ClientConfig{}, err
-	}
-
-	clientConfig := ssh.ClientConfig{
-		User: username,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: keyCallBack,
-	}
-	return clientConfig, nil
-}
-
-func clientClose(client scp.Client) {
-	common.CBLog.Info("SSH call clientClose()")
-	client.Close()
-}
-
-func runCommand(client scp.Client, cmd string) (string, error) {
-	common.CBLog.Info("call runCommand()")
-
-	session := client.Session
-	sshOut, err := session.StdoutPipe()
-	session.Stderr = os.Stderr
-
-	err = session.Run(cmd)
-	//err = session.Start(cmd)
-
-	return stdoutToString(sshOut), err
-}
-
-func stdoutToString(sshOut io.Reader) string {
-	buf := make([]byte, 1000)
-	num, err := sshOut.Read(buf)
-	outStr := ""
-	if err == nil {
-		outStr = string(buf[:num])
-	}
-	for err == nil {
-		num, err = sshOut.Read(buf)
-		outStr += string(buf[:num])
-		if err != nil {
-			if err.Error() != "EOF" {
-				common.CBLog.Error(err)
-			}
-		}
-
-	}
-	return strings.Trim(outStr, "\n")
-}
-
 // runSSH func execute a command by SSH
 func runSSH(sshInfo sshInfo, cmd string) (string, error) {
-	common.CBLog.Info("call runSSH()")
-
-	sshCli, err := clientConnect(sshInfo)
+	// Parse the private key
+	signer, err := ssh.ParsePrivateKey(sshInfo.PrivateKey)
 	if err != nil {
 		return "", err
 	}
-	defer clientClose(sshCli)
 
-	return runCommand(sshCli, cmd)
+	// Create an SSH client configuration
+	config := &ssh.ClientConfig{
+		User: sshInfo.UserName,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Create an SSH client connection
+	client, err := ssh.Dial("tcp", sshInfo.ServerPort, config)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	// Create a new SSH session
+	session, err := client.NewSession()
+	if err != nil {
+		return "", err
+	}
+	defer session.Close()
+
+	// Capture the output
+	var stdoutBuf, stderrBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	session.Stderr = &stderrBuf
+
+	// Run the command
+	err = session.Run(cmd)
+	if err != nil {
+		return stdoutBuf.String(), fmt.Errorf("command run error: %s, stderr: %s", err, stderrBuf.String())
+	}
+
+	// Return the output
+	return stdoutBuf.String(), nil
 }
