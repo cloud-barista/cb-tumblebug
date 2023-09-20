@@ -82,6 +82,8 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 - Linux (추천: Ubuntu 18.04)
 - Go (추천: v1.19)
 
+참고: [의존성 리스트](https://github.com/cloud-barista/cb-tumblebug/network/dependencies), [SBOM 다운로드](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
+
 ***
 ***
 
