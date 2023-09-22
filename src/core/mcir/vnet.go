@@ -135,11 +135,12 @@ func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
 
 // TbSubnetInfo is a struct that represents TB subnet object.
 type TbSubnetInfo struct { // Tumblebug
-	Id           string
-	Name         string `validate:"required"`
-	IPv4_CIDR    string `validate:"required"`
-	KeyValueList []common.KeyValue
-	Description  string
+	Id             string
+	Name           string `validate:"required"`
+	IPv4_CIDR      string `validate:"required"`
+	BastionNodeIds []string
+	KeyValueList   []common.KeyValue
+	Description    string
 }
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
