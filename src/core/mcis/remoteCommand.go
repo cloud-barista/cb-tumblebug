@@ -249,13 +249,13 @@ func RunRemoteCommand(vmIP string, sshPort string, userName string, privateKey s
 	// Set VM SSH config (serverEndpoint, userName, Private Key)
 	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
 	sshInfo := sshInfo{
-		ServerPort: serverEndpoint,
+		EndPoint:   serverEndpoint,
 		UserName:   userName,
 		PrivateKey: []byte(privateKey),
 	}
 
 	// Execute SSH
-	result, err := runSSH(sshInfo, cmd)
+	result, err := runSSH(sshInfo, sshInfo, cmd)
 	if err != nil {
 		return &result, err
 	}
@@ -459,34 +459,61 @@ func init() {
 }
 
 type sshInfo struct {
-	UserName   string // ex) "root"
-	PrivateKey []byte // ex)  []byte(`-----BEGIN RSA PRIVATE KEY-----
-	//      MIIEoQIBAAKCAQEArVNOLwMIp5VmZ4VPZotcoCHdE...`)
-	ServerPort string // ex) "node12:22"
+	UserName   string // ex) root
+	PrivateKey []byte // ex) -----BEGIN RSA PRIVATE KEY-----
+	EndPoint   string // ex) node12:22
 }
 
 // runSSH func execute a command by SSH
-func runSSH(sshInfo sshInfo, cmd string) (string, error) {
-	// Parse the private key
-	signer, err := ssh.ParsePrivateKey(sshInfo.PrivateKey)
+func runSSH(targetInfo sshInfo, bastionInfo sshInfo, cmd string) (string, error) {
+	// Parse the private key for the bastion host
+	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
 	if err != nil {
 		return "", err
 	}
 
-	// Create an SSH client configuration
-	config := &ssh.ClientConfig{
-		User: sshInfo.UserName,
+	// Create an SSH client configuration for the bastion host
+	bastionConfig := &ssh.ClientConfig{
+		User: bastionInfo.UserName,
 		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
+			ssh.PublicKeys(bastionSigner),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	// Create an SSH client connection
-	client, err := ssh.Dial("tcp", sshInfo.ServerPort, config)
+	// Parse the private key for the target host
+	targetSigner, err := ssh.ParsePrivateKey(targetInfo.PrivateKey)
 	if err != nil {
 		return "", err
 	}
+
+	// Create an SSH client configuration for the target host
+	targetConfig := &ssh.ClientConfig{
+		User: targetInfo.UserName,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(targetSigner),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Setup the bastion host connection
+	bastionClient, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
+	if err != nil {
+		return "", err
+	}
+	defer bastionClient.Close()
+
+	// Setup the actual SSH client through the bastion host
+	conn, err := bastionClient.Dial("tcp", targetInfo.EndPoint)
+	if err != nil {
+		return "", err
+	}
+
+	ncc, chans, reqs, err := ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
+	if err != nil {
+		return "", err
+	}
+	client := ssh.NewClient(ncc, chans, reqs)
 	defer client.Close()
 
 	// Create a new SSH session
@@ -504,7 +531,7 @@ func runSSH(sshInfo sshInfo, cmd string) (string, error) {
 	// Run the command
 	err = session.Run(cmd)
 	if err != nil {
-		return stdoutBuf.String(), fmt.Errorf("command run error: %s, stderr: %s", err, stderrBuf.String())
+		return stdoutBuf.String(), fmt.Errorf("(%s)\nStderr: %s", err, stderrBuf.String())
 	}
 
 	// Return the output

@@ -420,6 +420,7 @@ type McisAccessInfo struct {
 type McisSubGroupAccessInfo struct {
 	SubGroupId       string
 	NlbListener      *TbNLBListenerInfo `json:"nlbListener,omitempty"`
+	BastionVmId      string
 	McisVmAccessInfo []McisVmAccessInfo
 }
 
