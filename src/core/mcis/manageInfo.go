@@ -673,6 +673,7 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if keyValue == nil || err != nil {
+		err = fmt.Errorf("failed to get GetVmObject (ID: %s)", key)
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
 	}

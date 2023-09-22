@@ -537,3 +537,91 @@ func runSSH(targetInfo sshInfo, bastionInfo sshInfo, cmd string) (string, error)
 	// Return the output
 	return stdoutBuf.String(), nil
 }
+
+// BastionInfo is struct for bastion info
+type BastionInfo struct {
+	VmId []string `json:"vmId"`
+}
+
+// SetBastionNodes func sets bastion nodes
+func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId string) (string, error) {
+	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+
+	res, err := mcir.GetResource(nsId, common.StrVNet, vmObj.VNetId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+
+	tempVNetInfo, ok := res.(mcir.TbVNetInfo)
+	if !ok {
+		common.CBLog.Error(err)
+		return "", err
+	}
+
+	// find subnet and append bastion node
+	for i, subnetInfo := range tempVNetInfo.SubnetInfoList {
+		if subnetInfo.Id == vmObj.SubnetId {
+			for _, existingId := range subnetInfo.BastionNodeIds {
+				if existingId == bastionVmId {
+					return fmt.Sprintf("Bastion (ID: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
+						bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
+				}
+			}
+
+			// Append bastionVmId only if it doesn't already exist.
+			subnetInfo.BastionNodeIds = append(subnetInfo.BastionNodeIds, bastionVmId)
+			tempVNetInfo.SubnetInfoList[i] = subnetInfo
+			mcir.UpdateResourceObject(nsId, common.StrVNet, tempVNetInfo)
+
+			return fmt.Sprintf("Successfully set the bastion (ID: %s) for subnet (ID: %s) in vNet (ID: %s) for VM (ID: %s) in MCIS (ID: %s).",
+				bastionVmId, subnetInfo.Id, vmObj.VNetId, targetVmId, mcisId), nil
+		}
+	}
+	return "", fmt.Errorf("failed to set bastion. Subnet (ID: %s) not found in VNet (ID: %s) for VM (ID: %s) in MCIS (ID: %s) under namespace (ID: %s)",
+		vmObj.SubnetId, vmObj.VNetId, targetVmId, mcisId, nsId)
+}
+
+// GetBastionNodes func retrieves bastion nodes for a given VM
+func GetBastionNodes(nsId string, mcisId string, targetVmId string) (BastionInfo, error) {
+	returnValue := BastionInfo{}
+	// Fetch VM object based on nsId, mcisId, and targetVmId
+	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return returnValue, err
+	}
+
+	// Fetch VNet resource information
+	res, err := mcir.GetResource(nsId, common.StrVNet, vmObj.VNetId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return returnValue, err
+	}
+
+	// Type assertion for VNet information
+	tempVNetInfo, ok := res.(mcir.TbVNetInfo)
+	if !ok {
+		common.CBLog.Error(err)
+		return returnValue, err
+	}
+
+	// Find the subnet corresponding to the VM and return the BastionNodeIds
+	for _, subnetInfo := range tempVNetInfo.SubnetInfoList {
+		if subnetInfo.Id == vmObj.SubnetId {
+			if subnetInfo.BastionNodeIds == nil {
+				return returnValue, fmt.Errorf("no assigned bastion in Subnet (ID: %s) of VNet (ID: %s) for VM (ID: %s)",
+					vmObj.SubnetId, vmObj.VNetId, targetVmId)
+			}
+			returnValue.VmId = subnetInfo.BastionNodeIds
+			return returnValue, nil
+		}
+	}
+
+	return returnValue, fmt.Errorf("failed to get bastion in Subnet (ID: %s) of VNet (ID: %s) for VM (ID: %s)",
+		vmObj.SubnetId, vmObj.VNetId, targetVmId)
+}
