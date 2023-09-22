@@ -1310,6 +1310,8 @@ definitions:
     type: object
   mcis.McisSubGroupAccessInfo:
     properties:
+      bastionVmId:
+        type: string
       mcisVmAccessInfo:
         items:
           $ref: '#/definitions/mcis.McisVmAccessInfo'

@@ -9002,6 +9002,9 @@ const docTemplate = `{
         "mcis.McisSubGroupAccessInfo": {
             "type": "object",
             "properties": {
+                "bastionVmId": {
+                    "type": "string"
+                },
                 "mcisVmAccessInfo": {
                     "type": "array",
                     "items": {
