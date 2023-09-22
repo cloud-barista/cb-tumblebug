@@ -85,8 +85,7 @@ func setConfig(profile string) {
 	}
 
 	//fmt.Printf("RuntimeLatancyMap: %v\n\n", common.RuntimeLatancyMap)
-
-	fmt.Printf("[RuntimeLatancyMapIndex]\n %v\n", common.RuntimeLatancyMapIndex)
+	//fmt.Printf("[RuntimeLatancyMapIndex]\n %v\n", common.RuntimeLatancyMapIndex)
 
 }
 
