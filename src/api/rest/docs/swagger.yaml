@@ -919,6 +919,10 @@ definitions:
     type: object
   mcir.TbSubnetInfo:
     properties:
+      bastionNodeIds:
+        items:
+          type: string
+        type: array
       description:
         type: string
       id:
