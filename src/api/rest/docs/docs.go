@@ -8435,6 +8435,12 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "bastionNodeIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
