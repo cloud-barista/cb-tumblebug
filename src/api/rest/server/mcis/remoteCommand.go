@@ -87,3 +87,59 @@ func RestPostCmdMcis(c echo.Context) error {
 	return c.JSON(http.StatusOK, content)
 
 }
+
+// RestSetBastionNodes godoc
+// @Summary Set bastion nodes for a VM
+// @Description Set bastion nodes for a VM
+// @Tags [Infra service] MCIS Remote command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param targetVmId path string true "Target VM ID" default(vm01)
+// @Param bastionVmId path string true "Bastion VM ID" default(bastion01)
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion/{bastionVmId} [put]
+func RestSetBastionNodes(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	targetVmId := c.Param("targetVmId")
+	bastionVmId := c.Param("bastionVmId")
+
+	message, err := mcis.SetBastionNodes(nsId, mcisId, targetVmId, bastionVmId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": message})
+}
+
+// RestGetBastionNodes godoc
+// @Summary Get bastion nodes for a VM
+// @Description Get bastion nodes for a VM
+// @Tags [Infra service] MCIS Remote command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param targetVmId path string true "Target VM ID" default(vm01)
+// @Success 200 {object} mcis.BastionInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion [get]
+func RestGetBastionNodes(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	targetVmId := c.Param("targetVmId")
+
+	bastionNodes, err := mcis.GetBastionNodes(nsId, mcisId, targetVmId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, bastionNodes)
+}
