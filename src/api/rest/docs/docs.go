@@ -1258,9 +1258,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "\"\"",
+                        "default": "",
                         "description": "subGroupId to apply the command only for VMs in subGroup of MCIS",
                         "name": "subGroupId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "vmId to apply the command only for a VM in MCIS",
+                        "name": "vmId",
                         "in": "query"
                     }
                 ],
@@ -1269,76 +1276,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId}": {
-            "post": {
-                "description": "Send a command to specified VM",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] MCIS Remote command"
-                ],
-                "summary": "Send a command to specified VM",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "g1-1",
-                        "description": "VM ID",
-                        "name": "vmId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "MCIS Command Request",
-                        "name": "mcisCmdReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.RestPostCmdMcisVmResponse"
                         }
                     },
                     "404": {
@@ -9365,14 +9302,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/mcis.RestPostCmdMcisResponse"
                     }
-                }
-            }
-        },
-        "mcis.RestPostCmdMcisVmResponse": {
-            "type": "object",
-            "properties": {
-                "result": {
-                    "type": "string"
                 }
             }
         },
