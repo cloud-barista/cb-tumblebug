@@ -1075,6 +1075,13 @@ definitions:
         example: '>='
         type: string
     type: object
+  mcis.BastionInfo:
+    properties:
+      vmId:
+        items:
+          type: string
+        type: array
+    type: object
   mcis.BenchmarkInfo:
     properties:
       desc:
@@ -4310,6 +4317,96 @@ paths:
         for multiple VMs)
       tags:
       - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion:
+    get:
+      consumes:
+      - application/json
+      description: Get bastion nodes for a VM
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vm01
+        description: Target VM ID
+        in: path
+        name: targetVmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.BastionInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get bastion nodes for a VM
+      tags:
+      - '[Infra service] MCIS Remote command'
+  /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion/{bastionVmId}:
+    put:
+      consumes:
+      - application/json
+      description: Set bastion nodes for a VM
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vm01
+        description: Target VM ID
+        in: path
+        name: targetVmId
+        required: true
+        type: string
+      - default: bastion01
+        description: Bastion VM ID
+        in: path
+        name: bastionVmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Set bastion nodes for a VM
+      tags:
+      - '[Infra service] MCIS Remote command'
   /ns/{nsId}/mcis/{mcisId}/vm/{vmId}:
     delete:
       consumes:
