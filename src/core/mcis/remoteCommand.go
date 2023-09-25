@@ -34,7 +34,7 @@ var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 // McisCmdReq is struct for remote command
 type McisCmdReq struct {
 	UserName string `json:"userName" example:"cb-user" default:""`
-	Command  string `json:"command" validate:"required" example:"sudo apt-get install ..."`
+	Command  string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
 }
 
 // TbMcisCmdReqStructLevelValidation is func to validate fields in McisCmdReq
@@ -163,18 +163,42 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 }
 
 // RunRemoteCommand is func to execute a SSH command to a VM (sync call)
-func RunRemoteCommand(vmIP string, sshPort string, userName string, privateKey string, cmd string) (*string, error) {
+func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName string, cmd string) (*string, error) {
 
-	// Set VM SSH config (serverEndpoint, userName, Private Key)
-	serverEndpoint := fmt.Sprintf("%s:%s", vmIP, sshPort)
-	sshInfo := sshInfo{
-		EndPoint:   serverEndpoint,
-		UserName:   userName,
-		PrivateKey: []byte(privateKey),
+	var result string
+	vmIP, targetSshPort := GetVmIp(nsId, mcisId, vmId)
+	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIP, targetSshPort, givenUserName)
+
+	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
+	bastionNodes, err := GetBastionNodes(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return &result, err
+	}
+	bastionNode := bastionNodes.VmId[0]
+	bastionIp, bastionSshPort := GetVmIp(nsId, mcisId, bastionNode)
+	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, mcisId, bastionNode, bastionIp, bastionSshPort, givenUserName)
+	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
+
+	bastionSshInfo := sshInfo{
+		EndPoint:   bastionEndpoint,
+		UserName:   bastionUserName,
+		PrivateKey: []byte(bastionSshKey),
+	}
+
+	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIP + ")" + " with userName: " + targetUserName)
+	fmt.Println("[CMD] " + cmd)
+
+	// Set VM SSH config (targetEndpoint, userName, Private Key)
+	targetEndpoint := fmt.Sprintf("%s:%s", vmIP, targetSshPort)
+	targetSshInfo := sshInfo{
+		EndPoint:   targetEndpoint,
+		UserName:   targetUserName,
+		PrivateKey: []byte(targetPrivateKey),
 	}
 
 	// Execute SSH
-	result, err := runSSH(sshInfo, sshInfo, cmd)
+	result, err = runSSH(bastionSshInfo, targetSshInfo, cmd)
 	if err != nil {
 		return &result, err
 	}
@@ -187,23 +211,14 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 
 	defer wg.Done() //goroutin sync done
 
-	vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
-	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, givenUserName)
-	// Eventhough VerifySshUserName is not complete, Try RunRemoteCommand
-	// With RunRemoteCommand, error will be checked again
-
-	fmt.Println("")
-	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName: " + userName)
-	fmt.Println("[CMD] " + cmd)
-	fmt.Println("")
-
+	vmIP, _ := GetVmIp(nsId, mcisId, vmId)
 	// RunRemoteCommand
-	result, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, cmd)
+	result, err := RunRemoteCommand(nsId, mcisId, vmId, givenUserName, cmd)
 
 	sshResultTmp := SshCmdResult{}
-	sshResultTmp.McisId = ""
+	sshResultTmp.McisId = mcisId
 	sshResultTmp.VmId = vmId
-	sshResultTmp.VmIp = vmIp
+	sshResultTmp.VmIp = vmIP
 
 	if err != nil {
 		sshResultTmp.Result = ("[ERROR: " + err.Error() + "]\n " + *result)
@@ -224,57 +239,79 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 // VerifySshUserName is func to verify SSH username
 func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, sshPort string, givenUserName string) (string, string, error) {
 
-	// find vaild username
-	userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
-	userNames := []string{
-		sshDefaultUserName[0],
-		userName,
-		givenUserName,
-		sshDefaultUserName[1],
-		sshDefaultUserName[2],
-		sshDefaultUserName[3],
-	}
+	// Disable the verification of SSH username (until bastion host is supported)
+
+	// // find vaild username
+	// userName, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
+	// userNames := []string{
+	// 	sshDefaultUserName[0],
+	// 	userName,
+	// 	givenUserName,
+	// 	sshDefaultUserName[1],
+	// 	sshDefaultUserName[2],
+	// 	sshDefaultUserName[3],
+	// }
+
+	// theUserName := ""
+	// cmd := "sudo ls"
+
+	// if verifiedUserName != "" {
+	// 	/* Code for strict check in advance with real SSH (but slow down speed)
+	// 	fmt.Printf("\n[Check SSH] (%s) with userName: %s\n", vmIp, verifiedUserName)
+	// 	_, err := RunRemoteCommand(vmIp, sshPort, verifiedUserName, privateKey, cmd)
+	// 	if err != nil {
+	// 		return "", "", fmt.Errorf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
+	// 	}*/
+	// 	theUserName = verifiedUserName
+	// 	fmt.Printf("[%s] is a valid UserName\n", theUserName)
+	// 	return theUserName, privateKey, nil
+	// }
+
+	// // If we have a varified username, Retrieve ssh username from the given list will not be executed
+	// fmt.Println("[Retrieve ssh username from the given list]")
+	// for _, v := range userNames {
+	// 	if v != "" {
+	// 		fmt.Printf("[Check SSH] (%s) with userName: %s\n", vmIp, v)
+	// 		_, err := RunRemoteCommand(vmIp, sshPort, v, privateKey, cmd)
+	// 		if err != nil {
+	// 			fmt.Printf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
+	// 		} else {
+	// 			theUserName = v
+	// 			fmt.Printf("[%s] is a valid UserName\n", theUserName)
+	// 			break
+	// 		}
+	// 		time.Sleep(3 * time.Second)
+	// 	}
+	// }
+
+	userName, _, privateKey := GetVmSshKey(nsId, mcisId, vmId)
 
 	theUserName := ""
-	cmd := "sudo ls"
-
-	if verifiedUserName != "" {
-		/* Code for strict check in advance with real SSH (but slow down speed)
-		fmt.Printf("\n[Check SSH] (%s) with userName: %s\n", vmIp, verifiedUserName)
-		_, err := RunRemoteCommand(vmIp, sshPort, verifiedUserName, privateKey, cmd)
-		if err != nil {
-			return "", "", fmt.Errorf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
-		}*/
-		theUserName = verifiedUserName
-		fmt.Printf("[%s] is a valid UserName\n", theUserName)
-		return theUserName, privateKey, nil
-	}
-
-	// If we have a varified username, Retrieve ssh username from the given list will not be executed
-	fmt.Println("[Retrieve ssh username from the given list]")
-	for _, v := range userNames {
-		if v != "" {
-			fmt.Printf("[Check SSH] (%s) with userName: %s\n", vmIp, v)
-			_, err := RunRemoteCommand(vmIp, sshPort, v, privateKey, cmd)
-			if err != nil {
-				fmt.Printf("Cannot do ssh, with %s, %s", verifiedUserName, err.Error())
-			} else {
-				theUserName = v
-				fmt.Printf("[%s] is a valid UserName\n", theUserName)
-				break
-			}
-			time.Sleep(3 * time.Second)
-		}
-	}
-	if theUserName != "" {
-		err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
-		if err != nil {
-			common.CBLog.Error(err)
-			return "", "", err
-		}
+	if givenUserName != "" {
+		theUserName = givenUserName
+	} else if userName != "" {
+		theUserName = userName
 	} else {
-		return "", "", fmt.Errorf("Could not find a valid username")
+		theUserName = sshDefaultUserName[0] // default username: cb-user
 	}
+
+	if theUserName == "" {
+		err := fmt.Errorf("Could not find a valid username")
+		common.CBLog.Error(err)
+		return "", "", err
+	}
+
+	// Disable the verification of SSH username (until bastion host is supported)
+
+	// if theUserName != "" {
+	// 	err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
+	// 	if err != nil {
+	// 		common.CBLog.Error(err)
+	// 		return "", "", err
+	// 	}
+	// } else {
+	// 	return "", "", fmt.Errorf("Could not find a valid username")
+	// }
 
 	return theUserName, privateKey, nil
 }
@@ -310,7 +347,7 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 		SshKeyId string `json:"sshKeyId"`
 	}
 
-	fmt.Println("[GetVmSshKey]" + vmId)
+	//fmt.Println("[GetVmSshKey]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
 	keyValue, err := common.CBStore.Get(key)
@@ -323,7 +360,7 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	fmt.Printf("%+v\n", content.SshKeyId)
+	//fmt.Printf("%+v\n", content.SshKeyId)
 
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
 	keyValue, _ = common.CBStore.Get(sshKey)
@@ -384,7 +421,7 @@ type sshInfo struct {
 }
 
 // runSSH func execute a command by SSH
-func runSSH(targetInfo sshInfo, bastionInfo sshInfo, cmd string) (string, error) {
+func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmd string) (string, error) {
 	// Parse the private key for the bastion host
 	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
 	if err != nil {
