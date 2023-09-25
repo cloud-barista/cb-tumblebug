@@ -58,93 +58,8 @@ type SshCmdResult struct { // Tumblebug
 	Err    error  `json:"err"`
 }
 
-// RemoteCommandToMcisVm is func to command to a VM in MCIS by SSH
-func RemoteCommandToMcisVm(nsId string, mcisId string, vmId string, req *McisCmdReq) (string, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return "", err
-	}
-
-	err = common.CheckString(mcisId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return "", err
-	}
-
-	err = common.CheckString(vmId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return "", err
-	}
-
-	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
-	err = validate.Struct(req)
-	if err != nil {
-
-		// this check is only needed when your code could produce
-		// an invalid value for validation such as interface with nil
-		// value most including myself do not usually have code like this.
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
-			return "", err
-		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
-
-		return "", err
-	}
-
-	check, _ := CheckVm(nsId, mcisId, vmId)
-
-	if !check {
-		err := fmt.Errorf("The vm " + vmId + " does not exist.")
-		return err.Error(), err
-	}
-
-	vmIp, sshPort := GetVmIp(nsId, mcisId, vmId)
-
-	//sshKey := req.SshKey
-	cmd := req.Command
-
-	// find vaild username
-	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, req.UserName)
-	// Even though VerifySshUserName is not complete, Try RunRemoteCommand
-	// With RunRemoteCommand, error will be checked again
-	if err == nil {
-		// Just logging the error (but it is net a faultal)
-		common.CBLog.Info(err)
-	}
-
-	fmt.Println("")
-	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName: " + userName)
-	fmt.Println("[CMD] " + cmd)
-	fmt.Println("")
-
-	result, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, cmd)
-	if err != nil {
-		return ("[ERROR: " + err.Error() + "]\n " + *result), nil
-	}
-	return *result, nil
-
-}
-
 // RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
-func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, req *McisCmdReq) ([]SshCmdResult, error) {
+func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -227,6 +142,10 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, req *Mci
 			return nil, err
 		}
 		vmList = vmListInGroup
+	}
+
+	if vmId != "" {
+		vmList = []string{vmId}
 	}
 
 	//goroutine sync wg

@@ -26,41 +26,6 @@ type RestPostCmdMcisVmResponse struct {
 	Result string `json:"result"`
 }
 
-// RestPostCmdMcisVm godoc
-// @Summary Send a command to specified VM
-// @Description Send a command to specified VM
-// @Tags [Infra service] MCIS Remote command
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param vmId path string true "VM ID" default(g1-1)
-// @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
-// @Success 200 {object} RestPostCmdMcisVmResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/cmd/mcis/{mcisId}/vm/{vmId} [post]
-func RestPostCmdMcisVm(c echo.Context) error {
-
-	nsId := c.Param("nsId")
-	mcisId := c.Param("mcisId")
-	vmId := c.Param("vmId")
-
-	req := &mcis.McisCmdReq{}
-	if err := c.Bind(req); err != nil {
-		return err
-	}
-
-	result, err := mcis.RemoteCommandToMcisVm(nsId, mcisId, vmId, req)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	response := RestPostCmdMcisVmResponse{Result: result}
-	return c.JSON(http.StatusOK, response)
-}
-
 type RestPostCmdMcisResponse struct {
 	McisId string `json:"mcisId"`
 	VmId   string `json:"vmId"`
@@ -81,7 +46,8 @@ type RestPostCmdMcisResponseWrapper struct {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
-// @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default("")
+// @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default()
+// @Param vmId query string false "vmId to apply the command only for a VM in MCIS" default()
 // @Success 200 {object} RestPostCmdMcisResponseWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -91,13 +57,14 @@ func RestPostCmdMcis(c echo.Context) error {
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	subGroupId := c.QueryParam("subGroupId")
+	vmId := c.QueryParam("vmId")
 
 	req := &mcis.McisCmdReq{}
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	resultArray, err := mcis.RemoteCommandToMcis(nsId, mcisId, subGroupId, req)
+	resultArray, err := mcis.RemoteCommandToMcis(nsId, mcisId, subGroupId, vmId, req)
 	if err != nil {
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)

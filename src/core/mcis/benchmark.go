@@ -108,7 +108,7 @@ func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq, op
 	// Replace given parameter with the installation cmd
 	req.Command = cmd
 
-	sshCmdResult, err := RemoteCommandToMcis(nsId, mcisId, "", req)
+	sshCmdResult, err := RemoteCommandToMcis(nsId, mcisId, "", "", req)
 
 	if err != nil {
 		temp := []SshCmdResult{}
