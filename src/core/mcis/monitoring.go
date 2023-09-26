@@ -159,7 +159,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	defer wg.Done() //goroutin sync done
 
-	vmIP, sshPort := GetVmIp(nsID, mcisID, vmID)
+	vmIP, _, sshPort := GetVmIp(nsID, mcisID, vmID)
 	userName, privateKey, err := VerifySshUserName(nsID, mcisID, vmID, vmIP, sshPort, givenUserName)
 	errStr := ""
 	if err != nil {
@@ -421,7 +421,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 		wg.Add(1)
 
 		vmId := v
-		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
+		vmIp, _, _ := GetVmIp(nsId, mcisId, vmId)
 
 		// DF: Get vm on-demand monitoring metric info
 		// Path Param: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info

@@ -1018,15 +1018,15 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	return vmStatusTmp, nil
 }
 
-// GetVmIp is func to get VM IP
-func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
+// GetVmIp is func to get VM IP to return PublicIP, PrivateIP, SSHPort
+func GetVmIp(nsId string, mcisId string, vmId string) (string, string, string) {
 
 	var content struct {
-		PublicIP string `json:"publicIP"`
-		SSHPort  string `json:"sshPort"`
+		PublicIP  string `json:"publicIP"`
+		PrivateIP string `json:"privateIP"`
+		SSHPort   string `json:"sshPort"`
 	}
 
-	fmt.Printf("[GetVmIp] " + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
 	keyValue, err := common.CBStore.Get(key)
@@ -1039,9 +1039,7 @@ func GetVmIp(nsId string, mcisId string, vmId string) (string, string) {
 
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
-	fmt.Printf(" %+v\n", content.PublicIP)
-
-	return content.PublicIP, content.SSHPort
+	return content.PublicIP, content.PrivateIP, content.SSHPort
 }
 
 // GetVmSpecId is func to get VM SpecId
