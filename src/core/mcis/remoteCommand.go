@@ -166,8 +166,9 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName string, cmd string) (*string, error) {
 
 	var result string
-	vmIP, targetSshPort := GetVmIp(nsId, mcisId, vmId)
-	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIP, targetSshPort, givenUserName)
+	// use privagte IP of the target VM
+	_, targetVmIP, targetSshPort := GetVmIp(nsId, mcisId, vmId)
+	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mcisId, vmId, targetVmIP, targetSshPort, givenUserName)
 
 	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
 	bastionNodes, err := GetBastionNodes(nsId, mcisId, vmId)
@@ -176,7 +177,8 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 		return &result, err
 	}
 	bastionNode := bastionNodes.VmId[0]
-	bastionIp, bastionSshPort := GetVmIp(nsId, mcisId, bastionNode)
+	// use public IP of the bastion VM
+	bastionIp, _, bastionSshPort := GetVmIp(nsId, mcisId, bastionNode)
 	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, mcisId, bastionNode, bastionIp, bastionSshPort, givenUserName)
 	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
 
@@ -186,11 +188,11 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 		PrivateKey: []byte(bastionSshKey),
 	}
 
-	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIP + ")" + " with userName: " + targetUserName)
+	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + targetVmIP + ")" + " with userName: " + targetUserName)
 	fmt.Println("[CMD] " + cmd)
 
 	// Set VM SSH config (targetEndpoint, userName, Private Key)
-	targetEndpoint := fmt.Sprintf("%s:%s", vmIP, targetSshPort)
+	targetEndpoint := fmt.Sprintf("%s:%s", targetVmIP, targetSshPort)
 	targetSshInfo := sshInfo{
 		EndPoint:   targetEndpoint,
 		UserName:   targetUserName,
@@ -211,7 +213,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 
 	defer wg.Done() //goroutin sync done
 
-	vmIP, _ := GetVmIp(nsId, mcisId, vmId)
+	vmIP, _, _ := GetVmIp(nsId, mcisId, vmId)
 	// RunRemoteCommand
 	result, err := RunRemoteCommand(nsId, mcisId, vmId, givenUserName, cmd)
 

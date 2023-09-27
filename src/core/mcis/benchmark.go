@@ -145,7 +145,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		reqTmp := MultihostBenchmarkReq{}
 		for _, vm := range vmList {
 			vmIdTmp := vm
-			vmIpTmp, _ := GetVmIp(nsId, mcisId, vmIdTmp)
+			vmIpTmp, _, _ := GetVmIp(nsId, mcisId, vmIdTmp)
 			fmt.Println("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
 
 			hostTmp := BenchmarkReq{}
@@ -618,7 +618,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 		wg.Add(1)
 
 		vmId := v
-		vmIp, _ := GetVmIp(nsId, mcisId, vmId)
+		vmIp, _, _ := GetVmIp(nsId, mcisId, vmId)
 
 		go CallMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
 	}
