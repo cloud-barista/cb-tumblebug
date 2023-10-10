@@ -1268,7 +1268,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
+                            "$ref": "#/definitions/mcis.SshCmdResultWrapper"
                         }
                     },
                     "404": {
@@ -1529,7 +1529,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
+                            "$ref": "#/definitions/mcis.SshCmdResultWrapper"
                         }
                     },
                     "404": {
@@ -9372,17 +9372,6 @@
                 }
             }
         },
-        "mcis.RestPostCmdMcisResponseWrapper": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.SshCmdResult"
-                    }
-                }
-            }
-        },
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
@@ -9511,6 +9500,12 @@
         "mcis.SshCmdResult": {
             "type": "object",
             "properties": {
+                "command": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "err": {},
                 "mcisId": {
                     "type": "string"
@@ -9532,6 +9527,17 @@
                 },
                 "vmIp": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.SshCmdResultWrapper": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.SshCmdResult"
+                    }
                 }
             }
         },

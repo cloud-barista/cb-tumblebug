@@ -1523,13 +1523,6 @@ definitions:
       host:
         type: string
     type: object
-  mcis.RestPostCmdMcisResponseWrapper:
-    properties:
-      results:
-        items:
-          $ref: '#/definitions/mcis.SshCmdResult'
-        type: array
-    type: object
   mcis.SpiderVMInfo:
     properties:
       cspid:
@@ -1619,6 +1612,10 @@ definitions:
     type: object
   mcis.SshCmdResult:
     properties:
+      command:
+        additionalProperties:
+          type: string
+        type: object
       err: {}
       mcisId:
         type: string
@@ -1634,6 +1631,13 @@ definitions:
         type: string
       vmIp:
         type: string
+    type: object
+  mcis.SshCmdResultWrapper:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/mcis.SshCmdResult'
+        type: array
     type: object
   mcis.StatusCountInfo:
     properties:
@@ -3262,7 +3266,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.RestPostCmdMcisResponseWrapper'
+            $ref: '#/definitions/mcis.SshCmdResultWrapper'
         "404":
           description: Not Found
           schema:
@@ -3443,7 +3447,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.RestPostCmdMcisResponseWrapper'
+            $ref: '#/definitions/mcis.SshCmdResultWrapper'
         "404":
           description: Not Found
           schema:
