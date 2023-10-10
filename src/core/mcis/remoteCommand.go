@@ -51,12 +51,13 @@ func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
 
 // SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
-	McisId string         `json:"mcisId"`
-	VmId   string         `json:"vmId"`
-	VmIp   string         `json:"vmIp"`
-	Stdout map[int]string `json:"stdout"`
-	Stderr map[int]string `json:"stderr"`
-	Err    error          `json:"err"`
+	McisId  string         `json:"mcisId"`
+	VmId    string         `json:"vmId"`
+	VmIp    string         `json:"vmIp"`
+	Command map[int]string `json:"command"`
+	Stdout  map[int]string `json:"stdout"`
+	Stderr  map[int]string `json:"stderr"`
+	Err     error          `json:"err"`
 }
 
 // RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
@@ -224,6 +225,10 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 	sshResultTmp.McisId = mcisId
 	sshResultTmp.VmId = vmId
 	sshResultTmp.VmIp = vmIP
+	sshResultTmp.Command = make(map[int]string)
+	for i, c := range cmd {
+		sshResultTmp.Command[i] = c
+	}
 
 	if err != nil {
 		sshResultTmp.Stdout = stdoutResults
