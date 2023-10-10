@@ -485,7 +485,7 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmds []string) (map[int]str
 	// Create a new SSH session
 	session, err := client.NewSession()
 	if err != nil {
-		return nil, nil, err
+		return stdoutMap, stderrMap, err
 	}
 	defer session.Close()
 
@@ -494,7 +494,7 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmds []string) (map[int]str
 		// Create a new SSH session for each command
 		session, err := client.NewSession()
 		if err != nil {
-			return nil, nil, err
+			return stdoutMap, stderrMap, err
 		}
 		defer session.Close()
 
