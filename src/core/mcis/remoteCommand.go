@@ -529,6 +529,18 @@ type BastionInfo struct {
 
 // SetBastionNodes func sets bastion nodes
 func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId string) (string, error) {
+
+	// Check if bastion node already exists for the target VM (for random assignment)
+	currentBastion, err := GetBastionNodes(nsId, mcisId, targetVmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+	if len(currentBastion.VmId) > 0 && bastionVmId == "" {
+		return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in MCIS (ID: %s) under namespace (ID: %s)",
+			targetVmId, mcisId, nsId)
+	}
+
 	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
 	if err != nil {
 		common.CBLog.Error(err)
@@ -550,10 +562,25 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 	// find subnet and append bastion node
 	for i, subnetInfo := range tempVNetInfo.SubnetInfoList {
 		if subnetInfo.Id == vmObj.SubnetId {
-			for _, existingId := range subnetInfo.BastionNodeIds {
-				if existingId == bastionVmId {
-					return fmt.Sprintf("Bastion (ID: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
-						bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
+
+			if bastionVmId == "" {
+				vmIdsInSubnet, err := ListVmByFilter(nsId, mcisId, "SubnetId", subnetInfo.Id)
+				if err != nil {
+					common.CBLog.Error(err)
+				}
+				for _, v := range vmIdsInSubnet {
+					tmpPublicIp, _, _ := GetVmIp(nsId, mcisId, v)
+					if tmpPublicIp != "" {
+						bastionVmId = v
+						break
+					}
+				}
+			} else {
+				for _, existingId := range subnetInfo.BastionNodeIds {
+					if existingId == bastionVmId {
+						return fmt.Sprintf("Bastion (ID: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
+							bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
+					}
 				}
 			}
 
@@ -598,8 +625,7 @@ func GetBastionNodes(nsId string, mcisId string, targetVmId string) (BastionInfo
 	for _, subnetInfo := range tempVNetInfo.SubnetInfoList {
 		if subnetInfo.Id == vmObj.SubnetId {
 			if subnetInfo.BastionNodeIds == nil {
-				return returnValue, fmt.Errorf("no assigned bastion in Subnet (ID: %s) of VNet (ID: %s) for VM (ID: %s)",
-					vmObj.SubnetId, vmObj.VNetId, targetVmId)
+				return returnValue, nil
 			}
 			returnValue.VmId = subnetInfo.BastionNodeIds
 			return returnValue, nil
