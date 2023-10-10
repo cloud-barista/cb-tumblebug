@@ -127,7 +127,7 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 	// Replace given parameter with the installation cmd
 	mcisCmdReq := McisCmdReq{}
 	mcisCmdReq.UserName = "cb-user" // this MCIS user name is temporal code. Need to improve.
-	mcisCmdReq.Command = command
+	mcisCmdReq.Command = append(mcisCmdReq.Command, command)
 
 	//// Install the cb-network agent to MCIS
 	// sshCmdResults, err := installCBNetworkAgentToMcis(nsId, mcisId, mcisCmdReq)
@@ -182,7 +182,7 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 		tempContent.McisId = mcisId
 		tempContent.VmId = result.VmId
 		tempContent.VmIp = result.VmIp
-		tempContent.Result = result.Result
+		tempContent.Result = result.Stdout[0]
 
 		contents.ResultArray = append(contents.ResultArray, tempContent)
 	}
@@ -394,27 +394,22 @@ func installCBNetworkAgentToVM(nsId, mcisId, vmId string, mcisCmdReq McisCmdReq)
 		// Just logging the error (but it is net a faultal )
 		common.CBLog.Info(err)
 	}
-	fmt.Println("")
-	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + vmIp + ")" + " with userName: " + userName)
-	fmt.Println("[CMD] " + mcisCmdReq.Command)
-	fmt.Println("")
 
-	result, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, mcisCmdReq.Command)
+	stdout, stderr, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, mcisCmdReq.Command)
 
 	sshResultTmp := SshCmdResult{}
 	sshResultTmp.McisId = ""
 	sshResultTmp.VmId = vmId
 	sshResultTmp.VmIp = vmIp
+	sshResultTmp.Stdout = stdout
+	sshResultTmp.Stderr = stderr
 
 	if err != nil {
-		sshResultTmp.Result = ("[ERROR: " + err.Error() + "]\n " + *result)
 		sshResultTmp.Err = err
 	} else {
 		fmt.Println("[Begin] SSH Output")
-		fmt.Println(*result)
+		fmt.Println(sshResultTmp.Stdout)
 		fmt.Println("[end] SSH Output")
-
-		sshResultTmp.Result = *result
 		sshResultTmp.Err = nil
 	}
 

@@ -185,28 +185,6 @@ definitions:
       connectionName:
         type: string
     type: object
-  mcir.CustomImageStatus:
-    enum:
-    - Available
-    - Unavailable
-    type: string
-    x-enum-varnames:
-    - MyImageAvailable
-    - MyImageUnavailable
-  mcir.DiskStatus:
-    enum:
-    - Creating
-    - Available
-    - Attached
-    - Deleting
-    - Error
-    type: string
-    x-enum-varnames:
-    - DiskCreating
-    - DiskAvailable
-    - DiskAttached
-    - DiskDeleting
-    - DiskError
   mcir.FilterSpecsByRangeRequest:
     properties:
       connectionName:
@@ -379,8 +357,7 @@ definitions:
         description: Windows7, Ubuntu etc.
         type: string
       iid:
-        allOf:
-        - $ref: '#/definitions/common.IID'
+        $ref: '#/definitions/common.IID'
         description: Fields for response
       keyValueList:
         items:
@@ -484,9 +461,8 @@ definitions:
         example: aws-ap-southeast-1-1
         type: string
       status:
-        allOf:
-        - $ref: '#/definitions/mcir.CustomImageStatus'
         example: Available
+        type: string
       systemLabel:
         description: SystemLabel is for describing the MCIR in a keyword (any string
           can be used) for special System purpose
@@ -549,10 +525,9 @@ definitions:
         example: aws-ap-southeast-1-datadisk
         type: string
       status:
-        allOf:
-        - $ref: '#/definitions/mcir.DiskStatus'
         description: Available, Unavailable, Attached, ...
         example: Available
+        type: string
       systemLabel:
         description: SystemLabel is for describing the MCIR in a keyword (any string
           can be used) for special System purpose
@@ -1043,8 +1018,7 @@ definitions:
         example: random
         type: string
       postCommand:
-        allOf:
-        - $ref: '#/definitions/mcis.McisCmdReq'
+        $ref: '#/definitions/mcis.McisCmdReq'
         description: PostCommand is field for providing command to VMs after its creation.
           example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
           -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
@@ -1228,9 +1202,12 @@ definitions:
   mcis.McisCmdReq:
     properties:
       command:
-        example: 'client_ip=$(echo $SSH_CLIENT | awk ''{print $1}''); echo SSH client
-          IP is: $client_ip'
-        type: string
+        example:
+        - 'client_ip=$(echo $SSH_CLIENT | awk ''{print $1}''); echo SSH client IP
+          is: $client_ip'
+        items:
+          type: string
+        type: array
       userName:
         example: cb-user
         type: string
@@ -1546,32 +1523,13 @@ definitions:
       host:
         type: string
     type: object
-  mcis.RestPostCmdMcisResponse:
-    properties:
-      mcisId:
-        type: string
-      result:
-        type: string
-      vmId:
-        type: string
-      vmIp:
-        type: string
-    type: object
   mcis.RestPostCmdMcisResponseWrapper:
     properties:
-      resultArray:
+      results:
         items:
-          $ref: '#/definitions/mcis.RestPostCmdMcisResponse'
+          $ref: '#/definitions/mcis.SshCmdResult'
         type: array
     type: object
-  mcis.SpiderImageType:
-    enum:
-    - PublicImage
-    - MyImage
-    type: string
-    x-enum-varnames:
-    - PublicImage
-    - MyImage
   mcis.SpiderVMInfo:
     properties:
       cspid:
@@ -1586,15 +1544,14 @@ definitions:
           type: string
         type: array
       iid:
-        allOf:
-        - $ref: '#/definitions/common.IID'
+        $ref: '#/definitions/common.IID'
         description: Fields for response
       imageIId:
         $ref: '#/definitions/common.IID'
       imageName:
         type: string
       imageType:
-        $ref: '#/definitions/mcis.SpiderImageType'
+        type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
       keyPairName:
@@ -1618,8 +1575,7 @@ definitions:
       publicIP:
         type: string
       region:
-        allOf:
-        - $ref: '#/definitions/mcis.RegionInfo'
+        $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         description: '"/dev/sda1", ...'
@@ -1644,8 +1600,7 @@ definitions:
       startTime:
         type: string
       subnetIID:
-        allOf:
-        - $ref: '#/definitions/common.IID'
+        $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
       subnetName:
         type: string
@@ -1660,6 +1615,24 @@ definitions:
       vpcIID:
         $ref: '#/definitions/common.IID'
       vpcname:
+        type: string
+    type: object
+  mcis.SshCmdResult:
+    properties:
+      err: {}
+      mcisId:
+        type: string
+      stderr:
+        additionalProperties:
+          type: string
+        type: object
+      stdout:
+        additionalProperties:
+          type: string
+        type: object
+      vmId:
+        type: string
+      vmIp:
         type: string
     type: object
   mcis.StatusCountInfo:
@@ -1970,12 +1943,10 @@ definitions:
       description:
         type: string
       healthChecker:
-        allOf:
-        - $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
+        $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
         description: HealthChecker
       listener:
-        allOf:
-        - $ref: '#/definitions/mcis.NLBListenerReq'
+        $ref: '#/definitions/mcis.NLBListenerReq'
         description: Frontend
       scope:
         description: REGION(V) | GLOBAL
@@ -1985,8 +1956,7 @@ definitions:
         example: REGION
         type: string
       targetGroup:
-        allOf:
-        - $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
+        $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
         description: Backend
       type:
         description: PUBLIC(V) | INTERNAL
@@ -2143,8 +2113,7 @@ definitions:
       publicIP:
         type: string
       region:
-        allOf:
-        - $ref: '#/definitions/mcis.RegionInfo'
+        $ref: '#/definitions/mcis.RegionInfo'
         description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         type: string

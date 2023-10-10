@@ -26,15 +26,8 @@ type RestPostCmdMcisVmResponse struct {
 	Result string `json:"result"`
 }
 
-type RestPostCmdMcisResponse struct {
-	McisId string `json:"mcisId"`
-	VmId   string `json:"vmId"`
-	VmIp   string `json:"vmIp"`
-	Result string `json:"result"`
-}
-
-type RestPostCmdMcisResponseWrapper struct {
-	ResultArray []RestPostCmdMcisResponse `json:"resultArray"`
+type SshCmdResultWrapper struct {
+	Results []mcis.SshCmdResult `json:"results"`
 }
 
 // RestPostCmdMcis godoc
@@ -48,7 +41,7 @@ type RestPostCmdMcisResponseWrapper struct {
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default()
 // @Param vmId query string false "vmId to apply the command only for a VM in MCIS" default()
-// @Success 200 {object} RestPostCmdMcisResponseWrapper
+// @Success 200 {object} SshCmdResultWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/cmd/mcis/{mcisId} [post]
@@ -70,16 +63,10 @@ func RestPostCmdMcis(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	content := RestPostCmdMcisResponseWrapper{}
+	content := SshCmdResultWrapper{}
 
 	for _, v := range resultArray {
-
-		resultTmp := RestPostCmdMcisResponse{}
-		resultTmp.McisId = mcisId
-		resultTmp.VmId = v.VmId
-		resultTmp.VmIp = v.VmIp
-		resultTmp.Result = v.Result
-		content.ResultArray = append(content.ResultArray, resultTmp)
+		content.Results = append(content.Results, v)
 	}
 
 	common.PrintJsonPretty(content)

@@ -260,13 +260,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	if err != nil || errStr != "" {
 		common.CBLog.Error("[Monitoring Agent deployment errors] " + errStr)
-		sshResultTmp.Result = errStr
+		sshResultTmp.Stderr[0] = errStr
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
 		vmInfoTmp.MonAgentStatus = "failed"
 	} else {
 		fmt.Println("Result: " + result)
-		sshResultTmp.Result = result
+		sshResultTmp.Stdout[0] = result
 		sshResultTmp.Err = nil
 		*returnResult = append(*returnResult, sshResultTmp)
 		vmInfoTmp.MonAgentStatus = "installed"
@@ -344,7 +344,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 		resultTmp.McisId = mcisId
 		resultTmp.VmId = v.VmId
 		resultTmp.VmIp = v.VmIp
-		resultTmp.Result = v.Result
+		resultTmp.Result = v.Stdout[0]
 		content.ResultArray = append(content.ResultArray, resultTmp)
 	}
 

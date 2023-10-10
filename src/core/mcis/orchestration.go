@@ -348,9 +348,9 @@ func OrchestrationController() {
 						}
 						common.PrintJsonPretty(result)
 
-						nullMcisCmdReq := McisCmdReq{}
-						if autoAction.PostCommand != nullMcisCmdReq {
-							fmt.Println("[Post Command to VM] " + autoAction.PostCommand.Command)
+						if len(autoAction.PostCommand.Command) != 0 {
+							fmt.Print("[Post Command to VM] ")
+							fmt.Println(autoAction.PostCommand.Command)
 							_, cmdErr := RemoteCommandToMcis(nsId, mcisPolicyTmp.Id, common.ToLower(autoAction.VmDynamicReq.Name), "", &autoAction.PostCommand)
 							if cmdErr != nil {
 								mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
