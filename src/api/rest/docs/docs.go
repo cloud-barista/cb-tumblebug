@@ -1276,7 +1276,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
+                            "$ref": "#/definitions/mcis.SshCmdResultWrapper"
                         }
                     },
                     "404": {
@@ -1537,7 +1537,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.RestPostCmdMcisResponseWrapper"
+                            "$ref": "#/definitions/mcis.SshCmdResultWrapper"
                         }
                     },
                     "404": {
@@ -9380,17 +9380,6 @@ const docTemplate = `{
                 }
             }
         },
-        "mcis.RestPostCmdMcisResponseWrapper": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.SshCmdResult"
-                    }
-                }
-            }
-        },
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
@@ -9519,6 +9508,12 @@ const docTemplate = `{
         "mcis.SshCmdResult": {
             "type": "object",
             "properties": {
+                "command": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "err": {},
                 "mcisId": {
                     "type": "string"
@@ -9540,6 +9535,17 @@ const docTemplate = `{
                 },
                 "vmIp": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.SshCmdResultWrapper": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.SshCmdResult"
+                    }
                 }
             }
         },
