@@ -1835,5 +1835,12 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 
+	// Assign a Bastion if none (randomly)
+	_, err = SetBastionNodes(nsId, mcisId, vmInfoData.Id, "")
+	if err != nil {
+		// just log error and continue
+		common.CBLog.Error(err)
+	}
+
 	return nil
 }
