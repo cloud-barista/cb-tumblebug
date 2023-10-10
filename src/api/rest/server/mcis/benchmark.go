@@ -53,16 +53,11 @@ func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	content := RestPostCmdMcisResponseWrapper{}
+	content := SshCmdResultWrapper{}
 
 	for _, v := range resultArray {
 
-		resultTmp := RestPostCmdMcisResponse{}
-		resultTmp.McisId = mcisId
-		resultTmp.VmId = v.VmId
-		resultTmp.VmIp = v.VmIp
-		resultTmp.Result = v.Result
-		content.ResultArray = append(content.ResultArray, resultTmp)
+		content.Results = append(content.Results, v)
 
 	}
 

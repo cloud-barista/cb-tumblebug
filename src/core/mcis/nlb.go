@@ -343,13 +343,16 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 
 	// Deploy SW NLB
 	cmd := common.RuntimeConf.Nlbsw.CommandNlbPrepare
-	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmd})
+	var cmds []string
+	cmds = append(cmds, cmd)
+
+	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
 	if err != nil {
 		common.CBLog.Error(err)
 		return emptyObj, err
 	}
 	cmd = common.RuntimeConf.Nlbsw.CommandNlbDeploy + " " + mcisId + " " + common.ToLower(req.Listener.Protocol) + " " + req.Listener.Port
-	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmd})
+	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
 	if err != nil {
 		common.CBLog.Error(err)
 		return emptyObj, err
@@ -367,7 +370,7 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 		for _, k := range v.McisVmAccessInfo {
 
 			cmd = common.RuntimeConf.Nlbsw.CommandNlbAddTargetNode + " " + k.VmId + " " + k.PublicIP + " " + req.TargetGroup.Port
-			_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmd})
+			_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
 			if err != nil {
 				common.CBLog.Error(err)
 				return emptyObj, err
@@ -377,7 +380,7 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 	}
 
 	cmd = common.RuntimeConf.Nlbsw.CommandNlbApplyConfig
-	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmd})
+	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
 	if err != nil {
 		common.CBLog.Error(err)
 		return emptyObj, err

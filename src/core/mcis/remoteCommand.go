@@ -33,8 +33,8 @@ var sshDefaultUserName = []string{"cb-user", "ubuntu", "root", "ec2-user"}
 
 // McisCmdReq is struct for remote command
 type McisCmdReq struct {
-	UserName string `json:"userName" example:"cb-user" default:""`
-	Command  string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
+	UserName string   `json:"userName" example:"cb-user" default:""`
+	Command  []string `json:"command" validate:"required" example:"client_ip=$(echo $SSH_CLIENT | awk '{print $1}'); echo SSH client IP is: $client_ip"`
 }
 
 // TbMcisCmdReqStructLevelValidation is func to validate fields in McisCmdReq
@@ -51,11 +51,12 @@ func TbMcisCmdReqStructLevelValidation(sl validator.StructLevel) {
 
 // SshCmdResult is struct for SshCmd Result
 type SshCmdResult struct { // Tumblebug
-	McisId string `json:"mcisId"`
-	VmId   string `json:"vmId"`
-	VmIp   string `json:"vmIp"`
-	Result string `json:"result"`
-	Err    error  `json:"err"`
+	McisId string         `json:"mcisId"`
+	VmId   string         `json:"vmId"`
+	VmIp   string         `json:"vmIp"`
+	Stdout map[int]string `json:"stdout"`
+	Stderr map[int]string `json:"stderr"`
+	Err    error          `json:"err"`
 }
 
 // RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
@@ -163,9 +164,8 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 }
 
 // RunRemoteCommand is func to execute a SSH command to a VM (sync call)
-func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName string, cmd string) (*string, error) {
+func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
 
-	var result string
 	// use privagte IP of the target VM
 	_, targetVmIP, targetSshPort := GetVmIp(nsId, mcisId, vmId)
 	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mcisId, vmId, targetVmIP, targetSshPort, givenUserName)
@@ -174,7 +174,7 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 	bastionNodes, err := GetBastionNodes(nsId, mcisId, vmId)
 	if err != nil {
 		common.CBLog.Error(err)
-		return &result, err
+		return map[int]string{}, map[int]string{}, err
 	}
 	bastionNode := bastionNodes.VmId[0]
 	// use public IP of the bastion VM
@@ -189,7 +189,9 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 	}
 
 	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + targetVmIP + ")" + " with userName: " + targetUserName)
-	fmt.Println("[CMD] " + cmd)
+	for i, v := range cmds {
+		fmt.Println("[SSH] cmd[" + fmt.Sprint(i) + "]: " + v)
+	}
 
 	// Set VM SSH config (targetEndpoint, userName, Private Key)
 	targetEndpoint := fmt.Sprintf("%s:%s", targetVmIP, targetSshPort)
@@ -200,22 +202,23 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 	}
 
 	// Execute SSH
-	result, err = runSSH(bastionSshInfo, targetSshInfo, cmd)
+	stdoutResults, stderrResults, err := runSSH(bastionSshInfo, targetSshInfo, cmds)
 	if err != nil {
-		return &result, err
+		fmt.Printf("Error executing commands: %s\n", err)
+		return stdoutResults, stderrResults, err
 	}
-	return &result, nil
+	return stdoutResults, stderrResults, nil
 
 }
 
 // RunRemoteCommandAsync is func to execute a SSH command to a VM (async call)
-func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, givenUserName string, cmd string, returnResult *[]SshCmdResult) {
+func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string, givenUserName string, cmd []string, returnResult *[]SshCmdResult) {
 
-	defer wg.Done() //goroutin sync done
+	defer wg.Done() //goroutine sync done
 
 	vmIP, _, _ := GetVmIp(nsId, mcisId, vmId)
 	// RunRemoteCommand
-	result, err := RunRemoteCommand(nsId, mcisId, vmId, givenUserName, cmd)
+	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, mcisId, vmId, givenUserName, cmd)
 
 	sshResultTmp := SshCmdResult{}
 	sshResultTmp.McisId = mcisId
@@ -223,19 +226,20 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 	sshResultTmp.VmIp = vmIP
 
 	if err != nil {
-		sshResultTmp.Result = ("[ERROR: " + err.Error() + "]\n " + *result)
+		sshResultTmp.Stdout = stdoutResults
+		sshResultTmp.Stderr = stderrResults
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
 	} else {
 		fmt.Println("[Begin] SSH Output")
-		fmt.Println(*result)
-		fmt.Println("[end] SSH Output")
+		fmt.Println(stdoutResults)
+		fmt.Println("[End] SSH Output")
 
-		sshResultTmp.Result = *result
+		sshResultTmp.Stdout = stdoutResults
+		sshResultTmp.Stderr = stderrResults
 		sshResultTmp.Err = nil
 		*returnResult = append(*returnResult, sshResultTmp)
 	}
-
 }
 
 // VerifySshUserName is func to verify SSH username
@@ -423,11 +427,15 @@ type sshInfo struct {
 }
 
 // runSSH func execute a command by SSH
-func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmd string) (string, error) {
+func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmds []string) (map[int]string, map[int]string, error) {
+
+	stdoutMap := make(map[int]string)
+	stderrMap := make(map[int]string)
+
 	// Parse the private key for the bastion host
 	bastionSigner, err := ssh.ParsePrivateKey(bastionInfo.PrivateKey)
 	if err != nil {
-		return "", err
+		return stdoutMap, stderrMap, err
 	}
 
 	// Create an SSH client configuration for the bastion host
@@ -442,7 +450,7 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmd string) (string, error)
 	// Parse the private key for the target host
 	targetSigner, err := ssh.ParsePrivateKey(targetInfo.PrivateKey)
 	if err != nil {
-		return "", err
+		return stdoutMap, stderrMap, err
 	}
 
 	// Create an SSH client configuration for the target host
@@ -457,19 +465,19 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmd string) (string, error)
 	// Setup the bastion host connection
 	bastionClient, err := ssh.Dial("tcp", bastionInfo.EndPoint, bastionConfig)
 	if err != nil {
-		return "", err
+		return stdoutMap, stderrMap, err
 	}
 	defer bastionClient.Close()
 
 	// Setup the actual SSH client through the bastion host
 	conn, err := bastionClient.Dial("tcp", targetInfo.EndPoint)
 	if err != nil {
-		return "", err
+		return stdoutMap, stderrMap, err
 	}
 
 	ncc, chans, reqs, err := ssh.NewClientConn(conn, targetInfo.EndPoint, targetConfig)
 	if err != nil {
-		return "", err
+		return stdoutMap, stderrMap, err
 	}
 	client := ssh.NewClient(ncc, chans, reqs)
 	defer client.Close()
@@ -477,23 +485,36 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmd string) (string, error)
 	// Create a new SSH session
 	session, err := client.NewSession()
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
 	defer session.Close()
 
-	// Capture the output
-	var stdoutBuf, stderrBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Stderr = &stderrBuf
+	// Run the commands
+	for i, cmd := range cmds {
+		// Create a new SSH session for each command
+		session, err := client.NewSession()
+		if err != nil {
+			return nil, nil, err
+		}
+		defer session.Close()
 
-	// Run the command
-	err = session.Run(cmd)
-	if err != nil {
-		return stdoutBuf.String(), fmt.Errorf("(%s)\nStderr: %s", err, stderrBuf.String())
+		// Capture the output
+		var stdoutBuf, stderrBuf bytes.Buffer
+		session.Stdout = &stdoutBuf
+		session.Stderr = &stderrBuf
+
+		// Run the command
+		err = session.Run(cmd)
+		if err != nil {
+			stderrMap[i] = fmt.Sprintf("(%s)\nStderr: %s", err, stderrBuf.String())
+			break // Stop if the command fails
+		}
+
+		stdoutMap[i] = stdoutBuf.String()
+		stderrMap[i] = stderrBuf.String()
 	}
 
-	// Return the output
-	return stdoutBuf.String(), nil
+	return stdoutMap, stderrMap, nil
 }
 
 // BastionInfo is struct for bastion info
