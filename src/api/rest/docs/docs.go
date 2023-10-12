@@ -2821,7 +2821,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.BastionInfo"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/mcir.BastionNode"
+                            }
                         }
                     },
                     "404": {
@@ -7429,6 +7432,17 @@ const docTemplate = `{
                 }
             }
         },
+        "mcir.BastionNode": {
+            "type": "object",
+            "properties": {
+                "mcisId": {
+                    "type": "string"
+                },
+                "vmId": {
+                    "type": "string"
+                }
+            }
+        },
         "mcir.CustomImageStatus": {
             "type": "string",
             "enum": [
@@ -8502,10 +8516,10 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
-                "bastionNodeIds": {
+                "bastionNodes": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/mcir.BastionNode"
                     }
                 },
                 "description": {
@@ -8723,17 +8737,6 @@ const docTemplate = `{
                         "\u003e="
                     ],
                     "example": "\u003e="
-                }
-            }
-        },
-        "mcis.BastionInfo": {
-            "type": "object",
-            "properties": {
-                "vmId": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 }
             }
         },
