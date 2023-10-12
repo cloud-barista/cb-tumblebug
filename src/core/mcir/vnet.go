@@ -135,12 +135,18 @@ func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
 
 // TbSubnetInfo is a struct that represents TB subnet object.
 type TbSubnetInfo struct { // Tumblebug
-	Id             string
-	Name           string `validate:"required"`
-	IPv4_CIDR      string `validate:"required"`
-	BastionNodeIds []string
-	KeyValueList   []common.KeyValue
-	Description    string
+	Id           string
+	Name         string `validate:"required"`
+	IPv4_CIDR    string `validate:"required"`
+	BastionNodes []BastionNode
+	KeyValueList []common.KeyValue
+	Description  string
+}
+
+// BastionNode is a struct that represents TB BastionNode object.
+type BastionNode struct {
+	McisId string `json:"mcisId"`
+	VmId   string `json:"vmId"`
 }
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object

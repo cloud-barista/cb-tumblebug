@@ -177,10 +177,10 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 		common.CBLog.Error(err)
 		return map[int]string{}, map[int]string{}, err
 	}
-	bastionNode := bastionNodes.VmId[0]
+	bastionNode := bastionNodes[0]
 	// use public IP of the bastion VM
-	bastionIp, _, bastionSshPort := GetVmIp(nsId, mcisId, bastionNode)
-	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, mcisId, bastionNode, bastionIp, bastionSshPort, givenUserName)
+	bastionIp, _, bastionSshPort := GetVmIp(nsId, bastionNode.McisId, bastionNode.VmId)
+	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.McisId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
 	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
 
 	bastionSshInfo := sshInfo{
@@ -536,7 +536,7 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 		common.CBLog.Error(err)
 		return "", err
 	}
-	if len(currentBastion.VmId) > 0 && bastionVmId == "" {
+	if len(currentBastion) > 0 && bastionVmId == "" {
 		return "", fmt.Errorf("bastion node already exists for VM (ID: %s) in MCIS (ID: %s) under namespace (ID: %s)",
 			targetVmId, mcisId, nsId)
 	}
@@ -576,16 +576,17 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 					}
 				}
 			} else {
-				for _, existingId := range subnetInfo.BastionNodeIds {
-					if existingId == bastionVmId {
+				for _, existingId := range subnetInfo.BastionNodes {
+					if existingId.VmId == bastionVmId {
 						return fmt.Sprintf("Bastion (ID: %s) already exists in subnet (ID: %s) in VNet (ID: %s).",
 							bastionVmId, subnetInfo.Id, vmObj.VNetId), nil
 					}
 				}
 			}
 
+			bastionCandidate := mcir.BastionNode{McisId: mcisId, VmId: bastionVmId}
 			// Append bastionVmId only if it doesn't already exist.
-			subnetInfo.BastionNodeIds = append(subnetInfo.BastionNodeIds, bastionVmId)
+			subnetInfo.BastionNodes = append(subnetInfo.BastionNodes, bastionCandidate)
 			tempVNetInfo.SubnetInfoList[i] = subnetInfo
 			mcir.UpdateResourceObject(nsId, common.StrVNet, tempVNetInfo)
 
@@ -598,8 +599,8 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 }
 
 // GetBastionNodes func retrieves bastion nodes for a given VM
-func GetBastionNodes(nsId string, mcisId string, targetVmId string) (BastionInfo, error) {
-	returnValue := BastionInfo{}
+func GetBastionNodes(nsId string, mcisId string, targetVmId string) ([]mcir.BastionNode, error) {
+	returnValue := []mcir.BastionNode{}
 	// Fetch VM object based on nsId, mcisId, and targetVmId
 	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
 	if err != nil {
@@ -624,10 +625,10 @@ func GetBastionNodes(nsId string, mcisId string, targetVmId string) (BastionInfo
 	// Find the subnet corresponding to the VM and return the BastionNodeIds
 	for _, subnetInfo := range tempVNetInfo.SubnetInfoList {
 		if subnetInfo.Id == vmObj.SubnetId {
-			if subnetInfo.BastionNodeIds == nil {
+			if subnetInfo.BastionNodes == nil {
 				return returnValue, nil
 			}
-			returnValue.VmId = subnetInfo.BastionNodeIds
+			returnValue = subnetInfo.BastionNodes
 			return returnValue, nil
 		}
 	}

@@ -113,7 +113,7 @@ func RestSetBastionNodes(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param targetVmId path string true "Target VM ID" default(vm01)
-// @Success 200 {object} mcis.BastionInfo
+// @Success 200 {object} []mcir.BastionNode
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion [get]
