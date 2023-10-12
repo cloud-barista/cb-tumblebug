@@ -25,6 +25,7 @@ import (
 	"time"
 
 	//_ "github.com/go-sql-driver/mysql"
+	"github.com/fsnotify/fsnotify"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 
@@ -218,6 +219,21 @@ func main() {
 		}
 	}()
 	defer ticker.Stop()
+
+	go func() {
+		viper.WatchConfig()
+		viper.OnConfigChange(func(e fsnotify.Event) {
+			fmt.Println("Config file changed:", e.Name)
+			err := viper.ReadInConfig()
+			if err != nil { // Handle errors reading the config file
+				panic(fmt.Errorf("fatal error config file: %w", err))
+			}
+			err = viper.Unmarshal(&common.RuntimeConf)
+			if err != nil {
+				panic(err)
+			}
+		})
+	}()
 
 	// Launch API servers (REST)
 	wg := new(sync.WaitGroup)
