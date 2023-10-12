@@ -1127,7 +1127,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 	errorInfo.Location = temp.Location
 	errorInfo.MonAgentStatus = temp.MonAgentStatus
 	errorInfo.CreatedTime = temp.CreatedTime
-	errorInfo.SystemMessage = "Error in GetVmStatus"
+	errorInfo.SystemMessage = "Error in FetchVmStatus"
 
 	cspVmId := temp.CspViewVmDetail.IId.NameId
 
@@ -1857,14 +1857,20 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 	fmt.Println("[Delete VM] " + vmId)
 
 	// ControlVm first
-	err = ControlVm(nsId, mcisId, vmId, ActionTerminate)
-
-	if err != nil {
-		common.CBLog.Error(err)
+	var wg sync.WaitGroup
+	results := make(chan ControlVmResult, 1)
+	wg.Add(1)
+	go ControlVmAsync(&wg, nsId, mcisId, vmId, ActionTerminate, results)
+	checkErr := <-results
+	wg.Wait()
+	close(results)
+	if checkErr.Error != nil {
+		common.CBLog.Info(checkErr.Error)
 		if option != "force" {
-			return err
+			return checkErr.Error
 		}
 	}
+
 	// for deletion, need to wait until termination is finished
 	// Sleep for 5 seconds
 	fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe VM termination.\n\n")
