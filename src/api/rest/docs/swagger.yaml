@@ -185,6 +185,13 @@ definitions:
       connectionName:
         type: string
     type: object
+  mcir.BastionNode:
+    properties:
+      mcisId:
+        type: string
+      vmId:
+        type: string
+    type: object
   mcir.CustomImageStatus:
     enum:
     - Available
@@ -919,9 +926,9 @@ definitions:
     type: object
   mcir.TbSubnetInfo:
     properties:
-      bastionNodeIds:
+      bastionNodes:
         items:
-          type: string
+          $ref: '#/definitions/mcir.BastionNode'
         type: array
       description:
         type: string
@@ -1074,13 +1081,6 @@ definitions:
         - '>='
         example: '>='
         type: string
-    type: object
-  mcis.BastionInfo:
-    properties:
-      vmId:
-        items:
-          type: string
-        type: array
     type: object
   mcis.BenchmarkInfo:
     properties:
@@ -4362,7 +4362,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/mcis.BastionInfo'
+            items:
+              $ref: '#/definitions/mcir.BastionNode'
+            type: array
         "404":
           description: Not Found
           schema:
