@@ -109,7 +109,7 @@ done
 echo "Launching Weavescope for master node..."
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${LAUNCHCMD}"
+	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 
@@ -124,7 +124,7 @@ for MCISID in "$@"; do
     echo "Launching Weavescope for the other nodes..."
     curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
         {
-        "command"        : "${LAUNCHCMD}"
+        "command"        : "[${LAUNCHCMD}]"
         }
 EOF
 
