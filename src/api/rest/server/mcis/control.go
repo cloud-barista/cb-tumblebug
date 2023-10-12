@@ -87,7 +87,7 @@ func RestGetControlMcisVm(c echo.Context) error {
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
-		result, err := mcis.CoreGetMcisVmAction(nsId, mcisId, vmId, action)
+		result, err := mcis.HandleMcisVmAction(nsId, mcisId, vmId, action)
 		if err != nil {
 			mapA := map[string]string{"message": err.Error()}
 			return c.JSON(http.StatusInternalServerError, &mapA)
