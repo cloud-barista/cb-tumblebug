@@ -106,7 +106,7 @@ echo "[Prepare fping (CMD: $LAUNCHCMD)]"
 VAR1=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${LAUNCHCMD}"
+	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 )
@@ -134,7 +134,7 @@ LAUNCHCMD="fping -e $VMLIST"
 VAR1=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${LAUNCHCMD}"
+	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 )
@@ -191,7 +191,7 @@ echo ""
 # 		VAR1=$(
 # 			curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$i -H 'Content-Type: application/json' -d @- <<EOF
 # 	{
-# 	"command"        : "${LAUNCHCMD}"
+# 	"command"        : "[${LAUNCHCMD}]"
 # 	}
 # EOF
 # 		)

@@ -102,7 +102,7 @@ for MCISID in "$@"; do
     VAR1=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${INSTALLCMD}"
+	"command"        : "[${INSTALLCMD}]"
 	}
 EOF
     )
@@ -114,7 +114,7 @@ LAUNCHCMD="sudo scope stop"
 echo "Stopping Weavescope for master node if exist..."
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${LAUNCHCMD}"
+	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 
@@ -125,7 +125,7 @@ LAUNCHCMD="sudo scope launch $WHOLE_IPLIST"
 echo "Launching Weavescope for master node..."
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$LORDMCIS/vm/$LORDVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${LAUNCHCMD}"
+	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 
@@ -142,7 +142,7 @@ for MCISID in "$@"; do
     echo "Launching Weavescope for the other nodes..."
     curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
         {
-        "command"        : "${LAUNCHCMD}"
+        "command"        : "[${LAUNCHCMD}]"
         }
 EOF
 

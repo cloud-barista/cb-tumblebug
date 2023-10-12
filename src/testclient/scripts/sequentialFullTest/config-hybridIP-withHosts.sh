@@ -81,7 +81,7 @@ CMD="cat /etc/hosts"
 VAR1=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${CMD}"
+	"command"        : "[${CMD}]"
 	}
 EOF
 )

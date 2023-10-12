@@ -62,7 +62,7 @@ echo ""
 
 VAR1=$(curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${INSTALLCMD}"
+	"command"        : "[${INSTALLCMD}]"
 	}
 EOF
 )
@@ -72,7 +72,7 @@ echo ""
 echo "Launching Weavescope for master node..."
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$MASTERVM -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${LAUNCHCMD}"
+	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 #LAUNCHCMD="sudo scope launch $MASTERIP"
@@ -88,7 +88,7 @@ echo "Working on clustring..."
 echo "Launching Weavescope for the other nodes..."
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${LAUNCHCMD}"
+	"command"        : "[${LAUNCHCMD}]"
 	}
 EOF
 

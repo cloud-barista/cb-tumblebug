@@ -38,7 +38,7 @@ for row in $(echo "${VMARRAY}" | jq -r '.[] | @base64'); do
 	VAR1=$(
 		curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID/vm/$VMID -H 'Content-Type: application/json' -d @- <<EOF
 	{
-	"command"        : "${USERCMD}"
+	"command"        : "[${USERCMD}]"
 	} 
 EOF
 	)

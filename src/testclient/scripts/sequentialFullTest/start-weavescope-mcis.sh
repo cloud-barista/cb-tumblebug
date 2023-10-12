@@ -35,7 +35,7 @@
     echo "Launching Weavescope for the other nodes..."
     curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/cmd/mcis/$MCISID -H 'Content-Type: application/json' -d @- <<EOF
     {
-    "command"        : "${LAUNCHCMD}"
+    "command"        : "[${LAUNCHCMD}]"
     }
 EOF
 
