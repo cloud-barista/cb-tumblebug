@@ -548,14 +548,11 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 		return temp, err
 	}
 
-	targetAction := ActionCreate
-	targetStatus := StatusRunning
-
 	vmInfoData.Id = vmInfoData.Name
 	vmInfoData.PublicIP = "empty"
 	vmInfoData.PublicDNS = "empty"
-	vmInfoData.TargetAction = targetAction
-	vmInfoData.TargetStatus = targetStatus
+	vmInfoData.TargetAction = ActionCreate
+	vmInfoData.TargetStatus = StatusRunning
 	vmInfoData.Status = StatusCreating
 
 	//goroutin
@@ -1492,6 +1489,15 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 		return fmt.Errorf("AddVmToMcis: Cannot find mcisId. Key: %s", key)
 	}
 
+	// Make VM object
+	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
+	val, _ := json.Marshal(vmInfoData)
+	err = common.CBStore.Put(key, string(val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return err
+	}
+
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 	regionTmp, _ := common.GetRegion(configTmp.RegionName)
 
@@ -1506,16 +1512,15 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	vmInfoData.Location = common.GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
 
 	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
-	// Make VM object
-	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
-	val, _ := json.Marshal(vmInfoData)
+	// Update VM object
+	val, _ = json.Marshal(vmInfoData)
 	err = common.CBStore.Put(key, string(val))
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
 
-	fmt.Printf("\n[AddVmToMcis Befor request vmInfoData]\n")
+	fmt.Printf("\n[AddVmToMcis Before request vmInfoData]\n")
 
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
 	err = CreateVm(nsId, mcisId, vmInfoData, option)
@@ -1758,7 +1763,6 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	vmInfoData.RootDiskType = callResult.RootDiskType
 	vmInfoData.RootDiskSize = callResult.RootDiskSize
 	vmInfoData.RootDeviceName = callResult.RootDeviceName
-	//vmInfoData.KeyValueList = temp.KeyValueList
 	//configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 
 	if option == "register" {

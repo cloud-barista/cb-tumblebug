@@ -226,9 +226,6 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 		return err
 	}
 
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
-
 	checkError := CheckAllowedTransition(nsId, mcisId, action)
 	if checkError != nil {
 		if !force {
@@ -474,7 +471,10 @@ func CheckAllowedTransition(nsId string, mcisId string, action string) error {
 	mcisTmp := TbMcisInfo{}
 	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
 	if unmarshalErr != nil {
-		fmt.Println("Unmarshal Error:", unmarshalErr)
+		return unmarshalErr
+	}
+	if mcisTmp.TargetAction != "" && mcisTmp.TargetAction != ActionComplete {
+		return errors.New("The MCIS is under processing for another action. Please try later.")
 	}
 
 	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)

@@ -678,7 +678,12 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 		return TbVmInfo{}, err
 	}
 	vmTmp := TbVmInfo{}
-	json.Unmarshal([]byte(keyValue.Value), &vmTmp)
+	err = json.Unmarshal([]byte(keyValue.Value), &vmTmp)
+	if err != nil {
+		err = fmt.Errorf("failed to get GetVmObject (ID: %s), message: failed to unmarshal", key)
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
 	return vmTmp, nil
 }
 
@@ -1088,30 +1093,11 @@ func FetchVmStatusAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId str
 // FetchVmStatus is func to fetch VM status (call to CSPs)
 func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
 
-	// defer func() {
-	// 	if runtimeErr := recover(); runtimeErr != nil {
-	// 		myErr := fmt.Errorf("in GetVmStatus; mcisId: " + mcisId + ", vmId: " + vmId)
-	// 		common.CBLog.Error(myErr)
-	// 		common.CBLog.Error(runtimeErr)
-	// 	}
-	// }()
-
-	key := common.GenMcisKey(nsId, mcisId, vmId)
-
 	errorInfo := TbVmStatusInfo{}
 
-	keyValue, err := common.CBStore.Get(key)
-	if keyValue == nil || err != nil {
-		fmt.Println("CBStoreGetErr. keyValue == nil || err != nil", err)
-		fmt.Println(err)
-		return errorInfo, err
-	}
-
-	temp := TbVmInfo{}
-	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
-	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
-		fmt.Println(err)
+	temp, err := GetVmObject(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
 		return errorInfo, err
 	}
 
@@ -1131,13 +1117,19 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 
 	cspVmId := temp.CspViewVmDetail.IId.NameId
 
+	if (temp.TargetAction != ActionCreate && temp.TargetAction != ActionTerminate) && cspVmId == "" {
+		err = fmt.Errorf("cspVmId is empty (VmId: %s)", vmId)
+		common.CBLog.Error(err)
+		return errorInfo, err
+	}
+
 	type statusResponse struct {
 		Status string
 	}
 	callResult := statusResponse{}
 	callResult.Status = ""
 
-	if cspVmId != "" && temp.Status != StatusTerminated {
+	if temp.Status != StatusTerminated {
 		client := resty.New()
 		url := common.SpiderRestUrl + "/vmstatus/" + cspVmId
 		method := "GET"
@@ -1150,7 +1142,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 		requestBody.ConnectionName = temp.ConnectionName
 
 		// Retry to get right VM status from cb-spider. Sometimes cb-spider returns not approriate status.
-		retrycheck := 5
+		retrycheck := 2
 		for i := 0; i < retrycheck; i++ {
 			errorInfo.Status = StatusFailed
 			err := common.ExecuteHttpRequest(
@@ -1164,8 +1156,9 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 				common.MediumDuration,
 			)
 			if err != nil {
-				fmt.Println(err)
 				errorInfo.SystemMessage = err.Error()
+				callResult.Status = StatusUndefined
+				break
 			}
 			if callResult.Status != "" {
 				break
@@ -1174,34 +1167,32 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 		}
 
 	} else {
-		callResult.Status = ""
+		callResult.Status = StatusUndefined
 	}
 
 	nativeStatus := callResult.Status
-	// Temporal CODE. This should be changed after CB-Spider fixes status types and strings/
-	if nativeStatus == "Creating" {
-		callResult.Status = StatusCreating
-	} else if nativeStatus == "Running" {
-		callResult.Status = StatusRunning
-	} else if nativeStatus == "Suspending" {
-		callResult.Status = StatusSuspending
-	} else if nativeStatus == "Suspended" {
-		callResult.Status = StatusSuspended
-	} else if nativeStatus == "Resuming" {
-		callResult.Status = StatusResuming
-	} else if nativeStatus == "Rebooting" {
-		callResult.Status = StatusRebooting
-	} else if nativeStatus == "Terminating" {
-		callResult.Status = StatusTerminating
-	} else if nativeStatus == "Terminated" {
-		callResult.Status = StatusTerminated
+
+	// Define a map to validate nativeStatus
+	var validStatuses = map[string]bool{
+		StatusCreating:    true,
+		StatusRunning:     true,
+		StatusSuspending:  true,
+		StatusSuspended:   true,
+		StatusResuming:    true,
+		StatusRebooting:   true,
+		StatusTerminating: true,
+		StatusTerminated:  true,
+	}
+
+	// Check if nativeStatus is a valid status, otherwise set to StatusUndefined
+	if _, ok := validStatuses[nativeStatus]; ok {
+		callResult.Status = nativeStatus
 	} else {
 		callResult.Status = StatusUndefined
 	}
-	// End of Temporal CODE.
+
 	temp, err = GetVmObject(nsId, mcisId, vmId)
-	if keyValue == nil || err != nil {
-		fmt.Println("CBStoreGetErr. keyValue == nil || err != nil", err)
+	if err != nil {
 		fmt.Println(err)
 		return errorInfo, err
 	}
@@ -1233,7 +1224,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 			callResult.Status = StatusTerminated
 		}
 		if callResult.Status == StatusSuspending {
-			callResult.Status = StatusTerminated
+			callResult.Status = StatusTerminating
 		}
 	}
 	if vmStatusTmp.TargetAction == ActionResume {
@@ -1271,7 +1262,6 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 			vmStatusTmp.TargetAction = ActionComplete
 
 			//Get current public IP when status has been changed.
-			//UpdateVmPublicIp(nsId, mcisId, temp)
 			vmInfoTmp, err := GetVmCurrentPublicIp(nsId, mcisId, temp.Id)
 			if err != nil {
 				common.CBLog.Error(err)
@@ -1295,9 +1285,9 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 
 	// Apply current status to vmInfo
 	temp.Status = vmStatusTmp.Status
-	temp.SystemMessage = vmStatusTmp.SystemMessage
 	temp.TargetAction = vmStatusTmp.TargetAction
 	temp.TargetStatus = vmStatusTmp.TargetStatus
+	temp.SystemMessage = vmStatusTmp.SystemMessage
 
 	if cspVmId != "" {
 		// don't update VM info, if cspVmId is empty
