@@ -39,8 +39,8 @@ type SshCmdResultWrapper struct {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
-// @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default()
-// @Param vmId query string false "vmId to apply the command only for a VM in MCIS" default()
+// @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default(g1)
+// @Param vmId query string false "vmId to apply the command only for a VM in MCIS" default(g1-1)
 // @Success 200 {object} SshCmdResultWrapper
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -83,8 +83,8 @@ func RestPostCmdMcis(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param targetVmId path string true "Target VM ID" default(vm01)
-// @Param bastionVmId path string true "Bastion VM ID" default(bastion01)
+// @Param targetVmId path string true "Target VM ID" default(g1-1)
+// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -112,7 +112,7 @@ func RestSetBastionNodes(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param targetVmId path string true "Target VM ID" default(vm01)
+// @Param targetVmId path string true "Target VM ID" default(g1-1)
 // @Success 200 {object} []mcir.BastionNode
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -129,4 +129,31 @@ func RestGetBastionNodes(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, bastionNodes)
+}
+
+// RestRemoveBastionNodes godoc
+// @Summary Remove a bastion VM from all vNets
+// @Description Remove a bastion VM from all vNets
+// @Tags [Infra service] MCIS Remote command
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param bastionVmId path string true "Bastion VM ID" default(g1-1)
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/bastion/{bastionVmId} [delete]
+func RestRemoveBastionNodes(c echo.Context) error {
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	bastionVmId := c.Param("bastionVmId")
+
+	message, err := mcis.RemoveBastionNodes(nsId, mcisId, bastionVmId)
+	if err != nil {
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": message})
 }

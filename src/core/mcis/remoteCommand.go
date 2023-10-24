@@ -168,8 +168,16 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName string, cmds []string) (map[int]string, map[int]string, error) {
 
 	// use privagte IP of the target VM
-	_, targetVmIP, targetSshPort := GetVmIp(nsId, mcisId, vmId)
+	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return map[int]string{}, map[int]string{}, err
+	}
 	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mcisId, vmId, targetVmIP, targetSshPort, givenUserName)
+	if err != nil {
+		common.CBLog.Error(err)
+		return map[int]string{}, map[int]string{}, err
+	}
 
 	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
 	bastionNodes, err := GetBastionNodes(nsId, mcisId, vmId)
@@ -179,7 +187,11 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 	}
 	bastionNode := bastionNodes[0]
 	// use public IP of the bastion VM
-	bastionIp, _, bastionSshPort := GetVmIp(nsId, bastionNode.McisId, bastionNode.VmId)
+	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.McisId, bastionNode.VmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return map[int]string{}, map[int]string{}, err
+	}
 	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.McisId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
 	bastionEndpoint := fmt.Sprintf("%s:%s", bastionIp, bastionSshPort)
 
@@ -217,9 +229,7 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 
 	defer wg.Done() //goroutine sync done
 
-	vmIP, _, _ := GetVmIp(nsId, mcisId, vmId)
-	// RunRemoteCommand
-	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, mcisId, vmId, givenUserName, cmd)
+	vmIP, _, _, err := GetVmIp(nsId, mcisId, vmId)
 
 	sshResultTmp := SshCmdResult{}
 	sshResultTmp.McisId = mcisId
@@ -229,6 +239,14 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 	for i, c := range cmd {
 		sshResultTmp.Command[i] = c
 	}
+
+	if err != nil {
+		sshResultTmp.Err = err
+		*returnResult = append(*returnResult, sshResultTmp)
+	}
+
+	// RunRemoteCommand
+	stdoutResults, stderrResults, err := RunRemoteCommand(nsId, mcisId, vmId, givenUserName, cmd)
 
 	if err != nil {
 		sshResultTmp.Stdout = stdoutResults
@@ -569,7 +587,10 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 					common.CBLog.Error(err)
 				}
 				for _, v := range vmIdsInSubnet {
-					tmpPublicIp, _, _ := GetVmIp(nsId, mcisId, v)
+					tmpPublicIp, _, _, err := GetVmIp(nsId, mcisId, v)
+					if err != nil {
+						common.CBLog.Error(err)
+					}
 					if tmpPublicIp != "" {
 						bastionVmId = v
 						break
@@ -596,6 +617,33 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 	}
 	return "", fmt.Errorf("failed to set bastion. Subnet (ID: %s) not found in VNet (ID: %s) for VM (ID: %s) in MCIS (ID: %s) under namespace (ID: %s)",
 		vmObj.SubnetId, vmObj.VNetId, targetVmId, mcisId, nsId)
+}
+
+// RemoveBastionNodes func removes existing bastion nodes info
+func RemoveBastionNodes(nsId string, mcisId string, bastionVmId string) (string, error) {
+	resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "mcisId", mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	} else {
+		vNets := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
+		for _, vNet := range vNets {
+			removed := false
+			for i, subnet := range vNet.SubnetInfoList {
+				for j := len(subnet.BastionNodes) - 1; j >= 0; j-- {
+					if subnet.BastionNodes[j].VmId == bastionVmId {
+						subnet.BastionNodes = append(subnet.BastionNodes[:j], subnet.BastionNodes[j+1:]...)
+						removed = true
+					}
+				}
+				vNet.SubnetInfoList[i] = subnet
+			}
+			if removed {
+				mcir.UpdateResourceObject(nsId, common.StrVNet, vNet)
+			}
+		}
+	}
+	return fmt.Sprintf("Successfully removed the bastion (ID: %s) in MCIS (ID: %s) from all subnets", bastionVmId, mcisId), nil
 }
 
 // GetBastionNodes func retrieves bastion nodes for a given VM

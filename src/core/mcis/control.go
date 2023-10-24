@@ -164,7 +164,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 }
 
 // HandleMcisVmAction is func to Get McisVm Action
-func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string) (string, error) {
+func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string, force bool) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -191,6 +191,30 @@ func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string) 
 	}
 
 	fmt.Println("[VM action: " + action)
+
+	mcis, err := GetMcisStatus(nsId, mcisId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", err
+	}
+
+	// Check if MCIS is under an action (individual VM action cannot be executed while MCIS is under an action)
+	if mcis.TargetAction != "" && mcis.TargetAction != ActionComplete {
+		err = fmt.Errorf("MCIS %s is under %s, please try later", mcisId, mcis.TargetAction)
+		if !force {
+			common.CBLog.Info(err)
+			return "", err
+		}
+	}
+
+	err = CheckAllowedTransition(nsId, mcisId, common.OptionalParameter{Set: true, Value: vmId}, action)
+	if err != nil {
+		if !force {
+			common.CBLog.Info(err)
+			return "", err
+		}
+	}
+
 	var wg sync.WaitGroup
 	results := make(chan ControlVmResult, 1)
 	wg.Add(1)
@@ -218,29 +242,29 @@ func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string) 
 // ControlMcisAsync is func to control MCIS async
 func ControlMcisAsync(nsId string, mcisId string, action string, force bool) error {
 
-	key := common.GenMcisKey(nsId, mcisId, "")
-	fmt.Println("[ControlMcisAsync] " + key + " to " + action)
-	keyValue, err := common.CBStore.Get(key)
+	mcis, err := GetMcisObject(nsId, mcisId)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
 	}
 
-	checkError := CheckAllowedTransition(nsId, mcisId, action)
-	if checkError != nil {
+	// Check if MCIS is under an action (new action cannot be executed while MCIS is under an action)
+	if mcis.TargetAction != "" && mcis.TargetAction != ActionComplete {
+		err = fmt.Errorf("MCIS %s is under %s, please try later", mcisId, mcis.TargetAction)
 		if !force {
-			return checkError
+			common.CBLog.Info(err)
+			return err
 		}
 	}
 
-	mcisTmp := TbMcisInfo{}
-	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
-	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
+	err = CheckAllowedTransition(nsId, mcisId, common.OptionalParameter{Set: false}, action)
+	if err != nil {
+		if !force {
+			return err
+		}
 	}
 
 	vmList, err := ListVmId(nsId, mcisId)
-	fmt.Println("=============================================== ", vmList)
 	if err != nil {
 		common.CBLog.Error(err)
 		return err
@@ -252,44 +276,48 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 	switch action {
 	case ActionTerminate:
 
-		mcisTmp.TargetAction = ActionTerminate
-		mcisTmp.TargetStatus = StatusTerminated
-		mcisTmp.Status = StatusTerminating
+		mcis.TargetAction = ActionTerminate
+		mcis.TargetStatus = StatusTerminated
+		mcis.Status = StatusTerminating
 
 	case ActionReboot:
 
-		mcisTmp.TargetAction = ActionReboot
-		mcisTmp.TargetStatus = StatusRunning
-		mcisTmp.Status = StatusRebooting
+		mcis.TargetAction = ActionReboot
+		mcis.TargetStatus = StatusRunning
+		mcis.Status = StatusRebooting
 
 	case ActionSuspend:
 
-		mcisTmp.TargetAction = ActionSuspend
-		mcisTmp.TargetStatus = StatusSuspended
-		mcisTmp.Status = StatusSuspending
+		mcis.TargetAction = ActionSuspend
+		mcis.TargetStatus = StatusSuspended
+		mcis.Status = StatusSuspending
 
 	case ActionResume:
 
-		mcisTmp.TargetAction = ActionResume
-		mcisTmp.TargetStatus = StatusRunning
-		mcisTmp.Status = StatusResuming
+		mcis.TargetAction = ActionResume
+		mcis.TargetStatus = StatusRunning
+		mcis.Status = StatusResuming
 
 	default:
 		return errors.New(action + " is invalid actionType")
 	}
-	UpdateMcisInfo(nsId, mcisTmp)
+	UpdateMcisInfo(nsId, mcis)
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
 	results := make(chan ControlVmResult, len(vmList))
 
-	for _, v := range vmList {
-		wg.Add(1)
+	for _, vmId := range vmList {
+		// skip if control is not needed
+		err = CheckAllowedTransition(nsId, mcisId, common.OptionalParameter{Set: true, Value: vmId}, action)
+		if err == nil || force {
+			wg.Add(1)
 
-		// Avoid concurrent requests to CSP.
-		time.Sleep(time.Duration(3) * time.Second)
+			// Avoid concurrent requests to CSP.
+			time.Sleep(time.Duration(3) * time.Second)
 
-		go ControlVmAsync(&wg, nsId, mcisId, v, action, results)
+			go ControlVmAsync(&wg, nsId, mcisId, vmId, action, results)
+		}
 	}
 	go func() {
 		wg.Wait()
@@ -367,6 +395,13 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 
 				url = common.SpiderRestUrl + "/vm/" + cspVmId
 				method = "DELETE"
+
+				// Remove Bastion Info from all vNets if the terminating VM is a Bastion
+				_, err := RemoveBastionNodes(nsId, mcisId, vmId)
+				if err != nil {
+					common.CBLog.Info(err)
+				}
+
 			case ActionReboot:
 
 				temp.TargetAction = ActionReboot
@@ -458,43 +493,85 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 }
 
 // CheckAllowedTransition is func to check status transition is acceptable
-func CheckAllowedTransition(nsId string, mcisId string, action string) error {
+func CheckAllowedTransition(nsId string, mcisId string, vmId common.OptionalParameter, action string) error {
 
-	fmt.Println("[CheckAllowedTransition]" + mcisId + " to " + action)
-	key := common.GenMcisKey(nsId, mcisId, "")
-	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
+	targetStatus := ""
+	switch {
+	case strings.EqualFold(action, ActionTerminate):
+		targetStatus = StatusTerminated
+	case strings.EqualFold(action, ActionReboot):
+		targetStatus = StatusRunning
+	case strings.EqualFold(action, ActionSuspend):
+		targetStatus = StatusSuspended
+	case strings.EqualFold(action, ActionResume):
+		targetStatus = StatusRunning
+	default:
+		return fmt.Errorf("requested action %s is not matched with available actions", action)
 	}
 
-	mcisTmp := TbMcisInfo{}
-	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &mcisTmp)
-	if unmarshalErr != nil {
-		return unmarshalErr
-	}
-	if mcisTmp.TargetAction != "" && mcisTmp.TargetAction != ActionComplete {
-		return errors.New("The MCIS is under processing for another action. Please try later.")
-	}
+	if vmId.Set {
+		vm, err := GetMcisVmStatus(nsId, mcisId, vmId.Value)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
 
-	mcisStatusTmp, _ := GetMcisStatus(nsId, mcisId)
+		// duplicated action
+		if strings.EqualFold(vm.Status, targetStatus) {
+			return errors.New(action + " is not allowed for VM under " + vm.Status)
+		}
+		// redundant action
+		if strings.EqualFold(vm.Status, StatusTerminated) {
+			return errors.New(action + " is not allowed for VM under " + vm.Status)
+		}
+		// under transitional status
+		if strings.EqualFold(vm.Status, StatusCreating) ||
+			strings.EqualFold(vm.Status, StatusTerminating) ||
+			strings.EqualFold(vm.Status, StatusResuming) ||
+			strings.EqualFold(vm.Status, StatusSuspending) ||
+			strings.EqualFold(vm.Status, StatusRebooting) {
 
-	if strings.Contains(mcisStatusTmp.Status, StatusCreating) ||
-		strings.Contains(mcisStatusTmp.Status, StatusTerminating) ||
-		strings.Contains(mcisStatusTmp.Status, StatusResuming) ||
-		strings.Contains(mcisStatusTmp.Status, StatusSuspending) ||
-		strings.Contains(mcisStatusTmp.Status, StatusRebooting) {
+			return errors.New(action + " is not allowed for VM under " + vm.Status)
+		}
+		// under conditional status
+		if strings.EqualFold(vm.Status, StatusSuspended) {
+			if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionTerminate) {
+				return nil
+			} else {
+				return errors.New(action + " is not allowed for VM under " + vm.Status)
+			}
+		}
+	} else {
+		mcis, err := GetMcisStatus(nsId, mcisId)
+		if err != nil {
+			common.CBLog.Error(err)
+			return err
+		}
 
-		return errors.New(action + " is not allowed for MCIS under " + mcisStatusTmp.Status)
-	}
-	if !strings.Contains(mcisStatusTmp.Status, "Partial-") && strings.Contains(mcisStatusTmp.Status, StatusTerminated) {
-		return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
-	}
-	if strings.Contains(mcisStatusTmp.Status, StatusSuspended) {
-		if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionSuspend) || strings.EqualFold(action, ActionTerminate) {
-			return nil
-		} else {
-			return errors.New(action + " is not allowed for " + mcisStatusTmp.Status + " MCIS")
+		// duplicated action
+		if strings.EqualFold(mcis.Status, targetStatus) {
+			return errors.New(action + " is not allowed for MCIS under " + mcis.Status)
+		}
+		// redundant action
+		if strings.EqualFold(mcis.Status, StatusTerminated) {
+			return errors.New(action + " is not allowed for MCIS under " + mcis.Status)
+		}
+		// under transitional status
+		if strings.Contains(mcis.Status, StatusCreating) ||
+			strings.Contains(mcis.Status, StatusTerminating) ||
+			strings.Contains(mcis.Status, StatusResuming) ||
+			strings.Contains(mcis.Status, StatusSuspending) ||
+			strings.Contains(mcis.Status, StatusRebooting) {
+
+			return errors.New(action + " is not allowed for MCIS under " + mcis.Status)
+		}
+		// under conditional status
+		if strings.EqualFold(mcis.Status, StatusSuspended) {
+			if strings.EqualFold(action, ActionResume) || strings.EqualFold(action, ActionTerminate) {
+				return nil
+			} else {
+				return errors.New(action + " is not allowed for MCIS under " + mcis.Status)
+			}
 		}
 	}
 	return nil

@@ -145,7 +145,10 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		reqTmp := MultihostBenchmarkReq{}
 		for _, vm := range vmList {
 			vmIdTmp := vm
-			vmIpTmp, _, _ := GetVmIp(nsId, mcisId, vmIdTmp)
+			vmIpTmp, _, _, err := GetVmIp(nsId, mcisId, vmIdTmp)
+			if err != nil {
+				common.CBLog.Error(err)
+			}
 			fmt.Println("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
 
 			hostTmp := BenchmarkReq{}
@@ -614,13 +617,17 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 	//goroutin sync wg
 	var wg sync.WaitGroup
 
-	for _, v := range vmList {
+	for _, vmId := range vmList {
 		wg.Add(1)
 
-		vmId := v
-		vmIp, _, _ := GetVmIp(nsId, mcisId, vmId)
-
-		go CallMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
+		vmIp, _, _, err := GetVmIp(nsId, mcisId, vmId)
+		if err != nil {
+			common.CBLog.Error(err)
+			wg.Done()
+			// continue to next vm even if error occurs
+		} else {
+			go CallMilkyway(&wg, vmList, nsId, mcisId, vmId, vmIp, action, option, &results)
+		}
 	}
 	wg.Wait() //goroutine sync wg
 

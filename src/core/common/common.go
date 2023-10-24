@@ -34,6 +34,12 @@ type IdList struct {
 	IdList []string `json:"output"`
 }
 
+// OptionalParameter is struct for optional parameter for function (ex. VmId)
+type OptionalParameter struct {
+	Value string
+	Set   bool
+}
+
 // CB-Store
 var CBLog *logrus.Logger
 var CBStore icbs.Store
