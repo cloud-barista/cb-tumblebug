@@ -384,7 +384,11 @@ func getAgentInstallationCommand(etcdEndpoints, cladnetId string) (string, error
 func installCBNetworkAgentToVM(nsId, mcisId, vmId string, mcisCmdReq McisCmdReq) (SshCmdResult, error) {
 	common.CBLog.Debug("Start.........")
 
-	vmIp, _, sshPort := GetVmIp(nsId, mcisId, vmId)
+	vmIp, _, sshPort, err := GetVmIp(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return SshCmdResult{}, err
+	}
 
 	// find vaild username
 	userName, sshKey, err := VerifySshUserName(nsId, mcisId, vmId, vmIp, sshPort, mcisCmdReq.UserName)

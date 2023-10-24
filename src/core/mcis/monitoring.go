@@ -159,9 +159,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	defer wg.Done() //goroutin sync done
 
-	vmIP, _, sshPort := GetVmIp(nsID, mcisID, vmID)
-	userName, privateKey, err := VerifySshUserName(nsID, mcisID, vmID, vmIP, sshPort, givenUserName)
+	vmIP, _, sshPort, err := GetVmIp(nsID, mcisID, vmID)
 	errStr := ""
+	if err != nil {
+		common.CBLog.Error(err)
+		errStr += "/ " + err.Error()
+	}
+	userName, privateKey, err := VerifySshUserName(nsID, mcisID, vmID, vmIP, sshPort, givenUserName)
 	if err != nil {
 		common.CBLog.Error(err)
 		errStr += "/ " + err.Error()
@@ -417,18 +421,20 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 
 	method := "GET"
 
-	for _, v := range vmList {
+	for _, vmId := range vmList {
 		wg.Add(1)
 
-		vmId := v
-		vmIp, _, _ := GetVmIp(nsId, mcisId, vmId)
-
-		// DF: Get vm on-demand monitoring metric info
-		// Path Param: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
-		cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
-
-		go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, metric, cmd, &resultArray)
-
+		vmIp, _, _, err := GetVmIp(nsId, mcisId, vmId)
+		if err != nil {
+			common.CBLog.Error(err)
+			wg.Done()
+			// continue to next vm even if error occurs
+		} else {
+			// DF: Get vm on-demand monitoring metric info
+			// Path Param: /ns/:nsId/mcis/:mcisId/vm/:vmId/agent_ip/:agent_ip/metric/:metric_name/ondemand-monitoring-info
+			cmd := "/ns/" + nsId + "/mcis/" + mcisId + "/vm/" + vmId + "/agent_ip/" + vmIp + "/metric/" + metric + "/ondemand-monitoring-info"
+			go CallGetMonitoringAsync(&wg, nsId, mcisId, vmId, vmIp, method, metric, cmd, &resultArray)
+		}
 	}
 	wg.Wait() //goroutin sync wg
 

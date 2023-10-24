@@ -219,6 +219,7 @@ func RunServer(port string) {
 
 	g.POST("/:nsId/cmd/mcis/:mcisId", rest_mcis.RestPostCmdMcis)
 	g.PUT("/:nsId/mcis/:mcisId/vm/:targetVmId/bastion/:bastionVmId", rest_mcis.RestSetBastionNodes)
+	g.DELETE("/:nsId/mcis/:mcisId/bastion/:bastionVmId", rest_mcis.RestRemoveBastionNodes)
 	g.GET("/:nsId/mcis/:mcisId/vm/:targetVmId/bastion", rest_mcis.RestGetBastionNodes)
 
 	g.POST("/:nsId/installBenchmarkAgent/mcis/:mcisId", rest_mcis.RestPostInstallBenchmarkAgentToMcis)

@@ -895,11 +895,12 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 	mcisStatus.StatusCount.CountTerminating = statusFlag[8]
 	mcisStatus.StatusCount.CountUndefined = statusFlag[9]
 
-	var isDone bool
-	isDone = true
+	isDone := true
 	for _, v := range mcisStatus.Vm {
 		if v.TargetStatus != StatusComplete {
-			isDone = false
+			if v.Status != StatusTerminated {
+				isDone = false
+			}
 		}
 	}
 	if isDone {
@@ -1024,27 +1025,15 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 }
 
 // GetVmIp is func to get VM IP to return PublicIP, PrivateIP, SSHPort
-func GetVmIp(nsId string, mcisId string, vmId string) (string, string, string) {
+func GetVmIp(nsId string, mcisId string, vmId string) (string, string, string, error) {
 
-	var content struct {
-		PublicIP  string `json:"publicIP"`
-		PrivateIP string `json:"privateIP"`
-		SSHPort   string `json:"sshPort"`
-	}
-
-	key := common.GenMcisKey(nsId, mcisId, vmId)
-
-	keyValue, err := common.CBStore.Get(key)
+	vmObject, err := GetVmObject(nsId, mcisId, vmId)
 	if err != nil {
 		common.CBLog.Error(err)
-		err = fmt.Errorf("In GetVmIp(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
-		// return nil, err
+		return "", "", "", err
 	}
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	return content.PublicIP, content.PrivateIP, content.SSHPort
+	return vmObject.PublicIP, vmObject.PrivateIP, vmObject.SSHPort, nil
 }
 
 // GetVmSpecId is func to get VM SpecId
@@ -1276,7 +1265,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 			vmStatusTmp.TargetStatus = StatusTerminated
 			vmStatusTmp.TargetAction = ActionTerminate
 			vmStatusTmp.Status = StatusTerminated
-			vmStatusTmp.SystemMessage = "This VM has been terminated. No action is acceptable except deletion"
+			vmStatusTmp.SystemMessage = "terminated VM. No action is acceptable except deletion"
 		}
 	}
 
