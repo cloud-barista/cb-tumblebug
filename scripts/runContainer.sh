@@ -122,8 +122,7 @@ while true; do
                 echo ==========================================================
                 echo "[List of all version tags in hub.docker]"
                 echo -e "${LGREEN}"
-                curl -s https://registry.hub.docker.com/v1/repositories/cloudbaristaorg/$CONTAINER_NAME/tags | \
-                        grep -oP '(?<="name": ")[^"]+' | sort -r
+                curl -s https://registry.hub.docker.com/v2/repositories/cloudbaristaorg/$CONTAINER_NAME/tags?page_size=1024 | jq '."results"[]["name"]' | tr -d \" | sort -V
                 echo -e "${NC}"
                 read -p "Please specify $CONTAINER_NAME_READ version you want (latest / $CONTAINER_VERSION / ...): " CONTAINER_VERSION
                 echo
