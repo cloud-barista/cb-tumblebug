@@ -261,19 +261,6 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   ⇨ http server started on [::]:1323
   ```
 
-- 알려진 에러 및 해결 방법 
-  ``` 
-  panic: /debug/requests is already registered. 
-  You may have two independent copies of golang.org/x/net/trace in your binary, 
-  trying to maintain separate state. 
-  This may involve a vendored copy of golang.org/x/net/trace.
-  ```
-
-  에러 발생 시, 다음을 실행하여 해결
-  ```bash
-  rm -rf $GOPATH/src/go.etcd.io/etcd/vendor/golang.org/x/net/trace
-  make
-  ```
 
 ### (4) CB-Tumblebug 멀티 클라우드 환경 설정
 
@@ -305,8 +292,21 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 ## CB-Tumblebug 기능 사용 방법
 
+1. [CB-Tumblebug MapUI 사용](#cb-tumblebug-mapui-사용)
 1. [CB-Tumblebug 스크립트 사용](#cb-tumblebug-스크립트-사용)
 1. [CB-Tumblebug REST API 사용](#cb-tumblebug-rest-api-사용)
+
+### CB-Tumblebug MapUI 사용
+- CB-MapUI 를 통해 MCIS 생성, 형상 확인 및 제어 가능
+  - CB-Tumblebug은 지도 형태로 MCIS 배포 형상 확인을 위해 [CB-MapUI](https://github.com/cloud-barista/cb-mapui)를 활용
+  - (추천 실행 방법) CB-TB 스크립트를 통한 CB-MapUI 컨테이너 실행
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
+    ./scripts/runMapUI.sh
+    ```
+  - 웹브라우저에서 http://{HostIP}:1324 에 접속하여 활용
+    ![image](https://github.com/cloud-barista/cb-mapui/assets/5966944/2423fbcd-0fdb-4511-85e2-488ba15ae8c0)
 
 
 ### CB-Tumblebug 스크립트 사용
@@ -424,15 +424,6 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
 
-- CB-MapUI 를 통해 MCIS 형상 확인 및 제어 가능
-  - CB-Tumblebug은 지도 형태로 MCIS 배포 형상 확인을 위해 [CB-MapUI](https://github.com/cloud-barista/cb-mapui)를 활용
-  - (추천 실행 방법) CB-TB 스크립트를 통한 CB-MapUI 컨테이너 실행
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/runMapUI.sh
-    ```
-  - 웹브라우저에서 http://{HostIP}:1324 주소 접속
     
 <details>
 <summary>입출력 예시 보기</summary>
