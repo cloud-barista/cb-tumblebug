@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -325,16 +326,43 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				index         int
 				priorityIndex int
 			}
-			distances := []distanceType{}
+			distances := make([]distanceType, len(*specList))
+
+			var wg sync.WaitGroup // WaitGroup to wait for all goroutines to finish
+			var mu sync.Mutex     // Mutex to protect shared data
+			var once sync.Once    // Once ensures that certain actions are performed only once
+			var globalErr error   // Global error variable to capture any error from goroutines
 
 			for i := range *specList {
-				distances = append(distances, distanceType{})
-				distances[i].distance, err = getDistance(latitude, longitude, (*specList)[i].ConnectionName)
-				if err != nil {
-					common.CBLog.Error(err)
-					return []mcir.TbSpecInfo{}, err
-				}
-				distances[i].index = i
+				wg.Add(1)
+				go func(i int) {
+					defer wg.Done() // Decrement the counter when the goroutine completes
+
+					distance, err := getDistance(latitude, longitude, (*specList)[i].ConnectionName)
+					if err != nil {
+						common.CBLog.Error(err)
+						mu.Lock()
+						globalErr = err // Capture the error in globalErr
+						mu.Unlock()
+
+						once.Do(func() {
+							// If an error occurs, stop all operations (this block is executed only once)
+							return
+						})
+					}
+
+					mu.Lock() // Lock to protect the shared data
+					distances[i].distance = distance
+					distances[i].index = i
+					mu.Unlock() // Unlock after updating
+
+				}(i)
+			}
+
+			wg.Wait() // Wait for all goroutines to finish
+
+			if globalErr != nil { // If there's an error from any goroutine, return it
+				return []mcir.TbSpecInfo{}, globalErr
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
@@ -373,7 +401,6 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 		case "coordinateWithin":
 			//
 		case "coordinateFair":
-			var err error
 
 			// Calculate centroid of coordinate clusters
 			latitudeSum := 0.0
@@ -403,16 +430,43 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				index         int
 				priorityIndex int
 			}
-			distances := []distanceType{}
+			distances := make([]distanceType, len(*specList))
+
+			var wg sync.WaitGroup // WaitGroup to wait for all goroutines to finish
+			var mu sync.Mutex     // Mutex to protect shared data
+			var once sync.Once    // Once ensures that certain actions are performed only once
+			var globalErr error   // Global error variable to capture any error from goroutines
 
 			for i := range *specList {
-				distances = append(distances, distanceType{})
-				distances[i].distance, err = getDistance(latitude, longitude, (*specList)[i].ConnectionName)
-				if err != nil {
-					common.CBLog.Error(err)
-					return []mcir.TbSpecInfo{}, err
-				}
-				distances[i].index = i
+				wg.Add(1)
+				go func(i int) {
+					defer wg.Done() // Decrement the counter when the goroutine completes
+
+					distance, err := getDistance(latitude, longitude, (*specList)[i].ConnectionName)
+					if err != nil {
+						common.CBLog.Error(err)
+						mu.Lock()
+						globalErr = err // Capture the error in globalErr
+						mu.Unlock()
+
+						once.Do(func() {
+							// If an error occurs, stop all operations (this block is executed only once)
+							return
+						})
+					}
+
+					mu.Lock() // Lock to protect the shared data
+					distances[i].distance = distance
+					distances[i].index = i
+					mu.Unlock() // Unlock after updating
+
+				}(i)
+			}
+
+			wg.Wait() // Wait for all goroutines to finish
+
+			if globalErr != nil { // If there's an error from any goroutine, return it
+				return []mcir.TbSpecInfo{}, globalErr
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
