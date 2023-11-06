@@ -1,18 +1,20 @@
 #!/bin/bash
 
+# This script should be run as root for full access to systemd logs and service management
+if [ "$EUID" -ne 0 ]; then 
+  echo "Please run as root"
+  exit
+fi
+
 echo "[Stop Xonotic FPS Game]"
 
-# echo ""
-# echo "[Current server.log]"
-# cat ~/Xonotic/server.log
-# echo ""
+# Stop the systemd service
+systemctl stop xonotic.service
 
-PID=$(ps -ef | grep [x]onotic | awk '{print $2}')
-kill $PID
-echo ""
-echo "[Stop Xonotic] PID=$PID"
-echo "[Check Xonotic Process]"
-sleep 2
-ps -ef | grep [x]onotic
+echo "Xonotic service has been stopped."
+
+# Optionally, check to confirm the service is stopped
+echo "[Check Xonotic Service Status]"
+systemctl status xonotic.service
 
 echo ""

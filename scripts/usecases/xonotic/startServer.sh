@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Need to be executed with sudo
-# Param: serverName, serverPort, numBot
-echo "[Start Xonotic FPS Game Server]"
+# This script should be run as root, so we check for root privileges
+if [ "$EUID" -ne 0 ]; then 
+  echo "Please run as root"
+  exit
+fi
+
+echo "[Start Xonotic FPS Game Server Installation]"
 
 SECONDS=0
 
@@ -10,45 +14,74 @@ serverName=${1:-Xonotic-0.8.5-by-Cloud-Barista}
 serverPort=${2:-26000}
 numBot=${3:-2}
 numMaxUser=32
-
-echo "Installing Xonotic to instance..."
 FILE="xonotic-0.8.5.zip"
+DIR="/root/Xonotic"
+INSTALL_PATH="/root"
+SERVICE_FILE="/etc/systemd/system/xonotic.service"
+LOG_DIR="/var/log/xonotic"
+XONOTIC_BINARY="xonotic-linux64-dedicated"
+CONFIG_DIR="$INSTALL_PATH/.xonotic/data"
 
-#InstallFilePath="https://.../$FILE"
-InstallFilePath="https://github.com/garymoon/xonotic/releases/download/xonotic-v0.8.5/$FILE"
-
-if test -f "$FILE"; then
-        echo "$FILE exists."
-else
-        sudo apt-get update > /dev/null; wget $InstallFilePath
+# Download and unzip Xonotic if it's not already present
+if [ ! -f "$INSTALL_PATH/$FILE" ]; then
+  apt-get update > /dev/null
+  wget -O "$INSTALL_PATH/$FILE" "https://github.com/garymoon/xonotic/releases/download/xonotic-v0.8.5/$FILE"
 fi
 
-DIR="Xonotic"
-
-if test -d "$DIR"; then
-        echo "$DIR directory exists."
-else
-        sudo apt install unzip -y; unzip $FILE
+if [ ! -d "$DIR" ]; then
+  apt install unzip -y
+  unzip "$INSTALL_PATH/$FILE" -d "$INSTALL_PATH"
 fi
 
+# Create configuration file with user inputs
 appendConfig="port $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
-sudo mkdir -p ~/.xonotic/data
-sudo cp ~/Xonotic/server/server.cfg ~/.xonotic/data
-sudo echo -e "${appendConfig}" >> ~/.xonotic/data/server.cfg
+mkdir -p "$CONFIG_DIR"
+cp "$DIR/server/server.cfg" "$CONFIG_DIR"
+echo -e "${appendConfig}" >> "$CONFIG_DIR/server.cfg"
 
-echo "Launching Xonotic dedicated server"
+# Create systemd service file
+echo "Creating systemd service file for Xonotic Server"
+cat <<EOF > $SERVICE_FILE
+[Unit]
+Description=Xonotic Dedicated Server
+After=network.target
 
-cd Xonotic/; nohup ./xonotic-linux64-dedicated 1>server.log 2>&1 &
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=$DIR/$XONOTIC_BINARY -dedicated
+WorkingDirectory=$DIR
+StandardOutput=file:$LOG_DIR/server.log
+StandardError=file:$LOG_DIR/error.log
+SyslogIdentifier=xonotic
 
-echo "Done! elapsed time: $SECONDS"
+[Install]
+WantedBy=multi-user.target
+EOF
 
-IP=$(curl https://api.ipify.org)
+# Create log directory
+mkdir -p "$LOG_DIR"
 
-PID=$(ps -ef | grep [x]onotic | awk '{print $2}')
+# Reload systemd to recognize new service
+systemctl daemon-reload
 
-cat ~/Xonotic/server.log
+# Enable and start the service
+systemctl enable xonotic.service
+systemctl start xonotic.service
 
-echo ""
+echo "Done! Xonotic server installed and started as a service. Elapsed time: $SECONDS seconds."
+
+# Display status
+systemctl status xonotic.service
+
+# Get the public IP address
+IP=$(curl -s https://api.ipify.org)
+
+# Get the process ID of the Xonotic server
+PID=$(pgrep -f xonotic-linux64-dedicated)
+
+# Display the server information
 echo "[Start Xonotic: complete] PID=$PID"
 echo "Access to $IP:$serverPort by using your Xonotic Client"
 echo "Hostname: $serverName"
