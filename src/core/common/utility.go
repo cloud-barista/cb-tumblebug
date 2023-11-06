@@ -394,7 +394,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 	}
 
 	if keyValue != nil {
-		fmt.Printf("[GetCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
+		//fmt.Printf("[GetCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
 		err = json.Unmarshal([]byte(keyValue.Value), &location)
 		if err != nil {
 			CBLog.Error(err)
