@@ -200,7 +200,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 - CB-Spider 실행 
   - CB-Tumblebug은 클라우드 제어를 위해서 CB-Spider를 활용(필수 구동)
-  - (추천 실행 방법) CB-TB 스크립트를 통한 CB-Spider 컨테이너 실행
+  - (추천 실행 방법) CB-TB 스크립트를 통한 CB-Spider 컨테이너 실행 (가급적 지정된 버전 사용)
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
     export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
@@ -231,6 +231,13 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
     make run
+    ```
+
+    또는 CB-Tumblebug 스크립트를 통한 CB-Tumblebug 컨테이너 실행
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
+    ./scripts/runTumblebug.sh
     ```
 
   CB-Tumblebug 서버 실행 화면
