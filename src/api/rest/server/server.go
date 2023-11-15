@@ -18,6 +18,7 @@ import (
 	"context"
 	"log"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -109,13 +110,24 @@ func RunServer(port string) {
 	apiUser := os.Getenv("API_USERNAME")
 	apiPass := os.Getenv("API_PASSWORD")
 
-	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-		// Be careful to use constant time comparison to prevent timing attacks
-		if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
-			subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
-			return true, nil
-		}
-		return false, nil
+	e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+		Skipper: func(c echo.Context) bool {
+			if strings.HasPrefix(c.Request().Host, "localhost") ||
+				c.Path() == "/tumblebug/health" ||
+				c.Path() == "/tumblebug/httpVersion" {
+				// c.Path() == "/tumblebug/swagger/*" {
+				return true
+			}
+			return false
+		},
+		Validator: func(username, password string, c echo.Context) (bool, error) {
+			// Be careful to use constant time comparison to prevent timing attacks
+			if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
+				subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
+				return true, nil
+			}
+			return false, nil
+		},
 	}))
 
 	fmt.Println("\n \n ")
