@@ -1,5 +1,5 @@
 # Check auto merge contiditons of PR and proceed merging
-name: "check auto merge contiditons and proceed merging"
+name: "Auto-merge in condition"
 
 # Event on a comment (in PR)
 on:
@@ -7,20 +7,40 @@ on:
     types: [created]
 jobs:
   # Check auto merge contiditons of PR and proceed merging
-  automerge:
+  automerge:  
     # Apply this job if it is a PR and by OWNER with '/approve' comment
-    # TODO: the section contains('seokho-son yunkon-kim') needs to be updated or automated
-    if: ${{ github.event.issue.pull_request && (contains('seokho-son yunkon-kim', github.event.comment.user.login) || github.event.comment.author_association == 'OWNER') && startsWith(github.event.comment.body, '/approve') }}
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/approve') }}
+    
     # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
     # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
     runs-on: ubuntu-latest
     steps:
-      # Check author_association is OWNER
-      - name: Check author_association
+      # Check the commenter is a member of the maintainer team of this repo
+      - name: Extract Repository Name
+        id: repo-name
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)" >> $GITHUB_ENV
+        
+      - name: Get Maintainer Team Members
+        id: check-team-members
         run: |
-          echo event.comment.user.login is ${{ github.event.comment.user.login }}
-          echo event.comment.author_association is ${{ github.event.comment.author_association }}
-          echo Hello, this workflow is allowed to specific OWNERS.
+          TEAM_NAME="${{ env.REPO_NAME }}-maintainer"
+          echo "GITHUB_ACTOR: ${GITHUB_ACTOR} / TEAM_NAME: ${TEAM_NAME}"
+
+          TEAM_MEMBERS=$(curl -L \
+                          -H "Accept: application/vnd.github+json" \
+                          -H "Authorization: Bearer ${{ secrets.CR_PAT }}" \
+                          -H "X-GitHub-Api-Version: 2022-11-28" \
+                          https://api.github.com/orgs/cloud-barista/teams/${TEAM_NAME}/members | jq -r '.[] | .login' | tr '\n' ',')
+          echo "TEAM_MEMBERS=$TEAM_MEMBERS" >> $GITHUB_ENV
+          echo "TEAM_MEMBERS: ${TEAM_MEMBERS}"
+          
+      - name: Verify if GITHUB_ACTOR is a Maintainer Team Member
+        run: |
+          TEAM_MEMBERS_ARRAY=(${TEAM_MEMBERS//,/ })
+          if [[ ! " ${TEAM_MEMBERS_ARRAY[@]} " =~ " ${GITHUB_ACTOR} " ]]; then
+            echo "User ${GITHUB_ACTOR} is not a member of the team. Stopping workflow."
+            exit 1
+          fi
       
       # Apply 'approved' label when OWNER left '/approve' comment
       - uses: actions/checkout@v4
@@ -36,8 +56,8 @@ jobs:
         with:
           args: "--trace"
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          MERGE_LABELS: "approved,lgtm,!wip,!hold"
+          GITHUB_TOKEN: "${{ secrets.CR_PAT }}"
+          MERGE_LABELS: "approved,!wip,!hold"
           MERGE_REMOVE_LABELS: ""
           MERGE_METHOD: "merge"
           MERGE_COMMIT_MESSAGE: "pull-request-title"
