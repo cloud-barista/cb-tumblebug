@@ -56,6 +56,8 @@ ENV DB_PASSWORD cb_tumblebug
 # API Setting
 # ALLOW_ORIGINS (ex: https://cloud-barista.org,xxx.xxx.xxx.xxx or * for all)
 ENV ALLOW_ORIGINS *
+## Set SKIP_BASIC_AUTH=true to skip basic auth for all routes (i.e., url or path)
+ENV SKIP_BASIC_AUTH false
 ENV API_USERNAME default
 ENV API_PASSWORD default
 

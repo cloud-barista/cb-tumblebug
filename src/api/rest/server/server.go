@@ -18,7 +18,6 @@ import (
 	"context"
 	"log"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -107,12 +106,15 @@ func RunServer(port string) {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
+	// Conditions to prevent abnormal operation due to typos (e.g., ture, falss, etc.)
+	skipBasicAuthOption := os.Getenv("SKIP_BASIC_AUTH") == "true"
+
 	apiUser := os.Getenv("API_USERNAME")
 	apiPass := os.Getenv("API_PASSWORD")
 
 	e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 		Skipper: func(c echo.Context) bool {
-			if strings.HasPrefix(c.Request().Host, "localhost") ||
+			if skipBasicAuthOption ||
 				c.Path() == "/tumblebug/health" ||
 				c.Path() == "/tumblebug/httpVersion" {
 				// c.Path() == "/tumblebug/swagger/*" {
