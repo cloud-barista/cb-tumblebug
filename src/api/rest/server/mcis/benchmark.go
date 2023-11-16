@@ -32,7 +32,7 @@ import (
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Param option query string false "Option for checking update" Enums(update)
-// @Success 200 {object} SshCmdResultWrapper
+// @Success 200 {object} mcis.McisSshCmdResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId} [post]
@@ -53,7 +53,7 @@ func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	content := SshCmdResultWrapper{}
+	content := mcis.McisSshCmdResult{}
 
 	for _, v := range resultArray {
 

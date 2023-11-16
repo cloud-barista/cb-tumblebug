@@ -1268,7 +1268,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.SshCmdResultWrapper"
+                            "$ref": "#/definitions/mcis.McisSshCmdResult"
                         }
                     },
                     "404": {
@@ -1539,7 +1539,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.SshCmdResultWrapper"
+                            "$ref": "#/definitions/mcis.McisSshCmdResult"
                         }
                     },
                     "404": {
@@ -2055,7 +2055,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/mcis.TbMcisInfo"
+                            "$ref": "#/definitions/mcis.McNlbInfo"
                         }
                     },
                     "404": {
@@ -7507,34 +7507,6 @@
                 }
             }
         },
-        "mcir.CustomImageStatus": {
-            "type": "string",
-            "enum": [
-                "Available",
-                "Unavailable"
-            ],
-            "x-enum-varnames": [
-                "MyImageAvailable",
-                "MyImageUnavailable"
-            ]
-        },
-        "mcir.DiskStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Available",
-                "Attached",
-                "Deleting",
-                "Error"
-            ],
-            "x-enum-varnames": [
-                "DiskCreating",
-                "DiskAvailable",
-                "DiskAttached",
-                "DiskDeleting",
-                "DiskError"
-            ]
-        },
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
             "properties": {
@@ -7800,11 +7772,7 @@
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
                     "type": "array",
@@ -7955,11 +7923,7 @@
                     "example": "aws-ap-southeast-1-1"
                 },
                 "status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.CustomImageStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -8049,11 +8013,7 @@
                 },
                 "status": {
                     "description": "Available, Unavailable, Attached, ...",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.DiskStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -8760,11 +8720,7 @@
                 },
                 "postCommand": {
                     "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.McisCmdReq"
                 },
                 "vmDynamicReq": {
                     "$ref": "#/definitions/mcis.TbVmDynamicReq"
@@ -9002,6 +8958,20 @@
         "mcis.JSONResult": {
             "type": "object"
         },
+        "mcis.McNlbInfo": {
+            "type": "object",
+            "properties": {
+                "deploymentLog": {
+                    "$ref": "#/definitions/mcis.McisSshCmdResult"
+                },
+                "mcNlbHostInfo": {
+                    "$ref": "#/definitions/mcis.TbMcisInfo"
+                },
+                "mcisAccessInfo": {
+                    "$ref": "#/definitions/mcis.McisAccessInfo"
+                }
+            }
+        },
         "mcis.McisAccessInfo": {
             "type": "object",
             "properties": {
@@ -9096,6 +9066,17 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/mcis.Policy"
+                    }
+                }
+            }
+        },
+        "mcis.McisSshCmdResult": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.SshCmdResult"
                     }
                 }
             }
@@ -9490,17 +9471,6 @@
                 }
             }
         },
-        "mcis.SpiderImageType": {
-            "type": "string",
-            "enum": [
-                "PublicImage",
-                "MyImage"
-            ],
-            "x-enum-varnames": [
-                "PublicImage",
-                "MyImage"
-            ]
-        },
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
@@ -9522,11 +9492,7 @@
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
                     "$ref": "#/definitions/common.IID"
@@ -9535,7 +9501,7 @@
                     "type": "string"
                 },
                 "imageType": {
-                    "$ref": "#/definitions/mcis.SpiderImageType"
+                    "type": "string"
                 },
                 "keyPairIId": {
                     "$ref": "#/definitions/common.IID"
@@ -9571,11 +9537,7 @@
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "description": "\"/dev/sda1\", ...",
@@ -9610,11 +9572,7 @@
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
                     "type": "string"
@@ -9668,17 +9626,6 @@
                 },
                 "vmIp": {
                     "type": "string"
-                }
-            }
-        },
-        "mcis.SshCmdResultWrapper": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mcis.SshCmdResult"
-                    }
                 }
             }
         },
@@ -10097,19 +10044,11 @@
                 },
                 "healthChecker": {
                     "description": "HealthChecker",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
                 },
                 "listener": {
                     "description": "Frontend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.NLBListenerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.NLBListenerReq"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -10122,11 +10061,7 @@
                 },
                 "targetGroup": {
                     "description": "Backend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -10325,11 +10260,7 @@
                 },
                 "region": {
                     "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "type": "string"
