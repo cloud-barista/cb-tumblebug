@@ -107,30 +107,30 @@ func RunServer(port string) {
 	}))
 
 	// Conditions to prevent abnormal operation due to typos (e.g., ture, falss, etc.)
-	skipBasicAuthOption := os.Getenv("SKIP_BASIC_AUTH") == "true"
+	enableAuth := os.Getenv("ENABLE_AUTH") == "true"
 
 	apiUser := os.Getenv("API_USERNAME")
 	apiPass := os.Getenv("API_PASSWORD")
 
-	e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-		Skipper: func(c echo.Context) bool {
-			if skipBasicAuthOption ||
-				c.Path() == "/tumblebug/health" ||
-				c.Path() == "/tumblebug/httpVersion" {
-				// c.Path() == "/tumblebug/swagger/*" {
-				return true
-			}
-			return false
-		},
-		Validator: func(username, password string, c echo.Context) (bool, error) {
-			// Be careful to use constant time comparison to prevent timing attacks
-			if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
-				subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
-				return true, nil
-			}
-			return false, nil
-		},
-	}))
+	if enableAuth {
+		e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+			Skipper: func(c echo.Context) bool {
+				if c.Path() == "/tumblebug/health" ||
+					c.Path() == "/tumblebug/httpVersion" {
+					return true
+				}
+				return false
+			},
+			Validator: func(username, password string, c echo.Context) (bool, error) {
+				// Be careful to use constant time comparison to prevent timing attacks
+				if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
+					subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
+					return true, nil
+				}
+				return false, nil
+			},
+		}))
+	}
 
 	fmt.Println("\n \n ")
 	fmt.Printf(banner)
@@ -379,7 +379,9 @@ func RunServer(port string) {
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/index.html"
 
-	fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
+	if enableAuth {
+		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
+	}
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
