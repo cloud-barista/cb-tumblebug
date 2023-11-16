@@ -22,14 +22,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type RestPostCmdMcisVmResponse struct {
-	Result string `json:"result"`
-}
-
-type SshCmdResultWrapper struct {
-	Results []mcis.SshCmdResult `json:"results"`
-}
-
 // RestPostCmdMcis godoc
 // @Summary Send a command to specified MCIS
 // @Description Send a command to specified MCIS
@@ -41,7 +33,7 @@ type SshCmdResultWrapper struct {
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default(g1)
 // @Param vmId query string false "vmId to apply the command only for a VM in MCIS" default(g1-1)
-// @Success 200 {object} SshCmdResultWrapper
+// @Success 200 {object} mcis.McisSshCmdResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/cmd/mcis/{mcisId} [post]
@@ -63,7 +55,7 @@ func RestPostCmdMcis(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
 
-	content := SshCmdResultWrapper{}
+	content := mcis.McisSshCmdResult{}
 
 	for _, v := range resultArray {
 		content.Results = append(content.Results, v)

@@ -60,6 +60,11 @@ type SshCmdResult struct { // Tumblebug
 	Err     error          `json:"err"`
 }
 
+// McisSshCmdResult is struct for Set of SshCmd Results in terms of MCIS
+type McisSshCmdResult struct {
+	Results []SshCmdResult `json:"results"`
+}
+
 // RemoteCommandToMcis is func to command to all VMs in MCIS by SSH
 func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId string, req *McisCmdReq) ([]SshCmdResult, error) {
 
@@ -114,19 +119,6 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 		err := fmt.Errorf("The mcis " + mcisId + " does not exist.")
 		return temp, err
 	}
-
-	/*
-		type contentSub struct {
-			McisId string `json:"mcisId"`
-			VmId   string `json:"vmId"`
-			VmIp   string `json:"vmIp"`
-			Result  string `json:"result"`
-		}
-		var content struct {
-			ResultArray []contentSub `json:"resultArray"`
-		}
-	*/
-	//content := RestPostCmdMcisResponseWrapper{}
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {

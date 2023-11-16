@@ -70,7 +70,7 @@ func RestPostNLB(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param nlbReq body mcis.TbNLBReq true "Details of the NLB object"
-// @Success 200 {object} mcis.TbMcisInfo
+// @Success 200 {object} mcis.McNlbInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/mcSwNlb [post]

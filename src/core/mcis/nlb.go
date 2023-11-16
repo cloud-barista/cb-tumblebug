@@ -271,11 +271,18 @@ type TbNLBAddRemoveVMReq struct { // Tumblebug
 	TargetGroup TbNLBTargetGroupInfo `json:"targetGroup"`
 }
 
+// McNlbInfo is a struct for response of CreateMcSwNlb
+type McNlbInfo struct {
+	McisAccessInfo *McisAccessInfo  `json:"mcisAccessInfo"`
+	McNlbHostInfo  *TbMcisInfo      `json:"mcNlbHostInfo"`
+	DeploymentLog  McisSshCmdResult `json:"deploymentLog"`
+}
+
 // CreateMcSwNlb func create a special purpose MCIS for NLB and depoly and setting SW NLB
-func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (TbMcisInfo, error) {
+func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (McNlbInfo, error) {
 	fmt.Println("=========================== CreateMcSwNlb")
 
-	emptyObj := TbMcisInfo{}
+	emptyObj := McNlbInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -342,21 +349,11 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 	time.Sleep(30 * time.Second)
 
 	// Deploy SW NLB
-	cmd := common.RuntimeConf.Nlbsw.CommandNlbPrepare
 	var cmds []string
+	cmd := common.RuntimeConf.Nlbsw.CommandNlbPrepare
 	cmds = append(cmds, cmd)
-
-	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
-	if err != nil {
-		common.CBLog.Error(err)
-		return emptyObj, err
-	}
 	cmd = common.RuntimeConf.Nlbsw.CommandNlbDeploy + " " + mcisId + " " + common.ToLower(req.Listener.Protocol) + " " + req.Listener.Port
-	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
-	if err != nil {
-		common.CBLog.Error(err)
-		return emptyObj, err
-	}
+	cmds = append(cmds, cmd)
 
 	// nodeId=${1:-vm}
 	// nodeIp=${2:-127.0.0.1}
@@ -368,25 +365,22 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Tb
 	}
 	for _, v := range accessList.McisSubGroupAccessInfo {
 		for _, k := range v.McisVmAccessInfo {
-
 			cmd = common.RuntimeConf.Nlbsw.CommandNlbAddTargetNode + " " + k.VmId + " " + k.PublicIP + " " + req.TargetGroup.Port
-			_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
-			if err != nil {
-				common.CBLog.Error(err)
-				return emptyObj, err
-			}
-
+			cmds = append(cmds, cmd)
 		}
 	}
 
 	cmd = common.RuntimeConf.Nlbsw.CommandNlbApplyConfig
-	_, err = RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
+	cmds = append(cmds, cmd)
+	output, err := RemoteCommandToMcis(nsId, nlbMcisId, "", "", &McisCmdReq{Command: cmds})
 	if err != nil {
 		common.CBLog.Error(err)
 		return emptyObj, err
 	}
+	result := McisSshCmdResult{Results: output}
+	mcNlbInfo := McNlbInfo{McisAccessInfo: accessList, McNlbHostInfo: mcisInfo, DeploymentLog: result}
 
-	return *mcisInfo, err
+	return mcNlbInfo, err
 
 }
 
