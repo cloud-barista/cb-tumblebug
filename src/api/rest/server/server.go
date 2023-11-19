@@ -86,6 +86,15 @@ func RunServer(port string) {
 	// limit the application to 20 requests/sec using the default in-memory store
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
 
+	// Customized middleware for request logging
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			reqID := fmt.Sprintf("%d", time.Now().UnixNano())
+			c.Set("RequestID", reqID)
+			return next(c)
+		}
+	})
+
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
 
@@ -164,6 +173,9 @@ func RunServer(port string) {
 	e.GET("/tumblebug/config", rest_common.RestGetAllConfig)
 	e.DELETE("/tumblebug/config/:configId", rest_common.RestInitConfig)
 	e.DELETE("/tumblebug/config", rest_common.RestInitAllConfig)
+
+	e.GET("/tumblebug/request/:reqId", rest_common.RestGetRequest)
+	e.GET("/tumblebug/requests", rest_common.RestGetAllRequests)
 
 	e.GET("/tumblebug/object", rest_common.RestGetObject)
 	e.GET("/tumblebug/objects", rest_common.RestGetObjects)

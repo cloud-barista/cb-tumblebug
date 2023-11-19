@@ -38,6 +38,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/cmd/mcis/{mcisId} [post]
 func RestPostCmdMcis(c echo.Context) error {
+	reqID := common.StartRequest(c)
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -51,8 +52,7 @@ func RestPostCmdMcis(c echo.Context) error {
 
 	resultArray, err := mcis.RemoteCommandToMcis(nsId, mcisId, subGroupId, vmId, req)
 	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
+		return common.EndRequest(c, reqID, err, nil)
 	}
 
 	content := mcis.McisSshCmdResult{}
@@ -63,7 +63,7 @@ func RestPostCmdMcis(c echo.Context) error {
 
 	common.PrintJsonPretty(content)
 
-	return c.JSON(http.StatusOK, content)
+	return common.EndRequest(c, reqID, nil, content)
 
 }
 

@@ -17,10 +17,12 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/labstack/echo/v4"
 )
 
 // CacheItem is a struct to store cached item
@@ -153,4 +155,51 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	return nil
+}
+
+// RequestDetails struct for request details
+type RequestDetails struct {
+	StartTime     time.Time
+	EndTime       time.Time
+	Status        string
+	RequestData   interface{}
+	ResponseData  interface{}
+	ErrorResponse error
+}
+
+// RequestMap is a map for request details
+var RequestMap = sync.Map{}
+
+// StartRequest func is to start a request
+func StartRequest(c echo.Context) string {
+	reqID := fmt.Sprintf("%d", time.Now().UnixNano())
+	details := RequestDetails{
+		StartTime:   time.Now(),
+		Status:      "Handling",
+		RequestData: c.Request(), // 요청 데이터
+	}
+	RequestMap.Store(reqID, details)
+	return reqID
+}
+
+// EndRequest func is to end a request
+func EndRequest(c echo.Context, reqID string, err error, responseData interface{}) error {
+	if v, ok := RequestMap.Load(reqID); ok {
+		details := v.(RequestDetails)
+		details.EndTime = time.Now()
+		// provide reqID to response header
+		c.Response().Header().Set("X-Request-ID", reqID)
+
+		if err != nil {
+			details.Status = "Error"
+			details.ErrorResponse = err
+			RequestMap.Store(reqID, details)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+		}
+		details.Status = "Success"
+		details.ResponseData = responseData
+		RequestMap.Store(reqID, details)
+		return c.JSON(http.StatusOK, responseData)
+	}
+	return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Invalid Request ID"})
 }

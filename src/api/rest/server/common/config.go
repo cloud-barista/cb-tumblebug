@@ -157,3 +157,45 @@ func RestInitAllConfig(c echo.Context) error {
 
 	return SendMessage(c, http.StatusOK, "All configs has been initialized.")
 }
+
+// RestGetRequest godoc
+// @Summary Get request details
+// @Description Get details of a specific request
+// @Tags [Admin] Request tracking
+// @Accept  json
+// @Produce  json
+// @Param reqId path string true "Request ID acquired from X-Request-ID header"
+// @Success 200 {object} common.RequestDetails
+// @Failure 404 {object} SimpleMsg
+// @Failure 500 {object} SimpleMsg
+// @Router /request/{reqId} [get]
+func RestGetRequest(c echo.Context) error {
+	reqId := c.Param("reqId")
+
+	if details, ok := common.RequestMap.Load(reqId); ok {
+		return Send(c, http.StatusOK, details)
+	}
+
+	return SendMessage(c, http.StatusNotFound, "Request ID not found")
+}
+
+// RestGetAllRequests godoc
+// @Summary Get all requests
+// @Description Get details of all requests
+// @Tags [Admin] Request tracking
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} map[string][]common.RequestDetails
+// @Router /requests [get]
+func RestGetAllRequests(c echo.Context) error {
+	var allRequests []common.RequestDetails
+
+	common.RequestMap.Range(func(key, value interface{}) bool {
+		if details, ok := value.(common.RequestDetails); ok {
+			allRequests = append(allRequests, details)
+		}
+		return true
+	})
+
+	return Send(c, http.StatusOK, map[string][]common.RequestDetails{"requests": allRequests})
+}
