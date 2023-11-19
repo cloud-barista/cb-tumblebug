@@ -15,8 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -34,24 +32,16 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /mcisRecommendVm [post]
 func RestRecommendVm(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := common.SystemCommonNs
 
 	u := &mcis.DeploymentPlan{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcis.RecommendVm(nsId, *u)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	// result := RestFilterSpecsResponse{}
-	// result.Spec = content
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 type RestPostMcisRecommendResponse struct {
@@ -63,37 +53,37 @@ type RestPostMcisRecommendResponse struct {
 
 // RestPostMcisRecommend godoc
 // @Deprecated
-func RestPostMcisRecommend(c echo.Context) error {
-	// @Summary Get MCIS recommendation
-	// @Description Get MCIS recommendation
-	// @Tags [Infra service] MCIS Provisioning management
-	// @Accept  json
-	// @Produce  json
-	// @Param nsId path string true "Namespace ID" default(ns01)
-	// @Param mcisRecommendReq body mcis.McisRecommendReq true "Details for an MCIS object"
-	// @Success 200 {object} RestPostMcisRecommendResponse
-	// @Failure 404 {object} common.SimpleMsg
-	// @Failure 500 {object} common.SimpleMsg
-	// @Router /ns/{nsId}/mcis/recommend [post]
-	nsId := c.Param("nsId")
+// func RestPostMcisRecommend(c echo.Context) error {
+// 	// @Summary Get MCIS recommendation
+// 	// @Description Get MCIS recommendation
+// 	// @Tags [Infra service] MCIS Provisioning management
+// 	// @Accept  json
+// 	// @Produce  json
+// 	// @Param nsId path string true "Namespace ID" default(ns01)
+// 	// @Param mcisRecommendReq body mcis.McisRecommendReq true "Details for an MCIS object"
+// 	// @Success 200 {object} RestPostMcisRecommendResponse
+// 	// @Failure 404 {object} common.SimpleMsg
+// 	// @Failure 500 {object} common.SimpleMsg
+// 	// @Router /ns/{nsId}/mcis/recommend [post]
+// 	nsId := c.Param("nsId")
 
-	req := &mcis.McisRecommendReq{}
-	if err := c.Bind(req); err != nil {
-		return err
-	}
+// 	req := &mcis.McisRecommendReq{}
+// 	if err := c.Bind(req); err != nil {
+// 		return err
+// 	}
 
-	result, err := mcis.CorePostMcisRecommend(nsId, req)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
+// 	result, err := mcis.CorePostMcisRecommend(nsId, req)
+// 	if err != nil {
+// 		mapA := map[string]string{"message": err.Error()}
+// 		return c.JSON(http.StatusInternalServerError, &mapA)
+// 	}
 
-	content := RestPostMcisRecommendResponse{}
-	content.VmRecommend = result
-	content.PlacementAlgo = req.PlacementAlgo
-	content.PlacementParam = req.PlacementParam
+// 	content := RestPostMcisRecommendResponse{}
+// 	content.VmRecommend = result
+// 	content.PlacementAlgo = req.PlacementAlgo
+// 	content.PlacementParam = req.PlacementParam
 
-	common.PrintJsonPretty(content)
+// 	common.PrintJsonPretty(content)
 
-	return c.JSON(http.StatusCreated, content)
-}
+// 	return c.JSON(http.StatusCreated, content)
+// }

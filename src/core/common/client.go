@@ -157,49 +157,71 @@ func ExecuteHttpRequest[B any, T any](
 	return nil
 }
 
-// RequestDetails struct for request details
+// RequestInfo stores the essential details of an HTTP request.
+type RequestInfo struct {
+	Method string            `json:"method"` // HTTP method (GET, POST, etc.), indicating the request's action type.
+	URL    string            `json:"url"`    // The URL the request is made to.
+	Header map[string]string `json:"header"` // Key-value pairs of the request headers.
+}
+
+// RequestDetails contains detailed information about an HTTP request and its processing status.
 type RequestDetails struct {
-	StartTime     time.Time
-	EndTime       time.Time
-	Status        string
-	RequestData   interface{}
-	ResponseData  interface{}
-	ErrorResponse error
+	StartTime     time.Time   `json:"startTime"`     // The time when the request was received by the server.
+	EndTime       time.Time   `json:"endTime"`       // The time when the request was fully processed.
+	Status        string      `json:"status"`        // The current status of the request (e.g., "Handling", "Error", "Success").
+	RequestInfo   RequestInfo `json:"requestInfo"`   // Extracted information about the request.
+	ResponseData  interface{} `json:"responseData"`  // The data sent back in response to the request.
+	ErrorResponse string      `json:"errorResponse"` // A message describing any error that occurred during request processing.
 }
 
 // RequestMap is a map for request details
 var RequestMap = sync.Map{}
 
-// StartRequest func is to start a request
-func StartRequest(c echo.Context) string {
+// ExtractRequestInfo extracts necessary information from http.Request
+func ExtractRequestInfo(r *http.Request) RequestInfo {
+	headerInfo := make(map[string]string)
+	for name, headers := range r.Header {
+		headerInfo[name] = headers[0]
+	}
+	return RequestInfo{
+		Method: r.Method,
+		URL:    r.URL.String(),
+		Header: headerInfo,
+	}
+}
+
+// StartRequestWithLog initializes request tracking details
+func StartRequestWithLog(c echo.Context) string {
 	reqID := fmt.Sprintf("%d", time.Now().UnixNano())
 	details := RequestDetails{
 		StartTime:   time.Now(),
 		Status:      "Handling",
-		RequestData: c.Request(), // 요청 데이터
+		RequestInfo: ExtractRequestInfo(c.Request()),
 	}
 	RequestMap.Store(reqID, details)
 	return reqID
 }
 
-// EndRequest func is to end a request
-func EndRequest(c echo.Context, reqID string, err error, responseData interface{}) error {
+// EndRequestWithLog updates the request details and sends the final response.
+func EndRequestWithLog(c echo.Context, reqID string, err error, responseData interface{}) error {
 	if v, ok := RequestMap.Load(reqID); ok {
 		details := v.(RequestDetails)
 		details.EndTime = time.Now()
-		// provide reqID to response header
+
 		c.Response().Header().Set("X-Request-ID", reqID)
 
 		if err != nil {
 			details.Status = "Error"
-			details.ErrorResponse = err
+			details.ErrorResponse = err.Error()
 			RequestMap.Store(reqID, details)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 		}
+
 		details.Status = "Success"
 		details.ResponseData = responseData
 		RequestMap.Store(reqID, details)
 		return c.JSON(http.StatusOK, responseData)
 	}
-	return c.JSON(http.StatusInternalServerError, map[string]string{"message": "Invalid Request ID"})
+
+	return c.JSON(http.StatusNotFound, map[string]string{"message": "Invalid Request ID"})
 }

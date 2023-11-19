@@ -16,7 +16,6 @@ package mcir
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -38,7 +37,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec [post]
 func RestPostSpec(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
@@ -48,31 +47,19 @@ func RestPostSpec(c echo.Context) error {
 		fmt.Println("[Registering Spec with info]")
 		u := &mcir.TbSpecInfo{}
 		if err := c.Bind(u); err != nil {
-			return err
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 		content, err := mcir.RegisterSpecWithInfo(nsId, u)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-		return c.JSON(http.StatusCreated, content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} else { // if action == "registerWithCspSpecName" { // The default mode.
 		fmt.Println("[Registering Spec with CspSpecName]")
 		u := &mcir.TbSpecReq{}
 		if err := c.Bind(u); err != nil {
-			return err
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 		content, err := mcir.RegisterSpecWithCspSpecName(nsId, u)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-		return c.JSON(http.StatusCreated, content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} /* else {
 		mapA := map[string]string{"message": "LookupSpec(specRequest) failed."}
@@ -95,22 +82,17 @@ func RestPostSpec(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [put]
 func RestPutSpec(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	specId := c.Param("resourceId")
 
 	u := &mcir.TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	updatedSpec, err := mcir.UpdateSpec(nsId, specId, *u)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{
-			"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusOK, updatedSpec)
+	content, err := mcir.UpdateSpec(nsId, specId, *u)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // Request structure for RestLookupSpec
@@ -131,19 +113,15 @@ type RestLookupSpecRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupSpec [post]
 func RestLookupSpec(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	fmt.Println("[Lookup spec]: " + u.CspSpecName)
 	content, err := mcir.LookupSpec(u.ConnectionName, u.CspSpecName)
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -159,20 +137,15 @@ func RestLookupSpec(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupSpecs [post]
 func RestLookupSpecList(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	fmt.Println("[Lookup specs]")
 	content, err := mcir.LookupSpecList(u.ConnectionName)
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -188,12 +161,12 @@ func RestLookupSpecList(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchSpecs [post]
 func RestFetchSpecs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	var connConfigCount, specCount uint
@@ -202,25 +175,19 @@ func RestFetchSpecs(c echo.Context) error {
 	if u.ConnectionName == "" {
 		connConfigCount, specCount, err = mcir.FetchSpecsForAllConnConfigs(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 	} else {
 		connConfigCount = 1
 		specCount, err = mcir.FetchSpecsForConnConfig(u.ConnectionName, nsId)
 		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 	}
 
-	mapA := map[string]string{
+	content := map[string]string{
 		"message": "Fetched " + fmt.Sprint(specCount) + " specs (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-	return c.JSON(http.StatusCreated, &mapA)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestFilterSpecsResponse is Response structure for RestFilterSpecs
@@ -241,25 +208,19 @@ type RestFilterSpecsResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/filterSpecs [post]
 func RestFilterSpecs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	u := &mcir.TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	fmt.Println("[Filter specs]")
 	content, err := mcir.FilterSpecs(nsId, *u)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
-	return c.JSON(http.StatusOK, &result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestFilterSpecsByRange godoc
@@ -275,53 +236,41 @@ func RestFilterSpecs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/filterSpecsByRange [post]
 func RestFilterSpecsByRange(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	u := &mcir.FilterSpecsByRangeRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	fmt.Println("[Filter specs]")
 	content, err := mcir.FilterSpecsByRange(nsId, *u)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
-	return c.JSON(http.StatusOK, &result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 func RestTestSortSpecs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	u := &mcir.TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	fmt.Println("[Filter specs]")
 	content, err := mcir.FilterSpecs(nsId, *u)
 
 	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err = mcir.SortSpecs(content, "memGiB", "descending")
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
-	return c.JSON(http.StatusOK, &result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestGetSpec godoc

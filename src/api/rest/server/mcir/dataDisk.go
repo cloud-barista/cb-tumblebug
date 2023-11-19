@@ -16,7 +16,6 @@ package mcir
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -38,7 +37,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk [post]
 func RestPostDataDisk(c echo.Context) error {
-	fmt.Println("[POST DataDisk]")
+	reqID := common.StartRequestWithLog(c)
 
 	nsId := c.Param("nsId")
 
@@ -46,16 +45,11 @@ func RestPostDataDisk(c echo.Context) error {
 
 	u := &mcir.TbDataDiskReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcir.CreateDataDisk(nsId, u, optionFlag)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestPutDataDisk godoc
@@ -72,22 +66,18 @@ func RestPostDataDisk(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [put]
 func RestPutDataDisk(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
+
 	nsId := c.Param("nsId")
 	dataDiskId := c.Param("resourceId")
 
 	u := &mcir.TbDataDiskUpsizeReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	updatedDataDisk, err := mcir.UpsizeDataDisk(nsId, dataDiskId, u)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{
-			"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusOK, updatedDataDisk)
+	content, err := mcir.UpsizeDataDisk(nsId, dataDiskId, u)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetDataDisk godoc
@@ -179,7 +169,7 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [put]
 func RestPutVmDataDisk(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -188,7 +178,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 
 	u := &mcir.TbAttachDetachDataDiskReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	switch option {
@@ -196,20 +186,12 @@ func RestPutVmDataDisk(c echo.Context) error {
 		fallthrough
 	case common.DetachDataDisk:
 		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, option, u.DataDiskId)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		// common.PrintJsonPretty(result)
-
-		return c.JSON(http.StatusOK, result)
+		return common.EndRequestWithLog(c, reqID, err, result)
 
 	default:
-		mapA := map[string]string{"message": fmt.Sprintf("Supported options: %s, %s, %s", common.AttachDataDisk, common.DetachDataDisk, common.AvailableDataDisk)}
-		return c.JSON(http.StatusNotFound, &mapA)
+		err := fmt.Errorf("Supported options: %s, %s, %s", common.AttachDataDisk, common.DetachDataDisk, common.AvailableDataDisk)
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-	return nil
 }
 
 // RestGetVmDataDisk godoc
@@ -226,7 +208,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [get]
 func RestGetVmDataDisk(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -234,8 +216,7 @@ func RestGetVmDataDisk(c echo.Context) error {
 
 	result, err := mcis.GetAvailableDataDisks(nsId, mcisId, vmId, optionFlag)
 	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	var content interface{}
@@ -249,5 +230,5 @@ func RestGetVmDataDisk(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

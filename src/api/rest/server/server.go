@@ -176,6 +176,8 @@ func RunServer(port string) {
 
 	e.GET("/tumblebug/request/:reqId", rest_common.RestGetRequest)
 	e.GET("/tumblebug/requests", rest_common.RestGetAllRequests)
+	e.DELETE("/tumblebug/request/:reqId", rest_common.RestDeleteRequest)
+	e.DELETE("/tumblebug/requests", rest_common.RestDeleteAllRequests)
 
 	e.GET("/tumblebug/object", rest_common.RestGetObject)
 	e.GET("/tumblebug/objects", rest_common.RestGetObjects)

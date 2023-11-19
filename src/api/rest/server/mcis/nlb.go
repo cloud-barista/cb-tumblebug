@@ -15,9 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -38,7 +35,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb [post]
 func RestPostNLB(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -46,19 +43,11 @@ func RestPostNLB(c echo.Context) error {
 
 	u := &mcis.TbNLBReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-
-	fmt.Println("[POST NLB]")
 
 	content, err := mcis.CreateNLB(nsId, mcisId, u, optionFlag)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestPostMcNLB godoc
@@ -75,23 +64,17 @@ func RestPostNLB(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/mcSwNlb [post]
 func RestPostMcNLB(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	u := &mcis.TbNLBReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcis.CreateMcSwNlb(nsId, mcisId, u, "")
-
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 /*
@@ -133,18 +116,13 @@ func RestPutNLB(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId} [get]
 func RestGetNLB(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
 
 	res, err := mcis.GetNLB(nsId, mcisId, resourceId)
-	if err != nil {
-		mapA := map[string]string{"message": "Failed to find the NLB " + resourceId}
-		return c.JSON(http.StatusNotFound, &mapA)
-	} else {
-		return c.JSON(http.StatusOK, &res)
-	}
+	return common.EndRequestWithLog(c, reqID, err, res)
 }
 
 // Response structure for RestGetAllNLB
@@ -168,7 +146,7 @@ type RestGetAllNLBResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb [get]
 func RestGetAllNLB(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -180,18 +158,12 @@ func RestGetAllNLB(c echo.Context) error {
 		content := common.IdList{}
 		var err error
 		content.IdList, err = mcis.ListNLBId(nsId, mcisId)
-		if err != nil {
-			mapA := map[string]string{"message": "Failed to list NLBs' ID; " + err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else {
 
 		resourceList, err := mcis.ListNLB(nsId, mcisId, filterKey, filterVal)
 		if err != nil {
-			mapA := map[string]string{"message": "Failed to list NLBs; " + err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 
 		var content struct {
@@ -199,8 +171,7 @@ func RestGetAllNLB(c echo.Context) error {
 		}
 
 		content.NLB = resourceList.([]mcis.TbNLBInfo) // type assertion (interface{} -> array)
-		return c.JSON(http.StatusOK, &content)
-		// return c.JSON(http.StatusBadRequest, nil)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	}
 }
 
@@ -217,7 +188,7 @@ func RestGetAllNLB(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId} [delete]
 func RestDelNLB(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
@@ -225,14 +196,8 @@ func RestDelNLB(c echo.Context) error {
 	forceFlag := c.QueryParam("force")
 
 	err := mcis.DelNLB(nsId, mcisId, resourceId, forceFlag)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	mapA := map[string]string{"message": "The NLB " + resourceId + " has been deleted"}
-	return c.JSON(http.StatusOK, &mapA)
+	content := map[string]string{"message": "The NLB " + resourceId + " has been deleted"}
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestDelAllNLB godoc
@@ -248,21 +213,15 @@ func RestDelNLB(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb [delete]
 func RestDelAllNLB(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	forceFlag := c.QueryParam("force")
 	subString := c.QueryParam("match")
 
-	output, err := mcis.DelAllNLB(nsId, mcisId, subString, forceFlag)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusConflict, &mapA)
-	}
-
-	return c.JSON(http.StatusOK, output)
+	content, err := mcis.DelAllNLB(nsId, mcisId, subString, forceFlag)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetNLBHealth godoc
@@ -279,18 +238,13 @@ func RestDelAllNLB(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/healthz [get]
 func RestGetNLBHealth(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
 
-	res, err := mcis.GetNLBHealth(nsId, mcisId, resourceId)
-	if err != nil {
-		mapA := map[string]string{"message": "Failed to get the health info of NLB " + resourceId}
-		return c.JSON(http.StatusNotFound, &mapA)
-	} else {
-		return c.JSON(http.StatusOK, &res)
-	}
+	content, err := mcis.GetNLBHealth(nsId, mcisId, resourceId)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // The REST APIs below are for dev/test only
@@ -310,7 +264,7 @@ func RestGetNLBHealth(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm [post]
 func RestAddNLBVMs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
@@ -319,17 +273,8 @@ func RestAddNLBVMs(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-
-	fmt.Println("[Add NLB VMs]")
-
 	content, err := mcis.AddNLBVMs(nsId, mcisId, resourceId, u)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestRemoveNLBVMs godoc
@@ -346,7 +291,7 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm [delete]
 func RestRemoveNLBVMs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
@@ -357,12 +302,6 @@ func RestRemoveNLBVMs(c echo.Context) error {
 	}
 
 	err := mcis.RemoveNLBVMs(nsId, mcisId, resourceId, u)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	mapA := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
-	return c.JSON(http.StatusOK, &mapA)
+	content := map[string]string{"message": "Removed VMs from the NLB " + resourceId}
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

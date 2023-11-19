@@ -15,8 +15,9 @@ limitations under the License.
 package mcis
 
 import (
-	"net/http"
+	"fmt"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
@@ -36,6 +37,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/control/mcis/{mcisId} [get]
 func RestGetControlMcis(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -49,17 +51,11 @@ func RestGetControlMcis(c echo.Context) error {
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
 
 		result, err := mcis.HandleMcisAction(nsId, mcisId, action, forceOption)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-
-		mapA := map[string]string{"message": result}
-		return c.JSON(http.StatusOK, &mapA)
+		return common.EndRequestWithLog(c, reqID, err, result)
 
 	} else {
-		mapA := map[string]string{"message": "'action' should be one of these: suspend, resume, reboot, terminate, refine"}
-		return c.JSON(http.StatusBadRequest, &mapA)
+		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 }
 
@@ -79,7 +75,7 @@ func RestGetControlMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/control/mcis/{mcisId}/vm/{vmId} [get]
 func RestGetControlMcisVm(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -94,17 +90,11 @@ func RestGetControlMcisVm(c echo.Context) error {
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
 		result, err := mcis.HandleMcisVmAction(nsId, mcisId, vmId, action, forceOption)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-
-		mapA := map[string]string{"message": result}
-		return c.JSON(http.StatusOK, &mapA)
+		return common.EndRequestWithLog(c, reqID, err, result)
 
 	} else {
-		mapA := map[string]string{"message": "'action' should be one of these: suspend, resume, reboot, terminate"}
-		return c.JSON(http.StatusBadRequest, &mapA)
+		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 }
 
@@ -123,7 +113,7 @@ func RestGetControlMcisVm(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/snapshot [post]
 func RestPostMcisVmSnapshot(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -134,12 +124,5 @@ func RestPostMcisVmSnapshot(c echo.Context) error {
 	}
 
 	result, err := mcis.CreateVmSnapshot(nsId, mcisId, vmId, u.Name)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
-	}
-
-	// common.PrintJsonPretty(result)
-
-	return c.JSON(http.StatusOK, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }

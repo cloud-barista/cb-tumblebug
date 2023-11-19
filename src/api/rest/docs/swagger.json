@@ -7122,6 +7122,162 @@
                 }
             }
         },
+        "/request/{reqId}": {
+            "get": {
+                "description": "Get details of a specific request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Request tracking"
+                ],
+                "summary": "Get request details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Request ID acquired from X-Request-ID header",
+                        "name": "reqId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.RequestDetails"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete details of a specific request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Request tracking"
+                ],
+                "summary": "Delete a specific request's details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Request ID to delete",
+                        "name": "reqId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/requests": {
+            "get": {
+                "description": "Get details of all requests with optional filters.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Request tracking"
+                ],
+                "summary": "Get all requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by request status (Handling, Error, Success)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by HTTP method (GET, POST, etc.)",
+                        "name": "method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by request URL",
+                        "name": "url",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by time in minutes from now (to get recent requests)",
+                        "name": "time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Option to save the results to a file (set 'true' to activate)",
+                        "name": "savefile",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/common.RequestDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete details of all requests",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Request tracking"
+                ],
+                "summary": "Delete all requests' details",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/systemMcis": {
             "post": {
                 "description": "Create System MCIS Dynamically for Special Purpose",
@@ -7406,6 +7562,54 @@
                 }
             }
         },
+        "common.RequestDetails": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "description": "The time when the request was fully processed.",
+                    "type": "string"
+                },
+                "errorResponse": {
+                    "description": "A message describing any error that occurred during request processing.",
+                    "type": "string"
+                },
+                "requestInfo": {
+                    "description": "Extracted information about the request.",
+                    "$ref": "#/definitions/common.RequestInfo"
+                },
+                "responseData": {
+                    "description": "The data sent back in response to the request."
+                },
+                "startTime": {
+                    "description": "The time when the request was received by the server.",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "The current status of the request (e.g., \"Handling\", \"Error\", \"Success\").",
+                    "type": "string"
+                }
+            }
+        },
+        "common.RequestInfo": {
+            "type": "object",
+            "properties": {
+                "header": {
+                    "description": "Key-value pairs of the request headers.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "method": {
+                    "description": "HTTP method (GET, POST, etc.), indicating the request's action type.",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "The URL the request is made to.",
+                    "type": "string"
+                }
+            }
+        },
         "common.RestGetAllConfigResponse": {
             "type": "object",
             "properties": {
@@ -7506,34 +7710,6 @@
                     "type": "string"
                 }
             }
-        },
-        "mcir.CustomImageStatus": {
-            "type": "string",
-            "enum": [
-                "Available",
-                "Unavailable"
-            ],
-            "x-enum-varnames": [
-                "MyImageAvailable",
-                "MyImageUnavailable"
-            ]
-        },
-        "mcir.DiskStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Available",
-                "Attached",
-                "Deleting",
-                "Error"
-            ],
-            "x-enum-varnames": [
-                "DiskCreating",
-                "DiskAvailable",
-                "DiskAttached",
-                "DiskDeleting",
-                "DiskError"
-            ]
         },
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
@@ -7800,11 +7976,7 @@
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
                     "type": "array",
@@ -7955,11 +8127,7 @@
                     "example": "aws-ap-southeast-1-1"
                 },
                 "status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.CustomImageStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -8049,11 +8217,7 @@
                 },
                 "status": {
                     "description": "Available, Unavailable, Attached, ...",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.DiskStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -8760,11 +8924,7 @@
                 },
                 "postCommand": {
                     "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.McisCmdReq"
                 },
                 "vmDynamicReq": {
                     "$ref": "#/definitions/mcis.TbVmDynamicReq"
@@ -9515,17 +9675,6 @@
                 }
             }
         },
-        "mcis.SpiderImageType": {
-            "type": "string",
-            "enum": [
-                "PublicImage",
-                "MyImage"
-            ],
-            "x-enum-varnames": [
-                "PublicImage",
-                "MyImage"
-            ]
-        },
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
@@ -9547,11 +9696,7 @@
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
                     "$ref": "#/definitions/common.IID"
@@ -9560,7 +9705,7 @@
                     "type": "string"
                 },
                 "imageType": {
-                    "$ref": "#/definitions/mcis.SpiderImageType"
+                    "type": "string"
                 },
                 "keyPairIId": {
                     "$ref": "#/definitions/common.IID"
@@ -9596,11 +9741,7 @@
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "description": "\"/dev/sda1\", ...",
@@ -9635,11 +9776,7 @@
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
                     "type": "string"
@@ -10111,19 +10248,11 @@
                 },
                 "healthChecker": {
                     "description": "HealthChecker",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
                 },
                 "listener": {
                     "description": "Frontend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.NLBListenerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.NLBListenerReq"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -10136,11 +10265,7 @@
                 },
                 "targetGroup": {
                     "description": "Backend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -10339,11 +10464,7 @@
                 },
                 "region": {
                     "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "type": "string"

@@ -15,9 +15,6 @@ limitations under the License.
 package mcir
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
@@ -36,7 +33,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet/{vNetId}/subnet [post]
 func RestPostSubnet(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	vNetId := c.Param("vNetId")
 
@@ -45,14 +42,8 @@ func RestPostSubnet(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[POST Subnet]")
 	content, err := mcir.CreateSubnet(nsId, vNetId, *u, false)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 /* function RestPutSubnet not yet implemented

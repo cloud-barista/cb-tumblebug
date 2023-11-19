@@ -15,9 +15,6 @@ limitations under the License.
 package mcir
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
@@ -37,7 +34,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey [post]
 func RestPostSshKey(c echo.Context) error {
-	fmt.Println("[POST SshKey]")
+	reqID := common.StartRequestWithLog(c)
 
 	nsId := c.Param("nsId")
 
@@ -45,16 +42,11 @@ func RestPostSshKey(c echo.Context) error {
 
 	u := &mcir.TbSshKeyReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcir.CreateSshKey(nsId, u, optionFlag)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestPutSshKey godoc
@@ -71,22 +63,17 @@ func RestPostSshKey(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/sshKey/{sshKeyId} [put]
 func RestPutSshKey(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	sshKeyId := c.Param("resourceId")
 
 	u := &mcir.TbSshKeyInfo{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	updatedSshKey, err := mcir.UpdateSshKey(nsId, sshKeyId, *u)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{
-			"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusOK, updatedSshKey)
+	content, err := mcir.UpdateSshKey(nsId, sshKeyId, *u)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetSshKey godoc

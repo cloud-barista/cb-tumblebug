@@ -15,8 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -36,24 +34,17 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/install/mcis/{mcisId} [post]
 func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	req := &mcis.McisCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-
 	// mcisTmpSystemLabel := mcis.DefaultSystemLabel
 	content, err := mcis.InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, req)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	return c.JSON(http.StatusOK, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestPutMonitorAgentStatusInstalled godoc
@@ -70,7 +61,7 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/status/mcis/{mcisId}/vm/{vmId} [put]
 func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -78,19 +69,11 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 	// mcisTmpSystemLabel := mcis.DefaultSystemLabel
 	err := mcis.SetMonitoringAgentStatusInstalled(nsId, mcisId, vmId)
 	if err != nil {
-		common.CBLog.Error(err)
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	result, err := mcis.ListVmInfo(nsId, mcisId, vmId)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusOK, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestGetMonitorData godoc
@@ -107,21 +90,16 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric} [get]
 func RestGetMonitorData(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	metric := c.Param("metric")
 
 	req := &mcis.McisCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcis.GetMonitoringData(nsId, mcisId, metric)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	return c.JSON(http.StatusOK, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

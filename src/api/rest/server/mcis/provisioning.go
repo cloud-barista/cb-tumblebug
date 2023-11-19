@@ -15,8 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -35,24 +33,17 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis [post]
 func RestPostMcis(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	req := &mcis.TbMcisReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	option := "create"
 	result, err := mcis.CreateMcis(nsId, req, option)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostRegisterCSPNativeVM godoc
@@ -68,24 +59,17 @@ func RestPostMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/registerCspVm [post]
 func RestPostRegisterCSPNativeVM(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	req := &mcis.TbMcisReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	option := "register"
 	result, err := mcis.CreateMcis(nsId, req, option)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostSystemMcis godoc
@@ -100,23 +84,16 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /systemMcis [post]
 func RestPostSystemMcis(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	option := c.QueryParam("option")
 
 	req := &mcis.TbMcisDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	result, err := mcis.CreateSystemMcisDynamic(option)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostMcisDynamic godoc
@@ -132,23 +109,16 @@ func RestPostSystemMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcisDynamic [post]
 func RestPostMcisDynamic(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	req := &mcis.TbMcisDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	result, err := mcis.CreateMcisDynamic(nsId, req)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostMcisVmDynamic godoc
@@ -165,24 +135,17 @@ func RestPostMcisDynamic(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vmDynamic [post]
 func RestPostMcisVmDynamic(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	req := &mcis.TbVmDynamicReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	result, err := mcis.CreateMcisVmDynamic(nsId, mcisId, req)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostMcisDynamicCheckRequest godoc
@@ -197,21 +160,14 @@ func RestPostMcisVmDynamic(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /mcisDynamicCheckRequest [post]
 func RestPostMcisDynamicCheckRequest(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	req := &mcis.McisConnectionConfigCandidatesReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	result, err := mcis.CheckMcisDynamicReq(req)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusOK, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostMcisVm godoc
@@ -228,24 +184,16 @@ func RestPostMcisDynamicCheckRequest(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm [post]
 func RestPostMcisVm(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	vmInfoData := &mcis.TbVmReq{}
 	if err := c.Bind(vmInfoData); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-	common.PrintJsonPretty(*vmInfoData)
-
 	result, err := mcis.CreateMcisGroupVm(nsId, mcisId, vmInfoData, true)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestPostMcisSubGroupScaleOut godoc
@@ -263,22 +211,16 @@ func RestPostMcisVm(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId} [post]
 func RestPostMcisSubGroupScaleOut(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	subgroupId := c.Param("subgroupId")
 
 	scaleOutReq := &mcis.TbScaleOutSubGroupReq{}
 	if err := c.Bind(scaleOutReq); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	result, err := mcis.ScaleOutMcisSubGroup(nsId, mcisId, subgroupId, scaleOutReq.NumVMsToAdd)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	common.PrintJsonPretty(*result)
-
-	return c.JSON(http.StatusCreated, result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
