@@ -91,6 +91,8 @@ func RunServer(port string) {
 		return func(c echo.Context) error {
 			reqID := fmt.Sprintf("%d", time.Now().UnixNano())
 			c.Set("RequestID", reqID)
+			// make X-Request-Id visible to all handlers
+			c.Response().Header().Set("Access-Control-Expose-Headers", "X-Request-Id")
 			return next(c)
 		}
 	})
