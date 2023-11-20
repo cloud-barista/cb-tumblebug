@@ -15,8 +15,10 @@ limitations under the License.
 package common
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
@@ -159,9 +161,10 @@ func ExecuteHttpRequest[B any, T any](
 
 // RequestInfo stores the essential details of an HTTP request.
 type RequestInfo struct {
-	Method string            `json:"method"` // HTTP method (GET, POST, etc.), indicating the request's action type.
-	URL    string            `json:"url"`    // The URL the request is made to.
-	Header map[string]string `json:"header"` // Key-value pairs of the request headers.
+	Method string            `json:"method"`         // HTTP method (GET, POST, etc.), indicating the request's action type.
+	URL    string            `json:"url"`            // The URL the request is made to.
+	Header map[string]string `json:"header"`         // Key-value pairs of the request headers.
+	Body   interface{}       `json:"body,omitempty"` // Optional: request body
 }
 
 // RequestDetails contains detailed information about an HTTP request and its processing status.
@@ -183,10 +186,25 @@ func ExtractRequestInfo(r *http.Request) RequestInfo {
 	for name, headers := range r.Header {
 		headerInfo[name] = headers[0]
 	}
+
+	//var bodyString string
+	var bodyObject interface{}
+	if r.Body != nil { // Check if the body is not nil
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err == nil {
+			//bodyString = string(bodyBytes)
+			json.Unmarshal(bodyBytes, &bodyObject) // Try to unmarshal to a JSON object
+
+			// Important: Write the body back for further processing
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+	}
+
 	return RequestInfo{
 		Method: r.Method,
 		URL:    r.URL.String(),
 		Header: headerInfo,
+		Body:   bodyObject, // Use the JSON object if parsing was successful, otherwise it's nil
 	}
 }
 
