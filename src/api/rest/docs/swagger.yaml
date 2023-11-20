@@ -132,7 +132,8 @@ definitions:
         description: A message describing any error that occurred during request processing.
         type: string
       requestInfo:
-        $ref: '#/definitions/common.RequestInfo'
+        allOf:
+        - $ref: '#/definitions/common.RequestInfo'
         description: Extracted information about the request.
       responseData:
         description: The data sent back in response to the request.
@@ -228,6 +229,28 @@ definitions:
       vmId:
         type: string
     type: object
+  mcir.CustomImageStatus:
+    enum:
+    - Available
+    - Unavailable
+    type: string
+    x-enum-varnames:
+    - MyImageAvailable
+    - MyImageUnavailable
+  mcir.DiskStatus:
+    enum:
+    - Creating
+    - Available
+    - Attached
+    - Deleting
+    - Error
+    type: string
+    x-enum-varnames:
+    - DiskCreating
+    - DiskAvailable
+    - DiskAttached
+    - DiskDeleting
+    - DiskError
   mcir.FilterSpecsByRangeRequest:
     properties:
       connectionName:
@@ -400,7 +423,8 @@ definitions:
         description: Windows7, Ubuntu etc.
         type: string
       iid:
-        $ref: '#/definitions/common.IID'
+        allOf:
+        - $ref: '#/definitions/common.IID'
         description: Fields for response
       keyValueList:
         items:
@@ -504,8 +528,9 @@ definitions:
         example: aws-ap-southeast-1-1
         type: string
       status:
+        allOf:
+        - $ref: '#/definitions/mcir.CustomImageStatus'
         example: Available
-        type: string
       systemLabel:
         description: SystemLabel is for describing the MCIR in a keyword (any string
           can be used) for special System purpose
@@ -568,9 +593,10 @@ definitions:
         example: aws-ap-southeast-1-datadisk
         type: string
       status:
+        allOf:
+        - $ref: '#/definitions/mcir.DiskStatus'
         description: Available, Unavailable, Attached, ...
         example: Available
-        type: string
       systemLabel:
         description: SystemLabel is for describing the MCIR in a keyword (any string
           can be used) for special System purpose
@@ -1061,7 +1087,8 @@ definitions:
         example: random
         type: string
       postCommand:
-        $ref: '#/definitions/mcis.McisCmdReq'
+        allOf:
+        - $ref: '#/definitions/mcis.McisCmdReq'
         description: PostCommand is field for providing command to VMs after its creation.
           example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
           -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
@@ -1575,6 +1602,14 @@ definitions:
       host:
         type: string
     type: object
+  mcis.SpiderImageType:
+    enum:
+    - PublicImage
+    - MyImage
+    type: string
+    x-enum-varnames:
+    - PublicImage
+    - MyImage
   mcis.SpiderVMInfo:
     properties:
       cspid:
@@ -1589,14 +1624,15 @@ definitions:
           type: string
         type: array
       iid:
-        $ref: '#/definitions/common.IID'
+        allOf:
+        - $ref: '#/definitions/common.IID'
         description: Fields for response
       imageIId:
         $ref: '#/definitions/common.IID'
       imageName:
         type: string
       imageType:
-        type: string
+        $ref: '#/definitions/mcis.SpiderImageType'
       keyPairIId:
         $ref: '#/definitions/common.IID'
       keyPairName:
@@ -1620,7 +1656,8 @@ definitions:
       publicIP:
         type: string
       region:
-        $ref: '#/definitions/mcis.RegionInfo'
+        allOf:
+        - $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         description: '"/dev/sda1", ...'
@@ -1645,7 +1682,8 @@ definitions:
       startTime:
         type: string
       subnetIID:
-        $ref: '#/definitions/common.IID'
+        allOf:
+        - $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
       subnetName:
         type: string
@@ -1992,10 +2030,12 @@ definitions:
       description:
         type: string
       healthChecker:
-        $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
+        allOf:
+        - $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
         description: HealthChecker
       listener:
-        $ref: '#/definitions/mcis.NLBListenerReq'
+        allOf:
+        - $ref: '#/definitions/mcis.NLBListenerReq'
         description: Frontend
       scope:
         description: REGION(V) | GLOBAL
@@ -2005,7 +2045,8 @@ definitions:
         example: REGION
         type: string
       targetGroup:
-        $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
+        allOf:
+        - $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
         description: Backend
       type:
         description: PUBLIC(V) | INTERNAL
@@ -2162,7 +2203,8 @@ definitions:
       publicIP:
         type: string
       region:
-        $ref: '#/definitions/mcis.RegionInfo'
+        allOf:
+        - $ref: '#/definitions/mcis.RegionInfo'
         description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         type: string
