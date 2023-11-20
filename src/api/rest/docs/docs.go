@@ -7604,6 +7604,9 @@ const docTemplate = `{
         "common.RequestInfo": {
             "type": "object",
             "properties": {
+                "body": {
+                    "description": "Optional: request body"
+                },
                 "header": {
                     "description": "Key-value pairs of the request headers.",
                     "type": "object",
