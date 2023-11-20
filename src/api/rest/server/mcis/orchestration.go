@@ -16,7 +16,6 @@ package mcis
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
@@ -37,22 +36,17 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis/{mcisId} [post]
 func RestPostMcisPolicy(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	req := &mcis.McisPolicyReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcis.CreateMcisPolicy(nsId, mcisId, req)
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-	}
-
-	return c.JSON(http.StatusOK, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetMcisPolicy godoc
@@ -68,25 +62,22 @@ func RestPostMcisPolicy(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis/{mcisId} [get]
 func RestGetMcisPolicy(c echo.Context) error {
-	//id, _ := strconv.Atoi(c.Param("id"))
+	reqID := common.StartRequestWithLog(c)
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	result, err := mcis.GetMcisPolicyObject(nsId, mcisId)
 	if err != nil {
-		mapA := map[string]string{"message": "Error to find McisPolicyObject : " + mcisId + "ERROR : " + err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
+		errorMessage := fmt.Errorf("Error to find McisPolicyObject : " + mcisId + "ERROR : " + err.Error())
+		return common.EndRequestWithLog(c, reqID, errorMessage, nil)
 	}
 
 	if result.Id == "" {
-		mapA := map[string]string{"message": "Failed to find McisPolicyObject : " + mcisId}
-		return c.JSON(http.StatusNotFound, &mapA)
+		errorMessage := fmt.Errorf("Failed to find McisPolicyObject : " + mcisId)
+		return common.EndRequestWithLog(c, reqID, errorMessage, nil)
 	}
-
-	common.PrintJsonPretty(result)
-	return c.JSON(http.StatusOK, result)
-
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // Response structure for RestGetAllMcisPolicy
@@ -106,26 +97,23 @@ type RestGetAllMcisPolicyResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis [get]
 func RestGetAllMcisPolicy(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	fmt.Println("[Get MCIS Policy List]")
 
 	result, err := mcis.GetAllMcisPolicyObject(nsId)
 	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content := RestGetAllMcisPolicyResponse{}
 	content.McisPolicy = result
-
-	common.PrintJsonPretty(content)
-
-	return c.JSON(http.StatusOK, &content)
-
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-/* function RestPutMcisPolicy not yet implemented
+/*
+	function RestPutMcisPolicy not yet implemented
+
 // RestPutMcisPolicy godoc
 // @Summary Update MCIS Policy
 // @Description Update MCIS Policy
@@ -154,19 +142,13 @@ func RestPutMcisPolicy(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis/{mcisId} [delete]
 func RestDelMcisPolicy(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	err := mcis.DelMcisPolicy(nsId, mcisId)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the MCIS Policy"}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	mapA := map[string]string{"message": "Deleted the MCIS Policy info"}
-	return c.JSON(http.StatusOK, &mapA)
+	result := map[string]string{"message": "Deleted the MCIS Policy info"}
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestDelAllMcisPolicy godoc
@@ -180,12 +162,8 @@ func RestDelMcisPolicy(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis [delete]
 func RestDelAllMcisPolicy(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	result, err := mcis.DelAllMcisPolicy(nsId)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	mapA := map[string]string{"message": result}
-	return c.JSON(http.StatusOK, &mapA)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }

@@ -15,15 +15,13 @@ limitations under the License.
 package mcis
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
 )
 
 func RestCheckMcis(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -34,17 +32,11 @@ func RestCheckMcis(c echo.Context) error {
 	}
 	content := JsonTemplate{}
 	content.Exists = exists
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSON(http.StatusNotFound, &content)
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 func RestCheckVm(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -56,11 +48,5 @@ func RestCheckVm(c echo.Context) error {
 	}
 	content := JsonTemplate{}
 	content.Exists = exists
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSON(http.StatusNotFound, &content)
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

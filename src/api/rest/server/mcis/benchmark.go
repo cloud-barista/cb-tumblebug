@@ -15,8 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -37,6 +35,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId} [post]
 func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -49,21 +48,15 @@ func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
 
 	resultArray, err := mcis.InstallBenchmarkAgentToMcis(nsId, mcisId, req, option)
 	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
+		common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content := mcis.McisSshCmdResult{}
-
 	for _, v := range resultArray {
-
 		content.Results = append(content.Results, v)
-
 	}
 
-	common.PrintJsonPretty(content)
-
-	return c.JSON(http.StatusOK, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -86,6 +79,7 @@ type RestGetAllBenchmarkRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/benchmarkAll/mcis/{mcisId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -95,14 +89,8 @@ func RestGetAllBenchmark(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.RunAllBenchmarks(nsId, mcisId, req.Host)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-	return c.JSON(http.StatusOK, result)
+	content, err := mcis.RunAllBenchmarks(nsId, mcisId, req.Host)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetLatencyBenchmark godoc
@@ -118,18 +106,12 @@ func RestGetAllBenchmark(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/benchmarkLatency/mcis/{mcisId} [get]
 func RestGetBenchmarkLatency(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
-	result, err := mcis.RunLatencyBenchmark(nsId, mcisId, "")
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-	return c.JSON(http.StatusOK, result)
+	content, err := mcis.RunLatencyBenchmark(nsId, mcisId, "")
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 type RestGetBenchmarkRequest struct {
@@ -151,10 +133,9 @@ type RestGetBenchmarkRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/benchmark/mcis/{mcisId} [post]
 func RestGetBenchmark(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
-
 	action := c.QueryParam("action")
 
 	req := &RestGetBenchmarkRequest{}
@@ -162,12 +143,6 @@ func RestGetBenchmark(c echo.Context) error {
 		return err
 	}
 
-	result, err := mcis.CoreGetBenchmark(nsId, mcisId, action, req.Host)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	common.PrintJsonPretty(*result)
-	return c.JSON(http.StatusOK, result)
+	content, err := mcis.CoreGetBenchmark(nsId, mcisId, action, req.Host)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

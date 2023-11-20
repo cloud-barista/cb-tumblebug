@@ -15,9 +15,6 @@ limitations under the License.
 package mcir
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
@@ -37,29 +34,20 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/vNet [post]
 func RestPostVNet(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
-
 	optionFlag := c.QueryParam("option")
-
 	u := &mcir.TbVNetReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-
-	fmt.Println("[POST VNet]")
-
 	content, err := mcir.CreateVNet(nsId, u, optionFlag)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-/* function RestPutVNet not yet implemented
+/*
+	function RestPutVNet not yet implemented
+
 // RestPutVNet godoc
 // @Summary Update VNet
 // @Description Update VNet

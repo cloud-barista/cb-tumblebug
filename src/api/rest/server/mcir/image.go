@@ -16,7 +16,6 @@ package mcir
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -38,7 +37,7 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image [post]
 func RestPostImage(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
@@ -54,31 +53,21 @@ func RestPostImage(c echo.Context) error {
 		fmt.Println("[Registering Image with info]")
 		u := &mcir.TbImageInfo{}
 		if err := c.Bind(u); err != nil {
-			return err
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 		content, err := mcir.RegisterImageWithInfo(nsId, u)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-		return c.JSON(http.StatusCreated, content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else if action == "registerWithId" {
 		fmt.Println("[Registering Image with ID]")
 		u := &mcir.TbImageReq{}
 		if err := c.Bind(u); err != nil {
-			return err
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 		content, err := mcir.RegisterImageWithId(nsId, u)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-		return c.JSON(http.StatusCreated, content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else {
-		mapA := map[string]string{"message": "You must specify: action=registerWithInfo or action=registerWithId"}
-		return c.JSON(http.StatusInternalServerError, &mapA)
+		err := fmt.Errorf("You must specify: action=registerWithInfo or action=registerWithId")
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 }
@@ -97,22 +86,17 @@ func RestPostImage(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [put]
 func RestPutImage(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	imageId := c.Param("resourceId")
 
 	u := &mcir.TbImageInfo{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	updatedImage, err := mcir.UpdateImage(nsId, imageId, *u)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{
-			"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusOK, updatedImage)
+	content, err := mcir.UpdateImage(nsId, imageId, *u)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // Request structure for RestLookupImage
@@ -133,20 +117,15 @@ type RestLookupImageRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupImage [post]
 func RestLookupImage(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	fmt.Println("[Lookup image]: " + u.CspImageId)
 	content, err := mcir.LookupImage(u.ConnectionName, u.CspImageId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -162,20 +141,15 @@ func RestLookupImage(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupImages [post]
 func RestLookupImageList(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	fmt.Println("[Lookup images]")
 	content, err := mcir.LookupImageList(u.ConnectionName)
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -191,12 +165,12 @@ func RestLookupImageList(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchImages [post]
 func RestFetchImages(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	var connConfigCount, imageCount uint
@@ -205,25 +179,19 @@ func RestFetchImages(c echo.Context) error {
 	if u.ConnectionName == "" {
 		connConfigCount, imageCount, err = mcir.FetchImagesForAllConnConfigs(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 	} else {
 		connConfigCount = 1
 		imageCount, err = mcir.FetchImagesForConnConfig(u.ConnectionName, nsId)
 		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{
-				"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 	}
 
-	mapA := map[string]string{
+	content := map[string]string{
 		"message": "Fetched " + fmt.Sprint(imageCount) + " images (from " + fmt.Sprint(connConfigCount) + " connConfigs)"}
-	return c.JSON(http.StatusCreated, &mapA)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetImage godoc
@@ -317,6 +285,7 @@ type RestSearchImageRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/searchImage [post]
 func RestSearchImage(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	u := &RestSearchImageRequest{}
@@ -325,14 +294,7 @@ func RestSearchImage(c echo.Context) error {
 	}
 
 	content, err := mcir.SearchImage(nsId, u.Keywords...)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{
-			"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
 	result := RestGetAllImageResponse{}
 	result.Image = content
-	return c.JSON(http.StatusOK, &result)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }

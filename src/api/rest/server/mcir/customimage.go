@@ -16,7 +16,6 @@ package mcir
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -37,29 +36,23 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage [post]
 func RestPostCustomImage(c echo.Context) error {
-	fmt.Println("[POST CustomImage]")
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
 
 	if optionFlag != "register" {
-		mapA := map[string]string{"message": "POST customImage can be called only with 'option=register'"}
-		return c.JSON(http.StatusNotAcceptable, &mapA)
+		err := fmt.Errorf("POST customImage can be called only with 'option=register'")
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	u := &mcir.TbCustomImageReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcir.RegisterCustomImageWithId(nsId, u)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetCustomImage godoc

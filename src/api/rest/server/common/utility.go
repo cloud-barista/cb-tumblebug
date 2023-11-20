@@ -150,16 +150,11 @@ func RestGetSwagger(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /connConfig/{connConfigName} [get]
 func RestGetConnConfig(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	connConfigName := c.Param("connConfigName")
 
-	fmt.Println("[Get ConnConfig for name]" + connConfigName)
 	content, err := common.GetConnConfig(connConfigName)
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -175,16 +170,9 @@ func RestGetConnConfig(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /connConfig [get]
 func RestGetConnConfigList(c echo.Context) error {
-
-	fmt.Println("[Get ConnConfig List]")
+	reqID := common.StartRequestWithLog(c)
 	content, err := common.GetConnConfigList()
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
-
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetRegion func is a rest api wrapper for GetRegion.
@@ -200,17 +188,11 @@ func RestGetConnConfigList(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /region/{regionName} [get]
 func RestGetRegion(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	regionName := c.Param("regionName")
 
-	fmt.Println("[Get Region for name]" + regionName)
 	content, err := common.GetRegion(regionName)
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -226,15 +208,9 @@ func RestGetRegion(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /region [get]
 func RestGetRegionList(c echo.Context) error {
-
-	fmt.Println("[Get Region List]")
+	reqID := common.StartRequestWithLog(c)
 	content, err := common.GetRegionList()
-	if err != nil {
-		common.CBLog.Error(err)
-		return c.JSONBlob(http.StatusNotFound, []byte(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -367,7 +343,7 @@ type RestInspectResourcesRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /inspectResources [post]
 func RestInspectResources(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	u := &RestInspectResourcesRequest{}
 	if err := c.Bind(u); err != nil {
 		return err
@@ -382,14 +358,7 @@ func RestInspectResources(c echo.Context) error {
 	// 	content, err = mcis.InspectVMs(u.ConnectionName)
 	// }
 	content, err = mcis.InspectResources(u.ConnectionName, u.ResourceType)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -404,13 +373,9 @@ func RestInspectResources(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /inspectResourcesOverview [get]
 func RestInspectResourcesOverview(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	content, err := mcis.InspectResourcesOverview()
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // Request struct for RestRegisterCspNativeResources
@@ -434,23 +399,16 @@ type RestRegisterCspNativeResourcesRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResources [post]
 func RestRegisterCspNativeResources(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	u := &RestRegisterCspNativeResourcesRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 	option := c.QueryParam("option")
 	mcisFlag := c.QueryParam("mcisFlag")
 
 	content, err := mcis.RegisterCspNativeResources(u.NsId, u.ConnectionName, u.McisName, option, mcisFlag)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	return c.JSON(http.StatusOK, &content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -474,22 +432,14 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /registerCspResourcesAll [post]
 func RestRegisterCspNativeResourcesAll(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	u := &RestRegisterCspNativeResourcesRequest{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 	option := c.QueryParam("option")
 	mcisFlag := c.QueryParam("mcisFlag")
 
 	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName, option, mcisFlag)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	return c.JSON(http.StatusOK, &content)
-
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

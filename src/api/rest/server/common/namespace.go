@@ -15,33 +15,24 @@ limitations under the License.
 package common
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
 func RestCheckNs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	if err := Validate(c, []string{"nsId"}); err != nil {
-		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusNotFound, err.Error())
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	nsId := c.Param("nsId")
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
-	exists, err := common.CheckNs(nsId)
-	if err != nil {
-		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusNotFound, err.Error())
-	}
-
-	return SendExistence(c, http.StatusOK, exists)
+	content, err := common.CheckNs(nsId)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestDelAllNs godoc
@@ -54,14 +45,10 @@ func RestCheckNs(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns [delete]
 func RestDelAllNs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	err := common.DelAllNs()
-	if err != nil {
-		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusBadRequest, err.Error())
-	}
-
-	return SendMessage(c, http.StatusOK, "All namespaces has been deleted")
+	content := map[string]string{"message": "All namespaces has been deleted"}
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestDelNs godoc
@@ -75,19 +62,14 @@ func RestDelAllNs(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId} [delete]
 func RestDelNs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	if err := Validate(c, []string{"nsId"}); err != nil {
-		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusBadRequest, err.Error())
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	err := common.DelNs(c.Param("nsId"))
-	if err != nil {
-		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusBadRequest, err.Error())
-	}
-
-	return SendMessage(c, http.StatusOK, "The ns "+c.Param("nsId")+" has been deleted")
+	content := map[string]string{"message": "The ns " + c.Param("nsId") + " has been deleted"}
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // JSONResult's data field will be overridden by the specific type
@@ -115,33 +97,19 @@ type RestGetAllNsResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns [get]
 func RestGetAllNs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	optionFlag := c.QueryParam("option")
 
 	var content RestGetAllNsResponse
 	if optionFlag == "id" {
 		content := common.IdList{}
-
 		var err error
 		content.IdList, err = common.ListNsId()
-		if err != nil {
-			return SendMessage(c, http.StatusOK, "Failed to list namespaces' ID: "+err.Error())
-		}
-
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else {
 		nsList, err := common.ListNs()
-		if err != nil {
-			return SendMessage(c, http.StatusOK, "Failed to list namespaces.")
-		}
-
-		if nsList == nil {
-			return Send(c, http.StatusOK, content)
-		}
-
-		// When err == nil && resourceList != nil
 		content.Ns = nsList
-		return Send(c, http.StatusOK, content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	}
 }
 
@@ -157,18 +125,13 @@ func RestGetAllNs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId} [get]
 func RestGetNs(c echo.Context) error {
-	//id := c.Param("nsId")
+	reqID := common.StartRequestWithLog(c)
 	if err := Validate(c, []string{"nsId"}); err != nil {
-		common.CBLog.Error(err)
-		return SendMessage(c, http.StatusBadRequest, err.Error())
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	res, err := common.GetNs(c.Param("nsId"))
-	if err != nil {
-		return SendMessage(c, http.StatusOK, "Failed to find the namespace "+c.Param("nsId"))
-	} else {
-		return Send(c, http.StatusOK, res)
-	}
+	content, err := common.GetNs(c.Param("nsId"))
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestPostNs godoc
@@ -183,18 +146,14 @@ func RestGetNs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns [post]
 func RestPostNs(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	u := &common.NsReq{}
 	if err := c.Bind(u); err != nil {
-		//return err
-		return SendMessage(c, http.StatusBadRequest, err.Error())
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := common.CreateNs(u)
-	if err != nil {
-		return SendMessage(c, http.StatusBadRequest, err.Error())
-	}
-	return Send(c, http.StatusOK, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
 
@@ -211,14 +170,12 @@ func RestPostNs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId} [put]
 func RestPutNs(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	u := &common.NsReq{}
 	if err := c.Bind(u); err != nil {
-		return SendMessage(c, http.StatusBadRequest, err.Error())
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := common.UpdateNs(c.Param("nsId"), u)
-	if err != nil {
-		return SendMessage(c, http.StatusBadRequest, err.Error())
-	}
-	return Send(c, http.StatusOK, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

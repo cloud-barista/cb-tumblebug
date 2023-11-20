@@ -16,7 +16,6 @@ package mcis
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
@@ -50,6 +49,7 @@ type JSONResult struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [get]
 func RestGetMcis(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -63,18 +63,12 @@ func RestGetMcis(c echo.Context) error {
 		content := common.IdList{}
 		var err error
 		content.IdList, err = mcis.ListVmByFilter(nsId, mcisId, filterKey, filterVal)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else if option == "status" {
 
 		result, err := mcis.GetMcisStatus(nsId, mcisId)
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 
 		var content struct {
@@ -82,30 +76,17 @@ func RestGetMcis(c echo.Context) error {
 		}
 		content.Result = result
 
-		common.PrintJsonPretty(content)
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} else if option == "accessinfo" {
 
 		result, err := mcis.GetMcisAccessInfo(nsId, mcisId, accessInfoOption)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-
-		common.PrintJsonPretty(result)
-		return c.JSON(http.StatusOK, &result)
+		return common.EndRequestWithLog(c, reqID, err, result)
 
 	} else {
 
 		result, err := mcis.GetMcisInfo(nsId, mcisId)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		common.PrintJsonPretty(*result)
-		return c.JSON(http.StatusOK, result)
+		return common.EndRequestWithLog(c, reqID, err, result)
 
 	}
 }
@@ -133,54 +114,44 @@ type RestGetAllMcisStatusResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis [get]
 func RestGetAllMcis(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
-	fmt.Println("[Get MCIS List requested with option: " + option)
 
 	if option == "id" {
 		// return MCIS IDs
 		content := common.IdList{}
 		var err error
 		content.IdList, err = mcis.ListMcisId(nsId)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else if option == "status" {
 		// return MCIS Status objects (diffent with MCIS objects)
 		result, err := mcis.ListMcisStatus(nsId)
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 		content := RestGetAllMcisStatusResponse{}
 		content.Mcis = result
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else if option == "simple" {
 		// MCIS in simple (without VM information)
 		result, err := mcis.ListMcisInfo(nsId, option)
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 		content := RestGetAllMcisResponse{}
 		content.Mcis = result
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	} else {
 		// MCIS in detail (with status information)
 		result, err := mcis.ListMcisInfo(nsId, "status")
 		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
+			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
 		content := RestGetAllMcisResponse{}
 		content.Mcis = result
-		return c.JSON(http.StatusOK, &content)
+		return common.EndRequestWithLog(c, reqID, err, content)
 	}
-
 }
 
 /*
@@ -215,19 +186,13 @@ func RestPutMcis(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId} [delete]
 func RestDelMcis(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	option := c.QueryParam("option")
 
-	output, err := mcis.DelMcis(nsId, mcisId, option)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	return c.JSON(http.StatusOK, output)
+	content, err := mcis.DelMcis(nsId, mcisId, option)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestDelAllMcis godoc
@@ -242,17 +207,12 @@ func RestDelMcis(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis [delete]
 func RestDelAllMcis(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
 	result, err := mcis.DelAllMcis(nsId, option)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-
-	mapA := map[string]string{"message": result}
-	return c.JSON(http.StatusOK, &mapA)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // TODO: swag does not support multiple response types (success 200) in an API.
@@ -273,7 +233,7 @@ func RestDelAllMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [get]
 func RestGetMcisVm(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -283,36 +243,15 @@ func RestGetMcisVm(c echo.Context) error {
 	switch option {
 	case "status":
 		result, err := mcis.GetMcisVmStatus(nsId, mcisId, vmId)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-
-		common.PrintJsonPretty(*result)
-
-		return c.JSON(http.StatusOK, result)
+		return common.EndRequestWithLog(c, reqID, err, result)
 
 	case "idsInDetail":
 		result, err := mcis.GetVmIdNameInDetail(nsId, mcisId, vmId)
-		if err != nil {
-			common.CBLog.Error(err)
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusInternalServerError, &mapA)
-		}
-
-		return c.JSON(http.StatusOK, result)
+		return common.EndRequestWithLog(c, reqID, err, result)
 
 	default:
 		result, err := mcis.ListVmInfo(nsId, mcisId, vmId)
-		if err != nil {
-			mapA := map[string]string{"message": err.Error()}
-			return c.JSON(http.StatusNotFound, &mapA)
-		}
-
-		common.PrintJsonPretty(*result)
-
-		return c.JSON(http.StatusOK, result)
+		return common.EndRequestWithLog(c, reqID, err, result)
 	}
 }
 
@@ -350,7 +289,7 @@ func RestPutMcisVm(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId} [delete]
 func RestDelMcisVm(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -359,12 +298,12 @@ func RestDelMcisVm(c echo.Context) error {
 	err := mcis.DelMcisVm(nsId, mcisId, vmId, option)
 	if err != nil {
 		common.CBLog.Error(err)
-		mapA := map[string]string{"message": "Failed to delete the VM info"}
-		return c.JSON(http.StatusInternalServerError, &mapA)
+		err := fmt.Errorf("Failed to delete the VM info")
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	mapA := map[string]string{"message": "Deleted the VM info"}
-	return c.JSON(http.StatusOK, &mapA)
+	result := map[string]string{"message": "Deleted the VM info"}
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestGetMcisGroupVms godoc
@@ -382,7 +321,7 @@ func RestDelMcisVm(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/subgroup/{subgroupId} [get]
 func RestGetMcisGroupVms(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	subgroupId := c.Param("subgroupId")
@@ -391,13 +330,7 @@ func RestGetMcisGroupVms(c echo.Context) error {
 	content := common.IdList{}
 	var err error
 	content.IdList, err = mcis.ListVmBySubGroup(nsId, mcisId, subgroupId)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
-	}
-
-	return c.JSON(http.StatusOK, &content)
-
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestGetMcisGroupIds godoc
@@ -413,7 +346,7 @@ func RestGetMcisGroupVms(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/subgroup [get]
 func RestGetMcisGroupIds(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	//option := c.QueryParam("option")
@@ -421,11 +354,5 @@ func RestGetMcisGroupIds(c echo.Context) error {
 	content := common.IdList{}
 	var err error
 	content.IdList, err = mcis.ListSubGroupId(nsId, mcisId)
-	if err != nil {
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusNotFound, &mapA)
-	}
-
-	return c.JSON(http.StatusOK, &content)
-
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

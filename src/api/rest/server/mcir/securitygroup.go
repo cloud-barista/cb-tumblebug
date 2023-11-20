@@ -15,9 +15,6 @@ limitations under the License.
 package mcir
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
@@ -37,27 +34,23 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup [post]
 func RestPostSecurityGroup(c echo.Context) error {
-	fmt.Println("[POST SecurityGroup]")
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
 
 	u := &mcir.TbSecurityGroupReq{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
 	content, err := mcir.CreateSecurityGroup(nsId, u, optionFlag)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
-/* function RestPutSecurityGroup not yet implemented
+/*
+	function RestPutSecurityGroup not yet implemented
+
 // RestPutSecurityGroup godoc
 // @Summary Update Security Group
 // @Description Update Security Group

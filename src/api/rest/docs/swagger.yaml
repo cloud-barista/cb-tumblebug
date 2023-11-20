@@ -123,6 +123,42 @@ definitions:
           $ref: '#/definitions/common.Region'
         type: array
     type: object
+  common.RequestDetails:
+    properties:
+      endTime:
+        description: The time when the request was fully processed.
+        type: string
+      errorResponse:
+        description: A message describing any error that occurred during request processing.
+        type: string
+      requestInfo:
+        $ref: '#/definitions/common.RequestInfo'
+        description: Extracted information about the request.
+      responseData:
+        description: The data sent back in response to the request.
+      startTime:
+        description: The time when the request was received by the server.
+        type: string
+      status:
+        description: The current status of the request (e.g., "Handling", "Error",
+          "Success").
+        type: string
+    type: object
+  common.RequestInfo:
+    properties:
+      header:
+        additionalProperties:
+          type: string
+        description: Key-value pairs of the request headers.
+        type: object
+      method:
+        description: HTTP method (GET, POST, etc.), indicating the request's action
+          type.
+        type: string
+      url:
+        description: The URL the request is made to.
+        type: string
+    type: object
   common.RestGetAllConfigResponse:
     properties:
       config:
@@ -192,28 +228,6 @@ definitions:
       vmId:
         type: string
     type: object
-  mcir.CustomImageStatus:
-    enum:
-    - Available
-    - Unavailable
-    type: string
-    x-enum-varnames:
-    - MyImageAvailable
-    - MyImageUnavailable
-  mcir.DiskStatus:
-    enum:
-    - Creating
-    - Available
-    - Attached
-    - Deleting
-    - Error
-    type: string
-    x-enum-varnames:
-    - DiskCreating
-    - DiskAvailable
-    - DiskAttached
-    - DiskDeleting
-    - DiskError
   mcir.FilterSpecsByRangeRequest:
     properties:
       connectionName:
@@ -386,8 +400,7 @@ definitions:
         description: Windows7, Ubuntu etc.
         type: string
       iid:
-        allOf:
-        - $ref: '#/definitions/common.IID'
+        $ref: '#/definitions/common.IID'
         description: Fields for response
       keyValueList:
         items:
@@ -491,9 +504,8 @@ definitions:
         example: aws-ap-southeast-1-1
         type: string
       status:
-        allOf:
-        - $ref: '#/definitions/mcir.CustomImageStatus'
         example: Available
+        type: string
       systemLabel:
         description: SystemLabel is for describing the MCIR in a keyword (any string
           can be used) for special System purpose
@@ -556,10 +568,9 @@ definitions:
         example: aws-ap-southeast-1-datadisk
         type: string
       status:
-        allOf:
-        - $ref: '#/definitions/mcir.DiskStatus'
         description: Available, Unavailable, Attached, ...
         example: Available
+        type: string
       systemLabel:
         description: SystemLabel is for describing the MCIR in a keyword (any string
           can be used) for special System purpose
@@ -1050,8 +1061,7 @@ definitions:
         example: random
         type: string
       postCommand:
-        allOf:
-        - $ref: '#/definitions/mcis.McisCmdReq'
+        $ref: '#/definitions/mcis.McisCmdReq'
         description: PostCommand is field for providing command to VMs after its creation.
           example:"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh
           -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh"
@@ -1565,14 +1575,6 @@ definitions:
       host:
         type: string
     type: object
-  mcis.SpiderImageType:
-    enum:
-    - PublicImage
-    - MyImage
-    type: string
-    x-enum-varnames:
-    - PublicImage
-    - MyImage
   mcis.SpiderVMInfo:
     properties:
       cspid:
@@ -1587,15 +1589,14 @@ definitions:
           type: string
         type: array
       iid:
-        allOf:
-        - $ref: '#/definitions/common.IID'
+        $ref: '#/definitions/common.IID'
         description: Fields for response
       imageIId:
         $ref: '#/definitions/common.IID'
       imageName:
         type: string
       imageType:
-        $ref: '#/definitions/mcis.SpiderImageType'
+        type: string
       keyPairIId:
         $ref: '#/definitions/common.IID'
       keyPairName:
@@ -1619,8 +1620,7 @@ definitions:
       publicIP:
         type: string
       region:
-        allOf:
-        - $ref: '#/definitions/mcis.RegionInfo'
+        $ref: '#/definitions/mcis.RegionInfo'
         description: ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         description: '"/dev/sda1", ...'
@@ -1645,8 +1645,7 @@ definitions:
       startTime:
         type: string
       subnetIID:
-        allOf:
-        - $ref: '#/definitions/common.IID'
+        $ref: '#/definitions/common.IID'
         description: AWS, ex) subnet-8c4a53e4
       subnetName:
         type: string
@@ -1993,12 +1992,10 @@ definitions:
       description:
         type: string
       healthChecker:
-        allOf:
-        - $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
+        $ref: '#/definitions/mcis.TbNLBHealthCheckerReq'
         description: HealthChecker
       listener:
-        allOf:
-        - $ref: '#/definitions/mcis.NLBListenerReq'
+        $ref: '#/definitions/mcis.NLBListenerReq'
         description: Frontend
       scope:
         description: REGION(V) | GLOBAL
@@ -2008,8 +2005,7 @@ definitions:
         example: REGION
         type: string
       targetGroup:
-        allOf:
-        - $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
+        $ref: '#/definitions/mcis.TbNLBTargetGroupReq'
         description: Backend
       type:
         description: PUBLIC(V) | INTERNAL
@@ -2166,8 +2162,7 @@ definitions:
       publicIP:
         type: string
       region:
-        allOf:
-        - $ref: '#/definitions/mcis.RegionInfo'
+        $ref: '#/definitions/mcis.RegionInfo'
         description: AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}
       rootDeviceName:
         type: string
@@ -7263,6 +7258,109 @@ paths:
         all Clouds to CB-Tumblebug
       tags:
       - '[Admin] System management'
+  /request/{reqId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete details of a specific request
+      parameters:
+      - description: Request ID to delete
+        in: path
+        name: reqId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete a specific request's details
+      tags:
+      - '[Admin] Request tracking'
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific request
+      parameters:
+      - description: Request ID acquired from X-Request-ID header
+        in: path
+        name: reqId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.RequestDetails'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get request details
+      tags:
+      - '[Admin] Request tracking'
+  /requests:
+    delete:
+      consumes:
+      - application/json
+      description: Delete details of all requests
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all requests' details
+      tags:
+      - '[Admin] Request tracking'
+    get:
+      consumes:
+      - application/json
+      description: Get details of all requests with optional filters.
+      parameters:
+      - description: Filter by request status (Handling, Error, Success)
+        in: query
+        name: status
+        type: string
+      - description: Filter by HTTP method (GET, POST, etc.)
+        in: query
+        name: method
+        type: string
+      - description: Filter by request URL
+        in: query
+        name: url
+        type: string
+      - description: Filter by time in minutes from now (to get recent requests)
+        in: query
+        name: time
+        type: string
+      - description: Option to save the results to a file (set 'true' to activate)
+        in: query
+        name: savefile
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/common.RequestDetails'
+              type: array
+            type: object
+      summary: Get all requests
+      tags:
+      - '[Admin] Request tracking'
   /systemMcis:
     post:
       consumes:

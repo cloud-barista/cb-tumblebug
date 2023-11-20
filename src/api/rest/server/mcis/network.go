@@ -15,8 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -36,24 +34,17 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/network/mcis/{mcisId} [post]
 func RestPostConfigureCloudAdaptiveNetworkToMcis(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	netReq := &mcis.NetworkReq{}
 	if err := c.Bind(netReq); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	contents, err := mcis.ConfigureCloudAdaptiveNetwork(nsId, mcisId, netReq)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-
-	}
-
-	return c.JSON(http.StatusOK, contents)
+	content, err := mcis.ConfigureCloudAdaptiveNetwork(nsId, mcisId, netReq)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // RestPutInjectCloudInformationForCloudAdaptiveNetwork godoc
@@ -70,22 +61,15 @@ func RestPostConfigureCloudAdaptiveNetworkToMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/network/mcis/{mcisId} [put]
 func RestPutInjectCloudInformationForCloudAdaptiveNetwork(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
 	netReq := &mcis.NetworkReq{}
 	if err := c.Bind(netReq); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	contents, err := mcis.InjectCloudInformationForCloudAdaptiveNetwork(nsId, mcisId, netReq)
-
-	if err != nil {
-		common.CBLog.Error(err)
-		return err
-
-	}
-
-	return c.JSON(http.StatusOK, contents)
+	content, err := mcis.InjectCloudInformationForCloudAdaptiveNetwork(nsId, mcisId, netReq)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }

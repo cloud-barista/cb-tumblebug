@@ -15,9 +15,6 @@ limitations under the License.
 package mcir
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
@@ -40,23 +37,17 @@ type TbFirewallRulesWrapper struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [post]
 func RestPostFirewallRules(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 
 	u := &TbFirewallRulesWrapper{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[POST FirewallRules]")
 	content, err := mcir.CreateFirewallRules(nsId, securityGroupId, *&u.FirewallRules, false)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusCreated, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 /* function RestPutFirewallRules not yet implemented
@@ -115,21 +106,15 @@ type RestGetAllFirewallRulesResponse struct {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [delete]
 func RestDelFirewallRules(c echo.Context) error {
-
+	reqID := common.StartRequestWithLog(c)
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 
 	u := &TbFirewallRulesWrapper{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[DELETE FirewallRules]")
 	content, err := mcir.DeleteFirewallRules(nsId, securityGroupId, *&u.FirewallRules)
-	if err != nil {
-		common.CBLog.Error(err)
-		mapA := map[string]string{"message": err.Error()}
-		return c.JSON(http.StatusInternalServerError, &mapA)
-	}
-	return c.JSON(http.StatusOK, content)
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
