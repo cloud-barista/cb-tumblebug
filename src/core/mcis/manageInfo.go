@@ -1835,25 +1835,28 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 
 	fmt.Println("[Delete VM] " + vmId)
 
-	// ControlVm first
-	var wg sync.WaitGroup
-	results := make(chan ControlVmResult, 1)
-	wg.Add(1)
-	go ControlVmAsync(&wg, nsId, mcisId, vmId, ActionTerminate, results)
-	checkErr := <-results
-	wg.Wait()
-	close(results)
-	if checkErr.Error != nil {
-		common.CBLog.Info(checkErr.Error)
-		if option != "force" {
-			return checkErr.Error
+	// skip termination if option is force
+	if option != "force" {
+		// ControlVm first
+		var wg sync.WaitGroup
+		results := make(chan ControlVmResult, 1)
+		wg.Add(1)
+		go ControlVmAsync(&wg, nsId, mcisId, vmId, ActionTerminate, results)
+		checkErr := <-results
+		wg.Wait()
+		close(results)
+		if checkErr.Error != nil {
+			common.CBLog.Info(checkErr.Error)
+			if option != "force" {
+				return checkErr.Error
+			}
 		}
-	}
+		// for deletion, need to wait until termination is finished
+		// Sleep for 5 seconds
+		fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe VM termination.\n\n")
+		time.Sleep(5 * time.Second)
 
-	// for deletion, need to wait until termination is finished
-	// Sleep for 5 seconds
-	fmt.Printf("\n\n[Info] Sleep for 20 seconds for safe VM termination.\n\n")
-	time.Sleep(5 * time.Second)
+	}
 
 	// get vm info
 	vmInfo, _ := GetVmObject(nsId, mcisId, vmId)
