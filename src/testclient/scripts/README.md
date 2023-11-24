@@ -12,7 +12,7 @@ This Directory consists of test scripts for performing fundamental test of CB-Tu
 ***
 
 ## Execution Environment
-- Linux (Verified: Ubuntu 18.04)
+- Linux (Verified: Ubuntu 22.04)
 
 ## How to Execute
 
