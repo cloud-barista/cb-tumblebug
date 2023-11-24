@@ -79,8 +79,8 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 ***
 
 ## CB-Tumblebug 실행 및 개발 환경
-- Linux (추천: Ubuntu 18.04)
-- Go (추천: v1.19)
+- Linux (추천: Ubuntu 22.04)
+- Go (추천: v1.21.4)
 
 참고: [의존성 리스트](https://github.com/cloud-barista/cb-tumblebug/network/dependencies), [SBOM 다운로드](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
 
@@ -150,12 +150,12 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     sudo apt install make gcc git
     ```
   - Go 설치
-    - https://golang.org/dl/ 를 참고하여 Go 설치 (추천 개발 환경: Go v1.19 이상)
+    - https://golang.org/dl/ 를 참고하여 Go 설치 (추천 개발 환경: Go v1.21.4 이상)
     - 설치 예시
       - Go 다운로드 및 압축 해제 
         ```bash
-        wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
-        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
+        wget https://go.dev/dl/go1.21.4.linux-amd64.tar.gz
+        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz
         ```
       - `.bashrc` 파일 하단에 다음을 추가 
         ```bash
@@ -300,8 +300,9 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 ## CB-Tumblebug 기능 사용 방법
 
 1. [CB-Tumblebug MapUI 사용](#cb-tumblebug-mapui-사용)
-1. [CB-Tumblebug 스크립트 사용](#cb-tumblebug-스크립트-사용)
 1. [CB-Tumblebug REST API 사용](#cb-tumblebug-rest-api-사용)
+1. [CB-Tumblebug 스크립트 사용](#cb-tumblebug-스크립트-사용)
+
 
 ### CB-Tumblebug MapUI 사용
 - CB-MapUI 를 통해 MCIS 생성, 형상 확인 및 제어 가능
@@ -314,6 +315,24 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     ```
   - 웹브라우저에서 http://{HostIP}:1324 에 접속하여 활용
     ![image](https://github.com/cloud-barista/cb-mapui/assets/5966944/2423fbcd-0fdb-4511-85e2-488ba15ae8c0)
+
+
+### CB-Tumblebug REST API 사용
+1. CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
+   - [Namespace 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BNamespace%5D%20Namespace%20management/post_ns)
+2. CB-Tumblebug 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
+   - [VM spec object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Spec%20management/post_ns__nsId__resources_spec)
+   - [VM image object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Image%20management/post_ns__nsId__resources_image)   
+   - [Virtual network object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Network%20management/post_ns__nsId__resources_vNet)
+   - [Security group object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
+   - [VM 접속 ssh key object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Access%20key%20management/post_ns__nsId__resources_sshKey)
+3. CB-Tumblebug 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 원격명령수행, 종료 및 삭제
+   - [MCIS 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/post_ns__nsId__mcis)
+   - [MCIS 원격 커맨드](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Remote%20command/post_ns__nsId__cmd_mcis__mcisId_)
+   - [MCIS 조회 및 제어](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/get_ns__nsId__mcis__mcisId_)
+   - [MCIS 삭제(MCIS 종료 상태에서만 동작 가능)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/delete_ns__nsId__mcis__mcisId_)
+4. CB-Tumblebug 최적 배치 및 동적 프로비저닝
+   - [CB-Tumblebug 최적 배치 및 동적 프로비저닝](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mcis-provisioning-guide)
 
 
 ### CB-Tumblebug 스크립트 사용
@@ -716,23 +735,6 @@ Dozing for 1 : 1 (Back to work)
 ##### MCIS Xonotic(3D FPS) 게임 서버 배치
   - [스크립트를 통해 MCIS에 Xonotic 게임 서버 배치](https://github.com/cloud-barista/cb-tumblebug/wiki/Deploy-Xonotic-game-sever-in-a-Cloud-via-CB-Tumblebug)
 
-
-### CB-Tumblebug REST API 사용
-1. CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
-   - [Namespace 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BNamespace%5D%20Namespace%20management/post_ns)
-2. CB-Tumblebug 멀티 클라우드 인프라 자원(MCIR) 관리 API를 통해서 VM 생성을 위한 자원 (MCIR) 생성
-   - [VM spec object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Spec%20management/post_ns__nsId__resources_spec)
-   - [VM image object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Image%20management/post_ns__nsId__resources_image)   
-   - [Virtual network object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Network%20management/post_ns__nsId__resources_vNet)
-   - [Security group object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Security%20group%20management/post_ns__nsId__resources_securityGroup)
-   - [VM 접속 ssh key object 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20resource%5D%20MCIR%20Access%20key%20management/post_ns__nsId__resources_sshKey)
-3. CB-Tumblebug 멀티 클라우드 인프라 서비스(MCIS) 관리 API를 통해서 MCIS 생성, 조회, 제어, 원격명령수행, 종료 및 삭제
-   - [MCIS 생성](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/post_ns__nsId__mcis)
-   - [MCIS 원격 커맨드](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Remote%20command/post_ns__nsId__cmd_mcis__mcisId_)
-   - [MCIS 조회 및 제어](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/get_ns__nsId__mcis__mcisId_)
-   - [MCIS 삭제(MCIS 종료 상태에서만 동작 가능)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml#/%5BInfra%20service%5D%20MCIS%20Provisioning%20management/delete_ns__nsId__mcis__mcisId_)
-4. CB-Tumblebug 최적 배치 및 동적 프로비저닝
-   - [CB-Tumblebug 최적 배치 및 동적 프로비저닝](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mcis-provisioning-guide)
 
   
 ***

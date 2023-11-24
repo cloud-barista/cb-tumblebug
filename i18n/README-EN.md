@@ -70,8 +70,8 @@ while CB-Tumblebug Repo accommodates local languages in the contents of them.
 ***
 
 ## CB-Tumblebug Execution and Development Environment
-- Linux (Recommended: Ubuntu 18.04)
-- Go (Recommended: v1.19)
+- Linux (Recommended: Ubuntu 22.04)
+- Go (Recommended: v1.21.4)
 
 ***
 ***
@@ -132,10 +132,10 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     - `# apt install make gcc git`
 
   - Install Go 
-    - Install Go by referencing https://golang.org/dl/ (Recommended: v1.19 or higher)
+    - Install Go by referencing https://golang.org/dl/ (Recommended: v1.21.4 or higher)
     - Installation Example
-      - `wget https://go.dev/dl/go1.19.linux-amd64.tar.gz`
-      - `sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz`
+      - `wget https://go.dev/dl/go1.21.4.linux-amd64.tar.gz`
+      - `sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz`
       - add followings on the bottom of `.bashrc`
       ```
       export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin

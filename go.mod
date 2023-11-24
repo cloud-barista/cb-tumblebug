@@ -1,6 +1,6 @@
 module github.com/cloud-barista/cb-tumblebug
 
-go 1.19
+go 1.21.4
 
 require (
 	github.com/cloud-barista/cb-larva v0.0.16
