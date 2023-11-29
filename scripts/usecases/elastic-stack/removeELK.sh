@@ -25,10 +25,8 @@ sudo systemctl disable kibana.service
 
 # Setup variables
 # See FAQ on 2021 License change https://www.elastic.co/pricing/faq/licensing
-serverName=${1:-Elastic-Stack-8.3.0-by-Cloud-Barista} # Specify the server name
 INSTALL_PATH="${HOME}"                                # The path where the ELK Stack will be installed
 ELASTIC_STACK_VERSION="8.3.0"                         # Specify the version you want to install
-KIBANA_PORT="5601"                                    # Specify the port number for Kibana (default: 5601)
 
 # Determine OS ID
 OS_ID=$(grep '^ID=' /etc/os-release | cut -d= -f2)
@@ -40,15 +38,11 @@ case "${OS_ID}" in
     
     BASE_URL="https://artifacts.elastic.co/downloads"
     PACKAGE_FORMAT="amd64.deb"
-    INSTALL_CMD="sudo dpkg -i"
-    PRE_INSTALL_CMD="sudo DEBIAN_FRONTEND=noninteractive apt update -qq && sudo DEBIAN_FRONTEND=noninteractive apt install -qq -y openjdk-11-jdk < /dev/null > /dev/null"
     ;;
 
   centos* | rocky* | rhel* | fedora*)    
     BASE_URL="https://artifacts.elastic.co/downloads"
     PACKAGE_FORMAT="x86_64.rpm"
-    INSTALL_CMD="sudo rpm -i"
-    PRE_INSTALL_CMD="sudo yum -q -y update && sudo yum -q -y install java-11-openjdk"
     ;;
 
   *) 
@@ -69,9 +63,7 @@ cd "${INSTALL_PATH}"
 
 # Loop through the array and process each file
 for file in "${!FILES[@]}"; do
-    url=${FILES[$file]}
-
-    # Check if the file already exists
+    # Check if the file exists
     if [ -f "$file" ]; then
         # Remove the file
         echo "Removing $file..."
