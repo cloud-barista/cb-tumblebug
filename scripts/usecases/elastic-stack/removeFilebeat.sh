@@ -54,7 +54,6 @@ esac
 cd "${INSTALL_PATH}"
 
 FILE_NAME="filebeat-${ELASTIC_STACK_VERSION}-${PACKAGE_FORMAT}"
-FILE_URL="${BASE_URL}/beats/filebeat/${FILE_NAME}"
 
 # Check if the file exists
 if [ -f "${FILE_NAME}" ]; then
