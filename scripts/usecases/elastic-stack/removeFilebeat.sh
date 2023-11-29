@@ -35,12 +35,10 @@ echo "OS ID: ${OS_ID}"
 # Setup variables and commands for installing and starting a server based on the operating system
 case "${OS_ID}" in
   ubuntu* | debian*) 
-    BASE_URL="https://artifacts.elastic.co/downloads"
     PACKAGE_FORMAT="amd64.deb"
     ;;
 
   centos* | rocky* | rhel* | fedora*)    
-    BASE_URL="https://artifacts.elastic.co/downloads"
     PACKAGE_FORMAT="x86_64.rpm"
     ;;
 
