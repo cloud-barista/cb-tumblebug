@@ -49,7 +49,7 @@ Elastic Stack은 로그 및 데이터 분석 파이프라인에서 중요한 역
 #### Filebeat
 - **Filebeat 시작**:
   ```bash
-  ./startFilebeat.sh
+  ./startFilebeat.sh "YOUR_LOGSTASH_SEVER_IP"
   ```
 
 - **Filebeat 상태 조회**:
@@ -68,6 +68,7 @@ Elastic Stack은 로그 및 데이터 분석 파이프라인에서 중요한 역
   ```
 
 ### 마치며
-- 위 스크립트는 ELK Stack과 Filebeat의 기본적인 관리를 위한 것입니다. 
+- 위 스크립트는 ELK Stack과 Filebeat의 설치부터 삭제까지의 가장 기본적인 내용을 담고 있습니다.
+- 유스케이스로 활용하기 위한 스크립트로 보안 설정이 비활성화 되어있으니 할용하실 때 주의하시기 바랍니다. 
 - 각 스크립트의 상세 내용은 스크립트 파일 내부를 참조하십시오.
 - ELK Stack과 Filebeat의 보다 상세한 설정 및 관리 방법은 각 공식 문서를 참조하시기 바랍니다.
