@@ -140,7 +140,7 @@ EOF
 }
 
 echo "####################################################################"
-echo "## 1. Register Cloud Inforation"
+echo "## 1. Register Cloud Information"
 echo "####################################################################"
 
 SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
@@ -155,11 +155,11 @@ echo -e " - Tumblebug Server : ${GREEN}${BOLD} $TumblebugServer ${NC}"
 echo -e " - Spider Server : ${GREEN}${BOLD} $SpiderServer ${NC}"
 echo ""
 
-INDEXX=${TotalNumCSP}
+INDEXX=${NumCSP}
 echo -e "${BOLD}2) Enabled Clouds and Regions${NC}"
 
 for ((cspi = 1; cspi <= INDEXX; cspi++)); do
-	INDEXY=${TotalNumRegion[$cspi]}
+	INDEXY=${NumRegion[$cspi]}
 	CSP=${CSPType[$cspi]}
 	echo -e "${GREEN}${BOLD} - [$cspi] Cloud : $CSP (enabled regions : $INDEXY)${NC}"
 	for ((cspj = 1; cspj <= INDEXY; cspj++)); do
@@ -211,9 +211,17 @@ if [ "${INDEX}" == "0" ]; then
 
 else
     echo ""
-    CallSpiderPostDriver
-    CallSpiderPostRegion
-
+    INDEXX=${NumCSP}
+    for ((cspi = 1; cspi <= INDEXX; cspi++)); do
+        INDEXY=${NumRegion[$cspi]}
+        CSP=${CSPType[$cspi]}
+        CallSpiderPostDriver
+	for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+            INDEX=$cspi
+            REGION=$cspj
+            CallSpiderPostRegion
+	done
+    done
 fi
 
 # Print list of all registered cloud info
