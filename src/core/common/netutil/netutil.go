@@ -39,26 +39,66 @@ func init() {
 }
 
 // Models
-type Network struct {
-	CIDRBlock        string    // 192.168.0.0/24
-	NetworkAddress   string    // 192.168.0.0
-	BroadcastAddress string    // 192.168.0.255
-	Prefix           int       // 24
-	Netmask          string    // 255.255.255.0
-	HostCapacity     int       // 254
-	Subnets          []Network // Subnets within this network
+type NetworkConfig struct {
+	BaseNetwork Network `json:"baseNetwork"`
 }
 
-// New creates a new Network object.
-func New(cidrBlock string) (*Network, error) {
-	network := &Network{
-		CIDRBlock: cidrBlock,
+// NetworkInterface defines the methods that both Network and NetworkDetails should implement.
+type NetworkInterface interface {
+	GetCIDRBlock() string
+	GetSubnets() []Network
+}
+
+type Network struct {
+	CIDRBlock string    `json:"cidrBlock"`
+	Name      string    `json:"name,omitempty"`
+	Subnets   []Network `json:"subnets,omitempty"`
+}
+
+func (n *Network) GetName() string       { return n.Name }
+func (n *Network) GetCIDRBlock() string  { return n.CIDRBlock }
+func (n *Network) GetSubnets() []Network { return n.Subnets }
+
+// New creates a new NetworkDetails object.
+func NewNetwork(cidrBlock string) (*Network, error) {
+
+	_, _, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return nil, err
 	}
+	network := new(Network)
+	network.CIDRBlock = cidrBlock
+
+	network.Subnets = []Network{}
+
+	return network, nil
+}
+
+type NetworkDetails struct {
+	Network
+	NetworkAddress   string `json:"networkAddress,omitempty"`
+	BroadcastAddress string `json:"broadcastAddress,omitempty"`
+	Prefix           int    `json:"prefix,omitempty"`
+	Netmask          string `json:"netmask,omitempty"`
+	HostCapacity     int    `json:"hostCapacity,omitempty"`
+}
+
+// Getters
+func (n *NetworkDetails) GetNetworkAddress() string   { return n.NetworkAddress }
+func (n *NetworkDetails) GetBroadcastAddress() string { return n.BroadcastAddress }
+func (n *NetworkDetails) GetPrefix() int              { return n.Prefix }
+func (n *NetworkDetails) GetNetmask() string          { return n.Netmask }
+func (n *NetworkDetails) GetHostCapacity() int        { return n.HostCapacity }
+
+// New creates a new NetworkDetails object.
+func NewNetworkDetails(cidrBlock string) (*NetworkDetails, error) {
 
 	_, ipNet, err := net.ParseCIDR(cidrBlock)
 	if err != nil {
 		return nil, err
 	}
+	network := new(NetworkDetails)
+	network.CIDRBlock = cidrBlock
 
 	// Set Netmask
 	mask := ipNet.Mask
@@ -93,15 +133,6 @@ func New(cidrBlock string) (*Network, error) {
 
 	return network, nil
 }
-
-// Getters
-func (n *Network) GetCIDRBlock() string        { return n.CIDRBlock }
-func (n *Network) GetNetworkAddress() string   { return n.NetworkAddress }
-func (n *Network) GetBroadcastAddress() string { return n.BroadcastAddress }
-func (n *Network) GetPrefix() int              { return n.Prefix }
-func (n *Network) GetNetmask() string          { return n.Netmask }
-func (n *Network) GetHostCapacity() int        { return n.HostCapacity }
-func (n *Network) GetSubnets() []Network       { return n.Subnets }
 
 // SubnettingByMininumSubnetCount divides the CIDR block into subnets to accommodate the minimum number of subnets entered.
 func SubnettingByMininumSubnetCount(cidrBlock string, minSubnets int) ([]string, error) {
@@ -223,6 +254,27 @@ func GetBroadcastAddr(cidrBlock string) (string, error) {
 	return CalculateBroadcastAddr(ipNet)
 }
 
+// GetPrefix calculates the prefix for a given CIDR block.
+func GetPrefix(cidrBlock string) (int, error) {
+	_, ipNet, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return -1, err
+	}
+
+	prefix, _ := ipNet.Mask.Size()
+	return prefix, nil
+}
+
+// GetNetmask calculates the netmask for a given CIDR block.
+func GetNetmask(cidrBlock string) (string, error) {
+	_, ipNet, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return "", err
+	}
+	mask := ipNet.Mask
+	return net.IP(mask).String(), nil
+}
+
 // CalculateHostCapacity calculates the number of hosts that can be accommodated in a given IPNet.
 func CalculateHostCapacity(ipNet *net.IPNet) (int, error) {
 
@@ -245,7 +297,7 @@ func CalculateHostCapacity(ipNet *net.IPNet) (int, error) {
 func GetSizeOfHosts(cidrBlock string) (int, error) {
 	_, ipNet, err := net.ParseCIDR(cidrBlock)
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
 	return CalculateHostCapacity(ipNet)
