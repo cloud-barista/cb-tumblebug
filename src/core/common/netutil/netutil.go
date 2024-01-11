@@ -46,6 +46,7 @@ type NetworkConfig struct {
 // NetworkInterface defines the methods that both Network and NetworkDetails should implement.
 type NetworkInterface interface {
 	GetCIDRBlock() string
+	GetName() string
 	GetSubnets() []Network
 }
 
@@ -55,8 +56,8 @@ type Network struct {
 	Subnets   []Network `json:"subnets,omitempty"`
 }
 
-func (n *Network) GetName() string       { return n.Name }
 func (n *Network) GetCIDRBlock() string  { return n.CIDRBlock }
+func (n *Network) GetName() string       { return n.Name }
 func (n *Network) GetSubnets() []Network { return n.Subnets }
 
 // New creates a new NetworkDetails object.
@@ -134,8 +135,171 @@ func NewNetworkDetails(cidrBlock string) (*NetworkDetails, error) {
 	return network, nil
 }
 
-// SubnettingByMininumSubnetCount divides the CIDR block into subnets to accommodate the minimum number of subnets entered.
-func SubnettingByMininumSubnetCount(cidrBlock string, minSubnets int) ([]string, error) {
+// GetNetworkAddr calculates the network address for a given CIDR block.
+func GetNetworkAddr(cidrBlock string) (string, error) {
+	_, ipNet, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return "", err
+	}
+	return CalculateNetworkAddr(ipNet)
+}
+
+// CalculateNetworkAddr calculates the network address for a given IPNet.
+func CalculateNetworkAddr(ipNet *net.IPNet) (string, error) {
+	ip := ipNet.IP
+	networkIP := ip.Mask(ipNet.Mask)
+	return networkIP.String(), nil
+}
+
+// GetBroadcastAddr calculates the broadcast address for a given CIDR block.
+func GetBroadcastAddr(cidrBlock string) (string, error) {
+	_, ipNet, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return "", err
+	}
+
+	return CalculateBroadcastAddr(ipNet)
+}
+
+// CalculateBroadcastAddr calculates the broadcast address for a given IPNet.
+func CalculateBroadcastAddr(ipNet *net.IPNet) (string, error) {
+	// Calculate network and broadcast addresses
+	ip := ipNet.IP
+	mask := ipNet.Mask
+	broadcast := make(net.IP, len(ip))
+	for i := 0; i < len(ip); i++ {
+		broadcast[i] = ip[i] | ^mask[i]
+	}
+	broadcastAddress := broadcast.String()
+
+	return broadcastAddress, nil
+}
+
+// GetPrefix calculates the prefix for a given CIDR block.
+func GetPrefix(cidrBlock string) (int, error) {
+	_, ipNet, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return -1, err
+	}
+
+	prefix, _ := ipNet.Mask.Size()
+	return prefix, nil
+}
+
+// GetNetmask calculates the netmask for a given CIDR block.
+func GetNetmask(cidrBlock string) (string, error) {
+	_, ipNet, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return "", err
+	}
+	mask := ipNet.Mask
+	return net.IP(mask).String(), nil
+}
+
+// GetSizeOfHosts calculates the number of hosts that can be accommodated in a given CIDR block.
+func GetSizeOfHosts(cidrBlock string) (int, error) {
+	_, ipNet, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return -1, err
+	}
+
+	return CalculateHostCapacity(ipNet)
+}
+
+// CalculateHostCapacity calculates the number of hosts that can be accommodated in a given IPNet.
+func CalculateHostCapacity(ipNet *net.IPNet) (int, error) {
+
+	maskSize, bits := ipNet.Mask.Size()
+	return calculateHostCapacity(maskSize, bits)
+}
+
+func calculateHostCapacity(maskSize, bits int) (int, error) {
+	switch maskSize {
+	case 31:
+		// Special case for /31 subnets, typically used in point-to-point links (RFC 3021)
+		return 2, nil
+	case 32:
+		// /32 subnets represent a single host (commonly used for loopback addresses)
+		return 1, nil
+	default:
+		hostBits := bits - maskSize
+		hosts := int(math.Pow(2, float64(hostBits))) - 2
+		return hosts, nil
+	}
+}
+
+// ///////////////////////////////////////////////////////////////////
+// Models for subnetting
+type SubnettingRequest struct {
+	CIDRBlock       string           `json:"cidrBlock"`
+	SubnettingRules []SubnettingRule `json:"subnettingRules"`
+}
+
+type SubnettingRule struct {
+	Type  string `json:"type"`
+	Value int    `json:"value"`
+}
+
+// Functions for subnetting
+// SubnettingBy divides a CIDR block into subnets based on the given rules.
+func SubnettingBy(request SubnettingRequest) (Network, error) {
+	network, err := NewNetwork(request.CIDRBlock)
+	if err != nil {
+		return Network{}, fmt.Errorf("error creating base network: %w", err)
+	}
+
+	return subnetting(*network, request.SubnettingRules)
+}
+
+// subnetting recursivly divides a CIDR block into subnets according to the subnetting rules.
+func subnetting(network Network, rules []SubnettingRule) (Network, error) {
+	// return the network if there are no more rule
+	if len(rules) == 0 {
+		return network, nil
+	}
+
+	rule := rules[0]
+	remainingRules := rules[1:]
+
+	var subnetsStr []string
+	var err error
+	var subnets []Network
+
+	// Subnetting by the given rule
+	switch rule.Type {
+	case "minSubnets":
+		subnetsStr, err = SubnettingByMinimumSubnetCount(network.CIDRBlock, rule.Value)
+	case "minHosts":
+		subnetsStr, err = SubnettingByMinimumHosts(network.CIDRBlock, rule.Value)
+	default:
+		return network, fmt.Errorf("unknown rule type: %s", rule.Type)
+	}
+
+	if err != nil {
+		return network, err
+	}
+
+	// Recursively subnetting again for each subnet
+	for _, cidr := range subnetsStr {
+		// a subnet without subnets
+		subnetWithoutSubnets, err := NewNetwork(cidr)
+		if err != nil {
+			return network, err
+		}
+		// subnetting this subnet recursively
+		subnetWithSubnets, err := subnetting(*subnetWithoutSubnets, remainingRules)
+		if err != nil {
+			return network, err
+		}
+		subnets = append(subnets, subnetWithSubnets)
+	}
+
+	network.Subnets = subnets
+	return network, nil
+}
+
+// SubnettingByMinimumSubnetCount divides the CIDR block into subnets to accommodate the minimum number of subnets entered.
+func SubnettingByMinimumSubnetCount(cidrBlock string, minSubnets int) ([]string, error) {
 	_, network, err := net.ParseCIDR(cidrBlock)
 	if err != nil {
 		return nil, err
@@ -147,7 +311,7 @@ func SubnettingByMininumSubnetCount(cidrBlock string, minSubnets int) ([]string,
 	newMaskSize := maskSize + subnetBits
 
 	if newMaskSize > 32 {
-		return nil, fmt.Errorf("cannot split %s to accommodate at least %d subnets", cidrBlock, minSubnets)
+		return nil, fmt.Errorf("cannot split '%s' to accommodate at least %d subnets", cidrBlock, minSubnets)
 	}
 
 	// Calculate the actual number of subnets that can be created with the new mask size
@@ -182,8 +346,8 @@ func Uint32ToIP(n uint32) net.IP {
 	return net.IPv4(byte(n>>24), byte(n>>16), byte(n>>8), byte(n))
 }
 
-// SubnettingByHosts divides a CIDR block into subnets based on the number of hosts required for one subnet.
-func SubnettingByHosts(cidrBlock string, hostsPerSubnet int) ([]string, error) {
+// SubnettingByMinimumHosts divides a CIDR block into subnets based on the number of hosts required for one subnet.
+func SubnettingByMinimumHosts(cidrBlock string, hostsPerSubnet int) ([]string, error) {
 	if hostsPerSubnet < 2 {
 		return nil, fmt.Errorf("number of hosts per subnet should be at least 2")
 	}
@@ -199,7 +363,8 @@ func SubnettingByHosts(cidrBlock string, hostsPerSubnet int) ([]string, error) {
 	newMaskSize := bits - hostBits
 
 	if newMaskSize <= maskSize {
-		return nil, fmt.Errorf("not enough room to create subnets for %d hosts in %s", hostsPerSubnet, cidrBlock)
+		capa, _ := calculateHostCapacity(newMaskSize, bits)
+		return nil, fmt.Errorf("cannot split '%s' (host capacity: %d) into multiple subnets, each containing at least %d hosts", cidrBlock, capa, hostsPerSubnet)
 	}
 
 	baseIP := IpToUint32(network.IP)
@@ -212,95 +377,6 @@ func SubnettingByHosts(cidrBlock string, hostsPerSubnet int) ([]string, error) {
 	}
 
 	return subnets, nil
-}
-
-// CalculateNetworkAddr calculates the network address for a given IPNet.
-func CalculateNetworkAddr(ipNet *net.IPNet) (string, error) {
-	ip := ipNet.IP
-	networkIP := ip.Mask(ipNet.Mask)
-	return networkIP.String(), nil
-}
-
-// GetNetworkAddr calculates the network address for a given CIDR block.
-func GetNetworkAddr(cidrBlock string) (string, error) {
-	_, ipNet, err := net.ParseCIDR(cidrBlock)
-	if err != nil {
-		return "", err
-	}
-	return CalculateNetworkAddr(ipNet)
-}
-
-// CalculateBroadcastAddr calculates the broadcast address for a given IPNet.
-func CalculateBroadcastAddr(ipNet *net.IPNet) (string, error) {
-	// Calculate network and broadcast addresses
-	ip := ipNet.IP
-	mask := ipNet.Mask
-	broadcast := make(net.IP, len(ip))
-	for i := 0; i < len(ip); i++ {
-		broadcast[i] = ip[i] | ^mask[i]
-	}
-	broadcastAddress := broadcast.String()
-
-	return broadcastAddress, nil
-}
-
-// GetBroadcastAddr calculates the broadcast address for a given CIDR block.
-func GetBroadcastAddr(cidrBlock string) (string, error) {
-	_, ipNet, err := net.ParseCIDR(cidrBlock)
-	if err != nil {
-		return "", err
-	}
-
-	return CalculateBroadcastAddr(ipNet)
-}
-
-// GetPrefix calculates the prefix for a given CIDR block.
-func GetPrefix(cidrBlock string) (int, error) {
-	_, ipNet, err := net.ParseCIDR(cidrBlock)
-	if err != nil {
-		return -1, err
-	}
-
-	prefix, _ := ipNet.Mask.Size()
-	return prefix, nil
-}
-
-// GetNetmask calculates the netmask for a given CIDR block.
-func GetNetmask(cidrBlock string) (string, error) {
-	_, ipNet, err := net.ParseCIDR(cidrBlock)
-	if err != nil {
-		return "", err
-	}
-	mask := ipNet.Mask
-	return net.IP(mask).String(), nil
-}
-
-// CalculateHostCapacity calculates the number of hosts that can be accommodated in a given IPNet.
-func CalculateHostCapacity(ipNet *net.IPNet) (int, error) {
-
-	maskSize, bits := ipNet.Mask.Size()
-	switch maskSize {
-	case 31:
-		// Special case for /31 subnets, typically used in point-to-point links (RFC 3021)
-		return 2, nil
-	case 32:
-		// /32 subnets represent a single host (commonly used for loopback addresses)
-		return 1, nil
-	default:
-		hostBits := bits - maskSize
-		hosts := int(math.Pow(2, float64(hostBits))) - 2
-		return hosts, nil
-	}
-}
-
-// GetSizeOfHosts calculates the number of hosts that can be accommodated in a given CIDR block.
-func GetSizeOfHosts(cidrBlock string) (int, error) {
-	_, ipNet, err := net.ParseCIDR(cidrBlock)
-	if err != nil {
-		return -1, err
-	}
-
-	return CalculateHostCapacity(ipNet)
 }
 
 // ///////////////////////////////////////////////////////////////////

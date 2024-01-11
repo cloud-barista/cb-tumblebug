@@ -42,21 +42,21 @@ func runExample(cmd *cobra.Command, args []string) {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	fmt.Println("\nDivide CIDR block into subnets to accommodate at least minimum number of subnets")
-	fmt.Println("Divide CIDR block by a specified number of hosts\n")
+	fmt.Printf("Divide CIDR block by a specified number of hosts\n")
 
 	fmt.Println("[Usecase] Get superneted VPCs and its subnets inside")
 	fmt.Printf("- Base network: %v\n", cidrBlock)
 	fmt.Printf("- Minimum number of VPCs (subnets of the base network): %d\n", minSubnets)
 	fmt.Printf("- Subnets in a VPC base on the number of hosts per subnet: %d\n", hostsPerSubnet)
 
-	subnets, err := netutil.SubnettingByMininumSubnetCount(cidrBlock, minSubnets)
+	subnets, err := netutil.SubnettingByMinimumSubnetCount(cidrBlock, minSubnets)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	for i, vpc := range subnets {
 		fmt.Printf("\nVPC[%03d]:\t%v\nSubnets:\t", i+1, vpc)
-		vpcsubnets, err := netutil.SubnettingByHosts(vpc, hostsPerSubnet)
+		vpcsubnets, err := netutil.SubnettingByMinimumHosts(vpc, hostsPerSubnet)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -73,7 +73,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	// fmt.Println("\nDivide CIDR block by a specified number of hosts")
 	// fmt.Printf("Number of hosts per subnet: %d\n", hostsPerSubnet)
 
-	// subnets, err = netutil.SubnettingByHosts(cidrBlock, hostsPerSubnet)
+	// subnets, err = netutil.SubnettingByMinimumHosts(cidrBlock, hostsPerSubnet)
 	// if err != nil {
 	// 	fmt.Println(err)
 	// }
@@ -193,5 +193,28 @@ func runExample(cmd *cobra.Command, args []string) {
 	} else {
 		fmt.Println("Network configuration is invalid.")
 	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	fmt.Println("\nSubnetting a CIDR block by requests")
+	request := netutil.SubnettingRequest{
+		CIDRBlock: cidrBlock,
+		SubnettingRules: []netutil.SubnettingRule{
+			{Type: "minSubnets", Value: minSubnets},
+			{Type: "minHosts", Value: hostsPerSubnet},
+		},
+	}
+
+	// Subnetting by requests
+	networkConfig, err := netutil.SubnettingBy(request)
+	if err != nil {
+		fmt.Println("Error subnetting network:", err)
+		return
+	}
+
+	pretty, err = json.MarshalIndent(networkConfig, "", "   ")
+	if err != nil {
+		fmt.Printf("marshaling error: %s\n", err)
+	}
+	fmt.Printf("[Subnetting result]\n%s\n", string(pretty))
 
 }
