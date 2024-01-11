@@ -42,33 +42,48 @@ func runExample(cmd *cobra.Command, args []string) {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	fmt.Println("\nDivide CIDR block into subnets to accommodate at least minimum number of subnets")
+	fmt.Println("Divide CIDR block by a specified number of hosts\n")
 
-	fmt.Printf("Minimum number of subnets: %d\n", minSubnets)
+	fmt.Println("[Usecase] Get superneted VPCs and its subnets inside")
+	fmt.Printf("- Base network: %v\n", cidrBlock)
+	fmt.Printf("- Minimum number of VPCs (subnets of the base network): %d\n", minSubnets)
+	fmt.Printf("- Subnets in a VPC base on the number of hosts per subnet: %d\n", hostsPerSubnet)
 
 	subnets, err := netutil.SubnettingByMininumSubnetCount(cidrBlock, minSubnets)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	for _, subnet := range subnets {
-		fmt.Println(subnet)
+	for i, vpc := range subnets {
+		fmt.Printf("\nVPC[%03d]:\t%v\nSubnets:\t", i+1, vpc)
+		vpcsubnets, err := netutil.SubnettingByHosts(vpc, hostsPerSubnet)
+		if err != nil {
+			fmt.Println(err)
+		}
+		for j, subnet := range vpcsubnets {
+			fmt.Printf("%v", subnet)
+			if j < len(vpcsubnets)-1 {
+				fmt.Print(", ")
+			}
+		}
+		fmt.Println("")
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nDivide CIDR block by a specified number of hosts")
-	fmt.Printf("Number of hosts per subnet: %d\n", hostsPerSubnet)
+	// fmt.Println("\nDivide CIDR block by a specified number of hosts")
+	// fmt.Printf("Number of hosts per subnet: %d\n", hostsPerSubnet)
 
-	subnets, err = netutil.SubnettingByHosts(cidrBlock, hostsPerSubnet)
-	if err != nil {
-		fmt.Println(err)
-	}
+	// subnets, err = netutil.SubnettingByHosts(cidrBlock, hostsPerSubnet)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
-	for _, subnet := range subnets {
-		fmt.Println(subnet)
-	}
+	// for _, subnet := range subnets {
+	// 	fmt.Printf("%v, ", subnet)
+	// }
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nGet Network Address")
+	fmt.Println("\n\nGet Network Address")
 	networkAddress, err := netutil.GetNetworkAddr(cidrBlock)
 	if err != nil {
 		fmt.Println(err)
