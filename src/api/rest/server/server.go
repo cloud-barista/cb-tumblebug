@@ -427,13 +427,15 @@ func RunServer(port string) {
 		defer cancel()
 
 		if err := e.Shutdown(ctx); err != nil {
+			log.Println("Error starting the server: ", err)
 			e.Logger.Panic(err)
 		}
 	}(&wg)
 
 	port = fmt.Sprintf(":%s", port)
 	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
-		e.Logger.Panic("shuttig down the server")
+		log.Println("Error starting the server: ", err)
+		e.Logger.Panic("Shuttig down the server: ", err)
 	}
 
 	wg.Wait()

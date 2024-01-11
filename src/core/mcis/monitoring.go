@@ -262,6 +262,9 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	sshResultTmp.VmId = vmID
 	sshResultTmp.VmIp = vmIP
 
+	sshResultTmp.Stdout = make(map[int]string)
+	sshResultTmp.Stderr = make(map[int]string)
+
 	if err != nil || errStr != "" {
 		common.CBLog.Error("[Monitoring Agent deployment errors] " + errStr)
 		sshResultTmp.Stderr[0] = errStr
