@@ -138,7 +138,7 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	if resp.IsError() {
-		return fmt.Errorf("[Error from: %s] Status code: %s", url, resp.Status())
+		return fmt.Errorf("[Error from: %s] Status code: %s, Message: %s", url, resp.Status(), resp.Body())
 	}
 
 	// Update the cache for GET method only
