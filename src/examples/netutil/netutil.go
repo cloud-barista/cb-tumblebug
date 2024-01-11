@@ -128,55 +128,15 @@ func runExample(cmd *cobra.Command, args []string) {
 	fmt.Printf(" GetSubnets(): %v\n", networkDetails.GetSubnets())
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\n(Under development) Network template example")
-	// Define the base network
-	baseNetwork := netutil.Network{
-		CIDRBlock: "10.0.0.0/16",
-		Subnets: []netutil.Network{
-			{
-				// Define a VPC Network
-				CIDRBlock: "10.0.1.0/24",
-				Subnets: []netutil.Network{
-					{
-						// Define a Subnetwork within the VPC
-						CIDRBlock: "10.0.1.0/28",
-					},
-					{
-						// Another Subnetwork within the VPC
-						CIDRBlock: "10.0.1.16/28",
-					},
-				},
-			},
-			{
-				// Another VPC Network
-				CIDRBlock: "10.0.2.0/24",
-				Subnets: []netutil.Network{
-					{
-						// Subnetwork within the second VPC
-						CIDRBlock: "10.0.2.0/28",
-					},
-				},
-			},
-		},
-	}
+	fmt.Println("\nValidate a network configuration")
 
-	fmt.Println("Base Network CIDR:", baseNetwork.CIDRBlock)
-	for i, vpc := range baseNetwork.Subnets {
-		fmt.Printf("VPC Network %d CIDR: %s\n", i+1, vpc.CIDRBlock)
-		for j, subnet := range vpc.Subnets {
-			fmt.Printf("\tSubnetwork %d CIDR: %s\n", j+1, subnet.CIDRBlock)
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\n(Under development) Design multi-cloud network")
-	jsonData := `{
-        "baseNetwork": {
-            "name": "BaseNetwork1",
+	expectedInput := `{
+        "networkConfiguration": {
+            "name": "BaseNetwork (note - a CIDR block of logical global mutli-cloud network)",
             "cidrBlock": "10.0.0.0/16",
             "subnets": [
                 {
-                    "name": "CloudNetwork1",
+                    "name": "CloudNetwork1 (note - a CIDR block to be assigned to cloud network such as VPC network)",
                     "cidrBlock": "10.0.1.0/24",
                     "subnets": [
                         {"name": "Subnet1", "cidrBlock": "10.0.1.0/26"},
@@ -184,20 +144,39 @@ func runExample(cmd *cobra.Command, args []string) {
                         {"name": "Subnet3", "cidrBlock": "10.0.1.128/26"},
                         {"name": "Subnet4", "cidrBlock": "10.0.1.192/26"}
                     ]
+                },
+				{
+                    "name": "CloudNetwork2 (note - a CIDR block to be assigned to cloud network such as VPC network)",
+                    "cidrBlock": "10.0.2.0/24",
+                    "subnets": [
+                        {"name": "Subnet1", "cidrBlock": "10.0.2.0/26"},
+                        {"name": "Subnet2", "cidrBlock": "10.0.2.64/26"},
+                        {"name": "Subnet3", "cidrBlock": "10.0.2.128/26"},
+                        {"name": "Subnet4", "cidrBlock": "10.0.2.192/26"}
+                    ]
                 }
             ]
         }
     }`
+	fmt.Printf("[Expected input]\n%s\n", expectedInput)
 
-	var config netutil.NetworkConfig
-	err = json.Unmarshal([]byte(jsonData), &config)
+	var netConf netutil.NetworkConfig
+	err = json.Unmarshal([]byte(expectedInput), &netConf)
 	if err != nil {
-		log.Fatalf("Error occurred during unmarshaling. Error: %s", err.Error())
+		fmt.Printf("Error occurred during unmarshaling. Error: %s\n", err.Error())
 	}
 
-	prettyConfig, err := json.MarshalIndent(config, "", "   ")
+	network := netConf.NetworkConfiguration
+	pretty, err := json.MarshalIndent(network, "", "   ")
 	if err != nil {
-		log.Fatalf("marshaling error: %s", err)
+		fmt.Printf("marshaling error: %s\n", err)
 	}
-	fmt.Printf("[Configuration]\n%s", string(prettyConfig))
+	fmt.Printf("[Network configuration to validate]\n%s\n", string(pretty))
+
+	if err := netutil.ValidateNetwork(network); err != nil {
+		fmt.Println("Network configuration is valid.")
+	} else {
+		fmt.Println("Network configuration is invalid.")
+	}
+
 }
