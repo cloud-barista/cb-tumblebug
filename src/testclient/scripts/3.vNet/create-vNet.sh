@@ -12,10 +12,13 @@ function CallTB() {
         {
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cidrBlock": "192.168.${CIDRDiff}.0/24",
+			"cidrBlock": "10.${CIDRDiff}.0.0/16",
 			"subnetInfoList": [ {
 				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-				"IPv4_CIDR": "192.168.${CIDRDiff}.128/28"
+				"IPv4_CIDR": "10.${CIDRDiff}.0.0/18"
+			}, {
+				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-01",
+				"IPv4_CIDR": "10.${CIDRDiff}.64.0/18"
 			} ]
 		}
 EOF
