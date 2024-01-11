@@ -40,7 +40,7 @@ func init() {
 
 // Models
 type NetworkConfig struct {
-	BaseNetwork Network `json:"baseNetwork"`
+	NetworkConfiguration Network `json:"networkConfiguration"`
 }
 
 // NetworkInterface defines the methods that both Network and NetworkDetails should implement.
@@ -301,4 +301,55 @@ func GetSizeOfHosts(cidrBlock string) (int, error) {
 	}
 
 	return CalculateHostCapacity(ipNet)
+}
+
+// ///////////////////////////////////////////////////////////////////
+// ValidateNetwork recursively validates the network and its subnets.
+func ValidateNetwork(network Network) error {
+	// Check if the CIDR block is valid
+	if _, _, err := net.ParseCIDR(network.CIDRBlock); err != nil {
+		return fmt.Errorf("invalid CIDR block '%s': %w", network.CIDRBlock, err)
+	}
+
+	// Check for overlapping subnets within the same network
+	if err := hasOverlappingSubnets(network.Subnets); err != nil {
+		return fmt.Errorf("in network '%s': %w", network.CIDRBlock, err)
+	}
+
+	// Recursively validate each subnet
+	for _, subnet := range network.Subnets {
+		if !isSubnetOf(network.CIDRBlock, subnet.CIDRBlock) {
+			return fmt.Errorf("subnet '%s' is not a valid subnet of '%s'", subnet.CIDRBlock, network.CIDRBlock)
+		}
+		if err := ValidateNetwork(subnet); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// isSubnetOf checks if childCIDR is a subnet of parentCIDR.
+func isSubnetOf(parentCIDR, childCIDR string) bool {
+	_, parentNet, _ := net.ParseCIDR(parentCIDR)
+	_, childNet, _ := net.ParseCIDR(childCIDR)
+	return parentNet.Contains(childNet.IP)
+}
+
+// hasOverlappingSubnets checks if there are overlapping subnets within the same network.
+func hasOverlappingSubnets(subnets []Network) error {
+	for i := 0; i < len(subnets); i++ {
+		for j := i + 1; j < len(subnets); j++ {
+			if cidrOverlap(subnets[i].CIDRBlock, subnets[j].CIDRBlock) {
+				return fmt.Errorf("overlapping subnets found: '%s' and '%s'", subnets[i].CIDRBlock, subnets[j].CIDRBlock)
+			}
+		}
+	}
+	return nil
+}
+
+// cidrOverlap checks if two CIDR blocks overlap.
+func cidrOverlap(cidr1, cidr2 string) bool {
+	_, net1, _ := net.ParseCIDR(cidr1)
+	_, net2, _ := net.ParseCIDR(cidr2)
+	return net1.Contains(net2.IP) || net2.Contains(net1.IP)
 }
