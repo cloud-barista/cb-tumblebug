@@ -217,4 +217,80 @@ func runExample(cmd *cobra.Command, args []string) {
 	}
 	fmt.Printf("[Subnetting result]\n%s\n", string(pretty))
 
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	fmt.Println("\n\nNextSubnet() test example")
+
+	baseNetwork := "10.0.0.0/16"
+	currentSubnet0 := "10.0.0.0/18"
+	currentSubnet1 := "10.0.64.0/18"
+	currentSubnet2 := "10.0.128.0/18"
+	currentSubnet3 := "10.0.192.0/18"
+
+	fmt.Printf("[NextSubnet() Case1] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet0)
+	nextSubnet, err := netutil.NextSubnet(currentSubnet0, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Next Subnet:", nextSubnet)
+	}
+
+	fmt.Printf("[NextSubnet() Case2] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet1)
+	nextSubnet, err = netutil.NextSubnet(currentSubnet1, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Next Subnet:", nextSubnet)
+	}
+
+	fmt.Printf("[NextSubnet() Case3] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet2)
+	nextSubnet, err = netutil.NextSubnet(currentSubnet2, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Next Subnet:", nextSubnet)
+	}
+
+	fmt.Printf("[NextSubnet() Case4] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet3)
+	nextSubnet, err = netutil.NextSubnet(currentSubnet3, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Next Subnet:", nextSubnet)
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	fmt.Println("\n\nPreviousSubnet() test example")
+
+	fmt.Printf("[PreviousSubnet() Case1] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet0)
+	previousSubnet, err := netutil.PreviousSubnet(currentSubnet0, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Previous Subnet:", previousSubnet)
+	}
+
+	fmt.Printf("[PreviousSubnet() Case2] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet1)
+	previousSubnet, err = netutil.PreviousSubnet(currentSubnet1, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Previous Subnet:", previousSubnet)
+	}
+
+	fmt.Printf("[PreviousSubnet() Case3] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet2)
+	previousSubnet, err = netutil.PreviousSubnet(currentSubnet2, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Previous Subnet:", previousSubnet)
+	}
+
+	fmt.Printf("[PreviousSubnet() Case4] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet3)
+	previousSubnet, err = netutil.PreviousSubnet(currentSubnet3, baseNetwork)
+	if err != nil {
+		fmt.Println(" Error:", err)
+	} else {
+		fmt.Println(" Previous Subnet:", previousSubnet)
+	}
+
 }
