@@ -429,3 +429,75 @@ func cidrOverlap(cidr1, cidr2 string) bool {
 	_, net2, _ := net.ParseCIDR(cidr2)
 	return net1.Contains(net2.IP) || net2.Contains(net1.IP)
 }
+
+// ///////////////////////////////////////////////////////////////////////////////////
+// NextSubnet find and check the next subnet based on the base/parent network.
+func NextSubnet(currentSubnetCIDR string, baseNetworkCIDR string) (string, error) {
+	// Parse the current subnet
+	_, currentNet, err := net.ParseCIDR(currentSubnetCIDR)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse the base network
+	_, baseNet, err := net.ParseCIDR(baseNetworkCIDR)
+	if err != nil {
+		return "", err
+	}
+
+	// Convert the current subnet's IP to uint32
+	currentIPInt := IpToUint32(currentNet.IP)
+
+	// Calculate the size of the current subnet
+	maskSize, _ := currentNet.Mask.Size()
+	subnetSize := uint32(1 << (32 - maskSize))
+
+	// Calculate the next subnet's starting IP
+	nextIPInt := currentIPInt + subnetSize
+
+	// Convert the next IP to net.IP
+	nextIP := Uint32ToIP(nextIPInt)
+
+	// Check if the next subnet is within the base network range
+	if !baseNet.Contains(nextIP) {
+		return "", fmt.Errorf("the next subnet is outside the base network range")
+	}
+
+	return fmt.Sprintf("%s/%d", nextIP.String(), maskSize), nil
+}
+
+
+// PreviousSubnet find and check the previous subnet based on the base/parent network.
+func PreviousSubnet(currentSubnet string, baseNetworkCIDR string) (string, error) {
+	// Parse the current subnet
+	_, currentNet, err := net.ParseCIDR(currentSubnet)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse the base network
+	_, baseNet, err := net.ParseCIDR(baseNetworkCIDR)
+	if err != nil {
+		return "", err
+	}
+
+	// Convert the current subnet's IP to uint32
+	currentIPInt := IpToUint32(currentNet.IP)
+
+	// Calculate the size of the current subnet
+	maskSize, _ := currentNet.Mask.Size()
+	subnetSize := uint32(1 << (32 - maskSize))
+
+	// Calculate the previous subnet's starting IP
+	previousIPInt := currentIPInt - subnetSize
+
+	// Convert the previous IP to net.IP
+	previousIP := Uint32ToIP(previousIPInt)
+
+	// Check if the previous subnet is within the base network range
+	if !baseNet.Contains(previousIP) {
+		return "", fmt.Errorf("the previous subnet is outside the base network range")
+	}
+
+	return fmt.Sprintf("%s/%d", previousIP.String(), maskSize), nil
+}
