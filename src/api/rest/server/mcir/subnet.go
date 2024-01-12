@@ -27,6 +27,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param vNetId path string true "VNet ID"
 // @Param subnetReq body mcir.TbSubnetReq true "Details for an Subnet object"
 // @Success 200 {object} mcir.TbSubnetInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -113,6 +114,7 @@ func RestGetAllSubnet(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
+// @Param vNetId path string true "VNet ID"
 // @Param subnetId path string true "Subnet ID"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
