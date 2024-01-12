@@ -6987,6 +6987,11 @@ paths:
         name: nsId
         required: true
         type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
+        required: true
+        type: string
       - description: Details for an Subnet object
         in: body
         name: subnetReq
@@ -7021,6 +7026,11 @@ paths:
         description: Namespace ID
         in: path
         name: nsId
+        required: true
+        type: string
+      - description: VNet ID
+        in: path
+        name: vNetId
         required: true
         type: string
       - description: Subnet ID

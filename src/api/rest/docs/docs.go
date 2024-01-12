@@ -6667,6 +6667,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Details for an Subnet object",
                         "name": "subnetReq",
                         "in": "body",
@@ -6717,6 +6724,13 @@ const docTemplate = `{
                         "default": "ns01",
                         "description": "Namespace ID",
                         "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VNet ID",
+                        "name": "vNetId",
                         "in": "path",
                         "required": true
                     },
