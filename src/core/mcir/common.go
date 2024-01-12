@@ -1687,8 +1687,8 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 				reqTmp.Name = resourceName
 				reqTmp.Description = description
 
-				// set isolated private address space for each cloud region (192.168.xxx.0/24)
-				reqTmp.CidrBlock = "192.168." + strconv.Itoa(i+1) + ".0/24"
+				// set isolated private address space for each cloud region (10.i.0.0/16)
+				reqTmp.CidrBlock = "10." + strconv.Itoa(i) + ".0.0/16"
 				if strings.EqualFold(provider, "cloudit") {
 					// CLOUDIT: the list of subnets that can be created is
 					// 10.0.4.0/22,10.0.8.0/22,10.0.12.0/22,10.0.28.0/22,10.0.32.0/22,
@@ -1708,8 +1708,16 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 					reqTmp.CidrBlock = "10.0.40.0/22"
 				}
 
-				// subnet := SpiderSubnetReqInfo{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
-				subnet := TbSubnetReq{Name: reqTmp.Name, IPv4_CIDR: reqTmp.CidrBlock}
+				// Consist 2 subnets (10.i.0.0/18, 10.i.64.0/18)
+				// Reserve spaces for tentative 2 subnets (10.i.128.0/18, 10.i.192.0/18)
+				subnetName := reqTmp.Name
+				subnetCidr := "10." + strconv.Itoa(i) + ".0.0/18"
+				subnet := TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
+				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
+
+				subnetName = reqTmp.Name + "-01"
+				subnetCidr = "10." + strconv.Itoa(i) + ".64.0/18"
+				subnet = TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
 				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
 
 				common.PrintJsonPretty(reqTmp)

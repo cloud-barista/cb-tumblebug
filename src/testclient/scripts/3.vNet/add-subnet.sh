@@ -11,10 +11,9 @@ function CallTB() {
     resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}/subnet -H 'Content-Type: application/json' -d @- <<EOF
         {
-			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-${CIDRDiff}",
+			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-02",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"IPv4_CIDR": "192.168.${CIDRDiff}.64/28"
-			
+			"IPv4_CIDR": "10.${CIDRDiff}.128.0/18"			
 		}
 EOF
     ); echo ${resp} | jq ''
@@ -24,7 +23,7 @@ EOF
 #function create_subnet() {
 
 	echo "####################################################################"
-	echo "## 3. subnet: Create"
+	echo "## 3. subnet: Create and add to vNet"
 	echo "####################################################################"
 
 	source ../init.sh
