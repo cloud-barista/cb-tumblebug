@@ -6,8 +6,8 @@ sudo apt-get update > /dev/null
 sudo apt-get -y install git > /dev/null
 
 # Install Go
-wget https://dl.google.com/go/go1.21.4.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz
+wget https://dl.google.com/go/go1.21.6.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
 
 # Set Go env (for next interactive shell)
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc 

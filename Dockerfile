@@ -2,7 +2,7 @@
 ## Stage 1 - Go Build
 ##############################################################
 
-FROM golang:1.21.4-alpine AS builder
+FROM golang:1.21.6-alpine AS builder
 
 #RUN apk update && apk add --no-cache bash
 
