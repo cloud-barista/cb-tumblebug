@@ -80,7 +80,7 @@ CB-Tumblebug은 한국에서 시작된 오픈 소스 프로젝트로서
 
 ## CB-Tumblebug 실행 및 개발 환경
 - Linux (추천: Ubuntu 22.04)
-- Go (추천: v1.21.4)
+- Go (추천: v1.21.6)
 
 [의존성 리스트](https://github.com/cloud-barista/cb-tumblebug/network/dependencies) ([SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom))
 
@@ -150,12 +150,12 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     sudo apt install make gcc git
     ```
   - Go 설치
-    - https://golang.org/dl/ 를 참고하여 Go 설치 (추천 개발 환경: Go v1.21.4 이상)
+    - https://golang.org/dl/ 를 참고하여 Go 설치 (추천 개발 환경: Go v1.21.6 이상)
     - 설치 예시
       - Go 다운로드 및 압축 해제 
         ```bash
-        wget https://go.dev/dl/go1.21.4.linux-amd64.tar.gz
-        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz
+        wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz
+        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
         ```
       - `.bashrc` 파일 하단에 다음을 추가 
         ```bash
