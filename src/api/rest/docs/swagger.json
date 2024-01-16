@@ -3257,6 +3257,16 @@
                         "name": "option",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "true",
+                            "false"
+                        ],
+                        "type": "string",
+                        "description": "Force to attach/detach even if VM info is not matched",
+                        "name": "force",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3274,6 +3284,68 @@
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Provisioning (Create and attach) dataDisk",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] MCIR Data Disk management"
+                ],
+                "summary": "Provisioning (Create and attach) dataDisk",
+                "parameters": [
+                    {
+                        "description": "Details for an Data Disk object",
+                        "name": "dataDiskInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcir.TbDataDiskVmReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "g1-1",
+                        "description": "VM ID",
+                        "name": "vmId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbVmInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
                         }
@@ -8338,6 +8410,31 @@
                 },
                 "diskSize": {
                     "type": "string"
+                }
+            }
+        },
+        "mcir.TbDataDiskVmReq": {
+            "type": "object",
+            "required": [
+                "diskSize",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "diskSize": {
+                    "type": "string",
+                    "default": "100",
+                    "example": "77"
+                },
+                "diskType": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "aws-ap-southeast-1-datadisk"
                 }
             }
         },
