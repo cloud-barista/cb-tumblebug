@@ -645,6 +645,24 @@ definitions:
     required:
     - diskSize
     type: object
+  mcir.TbDataDiskVmReq:
+    properties:
+      description:
+        type: string
+      diskSize:
+        default: "100"
+        example: "77"
+        type: string
+      diskType:
+        example: default
+        type: string
+      name:
+        example: aws-ap-southeast-1-datadisk
+        type: string
+    required:
+    - diskSize
+    - name
+    type: object
   mcir.TbFirewallRuleInfo:
     properties:
       cidr:
@@ -4672,6 +4690,49 @@ paths:
       summary: Get available dataDisks for a VM
       tags:
       - '[Infra resource] MCIR Data Disk management'
+    post:
+      consumes:
+      - application/json
+      description: Provisioning (Create and attach) dataDisk
+      parameters:
+      - description: Details for an Data Disk object
+        in: body
+        name: dataDiskInfo
+        required: true
+        schema:
+          $ref: '#/definitions/mcir.TbDataDiskVmReq'
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: g1-1
+        description: VM ID
+        in: path
+        name: vmId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbVmInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Provisioning (Create and attach) dataDisk
+      tags:
+      - '[Infra resource] MCIR Data Disk management'
     put:
       consumes:
       - application/json
@@ -4707,6 +4768,13 @@ paths:
         in: query
         name: option
         required: true
+        type: string
+      - description: Force to attach/detach even if VM info is not matched
+        enum:
+        - "true"
+        - "false"
+        in: query
+        name: force
         type: string
       produces:
       - application/json

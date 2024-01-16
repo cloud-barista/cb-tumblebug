@@ -103,6 +103,14 @@ type TbDataDiskReq struct {
 	CspDataDiskId string `json:"cspDataDiskId"`
 }
 
+// TbDataDiskVmReq is a struct to handle 'Provisioning dataDisk to VM' request toward CB-Tumblebug.
+type TbDataDiskVmReq struct {
+	Name        string `json:"name" validate:"required" example:"aws-ap-southeast-1-datadisk"`
+	DiskType    string `json:"diskType" example:"default"`
+	DiskSize    string `json:"diskSize" validate:"required" example:"77" default:"100"`
+	Description string `json:"description,omitempty"`
+}
+
 // TbDataDiskReqStructLevelValidation func is for Validation
 func TbDataDiskReqStructLevelValidation(sl validator.StructLevel) {
 

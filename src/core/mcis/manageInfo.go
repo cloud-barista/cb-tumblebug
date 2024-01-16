@@ -1391,8 +1391,42 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	}
 }
 
+// ProvisionDataDisk is func to provision DataDisk to VM (create and attach to VM)
+func ProvisionDataDisk(nsId string, mcisId string, vmId string, u *mcir.TbDataDiskVmReq) (TbVmInfo, error) {
+	vm, err := GetVmObject(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+
+	createDiskReq := mcir.TbDataDiskReq{
+		Name:           u.Name,
+		ConnectionName: vm.ConnectionName,
+		DiskType:       u.DiskType,
+		DiskSize:       u.DiskSize,
+		Description:    u.Description,
+	}
+
+	newDataDisk, err := mcir.CreateDataDisk(nsId, &createDiskReq, "")
+	if err != nil {
+		common.CBLog.Error(err)
+		return TbVmInfo{}, err
+	}
+	retry := 3
+	for i := 0; i < retry; i++ {
+		vmInfo, err := AttachDetachDataDisk(nsId, mcisId, vmId, common.AttachDataDisk, newDataDisk.Id, false)
+		if err != nil {
+			common.CBLog.Error(err)
+		} else {
+			return vmInfo, nil
+		}
+		time.Sleep(5 * time.Second)
+	}
+	return TbVmInfo{}, err
+}
+
 // AttachDetachDataDisk is func to attach/detach DataDisk to/from VM
-func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command string, dataDiskId string) (TbVmInfo, error) {
+func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command string, dataDiskId string, force bool) (TbVmInfo, error) {
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
 
 	// Check existence of the key. If no key, no update.
@@ -1406,13 +1440,13 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	vm := TbVmInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &vm)
 
-	isDataDiskAttached := common.CheckElement(dataDiskId, vm.DataDiskIds)
-	if command == common.DetachDataDisk && isDataDiskAttached == false {
-		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
+	isInList := common.CheckElement(dataDiskId, vm.DataDiskIds)
+	if command == common.DetachDataDisk && !isInList && !force {
+		err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
-	} else if command == common.AttachDataDisk && isDataDiskAttached == true {
-		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list.", dataDiskId)
+	} else if command == common.AttachDataDisk && isInList && !force {
+		err := fmt.Errorf("The dataDisk %s is already in the attached dataDisk list %v", dataDiskId, vm.DataDiskIds)
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
 	}
@@ -1428,6 +1462,11 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	dataDisk := mcir.TbDataDiskInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &dataDisk)
 
+	client := resty.New()
+	method := "PUT"
+	var callResult interface{}
+	//var requestBody interface{}
+
 	requestBody := mcir.SpiderDiskAttachDetachReqWrapper{
 		ConnectionName: vm.ConnectionName,
 		ReqInfo: mcir.SpiderDiskAttachDetachReq{
@@ -1435,22 +1474,12 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 		},
 	}
 
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody)
-		// SetResult(&SpiderDiskInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
 	var url string
 	var cmdToUpdateAsso string
-	var resp *resty.Response
 
 	switch command {
 	case common.AttachDataDisk:
-		req = req.SetResult(&mcir.SpiderDiskInfo{})
+		//req = req.SetResult(&mcir.SpiderDiskInfo{})
 		url = fmt.Sprintf("%s/disk/%s/attach", common.SpiderRestUrl, dataDisk.CspDataDiskName)
 
 		cmdToUpdateAsso = common.StrAdd
@@ -1465,13 +1494,18 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 
 	}
 
-	resp, err = req.Put(url)
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 
-	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		fmt.Println("body: ", string(resp.Body()))
+	if err != nil {
 		common.CBLog.Error(err)
 		return TbVmInfo{}, err
 	}
@@ -1484,20 +1518,20 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 		oldDataDiskIds := vm.DataDiskIds
 		newDataDiskIds := oldDataDiskIds
 
-		found_flag := false
+		flag := false
 
 		for i, oldDataDisk := range oldDataDiskIds {
 			if oldDataDisk == dataDiskId {
-				found_flag = true
+				flag = true
 				newDataDiskIds = append(oldDataDiskIds[:i], oldDataDiskIds[i+1:]...)
 				break
 			}
 		}
 
-		// Actually, in here, 'found_flag' cannot be false,
+		// Actually, in here, 'flag' cannot be false,
 		// since isDataDiskAttached is confirmed to be 'true' in the beginning of this function.
 		// Below is just a code snippet of 'defensive programming'.
-		if found_flag == false {
+		if !flag && !force {
 			err := fmt.Errorf("Failed to find the dataDisk %s in the attached dataDisk list.", dataDiskId)
 			common.CBLog.Error(err)
 			return TbVmInfo{}, err
@@ -1506,34 +1540,32 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 		}
 	}
 
-	// Update 'cspViewVmDetail' field
+	time.Sleep(8 * time.Second)
+	method = "GET"
 	url = fmt.Sprintf("%s/vm/%s", common.SpiderRestUrl, vm.CspViewVmDetail.IId.NameId)
-
-	connectionName := common.SpiderConnectionName{
+	requestBodyConnection := common.SpiderConnectionName{
 		ConnectionName: vm.ConnectionName,
 	}
+	var callResultSpiderVMInfo SpiderVMInfo
 
-	req = client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(connectionName).
-		SetResult(&SpiderVMInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBodyConnection),
+		&requestBodyConnection,
+		&callResultSpiderVMInfo,
+		common.MediumDuration,
+	)
 
-	time.Sleep(8 * time.Second)
-	resp, err = req.Get(url)
-
-	fmt.Printf("HTTP Status code: %d \n", resp.StatusCode())
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		fmt.Println("body: ", string(resp.Body()))
+	if err != nil {
 		common.CBLog.Error(err)
 		return vm, err
 	}
 
-	updatedSpiderVM := resp.Result().(*SpiderVMInfo)
 	// fmt.Printf("in AttachDetachDataDisk(), updatedSpiderVM.DataDiskIIDs: %s", updatedSpiderVM.DataDiskIIDs) // for debug
-	vm.CspViewVmDetail = *updatedSpiderVM
+	vm.CspViewVmDetail = callResultSpiderVMInfo
 
 	UpdateVmInfo(nsId, mcisId, vm)
 

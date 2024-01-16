@@ -16,6 +16,7 @@ package mcir
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -164,6 +165,7 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param option query string true "Option for MCIS" Enums(attach, detach)
+// @Param force query string false "Force to attach/detach even if VM info is not matched" Enums(true, false)
 // @Success 200 {object} mcis.TbVmInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -175,6 +177,15 @@ func RestPutVmDataDisk(c echo.Context) error {
 	vmId := c.Param("vmId")
 
 	option := c.QueryParam("option")
+	forceStr := c.QueryParam("force")
+	forceBool := false
+	var err error
+	if forceStr != "" {
+		forceBool, err = strconv.ParseBool(forceStr)
+		if err != nil {
+			return common.EndRequestWithLog(c, reqID, fmt.Errorf("Invalid force value: %s", forceStr), nil)
+		}
+	}
 
 	u := &mcir.TbAttachDetachDataDiskReq{}
 	if err := c.Bind(u); err != nil {
@@ -185,13 +196,45 @@ func RestPutVmDataDisk(c echo.Context) error {
 	case common.AttachDataDisk:
 		fallthrough
 	case common.DetachDataDisk:
-		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, option, u.DataDiskId)
+		result, err := mcis.AttachDetachDataDisk(nsId, mcisId, vmId, option, u.DataDiskId, forceBool)
 		return common.EndRequestWithLog(c, reqID, err, result)
 
 	default:
 		err := fmt.Errorf("Supported options: %s, %s, %s", common.AttachDataDisk, common.DetachDataDisk, common.AvailableDataDisk)
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
+}
+
+// RestPostVmDataDisk godoc
+// @Summary Provisioning (Create and attach) dataDisk
+// @Description Provisioning (Create and attach) dataDisk
+// @Tags [Infra resource] MCIR Data Disk management
+// @Accept  json
+// @Produce  json
+// @Param dataDiskInfo body mcir.TbDataDiskVmReq true "Details for an Data Disk object"
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Param vmId path string true "VM ID" default(g1-1)
+// @Success 200 {object} mcis.TbVmInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [post]
+func RestPostVmDataDisk(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
+	nsId := c.Param("nsId")
+	mcisId := c.Param("mcisId")
+	vmId := c.Param("vmId")
+
+	u := &mcir.TbDataDiskVmReq{}
+	if err := c.Bind(u); err != nil {
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	result, err := mcis.ProvisionDataDisk(nsId, mcisId, vmId, u)
+	if err != nil {
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // RestGetVmDataDisk godoc
