@@ -17,7 +17,9 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -441,5 +443,41 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 	mcisFlag := c.QueryParam("mcisFlag")
 
 	content, err := mcis.RegisterCspNativeResourcesAll(u.NsId, u.McisName, option, mcisFlag)
+	return common.EndRequestWithLog(c, reqID, err, content)
+}
+
+// RestForwardAnyReqToAny godoc
+// @Summary Forward any (GET) request to CB-Spider
+// @Description Forward any (GET) request to CB-Spider
+// @Tags [Admin] System utility
+// @Accept  json
+// @Produce  json
+// @Param path path string true "Internal call path to CB-Spider (path without /spider/ prefix) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc] for more details"" default(vmspec)
+// @Param Request body interface{} false "Request body (various formats) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc] for more details"
+// @Success 200 {object} map[string]interface{}
+// @Router /forward/{path} [post]
+func RestForwardAnyReqToAny(c echo.Context) error {
+	reqID := common.StartRequestWithLog(c)
+	reqPath := c.Param("*")
+	reqPath, err := url.PathUnescape(reqPath)
+	if err != nil {
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	fmt.Printf("reqPath: %s\n", reqPath)
+
+	method := "GET"
+	var requestBody interface{}
+	if c.Request().Body != nil {
+		bodyBytes, err := ioutil.ReadAll(c.Request().Body)
+		if err != nil {
+			return common.EndRequestWithLog(c, reqID, fmt.Errorf("Failed to read request body: %v", err), nil)
+		}
+		requestBody = bodyBytes
+	} else {
+		requestBody = common.NoBody
+	}
+
+	content, err := common.ForwardRequestToAny(reqPath, method, requestBody)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }

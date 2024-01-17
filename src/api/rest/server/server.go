@@ -190,6 +190,8 @@ func RunServer(port string) {
 	e.GET("/tumblebug/ns/:nsId/loadDefaultResource", rest_mcir.RestLoadDefaultResource)
 	e.DELETE("/tumblebug/ns/:nsId/defaultResources", rest_mcir.RestDelAllDefaultResources)
 
+	e.POST("/tumblebug/forward/*", rest_common.RestForwardAnyReqToAny)
+
 	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 

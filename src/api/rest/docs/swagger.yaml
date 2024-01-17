@@ -2715,6 +2715,37 @@ paths:
       summary: Get registered ConnConfig info
       tags:
       - '[Admin] Multi-Cloud environment configuration'
+  /forward/{path}:
+    post:
+      consumes:
+      - application/json
+      description: Forward any (GET) request to CB-Spider
+      parameters:
+      - default: vmspec
+        description: Internal call path to CB-Spider (path without /spider/ prefix)
+          - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc]
+          for more details
+        in: path
+        name: path
+        required: true
+        type: string
+      - description: Request body (various formats) - see [https://documenter.getpostman.com/view/24786935/2s9Ykq8Lpf#231eec23-b0ab-4966-83ce-a0ef92ead7bc]
+          for more details
+        in: body
+        name: Request
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Forward any (GET) request to CB-Spider
+      tags:
+      - '[Admin] System utility'
   /health:
     get:
       consumes:
