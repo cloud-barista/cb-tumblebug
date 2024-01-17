@@ -20,6 +20,7 @@ source $CBTUMBLEBUG_ROOT/conf/credentials.conf
 
 getCloudIndex $CSP
 MCISID=${POSTFIX}
+CLUSTERID_PREFIX=${POSTFIX}
 
 #install jq and puttygen
 if ! dpkg-query -W -f='${Status}' jq | grep "ok installed" > /dev/null; then echo "install jq package"; sudo apt install -y jq; fi

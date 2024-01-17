@@ -275,6 +275,19 @@ func RunServer(port string) {
 	g.POST("/:nsId/network/mcis/:mcisId", rest_mcis.RestPostConfigureCloudAdaptiveNetworkToMcis)
 	g.PUT("/:nsId/network/mcis/:mcisId", rest_mcis.RestPutInjectCloudInformationForCloudAdaptiveNetwork)
 
+	// Cluster
+	g.POST("/:nsId/cluster", rest_mcis.RestPostCluster)
+	g.POST("/:nsId/cluster/:clusterId/nodegroup", rest_mcis.RestPostNodeGroup)
+	g.DELETE("/:nsId/cluster/:clusterId/nodegroup/:nodeGroupName", rest_mcis.RestDeleteNodeGroup)
+	g.PUT("/:nsId/cluster/:clusterId/nodegroup/:nodeGroupName/onautoscaling", rest_mcis.RestPutSetAutoscaling)
+	g.PUT("/:nsId/cluster/:clusterId/nodegroup/:nodeGroupName/autoscalesize", rest_mcis.RestPutChangeAutoscaleSize)
+	g.GET("/:nsId/cluster/:clusterId", rest_mcis.RestGetCluster, middleware.TimeoutWithConfig(timeoutConfig),
+		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
+	g.GET("/:nsId/cluster", rest_mcis.RestGetAllCluster, middleware.TimeoutWithConfig(timeoutConfig),
+		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
+	g.DELETE("/:nsId/cluster/:clusterId", rest_mcis.RestDeleteCluster)
+	g.DELETE("/:nsId/cluster", rest_mcis.RestDeleteAllCluster)
+
 	// Network Load Balancer
 	g.POST("/:nsId/mcis/:mcisId/mcSwNlb", rest_mcis.RestPostMcNLB)
 	g.POST("/:nsId/mcis/:mcisId/nlb", rest_mcis.RestPostNLB)

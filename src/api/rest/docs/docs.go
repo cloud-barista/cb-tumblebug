@@ -1259,6 +1259,521 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/cluster": {
+            "get": {
+                "description": "List all Clusters or Clusters' ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "List all Clusters or Clusters' ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id"
+                        ],
+                        "type": "string",
+                        "description": "Option",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field key for filtering (ex: cspClusterName)",
+                        "name": "filterKey",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)",
+                        "name": "filterVal",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Different return structures by the given option param",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/mcis.JSONResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "[DEFAULT]": {
+                                            "$ref": "#/definitions/mcis.RestGetAllClusterResponse"
+                                        },
+                                        "[ID]": {
+                                            "$ref": "#/definitions/common.IdList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create Cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Create Cluster",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "register"
+                        ],
+                        "type": "string",
+                        "description": "Option: [required params for register] connectionName, name, cspClusterId",
+                        "name": "option",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Details of the Cluster object",
+                        "name": "clusterReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbClusterReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbClusterInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all Clusters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Delete all Clusters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Delete resources containing matched ID-substring only",
+                        "name": "match",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cluster/{clusterId}": {
+            "get": {
+                "description": "Get Cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Get Cluster",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "c1",
+                        "description": "Cluster ID",
+                        "name": "clusterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbClusterInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete Cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Delete Cluster",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster ID",
+                        "name": "clusterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cluster/{clusterId}/nodegroup": {
+            "post": {
+                "description": "Add a NodeGroup",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Add a NodeGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster ID",
+                        "name": "clusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Details of the NodeGroup object",
+                        "name": "nodeGroupReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbNodeGroupReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbClusterInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}": {
+            "delete": {
+                "description": "Remove a NodeGroup",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Remove a NodeGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster ID",
+                        "name": "clusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NodeGroup Name",
+                        "name": "nodeGroupName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}/autoscalesize": {
+            "put": {
+                "description": "Change a NodeGroup's Autoscale Size",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Change a NodeGroup's Autoscale Size",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster ID",
+                        "name": "clusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NodeGroup Name",
+                        "name": "nodeGroupName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}/onautoscaling": {
+            "put": {
+                "description": "Set a NodeGroup's Autoscaling On/Off",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Set a NodeGroup's Autoscaling On/Off",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster ID",
+                        "name": "clusterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "NodeGroup Name",
+                        "name": "nodeGroupName",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/cmd/mcis/{mcisId}": {
             "post": {
                 "description": "Send a command to specified MCIS",
@@ -9253,6 +9768,23 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.ClusterStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "ClusterCreating",
+                "ClusterActive",
+                "ClusterInactive",
+                "ClusterUpdating",
+                "ClusterDeleting"
+            ]
+        },
         "mcis.DeploymentPlan": {
             "type": "object",
             "properties": {
@@ -9666,6 +10198,23 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.NodeGroupStatus": {
+            "type": "string",
+            "enum": [
+                "Creating",
+                "Active",
+                "Inactive",
+                "Updating",
+                "Deleting"
+            ],
+            "x-enum-varnames": [
+                "NodeGroupCreating",
+                "NodeGroupActive",
+                "NodeGroupInactive",
+                "NodeGroupUpdating",
+                "NodeGroupDeleting"
+            ]
+        },
         "mcis.Operation": {
             "type": "object",
             "properties": {
@@ -9831,6 +10380,17 @@ const docTemplate = `{
             "properties": {
                 "host": {
                     "type": "string"
+                }
+            }
+        },
+        "mcis.RestGetAllClusterResponse": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbClusterInfo"
+                    }
                 }
             }
         },
@@ -10113,6 +10673,242 @@ const docTemplate = `{
                 "countUndefined": {
                     "description": "CountUndefined is for counting Undefined",
                     "type": "integer"
+                }
+            }
+        },
+        "mcis.TbClusterAccessInfo": {
+            "type": "object",
+            "properties": {
+                "endpoint": {
+                    "type": "string",
+                    "example": "http://1.2.3.4:6443"
+                },
+                "kubeconfig": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.TbClusterAddonsInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                }
+            }
+        },
+        "mcis.TbClusterInfo": {
+            "type": "object",
+            "properties": {
+                "accessInfo": {
+                    "$ref": "#/definitions/mcis.TbClusterAccessInfo"
+                },
+                "addons": {
+                    "$ref": "#/definitions/mcis.TbClusterAddonsInfo"
+                },
+                "connectionName": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "type": "string",
+                    "example": "1970-01-01T00:00:00.00Z"
+                },
+                "cspClusterId": {
+                    "type": "string"
+                },
+                "cspClusterName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "network": {
+                    "$ref": "#/definitions/mcis.TbClusterNetworkInfo"
+                },
+                "nodeGroupList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbClusterNodeGroupInfo"
+                    }
+                },
+                "status": {
+                    "description": "Creating, Active, Inactive, Updating, Deleting",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mcis.ClusterStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                },
+                "systemLabel": {
+                    "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
+                    "type": "string",
+                    "example": "Managed by CB-Tumblebug"
+                },
+                "systemMessage": {
+                    "description": "Latest system message such as error message",
+                    "type": "string",
+                    "example": "Failed because ..."
+                },
+                "version": {
+                    "description": "Kubernetes Version, ex) 1.23.3",
+                    "type": "string",
+                    "example": "1.23.3"
+                }
+            }
+        },
+        "mcis.TbClusterNetworkInfo": {
+            "type": "object",
+            "properties": {
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vNetId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.TbClusterNodeGroupInfo": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "imageId": {
+                    "description": "VM config.",
+                    "type": "string"
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer"
+                },
+                "minNodeSize": {
+                    "type": "integer"
+                },
+                "nodes": {
+                    "description": "id for nodes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "onAutoScaling": {
+                    "description": "Scaling config.",
+                    "type": "boolean"
+                },
+                "rootDiskSize": {
+                    "type": "string"
+                },
+                "rootDiskType": {
+                    "type": "string"
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "---",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mcis.NodeGroupStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                }
+            }
+        },
+        "mcis.TbClusterReq": {
+            "type": "object",
+            "required": [
+                "connectionName",
+                "id",
+                "securityGroupIds",
+                "subnetIds",
+                "vNetId"
+            ],
+            "properties": {
+                "connectionName": {
+                    "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"ns01\"` + "`" + `",
+                    "type": "string",
+                    "example": "testcloud01-seoul"
+                },
+                "cspClusterId": {
+                    "description": "Fields for \"Register existing cluster\" feature\nCspClusterId is required to register a cluster from CSP (option=register)",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "(1) Cluster Info",
+                    "type": "string",
+                    "example": "testcloud01-seoul-cluster"
+                },
+                "nodeGroupList": {
+                    "description": "(3) NodeGroupInfo List",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcis.TbNodeGroupReq"
+                    }
+                },
+                "securityGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subnetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vNetId": {
+                    "description": "(2) Network Info",
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.23.4"
                 }
             }
         },
@@ -10571,6 +11367,46 @@ const docTemplate = `{
                 "subGroupId": {
                     "type": "string",
                     "example": "g1"
+                }
+            }
+        },
+        "mcis.TbNodeGroupReq": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "string"
+                },
+                "imageId": {
+                    "type": "string"
+                },
+                "maxNodeSize": {
+                    "type": "string"
+                },
+                "minNodeSize": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "onAutoScaling": {
+                    "description": "autoscale config.",
+                    "type": "string"
+                },
+                "rootDiskSize": {
+                    "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
+                    "type": "string",
+                    "example": "default, 30, 42, ..."
+                },
+                "rootDiskType": {
+                    "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
+                    "type": "string",
+                    "example": "default, TYPE1, ..."
+                },
+                "specId": {
+                    "type": "string"
+                },
+                "sshKeyId": {
+                    "type": "string"
                 }
             }
         },

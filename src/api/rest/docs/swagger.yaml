@@ -1191,6 +1191,20 @@ definitions:
       vmSpec:
         $ref: '#/definitions/mcir.TbSpecInfo'
     type: object
+  mcis.ClusterStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - ClusterCreating
+    - ClusterActive
+    - ClusterInactive
+    - ClusterUpdating
+    - ClusterDeleting
   mcis.DeploymentPlan:
     properties:
       filter:
@@ -1473,6 +1487,20 @@ definitions:
         example: localhost:8053
         type: string
     type: object
+  mcis.NodeGroupStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - NodeGroupCreating
+    - NodeGroupActive
+    - NodeGroupInactive
+    - NodeGroupUpdating
+    - NodeGroupDeleting
   mcis.Operation:
     properties:
       operand:
@@ -1588,6 +1616,13 @@ definitions:
     properties:
       host:
         type: string
+    type: object
+  mcis.RestGetAllClusterResponse:
+    properties:
+      cluster:
+        items:
+          $ref: '#/definitions/mcis.TbClusterInfo'
+        type: array
     type: object
   mcis.RestGetAllMcisPolicyResponse:
     properties:
@@ -1777,6 +1812,170 @@ definitions:
       countUndefined:
         description: CountUndefined is for counting Undefined
         type: integer
+    type: object
+  mcis.TbClusterAccessInfo:
+    properties:
+      endpoint:
+        example: http://1.2.3.4:6443
+        type: string
+      kubeconfig:
+        type: string
+    type: object
+  mcis.TbClusterAddonsInfo:
+    properties:
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+    type: object
+  mcis.TbClusterInfo:
+    properties:
+      accessInfo:
+        $ref: '#/definitions/mcis.TbClusterAccessInfo'
+      addons:
+        $ref: '#/definitions/mcis.TbClusterAddonsInfo'
+      connectionName:
+        type: string
+      createdTime:
+        example: "1970-01-01T00:00:00.00Z"
+        type: string
+      cspClusterId:
+        type: string
+      cspClusterName:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      name:
+        type: string
+      network:
+        $ref: '#/definitions/mcis.TbClusterNetworkInfo'
+      nodeGroupList:
+        items:
+          $ref: '#/definitions/mcis.TbClusterNodeGroupInfo'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/mcis.ClusterStatus'
+        description: Creating, Active, Inactive, Updating, Deleting
+        example: Creating
+      systemLabel:
+        description: SystemLabel is for describing the MCIR in a keyword (any string
+          can be used) for special System purpose
+        example: Managed by CB-Tumblebug
+        type: string
+      systemMessage:
+        description: Latest system message such as error message
+        example: Failed because ...
+        type: string
+      version:
+        description: Kubernetes Version, ex) 1.23.3
+        example: 1.23.3
+        type: string
+    type: object
+  mcis.TbClusterNetworkInfo:
+    properties:
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      securityGroupIds:
+        items:
+          type: string
+        type: array
+      subnetIds:
+        items:
+          type: string
+        type: array
+      vNetId:
+        type: string
+    type: object
+  mcis.TbClusterNodeGroupInfo:
+    properties:
+      desiredNodeSize:
+        type: integer
+      id:
+        type: string
+      imageId:
+        description: VM config.
+        type: string
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      maxNodeSize:
+        type: integer
+      minNodeSize:
+        type: integer
+      nodes:
+        description: id for nodes
+        items:
+          type: string
+        type: array
+      onAutoScaling:
+        description: Scaling config.
+        type: boolean
+      rootDiskSize:
+        type: string
+      rootDiskType:
+        type: string
+      specId:
+        type: string
+      sshKeyId:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/mcis.NodeGroupStatus'
+        description: '---'
+        example: Creating
+    type: object
+  mcis.TbClusterReq:
+    properties:
+      connectionName:
+        description: Namespace      string `json:"namespace" validate:"required" example:"ns01"`
+        example: testcloud01-seoul
+        type: string
+      cspClusterId:
+        description: |-
+          Fields for "Register existing cluster" feature
+          CspClusterId is required to register a cluster from CSP (option=register)
+        type: string
+      description:
+        type: string
+      id:
+        description: (1) Cluster Info
+        example: testcloud01-seoul-cluster
+        type: string
+      nodeGroupList:
+        description: (3) NodeGroupInfo List
+        items:
+          $ref: '#/definitions/mcis.TbNodeGroupReq'
+        type: array
+      securityGroupIds:
+        items:
+          type: string
+        type: array
+      subnetIds:
+        items:
+          type: string
+        type: array
+      vNetId:
+        description: (2) Network Info
+        type: string
+      version:
+        example: 1.23.4
+        type: string
+    required:
+    - connectionName
+    - id
+    - securityGroupIds
+    - subnetIds
+    - vNetId
     type: object
   mcis.TbIdNameInDetailInfo:
     properties:
@@ -2116,6 +2315,37 @@ definitions:
         type: string
       subGroupId:
         example: g1
+        type: string
+    type: object
+  mcis.TbNodeGroupReq:
+    properties:
+      desiredNodeSize:
+        type: string
+      imageId:
+        type: string
+      maxNodeSize:
+        type: string
+      minNodeSize:
+        type: string
+      name:
+        type: string
+      onAutoScaling:
+        description: autoscale config.
+        type: string
+      rootDiskSize:
+        description: '"default", Integer (GB): ["50", ..., "1000"]'
+        example: default, 30, 42, ...
+        type: string
+      rootDiskType:
+        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
+          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
+          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
+          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
+        example: default, TYPE1, ...
+        type: string
+      specId:
+        type: string
+      sshKeyId:
         type: string
     type: object
   mcis.TbScaleOutSubGroupReq:
@@ -3364,6 +3594,352 @@ paths:
       summary: Run MCIS benchmark for network latency
       tags:
       - '[Infra service] MCIS Performance benchmarking (WIP)'
+  /ns/{nsId}/cluster:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all Clusters
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all Clusters
+      tags:
+      - '[Infra resource] Cluster management'
+    get:
+      consumes:
+      - application/json
+      description: List all Clusters or Clusters' ID
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
+      - description: 'Field key for filtering (ex: cspClusterName)'
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
+        in: query
+        name: filterVal
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          schema:
+            allOf:
+            - $ref: '#/definitions/mcis.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcis.RestGetAllClusterResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all Clusters or Clusters' ID
+      tags:
+      - '[Infra resource] Cluster management'
+    post:
+      consumes:
+      - application/json
+      description: Create Cluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: 'Option: [required params for register] connectionName, name,
+          cspClusterId'
+        enum:
+        - register
+        in: query
+        name: option
+        type: string
+      - description: Details of the Cluster object
+        in: body
+        name: clusterReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbClusterReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbClusterInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create Cluster
+      tags:
+      - '[Infra resource] Cluster management'
+  /ns/{nsId}/cluster/{clusterId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Cluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Cluster ID
+        in: path
+        name: clusterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete Cluster
+      tags:
+      - '[Infra resource] Cluster management'
+    get:
+      consumes:
+      - application/json
+      description: Get Cluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: c1
+        description: Cluster ID
+        in: path
+        name: clusterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbClusterInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get Cluster
+      tags:
+      - '[Infra resource] Cluster management'
+  /ns/{nsId}/cluster/{clusterId}/nodegroup:
+    post:
+      consumes:
+      - application/json
+      description: Add a NodeGroup
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Cluster ID
+        in: path
+        name: clusterId
+        required: true
+        type: string
+      - description: Details of the NodeGroup object
+        in: body
+        name: nodeGroupReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbNodeGroupReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbClusterInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Add a NodeGroup
+      tags:
+      - '[Infra resource] Cluster management'
+  /ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a NodeGroup
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Cluster ID
+        in: path
+        name: clusterId
+        required: true
+        type: string
+      - description: NodeGroup Name
+        in: path
+        name: nodeGroupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Remove a NodeGroup
+      tags:
+      - '[Infra resource] Cluster management'
+  /ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}/autoscalesize:
+    put:
+      consumes:
+      - application/json
+      description: Change a NodeGroup's Autoscale Size
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Cluster ID
+        in: path
+        name: clusterId
+        required: true
+        type: string
+      - description: NodeGroup Name
+        in: path
+        name: nodeGroupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Change a NodeGroup's Autoscale Size
+      tags:
+      - '[Infra resource] Cluster management'
+  /ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}/onautoscaling:
+    put:
+      consumes:
+      - application/json
+      description: Set a NodeGroup's Autoscaling On/Off
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Cluster ID
+        in: path
+        name: clusterId
+        required: true
+        type: string
+      - description: NodeGroup Name
+        in: path
+        name: nodeGroupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Set a NodeGroup's Autoscaling On/Off
+      tags:
+      - '[Infra resource] Cluster management'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
