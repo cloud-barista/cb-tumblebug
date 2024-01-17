@@ -243,3 +243,41 @@ func EndRequestWithLog(c echo.Context, reqID string, err error, responseData int
 
 	return c.JSON(http.StatusNotFound, map[string]string{"message": "Invalid Request ID"})
 }
+
+// ForwardRequestToAny forwards the given request to the specified path
+func ForwardRequestToAny(reqPath string, method string, requestBody interface{}) (interface{}, error) {
+	client := resty.New()
+	var callResult interface{}
+
+	url := SpiderRestUrl + "/" + reqPath
+
+	var requestBodyBytes []byte
+	var ok bool
+	if requestBodyBytes, ok = requestBody.([]byte); !ok {
+		return nil, fmt.Errorf("requestBody is not []byte type")
+	}
+
+	var requestBodyMap map[string]interface{}
+	err := json.Unmarshal(requestBodyBytes, &requestBodyMap)
+	if err != nil {
+		return nil, fmt.Errorf("JSON unmarshal error: %v", err)
+	}
+
+	err = ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBodyMap),
+		&requestBodyMap,
+		&callResult,
+		MediumDuration,
+	)
+
+	if err != nil {
+		CBLog.Error(err)
+		return nil, err
+	}
+
+	return callResult, nil
+}
