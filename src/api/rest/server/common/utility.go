@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -458,6 +459,10 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 func RestForwardAnyReqToAny(c echo.Context) error {
 	reqID := common.StartRequestWithLog(c)
 	reqPath := c.Param("*")
+	reqPath, err := url.PathUnescape(reqPath)
+	if err != nil {
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
 
 	fmt.Printf("reqPath: %s\n", reqPath)
 
