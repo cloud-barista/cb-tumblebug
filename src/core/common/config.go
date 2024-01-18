@@ -53,8 +53,9 @@ type Cloud struct {
 
 // CloudSetting is structure for cloud settings per CSP in details
 type CloudSetting struct {
-	Enable string     `yaml:"enable"`
-	Nlb    NlbSetting `yaml:"nlb"`
+	Enable  string         `yaml:"enable"`
+	Nlb     NlbSetting     `yaml:"nlb"`
+	Cluster ClusterSetting `yaml:"cluster"`
 }
 
 // NlbSetting is structure for NLB setting
@@ -76,6 +77,11 @@ type Nlbsw struct {
 	NlbMcisCommonSpec       string `yaml:"nlbMcisCommonSpec"`
 	NlbMcisCommonImage      string `yaml:"nlbMcisCommonImage"`
 	NlbMcisSubGroupSize     string `yaml:"nlbMcisSubGroupSize"`
+}
+
+// ClusterSetting is structure for Cluster setting
+type ClusterSetting struct {
+	Enable string `yaml:"enable"`
 }
 
 // type DataDiskCmd string

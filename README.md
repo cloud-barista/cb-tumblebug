@@ -378,6 +378,10 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     - `7.spec`  # MCIR spec 등록 관련 스크립트 모음
     - `8.mcis`  # MCIS 생성 및 제어, MCIS 원격 커맨드 등 스크립트 모음
     - `9.monitoring`  # CB-TB를 통해서 CB-DF 모니터링 에이전트 설치 및 모니터링 테스트 스크립트 모음
+    - `10.nlb`  # NLB 관련 스크립트 모음
+    - `11.dataDisk`  # dataDisk 관련 스크립트 모음
+    - `12.customImage`  # customImage 관련 스크립트 모음
+    - `13.cluster`  # cluster 관련 스크립트 모음
 
 #### 통합 제어 시험
 - `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 전체 과정을 한번에 테스트 가능
@@ -391,6 +395,13 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
       ├── create-mcis-for-df.sh  # CB-Dragonfly 호스팅을 위한 MCIS 생성        
       ├── deploy-dragonfly-docker.sh  # MCIS에 CB-Dragonfly 자동 배포 및 환경 자동 설정      
       ├── clean-all.sh  # 모든 오브젝트를 생성의 역순으로 삭제
+      ├── create-cluster-only.sh # testSet에 지정된 멀티 클라우드 인프라를 대상으로 K8s 클러스터를 생성
+      ├── clean-cluster-only.sh # testSet에 지정된 멀티 클라우드 인프라를 대상으로 K8s 클러스터를 삭제
+      ├── add-nodegroup.sh # 생성된 K8s 클러스터에 신규 노드그룹을 생성
+      ├── remove-nodegroup.sh # 생성된 K8s 클러스터에 생성된 신규 노드그룹을 삭제
+      ├── set-nodegroup-autoscaling.sh # 생성된 노드그룹의 오토스케일링 설정값을 off로 변경
+      ├── change-nodegroup-autoscalesize.sh # 생성된 노드그룹의 오토스케일 크기를 변경
+      ├── deploy-wavescope-to-cluster.sh # 생성된 K8s 클러스터에 weavescope를 배포
       └── executionStatus  # 수행이 진행된 테스트 로그 (testAll 수행시 정보가 추가되며, cleanAll 수행시 정보가 제거됨. 진행중인 작업 확인 가능)
 
   ```
@@ -449,6 +460,17 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   - MCIS SSH 원격 커맨드 실행을 통해 VM 통합 커맨드 확인
     - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
+  - K8s 클러스터 테스트
+    - `initMultiCloudEnv.sh`를 사전 실행함을 가정
+    - `./create-mcir-ns-cloud.sh -n tb -f ../testSet.env`  # K8s 클러스터 생성에 필요한 MCIR 생성
+    - `./create-cluster-only.sh -n tb -f ../testSet.env -x 1`  # K8s 클러스터를 생성(-x 최대노드수)
+    - `./add-nodegroup.sh -n tb -f ../testSet.env -x 1`  # K8s 클러스터에 신규 노드 그룹 추가
+    - `./change-nodegroup-autoscalesize.sh -n tb -f ../testSet.env -x 1`  # 신규 노드 그룹의 autoscale size를 기존+1로 변경
+    - `./deploy-weavescope-to-cluster.sh -n tb -f ../testSet.env -y n`  # 생성한 클러스터에 weascope를 배포
+    - `./set-nodegroup-autoscaling.sh -n tb -f ../testSet.env`  # 신규 노드그룹의 autosacling 설정값을 off로 변경
+    - `./remove-nodegroup.sh -n tb -f ../testSet.env`  # 신규 생성한 노드그룹을 삭제
+    - `./clean-cluster-only.sh -n tb -f ../testSet.env`  # 생성한 K8s 클러스터를 삭제
+    - `./clean-mcir-ns-cloud.h -n tb -f ../testSet.env`  # 생성한 MCIR 삭제
 
     
 <details>
