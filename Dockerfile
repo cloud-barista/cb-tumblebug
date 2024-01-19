@@ -20,7 +20,7 @@ COPY scripts ./scripts
 COPY conf ./conf
 
 # Building the Go application with specific flags
-RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -v -o cb-tumblebug src/main.go
+RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -v -o src/cb-tumblebug src/main.go
 
 #############################################################
 ## Stage 2 - Application Setup
