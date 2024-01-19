@@ -2,77 +2,66 @@
 ## Stage 1 - Go Build
 ##############################################################
 
+# Using a specific version of golang based on alpine for building the application
 FROM golang:1.21.6-alpine AS builder
 
-#RUN apk update && apk add --no-cache bash
+# Installing necessary packages
+# sqlite-libs and sqlite-dev for SQLite support
+# build-base for common build requirements
+RUN apk add --no-cache sqlite-libs sqlite-dev build-base
 
-#RUN apk add gcc
-
-RUN apk add --no-cache sqlite-libs sqlite-dev
-
-RUN apk add --no-cache build-base
-
-ADD . /go/src/github.com/cloud-barista/cb-tumblebug
-
+# Copying only necessary files for the build
 WORKDIR /go/src/github.com/cloud-barista/cb-tumblebug
+COPY go.mod go.sum go.work go.work.sum ./
+RUN go mod download
+COPY src ./src
+COPY assets ./assets
+COPY scripts ./scripts
+COPY conf ./conf
 
-WORKDIR src
-
-RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -o cb-tumblebug -v
+# Building the Go application with specific flags
+RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -v -o src/cb-tumblebug src/main.go
 
 #############################################################
 ## Stage 2 - Application Setup
 ##############################################################
 
+# Using the latest Ubuntu image for the production stage
 FROM ubuntu:latest as prod
 
-# use bash
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
+# Setting the working directory for the application
 WORKDIR /app/src
 
+# Copying necessary files from the builder stage to the production stage
+# Assets, scripts, and configuration files are copied excluding credentials.conf
+# which should be specified in .dockerignore
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/assets/ /app/assets/
-
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/scripts/ /app/scripts/
-
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/conf/ /app/conf/
-
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumblebug /app/src/
 
-#RUN /bin/bash -c "source /app/conf/setup.env"
-ENV CBTUMBLEBUG_ROOT /app
-ENV CBSTORE_ROOT /app
-ENV CBLOG_ROOT /app
-ENV SPIDER_CALL_METHOD REST
-ENV DRAGONFLY_CALL_METHOD REST
-ENV SPIDER_REST_URL http://cb-spider:1024/spider
-ENV DRAGONFLY_REST_URL http://cb-dragonfly:9090/dragonfly
+# Setting various environment variables required by the application
+ENV CBTUMBLEBUG_ROOT=/app \
+    CBSTORE_ROOT=/app \
+    CBLOG_ROOT=/app \
+    SPIDER_CALL_METHOD=REST \
+    DRAGONFLY_CALL_METHOD=REST \
+    SPIDER_REST_URL=http://cb-spider:1024/spider \
+    DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly \
+    DB_URL=localhost:3306 \
+    DB_DATABASE=cb_tumblebug \
+    DB_USER=cb_tumblebug \
+    DB_PASSWORD=cb_tumblebug \
+    ALLOW_ORIGINS=* \
+    ENABLE_AUTH=true \
+    API_USERNAME=default \
+    API_PASSWORD=default \
+    AUTOCONTROL_DURATION_MS=10000 \
+    SELF_ENDPOINT=localhost:1323 \
+    API_DOC_PATH=/app/src/api/rest/docs/swagger.json
 
-ENV DB_URL localhost:3306
-ENV DB_DATABASE cb_tumblebug
-ENV DB_USER cb_tumblebug
-ENV DB_PASSWORD cb_tumblebug
-
-# API Setting
-# ALLOW_ORIGINS (ex: https://cloud-barista.org,xxx.xxx.xxx.xxx or * for all)
-ENV ALLOW_ORIGINS *
-## Set ENABLE_AUTH=true currently for basic auth for all routes (i.e., url or path)
-ENV ENABLE_AUTH true
-ENV API_USERNAME default
-ENV API_PASSWORD default
-
-# Set period for auto control goroutine invocation
-ENV AUTOCONTROL_DURATION_MS 10000
-
-# Set SELF_ENDPOINT, if you want to access Swagger API dashboard from outside. (Ex: export SELF_ENDPOINT=xxx.xxx.xxx.xxx:1323)
-ENV SELF_ENDPOINT localhost:1323
-
-
-# Environment variables that you don't need to touch
-
-# Swagger UI API document file path 
-ENV API_DOC_PATH /app/src/api/rest/docs/swagger.json
-
+# Setting the entrypoint for the application
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
 
+# Exposing the port that the application will run on
 EXPOSE 1323
