@@ -1,0 +1,7 @@
+.github/
+i18n/
+log/
+logs/
+meta_db/
+**/credentials.conf
+.gitignore
