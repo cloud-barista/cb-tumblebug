@@ -229,15 +229,24 @@ func calculateHostCapacity(maskSize, bits int) (int, error) {
 }
 
 // ///////////////////////////////////////////////////////////////////
+// SubnettingRuleType defines the type for subnetting rules.
+type SubnettingRuleType string
+
+// SubnettingRuleType constants.
+const (
+	SubnettingRuleTypeMinSubnets SubnettingRuleType = "minSubnets"
+	SubnettingRuleTypeMinHosts   SubnettingRuleType = "minHosts"
+)
+
 // Models for subnetting
 type SubnettingRequest struct {
-	CIDRBlock       string           `json:"cidrBlock"`
+	CIDRBlock       string           `json:"cidrBlock" example:"192.168.0.0/16"`
 	SubnettingRules []SubnettingRule `json:"subnettingRules"`
 }
 
 type SubnettingRule struct {
-	Type  string `json:"type"`
-	Value int    `json:"value"`
+	Type  SubnettingRuleType `json:"type" example:"minSubnets" enum:"minSubnets,minHosts"`
+	Value int                `json:"value" example:"2"`
 }
 
 // Functions for subnetting
@@ -267,9 +276,9 @@ func subnetting(network Network, rules []SubnettingRule) (Network, error) {
 
 	// Subnetting by the given rule
 	switch rule.Type {
-	case "minSubnets":
+	case SubnettingRuleTypeMinSubnets:
 		subnetsStr, err = SubnettingByMinimumSubnetCount(network.CIDRBlock, rule.Value)
-	case "minHosts":
+	case SubnettingRuleTypeMinHosts:
 		subnetsStr, err = SubnettingByMinimumHosts(network.CIDRBlock, rule.Value)
 	default:
 		return network, fmt.Errorf("unknown rule type: %s", rule.Type)
@@ -465,7 +474,6 @@ func NextSubnet(currentSubnetCIDR string, baseNetworkCIDR string) (string, error
 
 	return fmt.Sprintf("%s/%d", nextIP.String(), maskSize), nil
 }
-
 
 // PreviousSubnet find and check the previous subnet based on the base/parent network.
 func PreviousSubnet(currentSubnet string, baseNetworkCIDR string) (string, error) {

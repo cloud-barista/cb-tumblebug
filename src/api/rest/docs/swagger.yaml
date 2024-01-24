@@ -2718,6 +2718,61 @@ definitions:
       onTumblebug:
         $ref: '#/definitions/mcis.resourceOnTumblebug'
     type: object
+  netutil.Network:
+    properties:
+      cidrBlock:
+        type: string
+      name:
+        type: string
+      subnets:
+        items:
+          $ref: '#/definitions/netutil.Network'
+        type: array
+    type: object
+  netutil.RestPostUtilToDesignNetworkReponse:
+    properties:
+      cidrBlock:
+        type: string
+      name:
+        type: string
+      subnets:
+        items:
+          $ref: '#/definitions/netutil.Network'
+        type: array
+    type: object
+  netutil.RestPostUtilToDesignNetworkRequest:
+    properties:
+      cidrBlock:
+        example: 192.168.0.0/16
+        type: string
+      subnettingRules:
+        items:
+          $ref: '#/definitions/netutil.SubnettingRule'
+        type: array
+    type: object
+  netutil.RestPostUtilToValidateNetworkRequest:
+    properties:
+      networkConfiguration:
+        $ref: '#/definitions/netutil.Network'
+    type: object
+  netutil.SubnettingRule:
+    properties:
+      type:
+        allOf:
+        - $ref: '#/definitions/netutil.SubnettingRuleType'
+        example: minSubnets
+      value:
+        example: 2
+        type: integer
+    type: object
+  netutil.SubnettingRuleType:
+    enum:
+    - minSubnets
+    - minHosts
+    type: string
+    x-enum-varnames:
+    - SubnettingRuleTypeMinSubnets
+    - SubnettingRuleTypeMinHosts
 info:
   contact:
     email: contact-to-cloud-barista@googlegroups.com
@@ -8120,6 +8175,68 @@ paths:
       summary: Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns
       tags:
       - '[Infra service] MCIS Provisioning management'
+  /util/net/design:
+    post:
+      consumes:
+      - application/json
+      description: Design a hierarchical network configuration of a VPC network or
+        multi-cloud network consisting of multiple VPC networks
+      parameters:
+      - description: A root/main network CIDR block and subnetting rules
+        in: body
+        name: subnettingReq
+        required: true
+        schema:
+          $ref: '#/definitions/netutil.RestPostUtilToDesignNetworkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/netutil.RestPostUtilToDesignNetworkReponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Design a multi-cloud network configuration
+      tags:
+      - '[Utility] Multi-cloud network design'
+  /util/net/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate a hierarchical configuration of a VPC network or multi-cloud
+        network consisting of multiple VPC networks
+      parameters:
+      - description: A hierarchical network configuration
+        in: body
+        name: subnettingReq
+        required: true
+        schema:
+          $ref: '#/definitions/netutil.RestPostUtilToValidateNetworkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Validate a multi-cloud network configuration
+      tags:
+      - '[Utility] Multi-cloud network design'
 securityDefinitions:
   BasicAuth:
     type: basic

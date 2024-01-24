@@ -27,6 +27,7 @@ import (
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
 	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
+	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
 
 	"crypto/subtle"
 	"fmt"
@@ -191,6 +192,10 @@ func RunServer(port string) {
 	e.DELETE("/tumblebug/ns/:nsId/defaultResources", rest_mcir.RestDelAllDefaultResources)
 
 	e.POST("/tumblebug/forward/*", rest_common.RestForwardAnyReqToAny)
+
+	// Utility for network design
+	e.POST("/tumblebug/util/net/design", rest_netutil.RestPostUtilToDesignNetwork)
+	e.POST("/tumblebug/util/net/validate", rest_netutil.RestPostUtilToValidateNetwork)
 
 	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())
