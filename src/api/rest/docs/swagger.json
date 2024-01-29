@@ -7967,6 +7967,98 @@
                 }
             }
         },
+        "/util/net/design": {
+            "post": {
+                "description": "Design a hierarchical network configuration of a VPC network or multi-cloud network consisting of multiple VPC networks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Utility] Multi-cloud network design"
+                ],
+                "summary": "Design a multi-cloud network configuration",
+                "parameters": [
+                    {
+                        "description": "A root/main network CIDR block and subnetting rules",
+                        "name": "subnettingReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/netutil.RestPostUtilToDesignNetworkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/netutil.RestPostUtilToDesignNetworkReponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/util/net/validate": {
+            "post": {
+                "description": "Validate a hierarchical configuration of a VPC network or multi-cloud network consisting of multiple VPC networks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Utility] Multi-cloud network design"
+                ],
+                "summary": "Validate a multi-cloud network configuration",
+                "parameters": [
+                    {
+                        "description": "A hierarchical network configuration",
+                        "name": "subnettingReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/netutil.RestPostUtilToValidateNetworkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/{nsId}/checkResource/{resourceType}/{resourceId}": {
             "get": {
                 "description": "Check resources' existence",
@@ -11921,6 +12013,91 @@
                     "$ref": "#/definitions/mcis.resourceOnTumblebug"
                 }
             }
+        },
+        "netutil.Network": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/netutil.Network"
+                    }
+                }
+            }
+        },
+        "netutil.RestPostUtilToDesignNetworkReponse": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/netutil.Network"
+                    }
+                }
+            }
+        },
+        "netutil.RestPostUtilToDesignNetworkRequest": {
+            "type": "object",
+            "properties": {
+                "cidrBlock": {
+                    "type": "string",
+                    "example": "192.168.0.0/16"
+                },
+                "subnettingRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/netutil.SubnettingRule"
+                    }
+                }
+            }
+        },
+        "netutil.RestPostUtilToValidateNetworkRequest": {
+            "type": "object",
+            "properties": {
+                "networkConfiguration": {
+                    "$ref": "#/definitions/netutil.Network"
+                }
+            }
+        },
+        "netutil.SubnettingRule": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/netutil.SubnettingRuleType"
+                        }
+                    ],
+                    "example": "minSubnets"
+                },
+                "value": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "netutil.SubnettingRuleType": {
+            "type": "string",
+            "enum": [
+                "minSubnets",
+                "minHosts"
+            ],
+            "x-enum-varnames": [
+                "SubnettingRuleTypeMinSubnets",
+                "SubnettingRuleTypeMinHosts"
+            ]
         }
     },
     "securityDefinitions": {

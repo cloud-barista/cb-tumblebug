@@ -189,20 +189,26 @@ func runExample(cmd *cobra.Command, args []string) {
 	fmt.Printf("[Network configuration to validate]\n%s\n", string(pretty))
 
 	if err := netutil.ValidateNetwork(network); err != nil {
-		fmt.Println("Network configuration is valid.")
-	} else {
 		fmt.Println("Network configuration is invalid.")
 	}
+
+	fmt.Println("Network configuration is valid.")
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	fmt.Println("\nSubnetting a CIDR block by requests")
 	request := netutil.SubnettingRequest{
 		CIDRBlock: cidrBlock,
 		SubnettingRules: []netutil.SubnettingRule{
-			{Type: "minSubnets", Value: minSubnets},
-			{Type: "minHosts", Value: hostsPerSubnet},
+			{Type: netutil.SubnettingRuleTypeMinSubnets, Value: minSubnets},
+			{Type: netutil.SubnettingRuleTypeMinHosts, Value: hostsPerSubnet},
 		},
 	}
+
+	pretty, err = json.MarshalIndent(request, "", "   ")
+	if err != nil {
+		fmt.Printf("marshaling error: %s\n", err)
+	}
+	fmt.Printf("[Subnetting request]\n%s\n", string(pretty))
 
 	// Subnetting by requests
 	networkConfig, err := netutil.SubnettingBy(request)
