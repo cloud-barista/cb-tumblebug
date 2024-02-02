@@ -1306,7 +1306,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	}
 
 	vmRequest := req.Vm
-	// Check whether VM names meet requirement.
+	// Check whether VM names meet requirement. If not, generate default resources dynamically.
 	for _, k := range vmRequest {
 		vmReq, err := getVmReqFromDynamicReq(nsId, &k)
 		if err != nil {
