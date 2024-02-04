@@ -7,18 +7,26 @@ function CallTB() {
 	CIDRDiff=$(($CIDRNum*$REGION))
 	CIDRDiff=$(($CIDRDiff%254))
 
+	CidrBlock="10.${CIDRDiff}.0.0/16"
+	IPv4CIDR01="10.${CIDRDiff}.0.0/18"
+	IPv4CIDR02="10.${CIDRDiff}.64.0/18"
+
+	CidrBlock="10.1.0.0/16" # test for ncp
+	IPv4CIDR01="10.1.0.0/18"
+	IPv4CIDR02="10.1.64.0/18"
+
     resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF
         {
 			"name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
 			"connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-			"cidrBlock": "10.${CIDRDiff}.0.0/16",
+			"cidrBlock": "${CidrBlock}",
 			"subnetInfoList": [ {
 				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-				"IPv4_CIDR": "10.${CIDRDiff}.0.0/18"
+				"IPv4_CIDR": "${IPv4CIDR01}"
 			}, {
 				"Name": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}-01",
-				"IPv4_CIDR": "10.${CIDRDiff}.64.0/18"
+				"IPv4_CIDR": "${IPv4CIDR02}"
 			} ]
 		}
 EOF

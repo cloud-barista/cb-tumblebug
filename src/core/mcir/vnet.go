@@ -17,7 +17,6 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
@@ -152,12 +151,11 @@ type BastionNode struct {
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
 func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	fmt.Println("=========================== CreateVNet")
-
+	temp := TbVNetInfo{}
 	resourceType := common.StrVNet
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbVNetInfo{}
 		common.CBLog.Error(err)
 		return temp, err
 	}
@@ -165,8 +163,6 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
-			temp := TbVNetInfo{}
 			return temp, err
 		}
 
@@ -177,13 +173,11 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if check {
-		temp := TbVNetInfo{}
 		err := fmt.Errorf("The vNet " + u.Name + " already exists.")
 		return temp, err
 	}
 
 	if err != nil {
-		temp := TbVNetInfo{}
 		err := fmt.Errorf("Failed to check the existence of the vNet " + u.Name + ".")
 		return temp, err
 	}
@@ -210,59 +204,45 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		requestBody.ReqInfo.SubnetInfoList = append(requestBody.ReqInfo.SubnetInfoList, spiderSubnetInfo)
 	}
 
-	var tempSpiderVPCInfo *SpiderVPCInfo
-
-	client := resty.New().SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	req := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&SpiderVPCInfo{}) // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-
-	var resp *resty.Response
-
+	client := resty.New()
+	method := "POST"
+	var callResult SpiderVPCInfo
 	var url string
+
 	if option == "register" && u.CspVNetId == "" {
 		url = fmt.Sprintf("%s/vpc/%s", common.SpiderRestUrl, u.Name)
-		resp, err = req.Get(url)
+		method = "GET"
 	} else if option == "register" && u.CspVNetId != "" {
 		url = fmt.Sprintf("%s/regvpc", common.SpiderRestUrl)
-		resp, err = req.Post(url)
 	} else { // option != "register"
 		url = fmt.Sprintf("%s/vpc", common.SpiderRestUrl)
-		resp, err = req.Post(url)
 	}
 
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 	if err != nil {
 		common.CBLog.Error(err)
-		content := TbVNetInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		return temp, err
 	}
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
-		content := TbVNetInfo{}
-		return content, err
-	}
-
-	tempSpiderVPCInfo = resp.Result().(*SpiderVPCInfo)
 
 	content := TbVNetInfo{}
 	//content.Id = common.GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.ConnectionName = u.ConnectionName
-	content.CspVNetId = tempSpiderVPCInfo.IId.SystemId
-	content.CspVNetName = tempSpiderVPCInfo.IId.NameId
-	content.CidrBlock = tempSpiderVPCInfo.IPv4_CIDR
+	content.CspVNetId = callResult.IId.SystemId
+	content.CspVNetName = callResult.IId.NameId
+	content.CidrBlock = callResult.IPv4_CIDR
 	content.Description = u.Description
-	content.KeyValueList = tempSpiderVPCInfo.KeyValueList
+	content.KeyValueList = callResult.KeyValueList
 	content.AssociatedObjectList = []string{}
 
 	if option == "register" && u.CspVNetId == "" {
@@ -281,7 +261,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		return content, err
 	}
 
-	for _, v := range tempSpiderVPCInfo.SubnetInfoList {
+	for _, v := range callResult.SubnetInfoList {
 		jsonBody, err := json.Marshal(v)
 		if err != nil {
 			common.CBLog.Error(err)
