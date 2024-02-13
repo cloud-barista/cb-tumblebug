@@ -11,9 +11,9 @@ function CallTB() {
 	IPv4CIDR01="10.${CIDRDiff}.0.0/18"
 	IPv4CIDR02="10.${CIDRDiff}.64.0/18"
 
-	CidrBlock="10.1.0.0/16" # test for ncp
-	IPv4CIDR01="10.1.0.0/18"
-	IPv4CIDR02="10.1.64.0/18"
+	# CidrBlock="10.1.0.0/16" # for a temporal test for a limited CSP.
+	# IPv4CIDR01="10.1.0.0/18"
+	# IPv4CIDR02="10.1.64.0/18"
 
     resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet -H 'Content-Type: application/json' -d @- <<EOF

@@ -28,7 +28,7 @@ azure,koreasouth,Korea South,35.1796,129.0756
 azure,francecentral,France Central,46.3772,2.3730
 azure,francesouth,France South,43.8345,2.1972
 azure,australiacentral,Australia Central,-35.3075,149.1244
-azure,australiacentral2,Australia Central 2,-35.3075,149.1244
+azure,australiacentral2,Australia Central 2,-35.3085,149.1254
 azure,uaecentral,UAE Central,24.4667,54.3667
 azure,uaenorth,UAE North,25.2667,55.3167
 azure,southafricanorth,South Africa North,-25.7313,28.2184
@@ -40,7 +40,7 @@ azure,germanywestcentral,Germany West Central,50.1109,8.6821
 azure,norwaywest,Norway West,58.9700,5.7331
 azure,norwayeast,Norway East,59.9139,10.7522
 aws,af-south-1,Africa (Cape Town),-33.9000,18.5000
-aws,ap-east-1,Asia Pacific (Hong Kong),22.2600,114.1800
+aws,ap-east-1,Asia Pacific (Hong Kong),22.2603,114.1803
 aws,ap-northeast-1,Tokyo,35.4100,139.4200
 aws,ap-northeast-2,Seoul,37.3600,126.7800
 aws,ap-northeast-3,Asia Pacific (Osaka-Local),34.3800,131.7000
@@ -66,17 +66,17 @@ aws,us-gov-east-1,AWS GovCloud (US-East),37.0000,-81.0000
 aws,us-gov-west-1,AWS GovCloud (US),40.0000,-120.0000
 gcp,asia-east1,Changhua County Taiwan,24.0756,120.5451
 gcp,asia-east2,Hong Kong,22.3964,114.1095
-gcp,asia-northeast1,Tokyo Japan,35.6895,139.6917
+gcp,asia-northeast1,Tokyo Japan,35.6896,139.6917
 gcp,asia-northeast2,Osaka Japan,34.6937,135.5022
 gcp,asia-northeast3,Seoul South Korea,37.2000,127.0000
 gcp,asia-south1,Mumbai India,19.0761,72.8774
-gcp,asia-southeast1,Jurong West Singapore,1.3400,103.7041
-gcp,asia-southeast2,Jakarta Indonesia,-6.2000,106.8160
+gcp,asia-southeast1,Jurong West Singapore,1.3409,103.7041
+gcp,asia-southeast2,Jakarta Indonesia,-6.2010,106.8160
 gcp,australia-southeast1,Sydney Australia,-33.8651,151.2099
 gcp,europe-north1,Hamina Finland,60.5700,27.2000
 gcp,europe-west1,St. Ghislain Belgium,50.4482,3.8189
 gcp,europe-west2,London England UK,51.5099,-0.1181
-gcp,europe-west3,Frankfurt Germany,50.1109,8.6821
+gcp,europe-west3,Frankfurt Germany,50.1109,8.6831
 gcp,europe-west4,Eemshaven Netherlands,53.4423,6.8253
 gcp,europe-west6,Zurich Switzerland,47.3667,8.5500
 gcp,europe-central2,Warsaw Poland,52.237049,21.017532
@@ -104,7 +104,7 @@ alibaba,cn-guangzhou,China (Guangzhou),23.1292,113.3288
 alibaba,ap-southeast-1,Singapore,1.3500,103.2000
 alibaba,ap-southeast-2,Australia (Sydney),-33.1651,151.8099
 alibaba,ap-southeast-3,Malaysia (Kuala Lumpur),3.1408,101.6932
-alibaba,ap-southeast-5,Indonesia (Jakarta),-6.2000,106.8160
+alibaba,ap-southeast-5,Indonesia (Jakarta),-6.2050,106.8160
 alibaba,ap-south-1,India (Mumbai),19.1761,72.1774
 alibaba,ap-northeast-1,Japan (Tokyo),34.6895,139.9917
 alibaba,us-west-1,US (Silicon Valley),37.3700,-122.0400
@@ -112,16 +112,16 @@ alibaba,us-east-1,US (Virginia),39.1300,-78.0000
 alibaba,eu-central-1,Germany (Frankfurt),50.4000,8.7000
 alibaba,eu-west-1,UK (London),51.8000,-0.2000
 alibaba,me-east-1,UAE (Dubai),25.2770,55.2962
-alibaba,ap-northeast-2,South Korea (Seoul),37.3600,126.7800
+alibaba,ap-northeast-2,South Korea (Seoul),37.3640,126.7800
 cloudit,default,South Korea (Seoul),37.2665,126.7780
-ncp,kr,South Korea (Seoul),37.4767,126.8841
-ncp,hk,Hong Kong,22.3964,114.1095
-ncp,sgn,Singapore,1.3400,103.7041
-ncp,jpn,Japan,35.6895,139.6917
-ncp,uswn,US Western,37.3500,-121.9600
-ncp,den,Germany,50.1109,8.6821
+ncp,kr,South Korea (Seoul),37.4754,126.8831
+ncp,hk,Hong Kong,22.3954,114.1295
+ncp,sgn,Singapore,1.3402,103.7041
+ncp,jpn,Japan,35.6893,139.6917
+ncp,uswn,US Western,37.3510,-121.9630
+ncp,den,Germany,50.1108,8.6821
 ncpvpc,kr,South Korea (Seoul),37.4667,126.8741
-ncpvpc,sgn,Singapore,1.3410,103.7141
+ncpvpc,sgn,Singapore,1.3410,103.7151
 openstack,regionone,South Korea (Daejeon),36.3804,127.3650
 tencent,ap-singapore,Southeast Asia (Singapore),1.352083,103.819839
 tencent,ap-jakarta,Southeast Asia (Jakarta),-6.175110,106.865036
@@ -140,23 +140,25 @@ tencent,ap-nanjing,East China (Nanjing),32.060255,118.796877
 tencent,ap-beijing,North China (Beijing),39.9042,116.407396
 tencent,ap-chengdu,Southwest China (Chengdu),30.572815,104.066801
 tencent,ap-chongqing,Southwest China (Chongqing),29.431586,106.912251
-tencent,ap-hongkong,Hong Kong,22.396428,114.109497
-ktcloud,kor-cheonan,Cheon-an - South Korea,36.812583,127.107005
-ktcloud,kor-seoul,Seoul - South Korea,37.566535,126.977969
-ktcloud,kor-kimhae,Kimhae - South Korea,35.228545,128.889352
-ktcloud,us,LA - US,34.052234,-118.243685
+tencent,ap-hongkong,Hong Kong,22.396228,114.108497
+ktcloud,kr-central-a,Cheon-an A - South Korea,36.812483,127.107005
+ktcloud,kr-central-b,Cheon-an B - South Korea,36.832583,127.157205
+ktcloud,kr-seoul-m,Seoul M- South Korea,37.566535,126.977969
+ktcloud,kr-seoul-m2,Seoul M2 - South Korea,37.466535,126.877969
+ktcloud,kr-kimhae,Kimhae - South Korea,35.228545,128.889352
+ktcloudvpc,us,LA - US,34.054234,-118.243685
 ibm,us-south,Dallas (US South),32.776664,-96.796988
 ibm,br-sao,Sao Paulo (Brazil),-23.55052,-46.633309
-ibm,ca-tor,Toronto (Canada),43.653226,-79.383184
+ibm,ca-tor,Toronto (Canada),43.655226,-79.383184
 ibm,us-east,Washington DC (US East),38.907192,-77.036871
-ibm,eu-de,Frankfurt (Germany),50.110922,8.682127
+ibm,eu-de,Frankfurt (Germany),50.110722,8.682127
 ibm,eu-gb,London (United Kingdom),51.507351,-0.127758
 ibm,jp-osa,Osaka (Japan),34.693738,135.502165
 ibm,au-syd,Sydney (Australia),-33.86882,151.209296
-ibm,jp-tok,Tokyo (Japan),35.689488,139.691706
+ibm,jp-tok,Tokyo (Japan),35.689588,139.691706
 nhncloud,kr1,South Korea (Pangyo),37.390889,127.096792
 nhncloud,kr2,South Korea (Pyeongchon),37.392584,126.95145
-nhncloud,jp1,Japan (Tokyo),35.4100,139.4200
-cloudtwin,default,South Korea (Daejeon),36.3804,127.3650
+nhncloud,jp1,Japan (Tokyo),35.4120,139.4230
+cloudtwin,default,South Korea (Daejeon),36.3806,127.3650
 mock,default,South Korea (Seoul),37.0000,126.0000
 ufc,ufc,South Korea (Seoul),37.4767,126.8841
