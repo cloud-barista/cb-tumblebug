@@ -31,7 +31,7 @@ while true; do
 done
 
 # Execute the load-common-resource script and capture its output
-output=$($CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb)
+output="$($CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb)"
 
 # Initialize counters
 successImageCount=0
@@ -59,9 +59,10 @@ done <<< "$output"
 # Optionally, display failed items
 echo "Failed items:"
 echo "$output" | grep "\[Failed\]" | while read line; do
-    echo $line | awk -F"  " '{printf "%-50s %-10s\n", $1, $2}'
+    echo "$line" | awk -F"  " '{printf "%-50s %-10s\n", $1, $2}'
 done
 
 # Display the counts
+echo ""
 echo "- Image Success count: $successImageCount (Failed count: $failedImageCount)"
 echo "- Spec Success count: $successSpecCount (Failed count: $failedSpecCount)"
