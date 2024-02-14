@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -1841,14 +1842,19 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	return output, nil
 }
 
-// ToNamingRuleCompatible func is a tool to replace string for name to make the name follow naming convention
+// ToNamingRuleCompatible function transforms a given string to match the regex pattern [a-z]([-a-z0-9]*[a-z0-9])?.
 func ToNamingRuleCompatible(rawName string) string {
-	rawName = strings.ReplaceAll(rawName, " ", "-")
-	rawName = strings.ReplaceAll(rawName, ".", "-")
-	rawName = strings.ReplaceAll(rawName, "_", "-")
-	rawName = strings.ReplaceAll(rawName, ":", "-")
-	rawName = strings.ReplaceAll(rawName, "/", "-")
+	// Convert all uppercase letters to lowercase
 	rawName = strings.ToLower(rawName)
+
+	// Replace all non-alphanumeric characters with '-'
+	nonAlphanumericRegex := regexp.MustCompile(`[^a-z0-9]+`)
+	rawName = nonAlphanumericRegex.ReplaceAllString(rawName, "-")
+
+	// Remove leading and trailing '-' from the result string
+	trimLeadingTrailingDashRegex := regexp.MustCompile(`^-+|-+$`)
+	rawName = trimLeadingTrailingDashRegex.ReplaceAllString(rawName, "")
+
 	return rawName
 }
 

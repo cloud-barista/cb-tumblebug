@@ -332,6 +332,8 @@ type GeoLocation struct {
 
 // GetCloudLocation is to get location of clouds (need error handling)
 func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
+	cloudType = strings.ToLower(cloudType)
+	nativeRegion = strings.ToLower(nativeRegion)
 
 	location := GeoLocation{}
 
@@ -577,7 +579,7 @@ func GetNativeRegion(connectionName string) (string, error) {
 		}
 
 	}
-	return nativeRegionName, nil
+	return strings.ToLower(nativeRegionName), nil
 
 }
 
