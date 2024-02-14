@@ -31,7 +31,7 @@ while true; do
 done
 
 # Execute the load-common-resource script and capture its output
-output="$($CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb)"
+output="$("$CBTUMBLEBUG_ROOT"/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb)"
 
 # Initialize counters
 successImageCount=0
