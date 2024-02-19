@@ -36,6 +36,7 @@ AWS,aws-us-east-2,ami-01e7ca2ef94a0ae86,Ubuntu 18.04
 AWS,aws-us-east-2,ami-02f3416038bdb17fb,Ubuntu 22.04
 AWS,aws-us-east-2,ami-0eb31daebdf3775ac,Windows Server 2012 R2
 AWS,aws-us-east-2,ami-0ad87058f66b00409,Debian 10
+AWS,aws-us-east-2,ami-0c616d2c080a12072,Ubuntu 20.04
 AWS,aws-us-west-2,ami-02701bcdc5509e57b,Ubuntu 18.04
 AWS,aws-us-west-2,ami-0d70546e43a941d70,Ubuntu 22.04
 AWS,aws-us-west-2,ami-0be1488bb453a4e59,Windows Server 2012 R2
