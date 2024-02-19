@@ -1,20 +1,25 @@
+## Introduction
 
-# LLM Service Management Scripts
+- LLM Deployment on Cloud VM
 
-This document describes a set of scripts designed to manage an LLM (Large Language Model) service. These scripts facilitate starting the service (`startServer.sh`), checking its status (`statusServer.sh`), and stopping the service (`stopServer.sh`).
+This document describes a set of scripts designed to deploy an 
+LLM (Large Language Model) service. These scripts facilitate starting 
+the service (`startServer.sh`), checking its status (`statusServer.sh`), 
+and stopping the service (`stopServer.sh`).
 
-## Prerequisites
+## Installation & Setup
+
+### Prerequisites
 
 - A Linux-based system
 - Python 3 installed
 - pip (Python package manager)
 - sudo privileges or root access
 
-## Installation & Setup
-
 ### 1. Start Server
 
-Starts the LLM service by installing necessary Python packages and running a FastAPI-based service in the background.
+Starts the LLM service by installing necessary Python packages 
+and running a FastAPI-based service in the background.
 
 ```bash
 sudo ./startServer.sh
@@ -29,7 +34,8 @@ chmod +x startServer.sh
 
 ### 2. Check Server Status
 
-Checks the status of the currently running LLM service. If the service is running, it outputs the contents of recent logs.
+Checks the status of the currently running LLM service. If the 
+service is running, it outputs the contents of recent logs.
 
 ```bash
 ./statusServer.sh
@@ -59,7 +65,9 @@ chmod +x stopServer.sh
 
 ## Testing the Server
 
-Once the server is running, you can test the LLM service with the following `curl` command. This command sends a text generation request to the service, testing its operational status.
+Once the server is running, you can test the LLM service with 
+the following `curl` command. This command sends a text generation 
+request to the service, testing its operational status.
 
 ```bash
 curl -X POST http://{PUBLICIP}:5001/v1/generateText \
@@ -67,7 +75,8 @@ curl -X POST http://{PUBLICIP}:5001/v1/generateText \
      -d '{"prompt": "Who is president of US?"}'
 ```
 
-Replace `{PUBLICIP}` with the public IP address of the server where the LLM service is running.
+Replace `{PUBLICIP}` with the public IP address of the server 
+where the LLM service is running.
 
 ## Notes
 
