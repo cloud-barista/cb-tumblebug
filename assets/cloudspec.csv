@@ -509,7 +509,7 @@ AWS,aws-us-east-2,aws-us-east-2,t2.medium,0.0464,34.18,,,,,,,,,,default,default
 AWS,aws-us-east-2,aws-us-east-2,t2.large,0.0928,34.18,,,,,,,,,,default,default
 AWS,aws-us-east-2,aws-us-east-2,t2.xlarge,0.1856,34.18,,,,,,,,,,default,default
 AWS,aws-us-east-2,aws-us-east-2,t2.2xlarge,0.3712,34.18,,,,,,,,,,default,default
-AWS,aws-us-east-2,aws-us-east-2,g5.2xlarge,0.3712,34.18,,,,,,,,,,default,default
+AWS,aws-us-east-2,aws-us-east-2,g5.2xlarge,1.212,34.18,,,,,,,,,,default,default
 AWS,aws-us-west-1,aws-us-west-1,t2.micro,0.0138,36.52,,,,,,,,,,default,default
 AWS,aws-us-west-1,aws-us-west-1,t2.small,0.0276,34.18,,,,,,,,,,default,default
 AWS,aws-us-west-1,aws-us-west-1,t2.medium,0.0552,34.18,,,,,,,,,,default,default
