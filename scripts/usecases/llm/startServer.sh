@@ -14,6 +14,12 @@ else
   exit 1
 fi
 
+# Step 2: Update system and install Python3-pip
+echo "[$SERVICE_NAME] Updating system and installing Python3-pip..."
+sudo apt-get update > /dev/null
+sudo apt-get install -y python3-pip python3-venv jq > /dev/null
+
+
 echo "[$SERVICE_NAME] Checking for virtual environment..."
 if [ ! -d "$VENV_PATH" ]; then
   echo "Creating virtual environment..."
@@ -24,10 +30,6 @@ fi
 
 source $VENV_PATH/bin/activate
 
-# Step 2: Update system and install Python3-pip
-echo "[$SERVICE_NAME] Updating system and installing Python3-pip..."
-sudo apt-get update > /dev/null
-sudo apt-get install -y python3-pip jq > /dev/null
 
 # Step 3: Install required Python packages
 echo "[$SERVICE_NAME] Installing required Python packages..."
