@@ -10,6 +10,7 @@ port = 5001
 
 # Global variable to indicate model loading status
 model="tiiuae/falcon-7b-instruct"
+
 model_loaded = False
 llm = None
 
@@ -29,7 +30,8 @@ async def startup_event():
 
 @app.get("/status")
 def get_status():
-    # Endpoint to return the model loading status
+    if not model_loaded:
+        return {"model": model, "loaded": model_loaded, "message": "Model is not loaded yet."}
     return {"model": model, "loaded": model_loaded}
 
 # Common function to generate text based on the prompt
