@@ -36,7 +36,7 @@ echo "[$SERVICE_NAME] Installing required Python packages..."
 pip install -U fastapi uvicorn 
 pip install -U langchain langchain-community
 pip install -U gptcache 
-sudo pip install -U vllm
+sudo $VENV_PATH/bin/python -m pip install vllm
 pip install openai==0.28.1 
 
 # Check if the pip install was successful
