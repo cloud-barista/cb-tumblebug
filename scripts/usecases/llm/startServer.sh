@@ -16,6 +16,7 @@ fi
 
 # Step 2: Update system and install Python3-pip
 echo "[$SERVICE_NAME] Updating system and installing Python3-pip..."
+export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update > /dev/null
 sudo apt-get install -y python3-pip python3-venv jq > /dev/null
 
