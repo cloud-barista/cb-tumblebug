@@ -52,27 +52,32 @@ nohup $VENV_PATH/bin/python $SOURCE_FILE > $LOG_FILE 2>&1 &
 echo "[$SERVICE_NAME] Checking status of the LLM service..."
 
 # Check if the LLM service is running
-PID=$(ps aux | grep "$SERVICE_NAME" | grep -v grep | awk '{print $2}')
+echo "[$SERVICE_NAME] last 30 lines of the log file ($LOG_FILE):"
+echo "cat $LOG_FILE"
+tail -n 30 "$LOG_FILE"
 
+PID=$(ps aux | grep "$SERVICE_NAME" | grep -v grep | awk '{print $2}')
 if [ -z "$PID" ]; then
     echo "[$SERVICE_NAME] LLM service is not running."
+    exit 1
 else
+    echo ""
     echo "[$SERVICE_NAME] LLM service is running. PID: $PID"
     echo ""
-    echo "[$SERVICE_NAME] Showing the last 20 lines of the log file ($LOG_FILE):"
-    echo ""
-    tail -n 20 "$LOG_FILE"
 fi
 
 echo ""
 echo "[Test: replace localhost with IP address of the server]"
+echo "curl -s http://localhost:5001/status | jq -R 'fromjson? // .'"
+curl -s -X GET http://localhost:5001/status | jq -R 'fromjson? // .'
+echo ""
+
 echo "curl -X POST http://localhost:5001/query -H \"Content-Type: application/json\" -d '{\"prompt\": \"What is the Multi-Cloud?\"}'"
 curl -s -X POST http://localhost:5001/query \
 -H "Content-Type: application/json" \
--d '{"prompt": "What is the Multi-Cloud?"}' | jq .
+-d '{"prompt": "What is the Multi-Cloud?"}' | jq -R 'fromjson? // .'
+echo ""
 
 echo "http://localhost:5001/query?prompt=What is the Multi-Cloud?"
-curl -s "http://localhost:5001/query?prompt=What+is+the+Multi-Cloud?" | jq .
-
-
+curl -s "http://localhost:5001/query?prompt=What+is+the+Multi-Cloud?" | jq -R 'fromjson? // .'
 echo ""
