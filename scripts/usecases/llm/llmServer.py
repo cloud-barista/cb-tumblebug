@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 # Correcting the import based on your initial code snippet
 from langchain_community.llms import VLLM
+import asyncio  # Import asyncio for asynchronous task management
 
 app = FastAPI()
 port = 5001
@@ -26,7 +27,7 @@ async def load_model():
 
 @app.on_event("startup")
 async def startup_event():
-    await load_model()
+    asyncio.create_task(load_model())  # Schedule load_model to run as a background task
 
 @app.get("/status")
 def get_status():
