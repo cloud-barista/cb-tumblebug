@@ -2,9 +2,9 @@ from typing import Union
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import JSONResponse
 import uvicorn
-# Correcting the import based on your initial code snippet
+from concurrent.futures import ThreadPoolExecutor
 from langchain_community.llms import VLLM
-import asyncio  # Import asyncio for asynchronous task management
+
 
 app = FastAPI()
 port = 5001
@@ -15,19 +15,18 @@ model="tiiuae/falcon-7b-instruct"
 model_loaded = False
 llm = None
 
-async def load_model():
+def load_model():
     global llm, model_loaded
-    # Create and initialize the model instance
     llm = VLLM(model=model,
-               trust_remote_code=True,  # Required for loading HF models
+               trust_remote_code=True,
                max_new_tokens=50,
-               temperature=0.6
-              )
-    model_loaded = True  # Update model loading status to True
+               temperature=0.6)
+    model_loaded = True
 
 @app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(load_model())  # Schedule load_model to run as a background task
+def startup_event():
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        executor.submit(load_model)
 
 @app.get("/status")
 def get_status():
