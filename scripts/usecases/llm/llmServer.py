@@ -1,12 +1,9 @@
-from typing import Union
-from fastapi import BackgroundTasks, FastAPI, Request
-from fastapi.responses import JSONResponse
-import uvicorn
-from concurrent.futures import ThreadPoolExecutor
+from flask import Flask, request, jsonify
+import threading
 from langchain_community.llms import VLLM
 
 
-app = FastAPI()
+app = Flask(__name__)
 port = 5001
 
 # Global variable to indicate model loading status
@@ -14,6 +11,10 @@ model="tiiuae/falcon-7b-instruct"
 
 model_loaded = False
 llm = None
+
+def start_model_loading():
+    thread = threading.Thread(target=load_model)
+    thread.start()
 
 def load_model():
     global llm, model_loaded
@@ -23,43 +24,29 @@ def load_model():
                temperature=0.6)
     model_loaded = True
 
-@app.on_event("startup")
-def startup_event():
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        executor.submit(load_model)
-
-@app.get("/status")
+@app.route("/status", methods=["GET"])
 def get_status():
     if not model_loaded:
-        return {"model": model, "loaded": model_loaded, "message": "Model is not loaded yet."}
-    return {"model": model, "loaded": model_loaded}
+        return jsonify({"model": model, "loaded": model_loaded, "message": "Model is not loaded yet."})
+    return jsonify({"model": model, "loaded": model_loaded})
 
-# Common function to generate text based on the prompt
-def generate_text_from_prompt(prompt: str) -> str:
+
+@app.route("/prompt", methods=["GET", "POST"])
+def prompt():
     if not model_loaded:
-        return "Model is not loaded yet."
-    output = llm(prompt) # Generate text based on the prompt
-    return output.replace("\n", "")
+        return jsonify({"error": "Model is not loaded yet."}), 503
 
-@app.get("/query")
-def query_get(prompt: str) -> JSONResponse:
-    if not model_loaded:
-        return JSONResponse(content={"error": output}, status_code=503)
+    input = ""
+    if request.method == "POST":
+        data = request.json
+        input = data.get("input", "")
+    elif request.method == "GET":
+        input = request.args.get("input", "")
 
-    output = generate_text_from_prompt(prompt)
-    return JSONResponse(content={"text": output})
-
-@app.post("/query")
-async def query_post(request: Request) -> JSONResponse:
-    if not model_loaded:
-        return JSONResponse(content={"error": output}, status_code=503)
-
-    request_dict = await request.json()
-    prompt = request_dict.get("prompt", "")
-    
-    output = generate_text_from_prompt(prompt)
-    return JSONResponse(content={"text": output})
+    output = llm(input)
+    return jsonify({"output": output, "model": model})
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    start_model_loading()
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
     

@@ -34,11 +34,11 @@ source $VENV_PATH/bin/activate
 
 # Step 3: Install required Python packages
 echo "[$SERVICE_NAME] Installing required Python packages..."
-pip install -U fastapi uvicorn 
-pip install -U langchain langchain-community
-pip install -U gptcache 
-sudo $VENV_PATH/bin/python -m pip install vllm
-pip install openai==0.28.1 
+pip install -U -q flask
+pip install -U -q langchain langchain-community
+pip install -U -q gptcache 
+sudo $VENV_PATH/bin/python -m pip install -U -q vllm
+pip install -q openai==0.28.1 
 
 # Check if the pip install was successful
 if [ $? -ne 0 ]; then
@@ -49,6 +49,8 @@ fi
 # Step 4: Run the Python script in the background using nohup and virtual environment's python
 echo "[$SERVICE_NAME] Starting LLM service in the background..."
 nohup $VENV_PATH/bin/python $SOURCE_FILE > $LOG_FILE 2>&1 &
+# Sleep for 20 seconds to allow the service to start
+sleep 20
 
 echo "[$SERVICE_NAME] Checking status of the LLM service..."
 
@@ -69,16 +71,27 @@ fi
 
 echo ""
 echo "[Test: replace localhost with IP address of the server]"
-echo "curl -s http://localhost:5001/status | jq -R 'fromjson? // .'"
-curl -s -X GET http://localhost:5001/status | jq -R 'fromjson? // .'
+
+# Test the status endpoint
+echo "Testing status endpoint:"
+cmd="curl -s http://localhost:5001/status"
+echo $cmd
+response=$($cmd)
+echo $response | jq -R 'fromjson? // .'
 echo ""
 
-echo "curl -X POST http://localhost:5001/query -H \"Content-Type: application/json\" -d '{\"prompt\": \"What is the Multi-Cloud?\"}'"
-curl -s -X POST http://localhost:5001/query \
--H "Content-Type: application/json" \
--d '{"prompt": "What is the Multi-Cloud?"}' | jq -R 'fromjson? // .'
+# Test the prompt endpoint with a POST request
+echo "Testing prompt endpoint with POST request:"
+cmd="curl -s -X POST http://localhost:5001/prompt -H \"Content-Type: application/json\" -d '{\"input\": \"What is the Multi-Cloud?\"}'"
+echo $cmd
+response=$($cmd)
+echo $response | jq -R 'fromjson? // .'
 echo ""
 
-echo "http://localhost:5001/query?prompt=What is the Multi-Cloud?"
-curl -s "http://localhost:5001/query?prompt=What+is+the+Multi-Cloud?" | jq -R 'fromjson? // .'
+# Test the prompt endpoint with a GET request
+echo "Testing prompt endpoint with GET request:"
+cmd="curl -s \"http://localhost:5001/prompt?input=What+is+the+Multi-Cloud?\""
+echo $cmd
+response=$($cmd)
+echo $response | jq -R 'fromjson? // .'
 echo ""
