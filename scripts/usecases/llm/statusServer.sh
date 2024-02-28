@@ -20,3 +20,8 @@ else
     echo ""
     tail -n 20 "$LOG_FILE"
 fi
+
+echo ""
+echo "[$SERVICE_NAME] Analyzing disk usage in the user's home directory..."
+echo "Top 60 largest files in HOME_DIR:"
+du -ah ~/ | sort -k 2 | sort -rh | head -n 60
