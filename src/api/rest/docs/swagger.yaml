@@ -2399,7 +2399,7 @@ definitions:
           VMs will be created accordingly.
         example: "3"
         type: string
-      'vmUserPassword default:':
+      vmUserPassword:
         type: string
     required:
     - commonImage

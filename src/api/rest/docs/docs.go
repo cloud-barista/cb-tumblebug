@@ -11564,7 +11564,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "3"
                 },
-                "vmUserPassword default:": {
+                "vmUserPassword": {
                     "type": "string"
                 }
             }
