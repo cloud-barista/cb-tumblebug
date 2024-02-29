@@ -232,7 +232,11 @@ func EndRequestWithLog(c echo.Context, reqID string, err error, responseData int
 			details.Status = "Error"
 			details.ErrorResponse = err.Error()
 			RequestMap.Store(reqID, details)
-			return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+			if responseData == nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{"message": err.Error()})
+			} else {
+				return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+			}
 		}
 
 		details.Status = "Success"
