@@ -16,6 +16,7 @@ package mcir
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -34,7 +35,10 @@ type JSONResult struct {
 // RestDelAllResources is a common function to handle 'DelAllResources' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelAllResources(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
@@ -49,7 +53,10 @@ func RestDelAllResources(c echo.Context) error {
 // RestDelResource is a common function to handle 'DelResource' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelResource(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	resourceType := strings.Split(c.Path(), "/")[5]
@@ -67,7 +74,10 @@ func RestDelResource(c echo.Context) error {
 // RestDelChildResource is a common function to handle 'DelChildResource' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestDelChildResource(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	childResourceType := strings.Split(c.Path(), "/")[7]
@@ -86,7 +96,10 @@ func RestDelChildResource(c echo.Context) error {
 // RestGetAllResources is a common function to handle 'GetAllResources' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestGetAllResources(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	optionFlag := c.QueryParam("option")
@@ -170,7 +183,10 @@ func RestGetAllResources(c echo.Context) error {
 // RestGetResource is a common function to handle 'GetResource' REST API requests.
 // Dummy functions for Swagger exist in [mcir/*.go]
 func RestGetResource(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	resourceType := strings.Split(c.Path(), "/")[5]
@@ -199,7 +215,10 @@ func RestGetResource(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /{nsId}/checkResource/{resourceType}/{resourceId} [get]
 func RestCheckResource(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
@@ -218,7 +237,10 @@ func RestCheckResource(c echo.Context) error {
 // RestTestAddObjectAssociation is a REST API call handling function
 // to test "mcir.UpdateAssociatedObjectList" function with "add" argument.
 func RestTestAddObjectAssociation(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	//resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/testAddObjectAssociation/:resourceType/:resourceId
@@ -233,7 +255,10 @@ func RestTestAddObjectAssociation(c echo.Context) error {
 // RestTestDeleteObjectAssociation is a REST API call handling function
 // to test "mcir.UpdateAssociatedObjectList" function with "delete" argument.
 func RestTestDeleteObjectAssociation(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	//resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId
@@ -247,7 +272,10 @@ func RestTestDeleteObjectAssociation(c echo.Context) error {
 // RestTestGetAssociatedObjectCount is a REST API call handling function
 // to test "mcir.GetAssociatedObjectCount" function.
 func RestTestGetAssociatedObjectCount(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	//resourceType := strings.Split(c.Path(), "/")[5]
 	// c.Path(): /tumblebug/ns/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId
@@ -270,7 +298,10 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /loadCommonResource [get]
 func RestLoadCommonResource(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	content, err := mcir.LoadCommonResource()
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
@@ -288,7 +319,10 @@ func RestLoadCommonResource(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/loadDefaultResource [get]
 func RestLoadDefaultResource(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	resType := c.QueryParam("option")
 
@@ -311,7 +345,10 @@ func RestLoadDefaultResource(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/defaultResources [delete]
 func RestDelAllDefaultResources(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	content, err := mcir.DelAllDefaultResources(nsId)

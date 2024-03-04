@@ -16,6 +16,7 @@ package mcir
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -37,7 +38,10 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image [post]
 func RestPostImage(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
@@ -86,7 +90,10 @@ func RestPostImage(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [put]
 func RestPutImage(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	imageId := c.Param("resourceId")
 
@@ -117,7 +124,10 @@ type RestLookupImageRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupImage [post]
 func RestLookupImage(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
@@ -141,7 +151,10 @@ func RestLookupImage(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupImages [post]
 func RestLookupImageList(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	u := &RestLookupImageRequest{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
@@ -165,7 +178,10 @@ func RestLookupImageList(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchImages [post]
 func RestFetchImages(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	u := &RestLookupImageRequest{}
@@ -285,7 +301,10 @@ type RestSearchImageRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/searchImage [post]
 func RestSearchImage(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	u := &RestSearchImageRequest{}

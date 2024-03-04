@@ -15,6 +15,8 @@ limitations under the License.
 package mcis
 
 import (
+	"net/http"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -35,7 +37,10 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/installBenchmarkAgent/mcis/{mcisId} [post]
 func RestPostInstallBenchmarkAgentToMcis(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -79,7 +84,10 @@ type RestGetAllBenchmarkRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/benchmarkAll/mcis/{mcisId} [post]
 func RestGetAllBenchmark(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -106,7 +114,10 @@ func RestGetAllBenchmark(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/benchmarkLatency/mcis/{mcisId} [get]
 func RestGetBenchmarkLatency(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -133,7 +144,10 @@ type RestGetBenchmarkRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/benchmark/mcis/{mcisId} [post]
 func RestGetBenchmark(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	action := c.QueryParam("action")

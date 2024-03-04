@@ -4029,6 +4029,10 @@ paths:
         in: query
         name: vmId
         type: string
+      - description: Custom request ID
+        in: header
+        name: x-request-id
+        type: string
       produces:
       - application/json
       responses:

@@ -21,7 +21,8 @@ import (
 	"strconv"
 	"time"
 
-	//"strings"
+	"strings"
+	"unicode"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
@@ -706,9 +707,13 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		sqlQuery = sqlQuery.And("ProviderName LIKE ?", "%"+filter.ProviderName+"%")
 	}
 	if filter.CspSpecName != "" {
-		//sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
-		filter.CspSpecName = ToNamingRuleCompatible(filter.CspSpecName)
-		sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+filter.CspSpecName+"%")
+		keywords := strings.FieldsFunc(filter.CspSpecName, func(r rune) bool {
+			return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+		})
+
+		for _, keyword := range keywords {
+			sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+keyword+"%")
+		}
 	}
 	if filter.OsType != "" {
 		//sqlQuery += " AND `osType` LIKE '%" + filter.OsType + "%'"
