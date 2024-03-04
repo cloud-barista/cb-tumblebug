@@ -16,6 +16,7 @@ package mcir
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -37,7 +38,10 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec [post]
 func RestPostSpec(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
@@ -82,7 +86,10 @@ func RestPostSpec(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [put]
 func RestPutSpec(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	specId := c.Param("resourceId")
 
@@ -113,7 +120,10 @@ type RestLookupSpecRequest struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupSpec [post]
 func RestLookupSpec(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
@@ -137,7 +147,10 @@ func RestLookupSpec(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /lookupSpecs [post]
 func RestLookupSpecList(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	u := &RestLookupSpecRequest{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
@@ -161,7 +174,10 @@ func RestLookupSpecList(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/fetchSpecs [post]
 func RestFetchSpecs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	u := &RestLookupSpecRequest{}
@@ -208,7 +224,10 @@ type RestFilterSpecsResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/filterSpecs [post]
 func RestFilterSpecs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	u := &mcir.TbSpecInfo{}
@@ -236,7 +255,10 @@ func RestFilterSpecs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/filterSpecsByRange [post]
 func RestFilterSpecsByRange(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	u := &mcir.FilterSpecsByRangeRequest{}
@@ -252,7 +274,10 @@ func RestFilterSpecsByRange(c echo.Context) error {
 }
 
 func RestTestSortSpecs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 
 	u := &mcir.TbSpecInfo{}

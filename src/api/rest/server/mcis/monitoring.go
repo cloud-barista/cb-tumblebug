@@ -15,6 +15,8 @@ limitations under the License.
 package mcis
 
 import (
+	"net/http"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -34,7 +36,10 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/install/mcis/{mcisId} [post]
 func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -61,7 +66,10 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/status/mcis/{mcisId}/vm/{vmId} [put]
 func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -90,7 +98,10 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/monitoring/mcis/{mcisId}/metric/{metric} [get]
 func RestGetMonitorData(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	metric := c.Param("metric")

@@ -15,6 +15,8 @@ limitations under the License.
 package mcis
 
 import (
+	"net/http"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -31,12 +33,16 @@ import (
 // @Param mcisCmdReq body mcis.McisCmdReq true "MCIS Command Request"
 // @Param subGroupId query string false "subGroupId to apply the command only for VMs in subGroup of MCIS" default(g1)
 // @Param vmId query string false "vmId to apply the command only for a VM in MCIS" default(g1-1)
+// @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} mcis.McisSshCmdResult
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/cmd/mcis/{mcisId} [post]
 func RestPostCmdMcis(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -45,23 +51,23 @@ func RestPostCmdMcis(c echo.Context) error {
 
 	req := &mcis.McisCmdReq{}
 	if err := c.Bind(req); err != nil {
-		return err
+		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	resultArray, err := mcis.RemoteCommandToMcis(nsId, mcisId, subGroupId, vmId, req)
+	output, err := mcis.RemoteCommandToMcis(nsId, mcisId, subGroupId, vmId, req)
 	if err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	content := mcis.McisSshCmdResult{}
+	result := mcis.McisSshCmdResult{}
 
-	for _, v := range resultArray {
-		content.Results = append(content.Results, v)
+	for _, v := range output {
+		result.Results = append(result.Results, v)
 	}
 
-	common.PrintJsonPretty(content)
+	common.PrintJsonPretty(result)
 
-	return common.EndRequestWithLog(c, reqID, nil, content)
+	return common.EndRequestWithLog(c, reqID, err, result)
 
 }
 
@@ -80,7 +86,10 @@ func RestPostCmdMcis(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion/{bastionVmId} [put]
 func RestSetBastionNodes(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	targetVmId := c.Param("targetVmId")
@@ -104,7 +113,10 @@ func RestSetBastionNodes(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{targetVmId}/bastion [get]
 func RestGetBastionNodes(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	targetVmId := c.Param("targetVmId")
@@ -127,7 +139,10 @@ func RestGetBastionNodes(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/bastion/{bastionVmId} [delete]
 func RestRemoveBastionNodes(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	bastionVmId := c.Param("bastionVmId")

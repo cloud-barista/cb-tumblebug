@@ -15,6 +15,8 @@ limitations under the License.
 package mcis
 
 import (
+	"net/http"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
@@ -35,7 +37,10 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb [post]
 func RestPostNLB(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -64,7 +69,10 @@ func RestPostNLB(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/mcSwNlb [post]
 func RestPostMcNLB(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -116,7 +124,10 @@ func RestPutNLB(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId} [get]
 func RestGetNLB(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
@@ -146,7 +157,10 @@ type RestGetAllNLBResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb [get]
 func RestGetAllNLB(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -188,7 +202,10 @@ func RestGetAllNLB(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId} [delete]
 func RestDelNLB(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
@@ -213,7 +230,10 @@ func RestDelNLB(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb [delete]
 func RestDelAllNLB(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -238,7 +258,10 @@ func RestDelAllNLB(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/healthz [get]
 func RestGetNLBHealth(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
@@ -264,7 +287,10 @@ func RestGetNLBHealth(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm [post]
 func RestAddNLBVMs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")
@@ -291,7 +317,10 @@ func RestAddNLBVMs(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/nlb/{nlbId}/vm [delete]
 func RestRemoveNLBVMs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	resourceId := c.Param("resourceId")

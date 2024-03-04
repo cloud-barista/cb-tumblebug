@@ -15,6 +15,8 @@ limitations under the License.
 package mcir
 
 import (
+	"net/http"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
@@ -37,7 +39,10 @@ type TbFirewallRulesWrapper struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [post]
 func RestPostFirewallRules(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 
@@ -106,7 +111,10 @@ type RestGetAllFirewallRulesResponse struct {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/securityGroup/{securityGroupId}/rules [delete]
 func RestDelFirewallRules(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	securityGroupId := c.Param("securityGroupId")
 

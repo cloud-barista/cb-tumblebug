@@ -16,6 +16,7 @@ package mcis
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
@@ -36,7 +37,10 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis/{mcisId} [post]
 func RestPostMcisPolicy(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -62,7 +66,10 @@ func RestPostMcisPolicy(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis/{mcisId} [get]
 func RestGetMcisPolicy(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -97,7 +104,10 @@ type RestGetAllMcisPolicyResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis [get]
 func RestGetAllMcisPolicy(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	fmt.Println("[Get MCIS Policy List]")
 
@@ -142,7 +152,10 @@ func RestPutMcisPolicy(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis/{mcisId} [delete]
 func RestDelMcisPolicy(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 
@@ -162,7 +175,10 @@ func RestDelMcisPolicy(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/policy/mcis [delete]
 func RestDelAllMcisPolicy(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	result, err := mcis.DelAllMcisPolicy(nsId)
 	return common.EndRequestWithLog(c, reqID, err, result)

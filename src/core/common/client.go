@@ -209,15 +209,22 @@ func ExtractRequestInfo(r *http.Request) RequestInfo {
 }
 
 // StartRequestWithLog initializes request tracking details
-func StartRequestWithLog(c echo.Context) string {
-	reqID := fmt.Sprintf("%d", time.Now().UnixNano())
+func StartRequestWithLog(c echo.Context) (string, error) {
+	reqID := c.Request().Header.Get("x-request-id")
+	if reqID == "" {
+		reqID = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	if _, ok := RequestMap.Load(reqID); ok {
+		return reqID, fmt.Errorf("The x-request-id is already in use")
+	}
+
 	details := RequestDetails{
 		StartTime:   time.Now(),
 		Status:      "Handling",
 		RequestInfo: ExtractRequestInfo(c.Request()),
 	}
 	RequestMap.Store(reqID, details)
-	return reqID
+	return reqID, nil
 }
 
 // EndRequestWithLog updates the request details and sends the final response.

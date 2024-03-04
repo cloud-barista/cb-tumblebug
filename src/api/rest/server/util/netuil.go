@@ -1,6 +1,8 @@
 package netutil
 
 import (
+	"net/http"
+
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/labstack/echo/v4"
@@ -28,7 +30,10 @@ type RestPostUtilToDesignNetworkReponse struct {
 func RestPostUtilToDesignNetwork(c echo.Context) error {
 
 	// ID for API request tracing
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	// Bind the request body to SubnettingRequest struct
 	subnettingReq := new(netutil.SubnettingRequest)
@@ -63,7 +68,10 @@ type RestPostUtilToValidateNetworkRequest struct {
 func RestPostUtilToValidateNetwork(c echo.Context) error {
 
 	// ID for API request tracing
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	// Bind the request body to SubnettingRequest struct
 	req := new(netutil.NetworkConfig)

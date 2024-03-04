@@ -16,6 +16,7 @@ package mcir
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -38,7 +39,10 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk [post]
 func RestPostDataDisk(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	nsId := c.Param("nsId")
 
@@ -67,7 +71,10 @@ func RestPostDataDisk(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/dataDisk/{dataDiskId} [put]
 func RestPutDataDisk(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 
 	nsId := c.Param("nsId")
 	dataDiskId := c.Param("resourceId")
@@ -171,7 +178,10 @@ func RestDelAllDataDisk(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [put]
 func RestPutVmDataDisk(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -219,7 +229,10 @@ func RestPutVmDataDisk(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [post]
 func RestPostVmDataDisk(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")
@@ -251,7 +264,10 @@ func RestPostVmDataDisk(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcis/{mcisId}/vm/{vmId}/dataDisk [get]
 func RestGetVmDataDisk(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
 	vmId := c.Param("vmId")

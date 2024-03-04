@@ -15,13 +15,18 @@ limitations under the License.
 package common
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
 
 func RestCheckNs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	if err := Validate(c, []string{"nsId"}); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -45,7 +50,10 @@ func RestCheckNs(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns [delete]
 func RestDelAllNs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	err := common.DelAllNs()
 	content := map[string]string{"message": "All namespaces has been deleted"}
 	return common.EndRequestWithLog(c, reqID, err, content)
@@ -62,7 +70,10 @@ func RestDelAllNs(c echo.Context) error {
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId} [delete]
 func RestDelNs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	if err := Validate(c, []string{"nsId"}); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -97,7 +108,10 @@ type RestGetAllNsResponse struct {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns [get]
 func RestGetAllNs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	optionFlag := c.QueryParam("option")
 
 	var content RestGetAllNsResponse
@@ -125,7 +139,11 @@ func RestGetAllNs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId} [get]
 func RestGetNs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+
 	if err := Validate(c, []string{"nsId"}); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
@@ -146,7 +164,10 @@ func RestGetNs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns [post]
 func RestPostNs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	u := &common.NsReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
@@ -170,7 +191,10 @@ func RestPostNs(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId} [put]
 func RestPutNs(c echo.Context) error {
-	reqID := common.StartRequestWithLog(c)
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
 	u := &common.NsReq{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
