@@ -9,11 +9,13 @@ VENV_PATH=venv_"$SERVICE_NAME"  # virtual environment path
 IP="localhost"
 PORT="5000"
 MODEL="tiiuae/falcon-7b-instruct"
+TOKEN="1024"
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --ip) IP="$2"; shift ;;
         --port) PORT="$2"; shift ;;
         --model) MODEL="$2"; shift ;;
+        --token) TOKEN="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -22,6 +24,7 @@ done
 echo "Using IP: $IP"
 echo "Using PORT: $PORT"
 echo "Using MODEL: $MODEL"
+echo "Using TOKEN: $TOKEN"
 
 echo "Checking source file: $SOURCE_FILE"
 if [ -f "$SOURCE_FILE" ]; then
@@ -113,3 +116,7 @@ echo $cmd
 response=$($cmd)
 echo $response | jq -R 'fromjson? // .'
 echo ""
+
+# Swagger API Dashboard Endpoint
+echo "[Swagger API Dashboard Endpoint]"
+echo "http://$IP:$PORT/apidocs/#/default/get_prompt"
