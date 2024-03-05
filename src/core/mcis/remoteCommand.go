@@ -305,7 +305,11 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	// 	}
 	// }
 
-	userName, _, privateKey := GetVmSshKey(nsId, mcisId, vmId)
+	userName, _, privateKey, err := GetVmSshKey(nsId, mcisId, vmId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", "", err
+	}
 
 	theUserName := ""
 	if givenUserName != "" {
@@ -361,38 +365,47 @@ func CheckConnectivity(host string, port string) error {
 	return fmt.Errorf("SSH Port is NOT not accessible (5 trials)")
 }
 
-// GetVmSshKey is func to get VM SShKey
-func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, string) {
+// GetVmSshKey is func to get VM SShKey. Returns username, verifiedUsername, privateKey
+func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, string, error) {
 
 	var content struct {
 		SshKeyId string `json:"sshKeyId"`
 	}
 
-	//fmt.Println("[GetVmSshKey]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		common.CBLog.Error(err)
-		err = fmt.Errorf("In GetVmSshKey(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
-		// return nil, err
+		err = fmt.Errorf("Cannot find the key from DB. key: " + key)
+		return "", "", "", err
 	}
 
-	json.Unmarshal([]byte(keyValue.Value), &content)
-
-	//fmt.Printf("%+v\n", content.SshKeyId)
+	err = json.Unmarshal([]byte(keyValue.Value), &content)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", "", "", err
+	}
 
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
-	keyValue, _ = common.CBStore.Get(sshKey)
+	keyValue, err = common.CBStore.Get(sshKey)
+	if err != nil || keyValue == nil {
+		common.CBLog.Error(err)
+		return "", "", "", err
+	}
+
 	var keyContent struct {
 		Username         string `json:"username"`
 		VerifiedUsername string `json:"verifiedUsername"`
 		PrivateKey       string `json:"privateKey"`
 	}
-	json.Unmarshal([]byte(keyValue.Value), &keyContent)
+	err = json.Unmarshal([]byte(keyValue.Value), &keyContent)
+	if err != nil {
+		common.CBLog.Error(err)
+		return "", "", "", err
+	}
 
-	return keyContent.Username, keyContent.VerifiedUsername, keyContent.PrivateKey
+	return keyContent.Username, keyContent.VerifiedUsername, keyContent.PrivateKey, nil
 }
 
 // UpdateVmSshKey is func to update VM SShKey
@@ -401,7 +414,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	var content struct {
 		SshKeyId string `json:"sshKeyId"`
 	}
-	fmt.Println("[GetVmSshKey]" + vmId)
+
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
