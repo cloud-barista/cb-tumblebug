@@ -5,17 +5,41 @@ import argparse
 from langchain_community.llms import VLLM
 
 app = Flask(__name__)
-swagger = Swagger(app)
+template = {
+  "swagger": "2.0",
+  "info": {
+    "title": "Cloud-Barista Language Model API",
+    "description": "API for generating text using a pre-trained language model.",
+    "version": "0.1.0"
+  },
+  "basePath": "/",  # base bash for blueprint registration
+  "schemes": [
+    "http"
+  ],
+  "tags": [
+    {
+      "name": "System",
+      "description": "Endpoints related to model information"
+    },
+    {
+      "name": "Text Generation",
+      "description": "Endpoints for generating text"
+    }
+  ],
+}
+swagger = Swagger(app, template=template)
 
 model="tiiuae/falcon-7b-instruct"
 
 parser = argparse.ArgumentParser(description='Start a Flask app with a specified model.')
 parser.add_argument('--port', type=int, default=5000, help='Port number to run the Flask app on.')
 parser.add_argument('--model', type=str, default=model, help='Model name to load.')
+parser.add_argument('--token', type=int, default=1024, help='Set max_new_tokens.')
 args = parser.parse_args()
 
 port=args.port
 model=args.model
+token=args.token
 
 # Global variable to indicate model loading status
 model_loaded = False
@@ -29,7 +53,7 @@ def load_model():
     global llm, model_loaded
     llm = VLLM(model=model,
                trust_remote_code=True,
-               max_new_tokens=50,
+               max_new_tokens=token,
                temperature=0.6)
     model_loaded = True
 
@@ -88,6 +112,9 @@ def prompt_post():
 
     data = request.json
     input = data.get("input", "")
+    if not input:
+        return jsonify({"error": "Input text cannot be empty."}), 400
+
     output = llm(input)
     return jsonify({"input": input, "output": output, "model": model})
 
@@ -122,6 +149,9 @@ def prompt_get():
         return jsonify({"error": "Model is not loaded yet."}), 503
 
     input = request.args.get("input", "")
+    if not input:
+        return jsonify({"error": "Input text cannot be empty."}), 400
+
     output = llm(input)
     return jsonify({"input": input, "output": output, "model": model})
 
