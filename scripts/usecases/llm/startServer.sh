@@ -133,4 +133,4 @@ echo ""
 
 # Swagger API Dashboard Endpoint
 echo "[Swagger API Dashboard Endpoint]"
-echo "http://$IP:$PORT/apidocs/#/default/get_prompt"
+echo "http://$IP:$PORT/apidocs/#/Generation/get_prompt"

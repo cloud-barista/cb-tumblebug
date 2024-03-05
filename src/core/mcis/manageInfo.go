@@ -442,13 +442,18 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 				}
 				vmAccessInfo.VmId = vmId
 
-				_, verifiedUserName, privateKey := GetVmSshKey(nsId, mcisId, vmId)
-
-				if strings.EqualFold(option, "showSshKey") {
-					vmAccessInfo.PrivateKey = privateKey
+				_, verifiedUserName, privateKey, err := GetVmSshKey(nsId, mcisId, vmId)
+				if err != nil {
+					common.CBLog.Error(err)
+					vmAccessInfo.PrivateKey = ""
+					vmAccessInfo.VmUserAccount = ""
+				} else {
+					if strings.EqualFold(option, "showSshKey") {
+						vmAccessInfo.PrivateKey = privateKey
+					}
+					vmAccessInfo.VmUserAccount = verifiedUserName
 				}
 
-				vmAccessInfo.VmUserAccount = verifiedUserName
 				//vmAccessInfo.VmUserPassword
 				chanResults <- vmAccessInfo
 			}(nsId, mcisId, vmId, option, chanResults)
