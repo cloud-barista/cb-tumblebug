@@ -51,12 +51,13 @@ loading_total_time = None
 loading_expected_time = timedelta(seconds=600)
 
 def start_model_loading():
+    global loading_start_time
     thread = threading.Thread(target=load_model)
     loading_start_time = datetime.now()
     thread.start()
 
 def load_model():
-    global llm, model_loaded
+    global llm, model_loaded, loading_end_time, loading_total_time
     llm = VLLM(model=model,
                trust_remote_code=True,
                max_new_tokens=token,
@@ -68,23 +69,48 @@ def load_model():
 @app.route("/status", methods=["GET"])
 def get_status():
     """
-    This endpoint returns the model loading status.
+    This endpoint returns the current status of the model loading process.
+    If the model is not yet loaded, it provides the elapsed time since the start of the loading process and an estimate of the remaining time. Once the model is loaded, it returns the total loading time.
     ---
     tags:
-      - System    
+      - System
     responses:
       200:
-        description: Model loading status
+        description: Provides either the current loading status or the total loading time once the model is loaded.
+        examples:
+          application/json: |
+            {
+              "model": "tiiuae/falcon-7b-instruct",
+              "loaded": false,
+              "message": "Model is not loaded yet.",
+              "elapsed_time": "0:01:30",
+              "remaining_time": "0:08:30"
+            }
+          application/json: |
+            {
+              "model": "tiiuae/falcon-7b-instruct",
+              "loaded": true,
+              "elapsed_time": "0:10:00"
+            }
         schema:
-          id: status_response
+          type: object
           properties:
             model:
               type: string
-              description: The model identifier
+              description: The identifier of the model being loaded.
             loaded:
               type: boolean
-              description: Whether the model has been loaded
-    """    
+              description: Indicates whether the model has finished loading.
+            message:
+              type: string
+              description: A message about the current status of the model loading process.
+            elapsed_time:
+              type: string
+              description: The time elapsed since the model loading process started (or total time elapsed). 
+            remaining_time:
+              type: string
+              description: An estimate of the remaining time until the model loading is complete.
+    """
     if not model_loaded:
         elapsed_time = datetime.now() - loading_start_time
         remaining_time = max(loading_expected_time - elapsed_time, timedelta(seconds=0))
@@ -95,12 +121,12 @@ def get_status():
             "elapsed_time": str(elapsed_time),
             "remaining_time": str(remaining_time)
         })
-    return jsonify({
-        "model": model, 
-        "loaded": model_loaded,
-        "loading_time": str(loading_total_time)
-    })
-
+    else:  
+        return jsonify({
+            "model": model, 
+            "loaded": model_loaded,
+            "elapsed_time": str(loading_total_time)
+        })
 
 @app.route("/prompt", methods=["POST"])
 def prompt_post():

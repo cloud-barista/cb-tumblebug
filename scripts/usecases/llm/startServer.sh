@@ -49,8 +49,22 @@ else
   echo "Virtual environment already exists."
 fi
 
-source $VENV_PATH/bin/activate
+# Check if the activate script exists
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
+  echo "'activate' script not found in the virtual environment. Attempting to recreate the virtual environment..."
+  # Remove the existing virtual environment
+  sudo rm -rf $VENV_PATH
+  # Recreate the virtual environment
+  python3 -m venv $VENV_PATH
+  # Check again if the activate script exists after recreation
+  if [ ! -f "$VENV_PATH/bin/activate" ]; then
+    echo "Failed to setup virtual environment after retry. Exiting."
+    exit 1
+  fi
+fi
 
+echo "Activating virtual environment..."
+source $VENV_PATH/bin/activate
 
 # Step 3: Install required Python packages
 echo "[$SERVICE_NAME] Installing required Python packages..."
