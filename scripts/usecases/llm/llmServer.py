@@ -83,14 +83,14 @@ def get_status():
               "model": "tiiuae/falcon-7b-instruct",
               "loaded": false,
               "message": "Model is not loaded yet.",
-              "elapsed_time": "0:01:30",
-              "remaining_time": "0:08:30"
+              "time_elapsed": "0:01:30",
+              "time_remaining": "0:08:30"
             }
           application/json: |
             {
               "model": "tiiuae/falcon-7b-instruct",
               "loaded": true,
-              "elapsed_time": "0:10:00"
+              "time_elapsed": "0:10:00"
             }
         schema:
           type: object
@@ -104,28 +104,28 @@ def get_status():
             message:
               type: string
               description: A message about the current status of the model loading process.
-            elapsed_time:
+            time_elapsed:
               type: string
               description: The time elapsed since the model loading process started (or total time elapsed). 
-            remaining_time:
+            time_remaining:
               type: string
               description: An estimate of the remaining time until the model loading is complete.
     """
     if not model_loaded:
-        elapsed_time = datetime.now() - loading_start_time
-        remaining_time = max(loading_expected_time - elapsed_time, timedelta(seconds=0))
+        time_elapsed = datetime.now() - loading_start_time
+        time_remaining = max(loading_expected_time - time_elapsed, timedelta(seconds=0))
         return jsonify({
             "model": model, 
             "loaded": model_loaded, 
             "message": "Model is not loaded yet.",
-            "elapsed_time": str(elapsed_time),
-            "remaining_time": str(remaining_time)
+            "time_elapsed": str(time_elapsed),
+            "time_remaining": str(time_remaining)
         })
     else:  
         return jsonify({
             "model": model, 
             "loaded": model_loaded,
-            "elapsed_time": str(loading_total_time)
+            "time_elapsed": str(loading_total_time)
         })
 
 @app.route("/prompt", methods=["POST"])
