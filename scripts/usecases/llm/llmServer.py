@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flasgger import Swagger
 import threading
 import argparse
+from datetime import datetime, timedelta
 from langchain_community.llms import VLLM
 
 app = Flask(__name__)
@@ -22,7 +23,7 @@ template = {
       "description": "Endpoints related to model information"
     },
     {
-      "name": "Text Generation",
+      "name": "Generation",
       "description": "Endpoints for generating text"
     }
   ],
@@ -44,9 +45,14 @@ token=args.token
 # Global variable to indicate model loading status
 model_loaded = False
 llm = None
+loading_start_time = None
+loading_end_time = None
+loading_total_time = None
+loading_expected_time = timedelta(seconds=600)
 
 def start_model_loading():
     thread = threading.Thread(target=load_model)
+    loading_start_time = datetime.now()
     thread.start()
 
 def load_model():
@@ -56,12 +62,16 @@ def load_model():
                max_new_tokens=token,
                temperature=0.6)
     model_loaded = True
+    loading_end_time = datetime.now()
+    loading_total_time = loading_end_time - loading_start_time
 
 @app.route("/status", methods=["GET"])
 def get_status():
     """
     This endpoint returns the model loading status.
     ---
+    tags:
+      - System    
     responses:
       200:
         description: Model loading status
@@ -76,8 +86,20 @@ def get_status():
               description: Whether the model has been loaded
     """    
     if not model_loaded:
-        return jsonify({"model": model, "loaded": model_loaded, "message": "Model is not loaded yet."})
-    return jsonify({"model": model, "loaded": model_loaded})
+        elapsed_time = datetime.now() - loading_start_time
+        remaining_time = max(loading_expected_time - elapsed_time, timedelta(seconds=0))
+        return jsonify({
+            "model": model, 
+            "loaded": model_loaded, 
+            "message": "Model is not loaded yet.",
+            "elapsed_time": str(elapsed_time),
+            "remaining_time": str(remaining_time)
+        })
+    return jsonify({
+        "model": model, 
+        "loaded": model_loaded,
+        "loading_time": str(loading_total_time)
+    })
 
 
 @app.route("/prompt", methods=["POST"])
@@ -85,6 +107,8 @@ def prompt_post():
     """
     This is the language model prompt API.
     ---
+    tags:
+      - Generation
     parameters:
       - name: input
         in: body
@@ -123,6 +147,8 @@ def prompt_get():
     """
     This is the language model prompt API for GET requests.
     ---
+    tags:
+      - Generation
     parameters:
       - name: input
         in: query
