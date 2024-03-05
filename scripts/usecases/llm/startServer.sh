@@ -56,6 +56,7 @@ pip install -U -q langchain langchain-community
 pip install -U -q gptcache 
 sudo $VENV_PATH/bin/python -m pip install -U -q vllm
 pip install -q openai==0.28.1 
+pip install -U -q flasgger
 
 # Check if the pip install was successful
 if [ $? -ne 0 ]; then
