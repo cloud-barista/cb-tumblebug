@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
+from flasgger import Swagger
 import threading
 import argparse
 from langchain_community.llms import VLLM
 
 app = Flask(__name__)
+swagger = Swagger(app)
 
 model="tiiuae/falcon-7b-instruct"
 
@@ -33,23 +35,93 @@ def load_model():
 
 @app.route("/status", methods=["GET"])
 def get_status():
+    """
+    This endpoint returns the model loading status.
+    ---
+    responses:
+      200:
+        description: Model loading status
+        schema:
+          id: status_response
+          properties:
+            model:
+              type: string
+              description: The model identifier
+            loaded:
+              type: boolean
+              description: Whether the model has been loaded
+    """    
     if not model_loaded:
         return jsonify({"model": model, "loaded": model_loaded, "message": "Model is not loaded yet."})
     return jsonify({"model": model, "loaded": model_loaded})
 
 
-@app.route("/prompt", methods=["GET", "POST"])
-def prompt():
+@app.route("/prompt", methods=["POST"])
+def prompt_post():
+    """
+    This is the language model prompt API.
+    ---
+    parameters:
+      - name: input
+        in: body
+        type: string
+        required: true
+        example: {"input": "What is the Multi-Cloud?"}
+    responses:
+      200:
+        description: A successful response
+        schema:
+          id: output_response
+          properties:
+            input:
+              type: string
+              description: The input prompt
+            output:
+              type: string
+              description: The generated text
+            model:
+              type: string
+              description: The model used for generation
+    """
     if not model_loaded:
         return jsonify({"error": "Model is not loaded yet."}), 503
 
-    input = ""
-    if request.method == "POST":
-        data = request.json
-        input = data.get("input", "")
-    elif request.method == "GET":
-        input = request.args.get("input", "")
+    data = request.json
+    input = data.get("input", "")
+    output = llm(input)
+    return jsonify({"input": input, "output": output, "model": model})
 
+@app.route("/prompt", methods=["GET"])
+def prompt_get():
+    """
+    This is the language model prompt API for GET requests.
+    ---
+    parameters:
+      - name: input
+        in: query
+        type: string
+        required: true
+        example: "What is the Multi-Cloud?"
+    responses:
+      200:
+        description: A successful response
+        schema:
+          id: output_response
+          properties:
+            input:
+              type: string
+              description: The input prompt
+            output:
+              type: string
+              description: The generated text
+            model:
+              type: string
+              description: The model used for generation
+    """
+    if not model_loaded:
+        return jsonify({"error": "Model is not loaded yet."}), 503
+
+    input = request.args.get("input", "")
     output = llm(input)
     return jsonify({"input": input, "output": output, "model": model})
 
