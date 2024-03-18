@@ -6,15 +6,11 @@ echo "####################################################################"
 
 source ../init.sh
 
-if [ "$CSP" == "azure" ]; then
-	NODEGROUPNAME="new${INDEX}${REGION}"
-else
-	NODEGROUPNAME="new${INDEX}${REGION}"
-fi 
-
-CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}
-
 NUMVM=${OPTION01:-1}
+CLUSTERID_ADD=${OPTION03:-1}
+
+CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}${CLUSTERID_ADD}
+NODEGROUPNAME="ng${INDEX}${REGION}${CLUSTERID_ADD}"
 
 DesiredNodeSize=$(($NUMVM+1))
 MinNodeSize=$(($NUMVM+1))

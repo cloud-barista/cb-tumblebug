@@ -6,14 +6,10 @@ echo "####################################################################"
 
 source ../init.sh
 
-if [ "$CSP" == "azure" ]; then
-	NODEGROUPNAME="new${INDEX}${REGION}"
-else
-	#NODEGROUPNAME="${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
-	NODEGROUPNAME="new${INDEX}${REGION}"
-fi 
+CLUSTERID_ADD=${OPTION03:-1}
 
-CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}
+CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}${CLUSTERID_ADD}
+NODEGROUPNAME="ng${INDEX}${REGION}${CLUSTERID_ADD}"
 
 echo "NSID: "${NSID}
 echo "CLUSTERID=${CLUSTERID}"

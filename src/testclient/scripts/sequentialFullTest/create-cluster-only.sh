@@ -7,13 +7,13 @@ function test_sequence_cluster() {
 	local POSTFIX=$3
 	local TestSetFile=$4
 	local NUMVM=$5 # as DesiredNodeSize
-	local VERSION=$6
+	local CLUSTERID_ADD=$6
 	local CMDPATH=$7
 
-	../13.cluster/create-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM -y $VERSION
+	../13.cluster/create-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM -z $CLUSTERID_ADD
 	dozing 1
 	# FIXME ../13.cluster/status-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -z $CLUSTERID_ADD
 
 	_self=$CMDPATH
 
@@ -35,12 +35,12 @@ function test_sequence_cluster_allcsp() {
 	local POSTFIX=$3
 	local TestSetFile=$4
 	local NUMVM=$5 # as DesiredNodeSize
-	local VERSION=$6
+	local CLUSTERID_ADD=$6
 	local CMDPATH=$7
 
 	_self=$CMDPATH
 
-	../13.cluster/create-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM -y $VERSION
+	../13.cluster/create-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM -z $CLUSTERID_ADD
 	#dozing 1
 	#../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCISPREFIX
 	echo ""
@@ -63,7 +63,7 @@ echo "####################################################################"
 source ../init.sh
 
 NUMVM=${OPTION01:-1}
-VERSION=${OPTION02:-1.26.1}
+CLUSTERID_ADD=${OPTION03:-1}
 
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel execution for all CSP regions]"
@@ -82,14 +82,15 @@ if [ "${INDEX}" == "0" ]; then
 
 			echo ""
 			echo "[Create a Cluster object"
-			test_sequence_cluster_allcsp $CSP $REGION $POSTFIX $TestSetFile $NUMVM $VERSION ${0##*/} &
+			test_sequence_cluster_allcsp $CSP $REGION $POSTFIX $TestSetFile $NUMVM $CLUSTERID_ADD ${0##*/} &
 
 			# Check CLUSTER object is created
-			CLUSTERID=${CLUSTERID_PREFIX}${cspi}${cspj}
+			CLUSTERID=${CLUSTERID_PREFIX}${cspi}${cspj}${CLUSTERID_ADD}
 			echo ""
-			echo "[Waiting for initialization of CLUSTER:$CNAME (5s)]"
-			dozing 60
+			echo "[Waiting for initialization of CLUSTER:$CNAME (3s)]"
+			dozing 3 
 
+<<COMMENT
 			echo "Checking CLUSTER object. (upto 3s * 20 trials)"
 			for ((try = 1; try <= 20; try++)); do
 				HTTP_CODE=0
@@ -103,19 +104,19 @@ if [ "${INDEX}" == "0" ]; then
 					dozing 10
 				fi
 			done
+COMMENT
 		 done
 	done
 	wait
 
 	# FIXME ../13.cluster/status-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -z $CLUSTERID_ADD
 
 else
 	echo ""
 	echo "[Create CLUSTER] CLUSTERs(1) = Cloud(1) * Region(1)"
 
-	test_sequence_cluster $CSP $REGION $POSTFIX $TestSetFile $NUMVM $VERSION ${0##*/}
-
+	test_sequence_cluster $CSP $REGION $POSTFIX $TestSetFile $NUMVM $CLUSTERID_ADD ${0##*/}
 fi
 
 duration=$SECONDS

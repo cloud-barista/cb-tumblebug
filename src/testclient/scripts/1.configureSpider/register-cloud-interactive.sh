@@ -140,7 +140,7 @@ EOF
 }
 
 echo "####################################################################"
-echo "## 1. Register Cloud Inforation"
+echo "## 1. Register Cloud Information"
 echo "####################################################################"
 
 SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`

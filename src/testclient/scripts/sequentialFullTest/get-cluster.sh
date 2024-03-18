@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Function for individual CSP test
-function test_sequence_remove_nodegroup() {
+function test_sequence_cluster() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
@@ -10,14 +10,10 @@ function test_sequence_remove_nodegroup() {
 	local CLUSTERID_ADD=$6
 	local CMDPATH=$7
 
-	../13.cluster/force-remove-nodegroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM -z $CLUSTERID_ADD
-	#dozing 1
-	# FIXME ../13.cluster/status-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -z $CLUSTERID_ADD
+	../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -z $CLUSTERID_ADD
 
 	_self=$CMDPATH
 
-	CLUSTERID=${CLUSTERID_PREFIX}${cspi}${cspj}
 	echo ""
 	echo "[Logging to notify latest command history]"
 	echo "[CLUSTER:${CLUSTERID}(${SECONDS}s)] ${_self} (Cluster) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile} ${DesiredNodeSize} ${MinNodeSize} ${MaxNodeSize}" >>./executionStatus
@@ -29,7 +25,7 @@ function test_sequence_remove_nodegroup() {
 }
 
 
-function test_sequence_remove_nodegroup_allcsp() {
+function test_sequence_cluster_allcsp() {
 	local CSP=$1
 	local REGION=$2
 	local POSTFIX=$3
@@ -40,11 +36,9 @@ function test_sequence_remove_nodegroup_allcsp() {
 
 	_self=$CMDPATH
 
-	../13.cluster/force-remove-nodegroup.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM -z $CLUSTERID_ADD
+	../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -z $CLUSTERID_ADD
 	#dozing 1
 	#../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCISPREFIX
-	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -z $CLUSTERID_ADD
-
 	echo ""
 	echo "[Logging to notify latest command history]"
 	echo "[CLUSTER:${CLUSTERID}(${SECONDS}s+More)] ${_self} (CLUSTER) all 1 ${POSTFIX} ${TestSetFile}" >>./executionStatus
@@ -53,19 +47,19 @@ function test_sequence_remove_nodegroup_allcsp() {
 	#cat ./executionStatus
 	cp ./executionStatus ./executionStatus.back
 	echo ""
+
 }
 
 SECONDS=0
 
 echo "####################################################################"
-echo "## Remove NodeGroup from Zero Base"
+echo "## Create cluster from Zero Base"
 echo "####################################################################"
 
 source ../init.sh
 
 NUMVM=${OPTION01:-1}
 CLUSTERID_ADD=${OPTION03:-1}
-
 
 if [ "${INDEX}" == "0" ]; then
 	echo "[Parallel execution for all CSP regions]"
@@ -76,27 +70,24 @@ if [ "${INDEX}" == "0" ]; then
 		INDEXY=${NumRegion[$cspi]}
 		CSP=${CSPType[$cspi]}
 		for ((cspj = 1; cspj <= INDEXY; cspj++)); do
+			#echo $j
 			REGION=$cspj
 
-			echo "[Remove NODEGROUP] CLUSTERs($((INDEXX * INDEXY))) = Cloud($INDEXX) * Region($INDEXY)"
-			echo "- Remove NODEGROUP in ${CONN_CONFIG[$cspi,$REGION]}"
+			echo "[Get CLUSTER] CLUSTERs($((INDEXX * INDEXY))) = Cloud($INDEXX) * Region($INDEXY)"
+			echo "- Get CLUSTER in ${CONN_CONFIG[$cspi,$cspj]}"
 
 			echo ""
-			echo "[Remove NODEGROUP object]"
-			test_sequence_remove_nodegroup_allcsp $CSP $REGION $POSTFIX $TestSetFile $NUMVM $CLUSTERID_ADD ${0##*/} &
+			echo "[Get a Cluster object]"
+			test_sequence_cluster_allcsp $CSP $REGION $POSTFIX $TestSetFile $NUMVM $CLUSTERID_ADD ${0##*/} &
 			dozing 3 
 		 done
 	done
 	wait
-
-	# FIXME ../13.cluster/status-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-
 else
 	echo ""
-	echo "[Add NODEGROUP] CLUSTERs(1) = Cloud(1) * Region(1)"
+	echo "[Create CLUSTER] CLUSTERs(1) = Cloud(1) * Region(1)"
 
-	test_sequence_remove_nodegroup $CSP $REGION $POSTFIX $TestSetFile $NUMVM $CLUSTERID_ADD ${0##*/}
+	test_sequence_cluster $CSP $REGION $POSTFIX $TestSetFile $NUMVM $CLUSTERID_ADD ${0##*/}
 
 fi
 

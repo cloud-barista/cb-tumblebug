@@ -4,6 +4,10 @@ function CallTB() {
 	echo "- Unregister image in ${MCIRRegionName}"
 
 	curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/image/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+
+	if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
+		curl -H "${AUTH}" -sX DELETE http://$TumblebugServer/tumblebug/ns/$NSID/resources/image/k8s-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} | jq ''
+	fi
 }
 
 #function unregister_image() {
