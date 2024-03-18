@@ -188,6 +188,20 @@ type TbChangeAutoscaleSizeRes struct {
 	TbClusterNodeGroupInfo
 }
 
+type SpiderUpgradeClusterReq struct {
+	NameSpace      string // should be empty string from Tumblebug
+	ConnectionName string
+	ReqInfo        SpiderUpgradeClusterReqInfo
+}
+
+type SpiderUpgradeClusterReqInfo struct {
+	Version string
+}
+
+type TbUpgradeClusterReq struct {
+	Version string `json:"version"`
+}
+
 // TbClusterReqStructLevelValidation is a function to validate 'TbClusterReq' object.
 func TbClusterReqStructLevelValidation(sl validator.StructLevel) {
 
@@ -1537,6 +1551,160 @@ func DeleteAllCluster(nsId string, subString string, forceFlag string) (common.I
 	return deletedClusters, nil
 }
 
+// UpgradeCluster upgrades the TB Cluster object
+func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbClusterInfo, error) {
+	fmt.Println("=========================== UpgradeCluster")
+
+	emptyObj := TbClusterInfo{}
+
+	err := validate.Struct(u)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return emptyObj, err
+		}
+
+		return emptyObj, err
+	}
+
+	check, err := CheckCluster(nsId, clusterId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	if !check {
+		err := fmt.Errorf("The cluster " + clusterId + " does not exist.")
+		return emptyObj, err
+	}
+
+	/*
+	 * Get TbClusterInfo from cb-store
+	 */
+	oldTbCInfo := TbClusterInfo{}
+	k := GenClusterKey(nsId, clusterId)
+	kv, err := common.CBStore.Get(k)
+	if err != nil {
+		err = fmt.Errorf("In UpgradeCluster(); CBStore.Get() returned an error: " + err.Error())
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
+	fmt.Println("===========================")
+
+	err = json.Unmarshal([]byte(kv.Value), &oldTbCInfo)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	/*
+	 * Check for Cluster Enablement from ClusterSetting
+	 */
+
+	connConfig, err := common.GetConnConfig(oldTbCInfo.ConnectionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the connConfig " + oldTbCInfo.ConnectionName + ": " + err.Error())
+		return emptyObj, err
+	}
+
+	cloudType := connConfig.ProviderName
+
+	// Convert cloud type to field name (e.g., AWS to Aws, OPENSTACK to Openstack)
+	lowercase := strings.ToLower(cloudType)
+	fnCloudType := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
+
+	// Get cloud setting with field name
+	cloudSetting := common.CloudSetting{}
+
+	getCloudSetting := func() {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println(err)
+				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
+			}
+		}()
+
+		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(common.CloudSetting)
+	}
+
+	getCloudSetting()
+
+	if cloudSetting.Cluster.Enable != "y" {
+		err := fmt.Errorf("The Cluster Management function is not enabled for Cloud(" + fnCloudType + ")")
+		return emptyObj, err
+	}
+
+	/*
+	 * Build RequestBody for SpiderUpgradeClusterReq{}
+	 */
+	requestBody := SpiderUpgradeClusterReq{
+		NameSpace:      "", // should be empty string from Tumblebug
+		ConnectionName: oldTbCInfo.ConnectionName,
+		ReqInfo: SpiderUpgradeClusterReqInfo{
+			Version: u.Version,
+		},
+	}
+
+	client := resty.New()
+	url := common.SpiderRestUrl + "/cluster/" + oldTbCInfo.CspClusterName + "/upgrade"
+	method := "PUT"
+
+	var spClusterRes SpiderClusterRes
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&spClusterRes,
+		common.MediumDuration,
+	)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	/*
+	 * Extract SpiderClusterInfo from Response & Build TbClusterInfo object
+	 */
+
+	newTbCInfo := convertSpiderClusterInfoToTbClusterInfo(&spClusterRes.ClusterInfo, oldTbCInfo.Id, oldTbCInfo.ConnectionName, oldTbCInfo.Description)
+
+	/*
+	 * Put/Get TbClusterInfo to/from cb-store
+	 */
+	k = GenClusterKey(nsId, newTbCInfo.Id)
+	Val, _ := json.Marshal(newTbCInfo)
+
+	err = common.CBStore.Put(k, string(Val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	kv, err = common.CBStore.Get(k)
+	if err != nil {
+		err = fmt.Errorf("In UpgradeCluster(); CBStore.Get() returned an error: " + err.Error())
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
+	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
+	fmt.Println("===========================")
+
+	storedTbCInfo := TbClusterInfo{}
+	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
+	if err != nil {
+		common.CBLog.Error(err)
+	}
+
+	return storedTbCInfo, nil
+}
+
 func convertSpiderNetworkInfoToTbClusterNetworkInfo(spNetworkInfo SpiderNetworkInfo) TbClusterNetworkInfo {
 	tbVNetId := spNetworkInfo.VpcIID.SystemId
 
@@ -1633,7 +1801,6 @@ func convertSpiderClusterInfoToTbClusterInfo(spClusterInfo *SpiderClusterInfo, i
 	tbCAccInfo := convertSpiderClusterAccessInfoToTbClusterAccessInfo(spClusterInfo.AccessInfo)
 	tbCAddInfo := convertSpiderClusterAddonsInfoToTbClusterAddonsInfo(spClusterInfo.Addons)
 	//tbCStatus := spClusterInfo.Status
-	//tbCTime := spClusterInfo.CreatedTime
 	tbKVList := convertSpiderKeyValueListToTbKeyValueList(spClusterInfo.KeyValueList)
 	tbCInfo := TbClusterInfo{
 		Id:             id,

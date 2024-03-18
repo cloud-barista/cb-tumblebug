@@ -292,6 +292,7 @@ func RunServer(port string) {
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
 	g.DELETE("/:nsId/cluster/:clusterId", rest_mcis.RestDeleteCluster)
 	g.DELETE("/:nsId/cluster", rest_mcis.RestDeleteAllCluster)
+	g.PUT("/:nsId/cluster/:clusterId/upgrade", rest_mcis.RestPutUpgradeCluster)
 
 	// Network Load Balancer
 	g.POST("/:nsId/mcis/:mcisId/mcSwNlb", rest_mcis.RestPostMcNLB)
