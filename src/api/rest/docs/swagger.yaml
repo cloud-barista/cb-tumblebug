@@ -3995,6 +3995,41 @@ paths:
       summary: Set a NodeGroup's Autoscaling On/Off
       tags:
       - '[Infra resource] Cluster management'
+  /ns/{nsId}/cluster/{clusterId}/upgrade:
+    put:
+      consumes:
+      - application/json
+      description: Upgrade a Cluster's version
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Cluster ID
+        in: path
+        name: clusterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Upgrade a Cluster's version
+      tags:
+      - '[Infra resource] Cluster management'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
