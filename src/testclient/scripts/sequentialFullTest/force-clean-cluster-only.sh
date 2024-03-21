@@ -8,7 +8,7 @@ function clean_sequence_cluster() {
 	local CLUSTERID_ADD=$5
 	local CMDPATH=$6
 
-	../13.cluster/delete-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate -z $CLUSTERID_ADD
+	../13.cluster/force-delete-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate -z $CLUSTERID_ADD
 }
 
 function clean_sequence_cluster_allcsp() {
@@ -21,7 +21,7 @@ function clean_sequence_cluster_allcsp() {
 
 	_self=$CMDPATH
 
-	../13.cluster/delete-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate -z $CLUSTERID_ADD
+	../13.cluster/force-delete-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x terminate -z $CLUSTERID_ADD
 	#dozing 1
 	#../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCISPREFIX
 	echo ""
@@ -71,6 +71,22 @@ if [ "${INDEX}" == "0" ]; then
 			echo ""
 			echo "[Waiting for deleting of CLUSTER:$CLUSTERID (5s)]"
 			dozing 5
+
+<<COMMENT
+			echo "Checking a CLUSTER object. (upto 5s * 10 trials)"
+			for ((try = 1; try <= 10; try++)); do
+				HTTP_CODE=0
+				HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NSID/cluster/${CLUSTERID}" --silent)
+				echo "HTTP status for get CLUSTER object: $HTTP_CODE"
+				if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
+					echo "[$try : CLUSTER object is still ALIVE].."
+					dozing 5
+				else
+					printf "[$try : CLUSTER object is deleted or not existed].."
+					break
+				fi
+			done
+COMMENT			
 		 done
 	done
 	wait

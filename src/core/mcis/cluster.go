@@ -111,13 +111,14 @@ type TbClusterReq struct { // Tumblebug
 
 // 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L441
 
-// SpiderNodeGroupReq is a wrapper struct to create JSON body of 'Add NodeGroup request'
+// SpiderNodeGroupReq is a wrapper struct to create JSON body of 'Add NodeGroup' request
 type SpiderNodeGroupReq struct {
 	NameSpace      string // should be empty string from Tumblebug
 	ConnectionName string
 	ReqInfo        SpiderNodeGroupReqInfo
 }
 
+// SpiderNodeGroupReqInfo is a wrapper struct to create JSON body of 'Add NodeGroup' request
 type SpiderNodeGroupReqInfo struct {
 	Name         string
 	ImageName    string
@@ -133,6 +134,7 @@ type SpiderNodeGroupReqInfo struct {
 	MaxNodeSize     string
 }
 
+// TbNodeGroupReq is a struct to handle requests related to NodeGroup toward CB-Tumblebug.
 type TbNodeGroupReq struct {
 	Name         string `json:"name"`
 	ImageId      string `json:"imageId"`
@@ -148,44 +150,68 @@ type TbNodeGroupReq struct {
 	MaxNodeSize     string `json:"maxNodeSize"`
 }
 
-// SpiderSetAutoscalingReq is a wrapper struct to create JSON body of 'Set Autoscaling On/Off request'
+// SpiderSetAutoscalingReq is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' request.
 type SpiderSetAutoscalingReq struct {
 	ConnectionName string
 	ReqInfo        SpiderSetAutoscalingReqInfo
 }
 
+// SpiderSetAutoscalingReqInfo is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' request.
 type SpiderSetAutoscalingReqInfo struct {
 	OnAutoScaling string
 }
 
+// TbSetAutoscalingReq is a struct to handle 'Set Autoscaling' request toward CB-Tumblebug.
 type TbSetAutoscalingReq struct {
 	OnAutoScaling string `json:"onAutoScaling"`
 }
 
+// SpiderChangeAutoscaleSizeReq is a wrapper struct to create JSON body of 'Change Autoscale Size' request.
 type SpiderChangeAutoscaleSizeReq struct {
 	ConnectionName string
 	ReqInfo        SpiderChangeAutoscaleSizeReqInfo
 }
 
+// SpiderChangeAutoscaleSizeReqInfo is a wrapper struct to create JSON body of 'Change Autoscale Size' request.
 type SpiderChangeAutoscaleSizeReqInfo struct {
 	DesiredNodeSize string
 	MinNodeSize     string
 	MaxNodeSize     string
 }
 
+// TbChangeAutoscaleSizeReq is a struct to handle 'Change Autoscale Size' request toward CB-Tumblebug.
 type TbChangeAutoscaleSizeReq struct {
 	DesiredNodeSize string `json:"desiredNodeSize"`
 	MinNodeSize     string `json:"minNodeSize"`
 	MaxNodeSize     string `json:"maxNodeSize"`
 }
 
+// SpiderChangeAutoscaleSizeRes is a wrapper struct to get JSON body of 'Change Autoscale Size' response
 type SpiderChangeAutoscaleSizeRes struct {
 	ConnectionName string
 	NodeGroupInfo  SpiderNodeGroupInfo
 }
 
+// TbChangeAutoscaleSizeRes is a struct to handle 'Change Autoscale Size' response from CB-Tumblebug.
 type TbChangeAutoscaleSizeRes struct {
 	TbClusterNodeGroupInfo
+}
+
+// SpiderUpgradeClusterReq is a wrapper struct to create JSON body of 'Upgrade Cluster' request
+type SpiderUpgradeClusterReq struct {
+	NameSpace      string // should be empty string from Tumblebug
+	ConnectionName string
+	ReqInfo        SpiderUpgradeClusterReqInfo
+}
+
+// SpiderUpgradeClusterReqInfo is a wrapper struct to create JSON body of 'Upgrade Cluster' request
+type SpiderUpgradeClusterReqInfo struct {
+	Version string
+}
+
+// TbUpgradeClusterReq is a struct to handle 'Upgrade Cluster' request toward CB-Tumblebug.
+type TbUpgradeClusterReq struct {
+	Version string `json:"version"`
 }
 
 // TbClusterReqStructLevelValidation is a function to validate 'TbClusterReq' object.
@@ -382,7 +408,7 @@ type TbClusterAddonsInfo struct {
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
 
-// CreateCluster accepts a cluster creation request, creates and returns an TB cluster object
+// CreateCluster create a cluster
 func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, error) {
 	fmt.Println("=========================== CreateCluster")
 
@@ -660,7 +686,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	return storedTbCInfo, nil
 }
 
-// AddNodeGroup accepts a request to add a nodegroup, adds and returns an TB cluster object
+// AddNodeGroup adds a NodeGroup
 func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterInfo, error) {
 	fmt.Println("=========================== AddNodeGroup")
 
@@ -869,7 +895,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 
 }
 
-// RemoveNodeGroup requests to delete a nodegroup with given nodeGropuName to Spider
+// RemoveNodeGroup removes a specified NodeGroup
 func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceFlag string) (bool, error) {
 	fmt.Println("=========================== RemoveNodeGroup")
 	/*
@@ -1124,7 +1150,7 @@ func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u 
 	return tbCAutoscaleSizeRes, nil
 }
 
-// GetCluster returns the requested TB Cluster object
+// GetCluster retrives a cluster information
 func GetCluster(nsId string, clusterId string) (TbClusterInfo, error) {
 
 	emptyObj := TbClusterInfo{}
@@ -1395,7 +1421,7 @@ func ListCluster(nsId string, filterKey string, filterVal string) (interface{}, 
 	return tbCInfoList, nil
 }
 
-// DeleteCluster deletes the TB Cluster object
+// DeleteCluster deletes a cluster
 func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error) {
 	fmt.Println("=========================== DeleteCluster")
 	/*
@@ -1501,7 +1527,7 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 	return false, nil
 }
 
-// DeleteAllCluster deletes all TB Cluster object of given nsId and given subString
+// DeleteAllCluster deletes all clusters
 func DeleteAllCluster(nsId string, subString string, forceFlag string) (common.IdList, error) {
 	fmt.Println("=========================== DeleteAllCluster")
 
@@ -1535,6 +1561,160 @@ func DeleteAllCluster(nsId string, subString string, forceFlag string) (common.I
 		}
 	}
 	return deletedClusters, nil
+}
+
+// UpgradeCluster upgrades an existing cluster to the specified version
+func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbClusterInfo, error) {
+	fmt.Println("=========================== UpgradeCluster")
+
+	emptyObj := TbClusterInfo{}
+
+	err := validate.Struct(u)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return emptyObj, err
+		}
+
+		return emptyObj, err
+	}
+
+	check, err := CheckCluster(nsId, clusterId)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	if !check {
+		err := fmt.Errorf("The cluster " + clusterId + " does not exist.")
+		return emptyObj, err
+	}
+
+	/*
+	 * Get TbClusterInfo from cb-store
+	 */
+	oldTbCInfo := TbClusterInfo{}
+	k := GenClusterKey(nsId, clusterId)
+	kv, err := common.CBStore.Get(k)
+	if err != nil {
+		err = fmt.Errorf("In UpgradeCluster(); CBStore.Get() returned an error: " + err.Error())
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
+	fmt.Println("===========================")
+
+	err = json.Unmarshal([]byte(kv.Value), &oldTbCInfo)
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	/*
+	 * Check for Cluster Enablement from ClusterSetting
+	 */
+
+	connConfig, err := common.GetConnConfig(oldTbCInfo.ConnectionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the connConfig " + oldTbCInfo.ConnectionName + ": " + err.Error())
+		return emptyObj, err
+	}
+
+	cloudType := connConfig.ProviderName
+
+	// Convert cloud type to field name (e.g., AWS to Aws, OPENSTACK to Openstack)
+	lowercase := strings.ToLower(cloudType)
+	fnCloudType := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
+
+	// Get cloud setting with field name
+	cloudSetting := common.CloudSetting{}
+
+	getCloudSetting := func() {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println(err)
+				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
+			}
+		}()
+
+		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(common.CloudSetting)
+	}
+
+	getCloudSetting()
+
+	if cloudSetting.Cluster.Enable != "y" {
+		err := fmt.Errorf("The Cluster Management function is not enabled for Cloud(" + fnCloudType + ")")
+		return emptyObj, err
+	}
+
+	/*
+	 * Build RequestBody for SpiderUpgradeClusterReq{}
+	 */
+	requestBody := SpiderUpgradeClusterReq{
+		NameSpace:      "", // should be empty string from Tumblebug
+		ConnectionName: oldTbCInfo.ConnectionName,
+		ReqInfo: SpiderUpgradeClusterReqInfo{
+			Version: u.Version,
+		},
+	}
+
+	client := resty.New()
+	url := common.SpiderRestUrl + "/cluster/" + oldTbCInfo.CspClusterName + "/upgrade"
+	method := "PUT"
+
+	var spClusterRes SpiderClusterRes
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&spClusterRes,
+		common.MediumDuration,
+	)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	/*
+	 * Extract SpiderClusterInfo from Response & Build TbClusterInfo object
+	 */
+
+	newTbCInfo := convertSpiderClusterInfoToTbClusterInfo(&spClusterRes.ClusterInfo, oldTbCInfo.Id, oldTbCInfo.ConnectionName, oldTbCInfo.Description)
+
+	/*
+	 * Put/Get TbClusterInfo to/from cb-store
+	 */
+	k = GenClusterKey(nsId, newTbCInfo.Id)
+	Val, _ := json.Marshal(newTbCInfo)
+
+	err = common.CBStore.Put(k, string(Val))
+	if err != nil {
+		common.CBLog.Error(err)
+		return emptyObj, err
+	}
+
+	kv, err = common.CBStore.Get(k)
+	if err != nil {
+		err = fmt.Errorf("In UpgradeCluster(); CBStore.Get() returned an error: " + err.Error())
+		common.CBLog.Error(err)
+		// return nil, err
+	}
+
+	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
+	fmt.Println("===========================")
+
+	storedTbCInfo := TbClusterInfo{}
+	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
+	if err != nil {
+		common.CBLog.Error(err)
+	}
+
+	return storedTbCInfo, nil
 }
 
 func convertSpiderNetworkInfoToTbClusterNetworkInfo(spNetworkInfo SpiderNetworkInfo) TbClusterNetworkInfo {
@@ -1633,7 +1813,6 @@ func convertSpiderClusterInfoToTbClusterInfo(spClusterInfo *SpiderClusterInfo, i
 	tbCAccInfo := convertSpiderClusterAccessInfoToTbClusterAccessInfo(spClusterInfo.AccessInfo)
 	tbCAddInfo := convertSpiderClusterAddonsInfoToTbClusterAddonsInfo(spClusterInfo.Addons)
 	//tbCStatus := spClusterInfo.Status
-	//tbCTime := spClusterInfo.CreatedTime
 	tbKVList := convertSpiderKeyValueListToTbKeyValueList(spClusterInfo.KeyValueList)
 	tbCInfo := TbClusterInfo{
 		Id:             id,

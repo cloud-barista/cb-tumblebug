@@ -18,24 +18,24 @@ else
         RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
 fi
 
-# Set NODEGROUPNAME, NODEIMAGEID for each CSP
-if [ "$CSP" == "azure" ]; then
-	VERSION=${OPTION02:-1.25.11}
-	NODEGROUPNAME="ng${INDEX}${REGION}"
-	NODEIMAGEID=""
-elif [ "$CSP" == "tencent" ]; then
-	VERSION=${OPTION02:-1.26.1}
-	NODEGROUPNAME="${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
-	NODEIMAGEID=""
+NODEGROUPNAME="ng${INDEX}${REGION}${CLUSTERID_ADD}"
+if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
+	NODEIMAGEID="k8s-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
 else
-	NODEGROUPNAME="${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
 	NODEIMAGEID="${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
-fi 
+fi
 
-CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}
+if [ -n "${K8S_VERSION[$INDEX,$REGION]}" ]; then
+	VERSION=${K8S_VERSION[$INDEX,$REGION]}
+else
+	echo "You need to specify K8S_VERION[\$IX,\$IY] in conf.env!!!"
+	exit
+fi
 
 NUMVM=${OPTION01:-1}
-VERSION=${OPTION02:-1.25.11}
+CLUSTERID_ADD=${OPTION03:-1}
+
+CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}${CLUSTERID_ADD}
 
 DesiredNodeSize=$NUMVM
 MinNodeSize="1"
@@ -47,17 +47,21 @@ echo "NSID=${NSID}"
 echo "INDEX=${INDEX}"
 echo "REGION=${REGION}"
 echo "POSTFIX=${POSTFIX}"
+echo "NAME=${NODEGROUPNAME}"
+echo "IMAGEID=${NODEIMAGEID}"
 echo "RootDiskType=${RootDiskType}"
 echo "RootDiskSize=${RootDiskSize}"
 echo "DesiredNodeSize=${DesiredNodeSize}"
 echo "MinNodeSize=${MinNodeSize}"
 echo "MaxNodeSize=${MaxNodeSize}"
+echo "VERSION=${VERSION}"
 echo "CLUSTERID=${CLUSTERID}"
 echo "===================================================================="
 
 # Set NodeGroupList for Type-I and Type-II CSP
 # https://github.com/cloud-barista/cb-spider/wiki/Provider-Managed-Kubernetes-and-Driver-API#3-%EB%93%9C%EB%9D%BC%EC%9D%B4%EB%B2%84-%EA%B0%9C%EB%B0%9C-%EB%85%B8%ED%8A%B8
-if [ "$CSP" == "tencent"  ]|| [ "$CSP" == "alibaba" ]; then # Type-I CSP
+
+if [ "${ClusterType[$INDEX]}" == "type1"  ]; then # Type-I CSP
     	NODEGROUPLIST=""
 else # Type-II CSP
 	NODEGROUPLIST=$(cat <<-END

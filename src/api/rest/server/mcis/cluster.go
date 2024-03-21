@@ -372,3 +372,38 @@ func RestDeleteAllCluster(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, output)
 }
+
+// RestPutClusterUpgrade godoc
+// @Summary Upgrade a Cluster's version
+// @Description Upgrade a Cluster's version
+// @Tags [Infra resource] Cluster management
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param clusterId path string true "Cluster ID"
+// @Success 200 {object} common.SimpleMsg
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /ns/{nsId}/cluster/{clusterId}/upgrade [put]
+func RestPutUpgradeCluster(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	clusterId := c.Param("clusterId")
+
+	u := &mcis.TbUpgradeClusterReq{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	fmt.Println("[PUT Upgrade Cluster]")
+
+	content, err := mcis.UpgradeCluster(nsId, clusterId, u)
+
+	if err != nil {
+		common.CBLog.Error(err)
+		mapA := map[string]string{"message": err.Error()}
+		return c.JSON(http.StatusInternalServerError, &mapA)
+	}
+
+	return c.JSON(http.StatusOK, content)
+}

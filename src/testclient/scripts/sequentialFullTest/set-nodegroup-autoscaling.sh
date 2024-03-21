@@ -12,7 +12,7 @@ function test_sequence_set_nodegroup_autoscaling() {
 	../13.cluster/set-autoscaling.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM 
 	dozing 1
 	# FIXME ../13.cluster/status-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	_self=$CMDPATH
 
@@ -41,7 +41,7 @@ function test_sequence_set_nodegroup_autoscaling_allcsp() {
 	../13.cluster/set-autoscaling.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile -x $NUMVM
 	#dozing 1
 	#../8.mcis/status-mcis.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile $MCISPREFIX
-	../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 	echo ""
 	echo "[Logging to notify latest command history]"
@@ -81,12 +81,13 @@ if [ "${INDEX}" == "0" ]; then
 			echo ""
 			echo "[set NODEGROUP autoscaling]"
 			test_sequence_set_nodegroup_autoscaling_allcsp $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/} &
+			dozing 3 
 		 done
 	done
 	wait
 
 	# FIXME ../13.cluster/status-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
-	../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
+	#../13.cluster/get-cluster.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile
 
 else
 	echo ""
