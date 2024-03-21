@@ -43,7 +43,6 @@ type NsInfo struct {
 func NsValidation() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			fmt.Printf("%v\n", "[Handle API Request]")
 			nsId := c.Param("nsId")
 			if nsId == "" {
 				return next(c)
