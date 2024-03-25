@@ -965,26 +965,29 @@ func ListMcisStatus(nsId string) ([]McisStatusInfo, error) {
 
 // GetVmCurrentPublicIp is func to get VM public IP
 func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusInfo, error) {
-
-	fmt.Println("[GetVmStatus]" + vmId)
-	key := common.GenMcisKey(nsId, mcisId, vmId)
 	errorInfo := TbVmStatusInfo{}
+	errorInfo.Status = StatusFailed
 
+	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil || keyValue == nil {
-		fmt.Println(err)
+		common.CBLog.Error(err)
 		return errorInfo, err
 	}
 
 	temp := TbVmInfo{}
-	unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
-	if unmarshalErr != nil {
-		fmt.Println("unmarshalErr:", unmarshalErr)
+	err = json.Unmarshal([]byte(keyValue.Value), &temp)
+	if err != nil {
+		common.CBLog.Error(err)
+		return errorInfo, err
 	}
-	fmt.Println("\n[Calling SPIDER] START")
-	fmt.Println("CspVmId: " + temp.CspViewVmDetail.IId.NameId)
 
 	cspVmId := temp.CspViewVmDetail.IId.NameId
+	if cspVmId == "" {
+		err = fmt.Errorf("cspVmId is empty (VmId: %s)", vmId)
+		common.CBLog.Error(err)
+		return errorInfo, err
+	}
 
 	type statusResponse struct {
 		Status         string
@@ -1013,8 +1016,6 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 		&callResult,
 		common.MediumDuration,
 	)
-
-	errorInfo.Status = StatusFailed
 
 	if err != nil {
 		common.CBLog.Error(err)
@@ -1123,7 +1124,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 	callResult := statusResponse{}
 	callResult.Status = ""
 
-	if temp.Status != StatusTerminated {
+	if temp.Status != StatusTerminated && cspVmId != "" {
 		client := resty.New()
 		url := common.SpiderRestUrl + "/vmstatus/" + cspVmId
 		method := "GET"
@@ -1321,20 +1322,6 @@ func GetMcisVmStatus(nsId string, mcisId string, vmId string) (*TbVmStatusInfo, 
 		temp := &TbVmStatusInfo{}
 		err := fmt.Errorf("The vm " + vmId + " does not exist.")
 		return temp, err
-	}
-
-	fmt.Println("[status VM]")
-
-	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
-	vmKeyValue, err := common.CBStore.Get(vmKey)
-	if err != nil {
-		err = fmt.Errorf("in CoreGetMcisVmStatus(); CBStore.Get() returned an error")
-		common.CBLog.Error(err)
-		// return nil, err
-	}
-
-	if vmKeyValue == nil {
-		return nil, fmt.Errorf("Cannot find " + vmKey)
 	}
 
 	vmStatusResponse, err := FetchVmStatus(nsId, mcisId, vmId)

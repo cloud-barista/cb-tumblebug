@@ -907,30 +907,10 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	// returns InvalidValidationError for bad validation input, nil or ValidationErrors ( []FieldError )
 	err = validate.Struct(req)
 	if err != nil {
-
-		// this check is only needed when your code could produce
-		// an invalid value for validation such as interface with nil
-		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			fmt.Println(err)
 			return nil, err
 		}
-
-		// for _, err := range err.(validator.ValidationErrors) {
-
-		// 	fmt.Println(err.Namespace()) // can differ when a custom TagNameFunc is registered or
-		// 	fmt.Println(err.Field())     // by passing alt name to ReportError like below
-		// 	fmt.Println(err.StructNamespace())
-		// 	fmt.Println(err.StructField())
-		// 	fmt.Println(err.Tag())
-		// 	fmt.Println(err.ActualTag())
-		// 	fmt.Println(err.Kind())
-		// 	fmt.Println(err.Type())
-		// 	fmt.Println(err.Value())
-		// 	fmt.Println(err.Param())
-		// 	fmt.Println()
-		// }
-
 		return nil, err
 	}
 
@@ -978,17 +958,6 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 		return nil, err
 	}
 
-	keyValue, err := common.CBStore.Get(key)
-	if err != nil {
-		common.CBLog.Error(err)
-		err = fmt.Errorf("In CreateMcis(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
-		// return nil, err
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
-
 	// Check whether VM names meet requirement.
 	for _, k := range vmRequest {
 		err = common.CheckString(k.Name)
@@ -1031,16 +1000,6 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			if err != nil {
 				common.CBLog.Error(err)
 			}
-			keyValue, err := common.CBStore.Get(key)
-			if err != nil {
-				common.CBLog.Error(err)
-				err = fmt.Errorf("In CreateMcis(); CBStore.Get() returned an error.")
-				common.CBLog.Error(err)
-				// return nil, err
-			}
-
-			fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-			fmt.Println("===========================")
 
 		}
 
@@ -1520,12 +1479,8 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 		return err
 	}
 
-	fmt.Printf("\n[AddVmToMcis Before request vmInfoData]\n")
-
 	//instanceIds, publicIPs := CreateVm(&vmInfoData)
 	err = CreateVm(nsId, mcisId, vmInfoData, option)
-
-	fmt.Printf("\n[AddVmToMcis After request vmInfoData]\n")
 
 	if err != nil {
 		vmInfoData.Status = StatusFailed
