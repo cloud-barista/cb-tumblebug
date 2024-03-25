@@ -33,7 +33,11 @@ type CacheItem[T any] struct {
 	ExpiresAt time.Time
 }
 
+// clientCache is a map for cache items of intenal calls
 var clientCache = sync.Map{}
+
+// clientRequestCounter is a map for request counters of intenal calls
+var clientRequestCounter = sync.Map{}
 
 const (
 	// ShortDuration is a duration for short-term cache
@@ -55,6 +59,30 @@ func SetUseBody(requestBody interface{}) bool {
 	return true
 }
 
+// limitConcurrentRequests limits the number of Concurrent requests to the given limit
+func limitConcurrentRequests(requestKey string, limit int) bool {
+	count, _ := clientRequestCounter.LoadOrStore(requestKey, 0)
+	currentCount := count.(int)
+
+	if currentCount >= limit {
+		fmt.Printf("[%s] requests for %s \n", currentCount, requestKey)
+		return false
+	}
+
+	clientRequestCounter.Store(requestKey, currentCount+1)
+	return true
+}
+
+// requestDone decreases the request counter
+func requestDone(requestKey string) {
+	count, _ := clientRequestCounter.Load(requestKey)
+	currentCount := count.(int)
+
+	if currentCount > 0 {
+		clientRequestCounter.Store(requestKey, currentCount-1)
+	}
+}
+
 // ExecuteHttpRequest performs the HTTP request and fills the result (var requestBody interface{} = nil for empty body)
 func ExecuteHttpRequest[B any, T any](
 	client *resty.Client,
@@ -68,7 +96,7 @@ func ExecuteHttpRequest[B any, T any](
 ) error {
 
 	// Generate cache key for GET method only
-	cacheKey := ""
+	requestKey := ""
 	if method == "GET" {
 
 		if useBody {
@@ -78,13 +106,13 @@ func ExecuteHttpRequest[B any, T any](
 				return fmt.Errorf("JSON marshaling failed: %w", err)
 			}
 			// Create cache key using both URL and body
-			cacheKey = fmt.Sprintf("%s_%s_%s", method, url, string(bodyString))
+			requestKey = fmt.Sprintf("%s_%s_%s", method, url, string(bodyString))
 		} else {
 			// Create cache key using only URL
-			cacheKey = fmt.Sprintf("%s_%s", method, url)
+			requestKey = fmt.Sprintf("%s_%s", method, url)
 		}
 
-		if item, found := clientCache.Load(cacheKey); found {
+		if item, found := clientCache.Load(requestKey); found {
 			cachedItem := item.(CacheItem[T]) // Generic type
 			if time.Now().Before(cachedItem.ExpiresAt) {
 				fmt.Println("Cache hit! Expires: ", time.Now().Sub(cachedItem.ExpiresAt))
@@ -96,7 +124,35 @@ func ExecuteHttpRequest[B any, T any](
 				return nil
 			} else {
 				fmt.Println("Cache item expired!")
-				clientCache.Delete(cacheKey)
+				clientCache.Delete(requestKey)
+			}
+		}
+
+		// Limit the number of concurrent requests
+		concurrencyLimit := 10
+		retryWait := 5 * time.Second
+		retryLimit := 3
+		retryCount := 0
+		// try to wait for the upcomming cached result when sending que is full
+		for {
+			if !limitConcurrentRequests(requestKey, concurrencyLimit) {
+				if retryCount >= retryLimit {
+					fmt.Printf("Too many same requests: %s\n", requestKey)
+					return fmt.Errorf("Too many same requests: %s", requestKey)
+				}
+				time.Sleep(retryWait)
+
+				if item, found := clientCache.Load(requestKey); found {
+					cachedItem := item.(CacheItem[T])
+					*result = cachedItem.Response
+					// release the request count for parallel requests limit
+					requestDone(requestKey)
+					fmt.Println("Got the cached result while waiting")
+					return nil
+				}
+				retryCount++
+			} else {
+				break
 			}
 		}
 	}
@@ -147,11 +203,14 @@ func ExecuteHttpRequest[B any, T any](
 		//val := reflect.ValueOf(result).Elem()
 		//newCacheItem := val.Interface()
 
+		// release the request count for parallel requests limit
+		requestDone(requestKey)
+
 		// Check if result is nil
 		if result == nil {
 			fmt.Println("Warning: result is nil, not caching.")
 		} else {
-			clientCache.Store(cacheKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
+			clientCache.Store(requestKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
 			fmt.Println("Cached successfully!")
 		}
 	}
