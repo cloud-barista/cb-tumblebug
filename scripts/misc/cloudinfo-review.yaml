@@ -559,283 +559,325 @@ azure:
         display: Australia Central
         latitude: -35.3075
         longitude: 149.1244
-      zone: []
+      zone:
+      - 1
     australiacentral2:
       desc: Australia Central 2
       location:
         display: Australia Central 2
         latitude: -35.3085
         longitude: 149.1254
-      zone: []
+      zone:
+      - 1
     australiaeast:
       desc: Australia East
       location:
         display: Australia East
         latitude: -33.86
         longitude: 151.2094
-      zone: []
+      zone:
+      - 1
     australiasoutheast:
       desc: Australia Southeast
       location:
         display: Australia Southeast
         latitude: -37.8136
         longitude: 144.9631
-      zone: []
+      zone:
+      - 1
     brazilsouth:
       desc: Brazil South
       location:
         display: Brazil South
         latitude: -23.55
         longitude: -46.633
-      zone: []
+      zone:
+      - 1
     canadacentral:
       desc: Canada Central
       location:
         display: Canada Central
         latitude: 43.653
         longitude: -79.383
-      zone: []
+      zone:
+      - 1
     canadaeast:
       desc: Canada East
       location:
         display: Canada East
         latitude: 46.817
         longitude: -71.217
-      zone: []
+      zone:
+      - 1
     centralindia:
       desc: Central India
       location:
         display: Central India
         latitude: 18.5822
         longitude: 73.9197
-      zone: []
+      zone:
+      - 1
     centralus:
       desc: Central US
       location:
         display: Central US
         latitude: 41.5908
         longitude: -93.6208
-      zone: []
+      zone:
+      - 1
     eastasia:
       desc: East Asia
       location:
         display: East Asia
         latitude: 22.267
         longitude: 114.188
-      zone: []
+      zone:
+      - 1
     eastus:
       desc: East US
       location:
         display: East US
         latitude: 37.3719
         longitude: -79.8164
-      zone: []
+      zone:
+      - 1
     eastus2:
       desc: East US 2
       location:
         display: East US 2
         latitude: 36.6681
         longitude: -78.3889
-      zone: []
+      zone:
+      - 1
     francecentral:
       desc: France Central
       location:
         display: France Central
         latitude: 46.3772
         longitude: 2.373
-      zone: []
+      zone:
+      - 1
     francesouth:
       desc: France South
       location:
         display: France South
         latitude: 43.8345
         longitude: 2.1972
-      zone: []
+      zone:
+      - 1
     germanynorth:
       desc: Germany North
       location:
         display: Germany North
         latitude: 53.0736
         longitude: 8.8064
-      zone: []
+      zone:
+      - 1
     germanywestcentral:
       desc: Germany West Central
       location:
         display: Germany West Central
         latitude: 50.1109
         longitude: 8.6821
-      zone: []
+      zone:
+      - 1
     japaneast:
       desc: Japan East
       location:
         display: Japan East
         latitude: 35.68
         longitude: 139.77
-      zone: []
+      zone:
+      - 1
     japanwest:
       desc: Japan West
       location:
         display: Japan West
         latitude: 34.6939
         longitude: 135.5022
-      zone: []
+      zone:
+      - 1
     koreacentral:
       desc: Korea Central
       location:
         display: Korea Central
         latitude: 37.5665
         longitude: 126.978
-      zone: []
+      zone:
+      - 1
     koreasouth:
       desc: Korea South
       location:
         display: Korea South
         latitude: 35.1796
         longitude: 129.0756
-      zone: []
+      zone:
+      - 1
     northcentralus:
       desc: North Central US
       location:
         display: North Central US
         latitude: 41.8819
         longitude: -87.6278
-      zone: []
+      zone:
+      - 1
     northeurope:
       desc: North Europe
       location:
         display: North Europe
         latitude: 53.3478
         longitude: -6.2597
-      zone: []
+      zone:
+      - 1
     norwayeast:
       desc: Norway East
       location:
         display: Norway East
         latitude: 59.9139
         longitude: 10.7522
-      zone: []
+      zone:
+      - 1
     norwaywest:
       desc: Norway West
       location:
         display: Norway West
         latitude: 58.97
         longitude: 5.7331
-      zone: []
+      zone:
+      - 1
     southafricanorth:
       desc: South Africa North
       location:
         display: South Africa North
         latitude: -25.7313
         longitude: 28.2184
-      zone: []
+      zone:
+      - 1
     southafricawest:
       desc: South Africa West
       location:
         display: South Africa West
         latitude: -34.0757
         longitude: 18.8433
-      zone: []
+      zone:
+      - 1
     southcentralus:
       desc: South Central US
       location:
         display: South Central US
         latitude: 29.4167
         longitude: -98.5
-      zone: []
+      zone:
+      - 1
     southeastasia:
       desc: Southeast Asia
       location:
         display: Southeast Asia
         latitude: 1.283
         longitude: 103.833
-      zone: []
+      zone:
+      - 1
     southindia:
       desc: South India
       location:
         display: South India
         latitude: 12.9822
         longitude: 80.1636
-      zone: []
+      zone:
+      - 1
     switzerlandnorth:
       desc: Switzerland North
       location:
         display: Switzerland North
         latitude: 47.4515
         longitude: 8.5646
-      zone: []
+      zone:
+      - 1
     switzerlandwest:
       desc: Switzerland West
       location:
         display: Switzerland West
         latitude: 46.2044
         longitude: 6.1432
-      zone: []
+      zone:
+      - 1
     uaecentral:
       desc: UAE Central
       location:
         display: UAE Central
         latitude: 24.4667
         longitude: 54.3667
-      zone: []
+      zone:
+      - 1
     uaenorth:
       desc: UAE North
       location:
         display: UAE North
         latitude: 25.2667
         longitude: 55.3167
-      zone: []
+      zone:
+      - 1
     uksouth:
       desc: UK South
       location:
         display: UK South
         latitude: 50.941
         longitude: -0.799
-      zone: []
+      zone:
+      - 1
     ukwest:
       desc: UK West
       location:
         display: UK West
         latitude: 53.427
         longitude: -3.084
-      zone: []
+      zone:
+      - 1
     westcentralus:
       desc: ' West Central US'
       location:
         display: West Central US
         latitude: 40.89
         longitude: -110.234
-      zone: []
+      zone:
+      - 1
     westeurope:
       desc: West Europe
       location:
         display: West Europe
         latitude: 52.3667
         longitude: 4.9
-      zone: []
+      zone:
+      - 1
     westindia:
       desc: West India
       location:
         display: West India
         latitude: 19.088
         longitude: 72.868
-      zone: []
+      zone:
+      - 1
     westus:
       desc: West US
       location:
         display: West US
         latitude: 37.783
         longitude: -122.417
-      zone: []
+      zone:
+      - 1
     westus2:
       desc: West US 2
       location:
         display: West US 2
         latitude: 47.233
         longitude: -119.852
-      zone: []
+      zone:
+      - 1
 gcp:
   desc: Google Cloud Platform
   driver: gcp-driver-v1.0.so
+  link:
+  - https://cloud.google.com/compute/docs/regions-zones
   region:
     asia-east1:
       desc: Changhua County Taiwan
@@ -843,175 +885,401 @@ gcp:
         display: Changhua County Taiwan
         latitude: 24.0756
         longitude: 120.5451
-      zone: []
+      zone:
+      - asia-east1-b
+      - asia-east1-a
+      - asia-east1-c
     asia-east2:
       desc: Hong Kong
       location:
         display: Hong Kong
         latitude: 22.3964
         longitude: 114.1095
-      zone: []
+      zone:
+      - asia-east2-a
+      - asia-east2-b
+      - asia-east2-c
     asia-northeast1:
       desc: Tokyo Japan
       location:
         display: Japan (Tokyo)
         latitude: 35.6896
         longitude: 139.6917
-      zone: []
+      zone:
+      - asia-northeast1-b
+      - asia-northeast1-c
+      - asia-northeast1-a
     asia-northeast2:
       desc: Osaka Japan
       location:
         display: Osaka Japan
         latitude: 34.6937
         longitude: 135.5022
-      zone: []
+      zone:
+      - asia-northeast2-a
+      - asia-northeast2-b
+      - asia-northeast2-c
     asia-northeast3:
       desc: Seoul South Korea
       location:
         display: South Korea (Seoul)
         latitude: 37.2
         longitude: 127.0
-      zone: []
+      zone:
+      - asia-northeast3-a
+      - asia-northeast3-b
+      - asia-northeast3-c
     asia-south1:
       desc: Mumbai India
       location:
         display: India (Mumbai)
         latitude: 19.0761
         longitude: 72.8774
-      zone: []
+      zone:
+      - asia-south1-c
+      - asia-south1-b
+      - asia-south1-a
     asia-southeast1:
       desc: Jurong West Singapore
       location:
         display: Singapore
         latitude: 1.3409
         longitude: 103.7041
-      zone: []
+      zone:
+      - asia-southeast1-b
+      - asia-southeast1-a
+      - asia-southeast1-c
     asia-southeast2:
       desc: Jakarta Indonesia
       location:
         display: Jakarta Indonesia
         latitude: -6.201
         longitude: 106.816
-      zone: []
+      zone:
+      - asia-southeast2-a
+      - asia-southeast2-b
+      - asia-southeast2-c
     australia-southeast1:
       desc: Sydney Australia
       location:
         display: Australia (Sydney)
         latitude: -33.8651
         longitude: 151.2099
-      zone: []
+      zone:
+      - australia-southeast1-b
+      - australia-southeast1-c
+      - australia-southeast1-a
     europe-central2:
       desc: Warsaw Poland
       location:
         display: Warsaw Poland
         latitude: 52.237049
         longitude: 21.017532
-      zone: []
+      zone:
+      - europe-central2-a
+      - europe-central2-b
+      - europe-central2-c
     europe-north1:
       desc: Hamina Finland
       location:
         display: Hamina Finland
         latitude: 60.57
         longitude: 27.2
-      zone: []
+      zone:
+      - europe-north1-a
+      - europe-north1-b
+      - europe-north1-c
     europe-west1:
       desc: St. Ghislain Belgium
       location:
         display: St. Ghislain Belgium
         latitude: 50.4482
         longitude: 3.8189
-      zone: []
+      zone:
+      - europe-west1-b
+      - europe-west1-d
+      - europe-west1-c
     europe-west2:
       desc: London England  UK
       location:
         display: UK (London)
         latitude: 51.5099
         longitude: -0.1181
-      zone: []
+      zone:
+      - europe-west2-c
+      - europe-west2-b
+      - europe-west2-a
     europe-west3:
       desc: Frankfurt Germany
       location:
         display: Germany (Frankfurt)
         latitude: 50.1109
         longitude: 8.6831
-      zone: []
+      zone:
+      - europe-west3-c
+      - europe-west3-a
+      - europe-west3-b
     europe-west4:
       desc: Eemshaven Netherlands
       location:
         display: Eemshaven Netherlands
         latitude: 53.4423
         longitude: 6.8253
-      zone: []
+      zone:
+      - europe-west4-a
+      - europe-west4-b
+      - europe-west4-c
     europe-west6:
       desc: Zurich Switzerland
       location:
         display: Zurich Switzerland
         latitude: 47.3667
         longitude: 8.55
-      zone: []
+      zone:
+      - europe-west6-a
+      - europe-west6-b
+      - europe-west6-c
     northamerica-northeast1:
       desc: Montreal Quebec Canada
       location:
         display: Montreal Quebec Canada
         latitude: 45.5089
         longitude: -73.5617
-      zone: []
+      zone:
+      - northamerica-northeast1-a
+      - northamerica-northeast1-b
+      - northamerica-northeast1-c
     southamerica-east1:
       desc: Osasco (Sao Paulo)  Brazil
       location:
         display: Brazil (Sao Paulo)
         latitude: -23.5325
         longitude: -46.7917
-      zone: []
+      zone:
+      - southamerica-east1-b
+      - southamerica-east1-c
+      - southamerica-east1-a
     us-central1:
       desc: Council Bluffs Iowa  USA
       location:
         display: Council Bluffs Iowa USA
         latitude: 41.2522
         longitude: -95.8575
-      zone: []
+      zone:
+      - us-central1-c
+      - us-central1-a
+      - us-central1-f
+      - us-central1-b
     us-east1:
       desc: Moncks Corner South Carolina USA
       location:
         display: Moncks Corner South Carolina USA
         latitude: 33.1913
         longitude: -80.004
-      zone: []
+      zone:
+      - us-east1-b
+      - us-east1-c
+      - us-east1-d
     us-east4:
       desc: Ashburn Northern Virginia USA
       location:
         display: USA (Virginia)
         latitude: 39.0403
         longitude: -77.4852
-      zone: []
+      zone:
+      - us-east4-c
+      - us-east4-b
+      - us-east4-a
     us-west1:
       desc: Dalles Oregon USA
       location:
         display: The Dalles Oregon USA
         latitude: 45.5946
         longitude: -121.1787
-      zone: []
+      zone:
+      - us-west1-b
+      - us-west1-c
+      - us-west1-a
     us-west2:
       desc: LA California USA
       location:
         display: Los Angeles California USA
         latitude: 34.0522
         longitude: -118.2437
-      zone: []
+      zone:
+      - us-west2-a
+      - us-west2-b
+      - us-west2-c
     us-west3:
       desc: Salt Lake City Utah USA
       location:
         display: Salt Lake City Utah USA
         latitude: 40.7587
         longitude: -111.8762
-      zone: []
+      zone:
+      - us-west3-a
+      - us-west3-b
+      - us-west3-c
     us-west4:
       desc: Las Vegas USA
       location:
         display: Las Vegas Nevada USA
         latitude: 36.1146
         longitude: -115.1728
-      zone: []
+      zone:
+      - us-west4-a
+      - us-west4-b
+      - us-west4-c
+    europe-southwest1:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - europe-southwest1-a
+      - europe-southwest1-b
+      - europe-southwest1-c
+    europe-west8:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - europe-west8-a
+      - europe-west8-b
+      - europe-west8-c
+    me-central2:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - me-central2-a
+      - me-central2-b
+      - me-central2-c
+    europe-west12:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - europe-west12-a
+      - europe-west12-b
+      - europe-west12-c
+    me-central1:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - me-central1-a
+      - me-central1-b
+      - me-central1-c
+    northamerica-northeast2:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - northamerica-northeast2-a
+      - northamerica-northeast2-b
+      - northamerica-northeast2-c
+    us-south1:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - us-south1-a
+      - us-south1-b
+      - us-south1-c
+    australia-southeast2:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - australia-southeast2-a
+      - australia-southeast2-b
+      - australia-southeast2-c
+    europe-west9:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - europe-west9-a
+      - europe-west9-b
+      - europe-west9-c
+    africa-south1:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - africa-south1-a
+      - africa-south1-b
+      - africa-south1-c
+    asia-south2:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - asia-south2-a
+      - asia-south2-b
+      - asia-south2-c
+    southamerica-west1:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - southamerica-west1-a
+      - southamerica-west1-b
+      - southamerica-west1-c
+    me-west1:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - me-west1-a
+      - me-west1-b
+      - me-west1-c
+    us-east5:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - us-east5-a
+      - us-east5-b
+      - us-east5-c
+    europe-west10:
+      desc: ''
+      location:
+        display: ''
+        latitude: null
+        longitude: null
+      zone:
+      - europe-west10-a
+      - europe-west10-b
+      - europe-west10-c
 ibm:
   desc: IBM Cloud
   driver: ibm-driver-v1.0.so
