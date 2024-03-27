@@ -33,6 +33,23 @@ csp_commands = {
     # Add more CSPs here
 }
 
+csp_connection_names = {
+    'gcp': 'gcp-asia-east1',
+    'azure': 'azure-eastus',
+    'aws': 'aws-us-east-1',
+    'ibm': 'ibm-us-east',
+    'alibaba': 'alibaba-us-east-1',
+    'tencent': 'tencent-ap-singapore',
+    'ncp': 'ncp-korea1',
+    'ncpvpc': 'ncpvpc-kr-1',
+    'ktcloud': 'kt-kr-central-a',
+    'ktcloudvpc': 'ktvpc-kr-dx-m1',
+    'nhncloud': 'nhncloud-kr-pangyo1'
+    # Add more CSPs here
+}
+
+
+
 def run_command(command):
     try:
         print(f"Running command: {' '.join(command)}")
@@ -43,51 +60,62 @@ def run_command(command):
         return None, e
 
 # Fetch regions and zones using Spider
-def fetch_regions_and_zones_from_spider(csp):
-    connection_name = csp
+def fetch_regions_and_zones_from_spider(csp, region_zones):
+    connection_name = csp_connection_names[csp]
 
-    print("Fetching regions and zones...")
+    print(f"\n[CSP: {csp}]")
     url = 'http://localhost:1024/spider/regionzone'
     headers = {'Content-Type': 'application/json'}
     data = {'ConnectionName': connection_name}
     response = requests.get(url, headers=headers, json=data)
-    region_zones = {}
+
     if response.status_code == 200:
         response = response.json()
         regions_info = response['regionzone']
+        regions_info = sorted(regions_info, key=lambda x: x['Name'])
+
+        if csp not in region_zones:
+            region_zones[csp] = {}
         for region_info in regions_info:
             region_name = region_info['Name']
-            print(f"\n- Fetching availability zones for {region_name}...")
-            zones = [zone['Name'] for zone in region_info['ZoneList']]
-            region_zones[region_name] = zones
-
-        return region_zones
+            print(f"{region_name}:")
+            if region_info['ZoneList'] is not None: 
+                zones = [zone['Name'] for zone in region_info['ZoneList']]
+                zones.sort()
+            else:
+                zones = [] 
+            region_zones[csp][region_name] = zones
+            print(f"{zones}")
     else:
         print(f"Failed to fetch GCP regions and zones: {response.text}")
-        return {}
+    return region_zones
 
 
 # Fetch regions and zones using each CSP CLI
-def fetch_regions_and_zones(csp):
+def fetch_regions_and_zones(csp, region_zones):
     regions_command = csp_commands[csp]['regions']
-    print("Fetching regions and zones...")   
-    print("(AuthFailure is because of permission issue (Opt-In). You need to opt-in regions)\n")
+    # print("(AuthFailure is because of permission issue (Opt-In). You need to opt-in regions)\n")
+    print(f"\n[CSP: {csp}]")
 
     regions, error = run_command(regions_command)
     if error:
         return {}
+    
+    if csp not in region_zones:
+        region_zones[csp] = {}
 
-    region_zones = {}
+    regions.sort()
     for region in regions:
-        print(f"\n- Fetching availability zones for {region}...")
+        print(f"{region}:")
         zones_command = csp_commands[csp]['zones'](region)
         zones, error = run_command(zones_command)
         if not error:
-            print(f"- {zones}")
+            print(f"{zones}")
         else:
             print(f"Failed to fetch zones for region {region}: {error}")
             zones = []
-        region_zones[region] = zones
+        zones.sort()
+        region_zones[csp][region] = zones
 
     return region_zones
 
@@ -124,38 +152,42 @@ def fetch_region_description(region_name):
     return description
 
 # Compare and update the cloudinfo.yaml file with the latest data
-def compare_and_update_yaml(csp, cloud_info, output_file_path, current_regions_and_zones):
-    file_csp_regions = set(cloud_info[csp]['region'].keys())
-    current_csp_regions = set(current_regions_and_zones.keys())
+def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
+    current_regions_and_zones = region_zones
+    csps = set(current_regions_and_zones.keys())
 
-    missing_in_file = current_csp_regions - file_csp_regions
-    extra_in_file = file_csp_regions - current_csp_regions
+    for csp in csps:
+        file_csp_regions = set(cloud_info[csp]['region'].keys())
+        current_csp_regions = set(current_regions_and_zones[csp].keys())
 
-    missing_regions_msg = ', '.join(missing_in_file) if missing_in_file else "none"
-    extra_regions_msg = ', '.join(extra_in_file) if extra_in_file else "none" 
+        missing_in_file = current_csp_regions - file_csp_regions
+        extra_in_file = file_csp_regions - current_csp_regions
 
-    print()
-    print(f"- Missing regions: {missing_regions_msg}")
-    print(f"- Obsoleted regions: {extra_regions_msg}\n\n") 
+        missing_regions_msg = ', '.join(missing_in_file) if missing_in_file else "none"
+        extra_regions_msg = ', '.join(extra_in_file) if extra_in_file else "none" 
 
-    for region in current_csp_regions:
-        if region in missing_in_file:
-            desc = fetch_region_description(region)
-            display = desc.split('(')[-1].rstrip(')') if '(' in desc else desc  # Improved parsing
-            location_details = fetch_location_details(display)
-            cloud_info[csp]['region'][region] = {
-                'desc': desc,
-                'location': location_details,
-                'zone': current_regions_and_zones[region]
-            }
-            print(f"Added new region: {region}")
-            print(f"Description: {desc}")
-            print(f"Location: {location_details['display']} ({location_details['latitude']}, {location_details['longitude']})")
-            print(f"Zones: {', '.join(current_regions_and_zones[region])}\n")
-        else:
-            cloud_info[csp]['region'][region]['zone'] = current_regions_and_zones[region]
-            print(f"Updated zones for region: {region}")
-            print(f"Zones: {', '.join(current_regions_and_zones[region])}\n")
+        print()
+        print(f"- Missing regions: {missing_regions_msg}")
+        print(f"- Obsoleted regions: {extra_regions_msg}\n\n") 
+
+        for region in current_csp_regions:
+            if region in missing_in_file:
+                desc = fetch_region_description(region)
+                display = desc.split('(')[-1].rstrip(')') if '(' in desc else desc  # Improved parsing
+                location_details = fetch_location_details(display)
+                cloud_info[csp]['region'][region] = {
+                    'desc': desc,
+                    'location': location_details,
+                    'zone': current_regions_and_zones[csp][region]
+                }
+                print(f"Added new region: {region}")
+                print(f"Description: {desc}")
+                print(f"Location: {location_details['display']} ({location_details['latitude']}, {location_details['longitude']})")
+                print(f"Zones: {', '.join(current_regions_and_zones[csp][region])}\n")
+            else:
+                cloud_info[csp]['region'][region]['zone'] = current_regions_and_zones[csp][region]
+                print(f"Updated zones for region: {region}")
+                print(f"Zones: {', '.join(current_regions_and_zones[csp][region])}\n")
 
     try:
         with open(output_file_path, 'w') as file:
@@ -185,11 +217,22 @@ def main():
     except FileNotFoundError as e:
         print(f"Error reading file {yaml_file_path}: {e}")
         return
-
-    # current_regions_and_zones = fetch_regions_and_zones('aws')
-    current_regions_and_zones = fetch_regions_and_zones_from_spider('gcp-asia-east1')
     
-    compare_and_update_yaml('gcp', cloud_info, output_file_path, current_regions_and_zones)
+    # Global variable to store region and zones for all CSPs
+    region_zones = {}
+
+    # region_zones = fetch_regions_and_zones('aws', region_zones)
+    # region_zones = fetch_regions_and_zones_from_spider('azure', region_zones)
+    # region_zones = fetch_regions_and_zones_from_spider('tencent', region_zones)
+    # region_zones = fetch_regions_and_zones_from_spider('ibm', region_zones)
+
+    target_csp = set(csp_connection_names.keys())
+    for csp in target_csp:
+        region_zones = fetch_regions_and_zones_from_spider(csp, region_zones)
+    
+    region_zones = fetch_regions_and_zones('aws', region_zones)
+
+    compare_and_update_yaml(cloud_info, output_file_path, region_zones)
 
     run_git_diff(yaml_file_path, output_file_path)
 
