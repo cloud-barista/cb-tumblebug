@@ -86,8 +86,8 @@ done < "$credentialFile"
 
 {
     echo "[default]"
-    echo "aws_access_key_id=$aws_access_key_id"
-    echo "aws_secret_access_key=$aws_secret_access_key"
+    echo "AWS_ACCESS_KEY_ID=$aws_access_key_id"
+    echo "AWS_SECRET_ACCESS_KEY=$aws_secret_access_key"
 } > "$saveTo/aws_credential"
 
 cat > "$saveTo/gcp_credential.json" << EOF
@@ -107,10 +107,10 @@ cat > "$saveTo/gcp_credential.json" << EOF
 EOF
 
 {
-    echo "client_id=$azure_client_id"
-    echo "client_secret=$azure_client_secret"
-    echo "tenant_id=$azure_tenant_id"
-    echo "subscription_id=$azure_subscription_id"
+    echo "ARM_CLIENT_ID=$azure_client_id"
+    echo "ARM_CLIENT_SECRET=$azure_client_secret"
+    echo "ARM_TENANT_ID=$azure_tenant_id"
+    echo "ARM_SUBSCRIPTION_ID=$azure_subscription_id"
 } > "$saveTo/azure_credential"
 
 
