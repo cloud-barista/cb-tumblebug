@@ -166,7 +166,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 - If Swagger API Document needs to be updated run `make swag` at `cb-tumblebug/src/` directory.
   - API document file is created at  `cb-tumblebug/src/api/rest/docs/swagger.yaml` directory.
-  - Following API document can be checked on http://localhost:1323/tumblebug/api through web browser. (Automatically provided when CB-Tumblebug is executed)
+  - Following API document can be checked on http://localhost:1323/tumblebug/swagger/ through web browser. (Automatically provided when CB-Tumblebug is executed)
 
 ### (3) Run CB-Tumblebug 
 - Run [CB-Spider](https://github.com/cloud-barista/cb-spider) in another tab
@@ -196,7 +196,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 
    Access to API dashboard (username: default / password: default)
-   http://xxx.xxx.xxx.xxx:1323/tumblebug/api
+   http://xxx.xxx.xxx.xxx:1323/tumblebug/swagger/
 
   ⇨ http server started on [::]:1323
   ```
