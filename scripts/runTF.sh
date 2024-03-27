@@ -6,8 +6,8 @@ CONTAINER_PORT="-p 8888:8888"
 CONTAINER_DATA_PATH="/app/.tofu"
 
 if [ -z "$CBTUMBLEBUG_ROOT" ]; then
-    SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
-    export CBTUMBLEBUG_ROOT=`cd $SCRIPT_DIR && cd .. && pwd`
+    SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
+    export CBTUMBLEBUG_ROOT=$(cd "$SCRIPT_DIR" && cd .. && pwd)
 fi
 
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
@@ -32,9 +32,9 @@ if [ ! -f "$aws_credential" ] || [ ! -f "$gcp_credential" ] || [ ! -f "$azure_cr
         ./exportCredentials.sh
     fi    
     # Move the exported credentials to the credential directory
-    mv $exported_aws_credential $aws_credential
-    mv $exported_gcp_credential $gcp_credential
-    mv $exported_azure_credential $azure_credential    
+    mv "$exported_aws_credential" "$aws_credential"
+    mv "$exported_gcp_credential" "$gcp_credential"
+    mv "$exported_azure_credential" "$azure_credential"
 fi
 
 CONTAINER_ENV="--env-file $credential_dir/credentials \
