@@ -42,6 +42,31 @@ def run_command(command):
         print(f"Error running command: {e}")
         return None, e
 
+# Fetch regions and zones using Spider
+def fetch_regions_and_zones_from_spider(csp):
+    connection_name = csp
+
+    print("Fetching regions and zones...")
+    url = 'http://localhost:1024/spider/regionzone'
+    headers = {'Content-Type': 'application/json'}
+    data = {'ConnectionName': connection_name}
+    response = requests.get(url, headers=headers, json=data)
+    region_zones = {}
+    if response.status_code == 200:
+        response = response.json()
+        regions_info = response['regionzone']
+        for region_info in regions_info:
+            region_name = region_info['Name']
+            print(f"\n- Fetching availability zones for {region_name}...")
+            zones = [zone['Name'] for zone in region_info['ZoneList']]
+            region_zones[region_name] = zones
+
+        return region_zones
+    else:
+        print(f"Failed to fetch GCP regions and zones: {response.text}")
+        return {}
+
+
 # Fetch regions and zones using each CSP CLI
 def fetch_regions_and_zones(csp):
     regions_command = csp_commands[csp]['regions']
@@ -161,9 +186,10 @@ def main():
         print(f"Error reading file {yaml_file_path}: {e}")
         return
 
-    current_regions_and_zones = fetch_regions_and_zones('aws')
+    # current_regions_and_zones = fetch_regions_and_zones('aws')
+    current_regions_and_zones = fetch_regions_and_zones_from_spider('gcp-asia-east1')
     
-    compare_and_update_yaml('aws', cloud_info, output_file_path, current_regions_and_zones)
+    compare_and_update_yaml('gcp', cloud_info, output_file_path, current_regions_and_zones)
 
     run_git_diff(yaml_file_path, output_file_path)
 
