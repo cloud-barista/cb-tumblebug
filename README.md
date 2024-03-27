@@ -193,7 +193,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 - Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
   - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
-  - 해당 API 문서는 http://localhost:1323/tumblebug/api 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
+  - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/ 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
   - Swagger 기반 [API 문서 업데이트 방법 상세 정보](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
 
 ### (3) CB-Tumblebug 실행
@@ -263,7 +263,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 
    Access to API dashboard (username: default / password: default)
-   http://xxx.xxx.xxx.xxx:1323/tumblebug/api
+   http://xxx.xxx.xxx.xxx:1323/tumblebug/swagger/
 
   ⇨ http server started on [::]:1323
   ```
