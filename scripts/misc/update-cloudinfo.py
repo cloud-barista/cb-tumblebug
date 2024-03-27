@@ -50,7 +50,7 @@ def fetch_regions_and_zones_from_spider(csp):
     url = 'http://localhost:1024/spider/regionzone'
     headers = {'Content-Type': 'application/json'}
     data = {'ConnectionName': connection_name}
-    response = requests.get(url, headers=headers, json=data)    
+    response = requests.get(url, headers=headers, json=data)
     region_zones = {}
     if response.status_code == 200:
         response = response.json()
