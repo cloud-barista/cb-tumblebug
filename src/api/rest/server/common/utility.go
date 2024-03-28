@@ -84,6 +84,8 @@ func RestGetHealth(c echo.Context) error {
 	okMessage := common.SimpleMsg{}
 	okMessage.Message = "API server of CB-Tumblebug is alive"
 
+	c.Logger().Printf("Inside of RestGetHealth() handler")
+
 	return c.JSON(http.StatusOK, &okMessage)
 }
 
