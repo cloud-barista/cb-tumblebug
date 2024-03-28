@@ -16,6 +16,8 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+
 	// "log"
 	"os/signal"
 	"sync"
@@ -96,13 +98,79 @@ func RunServer(port string) {
 	// Customized middleware for request logging
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Logger().Printf("Start - RequestLog()")
 			reqID := fmt.Sprintf("%d", time.Now().UnixNano())
 			c.Set("RequestID", reqID)
 			// make X-Request-Id visible to all handlers
 			c.Response().Header().Set("Access-Control-Expose-Headers", "X-Request-Id")
+
+			// reqID := c.Request().Header.Get("x-request-id")
+			// if reqID == "" {
+			// 	reqID = fmt.Sprintf("%d", time.Now().UnixNano())
+			// }
+			c.Logger().Printf("Request ID: %s", reqID)
+			if _, ok := common.RequestMap.Load(reqID); ok {
+				return fmt.Errorf("the x-request-id is already in use")
+			}
+
+			details := common.RequestDetails{
+				StartTime:   time.Now(),
+				Status:      "Handling",
+				RequestInfo: common.ExtractRequestInfo(c.Request()),
+			}
+			common.RequestMap.Store(reqID, details)
+
+			c.Logger().Printf("End - RequestLog()")
+
 			return next(c)
 		}
 	})
+
+	e.Use(middleware.BodyDumpWithConfig(middleware.BodyDumpConfig{
+		Skipper: func(c echo.Context) bool {
+			if c.Path() == "/tumblebug/swagger" {
+				return true
+			}
+			return false
+		},
+		Handler: func(c echo.Context, reqBody, resBody []byte) {
+			c.Logger().Printf("Start - BodyDump()")
+
+			reqID := c.Get("RequestID").(string)
+			c.Logger().Printf("Request ID: %s", reqID)
+			if v, ok := common.RequestMap.Load(reqID); ok {
+				c.Logger().Printf("OK, common.RequestMap.Load(reqID)")
+				details := v.(common.RequestDetails)
+				details.EndTime = time.Now()
+
+				c.Response().Header().Set("X-Request-ID", reqID)
+
+				// 1XX: Information responses
+				// 2XX: Successful responses (200 OK, 201 Created, 202 Accepted, 204 No Content)
+				// 3XX: Redirection messages
+				// 4XX: Client error responses (400 Bad Request, 401 Unauthorized, 404 Not Found, 408 Request Timeout)
+				// 5XX: Server error responses (500 Internal Server Error, 501 Not Implemented, 503 Service Unavailable)
+				if c.Response().Status >= 400 && c.Response().Status <= 599 {
+					c.Logger().Printf("Error, c.Response().Status")
+					var resMap map[string]interface{}
+					err := json.Unmarshal(resBody, &resMap)
+					if err != nil {
+						// handle error
+						c.Logger().Printf("Error while unmarshaling response body: %s", err)
+					}
+
+					details.Status = "Error"
+					details.ErrorResponse = resMap["message"].(string)
+				} else {
+					c.Logger().Printf("Not error, c.Response().Status")
+					details.Status = "Success"
+					details.ResponseData = resBody
+				}
+				common.RequestMap.Store(reqID, details)
+			}
+			c.Logger().Printf("End - BodyDump()")
+		},
+	}))
 
 	e.HideBanner = true
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
