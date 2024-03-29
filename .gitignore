@@ -58,5 +58,6 @@ src/rttmap.csv
 .vscode/
 
 log/
+*.log
 *.history
 

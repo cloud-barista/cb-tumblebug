@@ -58,7 +58,15 @@ ENV CBTUMBLEBUG_ROOT=/app \
     API_PASSWORD=default \
     AUTOCONTROL_DURATION_MS=10000 \
     SELF_ENDPOINT=localhost:1323 \
-    API_DOC_PATH=/app/src/api/rest/docs/swagger.json
+    API_DOC_PATH=/app/src/api/rest/docs/swagger.json \
+    LOGFILE_PATH=$CBTUMBLEBUG_ROOT/log/zerolog.log \
+    LOGFILE_MAXSIZE=10 \
+    LOGFILE_MAXBACKUPS=3 \
+    LOGFILE_MAXAGE=30 \
+    LOGFILE_COMPRESS=false \
+    LOGLEVEL=debug \
+    LOGWRITER=both \
+    NODE_ENV=development
 
 # Setting the entrypoint for the application
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]
