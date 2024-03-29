@@ -20,8 +20,76 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jedib0t/go-pretty/v6/table"
+
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
+
+type CloudInfo struct {
+	CSPs map[string]CSPDetail `mapstructure:"cloud"`
+}
+
+type CSPDetail struct {
+	Description string                  `mapstructure:"desc"`
+	Driver      string                  `mapstructure:"driver"`
+	Links       []string                `mapstructure:"link"`
+	Regions     map[string]RegionDetail `mapstructure:"region"`
+}
+
+type RegionDetail struct {
+	Description string   `mapstructure:"desc"`
+	Location    Location `mapstructure:"location"`
+	Zones       []string `mapstructure:"zone"`
+}
+
+type Location struct {
+	Display   string  `mapstructure:"display"`
+	Latitude  float64 `mapstructure:"latitude"`
+	Longitude float64 `mapstructure:"longitude"`
+}
+
+var RuntimeCloudInfo = CloudInfo{}
+
+// PrintCloudInfoTable prints CloudInfo in table format
+func PrintCloudInfoTable(cloudInfo CloudInfo) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"CSP", "Region", "Location", "(Lati:Long)", "Zones"})
+
+	for cspName, cspDetail := range cloudInfo.CSPs {
+		for regionName, regionDetail := range cspDetail.Regions {
+			latLong := formatLatLong(regionDetail.Location.Latitude, regionDetail.Location.Longitude)
+			zones := formatZones(regionDetail.Zones)
+			t.AppendRow(table.Row{cspName, regionName, regionDetail.Location.Display, latLong, zones})
+		}
+	}
+	t.SortBy([]table.SortBy{
+		{Name: "CSP", Mode: table.Asc},
+		{Name: "Region", Mode: table.Asc},
+	})
+	t.Render()
+}
+
+func formatLatLong(latitude, longitude float64) string {
+	if latitude == 0.0 && longitude == 0.0 {
+		return ""
+	}
+	return "(" + fmt.Sprintf("%.2f", latitude) + ":" + fmt.Sprintf("%.2f", longitude) + ")"
+}
+
+func formatZones(zones []string) string {
+	if len(zones) == 0 {
+		return ""
+	}
+	var formattedZones string
+	for i, zone := range zones {
+		formattedZones += zone
+		if i < len(zones)-1 {
+			formattedZones += " "
+		}
+	}
+	return formattedZones
+}
 
 // RuntimeLatancyMap is global variable for LatancyMap
 var RuntimeLatancyMap = [][]string{}

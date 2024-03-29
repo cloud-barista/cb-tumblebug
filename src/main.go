@@ -41,25 +41,45 @@ import (
 
 // init for main
 func init() {
-	profile := "cloud_conf"
-	setConfig(profile)
+	setConfig()
 }
 
 // setConfig get cloud settings from a config file
-func setConfig(profile string) {
+func setConfig() {
+	fileName := "cloud_conf"
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./conf/")
 	viper.AddConfigPath("../conf/")
-	viper.SetConfigName(profile)
+	viper.SetConfigName(fileName)
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
-	if err != nil { // Handle errors reading the config file
-		panic(fmt.Errorf("fatal error config file: %w", err))
+	if err != nil {
+		panic(fmt.Errorf("fatal error reading cloud_conf: %w", err))
 	}
+	fmt.Println(viper.ConfigFileUsed())
 	err = viper.Unmarshal(&common.RuntimeConf)
 	if err != nil {
 		panic(err)
 	}
+
+	cloudInfoViper := viper.New()
+	fileName = "cloudinfo"
+	cloudInfoViper.AddConfigPath(".")
+	cloudInfoViper.AddConfigPath("./assets/")
+	cloudInfoViper.AddConfigPath("../assets/")
+	cloudInfoViper.SetConfigName(fileName)
+	cloudInfoViper.SetConfigType("yaml")
+	err = cloudInfoViper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error reading cloudinfo config file: %w", err))
+	}
+	fmt.Println(cloudInfoViper.ConfigFileUsed())
+	err = cloudInfoViper.Unmarshal(&common.RuntimeCloudInfo)
+	if err != nil {
+		panic(err)
+	}
+	// fmt.Printf("%+v\n", common.RuntimeCloudInfo)
+	common.PrintCloudInfoTable(common.RuntimeCloudInfo)
 
 	// const mrttArrayXMax = 300
 	// const mrttArrayYMax = 300

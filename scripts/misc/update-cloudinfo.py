@@ -156,8 +156,11 @@ def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
     current_regions_and_zones = region_zones
     csps = set(current_regions_and_zones.keys())
 
+    if "cloud" not in cloud_info:
+        cloud_info["cloud"] = {}
+
     for csp in csps:
-        file_csp_regions = set(cloud_info[csp]['region'].keys())
+        file_csp_regions = set(cloud_info["cloud"][csp]['region'].keys())
         current_csp_regions = set(current_regions_and_zones[csp].keys())
 
         missing_in_file = current_csp_regions - file_csp_regions
@@ -175,7 +178,7 @@ def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
                 desc = fetch_region_description(region)
                 display = desc.split('(')[-1].rstrip(')') if '(' in desc else desc  # Improved parsing
                 location_details = fetch_location_details(display)
-                cloud_info[csp]['region'][region] = {
+                cloud_info["cloud"][csp]['region'][region] = {
                     'desc': desc,
                     'location': location_details,
                     'zone': current_regions_and_zones[csp][region]
@@ -185,7 +188,7 @@ def compare_and_update_yaml(cloud_info, output_file_path, region_zones):
                 print(f"Location: {location_details['display']} ({location_details['latitude']}, {location_details['longitude']})")
                 print(f"Zones: {', '.join(current_regions_and_zones[csp][region])}\n")
             else:
-                cloud_info[csp]['region'][region]['zone'] = current_regions_and_zones[csp][region]
+                cloud_info["cloud"][csp]['region'][region]['zone'] = current_regions_and_zones[csp][region]
                 print(f"Updated zones for region: {region}")
                 print(f"Zones: {', '.join(current_regions_and_zones[csp][region])}\n")
 
