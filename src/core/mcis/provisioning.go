@@ -1263,7 +1263,17 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	for _, k := range vmRequest {
 		vmReq, err := getVmReqFromDynamicReq(nsId, &k)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("Failed to prefare resources for dynamic MCIS creation")
+			// Rollback created default resources
+			time.Sleep(5 * time.Second)
+			log.Info().Msg("Try rollback created default resources")
+			rollbackResult, rollbackErr := mcir.DelAllDefaultResources(nsId)
+			if rollbackErr != nil {
+				err = fmt.Errorf("Failed in rollback operation: %w", rollbackErr)
+			} else {
+				ids := strings.Join(rollbackResult.IdList, ", ")
+				err = fmt.Errorf("Rollback results [%s]: %w", ids, err)
+			}
 			return emptyMcis, err
 		}
 		mcisReq.Vm = append(mcisReq.Vm, *vmReq)

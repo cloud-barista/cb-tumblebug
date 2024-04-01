@@ -40,6 +40,8 @@ import (
 	"reflect"
 
 	validator "github.com/go-playground/validator/v10"
+
+	"github.com/rs/zerolog/log"
 )
 
 // CB-Store
@@ -1718,10 +1720,8 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				resultInfo, err := CreateVNet(nsId, &reqTmp, "")
 				if err != nil {
-					common.CBLog.Error(err)
-					// If already exist, error will occur
-					// Even if error, do not return here to update information
-					// return err
+					log.Error().Err(err).Msg("Failed to create vNet")
+					return err
 				}
 				fmt.Printf("[%d] Registered Default vNet\n", i)
 				common.PrintJsonPretty(resultInfo)
@@ -1755,10 +1755,8 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
 				if err != nil {
-					common.CBLog.Error(err)
-					// If already exist, error will occur
-					// Even if error, do not return here to update information
-					// return err
+					log.Error().Err(err).Msg("Failed to create SecurityGroup")
+					return err
 				}
 				fmt.Printf("[%d] Registered Default SecurityGroup\n", i)
 				common.PrintJsonPretty(resultInfo)
@@ -1776,10 +1774,8 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 				resultInfo, err := CreateSshKey(nsId, &reqTmp, "")
 				if err != nil {
-					common.CBLog.Error(err)
-					// If already exist, error will occur
-					// Even if error, do not return here to update information
-					// return err
+					log.Error().Err(err).Msg("Failed to create SshKey")
+					return err
 				}
 				fmt.Printf("[%d] Registered Default SSHKey\n", i)
 				common.PrintJsonPretty(resultInfo)
