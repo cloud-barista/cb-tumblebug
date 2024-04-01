@@ -39,10 +39,11 @@ import (
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/cmd/mcis/{mcisId} [post]
 func RestPostCmdMcis(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+	// reqID, idErr := common.StartRequestWithLog(c)
+	// if idErr != nil {
+	// 	return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	// }
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
 
 	nsId := c.Param("nsId")
 	mcisId := c.Param("mcisId")
@@ -67,7 +68,9 @@ func RestPostCmdMcis(c echo.Context) error {
 
 	common.PrintJsonPretty(result)
 
-	return common.EndRequestWithLog(c, reqID, err, result)
+	return c.JSON(http.StatusOK, result)
+
+	// return common.EndRequestWithLog(c, reqID, err, result)
 
 }
 
