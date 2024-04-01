@@ -108,7 +108,14 @@ func RunServer(port string) {
 	//e.colorer.Printf(banner, e.colorer.Red("v"+Version), e.colorer.Blue(website))
 
 	// Route for system management
-	e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
+	swaggerRedirect := func(c echo.Context) error {
+		return c.Redirect(http.StatusMovedPermanently, "/tumblebug/api/index.html")
+	}
+	e.GET("/tumblebug/api", swaggerRedirect)
+	e.GET("/tumblebug/api/", swaggerRedirect)
+	e.GET("/tumblebug/api/*", echoSwagger.WrapHandler)
+
+	// e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
 	// e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
 	e.GET("/tumblebug/health", rest_common.RestGetHealth)
 	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
@@ -421,7 +428,7 @@ func RunServer(port string) {
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
-	apidashboard := " http://" + selfEndpoint + "/tumblebug/swagger/"
+	apidashboard := " http://" + selfEndpoint + "/tumblebug/api"
 
 	if enableAuth {
 		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
