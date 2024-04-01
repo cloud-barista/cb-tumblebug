@@ -25,6 +25,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	validator "github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -70,13 +71,13 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -122,13 +123,13 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if subGroupId != "" {
 		vmListInGroup, err := ListVmBySubGroup(nsId, mcisId, subGroupId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 		if vmListInGroup == nil {
@@ -162,26 +163,26 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 	// use privagte IP of the target VM
 	_, targetVmIP, targetSshPort, err := GetVmIp(nsId, mcisId, vmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 	targetUserName, targetPrivateKey, err := VerifySshUserName(nsId, mcisId, vmId, targetVmIP, targetSshPort, givenUserName)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 
 	// Set Bastion SSH config (bastionEndpoint, userName, Private Key)
 	bastionNodes, err := GetBastionNodes(nsId, mcisId, vmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 	bastionNode := bastionNodes[0]
 	// use public IP of the bastion VM
 	bastionIp, _, bastionSshPort, err := GetVmIp(nsId, bastionNode.McisId, bastionNode.VmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return map[int]string{}, map[int]string{}, err
 	}
 	bastionUserName, bastionSshKey, err := VerifySshUserName(nsId, bastionNode.McisId, bastionNode.VmId, bastionIp, bastionSshPort, givenUserName)
@@ -307,7 +308,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 
 	userName, _, privateKey, err := GetVmSshKey(nsId, mcisId, vmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", "", err
 	}
 
@@ -322,7 +323,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 
 	if theUserName == "" {
 		err := fmt.Errorf("Could not find a valid username")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", "", err
 	}
 
@@ -331,7 +332,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	// if theUserName != "" {
 	// 	err := UpdateVmSshKey(nsId, mcisId, vmId, theUserName)
 	// 	if err != nil {
-	// 		common.CBLog.Error(err)
+	// 		log.Error().Err(err).Msg("")
 	// 		return "", "", err
 	// 	}
 	// } else {
@@ -376,21 +377,21 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("Cannot find the key from DB. key: " + key)
 		return "", "", "", err
 	}
 
 	err = json.Unmarshal([]byte(keyValue.Value), &content)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", "", "", err
 	}
 
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
 	keyValue, err = common.CBStore.Get(sshKey)
 	if err != nil || keyValue == nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", "", "", err
 	}
 
@@ -401,7 +402,7 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &keyContent)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", "", "", err
 	}
 
@@ -418,9 +419,9 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In UpdateVmSshKey(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -437,7 +438,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	val, _ := json.Marshal(tmpSshKeyInfo)
 	err = common.CBStore.Put(keyValue.Key, string(val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 	return nil
@@ -556,7 +557,7 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 	// Check if bastion node already exists for the target VM (for random assignment)
 	currentBastion, err := GetBastionNodes(nsId, mcisId, targetVmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 	if len(currentBastion) > 0 && bastionVmId == "" {
@@ -566,19 +567,19 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 
 	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
 	res, err := mcir.GetResource(nsId, common.StrVNet, vmObj.VNetId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
 	tempVNetInfo, ok := res.(mcir.TbVNetInfo)
 	if !ok {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
@@ -589,12 +590,12 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 			if bastionVmId == "" {
 				vmIdsInSubnet, err := ListVmByFilter(nsId, mcisId, "SubnetId", subnetInfo.Id)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 				}
 				for _, v := range vmIdsInSubnet {
 					tmpPublicIp, _, _, err := GetVmIp(nsId, mcisId, v)
 					if err != nil {
-						common.CBLog.Error(err)
+						log.Error().Err(err).Msg("")
 					}
 					if tmpPublicIp != "" {
 						bastionVmId = v
@@ -628,7 +629,7 @@ func SetBastionNodes(nsId string, mcisId string, targetVmId string, bastionVmId 
 func RemoveBastionNodes(nsId string, mcisId string, bastionVmId string) (string, error) {
 	resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "mcisId", mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	} else {
 		vNets := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
@@ -657,21 +658,21 @@ func GetBastionNodes(nsId string, mcisId string, targetVmId string) ([]mcir.Bast
 	// Fetch VM object based on nsId, mcisId, and targetVmId
 	vmObj, err := GetVmObject(nsId, mcisId, targetVmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return returnValue, err
 	}
 
 	// Fetch VNet resource information
 	res, err := mcir.GetResource(nsId, common.StrVNet, vmObj.VNetId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return returnValue, err
 	}
 
 	// Type assertion for VNet information
 	tempVNetInfo, ok := res.(mcir.TbVNetInfo)
 	if !ok {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return returnValue, err
 	}
 

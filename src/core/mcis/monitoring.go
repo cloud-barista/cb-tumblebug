@@ -19,6 +19,7 @@ import (
 	"time"
 
 	validator "github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 	"github.com/tidwall/gjson"
 
 	"fmt"
@@ -162,12 +163,12 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	vmIP, _, sshPort, err := GetVmIp(nsID, mcisID, vmID)
 	errStr := ""
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
 	userName, privateKey, err := VerifySshUserName(nsID, mcisID, vmID, vmIP, sshPort, givenUserName)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
 	fmt.Println("[CallMonitoringAsync] " + mcisID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
@@ -199,13 +200,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	if requestBody.SshKey == "" {
 		common.PrintJsonPretty(requestBody)
 		err = fmt.Errorf("/request body to install monitoring agent: privateKey is empty/")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
 
 	payload, err := json.Marshal(requestBody)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
 
@@ -219,7 +220,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
 
@@ -231,13 +232,13 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	fmt.Println("Called CB-DRAGONFLY API")
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	} else {
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			errStr += "/ " + err.Error()
 		}
 		defer res.Body.Close()
@@ -246,7 +247,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err = fmt.Errorf("CB-DF HTTP Status: " + strconv.Itoa(res.StatusCode) + " / " + string(body))
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			errStr += "/ " + err.Error()
 		}
 
@@ -266,7 +267,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	sshResultTmp.Stderr = make(map[int]string)
 
 	if err != nil || errStr != "" {
-		common.CBLog.Error("[Monitoring Agent deployment errors] " + errStr)
+		log.Error().Err(err).Msgf("[Monitoring Agent deployment errors] %s", errStr)
 		sshResultTmp.Stderr[0] = errStr
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
@@ -288,14 +289,14 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := AgentInstallContentWrapper{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := AgentInstallContentWrapper{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckMcis(nsId, mcisId)
@@ -313,7 +314,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
@@ -338,7 +339,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 				wg.Add(1)
 				go CallMonitoringAsync(&wg, nsId, mcisId, mcisServiceType, v, req.UserName, method, cmd, &resultArray)
 			} else {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 
 		}
@@ -372,7 +373,7 @@ func UpdateMonitoringAgentStatusManually(nsId string, mcisId string, vmId string
 
 	vmInfoTmp, err := GetVmObject(nsId, mcisId, vmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -391,14 +392,14 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := MonResultSimpleResponse{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := MonResultSimpleResponse{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckMcis(nsId, mcisId)
@@ -413,7 +414,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		//common.CBLog.Error(err)
+		//log.Error().Err(err).Msg("")
 		return content, err
 	}
 
@@ -429,7 +430,7 @@ func GetMonitoringData(nsId string, mcisId string, metric string) (MonResultSimp
 
 		vmIp, _, _, err := GetVmIp(nsId, mcisId, vmId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			wg.Done()
 			// continue to next vm even if error occurs
 		} else {
@@ -476,7 +477,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	}
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr = err.Error()
 	}
 
@@ -484,20 +485,20 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	res, err := client.Do(req)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr = err.Error()
 	} else {
 		fmt.Println("HTTP Status code: " + strconv.Itoa(res.StatusCode))
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err1 := fmt.Errorf("HTTP Status: not in 200-399")
-			common.CBLog.Error(err1)
+			log.Error().Err(err1).Msg("")
 			errStr = err1.Error()
 		}
 
 		body, err2 := ioutil.ReadAll(res.Body)
 		if err2 != nil {
-			common.CBLog.Error(err2)
+			log.Error().Err(err2).Msg("")
 			errStr = err2.Error()
 		}
 		defer res.Body.Close()

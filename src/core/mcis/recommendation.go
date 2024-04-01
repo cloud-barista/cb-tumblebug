@@ -27,6 +27,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/rs/zerolog/log"
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
@@ -102,7 +103,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 				operand64, err = strconv.ParseFloat(strings.ReplaceAll(condition.Operand, " ", ""), 32)
 				operand = float32(operand64)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return []mcir.TbSpecInfo{}, err
 				}
 			}
@@ -153,7 +154,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 	filteredSpecs, err := mcir.FilterSpecsByRange(nsId, *u)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return []mcir.TbSpecInfo{}, err
 	}
 	if len(filteredSpecs) == 0 {
@@ -312,12 +313,12 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			slice := strings.Split(coordinateStr, "/")
 			latitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return []mcir.TbSpecInfo{}, err
 			}
 			longitude, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return []mcir.TbSpecInfo{}, err
 			}
 
@@ -340,7 +341,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 					distance, err := getDistance(latitude, longitude, (*specList)[i].ConnectionName)
 					if err != nil {
-						common.CBLog.Error(err)
+						log.Error().Err(err).Msg("")
 						mu.Lock()
 						globalErr = err // Capture the error in globalErr
 						mu.Unlock()
@@ -409,12 +410,12 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				slice := strings.Split(coordinateStr, "/")
 				latitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[0], " ", ""), 32)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return []mcir.TbSpecInfo{}, err
 				}
 				longitudeEach, err := strconv.ParseFloat(strings.ReplaceAll(slice[1], " ", ""), 32)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return []mcir.TbSpecInfo{}, err
 				}
 				latitudeSum += latitudeEach
@@ -444,7 +445,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 					distance, err := getDistance(latitude, longitude, (*specList)[i].ConnectionName)
 					if err != nil {
-						common.CBLog.Error(err)
+						log.Error().Err(err).Msg("")
 						mu.Lock()
 						globalErr = err // Capture the error in globalErr
 						mu.Unlock()
@@ -546,12 +547,12 @@ func getDistance(latitude float64, longitude float64, ConnectionName string) (fl
 
 	cloudLatitude, err := strconv.ParseFloat(strings.ReplaceAll(Location.Latitude, " ", ""), 32)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, err
 	}
 	cloudLongitude, err := strconv.ParseFloat(strings.ReplaceAll(Location.Longitude, " ", ""), 32)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, err
 	}
 
@@ -567,7 +568,7 @@ func GetLatency(src string, dest string) (float64, error) {
 	latencyString := common.RuntimeLatancyMap[common.RuntimeLatancyMapIndex[src]][common.RuntimeLatancyMapIndex[dest]]
 	latency, err := strconv.ParseFloat(strings.ReplaceAll(latencyString, " ", ""), 32)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 999999, err
 	}
 	return latency, nil
@@ -674,7 +675,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 	keyValue, err := common.CBStore.GetList(key, true)
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return []TbVmPriority{}, err
 	}
 
@@ -684,7 +685,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 		fmt.Println("getRecommendList1: " + v.Key)
 		err = json.Unmarshal([]byte(v.Value), &content)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return []TbVmPriority{}, err
 		}
 
@@ -693,7 +694,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 		keyValue2, err := common.CBStore.Get(key2)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return []TbVmPriority{}, err
 		}
 		json.Unmarshal([]byte(keyValue2.Value), &content2)
@@ -717,7 +718,7 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -749,7 +750,7 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 		vmTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
 
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return nil, fmt.Errorf("Failed to recommend MCIS")
 		}
 

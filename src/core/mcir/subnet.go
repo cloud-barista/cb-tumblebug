@@ -22,6 +22,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // CreateSubnet accepts subnet creation request, creates and returns an TB vNet object
@@ -30,14 +31,14 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbVNetInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(vNetId)
 	if err != nil {
 		temp := TbVNetInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -89,7 +90,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	oldVNet := TbVNetInfo{}
 	err = json.Unmarshal([]byte(vNetKeyValue.Value), &oldVNet)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldVNet, err
 	}
 
@@ -111,7 +112,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 			Post(url)
 
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			content := TbVNetInfo{}
 			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
@@ -121,7 +122,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			content := TbVNetInfo{}
 			return content, err
 		}
@@ -136,7 +137,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	err = common.CBStore.Put(SubnetKey, string(Val))
 	if err != nil {
 		temp := TbVNetInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -145,13 +146,13 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 
 	jsonBody, err := json.Marshal(req)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 
 	tbSubnetInfo := TbSubnetInfo{}
 	err = json.Unmarshal(jsonBody, &tbSubnetInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 	tbSubnetInfo.Id = req.Name
 	tbSubnetInfo.Name = req.Name
@@ -161,7 +162,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 
 	err = common.CBStore.Put(vNetKey, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldVNet, err
 	}
 

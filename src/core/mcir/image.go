@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
@@ -123,7 +124,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbImageInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -156,7 +157,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	res, err := LookupImage(u.ConnectionName, u.CspImageId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		//err := fmt.Errorf("an error occurred while lookup image via CB-Spider")
 		emptyImageInfoObj := TbImageInfo{}
 		return emptyImageInfoObj, err
@@ -164,7 +165,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	content, err := ConvertSpiderImageToTumblebugImage(res)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		//err := fmt.Errorf("an error occurred while converting Spider image info to Tumblebug image info.")
 		emptyImageInfoObj := TbImageInfo{}
 		return emptyImageInfoObj, err
@@ -181,7 +182,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
@@ -209,12 +210,12 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbImageInfo{}, err
 	}
 	err = common.CheckString(content.Name)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbImageInfo{}, err
 	}
 	check, err := CheckResource(nsId, resourceType, content.Name)
@@ -239,7 +240,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbImageInfo{}, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
@@ -273,7 +274,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 	if connConfig == "" {
 		content := SpiderImageList{}
 		err := fmt.Errorf("LookupImage() called with empty connConfig.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
@@ -294,7 +295,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 		Get(url)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := SpiderImageList{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -306,7 +307,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := SpiderImageList{}
 		return content, err
 	}
@@ -322,12 +323,12 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	if connConfig == "" {
 		content := SpiderImageInfo{}
 		err := fmt.Errorf("LookupImage() called with empty connConfig.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	} else if imageId == "" {
 		content := SpiderImageInfo{}
 		err := fmt.Errorf("LookupImage() called with empty imageId.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
@@ -348,7 +349,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		Get(url)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := SpiderImageInfo{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -360,7 +361,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := SpiderImageInfo{}
 		return content, err
 	}
@@ -376,14 +377,14 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 
 	spiderImageList, err := LookupImageList(connConfig)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, err
 	}
 
 	for _, spiderImage := range spiderImageList.Image {
 		tumblebugImage, err := ConvertSpiderImageToTumblebugImage(spiderImage)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return 0, err
 		}
 
@@ -391,10 +392,10 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 
 		check, err := CheckResource(nsId, common.StrImage, tumblebugImageId)
 		if check {
-			common.CBLog.Infoln("The image " + tumblebugImageId + " already exists in TB; continue")
+			log.Info().Msgf("The image %s already exists in TB; continue", tumblebugImageId)
 			continue
 		} else if err != nil {
-			common.CBLog.Infoln("Cannot check the existence of " + tumblebugImageId + " in TB; continue")
+			log.Info().Msgf("Cannot check the existence of %s in TB; continue", tumblebugImageId)
 			continue
 		} else {
 			tumblebugImage.Name = tumblebugImageId
@@ -402,7 +403,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 
 			_, err := RegisterImageWithInfo(nsId, &tumblebugImage)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return 0, err
 			}
 			imageCount++
@@ -416,13 +417,13 @@ func FetchImagesForAllConnConfigs(nsId string) (connConfigCount uint, imageCount
 
 	err = common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, 0, err
 	}
 
 	connConfigs, err := common.GetConnConfigList()
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, 0, err
 	}
 
@@ -439,7 +440,7 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -456,7 +457,7 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 
 	err = sqlQuery.Find(&tempList)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return tempList, err
 	}
 	return tempList, nil
@@ -470,21 +471,21 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbImageInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	if len(fieldsToUpdate.Namespace) > 0 {
 		temp := TbImageInfo{}
 		err := fmt.Errorf("You should not specify 'namespace' in the JSON request body.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	if len(fieldsToUpdate.Id) > 0 {
 		temp := TbImageInfo{}
 		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -492,7 +493,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 
 	if err != nil {
 		temp := TbImageInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -528,14 +529,14 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		temp := TbImageInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In UpdateImage(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 

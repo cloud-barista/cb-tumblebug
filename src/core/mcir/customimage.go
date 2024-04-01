@@ -23,6 +23,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type CustomImageStatus string
@@ -109,12 +110,12 @@ func RegisterCustomImageWithInfo(nsId string, content TbCustomImageInfo) (TbCust
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbCustomImageInfo{}, err
 	}
 	err = common.CheckString(content.Name)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbCustomImageInfo{}, err
 	}
 	check, err := CheckResource(nsId, resourceType, content.Name)
@@ -138,7 +139,7 @@ func RegisterCustomImageWithInfo(nsId string, content TbCustomImageInfo) (TbCust
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbCustomImageInfo{}, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
@@ -164,11 +165,11 @@ func LookupMyImage(connConfig string, myImageId string) (SpiderMyImageInfo, erro
 
 	if connConfig == "" {
 		err := fmt.Errorf("LookupMyImage() called with empty connConfig.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return SpiderMyImageInfo{}, err
 	} else if myImageId == "" {
 		err := fmt.Errorf("LookupMyImage() called with empty myImageId.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return SpiderMyImageInfo{}, err
 	}
 
@@ -192,7 +193,7 @@ func LookupMyImage(connConfig string, myImageId string) (SpiderMyImageInfo, erro
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := SpiderMyImageInfo{}
 		return content, err
 	}
@@ -237,7 +238,7 @@ func RegisterCustomImageWithId(nsId string, u *TbCustomImageReq) (TbCustomImageI
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbCustomImageInfo{}, err
 	}
 
@@ -299,7 +300,7 @@ func RegisterCustomImageWithId(nsId string, u *TbCustomImageReq) (TbCustomImageI
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbCustomImageInfo{}, err
 	}
 
@@ -330,7 +331,7 @@ func RegisterCustomImageWithId(nsId string, u *TbCustomImageReq) (TbCustomImageI
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	return content, nil

@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // CacheItem is a struct to store cached item
@@ -345,7 +346,7 @@ func ForwardRequestToAny(reqPath string, method string, requestBody interface{})
 	)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 

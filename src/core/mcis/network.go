@@ -18,11 +18,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	model "github.com/cloud-barista/cb-larva/poc-cb-net/pkg/cb-network/model"
 	nethelper "github.com/cloud-barista/cb-larva/poc-cb-net/pkg/network-helper"
@@ -40,15 +41,15 @@ type NetworkReq struct {
 
 // ConfigureCloudAdaptiveNetwork configures a cloud adaptive network to VMs in an MCIS
 func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkReq) (AgentInstallContentWrapper, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	if err := common.CheckString(nsId); err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
 
 	if err := common.CheckString(mcisId); err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
 
@@ -59,38 +60,38 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 	// Get a list of VM ID
 	vmIdList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
 
 	serviceEndpoint := netReq.ServiceEndpoint
 	// if the parameter is not passed, try to read from the environment variable
 	if serviceEndpoint == "" {
-		common.CBLog.Printf("read env for CB_NETWORK_SERVICE_ENDPOINT")
+		log.Debug().Msg("read env for CB_NETWORK_SERVICE_ENDPOINT")
 		// Get an endpoint of cb-network service
 		serviceEndpoint = os.Getenv("CB_NETWORK_SERVICE_ENDPOINT")
 		if serviceEndpoint == "" {
 			return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_SERVICE_ENDPOINT")
 		}
 	}
-	common.CBLog.Printf("Network service endpoint: %+v", serviceEndpoint)
+	log.Debug().Msgf("Network service endpoint: %+v", serviceEndpoint)
 
 	etcdEndpoints := netReq.EtcdEndpoints
 	// if the parameter is not passed, try to read from the environment variable
 	if len(etcdEndpoints) == 0 {
-		common.CBLog.Printf("read env for CB_NETWORK_ETCD_ENDPOINTS")
+		log.Debug().Msg("read env for CB_NETWORK_ETCD_ENDPOINTS")
 		// Get endpoints of cb-network etcd which should be accessible from the remote
 		etcdEndpoints = strings.Split(os.Getenv("CB_NETWORK_ETCD_ENDPOINTS"), ",")
 		if len(etcdEndpoints) == 0 {
 			return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_ETCD_ENDPOINTS")
 		}
 	}
-	common.CBLog.Printf("etcd endpoints: %+v", etcdEndpoints)
+	log.Debug().Msgf("etcd endpoints: %+v", etcdEndpoints)
 
 	// Get Cloud Adaptive Network
 	cladnetSpec, err := getCloudAdaptiveNetwork(serviceEndpoint, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
 
@@ -107,22 +108,22 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 		cladnetDescription := fmt.Sprintf("A cladnet for %s", mcisId)
 		cladnetSpec, err = createProperCloudAdaptiveNetwork(serviceEndpoint, ipNetworksInMCIS, mcisId, cladnetDescription)
 		if err != nil {
-			common.CBLog.Printf("could not create a cloud adaptive network: %v\n", err)
+			log.Debug().Msgf("could not create a cloud adaptive network: %v", err)
 			return AgentInstallContentWrapper{}, err
 		}
 	}
 
-	common.CBLog.Printf("CLADNet spec: %#v\n", cladnetSpec)
+	log.Debug().Msgf("CLADNet spec: %#v", cladnetSpec)
 
 	// Prepare the installation command
 	etcdEndpointsJSON, _ := json.Marshal(etcdEndpoints)
 	command, err := getAgentInstallationCommand(string(etcdEndpointsJSON), cladnetSpec.CladnetID)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
 
-	common.CBLog.Printf("Command: %#v\n", command)
+	log.Debug().Msgf("Command: %#v", command)
 
 	// Replace given parameter with the installation cmd
 	mcisCmdReq := McisCmdReq{}
@@ -138,7 +139,7 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 
 	var sshCmdResults []SshCmdResult
 
-	common.CBLog.Printf("VM list: %v\n", vmIdList)
+	log.Debug().Msgf("VM list: %v", vmIdList)
 
 	for _, vmId := range vmIdList {
 		wg.Add(1)
@@ -147,7 +148,7 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 
 			// Check NetworkAgentStatus
 			vmObject, _ := GetVmObject(nsId, mcisId, vmId)
-			common.CBLog.Printf("NetworkAgentStatus: %+v\n" + vmObject.NetworkAgentStatus)
+			log.Debug().Msgf("NetworkAgentStatus: %+v" + vmObject.NetworkAgentStatus)
 
 			// Skip if in installing or installed status)
 			if vmObject.NetworkAgentStatus != "installed" && vmObject.NetworkAgentStatus != "installing" {
@@ -188,13 +189,13 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 	}
 	common.PrintJsonPretty(sshCmdResults)
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return contents, nil
 }
 
 // // readCBNetworkEndpoints checks endpoints of cb-network service and etcd.
 // func readCBNetworkEndpoints() (string, string, error) {
-// 	common.CBLog.Debug("Start.........")
+// 	log.Debug().Msg("Start.........")
 
 // 	// Get an endpoint of cb-network service
 // 	serviceEndpoint := os.Getenv("CB_NETWORK_SERVICE_ENDPOINT")
@@ -208,13 +209,13 @@ func ConfigureCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkRe
 // 		return "", "", errors.New("could not load CB_NETWORK_ETCD_ENDPOINTS")
 // 	}
 
-// 	common.CBLog.Debug("End.........")
+// 	log.Debug().Msg("End.........")
 // 	return serviceEndpoint, etcdEndpoints, nil
 // }
 
 // getCloudAdaptiveNetwork retrieves a Cloud Adaptive Network
 func getCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetId string) (model.CLADNetSpecification, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 	var cladnetSpec model.CLADNetSpecification
 
 	client := resty.New()
@@ -228,26 +229,26 @@ func getCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetId string) (m
 		}).
 		Get(fmt.Sprintf("http://%s/v1/cladnet/{cladnetId}", networkServiceEndpoint))
 	// Output print
-	log.Printf("\nError: %v\n", err)
-	common.CBLog.Printf("Time: %v\n", resp.Time())
-	common.CBLog.Printf("Body: %v\n", resp)
+	log.Error().Err(err).Msg("")
+	log.Debug().Msgf("Time: %v", resp.Time())
+	log.Debug().Msgf("Body: %v", resp)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return model.CLADNetSpecification{}, err
 	}
 
 	json.Unmarshal(resp.Body(), &cladnetSpec)
-	common.CBLog.Printf("%+v\n", cladnetSpec)
-	common.CBLog.Printf("The specification of a Cloud Adaptive Network: %+v", cladnetSpec)
+	log.Debug().Msgf("%+v", cladnetSpec)
+	log.Debug().Msgf("The specification of a Cloud Adaptive Network: %+v", cladnetSpec)
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return cladnetSpec, nil
 }
 
 // getSubnetsInMCIS extracts all subnets in MCIS.
 func getSubnetsInMCIS(nsId string, mcisId string, vmList []string) ([]string, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	ipNetsInMCIS := make([]string, 0)
 
@@ -256,21 +257,21 @@ func getSubnetsInMCIS(nsId string, mcisId string, vmList []string) ([]string, er
 		// Get vNet info
 		tbVmInfo, err := GetVmObject(nsId, mcisId, vmId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return ipNetsInMCIS, err
 		}
 
 		// getVNet
 		res, err := mcir.GetResource(nsId, common.StrVNet, tbVmInfo.VNetId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return ipNetsInMCIS, err
 		}
 
 		// type casting
 		tempVNetInfo, ok := res.(mcir.TbVNetInfo)
 		if !ok {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return ipNetsInMCIS, err
 		}
 
@@ -281,15 +282,15 @@ func getSubnetsInMCIS(nsId string, mcisId string, vmList []string) ([]string, er
 	}
 
 	// Trace
-	common.CBLog.Tracef("%#v", ipNetsInMCIS)
+	log.Trace().Msgf("%#v", ipNetsInMCIS)
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return ipNetsInMCIS, nil
 }
 
 // createProperCloudAdaptiveNetwork requests available IPv4 private address spaces and uses the recommended address space.
 func createProperCloudAdaptiveNetwork(networkServiceEndpoint string, ipCIDRs []string, cladnetName string, cladnetDescription string) (model.CLADNetSpecification, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	ipv4CidrsHolder := `{"ipv4Cidrs": %s}`
 	tempJSON, _ := json.Marshal(ipCIDRs)
@@ -305,20 +306,20 @@ func createProperCloudAdaptiveNetwork(networkServiceEndpoint string, ipCIDRs []s
 		SetBody(ipv4CidrsString).
 		Post(fmt.Sprintf("http://%s/v1/cladnet/availableIPv4AddressSpaces", networkServiceEndpoint))
 	// Output print
-	common.CBLog.Printf("\nError: %v\n", err)
-	common.CBLog.Printf("Time: %v\n", resp.Time())
-	common.CBLog.Printf("Body: %v\n", resp)
+	log.Error().Err(err).Msg("")
+	log.Debug().Msgf("Time: %v", resp.Time())
+	log.Debug().Msgf("Body: %v", resp)
 
 	if err != nil {
-		common.CBLog.Printf("Could not request: %v\n", err)
+		log.Error().Err(err).Msgf("Could not request")
 		return model.CLADNetSpecification{}, err
 	}
 
 	var availableIPv4PrivateAddressSpaces nethelper.AvailableIPv4PrivateAddressSpaces
 
 	json.Unmarshal(resp.Body(), &availableIPv4PrivateAddressSpaces)
-	common.CBLog.Printf("%+v\n", availableIPv4PrivateAddressSpaces)
-	common.CBLog.Printf("RecommendedIpv4PrivateAddressSpace: %#v", availableIPv4PrivateAddressSpaces.RecommendedIPv4PrivateAddressSpace)
+	log.Debug().Msgf("%+v", availableIPv4PrivateAddressSpaces)
+	log.Debug().Msgf("RecommendedIpv4PrivateAddressSpace: %#v", availableIPv4PrivateAddressSpaces.RecommendedIPv4PrivateAddressSpace)
 
 	// if the cladnetName is unique, it can be used CladnetID.
 	reqSpec := &model.CLADNetSpecification{
@@ -335,7 +336,7 @@ func createProperCloudAdaptiveNetwork(networkServiceEndpoint string, ipCIDRs []s
 	if errMarshal != nil {
 		return model.CLADNetSpecification{}, err
 	}
-	common.CBLog.Printf("%#v\n", cladnetSpecString)
+	log.Debug().Msgf("%#v", cladnetSpecString)
 
 	// Request to create a Cloud Adaptive Network
 	resp, err = client.R().
@@ -344,12 +345,12 @@ func createProperCloudAdaptiveNetwork(networkServiceEndpoint string, ipCIDRs []s
 		SetBody(cladnetSpecString).
 		Post(fmt.Sprintf("http://%s/v1/cladnet", networkServiceEndpoint))
 	// Output print
-	common.CBLog.Printf("\nError: %v\n", err)
-	common.CBLog.Printf("Time: %v\n", resp.Time())
-	common.CBLog.Printf("Body: %v\n", resp)
+	log.Error().Err(err).Msg("")
+	log.Debug().Msgf("Time: %v", resp.Time())
+	log.Debug().Msgf("Body: %v", resp)
 
 	if err != nil {
-		common.CBLog.Printf("Could not request: %v\n", err)
+		log.Error().Err(err).Msg("Could not request")
 		return model.CLADNetSpecification{}, err
 	}
 
@@ -359,7 +360,7 @@ func createProperCloudAdaptiveNetwork(networkServiceEndpoint string, ipCIDRs []s
 		return model.CLADNetSpecification{}, err
 	}
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return tempSpec, nil
 }
 
@@ -382,11 +383,11 @@ func getAgentInstallationCommand(etcdEndpoints, cladnetId string) (string, error
 
 // installCBNetworkAgentToMcis installs cb-network agent to VMs in an MCIS by the remote command
 func installCBNetworkAgentToVM(nsId, mcisId, vmId string, mcisCmdReq McisCmdReq) (SshCmdResult, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	vmIp, _, sshPort, err := GetVmIp(nsId, mcisId, vmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return SshCmdResult{}, err
 	}
 
@@ -396,7 +397,7 @@ func installCBNetworkAgentToVM(nsId, mcisId, vmId string, mcisCmdReq McisCmdReq)
 	// With RunRemoteCommand, error will be checked again
 	if err == nil {
 		// Just logging the error (but it is net a faultal )
-		common.CBLog.Info(err)
+		log.Info().Msg(err.Error())
 	}
 
 	stdout, stderr, err := RunRemoteCommand(vmIp, sshPort, userName, sshKey, mcisCmdReq.Command)
@@ -417,37 +418,37 @@ func installCBNetworkAgentToVM(nsId, mcisId, vmId string, mcisCmdReq McisCmdReq)
 		sshResultTmp.Err = nil
 	}
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return sshResultTmp, err
 }
 
 // // installCBNetworkAgentToMcis installs cb-network agent to VMs in an MCIS by the remote command
 // func installCBNetworkAgentToMcis(nsId, mcisId string, mcisCmdReq McisCmdReq) ([]SshCmdResult, error) {
-// 	common.CBLog.Debug("Start.........")
+// 	log.Debug().Msg("Start.........")
 
 // 	sshCmdResult, err := RemoteCommandToMcis(nsId, mcisId, &mcisCmdReq)
 
 // 	if err != nil {
 // 		temp := []SshCmdResult{}
-// 		common.CBLog.Error(err)
+// 		log.Error().Err(err).Msg("")
 // 		return temp, err
 // 	}
 
-// 	common.CBLog.Debug("End.........")
+// 	log.Debug().Msg("End.........")
 // 	return sshCmdResult, nil
 // }
 
 // InjectCloudInformationForCloudAdaptiveNetwork injects cloud information for a cloud adaptive network
 func InjectCloudInformationForCloudAdaptiveNetwork(nsId string, mcisId string, netReq *NetworkReq) (AgentInstallContentWrapper, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	if err := common.CheckString(nsId); err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
 
 	if err := common.CheckString(mcisId); err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
 
@@ -458,59 +459,59 @@ func InjectCloudInformationForCloudAdaptiveNetwork(nsId string, mcisId string, n
 	serviceEndpoint := netReq.ServiceEndpoint
 	// if the parameter is not passed, try to read from the environment variable
 	if serviceEndpoint == "" {
-		common.CBLog.Printf("read env for CB_NETWORK_SERVICE_ENDPOINT")
+		log.Debug().Msg("read env for CB_NETWORK_SERVICE_ENDPOINT")
 		// Get an endpoint of cb-network service
 		serviceEndpoint = os.Getenv("CB_NETWORK_SERVICE_ENDPOINT")
 		if serviceEndpoint == "" {
 			return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_SERVICE_ENDPOINT")
 		}
 	}
-	common.CBLog.Printf("Network service endpoint: %+v", serviceEndpoint)
+	log.Debug().Msgf("Network service endpoint: %+v", serviceEndpoint)
 
 	// etcdEndpoints := netReq.EtcdEndpoints
 	// // if the parameter is not passed, try to read from the environment variable
 	// if len(etcdEndpoints) == 0 {
-	// 	common.CBLog.Printf("read env for CB_NETWORK_ETCD_ENDPOINTS")
+	// 	log.Debug().Msg("read env for CB_NETWORK_ETCD_ENDPOINTS")
 	// 	// Get endpoints of cb-network etcd which should be accessible from the remote
 	// 	etcdEndpoints = strings.Split(os.Getenv("CB_NETWORK_ETCD_ENDPOINTS"), ",")
 	// 	if len(etcdEndpoints) == 0 {
 	// 		return AgentInstallContentWrapper{}, errors.New("there is no CB_NETWORK_ETCD_ENDPOINTS")
 	// 	}
 	// }
-	// common.CBLog.Printf("etcd endpoints: %+v", etcdEndpoints)
+	// log.Debug().Msgf("etcd endpoints: %+v", etcdEndpoints)
 
 	// Get Cloud Adaptive Network
 	cladnetSpec, err := getCloudAdaptiveNetwork(serviceEndpoint, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
-	common.CBLog.Printf("CLADNet spec: %#v\n", cladnetSpec)
+	log.Debug().Msgf("CLADNet spec: %#v", cladnetSpec)
 
 	// Get Peers in Cloud Adaptive Network (NOTE - mcisId is equal to cladnetID)
 	peers, err := getPeersInCloudAdaptiveNetwork(serviceEndpoint, cladnetSpec.CladnetID)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
-	common.CBLog.Printf("Peers: %#v\n", peers)
+	log.Debug().Msgf("Peers: %#v", peers)
 
 	// Get a list of VM ID
 	vmIdList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
-	common.CBLog.Printf("VM list: %v\n", vmIdList)
+	log.Debug().Msgf("VM list: %v", vmIdList)
 
 	// Change the rule type of cloud adaptive network
 	cladnetSpec.RuleType = ruletype.CostPrioritized
 	cladnetSpec, err = updateCloudAdaptiveNetwork(serviceEndpoint, cladnetSpec)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return AgentInstallContentWrapper{}, err
 	}
-	common.CBLog.Printf("CLADNet spec: %#v\n", cladnetSpec)
+	log.Debug().Msgf("CLADNet spec: %#v", cladnetSpec)
 
 	//// Inject cloud information to each peer in the Cloud Adaptive network
 	contents := AgentInstallContentWrapper{}
@@ -519,7 +520,7 @@ func InjectCloudInformationForCloudAdaptiveNetwork(nsId string, mcisId string, n
 		vmObject, _ := GetVmObject(nsId, mcisId, vmId)
 		// jsonBytes, _ := json.Marshal(vmObject)
 		// doc := string(jsonBytes)
-		// common.CBLog.Printf("## vmObject ==> %+v\n", doc)
+		// log.Debug().Msgf("## vmObject ==> %+v", doc)
 
 		for _, peer := range peers.Peers {
 
@@ -534,19 +535,19 @@ func InjectCloudInformationForCloudAdaptiveNetwork(nsId string, mcisId string, n
 					VirtualNetworkID:   vmObject.CspViewVmDetail.VpcIID.SystemId,
 					SubnetID:           vmObject.CspViewVmDetail.SubnetIID.SystemId,
 				}
-				common.CBLog.Printf("## vmId: %+v\n", vmId)
-				common.CBLog.Printf("## %#v\n", tempCloudInfo)
+				log.Debug().Msgf("## vmId: %+v", vmId)
+				log.Debug().Msgf("## %#v", tempCloudInfo)
 
 				// Update the peer
 				updatedPeer, err := updateDetailsOfPeer(serviceEndpoint, cladnetSpec.CladnetID, peer.HostID, tempCloudInfo)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 				}
-				common.CBLog.Printf("The updated peer: %#v\n", updatedPeer)
+				log.Debug().Msgf("The updated peer: %#v", updatedPeer)
 
 				updatedPeerBytes, err := json.Marshal(updatedPeer)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					tempPeer := model.Peer{}
 					updatedPeerBytes, _ = json.Marshal(tempPeer)
 				}
@@ -563,13 +564,13 @@ func InjectCloudInformationForCloudAdaptiveNetwork(nsId string, mcisId string, n
 		}
 	}
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return contents, nil
 }
 
 // getPeersInCloudAdaptiveNetwork retrieves peers in a Cloud Adaptive Network
 func getPeersInCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetId string) (model.Peers, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	client := resty.New()
 
@@ -582,12 +583,12 @@ func getPeersInCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetId str
 		}).
 		Get(fmt.Sprintf("http://%s/v1/cladnet/{cladnetId}/peer", networkServiceEndpoint))
 	// Output print
-	log.Printf("\nError: %v\n", err)
-	common.CBLog.Printf("Time: %v\n", resp.Time())
-	common.CBLog.Printf("Body: %v\n", resp)
+	log.Error().Err(err).Msg("")
+	log.Debug().Msgf("Time: %v", resp.Time())
+	log.Debug().Msgf("Body: %v", resp)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return model.Peers{}, err
 	}
 
@@ -595,30 +596,30 @@ func getPeersInCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetId str
 
 	err = json.Unmarshal(resp.Body(), &peers)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return model.Peers{}, err
 	}
-	common.CBLog.Printf("%+v\n", peers)
-	common.CBLog.Printf("Peers in a Cloud Adaptive Network: %+v", peers)
+	log.Debug().Msgf("%+v", peers)
+	log.Debug().Msgf("Peers in a Cloud Adaptive Network: %+v", peers)
 
 	if len(peers.Peers) == 0 {
 		return model.Peers{}, errors.New("could not find any Peers")
 	}
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return peers, nil
 }
 
 // updateCloudAdaptiveNetwork updates the specification of a Cloud Adaptive Network.
 func updateCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetSpec model.CLADNetSpecification) (model.CLADNetSpecification, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	jsonBytes, errMarshal := json.Marshal(cladnetSpec)
 	if errMarshal != nil {
 		return model.CLADNetSpecification{}, errMarshal
 	}
 	doc := string(jsonBytes)
-	common.CBLog.Printf("CLADNetSpecification (JSON string): %v\n", doc)
+	log.Debug().Msgf("CLADNetSpecification (JSON string): %v", doc)
 
 	client := resty.New()
 	// Request a recommendation of available IPv4 private address spaces.
@@ -631,12 +632,12 @@ func updateCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetSpec model
 		SetBody(doc).
 		Put(fmt.Sprintf("http://%s/v1/cladnet/{cladnetId}", networkServiceEndpoint))
 	// Output print
-	log.Printf("\nError: %v\n", err)
-	common.CBLog.Printf("Time: %v\n", resp.Time())
-	common.CBLog.Printf("Body: %v\n", resp)
+	log.Error().Err(err).Msg("")
+	log.Debug().Msgf("Time: %v", resp.Time())
+	log.Debug().Msgf("Body: %v", resp)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return model.CLADNetSpecification{}, err
 	}
 
@@ -644,20 +645,20 @@ func updateCloudAdaptiveNetwork(networkServiceEndpoint string, cladnetSpec model
 
 	err = json.Unmarshal(resp.Body(), &spec)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return model.CLADNetSpecification{}, err
 	}
-	common.CBLog.Printf("%+v\n", spec)
-	common.CBLog.Printf("The updated CLADNetSpecification: %+v", spec)
+	log.Debug().Msgf("%+v", spec)
+	log.Debug().Msgf("The updated CLADNetSpecification: %+v", spec)
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return spec, nil
 
 }
 
 // updateDetailsOfPeer updates the peers with cloud information (i.e., details).
 func updateDetailsOfPeer(networkServiceEndpoint string, cladnetId string, hostId string, details model.CloudInformation) (model.Peer, error) {
-	common.CBLog.Debug("Start.........")
+	log.Debug().Msg("Start.........")
 
 	cloudInformationHolder := `{"cloudInformation": %s}`
 	jsonBytes, errMarshal := json.Marshal(details)
@@ -666,7 +667,7 @@ func updateDetailsOfPeer(networkServiceEndpoint string, cladnetId string, hostId
 	}
 	doc := fmt.Sprintf(cloudInformationHolder, string(jsonBytes))
 
-	common.CBLog.Printf("CloudInforamtion (JSON string): %v\n", doc)
+	log.Debug().Msgf("CloudInforamtion (JSON string): %v", doc)
 
 	client := resty.New()
 	// Request a recommendation of available IPv4 private address spaces.
@@ -680,12 +681,12 @@ func updateDetailsOfPeer(networkServiceEndpoint string, cladnetId string, hostId
 		SetBody(doc).
 		Put(fmt.Sprintf("http://%s/v1/cladnet/{cladnetId}/peer/{hostId}/details", networkServiceEndpoint))
 	// Output print
-	log.Printf("\nError: %v\n", err)
-	common.CBLog.Printf("Time: %v\n", resp.Time())
-	common.CBLog.Printf("Body: %v\n", resp)
+	log.Error().Err(err).Msg("")
+	log.Debug().Msgf("Time: %v", resp.Time())
+	log.Debug().Msgf("Body: %v", resp)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return model.Peer{}, err
 	}
 
@@ -693,12 +694,12 @@ func updateDetailsOfPeer(networkServiceEndpoint string, cladnetId string, hostId
 
 	err = json.Unmarshal(resp.Body(), &peer)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return model.Peer{}, err
 	}
-	common.CBLog.Printf("%+v\n", peer)
-	common.CBLog.Printf("The updated peer: %+v", peer)
+	log.Debug().Msgf("%+v", peer)
+	log.Debug().Msgf("The updated peer: %+v", peer)
 
-	common.CBLog.Debug("End.........")
+	log.Debug().Msg("End.........")
 	return peer, nil
 }

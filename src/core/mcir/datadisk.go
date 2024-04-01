@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
@@ -154,7 +155,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbDataDiskInfo{}, err
 	}
 
@@ -219,7 +220,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return TbDataDiskInfo{}, err
 	}
@@ -229,7 +230,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbDataDiskInfo{}, err
 	}
 
@@ -265,7 +266,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	return content, nil
@@ -284,7 +285,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbDataDiskInfo{}, err
 	}
 
@@ -353,7 +354,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	resp, err = req.Put(url)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return TbDataDiskInfo{}, err
 	}
@@ -363,7 +364,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbDataDiskInfo{}, err
 	}
 
@@ -385,7 +386,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	return content, nil

@@ -23,6 +23,8 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
+
+	"github.com/rs/zerolog/log"
 )
 
 type CloudInfo struct {
@@ -188,7 +190,7 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 	val, _ := json.Marshal(content)
 	err := CBStore.Put(key, string(val))
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	keyValue, _ := CBStore.Get(key)
@@ -205,7 +207,7 @@ func UpdateGlobalVariable(id string) error {
 
 	configInfo, err := GetConfig(id)
 	if err != nil {
-		//CBLog.Error(err)
+		//log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -274,7 +276,7 @@ func InitConfig(id string) error {
 
 		CBStore.Delete(key)
 		// if err != nil {
-		// 	CBLog.Error(err)
+		// 	log.Error().Err(err).Msg("")
 		// 	return err
 		// }
 	}
@@ -296,7 +298,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	if err != nil {
 		temp := ConfigInfo{}
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -305,7 +307,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		//CBLog.Error(err)
+		//log.Error().Err(err).Msg("")
 		return res, err
 	}
 
@@ -313,7 +315,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return res, err
 	}
 	return res, nil
@@ -328,7 +330,7 @@ func ListConfig() ([]ConfigInfo, error) {
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if keyValue != nil {
@@ -337,7 +339,7 @@ func ListConfig() ([]ConfigInfo, error) {
 			tempObj := ConfigInfo{}
 			err = json.Unmarshal([]byte(v.Value), &tempObj)
 			if err != nil {
-				CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			res = append(res, tempObj)

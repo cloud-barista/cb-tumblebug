@@ -26,6 +26,7 @@ import (
 
 	// Black import (_) is for running a package's init() function without using its other contents.
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
+	"github.com/rs/zerolog/log"
 
 	//_ "github.com/go-sql-driver/mysql"
 	"github.com/fsnotify/fsnotify"
@@ -57,11 +58,13 @@ func setConfig() {
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
+		log.Error().Err(err).Msg("")
 		panic(fmt.Errorf("fatal error reading cloud_conf: %w", err))
 	}
 	fmt.Println(viper.ConfigFileUsed())
 	err = viper.Unmarshal(&common.RuntimeConf)
 	if err != nil {
+		log.Error().Err(err).Msg("")
 		panic(err)
 	}
 
@@ -79,6 +82,7 @@ func setConfig() {
 	fmt.Println(cloudInfoViper.ConfigFileUsed())
 	err = cloudInfoViper.Unmarshal(&common.RuntimeCloudInfo)
 	if err != nil {
+		log.Error().Err(err).Msg("")
 		panic(err)
 	}
 	// fmt.Printf("%+v\n", common.RuntimeCloudInfo)
@@ -92,7 +96,7 @@ func setConfig() {
 	file, fileErr := os.Open("../assets/cloudlatencymap.csv")
 	defer file.Close()
 	if fileErr != nil {
-		common.CBLog.Error(fileErr)
+		log.Error().Err(fileErr).Msg("")
 		panic(fileErr)
 	}
 	rdr := csv.NewReader(bufio.NewReader(file))
@@ -177,15 +181,15 @@ func main() {
 
 	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	}
 
 	//err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db") // commented out to move to use XORM
 	common.ORM, err = xorm.NewEngine("sqlite3", "../meta_db/dat/cbtumblebug.s3db")
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Database access info set successfully")
+		log.Info().Msg("Database access info set successfully")
 	}
 	//common.ORM.SetMapper(names.SameMapper{})
 	common.ORM.SetTableMapper(names.SameMapper{})
@@ -204,25 +208,25 @@ func main() {
 	//err = common.CreateSpecTable() // commented out to move to use XORM
 	err = common.ORM.Sync2(new(mcir.TbSpecInfo))
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Table spec set successfully..")
+		log.Info().Msg("Table spec set successfully..")
 	}
 
 	// "CREATE Table IF NOT EXISTS image(...)"
 	//err = common.CreateImageTable() // commented out to move to use XORM
 	err = common.ORM.Sync2(new(mcir.TbImageInfo))
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Table image set successfully..")
+		log.Info().Msg("Table image set successfully..")
 	}
 
 	err = common.ORM.Sync2(new(mcir.TbCustomImageInfo))
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Table customImage set successfully..")
+		log.Info().Msg("Table customImage set successfully..")
 	}
 
 	//defer db.Close()
@@ -246,13 +250,15 @@ func main() {
 	go func() {
 		viper.WatchConfig()
 		viper.OnConfigChange(func(e fsnotify.Event) {
-			fmt.Println("Config file changed:", e.Name)
+			log.Info().Msgf("Config file changed: %s", e.Name)
 			err := viper.ReadInConfig()
 			if err != nil { // Handle errors reading the config file
+				log.Error().Err(err).Msg("")
 				panic(fmt.Errorf("fatal error config file: %w", err))
 			}
 			err = viper.Unmarshal(&common.RuntimeConf)
 			if err != nil {
+				log.Error().Err(err).Msg("")
 				panic(err)
 			}
 		})

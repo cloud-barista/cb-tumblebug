@@ -26,6 +26,7 @@ import (
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	uid "github.com/rs/xid"
+	"github.com/rs/zerolog/log"
 
 	"gopkg.in/yaml.v2"
 
@@ -249,11 +250,11 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	}
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 	if keyValue == nil {
-		//CBLog.Error(err)
+		//log.Error().Err(err).Msg("")
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", fmt.Errorf("cannot find the key " + key)
 	}
@@ -300,7 +301,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 			content := mcirIds{}
 			err = json.Unmarshal([]byte(keyValue.Value), &content)
 			if err != nil {
-				CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 				return ""
 			}
@@ -356,7 +357,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 	keyValue, err := CBStore.Get(key)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return location
 	}
 
@@ -364,7 +365,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 		file, fileErr := os.Open("../assets/cloudlocation.csv")
 		defer file.Close()
 		if fileErr != nil {
-			CBLog.Error(fileErr)
+			log.Error().Err(fileErr).Msg("")
 			return location
 		}
 
@@ -380,7 +381,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 			valLoc, _ := json.Marshal(location)
 			dbErr := CBStore.Put(keyLoc, string(valLoc))
 			if dbErr != nil {
-				CBLog.Error(dbErr)
+				log.Error().Err(dbErr).Msg("")
 				return location
 			}
 			for j := range row {
@@ -390,7 +391,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 		}
 		keyValue, err = CBStore.Get(key)
 		if err != nil {
-			CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return location
 		}
 	}
@@ -399,7 +400,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 		//fmt.Printf("[GetCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
 		err = json.Unmarshal([]byte(keyValue.Value), &location)
 		if err != nil {
-			CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return location
 		}
 	}
@@ -420,7 +421,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 		Get(url)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := ConnConfig{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -430,7 +431,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 		err := fmt.Errorf(string(resp.Body()))
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := ConnConfig{}
 		return content, err
 	}
@@ -440,7 +441,7 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	// Get geolocation
 	nativeRegion, err := GetNativeRegion(temp.ConfigName)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := ConnConfig{}
 		return content, err
 	}
@@ -478,7 +479,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 	)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := ConnConfigList{}
 		return content, err
 	}
@@ -487,7 +488,7 @@ func GetConnConfigList() (ConnConfigList, error) {
 	for i, connConfig := range callResult.Connectionconfig {
 		nativeRegion, err := GetNativeRegion(connConfig.ConfigName)
 		if err != nil {
-			CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			content := ConnConfigList{}
 			return content, err
 		}
@@ -520,7 +521,7 @@ func GetRegion(RegionName string) (Region, error) {
 		Get(url)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := Region{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -530,7 +531,7 @@ func GetRegion(RegionName string) (Region, error) {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 		err := fmt.Errorf(string(resp.Body()))
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := Region{}
 		return content, err
 	}
@@ -547,14 +548,14 @@ func GetNativeRegion(connectionName string) (string, error) {
 	file, fileErr := os.Open("../assets/cloudconnection.csv")
 	defer file.Close()
 	if fileErr != nil {
-		CBLog.Error(fileErr)
+		log.Error().Err(fileErr).Msg("")
 		return "", fileErr
 	}
 
 	rdr := csv.NewReader(bufio.NewReader(file))
 	rows, err := rdr.ReadAll()
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
@@ -601,7 +602,7 @@ func GetRegionList() (RegionList, error) {
 		Get(url)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := RegionList{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -611,7 +612,7 @@ func GetRegionList() (RegionList, error) {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
 		err := fmt.Errorf(string(resp.Body()))
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := RegionList{}
 		return content, err
 	}
@@ -756,7 +757,7 @@ func GetObjectValue(key string) (string, error) {
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 	if keyValue == nil {
@@ -770,7 +771,7 @@ func DeleteObject(key string) error {
 
 	err := CBStore.Delete(key)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 	return nil
@@ -782,7 +783,7 @@ func DeleteObjects(key string) error {
 	for _, v := range keyValue {
 		err := CBStore.Delete(v.Key)
 		if err != nil {
-			CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 	}

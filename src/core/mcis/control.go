@@ -34,6 +34,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // MCIS Control
@@ -56,13 +57,13 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 	check, _ := CheckMcis(nsId, mcisId)
@@ -108,7 +109,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 
 		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return "", err
 		}
 
@@ -128,7 +129,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 
 		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return "", err
 		}
 
@@ -138,7 +139,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 
 		mcisStatus, err := GetMcisStatus(nsId, mcisId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return "", err
 		}
 
@@ -150,7 +151,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 				// Delete VM sequentially for safety (for performance, need to use goroutine)
 				err := DelMcisVm(nsId, mcisId, v.Id, "force")
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return "", err
 				}
 			}
@@ -168,19 +169,19 @@ func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string, 
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
 	err = common.CheckString(vmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 	check, _ := CheckVm(nsId, mcisId, vmId)
@@ -194,7 +195,7 @@ func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string, 
 
 	mcis, err := GetMcisStatus(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 
@@ -202,7 +203,7 @@ func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string, 
 	if mcis.TargetAction != "" && mcis.TargetAction != ActionComplete {
 		err = fmt.Errorf("MCIS %s is under %s, please try later", mcisId, mcis.TargetAction)
 		if !force {
-			common.CBLog.Info(err)
+			log.Info().Msg(err.Error())
 			return "", err
 		}
 	}
@@ -210,7 +211,7 @@ func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string, 
 	err = CheckAllowedTransition(nsId, mcisId, common.OptionalParameter{Set: true, Value: vmId}, action)
 	if err != nil {
 		if !force {
-			common.CBLog.Info(err)
+			log.Info().Msg(err.Error())
 			return "", err
 		}
 	}
@@ -244,7 +245,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 
 	mcis, err := GetMcisObject(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -252,7 +253,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 	if mcis.TargetAction != "" && mcis.TargetAction != ActionComplete {
 		err = fmt.Errorf("MCIS %s is under %s, please try later", mcisId, mcis.TargetAction)
 		if !force {
-			common.CBLog.Info(err)
+			log.Info().Msg(err.Error())
 			return err
 		}
 	}
@@ -266,7 +267,7 @@ func ControlMcisAsync(nsId string, mcisId string, action string, force bool) err
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 	if len(vmList) == 0 {
@@ -399,7 +400,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 				// Remove Bastion Info from all vNets if the terminating VM is a Bastion
 				_, err := RemoveBastionNodes(nsId, mcisId, vmId)
 				if err != nil {
-					common.CBLog.Info(err)
+					log.Info().Msg(err.Error())
 				}
 
 			case ActionReboot:
@@ -451,7 +452,7 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 				common.MediumDuration,
 			)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.Status = StatusFailed
 				temp.SystemMessage = err.Error()
 				UpdateVmInfo(nsId, mcisId, temp)
@@ -512,7 +513,7 @@ func CheckAllowedTransition(nsId string, mcisId string, vmId common.OptionalPara
 	if vmId.Set {
 		vm, err := GetMcisVmStatus(nsId, mcisId, vmId.Value)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
@@ -544,7 +545,7 @@ func CheckAllowedTransition(nsId string, mcisId string, vmId common.OptionalPara
 	} else {
 		mcis, err := GetMcisStatus(nsId, mcisId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 

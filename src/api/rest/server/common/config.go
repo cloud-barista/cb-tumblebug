@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
@@ -46,7 +47,7 @@ func RestInitConfig(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	if err := Validate(c, []string{"configId"}); err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
@@ -55,7 +56,7 @@ func RestInitConfig(c echo.Context) error {
 		err := fmt.Errorf("Failed to init the config " + c.Param("configId"))
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	} else {
-		return SendMessage(c, http.StatusOK, "The config "+c.Param("configId")+" has been initialized.")
+		// return SendMessage(c, http.StatusOK, "The config "+c.Param("configId")+" has been initialized.")
 		content := map[string]string{"message": "The config " + c.Param("configId") + " has been initialized."}
 		return common.EndRequestWithLog(c, reqID, err, content)
 	}
@@ -78,7 +79,7 @@ func RestGetConfig(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	if err := Validate(c, []string{"configId"}); err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return SendMessage(c, http.StatusBadRequest, err.Error())
 	}
 

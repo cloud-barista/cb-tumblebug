@@ -24,6 +24,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/rs/zerolog/log"
 
 	"github.com/go-resty/resty/v2"
 
@@ -114,13 +115,13 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	fmt.Println("[Check mcis] " + mcisId)
@@ -129,9 +130,9 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CheckMcis(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -147,19 +148,19 @@ func CheckSubGroup(nsId string, mcisId string, subGroupId string) (bool, error) 
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	subGroupList, err := ListSubGroupId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	for _, v := range subGroupList {
@@ -186,18 +187,18 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	err = common.CheckString(vmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
@@ -206,9 +207,9 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CheckVm(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -232,13 +233,13 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	fmt.Println("[Check McisPolicy] " + mcisId)
@@ -247,9 +248,9 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CheckMcisPolicy(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -366,7 +367,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	nsList, err := common.ListNsId()
 	nullObj := InspectResource{}
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
 		return nullObj, err
 	}
@@ -383,7 +384,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 			for _, mcis := range mcisListinNs {
 				nlbListInMcis, err := ListNLBId(ns, mcis)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					err := fmt.Errorf("an error occurred while getting resource list")
 					return nullObj, err
 				}
@@ -394,7 +395,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				for _, nlbId := range nlbListInMcis {
 					nlb, err := GetNLB(ns, mcis, nlbId)
 					if err != nil {
-						common.CBLog.Error(err)
+						log.Error().Err(err).Msg("")
 						err := fmt.Errorf("an error occurred while getting resource list")
 						return nullObj, err
 					}
@@ -419,7 +420,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 			for _, mcis := range mcisListinNs {
 				vmListInMcis, err := ListVmId(ns, mcis)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					err := fmt.Errorf("an error occurred while getting resource list")
 					return nullObj, err
 				}
@@ -430,7 +431,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 				for _, vmId := range vmListInMcis {
 					vm, err := GetVmObject(ns, mcis, vmId)
 					if err != nil {
-						common.CBLog.Error(err)
+						log.Error().Err(err).Msg("")
 						err := fmt.Errorf("an error occurred while getting resource list")
 						return nullObj, err
 					}
@@ -450,7 +451,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		case common.StrVNet:
 			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
@@ -472,7 +473,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		case common.StrSecurityGroup:
 			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
@@ -494,7 +495,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		case common.StrSSHKey:
 			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
@@ -516,7 +517,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		case common.StrDataDisk:
 			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
@@ -538,7 +539,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		case common.StrCustomImage:
 			resourceListInNs, err := mcir.ListResource(ns, resourceType, "", "")
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				err := fmt.Errorf("an error occurred while getting resource list")
 				return nullObj, err
 			}
@@ -602,7 +603,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 		Get(spiderRequestURL)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return nullObj, err
 	}
@@ -611,7 +612,7 @@ func InspectResources(connConfig string, resourceType string) (InspectResource, 
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nullObj, err
 	default:
 	}
@@ -717,7 +718,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 	connectionConfigList, err := common.GetConnConfigList()
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return InspectResourceAllResult{}, err
 	}
 
@@ -736,7 +737,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 			inspectResult, err := InspectResources(k.ConfigName, common.StrVNet)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.SystemMessage = err.Error()
 			}
 			// retry if request rateLimitExceeded occurs. (GCP has ratelimiting)
@@ -747,7 +748,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 					common.RandomSleep(40, 80)
 					inspectResult, err = InspectResources(k.ConfigName, common.StrVNet)
 					if err != nil {
-						common.CBLog.Error(err)
+						log.Error().Err(err).Msg("")
 						temp.SystemMessage = err.Error()
 					} else {
 						temp.SystemMessage = ""
@@ -760,7 +761,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrSecurityGroup)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.SecurityGroup = inspectResult.ResourceOverview.OnTumblebug
@@ -768,7 +769,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrSSHKey)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.SshKey = inspectResult.ResourceOverview.OnTumblebug
@@ -776,7 +777,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrDataDisk)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.DataDisk = inspectResult.ResourceOverview.OnTumblebug
@@ -784,7 +785,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrCustomImage)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.CustomImage = inspectResult.ResourceOverview.OnTumblebug
@@ -792,7 +793,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrVM)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.Vm = inspectResult.ResourceOverview.OnTumblebug
@@ -800,7 +801,7 @@ func InspectResourcesOverview() (InspectResourceAllResult, error) {
 
 			inspectResult, err = InspectResources(k.ConfigName, common.StrNLB)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				temp.SystemMessage += err.Error()
 			}
 			temp.TumblebugOverview.NLB = inspectResult.ResourceOverview.OnTumblebug
@@ -884,7 +885,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mc
 	connectionConfigList, err := common.GetConnConfigList()
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return RegisterResourceAllResult{}, err
 	}
 
@@ -915,7 +916,7 @@ func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mc
 
 			registerResult, err := RegisterCspNativeResources(nsId, k.ConfigName, mcisNameForRegister, option, mcisFlag)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 
 			output.RegisterationResult = append(output.RegisterationResult, registerResult)
@@ -966,7 +967,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 		// bring vNet list and register all
 		inspectedResources, err := InspectResources(connConfig, common.StrVNet)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			result.SystemMessage = err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
@@ -981,7 +982,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 			registeredStatus = ""
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				registeredStatus = "  [Failed] " + err.Error()
 				result.RegisterationOverview.VNet--
 				result.RegisterationOverview.Failed++
@@ -996,7 +997,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 		// bring SecurityGroup list and register all
 		inspectedResources, err = InspectResources(connConfig, common.StrSecurityGroup)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
@@ -1012,7 +1013,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 			registeredStatus = ""
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				registeredStatus = "  [Failed] " + err.Error()
 				result.RegisterationOverview.SecurityGroup--
 				result.RegisterationOverview.Failed++
@@ -1027,7 +1028,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 		// bring SSHKey list and register all
 		inspectedResources, err = InspectResources(connConfig, common.StrSSHKey)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
@@ -1047,7 +1048,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 			registeredStatus = ""
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				registeredStatus = "  [Failed] " + err.Error()
 				result.RegisterationOverview.SshKey--
 				result.RegisterationOverview.Failed++
@@ -1063,7 +1064,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 		// bring DataDisk list and register all
 		inspectedResources, err = InspectResources(connConfig, common.StrDataDisk)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
@@ -1078,7 +1079,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 			registeredStatus = ""
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				registeredStatus = "  [Failed] " + err.Error()
 				result.RegisterationOverview.DataDisk--
 				result.RegisterationOverview.Failed++
@@ -1094,7 +1095,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 		// bring CustomImage list and register all
 		inspectedResources, err = InspectResources(connConfig, common.StrCustomImage)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResources.Resources.OnCspOnly.Info {
@@ -1109,7 +1110,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 			registeredStatus = ""
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				registeredStatus = "  [Failed] " + err.Error()
 				result.RegisterationOverview.CustomImage--
 				result.RegisterationOverview.Failed++
@@ -1128,7 +1129,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 		// bring VM list and register all
 		inspectedResourcesVm, err := InspectResources(connConfig, common.StrVM)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			result.SystemMessage += "//" + err.Error()
 		}
 		for _, r := range inspectedResourcesVm.Resources.OnCspOnly.Info {
@@ -1163,7 +1164,7 @@ func RegisterCspNativeResources(nsId string, connConfig string, mcisId string, o
 
 			registeredStatus = ""
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				registeredStatus = "  [Failed] " + err.Error()
 				result.RegisterationOverview.Vm--
 				result.RegisterationOverview.Failed++
@@ -1188,19 +1189,19 @@ func FindTbVmByCspId(nsId string, mcisId string, vmIdByCsp string) (TbVmInfo, er
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
 	}
 
 	err = common.CheckString(vmIdByCsp)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
 	}
 

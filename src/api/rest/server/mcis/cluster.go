@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostCluster godoc
@@ -52,7 +53,7 @@ func RestPostCluster(c echo.Context) error {
 	content, err := mcis.CreateCluster(nsId, u, optionFlag)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
@@ -111,7 +112,7 @@ func RestPostNodeGroup(c echo.Context) error {
 	content, err := mcis.AddNodeGroup(nsId, clusterId, u)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
@@ -141,7 +142,7 @@ func RestDeleteNodeGroup(c echo.Context) error {
 
 	res, err := mcis.RemoveNodeGroup(nsId, clusterId, nodeGroupName, forceFlag)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
@@ -185,7 +186,7 @@ func RestPutSetAutoscaling(c echo.Context) error {
 	content, err := mcis.SetAutoscaling(nsId, clusterId, nodeGroupName, u)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
@@ -222,7 +223,7 @@ func RestPutChangeAutoscaleSize(c echo.Context) error {
 	content, err := mcis.ChangeAutoscaleSize(nsId, clusterId, nodeGroupName, u)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
@@ -330,7 +331,7 @@ func RestDeleteCluster(c echo.Context) error {
 
 	res, err := mcis.DeleteCluster(nsId, clusterId, forceFlag)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}
@@ -365,7 +366,7 @@ func RestDeleteAllCluster(c echo.Context) error {
 
 	output, err := mcis.DeleteAllCluster(nsId, subString, forceFlag)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusConflict, &mapA)
 	}
@@ -400,7 +401,7 @@ func RestPutUpgradeCluster(c echo.Context) error {
 	content, err := mcis.UpgradeCluster(nsId, clusterId, u)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusInternalServerError, &mapA)
 	}

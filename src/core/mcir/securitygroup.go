@@ -22,6 +22,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // SpiderSecurityReqInfoWrapper is a wrapper struct to create JSON body of 'Create security group request'
@@ -129,7 +130,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSecurityGroupInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -177,7 +178,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		return temp, err
 	}
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := TbSecurityGroupInfo{}
 		err := fmt.Errorf("Cannot create securityGroup")
 		return content, err
@@ -190,7 +191,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		resourceList, err := ListResource(nsId, common.StrVNet, "", "")
 
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			err := fmt.Errorf("Cannot list vNet Ids for securityGroup")
 			return TbSecurityGroupInfo{}, err
 		}
@@ -203,7 +204,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		if len(content.VNet) == 0 {
 			errString := "There is no " + common.StrVNet + " resource in " + nsId
 			err := fmt.Errorf(errString)
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return TbSecurityGroupInfo{}, err
 		}
 
@@ -238,13 +239,13 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		for _, v := range *u.FirewallRules {
 			jsonBody, err := json.Marshal(v)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 
 			spiderSecurityRuleInfo := SpiderSecurityRuleInfo{}
 			err = json.Unmarshal(jsonBody, &spiderSecurityRuleInfo)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 
 			requestBody.ReqInfo.SecurityRules = append(requestBody.ReqInfo.SecurityRules, spiderSecurityRuleInfo)
@@ -277,7 +278,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := TbSecurityGroupInfo{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -287,7 +288,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := TbSecurityGroupInfo{}
 		return content, err
 	}
@@ -325,15 +326,15 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CreateSecurityGroup(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
