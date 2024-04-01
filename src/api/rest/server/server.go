@@ -16,7 +16,7 @@ package server
 
 import (
 	"context"
-	"log"
+	// "log"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -24,9 +24,12 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 
+	"github.com/rs/zerolog/log"
+
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
 	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares"
 	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
 
 	"crypto/subtle"
@@ -79,10 +82,13 @@ const (
 // RunServer func start Rest API server
 func RunServer(port string) {
 
+	log.Info().Msg("REST API Server is starting")
+
 	e := echo.New()
 
 	// Middleware
-	e.Use(middleware.Logger())
+	// e.Use(middleware.Logger())
+	e.Use(middlewares.Zerologger())
 	e.Use(middleware.Recover())
 	// limit the application to 20 requests/sec using the default in-memory store
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))
@@ -109,7 +115,7 @@ func RunServer(port string) {
 
 	allowedOrigins := os.Getenv("ALLOW_ORIGINS")
 	if allowedOrigins == "" {
-		log.Fatal("ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +
+		log.Fatal().Msgf("ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +
 			". Please provide a proper value and source setup.env again. EXITING...")
 		// allowedOrigins = "*"
 	}
@@ -449,14 +455,14 @@ func RunServer(port string) {
 		defer cancel()
 
 		if err := e.Shutdown(ctx); err != nil {
-			log.Println("Error starting the server: ", err)
+			log.Error().Err(err).Msg("Error starting the server")
 			e.Logger.Panic(err)
 		}
 	}(&wg)
 
 	port = fmt.Sprintf(":%s", port)
 	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
-		log.Println("Error starting the server: ", err)
+		log.Error().Err(err).Msg("Error starting the server")
 		e.Logger.Panic("Shuttig down the server: ", err)
 	}
 

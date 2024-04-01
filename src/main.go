@@ -24,6 +24,9 @@ import (
 	"sync"
 	"time"
 
+	// Black import (_) is for running a package's init() function without using its other contents.
+	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
+
 	//_ "github.com/go-sql-driver/mysql"
 	"github.com/fsnotify/fsnotify"
 	_ "github.com/mattn/go-sqlite3"
