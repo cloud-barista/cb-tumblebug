@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"mime"
 
 	// "log"
 	"os/signal"
@@ -98,8 +99,9 @@ func RunServer(port string) {
 	// Customized middleware for request logging
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			c.Logger().Printf("Start - RequestLog()")
-			// make X-Request-Id visible to all handlers
+			// log.Debug().Msg("Start - Request ID middleware")
+
+			// Make X-Request-Id visible to all handlers
 			c.Response().Header().Set("Access-Control-Expose-Headers", echo.HeaderXRequestID)
 
 			// Get or generate Request ID
@@ -111,7 +113,7 @@ func RunServer(port string) {
 			// Set Request on the context
 			c.Set("RequestID", reqID)
 
-			c.Logger().Printf("Request ID: %s", reqID)
+			log.Debug().Msgf("(Request ID middleware) Request ID: %s", reqID)
 			if _, ok := common.RequestMap.Load(reqID); ok {
 				return fmt.Errorf("the x-request-id is already in use")
 			}
@@ -123,7 +125,7 @@ func RunServer(port string) {
 			}
 			common.RequestMap.Store(reqID, details)
 
-			c.Logger().Printf("End - RequestLog()")
+			// log.Debug().Msg("End - Request ID middleware")
 
 			return next(c)
 		}
@@ -131,47 +133,68 @@ func RunServer(port string) {
 
 	e.Use(middleware.BodyDumpWithConfig(middleware.BodyDumpConfig{
 		Skipper: func(c echo.Context) bool {
-			if c.Path() == "/tumblebug/swagger" {
+			if c.Path() == "/tumblebug/api" {
 				return true
 			}
 			return false
 		},
 		Handler: func(c echo.Context, reqBody, resBody []byte) {
-			c.Logger().Printf("Start - BodyDump()")
+			// log.Debug().Msg("Start - BodyDump() middleware")
 
+			// Get the request ID
 			reqID := c.Get("RequestID").(string)
-			c.Logger().Printf("Request ID: %s", reqID)
-			if v, ok := common.RequestMap.Load(reqID); ok {
-				c.Logger().Printf("OK, common.RequestMap.Load(reqID)")
-				details := v.(common.RequestDetails)
-				details.EndTime = time.Now()
+			log.Debug().Msgf("(BodyDump middleware) Request ID: %s", reqID)
 
-				c.Response().Header().Set("X-Request-ID", reqID)
+			// Get the content type
+			contentTypeAndCharset := c.Response().Header().Get(echo.HeaderContentType)
+			// log.Trace().Msg(c.Response().Header().Get(echo.HeaderContentType))
+			contentType, _, err := mime.ParseMediaType(contentTypeAndCharset)
+			if err != nil {
+				log.Error().Err(err).Msgf("Error parsing content type: %s", err)
+			}
+			// log.Trace().Msg(c.Response().Header().Get(echo.HeaderContentType))
 
-				// 1XX: Information responses
-				// 2XX: Successful responses (200 OK, 201 Created, 202 Accepted, 204 No Content)
-				// 3XX: Redirection messages
-				// 4XX: Client error responses (400 Bad Request, 401 Unauthorized, 404 Not Found, 408 Request Timeout)
-				// 5XX: Server error responses (500 Internal Server Error, 501 Not Implemented, 503 Service Unavailable)
-				if c.Response().Status >= 400 && c.Response().Status <= 599 {
-					c.Logger().Printf("Error, c.Response().Status")
+			// Dump the response body if content type is "application/json"
+			if contentType == "application/json" {
+				// Load or check the request by ID
+				if v, ok := common.RequestMap.Load(reqID); ok {
+					log.Trace().Msg("OK, common.RequestMap.Load(reqID)")
+					details := v.(common.RequestDetails)
+					details.EndTime = time.Now()
+
+					// Set "X-Request-Id" in response header
+					c.Response().Header().Set(echo.HeaderXRequestID, reqID)
+
+					// Unmarshal the response body
 					var resMap map[string]interface{}
 					err := json.Unmarshal(resBody, &resMap)
 					if err != nil {
-						// handle error
-						c.Logger().Printf("Error while unmarshaling response body: %s", err)
+						log.Error().Err(err).Msgf("Error while unmarshaling response body: %s", err)
+						log.Debug().Msgf("Response body: %s", string(reqBody))
+						log.Debug().Msgf("Response body: %s", string(resBody))
 					}
 
-					details.Status = "Error"
-					details.ErrorResponse = resMap["message"].(string)
-				} else {
-					c.Logger().Printf("Not error, c.Response().Status")
-					details.Status = "Success"
-					details.ResponseData = resBody
+					// 1XX: Information responses
+					// 2XX: Successful responses (200 OK, 201 Created, 202 Accepted, 204 No Content)
+					// 3XX: Redirection messages
+					// 4XX: Client error responses (400 Bad Request, 401 Unauthorized, 404 Not Found, 408 Request Timeout)
+					// 5XX: Server error responses (500 Internal Server Error, 501 Not Implemented, 503 Service Unavailable)
+					if c.Response().Status >= 400 && c.Response().Status <= 599 {
+						log.Trace().Msg("Error, c.Response().Status")
+						details.Status = "Error"
+						details.ErrorResponse = resMap["message"].(string)
+					} else {
+						log.Trace().Msg("Not error, c.Response().Status")
+						details.Status = "Success"
+						details.ResponseData = resMap
+					}
+
+					// Store details of the request
+					common.RequestMap.Store(reqID, details)
 				}
-				common.RequestMap.Store(reqID, details)
 			}
-			c.Logger().Printf("End - BodyDump()")
+
+			// log.Debug().Msg("Start - BodyDump() middleware")
 		},
 	}))
 
