@@ -428,7 +428,7 @@ func RunServer(port string) {
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
-	apidashboard := " http://" + selfEndpoint + "/tumblebug/api/index.html"
+	apidashboard := " http://" + selfEndpoint + "/tumblebug/api"
 
 	if enableAuth {
 		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
