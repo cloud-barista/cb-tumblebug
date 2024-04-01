@@ -17,7 +17,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"mime"
 
 	// "log"
 	"os/signal"
@@ -146,16 +145,11 @@ func RunServer(port string) {
 			log.Debug().Msgf("(BodyDump middleware) Request ID: %s", reqID)
 
 			// Get the content type
-			contentTypeAndCharset := c.Response().Header().Get(echo.HeaderContentType)
-			// log.Trace().Msg(c.Response().Header().Get(echo.HeaderContentType))
-			contentType, _, err := mime.ParseMediaType(contentTypeAndCharset)
-			if err != nil {
-				log.Error().Err(err).Msgf("Error parsing content type: %s", err)
-			}
-			// log.Trace().Msg(c.Response().Header().Get(echo.HeaderContentType))
+			contentType := c.Response().Header().Get(echo.HeaderContentType)
+			log.Trace().Msgf("contentType: %s", contentType)
 
-			// Dump the response body if content type is "application/json"
-			if contentType == "application/json" {
+			// Dump the response body if content type is "application/json" or "application/json; charset=UTF-8"
+			if contentType == echo.MIMEApplicationJSONCharsetUTF8 || contentType == echo.MIMEApplicationJSON {
 				// Load or check the request by ID
 				if v, ok := common.RequestMap.Load(reqID); ok {
 					log.Trace().Msg("OK, common.RequestMap.Load(reqID)")
