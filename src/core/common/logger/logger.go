@@ -143,10 +143,10 @@ func getLogFileConfig() (string, int, int, int, bool) {
 	// Set config values
 	logFilePath := viper.GetString("logfile.path")
 
-	// Default: knock-knock.log
+	// Default: ./log/tumblebug.log
 	if logFilePath == "" {
-		log.Warn().Msg("LOGFILE_PATH is not set. Using default value: ./log/zerolog.log")
-		logFilePath = "./log/zerolog.log"
+		log.Warn().Msg("LOGFILE_PATH is not set. Using default value: ./log/tumblebug.log")
+		logFilePath = "./log/tumblebug.log"
 	}
 
 	// Default: 10 MB
