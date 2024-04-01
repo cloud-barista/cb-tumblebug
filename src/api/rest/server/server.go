@@ -99,15 +99,18 @@ func RunServer(port string) {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Logger().Printf("Start - RequestLog()")
-			reqID := fmt.Sprintf("%d", time.Now().UnixNano())
-			c.Set("RequestID", reqID)
 			// make X-Request-Id visible to all handlers
-			c.Response().Header().Set("Access-Control-Expose-Headers", "X-Request-Id")
+			c.Response().Header().Set("Access-Control-Expose-Headers", echo.HeaderXRequestID)
 
-			// reqID := c.Request().Header.Get("x-request-id")
-			// if reqID == "" {
-			// 	reqID = fmt.Sprintf("%d", time.Now().UnixNano())
-			// }
+			// Get or generate Request ID
+			reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+			if reqID == "" {
+				reqID = fmt.Sprintf("%d", time.Now().UnixNano())
+			}
+
+			// Set Request on the context
+			c.Set("RequestID", reqID)
+
 			c.Logger().Printf("Request ID: %s", reqID)
 			if _, ok := common.RequestMap.Load(reqID); ok {
 				return fmt.Errorf("the x-request-id is already in use")
