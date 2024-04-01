@@ -114,8 +114,11 @@ func RunServer(port string) {
 
 			log.Debug().Msgf("(Request ID middleware) Request ID: %s", reqID)
 			if _, ok := common.RequestMap.Load(reqID); ok {
-				return fmt.Errorf("the x-request-id is already in use")
+				return fmt.Errorf("the X-Request-Id is already in use")
 			}
+
+			// Set "X-Request-Id" in response header
+			c.Response().Header().Set(echo.HeaderXRequestID, reqID)
 
 			details := common.RequestDetails{
 				StartTime:   time.Now(),
