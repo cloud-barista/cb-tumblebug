@@ -18,21 +18,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"sync"
-
-	//"log"
-
 	"strings"
+	"sync"
 	"time"
-
-	//csv file handling
-
-	// REST API (echo)
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -1367,50 +1361,59 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	vmReq.VNetId = resourceName
 	tempInterface, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
-		common.CBLog.Info(err)
 		if !onDemand {
+			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
+			log.Error().Err(err).Msg("Failed to get the vNet")
 			return &TbVmReq{}, err
 		}
 		err2 := mcir.LoadDefaultResource(nsId, common.StrVNet, vmReq.ConnectionName)
 		if err2 != nil {
-			common.CBLog.Error(err2)
-			err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+			log.Error().Err(err2).Msg("Failed to create new default vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
 			return &TbVmReq{}, err2
+		} else {
+			log.Info().Msg("Created new default vNet: " + vmReq.VNetId)
 		}
+	} else {
+		log.Info().Msg("Found and utilize default vNet: " + vmReq.VNetId)
 	}
 	vmReq.SubnetId = resourceName
 
 	vmReq.SshKeyId = resourceName
 	tempInterface, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the SshKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
-		common.CBLog.Info(err)
 		if !onDemand {
+			err := fmt.Errorf("Failed to get the SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
+			log.Error().Err(err).Msg("Failed to get the SSHKey")
 			return &TbVmReq{}, err
 		}
 		err2 := mcir.LoadDefaultResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
 		if err2 != nil {
-			common.CBLog.Error(err2)
-			err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+			log.Error().Err(err2).Msg("Failed to create new default SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
 			return &TbVmReq{}, err2
+		} else {
+			log.Info().Msg("Created new default SSHKey: " + vmReq.VNetId)
 		}
+	} else {
+		log.Info().Msg("Found and utilize default SSHKey: " + vmReq.VNetId)
 	}
 	securityGroup := resourceName
 	vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
 	tempInterface, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the SecurityGroup " + securityGroup + " from " + vmReq.ConnectionName)
-		common.CBLog.Info(err)
 		if !onDemand {
+			err := fmt.Errorf("Failed to get the securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
+			log.Error().Err(err).Msg("Failed to get the securityGroup")
 			return &TbVmReq{}, err
 		}
 		err2 := mcir.LoadDefaultResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
 		if err2 != nil {
-			common.CBLog.Error(err2)
-			err2 = fmt.Errorf("[1]" + err.Error() + " [2]" + err2.Error())
+			log.Error().Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
 			return &TbVmReq{}, err2
+		} else {
+			log.Info().Msg("Created new default securityGroup: " + securityGroup)
 		}
+	} else {
+		log.Info().Msg("Found and utilize default securityGroup: " + securityGroup)
 	}
 
 	vmReq.Name = k.Name

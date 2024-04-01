@@ -564,10 +564,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Println("[ListResourceId] ns: " + nsId + ", type: " + resourceType)
 	key := "/ns/" + nsId + "/resources/"
-	fmt.Println(key)
-
 	keyValue, err := common.CBStore.GetList(key, true)
 
 	if err != nil {
@@ -856,7 +853,6 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 		common.CBLog.Error(err)
 		return -1, err
 	}
-	fmt.Println("[Get count] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
@@ -902,7 +898,6 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 		common.CBLog.Error(err)
 		return nil, err
 	}
-	fmt.Println("[Get count] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
@@ -1256,8 +1251,6 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		common.CBLog.Error(err)
 		return false, err
 	}
-
-	fmt.Println("[Check resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
