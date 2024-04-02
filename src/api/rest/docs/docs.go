@@ -5581,6 +5581,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/mcir.TbImageReq"
                         }
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Force update to existing image object",
+                        "name": "update",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -6363,6 +6370,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/mcir.TbSpecReq"
                         }
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Force update to existing spec object",
+                        "name": "update",
+                        "in": "query"
                     }
                 ],
                 "responses": {

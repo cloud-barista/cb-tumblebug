@@ -6587,6 +6587,11 @@ paths:
         name: imageId
         schema:
           $ref: '#/definitions/mcir.TbImageReq'
+      - default: false
+        description: Force update to existing image object
+        in: query
+        name: update
+        type: boolean
       produces:
       - application/json
       responses:
@@ -7108,6 +7113,11 @@ paths:
         name: specName
         schema:
           $ref: '#/definitions/mcir.TbSpecReq'
+      - default: false
+        description: Force update to existing spec object
+        in: query
+        name: update
+        type: boolean
       produces:
       - application/json
       responses:
