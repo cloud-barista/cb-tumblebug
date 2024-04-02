@@ -79,7 +79,7 @@ type ParameterKeyVal struct {
 // // Info manage for MCIS recommendation
 func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 
-	fmt.Println("RecommendVm")
+	log.Debug().Msg("RecommendVm")
 
 	// Filtering first
 
@@ -89,7 +89,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 	// verySmallValue := float32(0)
 
 	// Filtering
-	fmt.Println("[Filtering specs]")
+	log.Debug().Msg("[Filtering specs]")
 
 	for _, v := range plan.Filter.Policy {
 		metric := mcir.ToNamingRuleCompatible(v.Metric)
@@ -146,7 +146,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 			case "specname":
 				u.CspSpecName = condition.Operand
 			default:
-				fmt.Println("[Checking] Not available metric " + metric)
+				log.Debug().Msg("[Checking] Not available metric " + metric)
 			}
 		}
 	}
@@ -162,7 +162,7 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 	}
 
 	// Prioritizing
-	fmt.Println("[Prioritizing specs]")
+	log.Debug().Msg("[Prioritizing specs]")
 	prioritySpecs := []mcir.TbSpecInfo{}
 
 	for _, v := range plan.Priority.Policy {
@@ -270,7 +270,7 @@ func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]Param
 				// fmt.Printf("\n [%v] OrderInFilteredResult:%v, max:%v, min:%v, distance:%v, eval:%v \n", i, (*specList)[distances[i].index].OrderInFilteredResult, max, min, float32(distances[i].distance), (*specList)[distances[i].index].EvaluationScore09)
 			}
 		default:
-			// fmt.Println("[Checking] Not available metric " + metric)
+			// log.Debug().Msg("[Checking] Not available metric " + metric)
 		}
 
 	}
@@ -372,7 +372,6 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
 			})
-			fmt.Printf("\n distances : %v \n", distances)
 
 			priorityCnt := 1
 			for i := range distances {
@@ -476,7 +475,6 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
 			})
-			fmt.Printf("\n distances : %v \n", distances)
 
 			priorityCnt := 1
 			for i := range distances {
@@ -503,7 +501,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				// fmt.Printf("\n [%v] OrderInFilteredResult:%v, max:%v, min:%v, distance:%v, eval:%v \n", i, (*specList)[distances[i].index].OrderInFilteredResult, max, min, float32(distances[i].distance), (*specList)[distances[i].index].EvaluationScore09)
 			}
 		default:
-			// fmt.Println("[Checking] Not available metric " + metric)
+			// log.Debug().Msg("[Checking] Not available metric " + metric)
 		}
 
 	}
@@ -662,7 +660,7 @@ func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.Tb
 // GetRecommendList is func to get recommendation list
 func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
 
-	fmt.Println("GetRecommendList")
+	log.Debug().Msg("GetRecommendList")
 
 	var content struct {
 		Id             string
@@ -671,7 +669,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 	}
 
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
-	fmt.Println(key)
+	log.Debug().Msg(key)
 	keyValue, err := common.CBStore.GetList(key, true)
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
 	if err != nil {
@@ -682,7 +680,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 	var vmPriorityList []TbVmPriority
 
 	for cnt, v := range keyValue {
-		fmt.Println("getRecommendList1: " + v.Key)
+		log.Debug().Msg("getRecommendList1: " + v.Key)
 		err = json.Unmarshal([]byte(v.Value), &content)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -706,7 +704,6 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
 	}
 
-	fmt.Println("===============================================")
 	return vmPriorityList, err
 
 	//requires error handling

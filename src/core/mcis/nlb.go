@@ -281,7 +281,7 @@ type McNlbInfo struct {
 
 // CreateMcSwNlb func create a special purpose MCIS for NLB and depoly and setting SW NLB
 func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (McNlbInfo, error) {
-	fmt.Println("=========================== CreateMcSwNlb")
+	log.Info().Msg("CreateMcSwNlb")
 
 	emptyObj := McNlbInfo{}
 
@@ -387,7 +387,7 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Mc
 
 // CreateNLB accepts nlb creation request, creates and returns an TB nlb object
 func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInfo, error) {
-	fmt.Println("=========================== CreateNLB")
+	log.Info().Msg("CreateNLB")
 
 	emptyObj := TbNLBInfo{}
 
@@ -412,7 +412,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -501,7 +501,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 		defer func() {
 			if err := recover(); err != nil {
-				fmt.Println(err)
+				log.Error().Msgf("%v", err)
 				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
 			}
 		}()
@@ -535,24 +535,14 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
-		// fmt.Println("vm:")                             // for debug
-		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
-		// fmt.Print(string(payload))                     // for debug
-		// fmt.Print("vm.CspViewVmDetail.IId.NameId: " + vm.CspViewVmDetail.IId.NameId) // for debug
+
 		requestBody.ReqInfo.VMGroup.VMs = append(requestBody.ReqInfo.VMGroup.VMs, vm.CspViewVmDetail.IId.NameId)
 	}
-
-	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                     // for debug
-	// fmt.Printf("requestBody.ReqInfo.SubGroup.VMs: %s \n", requestBody.ReqInfo.SubGroup.VMs) // for debug
 
 	var tempSpiderNLBInfo *SpiderNLBInfo
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
-
-	// fmt.Println("requestBody:")                             // for debug
-	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
-	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -661,9 +651,6 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		// return nil, err
 	}
 
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
-
 	result := TbNLBInfo{}
 	err = json.Unmarshal([]byte(keyValue.Value), &result)
 	if err != nil {
@@ -706,7 +693,7 @@ func GetNLB(nsId string, mcisId string, resourceId string) (TbNLBInfo, error) {
 		return emptyObj, err
 	}
 
-	fmt.Println("[Get NLB] " + resourceId)
+	log.Debug().Msg("[Get NLB] " + resourceId)
 
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
 	key := GenNLBKey(nsId, mcisId, resourceId)
@@ -768,7 +755,7 @@ func CheckNLB(nsId string, mcisId string, resourceId string) (bool, error) {
 		return false, err
 	}
 
-	fmt.Println("[Check NLB] " + resourceId)
+	log.Debug().Msg("[Check NLB] " + resourceId)
 
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
 	key := GenNLBKey(nsId, mcisId, resourceId)
@@ -823,7 +810,7 @@ func ListNLBId(nsId string, mcisId string) ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Println("[ListNLBId] ns: " + nsId)
+	log.Debug().Msg("[ListNLBId] ns: " + nsId)
 	// key := "/ns/" + nsId + "/"
 	key := fmt.Sprintf("/ns/%s/mcis/%s/", nsId, mcisId)
 	fmt.Println(key)
@@ -871,7 +858,7 @@ func ListNLB(nsId string, mcisId string, filterKey string, filterVal string) (in
 		return nil, err
 	}
 
-	fmt.Println("[Get] NLB list")
+	log.Debug().Msg("[Get] NLB list")
 	key := fmt.Sprintf("/ns/%s/mcis/%s/nlb", nsId, mcisId)
 	fmt.Println(key)
 
@@ -1011,7 +998,7 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 	switch {
 	case forceFlag == "true":
 		url += "?force=true"
-		fmt.Println("forceFlag == true; url: " + url)
+		log.Debug().Msg("forceFlag == true; url: " + url)
 
 		_, err := client.R().
 			SetHeader("Content-Type", "application/json").
@@ -1094,7 +1081,7 @@ func DelAllNLB(nsId string, mcisId string, subString string, forceFlag string) (
 
 // GetNLBHealth queries the health status of NLB to CB-Spider, and returns it to user
 func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, error) {
-	fmt.Println("=========================== GetNLBHealth")
+	log.Info().Msg("GetNLBHealth")
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1139,10 +1126,6 @@ func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, er
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
-
-	// fmt.Println("requestBody:")                             // for debug
-	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
-	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -1218,8 +1201,8 @@ func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, er
 			// return nil, err
 		}
 
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===========================")
+
+
 
 		result := TbNLBInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &result)
@@ -1233,7 +1216,7 @@ func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, er
 
 // AddNLBVMs accepts VM addition request, adds VM to NLB, and returns an updated TB NLB object
 func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveVMReq) (TbNLBInfo, error) {
-	fmt.Println("=========================== AddNLBVMs")
+	log.Info().Msg("AddNLBVMs")
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1252,7 +1235,7 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			temp := TbNLBInfo{}
 			return temp, err
 		}
@@ -1305,41 +1288,14 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 			log.Error().Err(err).Msg("")
 			return TbNLBInfo{}, err
 		}
-		// fmt.Println("vm:")                             // for debug
-		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
-		// fmt.Print(string(payload))                     // for debug
+
 		requestBody.ReqInfo.VMs = append(requestBody.ReqInfo.VMs, vm.CspViewVmDetail.IId.NameId)
 	}
-
-	// fmt.Printf("u.TargetGroup.VMs: %s \n", u.TargetGroup.VMs)                             // for debug
-	// fmt.Printf("requestBody.ReqInfo.SubGroup.VMs: %s \n", requestBody.ReqInfo.SubGroup.VMs) // for debug
-	/*
-		for _, v := range u.VMIDList {
-			mcisId_vmId := strings.Split(v, "/")
-			if len(mcisId_vmId) != 2 {
-				err := fmt.Errorf("Cannot retrieve VM info: " + v)
-				log.Error().Err(err).Msg("")
-				return TbNLBInfo{}, err
-			}
-
-			vm, err := mcis.GetVmObject(nsId, mcisId_vmId[0], mcisId_vmId[1])
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return TbNLBInfo{}, err
-			}
-
-			requestBody.ReqInfo.SubGroup = append(requestBody.ReqInfo.SubGroup, vm.IdByCSP)
-		}
-	*/
 
 	var tempSpiderNLBInfo *SpiderNLBInfo
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
-
-	// fmt.Println("requestBody:")                             // for debug
-	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
-	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -1428,9 +1384,6 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 		// return nil, err
 	}
 
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
-
 	result := TbNLBInfo{}
 	err = json.Unmarshal([]byte(keyValue.Value), &result)
 	if err != nil {
@@ -1441,7 +1394,7 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 
 // RemoveNLBVMs accepts VM removal request, removes VMs from NLB, and returns an error if occurs.
 func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveVMReq) error {
-	fmt.Println("=========================== RemoveNLBVMs")
+	log.Info().Msg("RemoveNLBVMs")
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1459,7 +1412,7 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			// temp := TbNLBInfo{}
 			return err
 		}
@@ -1514,7 +1467,7 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 			log.Error().Err(err).Msg("")
 			return err
 		}
-		// fmt.Println("vm:")                             // for debug
+		// log.Debug().Msg("vm:")                             // for debug
 		// payload, _ := json.MarshalIndent(vm, "", "  ") // for debug
 		// fmt.Print(string(payload))                     // for debug
 		if vm.CspViewVmDetail.IId.NameId == "" {
@@ -1548,10 +1501,6 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 
 	client := resty.New().SetCloseConnection(true)
 	client.SetAllowGetMethodPayload(true)
-
-	// fmt.Println("requestBody:")                             // for debug
-	// payload, _ := json.MarshalIndent(requestBody, "", "  ") // for debug
-	// fmt.Print(string(payload))                          // for debug
 
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -1629,24 +1578,6 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 		return err
 	}
 
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CreateNLB(); CBStore.Get() returned an error.")
-		log.Error().Err(err).Msg("")
-		// return nil, err
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
-
-	/*
-		result := TbNLBInfo{}
-		err = json.Unmarshal([]byte(keyValue.Value), &result)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
-	*/
 	return nil
 }
 

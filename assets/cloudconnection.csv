@@ -23,46 +23,46 @@ AWS,aws-ap-east-1,aws-ap-east-1,ap-east-1,Asia Pacific (Hong Kong),aws-driver-v1
 AWS,aws-me-south-1,aws-me-south-1,me-south-1,Middle East (Bahrain),aws-driver-v1.0.so,aws-driver01
 AWS,aws-af-south-1,aws-af-south-1,af-south-1,Africa (Cape Town),aws-driver-v1.0.so,aws-driver01
 AWS,aws-eu-south-1,aws-eu-south-1,eu-south-1,Europe (Milan),aws-driver-v1.0.so,aws-driver01
-AZURE,azure-westus,azure-westus,westus,West US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-eastus,azure-eastus,eastus,East US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-northeurope,azure-northeurope,northeurope,North Europe,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westeurope,azure-westeurope,westeurope,West Europe,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-eastasia,azure-eastasia,eastasia,East Asia,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southeastasia,azure-southeastasia,southeastasia,Southeast Asia,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-northcentralus,azure-northcentralus,northcentralus,North Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southcentralus,azure-southcentralus,southcentralus,South Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-centralus,azure-centralus,centralus,Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-eastus2,azure-eastus2,eastus2,East US 2,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-japaneast,azure-japaneast,japaneast,Japan East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-japanwest,azure-japanwest,japanwest,Japan West,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-brazilsouth,azure-brazilsouth,brazilsouth,Brazil South,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-australiaeast,azure-australiaeast,australiaeast,Australia East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-australiasoutheast,azure-australiasoutheast,australiasoutheast,Australia Southeast,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-centralindia,azure-centralindia,centralindia,Central India,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-canadacentral,azure-canadacentral,canadacentral,Canada Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-canadaeast,azure-canadaeast,canadaeast,Canada East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westcentralus,azure-westcentralus,westcentralus, West Central US,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westus2,azure-westus2,westus2,West US 2,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-ukwest,azure-ukwest,ukwest,UK West,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-uksouth,azure-uksouth,uksouth,UK South,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-koreacentral,azure-koreacentral,koreacentral,Korea Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-koreasouth,azure-koreasouth,koreasouth,Korea South,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-francecentral,azure-francecentral,francecentral,France Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-australiacentral,azure-australiacentral,australiacentral,Australia Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southafricanorth,azure-southafricanorth,southafricanorth,South Africa North,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-uaenorth,azure-uaenorth,uaenorth,UAE North,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-switzerlandnorth,azure-switzerlandnorth,switzerlandnorth,Switzerland North,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-germanywestcentral,azure-germanywestcentral,germanywestcentral,Germany West Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-norwayeast,azure-norwayeast,norwayeast,Norway East,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southindia,azure-southindia,southindia,South India,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-westindia,azure-westindia,westindia,West India,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-southafricawest,azure-southafricawest,southafricawest,South Africa West,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-switzerlandwest,azure-switzerlandwest,switzerlandwest,Switzerland West,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-germanynorth,azure-germanynorth,germanynorth,Germany North,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-uaecentral,azure-uaecentral,uaecentral,UAE Central,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-norwaywest,azure-norwaywest,norwaywest,Norway West,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-francesouth,azure-francesouth,francesouth,France South,azure-driver-v1.0.so,azure-driver01
-AZURE,azure-australiacentral2,azure-australiacentral2,australiacentral2,Australia Central 2,azure-driver-v1.0.so,azure-driver01
+AZURE,az-wus,az-wus,westus,West US,azure-driver-v1.0.so,azure-driver01
+AZURE,az-eus,az-eus,eastus,East US,azure-driver-v1.0.so,azure-driver01
+AZURE,az-ne,az-ne,northeurope,North Europe,azure-driver-v1.0.so,azure-driver01
+AZURE,az-we,az-we,westeurope,West Europe,azure-driver-v1.0.so,azure-driver01
+AZURE,az-ea,az-ea,eastasia,East Asia,azure-driver-v1.0.so,azure-driver01
+AZURE,az-sea,az-sea,southeastasia,Southeast Asia,azure-driver-v1.0.so,azure-driver01
+AZURE,az-ncus,az-ncus,northcentralus,North Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,az-scus,az-scus,southcentralus,South Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,az-cus,az-cus,centralus,Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,az-eus2,az-eus2,eastus2,East US 2,azure-driver-v1.0.so,azure-driver01
+AZURE,az-jpe,az-jpe,japaneast,Japan East,azure-driver-v1.0.so,azure-driver01
+AZURE,az-jpw,az-jpw,japanwest,Japan West,azure-driver-v1.0.so,azure-driver01
+AZURE,az-brs,az-brs,brazilsouth,Brazil South,azure-driver-v1.0.so,azure-driver01
+AZURE,az-ae,az-ae,australiaeast,Australia East,azure-driver-v1.0.so,azure-driver01
+AZURE,az-ase,az-ase,australiasoutheast,Australia Southeast,azure-driver-v1.0.so,azure-driver01
+AZURE,az-inc,az-inc,centralindia,Central India,azure-driver-v1.0.so,azure-driver01
+AZURE,az-cnc,az-cnc,canadacentral,Canada Central,azure-driver-v1.0.so,azure-driver01
+AZURE,az-cne,az-cne,canadaeast,Canada East,azure-driver-v1.0.so,azure-driver01
+AZURE,az-wcus,az-wcus,westcentralus, West Central US,azure-driver-v1.0.so,azure-driver01
+AZURE,az-wus2,az-wus2,westus2,West US 2,azure-driver-v1.0.so,azure-driver01
+AZURE,az-ukw,az-ukw,ukwest,UK West,azure-driver-v1.0.so,azure-driver01
+AZURE,az-uks,az-uks,uksouth,UK South,azure-driver-v1.0.so,azure-driver01
+AZURE,az-krc,az-krc,koreacentral,Korea Central,azure-driver-v1.0.so,azure-driver01
+AZURE,az-krs,az-krs,koreasouth,Korea South,azure-driver-v1.0.so,azure-driver01
+AZURE,az-frc,az-frc,francecentral,France Central,azure-driver-v1.0.so,azure-driver01
+AZURE,az-acl,az-acl,australiacentral,Australia Central,azure-driver-v1.0.so,azure-driver01
+AZURE,az-san,az-san,southafricanorth,South Africa North,azure-driver-v1.0.so,azure-driver01
+AZURE,az-uan,az-uan,uaenorth,UAE North,azure-driver-v1.0.so,azure-driver01
+AZURE,az-szn,az-szn,switzerlandnorth,Switzerland North,azure-driver-v1.0.so,azure-driver01
+AZURE,az-gwc,az-gwc,germanywestcentral,Germany West Central,azure-driver-v1.0.so,azure-driver01
+AZURE,az-nwe,az-nwe,norwayeast,Norway East,azure-driver-v1.0.so,azure-driver01
+AZURE,az-ins,az-ins,southindia,South India,azure-driver-v1.0.so,azure-driver01
+AZURE,az-inw,az-inw,westindia,West India,azure-driver-v1.0.so,azure-driver01
+AZURE,az-saw,az-saw,southafricawest,South Africa West,azure-driver-v1.0.so,azure-driver01
+AZURE,az-szw,az-szw,switzerlandwest,Switzerland West,azure-driver-v1.0.so,azure-driver01
+AZURE,az-gn,az-gn,germanynorth,Germany North,azure-driver-v1.0.so,azure-driver01
+AZURE,az-uac,az-uac,uaecentral,UAE Central,azure-driver-v1.0.so,azure-driver01
+AZURE,az-nww,az-nww,norwaywest,Norway West,azure-driver-v1.0.so,azure-driver01
+AZURE,az-frs,az-frs,francesouth,France South,azure-driver-v1.0.so,azure-driver01
+AZURE,az-acl2,az-acl2,australiacentral2,Australia Central 2,azure-driver-v1.0.so,azure-driver01
 GCP,gcp-asia-east1,gcp-asia-east1,asia-east1,Changhua County Taiwan [zone:a],gcp-driver-v1.0.so,gcp-driver01
 GCP,gcp-europe-west3,gcp-europe-west3,europe-west3,Frankfurt Germany [zone:a],gcp-driver-v1.0.so,gcp-driver01
 GCP,gcp-asia-east2,gcp-asia-east2,asia-east2,Hong Kong [zone:a],gcp-driver-v1.0.so,gcp-driver01

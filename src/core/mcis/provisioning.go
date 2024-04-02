@@ -662,7 +662,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		// an invalid value for validation such as interface with nil
 		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return nil, err
 		}
 
@@ -720,7 +720,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 
 	if subGroupSize > 0 {
 
-		fmt.Println("=========================== Create MCIS subGroup object")
+		log.Info().Msg("Create MCIS subGroup object")
 
 		subGroupInfoData := TbSubGroupInfo{}
 		subGroupInfoData.Id = tentativeVmId
@@ -768,9 +768,6 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 			// return nil, err
 		}
 
-		fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-		fmt.Println("===========================")
-
 	}
 
 	for i := vmStartIndex; i <= subGroupSize+vmStartIndex; i++ {
@@ -785,9 +782,9 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 			vmInfoData.SubGroupId = vmRequest.Name
 			// TODO: Enhancement Required. Need to check existing subGroup. Need to update it if exist.
 			vmInfoData.Name = vmRequest.Name + "-" + strconv.Itoa(i)
-			fmt.Println("===========================")
-			fmt.Println("vmInfoData.Name: " + vmInfoData.Name)
-			fmt.Println("===========================")
+
+			log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
+
 		}
 		vmInfoData.Id = vmInfoData.Name
 
@@ -902,7 +899,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	err = validate.Struct(req)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return nil, err
 		}
 		return nil, err
@@ -925,7 +922,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	mcisId := req.Name
 	vmRequest := req.Vm
 
-	fmt.Println("=========================== Create MCIS object")
+	log.Info().Msg("Create MCIS object")
 	key := common.GenMcisKey(nsId, mcisId, "")
 	mapA := map[string]string{
 		"id":              mcisId,
@@ -977,7 +974,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 		if subGroupSize > 0 {
 
-			fmt.Println("=========================== Create MCIS subGroup object")
+			log.Info().Msg("Create MCIS subGroup object")
 			key := common.GenMcisSubGroupKey(nsId, mcisId, k.Name)
 
 			subGroupInfoData := TbSubGroupInfo{}
@@ -1008,9 +1005,8 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 				}
 				vmInfoData.SubGroupId = common.ToLower(k.Name)
 				vmInfoData.Name = common.ToLower(k.Name) + "-" + strconv.Itoa(i)
-				fmt.Println("===========================")
-				fmt.Println("vmInfoData.Name: " + vmInfoData.Name)
-				fmt.Println("===========================")
+
+				log.Debug().Msg("vmInfoData.Name: " + vmInfoData.Name)
 
 			}
 			vmInfoData.Id = vmInfoData.Name
@@ -1076,7 +1072,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	}
 	UpdateMcisInfo(nsId, mcisTmp)
 
-	fmt.Println("[MCIS has been created]" + mcisId)
+	log.Debug().Msg("[MCIS has been created]" + mcisId)
 
 	// Install CB-Dragonfly monitoring agent
 
@@ -1196,7 +1192,7 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 			condition := []Operation{}
 			condition = append(condition, Operation{Operand: v.RegionName})
 
-			fmt.Println(" - v.RegionName: " + v.RegionName)
+			log.Debug().Msg(" - v.RegionName: " + v.RegionName)
 
 			deploymentPlan.Filter.Policy = append(deploymentPlan.Filter.Policy, FilterCondition{Metric: "region", Condition: condition})
 			deploymentPlan.Limit = "1"
@@ -1444,16 +1440,14 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 
 // AddVmToMcis is func to add VM to MCIS
 func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbVmInfo, option string) error {
-	fmt.Printf("\n[AddVmToMcis]\n")
+	log.Debug().Msg("Start to add VM To MCIS")
 	//goroutin
 	defer wg.Done()
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In AddVmToMcis(); CBStore.Get() returned an error.")
-		log.Error().Err(err).Msg("")
+		log.Fatal().Err(err).Msg("AddVmToMcis(); CBStore.Get() returned an error.")
 		// return nil, err
 	}
 
@@ -1515,9 +1509,6 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 		return err
 	}
 
-	fmt.Printf("\n[AddVmToMcis vmStatusInfoTmp]\n")
-	common.PrintJsonPretty(vmStatusInfoTmp)
-
 	vmInfoData.Status = vmStatusInfoTmp.Status
 
 	// Monitoring Agent Installation Status (init: notInstalled)
@@ -1527,7 +1518,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	// set CreatedTime
 	t := time.Now()
 	vmInfoData.CreatedTime = t.Format("2006-01-02 15:04:05")
-	fmt.Println(vmInfoData.CreatedTime)
+	log.Debug().Msg(vmInfoData.CreatedTime)
 
 	UpdateVmInfo(nsId, mcisId, *vmInfoData)
 

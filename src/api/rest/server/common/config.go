@@ -141,7 +141,7 @@ func RestPostConfig(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Creating or Updating Config]")
+	log.Debug().Msg("[Creating or Updating Config]")
 	content, err := common.UpdateConfig(u)
 	return common.EndRequestWithLog(c, reqID, err, content)
 

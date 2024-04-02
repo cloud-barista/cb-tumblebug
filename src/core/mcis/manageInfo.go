@@ -152,7 +152,7 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 
 	_, err = common.CBStore.Get(key)
 	if err != nil {
-		fmt.Println("[Not found] " + mcisId)
+		log.Debug().Msg("[Not found] " + mcisId)
 		log.Error().Err(err).Msg("")
 		return vmList, err
 	}
@@ -181,7 +181,7 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 // ListVmByLabel is func to list VM by label
 func ListVmByLabel(nsId string, mcisId string, label string) ([]string, error) {
 
-	fmt.Println("[GetVmListByLabel]" + mcisId + " by " + label)
+	log.Debug().Msg("[GetVmListByLabel]" + mcisId + " by " + label)
 
 	var vmListByLabel []string
 
@@ -204,7 +204,7 @@ func ListVmByLabel(nsId string, mcisId string, label string) ([]string, error) {
 		}
 
 		if vmObj.Label == label {
-			fmt.Println("Found VM with " + vmObj.Label + ", VM ID: " + vmObj.Id)
+			log.Debug().Msg("Found VM with " + vmObj.Label + ", VM ID: " + vmObj.Id)
 			vmListByLabel = append(vmListByLabel, vmObj.Id)
 		}
 	}
@@ -246,14 +246,14 @@ func ListVmByFilter(nsId string, mcisId string, filterKey string, filterVal stri
 		for i := 0; i < elements.NumField(); i++ {
 			key := elements.Type().Field(i).Name
 			if strings.EqualFold(filterKey, key) {
-				fmt.Println(key)
+				//fmt.Println(key)
 
 				val := elements.Field(i).Interface().(string)
-				fmt.Println(val)
+				//fmt.Println(val)
 				if strings.EqualFold(filterVal, val) {
 
 					groupVmList = append(groupVmList, vmObj.Id)
-					fmt.Println(groupVmList)
+					//fmt.Println(groupVmList)
 				}
 
 				break
@@ -285,7 +285,7 @@ func ListSubGroupId(nsId string, mcisId string) ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Println("[ListSubGroupId]")
+	log.Debug().Msg("[ListSubGroupId]")
 	key := common.GenMcisKey(nsId, mcisId, "")
 	key += "/"
 
@@ -611,7 +611,7 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 		return temp, err
 	}
 
-	fmt.Println("[Get MCIS-VM info for id]" + vmId)
+	log.Debug().Msg("[Get MCIS-VM info for id]" + vmId)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 
@@ -646,7 +646,7 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 
 // GetMcisObject is func to retrieve MCIS object from database (no current status update)
 func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
-	fmt.Println("[GetMcisObject]" + mcisId)
+	log.Debug().Msg("[GetMcisObject]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
@@ -768,7 +768,7 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 		return &McisStatusInfo{}, err
 	}
 
-	fmt.Println("[GetMcisStatus]" + mcisId)
+	log.Debug().Msg("[GetMcisStatus]" + mcisId)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 
@@ -1050,7 +1050,7 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 		SpecId string `json:"specId"`
 	}
 
-	fmt.Println("[getVmSpecID]" + vmId)
+	log.Debug().Msg("[getVmSpecID]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
 	keyValue, err := common.CBStore.Get(key)
@@ -1189,7 +1189,7 @@ func FetchVmStatus(nsId string, mcisId string, vmId string) (TbVmStatusInfo, err
 
 	temp, err = GetVmObject(nsId, mcisId, vmId)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 		return errorInfo, err
 	}
 	vmStatusTmp := TbVmStatusInfo{}
@@ -1678,7 +1678,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 		return deletedResources, err
 	}
 
-	fmt.Println("[Delete MCIS] " + mcisId)
+	log.Debug().Msg("[Delete MCIS] " + mcisId)
 
 	// Check MCIS status is Terminated so that approve deletion
 	mcisStatus, _ := GetMcisStatus(nsId, mcisId)
@@ -1727,7 +1727,6 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	}
 
 	key := common.GenMcisKey(nsId, mcisId, "")
-	fmt.Println(key)
 
 	// delete associated MCIS Policy
 	err = DelMcisPolicy(nsId, mcisId)
@@ -1787,7 +1786,6 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	}
 	for _, v := range subGroupList {
 		subGroupKey := common.GenMcisSubGroupKey(nsId, mcisId, v)
-		fmt.Println(subGroupKey)
 		err := common.CBStore.Delete(subGroupKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -1858,7 +1856,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 		return err
 	}
 
-	fmt.Println("[Delete VM] " + vmId)
+	log.Debug().Msg("[Delete VM] " + vmId)
 
 	// skip termination if option is force
 	if option != "force" {
@@ -1963,7 +1961,7 @@ func UpdateVmPublicIp(nsId string, mcisId string, vmInfoData TbVmInfo) error {
 // GetVmTemplate is func to get VM template
 func GetVmTemplate(nsId string, mcisId string, algo string) (TbVmInfo, error) {
 
-	fmt.Println("[GetVmTemplate]" + mcisId + " by algo: " + algo)
+	log.Debug().Msg("[GetVmTemplate]" + mcisId + " by algo: " + algo)
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {

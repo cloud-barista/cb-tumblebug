@@ -115,7 +115,7 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	fmt.Println("[Check mcis] " + mcisId)
+	log.Debug().Msg("[Check mcis] " + mcisId)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 
@@ -192,7 +192,7 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	fmt.Println("[Check vm] " + mcisId + ", " + vmId)
+	log.Debug().Msg("[Check vm] " + mcisId + ", " + vmId)
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
@@ -233,7 +233,7 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	fmt.Println("[Check McisPolicy] " + mcisId)
+	log.Debug().Msg("[Check McisPolicy] " + mcisId)
 
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 

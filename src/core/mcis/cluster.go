@@ -411,7 +411,7 @@ type TbClusterAddonsInfo struct {
 
 // CreateCluster create a cluster
 func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, error) {
-	fmt.Println("=========================== CreateCluster")
+	log.Info().Msg("CreateCluster")
 
 	emptyObj := TbClusterInfo{}
 	/*
@@ -430,7 +430,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	err := validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -470,7 +470,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	getCloudSetting := func() {
 		defer func() {
 			if err := recover(); err != nil {
-				fmt.Println(err)
+				log.Error().Msgf("%v", err)
 				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
 			}
 		}()
@@ -676,8 +676,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 		log.Error().Err(err).Msg("")
 	}
 
-	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
-	fmt.Println("===========================")
+	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
 	storedTbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
@@ -689,7 +688,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 
 // AddNodeGroup adds a NodeGroup
 func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterInfo, error) {
-	fmt.Println("=========================== AddNodeGroup")
+	log.Info().Msg("AddNodeGroup")
 
 	emptyObj := TbClusterInfo{}
 	/*
@@ -708,7 +707,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	err := validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -738,8 +737,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 		return emptyObj, err
 	}
 
-	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
-	fmt.Println("===========================")
+	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
 	err = json.Unmarshal([]byte(kv.Value), &oldTbCInfo)
 	if err != nil {
@@ -769,7 +767,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	getCloudSetting := func() {
 		defer func() {
 			if err := recover(); err != nil {
-				fmt.Println(err)
+				log.Error().Msgf("%v", err)
 				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
 			}
 		}()
@@ -884,8 +882,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 		// return nil, err
 	}
 
-	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
-	fmt.Println("===========================")
+	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
 	storedTbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
@@ -898,7 +895,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 
 // RemoveNodeGroup removes a specified NodeGroup
 func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceFlag string) (bool, error) {
-	fmt.Println("=========================== RemoveNodeGroup")
+	log.Info().Msg("RemoveNodeGroup")
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -925,7 +922,7 @@ func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceF
 	}
 
 	k := GenClusterKey(nsId, clusterId)
-	fmt.Println("key: " + k)
+	log.Debug().Msg("key: " + k)
 
 	kv, _ := common.CBStore.Get(k)
 
@@ -984,7 +981,7 @@ func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceF
 
 // SetAutoscaling set NodeGroup's Autoscaling On/Off
 func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSetAutoscalingReq) (bool, error) {
-	fmt.Println("=========================== SetAutoscaling")
+	log.Info().Msg("SetAutoscaling")
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -1021,7 +1018,7 @@ func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSe
 	 */
 
 	k := GenClusterKey(nsId, clusterId)
-	fmt.Println("key: " + k)
+	log.Debug().Msg("key: " + k)
 
 	kv, _ := common.CBStore.Get(k)
 
@@ -1065,7 +1062,7 @@ func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSe
 
 // ChangeAutoscaleSize change NodeGroup's Autoscaling Size
 func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u *TbChangeAutoscaleSizeReq) (TbChangeAutoscaleSizeRes, error) {
-	fmt.Println("=========================== ChangeAutoscaleSize")
+	log.Info().Msg("ChangeAutoscaleSize")
 
 	emptyObj := TbChangeAutoscaleSizeRes{}
 	/*
@@ -1104,7 +1101,7 @@ func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u 
 	 */
 
 	k := GenClusterKey(nsId, clusterId)
-	fmt.Println("key: " + k)
+	log.Debug().Msg("key: " + k)
 
 	kv, _ := common.CBStore.Get(k)
 
@@ -1179,7 +1176,7 @@ func GetCluster(nsId string, clusterId string) (TbClusterInfo, error) {
 		return emptyObj, err
 	}
 
-	fmt.Println("[Get Cluster] " + clusterId)
+	log.Debug().Msg("[Get Cluster] " + clusterId)
 
 	/*
 	 * Get TbClusterInfo object from cb-store
@@ -1297,7 +1294,7 @@ func CheckCluster(nsId string, clusterId string) (bool, error) {
 		return false, err
 	}
 
-	fmt.Println("[Check Cluster] " + clusterId)
+	log.Debug().Msg("[Check Cluster] " + clusterId)
 
 	key := GenClusterKey(nsId, clusterId)
 
@@ -1338,10 +1335,10 @@ func ListClusterId(nsId string) ([]string, error) {
 		return nil, err
 	}
 
-	fmt.Println("[ListClusterId] ns: " + nsId)
+	log.Debug().Msg("[ListClusterId] ns: " + nsId)
 	// key := "/ns/" + nsId + "/"
 	k := fmt.Sprintf("/ns/%s/", nsId)
-	fmt.Println(k)
+	log.Debug().Msg(k)
 
 	kv, err := common.CBStore.GetList(k, true)
 
@@ -1372,7 +1369,7 @@ func ListClusterId(nsId string) ([]string, error) {
 
 // ListCluster returns the list of TB Cluster objects of given nsId
 func ListCluster(nsId string, filterKey string, filterVal string) (interface{}, error) {
-	fmt.Println("=========================== ListCluster")
+	log.Info().Msg("ListCluster")
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1380,9 +1377,9 @@ func ListCluster(nsId string, filterKey string, filterVal string) (interface{}, 
 		return nil, err
 	}
 
-	fmt.Println("[Get] Cluster list")
+	log.Debug().Msg("[Get] Cluster list")
 	k := fmt.Sprintf("/ns/%s/cluster", nsId)
-	fmt.Println(k)
+	log.Debug().Msg(k)
 
 	/*
 	 * Get TbClusterInfo objects from cb-store
@@ -1424,7 +1421,7 @@ func ListCluster(nsId string, filterKey string, filterVal string) (interface{}, 
 
 // DeleteCluster deletes a cluster
 func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error) {
-	fmt.Println("=========================== DeleteCluster")
+	log.Info().Msg("DeleteCluster")
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -1455,7 +1452,7 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 	 */
 
 	k := GenClusterKey(nsId, clusterId)
-	fmt.Println("key: " + k)
+	log.Debug().Msg("key: " + k)
 
 	kv, _ := common.CBStore.Get(k)
 
@@ -1530,7 +1527,7 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 
 // DeleteAllCluster deletes all clusters
 func DeleteAllCluster(nsId string, subString string, forceFlag string) (common.IdList, error) {
-	fmt.Println("=========================== DeleteAllCluster")
+	log.Info().Msg("DeleteAllCluster")
 
 	deletedClusters := common.IdList{}
 
@@ -1566,14 +1563,14 @@ func DeleteAllCluster(nsId string, subString string, forceFlag string) (common.I
 
 // UpgradeCluster upgrades an existing cluster to the specified version
 func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbClusterInfo, error) {
-	fmt.Println("=========================== UpgradeCluster")
+	log.Info().Msg("UpgradeCluster")
 
 	emptyObj := TbClusterInfo{}
 
 	err := validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -1603,8 +1600,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 		return emptyObj, err
 	}
 
-	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
-	fmt.Println("===========================")
+	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
 	err = json.Unmarshal([]byte(kv.Value), &oldTbCInfo)
 	if err != nil {
@@ -1634,7 +1630,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 	getCloudSetting := func() {
 		defer func() {
 			if err := recover(); err != nil {
-				fmt.Println(err)
+				log.Error().Msgf("%v", err)
 				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
 			}
 		}()
@@ -1706,8 +1702,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 		// return nil, err
 	}
 
-	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
-	fmt.Println("===========================")
+	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
 
 	storedTbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)

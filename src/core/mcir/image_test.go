@@ -21,6 +21,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,28 +41,28 @@ func TestImage(t *testing.T) {
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Namespace created successfully")
+		log.Debug().Msg("Namespace created successfully")
 	}
 
 	err = common.OpenSQL("../../../meta_db/dat/tb-unit-test.s3db")
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Database access info set successfully")
+		log.Debug().Msg("Database access info set successfully")
 	}
 
 	err = common.SelectDatabase("tb-unit-test")
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("DB selected successfully..")
+		log.Debug().Msg("DB selected successfully..")
 	}
 
 	// err = common.CreateImageTable()
 	// if err != nil {
 	// 	fmt.Println(err.Error())
 	// } else {
-	// 	fmt.Println("Table image created successfully..")
+	// 	log.Debug().Msg("Table image created successfully..")
 	// }
 
 	imageName := "tb-unit-test"
@@ -71,7 +72,7 @@ func TestImage(t *testing.T) {
 
 	result, _ := RegisterImageWithInfo(nsName, &imageReq)
 	resultJSON, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println("result: " + string(resultJSON))
+	log.Debug().Msg("result: " + string(resultJSON))
 	assert.Equal(t, imageName, result.Name, "CreateImage 기대값과 결과값이 다릅니다.")
 
 	resultInterface, _ := GetResource(nsName, common.StrImage, imageName)
@@ -89,7 +90,7 @@ func TestImage(t *testing.T) {
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Namespace deleted successfully")
+		log.Debug().Msg("Namespace deleted successfully")
 	}
 
 }

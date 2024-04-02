@@ -202,18 +202,15 @@ func GetNs(id string) (NsInfo, error) {
 		return temp, err
 	}
 
-	fmt.Println("[Get namespace] " + id)
+	log.Debug().Msg("[Get namespace] " + id)
 	key := "/ns/" + id
-	fmt.Println(key)
+	log.Debug().Msg(key)
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return res, err
 	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===============================================")
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
@@ -224,9 +221,9 @@ func GetNs(id string) (NsInfo, error) {
 }
 
 func ListNs() ([]NsInfo, error) {
-	fmt.Println("[List namespace]")
+	log.Debug().Msg("[List namespace]")
 	key := "/ns"
-	fmt.Println(key)
+	log.Debug().Msg(key)
 
 	keyValue, err := CBStore.GetList(key, true)
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
@@ -330,9 +327,9 @@ func DelNs(id string) error {
 		return err
 	}
 
-	fmt.Println("[Delete ns] " + id)
+	log.Debug().Msg("[Delete ns] " + id)
 	key := "/ns/" + id
-	fmt.Println(key)
+	log.Debug().Msg(key)
 
 	mcisList := GetChildIdList(key + "/mcis")
 	imageList := GetChildIdList(key + "/resources/image")
@@ -378,7 +375,6 @@ func DelNs(id string) error {
 }
 
 func DelAllNs() error {
-	fmt.Printf("DelAllNs() called;")
 
 	nsIdList, err := ListNsId()
 	if err != nil {

@@ -35,7 +35,7 @@ csp_commands = {
 
 csp_connection_names = {
     'gcp': 'gcp-asia-east1',
-    'azure': 'azure-eastus',
+    'azure': 'az-eus',
     'aws': 'aws-us-east-1',
     'ibm': 'ibm-us-east',
     'alibaba': 'alibaba-us-east-1',

@@ -163,7 +163,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		err = validate.Struct(u)
 		if err != nil {
 			if _, ok := err.(*validator.InvalidValidationError); ok {
-				fmt.Println(err)
+				log.Err(err).Msg("")
 				return TbDataDiskInfo{}, err
 			}
 
@@ -261,7 +261,7 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 	}
 
 	// cb-store
-	fmt.Println("=========================== PUT CreateDataDisk")
+	log.Info().Msg("PUT CreateDataDisk")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -292,7 +292,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return TbDataDiskInfo{}, err
 		}
 
@@ -381,7 +381,7 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	content.Description = u.Description
 
 	// cb-store
-	fmt.Println("=========================== PUT UpsizeDataDisk")
+	log.Info().Msg("PUT UpsizeDataDisk")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))

@@ -116,7 +116,7 @@ func ExecuteHttpRequest[B any, T any](
 		if item, found := clientCache.Load(requestKey); found {
 			cachedItem := item.(CacheItem[T]) // Generic type
 			if time.Now().Before(cachedItem.ExpiresAt) {
-				fmt.Println("Cache hit! Expires: ", time.Now().Sub(cachedItem.ExpiresAt))
+				log.Trace().Msgf("Cache hit! Expires: %v", time.Now().Sub(cachedItem.ExpiresAt))
 				*result = cachedItem.Response
 				//val := reflect.ValueOf(result).Elem()
 				//cachedVal := reflect.ValueOf(cachedItem.Response)
@@ -124,7 +124,7 @@ func ExecuteHttpRequest[B any, T any](
 
 				return nil
 			} else {
-				fmt.Println("Cache item expired!")
+				log.Trace().Msg("Cache item expired!")
 				clientCache.Delete(requestKey)
 			}
 		}
@@ -138,7 +138,7 @@ func ExecuteHttpRequest[B any, T any](
 		for {
 			if !limitConcurrentRequests(requestKey, concurrencyLimit) {
 				if retryCount >= retryLimit {
-					fmt.Printf("Too many same requests: %s\n", requestKey)
+					log.Debug().Msgf("Too many same requests: %s\n", requestKey)
 					return fmt.Errorf("Too many same requests: %s", requestKey)
 				}
 				time.Sleep(retryWait)
@@ -148,7 +148,7 @@ func ExecuteHttpRequest[B any, T any](
 					*result = cachedItem.Response
 					// release the request count for parallel requests limit
 					requestDone(requestKey)
-					fmt.Println("Got the cached result while waiting")
+					log.Debug().Msg("Got the cached result while waiting")
 					return nil
 				}
 				retryCount++
@@ -159,7 +159,7 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	// Perform the HTTP request using Resty
-	client.SetDebug(true)
+	// client.SetDebug(true)
 	// SetAllowGetMethodPayload should be set to true for GET method to allow payload
 	// NOTE: Need to removed when cb-spider api is stopped to use GET method with payload
 	client.SetAllowGetMethodPayload(true)
@@ -209,10 +209,10 @@ func ExecuteHttpRequest[B any, T any](
 
 		// Check if result is nil
 		if result == nil {
-			fmt.Println("Warning: result is nil, not caching.")
+			log.Debug().Msg("Fesult is nil, not caching")
 		} else {
 			clientCache.Store(requestKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
-			fmt.Println("Cached successfully!")
+			log.Debug().Msg("Cached successfully!")
 		}
 	}
 

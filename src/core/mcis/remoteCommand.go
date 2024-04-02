@@ -89,7 +89,7 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 		// an invalid value for validation such as interface with nil
 		// value most including myself do not usually have code like this.
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			temp := []SshCmdResult{}
 			return temp, err
 		}
@@ -194,9 +194,9 @@ func RunRemoteCommand(nsId string, mcisId string, vmId string, givenUserName str
 		PrivateKey: []byte(bastionSshKey),
 	}
 
-	fmt.Println("[SSH] " + mcisId + "." + vmId + "(" + targetVmIP + ")" + " with userName: " + targetUserName)
+	log.Debug().Msg("[SSH] " + mcisId + "." + vmId + "(" + targetVmIP + ")" + " with userName: " + targetUserName)
 	for i, v := range cmds {
-		fmt.Println("[SSH] cmd[" + fmt.Sprint(i) + "]: " + v)
+		log.Debug().Msg("[SSH] cmd[" + fmt.Sprint(i) + "]: " + v)
 	}
 
 	// Set VM SSH config (targetEndpoint, userName, Private Key)
@@ -247,9 +247,9 @@ func RunRemoteCommandAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId 
 		sshResultTmp.Err = err
 		*returnResult = append(*returnResult, sshResultTmp)
 	} else {
-		fmt.Println("[Begin] SSH Output")
+		log.Debug().Msg("[Begin] SSH Output")
 		fmt.Println(stdoutResults)
-		fmt.Println("[End] SSH Output")
+		log.Debug().Msg("[End] SSH Output")
 
 		sshResultTmp.Stdout = stdoutResults
 		sshResultTmp.Stderr = stderrResults
@@ -290,7 +290,7 @@ func VerifySshUserName(nsId string, mcisId string, vmId string, vmIp string, ssh
 	// }
 
 	// // If we have a varified username, Retrieve ssh username from the given list will not be executed
-	// fmt.Println("[Retrieve ssh username from the given list]")
+	// log.Debug().Msg("[Retrieve ssh username from the given list]")
 	// for _, v := range userNames {
 	// 	if v != "" {
 	// 		fmt.Printf("[Check SSH] (%s) with userName: %s\n", vmIp, v)
@@ -352,13 +352,12 @@ func CheckConnectivity(host string, port string) error {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
 		conn.Close()
 
-		fmt.Println("[Check SSH Port]", host, ":", port)
+		log.Debug().Msgf("[Check SSH Port] %v:%v", host, port)
 
 		if err != nil {
-			fmt.Println("SSH Port is NOT accessible yet. retry after 5 seconds sleep ", err)
+			log.Err(err).Msg("SSH Port is NOT accessible yet. retry after 5 seconds sleep")
 		} else {
-			// port is opened. return nil for error.
-			fmt.Println("SSH Port is accessible")
+			log.Debug().Msg("SSH Port is accessible")
 			return nil
 		}
 		time.Sleep(5 * time.Second)

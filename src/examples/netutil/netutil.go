@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +27,7 @@ or
 	exampleCmd.PersistentFlags().IntP("hosts", "n", 500, "Number of hosts per subnet")
 
 	if err := exampleCmd.Execute(); err != nil {
-		log.Fatalf("Error executing netutil-example: %s", err)
+		log.Fatal().Err(err).Msg("Error executing netutil-example")
 	}
 }
 
@@ -38,27 +38,27 @@ func runExample(cmd *cobra.Command, args []string) {
 	minSubnets, _ := cmd.Flags().GetInt("minsubnets")
 	hostsPerSubnet, _ := cmd.Flags().GetInt("hosts")
 
-	fmt.Println("Starting netuil example")
+	log.Debug().Msg("Starting netuil example")
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nDivide CIDR block into subnets to accommodate at least minimum number of subnets")
+	log.Debug().Msg("\nDivide CIDR block into subnets to accommodate at least minimum number of subnets")
 	fmt.Printf("Divide CIDR block by a specified number of hosts\n")
 
-	fmt.Println("[Usecase] Get superneted VPCs and its subnets inside")
+	log.Debug().Msg("[Usecase] Get superneted VPCs and its subnets inside")
 	fmt.Printf("- Base network: %v\n", cidrBlock)
 	fmt.Printf("- Minimum number of VPCs (subnets of the base network): %d\n", minSubnets)
 	fmt.Printf("- Subnets in a VPC base on the number of hosts per subnet: %d\n", hostsPerSubnet)
 
 	subnets, err := netutil.SubnettingByMinimumSubnetCount(cidrBlock, minSubnets)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 	}
 
 	for i, vpc := range subnets {
 		fmt.Printf("\nVPC[%03d]:\t%v\nSubnets:\t", i+1, vpc)
 		vpcsubnets, err := netutil.SubnettingByMinimumHosts(vpc, hostsPerSubnet)
 		if err != nil {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 		}
 		for j, subnet := range vpcsubnets {
 			fmt.Printf("%v", subnet)
@@ -66,16 +66,16 @@ func runExample(cmd *cobra.Command, args []string) {
 				fmt.Print(", ")
 			}
 		}
-		fmt.Println("")
+
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// fmt.Println("\nDivide CIDR block by a specified number of hosts")
+	// log.Debug().Msg("\nDivide CIDR block by a specified number of hosts")
 	// fmt.Printf("Number of hosts per subnet: %d\n", hostsPerSubnet)
 
 	// subnets, err = netutil.SubnettingByMinimumHosts(cidrBlock, hostsPerSubnet)
 	// if err != nil {
-	// 	fmt.Println(err)
+	// 	log.Err(err).Msg("")
 	// }
 
 	// for _, subnet := range subnets {
@@ -83,50 +83,50 @@ func runExample(cmd *cobra.Command, args []string) {
 	// }
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\n\nGet Network Address")
+	log.Debug().Msg("\n\nGet Network Address")
 	networkAddress, err := netutil.GetNetworkAddr(cidrBlock)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 	}
 	fmt.Printf("Network Address: %s\n", networkAddress)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nGet Broadcast Address")
+	log.Debug().Msg("\nGet Broadcast Address")
 	broadcastAddress, err := netutil.GetBroadcastAddr(cidrBlock)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 
 	}
 	fmt.Printf("Broadcast Address: %s\n", broadcastAddress)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nGet Prefix")
+	log.Debug().Msg("\nGet Prefix")
 	prefix, err := netutil.GetPrefix(cidrBlock)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 	}
 	fmt.Printf("Prefix: %d\n", prefix)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nGet Netmask")
+	log.Debug().Msg("\nGet Netmask")
 	netmask, err := netutil.GetNetmask(cidrBlock)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 	}
 	fmt.Printf("Netmask: %s\n", netmask)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nCalculate the number of hosts that can be accomodated in a given CIDR block")
+	log.Debug().Msg("\nCalculate the number of hosts that can be accomodated in a given CIDR block")
 
 	hosts, err := netutil.GetSizeOfHosts(cidrBlock)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 	}
 
 	fmt.Printf("The CIDR block %s can accommodate %d hosts.\n", cidrBlock, hosts)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nNew network")
+	log.Debug().Msg("\nNew network")
 	net, err := netutil.NewNetwork(cidrBlock)
 	fmt.Printf(" Network: %+v\n", net)
 	fmt.Printf(" GetCIDRBlock(): %s\n", net.GetCIDRBlock())
@@ -143,7 +143,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	fmt.Printf(" GetSubnets(): %v\n", networkDetails.GetSubnets())
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nValidate a network configuration")
+	log.Debug().Msg("\nValidate a network configuration")
 
 	expectedInput := `{
         "networkConfiguration": {
@@ -189,13 +189,13 @@ func runExample(cmd *cobra.Command, args []string) {
 	fmt.Printf("[Network configuration to validate]\n%s\n", string(pretty))
 
 	if err := netutil.ValidateNetwork(network); err != nil {
-		fmt.Println("Network configuration is invalid.")
+		log.Debug().Msg("Network configuration is invalid.")
 	}
 
-	fmt.Println("Network configuration is valid.")
+	log.Debug().Msg("Network configuration is valid.")
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\nSubnetting a CIDR block by requests")
+	log.Debug().Msg("\nSubnetting a CIDR block by requests")
 	request := netutil.SubnettingRequest{
 		CIDRBlock: cidrBlock,
 		SubnettingRules: []netutil.SubnettingRule{
@@ -213,7 +213,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	// Subnetting by requests
 	networkConfig, err := netutil.SubnettingBy(request)
 	if err != nil {
-		fmt.Println("Error subnetting network:", err)
+		log.Err(err).Msg("Error subnetting network")
 		return
 	}
 
@@ -224,7 +224,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	fmt.Printf("[Subnetting result]\n%s\n", string(pretty))
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	fmt.Println("\n\nNextSubnet() test example")
+	log.Debug().Msg("\n\nNextSubnet() test example")
 
 	baseNetwork := "10.0.0.0/16"
 	currentSubnet0 := "10.0.0.0/18"
@@ -237,7 +237,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Next Subnet:", nextSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", nextSubnet)
 	}
 
 	fmt.Printf("[NextSubnet() Case2] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet1)
@@ -245,7 +245,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Next Subnet:", nextSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", nextSubnet)
 	}
 
 	fmt.Printf("[NextSubnet() Case3] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet2)
@@ -253,7 +253,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Next Subnet:", nextSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", nextSubnet)
 	}
 
 	fmt.Printf("[NextSubnet() Case4] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet3)
@@ -261,7 +261,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Next Subnet:", nextSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", nextSubnet)
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,7 +272,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Previous Subnet:", previousSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", previousSubnet)
 	}
 
 	fmt.Printf("[PreviousSubnet() Case2] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet1)
@@ -280,7 +280,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Previous Subnet:", previousSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", previousSubnet)
 	}
 
 	fmt.Printf("[PreviousSubnet() Case3] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet2)
@@ -288,7 +288,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Previous Subnet:", previousSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", previousSubnet)
 	}
 
 	fmt.Printf("[PreviousSubnet() Case4] Base Network CIDR: %s, Current Subnet CIDR: %s\n", baseNetwork, currentSubnet3)
@@ -296,7 +296,7 @@ func runExample(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(" Error:", err)
 	} else {
-		fmt.Println(" Previous Subnet:", previousSubnet)
+		log.Debug().Msgf(" Next Subnet: %v", previousSubnet)
 	}
 
 }

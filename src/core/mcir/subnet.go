@@ -45,7 +45,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	err = validate.Struct(req)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			temp := TbVNetInfo{}
 			return temp, err
 		}
@@ -130,7 +130,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	}
 
 	// cb-store
-	fmt.Println("=========================== POST CreateSubnet")
+	log.Info().Msg("POST CreateSubnet")
 	SubnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, vNetId, req.Name)
 	Val, _ := json.Marshal(req)
 

@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostMcisPolicy godoc
@@ -109,7 +110,7 @@ func RestGetAllMcisPolicy(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	fmt.Println("[Get MCIS Policy List]")
+	log.Debug().Msg("[Get MCIS Policy List]")
 
 	result, err := mcis.GetAllMcisPolicyObject(nsId)
 	if err != nil {

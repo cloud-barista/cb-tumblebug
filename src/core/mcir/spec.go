@@ -276,7 +276,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 
 // FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects
 func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, err error) {
-	fmt.Println("FetchSpecsForConnConfig(" + connConfig + ")")
+	log.Debug().Msg("FetchSpecsForConnConfig(" + connConfig + ")")
 
 	spiderSpecList, err := LookupSpecList(connConfig)
 	if err != nil {
@@ -354,7 +354,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	if err != nil {
 
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			temp := TbSpecInfo{}
 			return temp, err
 		}
@@ -406,7 +406,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	//content.Description = res.Description
 
 	// cb-store
-	fmt.Println("=========================== PUT registerSpec")
+	log.Info().Msg("PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -414,19 +414,13 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		fmt.Println("In RegisterSpecWithCspSpecName(); CBStore.Get() returned error.")
-	}
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(&content)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Data inserted successfully..")
+		log.Info().Msg("SQL: Insert success")
 	}
 
 	return content, nil
@@ -468,7 +462,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	content.AssociatedObjectList = []string{}
 
 	// cb-store
-	fmt.Println("=========================== PUT registerSpec")
+	log.Info().Msg("PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -476,20 +470,13 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 		log.Error().Err(err).Msg("")
 		return *content, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		fmt.Println("In RegisterSpecWithInfo(); CBStore.Get() returned error.")
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(content)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Data inserted successfully..")
+		log.Info().Msg("SQL: Insert success")
 	}
 
 	return *content, nil
@@ -1148,7 +1135,6 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 	err = json.Unmarshal(toBeSpecJSON, &toBeSpec)
 
 	// cb-store
-	fmt.Println("=========================== PUT UpdateSpec")
 	Key := common.GenResourceKey(nsId, resourceType, toBeSpec.Id)
 	Val, _ := json.Marshal(toBeSpec)
 	err = common.CBStore.Put(Key, string(Val))
@@ -1157,23 +1143,13 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In UpdateSpec(); CBStore.Get() returned an error.")
-		log.Error().Err(err).Msg("")
-		// return nil, err
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	// "UPDATE `spec` SET `id`='" + specId + "', ... WHERE `namespace`='" + nsId + "' AND `id`='" + specId + "';"
 	_, err = common.ORM.Update(&toBeSpec, &TbSpecInfo{Namespace: nsId, Id: specId})
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("SQL data updated successfully..")
+		log.Info().Msg("SQL: Update success")
 	}
 
 	return toBeSpec, nil

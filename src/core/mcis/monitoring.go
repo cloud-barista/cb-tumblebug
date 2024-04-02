@@ -121,23 +121,23 @@ func CheckDragonflyEndpoint() error {
 	req, err := http.NewRequest(method, url, nil)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 		return err
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 		return err
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 		return err
 	}
 	defer res.Body.Close()
 
-	fmt.Println(string(body))
+	log.Debug().Msg(string(body))
 	return nil
 
 }
@@ -171,7 +171,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
 	}
-	fmt.Println("[CallMonitoringAsync] " + mcisID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
+	log.Debug().Msg("[CallMonitoringAsync] " + mcisID + "/" + vmID + "(" + vmIP + ")" + "with userName:" + userName)
 
 	// set vm MonAgentStatus = "installing" (to avoid duplicated requests)
 	vmInfoTmp, _ := GetVmObject(nsID, mcisID, vmID)
@@ -183,8 +183,8 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 	}
 
 	url := common.DragonflyRestUrl + cmd
-	fmt.Println("\n[Calling DRAGONFLY] START")
-	fmt.Println("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
+	log.Debug().Msg("\n[Calling DRAGONFLY] START")
+	log.Debug().Msg("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
 
 	requestBody := monAgentInstallReq{
 		NsId:        nsID,
@@ -230,7 +230,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	result := ""
 
-	fmt.Println("Called CB-DRAGONFLY API")
+	log.Debug().Msg("Called CB-DRAGONFLY API")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		errStr += "/ " + err.Error()
@@ -318,7 +318,7 @@ func InstallMonitorAgentToMcis(nsId string, mcisId string, mcisServiceType strin
 		return content, err
 	}
 
-	fmt.Println("[Install agent for each VM]")
+	log.Debug().Msg("[Install agent for each VM]")
 
 	//goroutin sync wg
 	var wg sync.WaitGroup
@@ -458,7 +458,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 
 	defer wg.Done() //goroutin sync done
 
-	fmt.Print("[Call CB-DF] ")
+	log.Info().Msg("[Call CB-DF] " + mcisID + "/" + vmID + "(" + vmIP + ")")
 
 	var response string
 	var errStr string
@@ -466,7 +466,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	var err error
 
 	url := common.DragonflyRestUrl + cmd
-	fmt.Println("URL: " + url)
+	log.Debug().Msg("URL: " + url)
 
 	responseLimit := 8
 	client := &http.Client{
@@ -506,7 +506,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 	}
 
 	if !gjson.Valid(response) {
-		fmt.Println("!gjson.Valid(response)")
+		log.Debug().Msg("!gjson.Valid(response)")
 	}
 
 	switch metric {
@@ -538,7 +538,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 		ResultTmp.Err = err.Error()
 		*returnResult = append(*returnResult, ResultTmp)
 	} else {
-		fmt.Println("CB-DF Result: " + result)
+		log.Debug().Msg("CB-DF Result: " + result)
 		ResultTmp.Value = result
 		*returnResult = append(*returnResult, ResultTmp)
 	}

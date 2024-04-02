@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostImage godoc
@@ -45,16 +46,16 @@ func RestPostImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
-	fmt.Println("[POST Image] (action: " + action + ")")
+	log.Debug().Msg("[POST Image] (action: " + action + ")")
 	/*
 		if action == "create" {
-			fmt.Println("[Creating Image]")
+			log.Debug().Msg("[Creating Image]")
 			content, _ := createImage(nsId, u)
 			return c.JSON(http.StatusCreated, content)
 
 		} else */
 	if action == "registerWithInfo" {
-		fmt.Println("[Registering Image with info]")
+		log.Debug().Msg("[Registering Image with info]")
 		u := &mcir.TbImageInfo{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
@@ -62,7 +63,7 @@ func RestPostImage(c echo.Context) error {
 		content, err := mcir.RegisterImageWithInfo(nsId, u)
 		return common.EndRequestWithLog(c, reqID, err, content)
 	} else if action == "registerWithId" {
-		fmt.Println("[Registering Image with ID]")
+		log.Debug().Msg("[Registering Image with ID]")
 		u := &mcir.TbImageReq{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
@@ -133,7 +134,7 @@ func RestLookupImage(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Lookup image]: " + u.CspImageId)
+	log.Debug().Msg("[Lookup image]: " + u.CspImageId)
 	content, err := mcir.LookupImage(u.ConnectionName, u.CspImageId)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
@@ -160,7 +161,7 @@ func RestLookupImageList(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Lookup images]")
+	log.Debug().Msg("[Lookup images]")
 	content, err := mcir.LookupImageList(u.ConnectionName)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
