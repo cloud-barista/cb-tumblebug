@@ -61,7 +61,7 @@ func setConfig() {
 		log.Error().Err(err).Msg("")
 		panic(fmt.Errorf("fatal error reading cloud_conf: %w", err))
 	}
-	fmt.Println(viper.ConfigFileUsed())
+	log.Info().Msg(viper.ConfigFileUsed())
 	err = viper.Unmarshal(&common.RuntimeConf)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -79,7 +79,8 @@ func setConfig() {
 	if err != nil {
 		panic(fmt.Errorf("fatal error reading cloudinfo config file: %w", err))
 	}
-	fmt.Println(cloudInfoViper.ConfigFileUsed())
+
+	log.Info().Msg(cloudInfoViper.ConfigFileUsed())
 	err = cloudInfoViper.Unmarshal(&common.RuntimeCloudInfo)
 	if err != nil {
 		log.Error().Err(err).Msg("")

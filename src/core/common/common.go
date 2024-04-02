@@ -19,9 +19,7 @@ import (
 	"time"
 
 	cbstore "github.com/cloud-barista/cb-store"
-	"github.com/cloud-barista/cb-store/config"
 	icbs "github.com/cloud-barista/cb-store/interfaces"
-	"github.com/sirupsen/logrus"
 	"xorm.io/xorm"
 )
 
@@ -41,7 +39,7 @@ type OptionalParameter struct {
 }
 
 // CB-Store
-var CBLog *logrus.Logger
+
 var CBStore icbs.Store
 
 var SpiderRestUrl string
@@ -87,7 +85,6 @@ const (
 var StartTime string
 
 func init() {
-	CBLog = config.Cblogger
 	CBStore = cbstore.GetStore()
 
 	StartTime = time.Now().Format("2006.01.02 15:04:05 Mon")

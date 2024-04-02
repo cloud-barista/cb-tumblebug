@@ -207,7 +207,7 @@ func UpdateGlobalVariable(id string) error {
 
 	configInfo, err := GetConfig(id)
 	if err != nil {
-		//log.Error().Err(err).Msg("")
+		log.Info().Msg(err.Error())
 		return err
 	}
 
@@ -289,25 +289,23 @@ func GetConfig(id string) (ConfigInfo, error) {
 	res := ConfigInfo{}
 
 	check, err := CheckConfig(id)
+	errString := id + " config is not found from Key-value store. Envirionment variable will be used."
 
 	if !check {
-		errString := "The config " + id + " does not exist."
 		err := fmt.Errorf(errString)
 		return res, err
 	}
 
 	if err != nil {
-		temp := ConfigInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
+		err := fmt.Errorf(errString)
+		return res, err
 	}
 
-	fmt.Println("[Get config] " + id)
 	key := "/config/" + id
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		//log.Error().Err(err).Msg("")
+		err := fmt.Errorf(errString)
 		return res, err
 	}
 
@@ -315,7 +313,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		err := fmt.Errorf(errString)
 		return res, err
 	}
 	return res, nil
