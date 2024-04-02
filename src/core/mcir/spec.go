@@ -406,7 +406,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	//content.Description = res.Description
 
 	// cb-store
-	log.Info().Msg("PUT registerSpec")
+	log.Trace().Msg("PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -462,7 +462,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	content.AssociatedObjectList = []string{}
 
 	// cb-store
-	log.Info().Msg("PUT registerSpec")
+	log.Trace().Msg("PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -1149,7 +1149,7 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("SQL: Update success")
+		log.Trace().Msg("SQL: Update success")
 	}
 
 	return toBeSpec, nil

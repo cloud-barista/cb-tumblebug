@@ -1403,6 +1403,16 @@ func LoadCommonResource() (common.IdList, error) {
 		}
 	}
 
+	connectionList, err := common.GetConnConfigList()
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot GetConnConfigList")
+		return regiesteredIds, err
+	}
+	if len(connectionList.Connectionconfig) == 0 {
+		log.Error().Err(err).Msg("No registered connection config")
+		return regiesteredIds, err
+	}
+
 	// Read common specs and register spec objects
 	file, fileErr := os.Open("../assets/cloudspec.csv")
 	defer file.Close()
@@ -1413,6 +1423,26 @@ func LoadCommonResource() (common.IdList, error) {
 
 	rdr := csv.NewReader(bufio.NewReader(file))
 	rows, _ := rdr.ReadAll()
+
+	// expending rows with "all" connectionName into each region
+	// "all" means the values in the row are applicable to all connectionNames in a CSP
+	newRows := make([][]string, 0, len(rows))
+	for _, row := range rows {
+		if row[1] == "all" {
+			for _, connConfig := range connectionList.Connectionconfig {
+				if strings.EqualFold(connConfig.ProviderName, row[0]) {
+					newRow := make([]string, len(row))
+					copy(newRow, row)
+					newRow[1] = connConfig.ConfigName
+					newRows = append(newRows, newRow)
+					log.Info().Msgf("Expended row: %s", newRow)
+				}
+			}
+		} else {
+			newRows = append(newRows, row)
+		}
+	}
+	rows = newRows
 
 	waitSpecImg.Add(1)
 	go func(rows [][]string) {
@@ -1428,24 +1458,25 @@ func LoadCommonResource() (common.IdList, error) {
 				common.RandomSleep(0, lenSpecs/8)
 				specReqTmp := TbSpecReq{}
 				// 0	providerName
-				// 1	regionName
-				// 2	connectionName
-				// 3	cspSpecName
-				// 4	CostPerHour
-				// 5	evaluationScore01
-				// 6	evaluationScore02
-				// 7	evaluationScore03
-				// 8	evaluationScore04
-				// 9	evaluationScore05
-				// 10	evaluationScore06
-				// 11	evaluationScore07
-				// 12	evaluationScore08
-				// 13	evaluationScore09
-				// 14	evaluationScore10
-				// 15	rootDiskType
-				// 16	rootDiskSize
-				specReqTmp.ConnectionName = row[2]
-				specReqTmp.CspSpecName = row[3]
+				// 1	connectionName
+				// 2	cspSpecName
+				// 3	CostPerHour
+				// 4	evaluationScore01
+				// 5	evaluationScore02
+				// 6	evaluationScore03
+				// 7	evaluationScore04
+				// 8	evaluationScore05
+				// 9	evaluationScore06
+				// 10	evaluationScore07
+				// 11	evaluationScore08
+				// 12	evaluationScore09
+				// 13	evaluationScore10
+				// 14	rootDiskType
+				// 15	rootDiskSize
+
+				providerName := row[0]
+				specReqTmp.ConnectionName = row[1]
+				specReqTmp.CspSpecName = row[2]
 				// Give a name for spec object by combining ConnectionName and CspSpecName
 				// To avoid naming-rule violation, modify the string
 				specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
@@ -1464,30 +1495,30 @@ func LoadCommonResource() (common.IdList, error) {
 					// Even if error, do not return here to update information
 					// return err
 				}
+
 				specObjId := specReqTmp.Name
-
-				// Update registered Spec object with ProviderName
-				providerName := row[0]
-				// Update registered Spec object with RegionName
-				regionName := row[1]
-				rootDiskType := row[15]
-				rootDiskSize := row[16]
-
+				connection, err1 := common.GetConnConfig(specReqTmp.ConnectionName)
+				regionName := ""
+				if err1 != nil {
+					log.Error().Err(err1).Msg("")
+				} else {
+					regionName = connection.RegionName
+				}
+				rootDiskType := row[14]
+				rootDiskSize := row[15]
 				// Update registered Spec object with Cost info
-				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
+				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
 				if err2 != nil {
 					log.Error().Err(err2).Msg("")
 					// If already exist, error will occur. Even if error, do not return here to update information
 					// return err
 				}
-
-				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[5], " ", ""), 32)
+				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
 				if err2 != nil {
 					log.Error().Err(err2).Msg("")
 					// If already exist, error will occur. Even if error, do not return here to update information
 					// return err
 				}
-
 				specUpdateRequest :=
 					TbSpecInfo{
 						ProviderName:      providerName,
@@ -1538,6 +1569,26 @@ func LoadCommonResource() (common.IdList, error) {
 
 	rdr = csv.NewReader(bufio.NewReader(file))
 	rows, _ = rdr.ReadAll()
+
+	// expending rows with "all" connectionName into each region
+	// "all" means the values in the row are applicable to all connectionNames in a CSP
+	newRows = make([][]string, 0, len(rows))
+	for _, row := range rows {
+		if row[1] == "all" {
+			for _, connConfig := range connectionList.Connectionconfig {
+				if strings.EqualFold(connConfig.ProviderName, row[0]) {
+					newRow := make([]string, len(row))
+					copy(newRow, row)
+					newRow[1] = connConfig.ConfigName
+					newRows = append(newRows, newRow)
+					log.Info().Msgf("Expended row: %s", newRow)
+				}
+			}
+		} else {
+			newRows = append(newRows, row)
+		}
+	}
+	rows = newRows
 
 	waitSpecImg.Add(1)
 	go func(rows [][]string) {

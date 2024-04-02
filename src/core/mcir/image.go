@@ -524,7 +524,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("SQL: Update success")
+		log.Trace().Msg("SQL: Update success")
 	}
 
 	return toBeImage, nil
