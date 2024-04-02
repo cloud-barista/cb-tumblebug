@@ -1488,7 +1488,7 @@ func LoadCommonResource() (common.IdList, error) {
 				//common.PrintJsonPretty(specReqTmp)
 
 				// Register Spec object
-				_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp)
+				_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
 				if err1 != nil {
 					log.Error().Err(err1).Msg("")
 					// If already exist, error will occur
@@ -1542,15 +1542,15 @@ func LoadCommonResource() (common.IdList, error) {
 				regiesteredStatus = ""
 				if updatedSpecInfo.Id != "" {
 					if err3 != nil {
-						regiesteredStatus = "  [Failed] " + err3.Error()
+						regiesteredStatus += "  [Failed] " + err3.Error()
 					}
 				} else {
 					if err1 != nil {
-						regiesteredStatus = "  [Failed] " + err1.Error()
+						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else if err2 != nil {
-						regiesteredStatus = "  [Failed] " + err2.Error()
+						regiesteredStatus += "  [Failed] " + err2.Error()
 					} else if err3 != nil {
-						regiesteredStatus = "  [Failed] " + err3.Error()
+						regiesteredStatus += "  [Failed] " + err3.Error()
 					}
 				}
 				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrSpec+": "+specObjId+regiesteredStatus)
@@ -1620,7 +1620,7 @@ func LoadCommonResource() (common.IdList, error) {
 				//common.PrintJsonPretty(imageReqTmp)
 
 				// Register Spec object
-				_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp)
+				_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp, true)
 				if err1 != nil {
 					log.Error().Err(err1).Msg("")
 					// If already exist, error will occur
@@ -1643,13 +1643,13 @@ func LoadCommonResource() (common.IdList, error) {
 				regiesteredStatus = ""
 				if updatedImageInfo.Id != "" {
 					if err2 != nil {
-						regiesteredStatus = "  [Failed] " + err2.Error()
+						regiesteredStatus += "  [Failed] " + err2.Error()
 					}
 				} else {
 					if err1 != nil {
-						regiesteredStatus = "  [Failed] " + err1.Error()
+						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else if err2 != nil {
-						regiesteredStatus = "  [Failed] " + err2.Error()
+						regiesteredStatus += "  [Failed] " + err2.Error()
 					}
 				}
 				//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)

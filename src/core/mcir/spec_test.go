@@ -70,7 +70,7 @@ func TestSpec(t *testing.T) {
 	specReq := TbSpecInfo{}
 	specReq.Name = specName
 
-	result, _ := RegisterSpecWithInfo(nsName, &specReq)
+	result, _ := RegisterSpecWithInfo(nsName, &specReq, false)
 	resultJSON, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Println("result: " + string(resultJSON))
 	assert.Equal(t, specName, result.Name, "CreateSpec 기대값과 결과값이 다릅니다.")

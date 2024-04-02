@@ -117,7 +117,7 @@ func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInf
 }
 
 // RegisterImageWithId accepts image creation request, creates and returns an TB image object
-func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
+func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, error) {
 
 	resourceType := common.StrImage
 
@@ -143,10 +143,12 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
-	if check {
-		temp := TbImageInfo{}
-		err := fmt.Errorf("The image " + u.Name + " already exists.")
-		return temp, err
+	if !update {
+		if check {
+			temp := TbImageInfo{}
+			err := fmt.Errorf("The image " + u.Name + " already exists.")
+			return temp, err
+		}
 	}
 
 	if err != nil {
@@ -198,7 +200,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 }
 
 // RegisterImageWithInfo accepts image creation request, creates and returns an TB image object
-func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, error) {
+func RegisterImageWithInfo(nsId string, content *TbImageInfo, update bool) (TbImageInfo, error) {
 
 	resourceType := common.StrImage
 
@@ -214,9 +216,11 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	}
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
-	if check {
-		err := fmt.Errorf("The image " + content.Name + " already exists.")
-		return TbImageInfo{}, err
+	if !update {
+		if check {
+			err := fmt.Errorf("The image " + content.Name + " already exists.")
+			return TbImageInfo{}, err
+		}
 	}
 
 	if err != nil {
@@ -389,7 +393,7 @@ func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, 
 			tumblebugImage.Name = tumblebugImageId
 			tumblebugImage.ConnectionName = connConfig
 
-			_, err := RegisterImageWithInfo(nsId, &tumblebugImage)
+			_, err := RegisterImageWithInfo(nsId, &tumblebugImage, true)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return 0, err

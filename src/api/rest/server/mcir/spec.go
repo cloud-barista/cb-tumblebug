@@ -17,6 +17,7 @@ package mcir
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -34,6 +35,7 @@ import (
 // @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
 // @Param specInfo body mcir.TbSpecInfo false "Details for an spec object"
 // @Param specName body mcir.TbSpecReq false "name, connectionName and cspSpecName"
+// @Param update query boolean false "Force update to existing spec object" default(false)
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -46,6 +48,11 @@ func RestPostSpec(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
+	updateStr := c.QueryParam("update")
+	update, err := strconv.ParseBool(updateStr)
+	if err != nil {
+		update = false
+	}
 	log.Debug().Msg("[POST Spec] (action: " + action + ")")
 
 	if action == "registerWithInfo" { // `RegisterSpecWithInfo` will be deprecated in Cappuccino.
@@ -54,7 +61,7 @@ func RestPostSpec(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
-		content, err := mcir.RegisterSpecWithInfo(nsId, u)
+		content, err := mcir.RegisterSpecWithInfo(nsId, u, update)
 		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} else { // if action == "registerWithCspSpecName" { // The default mode.
@@ -63,7 +70,7 @@ func RestPostSpec(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
-		content, err := mcir.RegisterSpecWithCspSpecName(nsId, u)
+		content, err := mcir.RegisterSpecWithCspSpecName(nsId, u, update)
 		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} /* else {

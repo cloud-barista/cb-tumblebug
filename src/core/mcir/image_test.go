@@ -70,7 +70,7 @@ func TestImage(t *testing.T) {
 	imageReq := TbImageInfo{}
 	imageReq.Name = imageName
 
-	result, _ := RegisterImageWithInfo(nsName, &imageReq)
+	result, _ := RegisterImageWithInfo(nsName, &imageReq, false)
 	resultJSON, _ := json.MarshalIndent(result, "", "  ")
 	log.Debug().Msg("result: " + string(resultJSON))
 	assert.Equal(t, imageName, result.Name, "CreateImage 기대값과 결과값이 다릅니다.")

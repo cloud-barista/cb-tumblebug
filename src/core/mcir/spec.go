@@ -304,7 +304,7 @@ func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, er
 			tumblebugSpec.Name = tumblebugSpecId
 			tumblebugSpec.ConnectionName = connConfig
 
-			_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec)
+			_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec, true)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return 0, err
@@ -339,7 +339,7 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 }
 
 // RegisterSpecWithCspSpecName accepts spec creation request, creates and returns an TB spec object
-func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) {
+func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpecInfo, error) {
 
 	resourceType := common.StrSpec
 
@@ -371,10 +371,12 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 		return temp, err
 	}
 
-	if check {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("The spec " + u.Name + " already exists.")
-		return temp, err
+	if !update {
+		if check {
+			temp := TbSpecInfo{}
+			err := fmt.Errorf("The spec " + u.Name + " already exists.")
+			return temp, err
+		}
 	}
 
 	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
@@ -427,7 +429,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 }
 
 // RegisterSpecWithInfo accepts spec creation request, creates and returns an TB spec object
-func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) {
+func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpecInfo, error) {
 
 	resourceType := common.StrSpec
 
@@ -451,10 +453,12 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 		return temp, err
 	}
 
-	if check {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("The spec " + content.Name + " already exists.")
-		return temp, err
+	if !update {
+		if check {
+			temp := TbSpecInfo{}
+			err := fmt.Errorf("The spec " + content.Name + " already exists.")
+			return temp, err
+		}
 	}
 
 	content.Namespace = nsId

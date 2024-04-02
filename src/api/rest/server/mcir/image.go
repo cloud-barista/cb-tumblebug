@@ -17,6 +17,7 @@ package mcir
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -34,6 +35,7 @@ import (
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param imageInfo body mcir.TbImageInfo false "Details for an image object"
 // @Param imageId body mcir.TbImageReq false "name, connectionName and cspImageId"
+// @Param update query boolean false "Force update to existing image object" default(false)
 // @Success 200 {object} mcir.TbImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -46,6 +48,12 @@ func RestPostImage(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
+	updateStr := c.QueryParam("update")
+	update, err := strconv.ParseBool(updateStr)
+	if err != nil {
+		update = false
+	}
+
 	log.Debug().Msg("[POST Image] (action: " + action + ")")
 	/*
 		if action == "create" {
@@ -60,7 +68,7 @@ func RestPostImage(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
-		content, err := mcir.RegisterImageWithInfo(nsId, u)
+		content, err := mcir.RegisterImageWithInfo(nsId, u, update)
 		return common.EndRequestWithLog(c, reqID, err, content)
 	} else if action == "registerWithId" {
 		log.Debug().Msg("[Registering Image with ID]")
@@ -68,7 +76,7 @@ func RestPostImage(c echo.Context) error {
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
 		}
-		content, err := mcir.RegisterImageWithId(nsId, u)
+		content, err := mcir.RegisterImageWithId(nsId, u, update)
 		return common.EndRequestWithLog(c, reqID, err, content)
 	} else {
 		err := fmt.Errorf("You must specify: action=registerWithInfo or action=registerWithId")
