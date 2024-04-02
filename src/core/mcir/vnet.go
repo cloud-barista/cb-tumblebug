@@ -151,7 +151,7 @@ type BastionNode struct {
 
 // CreateVNet accepts vNet creation request, creates and returns an TB vNet object
 func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
-	fmt.Println("=========================== CreateVNet")
+	log.Info().Msg("CreateVNet")
 	temp := TbVNetInfo{}
 	resourceType := common.StrVNet
 
@@ -288,9 +288,6 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	result := TbVNetInfo{}
 	err = json.Unmarshal([]byte(keyValue.Value), &result)

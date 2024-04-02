@@ -248,7 +248,6 @@ func RunServer(port string) {
 		}))
 	}
 
-	fmt.Println("\n \n ")
 	fmt.Printf(banner)
 	fmt.Println("\n ")
 	fmt.Printf(infoColor, website)
@@ -544,7 +543,7 @@ func RunServer(port string) {
 		// Block until a signal is triggered
 		<-gracefulShutdownContext.Done()
 
-		fmt.Println("\n[Stop] CB-Tumblebug REST Server")
+		log.Info().Msg("[Stop] CB-Tumblebug REST Server")
 		ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 		defer cancel()
 

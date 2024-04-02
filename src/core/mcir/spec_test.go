@@ -21,6 +21,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,28 +41,28 @@ func TestSpec(t *testing.T) {
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Namespace created successfully")
+		log.Debug().Msg("Namespace created successfully")
 	}
 
 	err = common.OpenSQL("../../../meta_db/dat/tb-unit-test.s3db")
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Database access info set successfully")
+		log.Debug().Msg("Database access info set successfully")
 	}
 
 	err = common.SelectDatabase("tb-unit-test")
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("DB selected successfully..")
+		log.Debug().Msg("DB selected successfully..")
 	}
 
 	// err = common.CreateSpecTable()
 	// if err != nil {
 	// 	fmt.Println(err.Error())
 	// } else {
-	// 	fmt.Println("Table spec created successfully..")
+	// 	log.Debug().Msg("Table spec created successfully..")
 	// }
 
 	specName := "tb-unit-test"
@@ -89,7 +90,7 @@ func TestSpec(t *testing.T) {
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Namespace deleted successfully")
+		log.Debug().Msg("Namespace deleted successfully")
 	}
 
 }

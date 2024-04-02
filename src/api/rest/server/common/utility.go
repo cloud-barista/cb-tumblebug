@@ -26,6 +26,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	"github.com/rs/zerolog/log"
 )
 
 var validate *validator.Validate
@@ -247,13 +248,10 @@ type ObjectList struct {
 // @Router /objects [get]
 func RestGetObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
-	fmt.Printf("[Get Tumblebug Object List] with Key: %s \n", parentKey)
-
 	content := common.GetObjectList(parentKey)
 
 	objectList := ObjectList{}
-	for i, v := range content {
-		fmt.Printf("[Obj: %d] %s \n", i, v)
+	for _, v := range content {
 		objectList.Object = append(objectList.Object, v)
 	}
 	return c.JSON(http.StatusOK, &objectList)
@@ -273,7 +271,7 @@ func RestGetObjects(c echo.Context) error {
 // @Router /object [get]
 func RestGetObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
-	fmt.Printf("[Get Tumblebug Object Value] with Key: %s \n", parentKey)
+	log.Debug().Msgf("[Get Tumblebug Object Value] with Key: %s ", parentKey)
 
 	content, err := common.GetObjectValue(parentKey)
 	if err != nil || content == "" {
@@ -300,7 +298,7 @@ func RestGetObject(c echo.Context) error {
 // @Router /object [delete]
 func RestDeleteObject(c echo.Context) error {
 	parentKey := c.QueryParam("key")
-	fmt.Printf("[Delete Tumblebug Object] with Key: %s \n", parentKey)
+	log.Debug().Msgf("[Delete Tumblebug Object Value] with Key: %s", parentKey)
 
 	content, err := common.GetObjectValue(parentKey)
 	if err != nil || content == "" {
@@ -329,7 +327,7 @@ func RestDeleteObject(c echo.Context) error {
 // @Router /objects [delete]
 func RestDeleteObjects(c echo.Context) error {
 	parentKey := c.QueryParam("key")
-	fmt.Printf("[Delete Tumblebug child Objects] with Key: %s \n", parentKey)
+	log.Debug().Msgf("[Delete Tumblebug child Object Value] with Key: %s", parentKey)
 
 	err := common.DeleteObjects(parentKey)
 	if err != nil {
@@ -366,7 +364,8 @@ func RestInspectResources(c echo.Context) error {
 		return err
 	}
 
-	fmt.Printf("[List Resource Status: %s] \n", u.ResourceType)
+	log.Debug().Msgf("[List Resource Status: %s]", u.ResourceType)
+
 	var content interface{}
 	var err error
 	// if u.Type == common.StrVNet || u.Type == common.StrSecurityGroup || u.Type == common.StrSSHKey {
@@ -491,7 +490,7 @@ func RestForwardAnyReqToAny(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Printf("reqPath: %s\n", reqPath)
+	log.Info().Msgf("reqPath: %s", reqPath)
 
 	method := "GET"
 	var requestBody interface{}

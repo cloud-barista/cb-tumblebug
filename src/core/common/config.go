@@ -214,25 +214,25 @@ func UpdateGlobalVariable(id string) error {
 	switch id {
 	case StrSpiderRestUrl:
 		SpiderRestUrl = configInfo.Value
-		fmt.Println("<SPIDER_REST_URL> " + SpiderRestUrl)
+		log.Debug().Msg("<SPIDER_REST_URL> " + SpiderRestUrl)
 	case StrDragonflyRestUrl:
 		DragonflyRestUrl = configInfo.Value
-		fmt.Println("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+		log.Debug().Msg("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
 	case StrDBUrl:
 		DBUrl = configInfo.Value
-		fmt.Println("<DB_URL> " + DBUrl)
+		log.Debug().Msg("<DB_URL> " + DBUrl)
 	case StrDBDatabase:
 		DBDatabase = configInfo.Value
-		fmt.Println("<DB_DATABASE> " + DBDatabase)
+		log.Debug().Msg("<DB_DATABASE> " + DBDatabase)
 	case StrDBUser:
 		DBUser = configInfo.Value
-		fmt.Println("<DB_USER> " + DBUser)
+		log.Debug().Msg("<DB_USER> " + DBUser)
 	case StrDBPassword:
 		DBPassword = configInfo.Value
-		fmt.Println("<DB_PASSWORD> " + DBPassword)
+		log.Debug().Msg("<DB_PASSWORD> " + DBPassword)
 	case StrAutocontrolDurationMs:
 		AutocontrolDurationMs = configInfo.Value
-		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
+		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
 	default:
 
 	}
@@ -245,25 +245,25 @@ func InitConfig(id string) error {
 	switch id {
 	case StrSpiderRestUrl:
 		SpiderRestUrl = NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-		fmt.Println("<SPIDER_REST_URL> " + SpiderRestUrl)
+		log.Debug().Msg("<SPIDER_REST_URL> " + SpiderRestUrl)
 	case StrDragonflyRestUrl:
 		DragonflyRestUrl = NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-		fmt.Println("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+		log.Debug().Msg("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
 	case StrDBUrl:
 		DBUrl = NVL(os.Getenv("DB_URL"), "localhost:3306")
-		fmt.Println("<DB_URL> " + DBUrl)
+		log.Debug().Msg("<DB_URL> " + DBUrl)
 	case StrDBDatabase:
 		DBDatabase = NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-		fmt.Println("<DB_DATABASE> " + DBDatabase)
+		log.Debug().Msg("<DB_DATABASE> " + DBDatabase)
 	case StrDBUser:
 		DBUser = NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-		fmt.Println("<DB_USER> " + DBUser)
+		log.Debug().Msg("<DB_USER> " + DBUser)
 	case StrDBPassword:
 		DBPassword = NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-		fmt.Println("<DB_PASSWORD> " + DBPassword)
+		log.Debug().Msg("<DB_PASSWORD> " + DBPassword)
 	case StrAutocontrolDurationMs:
 		AutocontrolDurationMs = NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
-		fmt.Println("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
+		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
 	default:
 
 	}
@@ -271,7 +271,7 @@ func InitConfig(id string) error {
 	check, err := CheckConfig(id)
 
 	if check && err == nil {
-		fmt.Println("[Init config] " + id)
+		log.Debug().Msg("[Init config] " + id)
 		key := "/config/" + id
 
 		CBStore.Delete(key)
@@ -309,7 +309,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 		return res, err
 	}
 
-	fmt.Println("<" + keyValue.Key + "> " + keyValue.Value)
+	log.Debug().Msg("<" + keyValue.Key + "> " + keyValue.Value)
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
@@ -320,9 +320,9 @@ func GetConfig(id string) (ConfigInfo, error) {
 }
 
 func ListConfig() ([]ConfigInfo, error) {
-	fmt.Println("[List config]")
+	log.Debug().Msg("[List config]")
 	key := "/config"
-	fmt.Println(key)
+	log.Debug().Msg(key)
 
 	keyValue, err := CBStore.GetList(key, true)
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
@@ -350,9 +350,9 @@ func ListConfig() ([]ConfigInfo, error) {
 
 func ListConfigId() []string {
 
-	fmt.Println("[List config]")
+	log.Debug().Msg("[List config]")
 	key := "/config"
-	fmt.Println(key)
+	log.Debug().Msg(key)
 
 	keyValue, _ := CBStore.GetList(key, true)
 
@@ -363,7 +363,7 @@ func ListConfigId() []string {
 	for _, v := range configList {
 		fmt.Println("<" + v + "> \n")
 	}
-	fmt.Println("===============================================")
+
 	return configList
 
 }
@@ -373,7 +373,7 @@ func DelAllConfig() error {
 	fmt.Printf("DelAllConfig() called;")
 
 	key := "/config"
-	fmt.Println(key)
+	log.Debug().Msg(key)
 	keyValue, _ := CBStore.GetList(key, true)
 
 	if len(keyValue) == 0 {
@@ -391,10 +391,7 @@ func DelAllConfig() error {
 */
 
 func InitAllConfig() error {
-	fmt.Printf("InitAllConfig() called;")
-
 	configIdList := ListConfigId()
-
 	for _, v := range configIdList {
 		InitConfig(v)
 	}

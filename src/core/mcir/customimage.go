@@ -134,7 +134,7 @@ func RegisterCustomImageWithInfo(nsId string, content TbCustomImageInfo) (TbCust
 	content.Id = content.Name
 	content.AssociatedObjectList = []string{}
 
-	fmt.Println("=========================== POST registerCustomImage")
+	log.Info().Msg("POST registerCustomImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -142,19 +142,13 @@ func RegisterCustomImageWithInfo(nsId string, content TbCustomImageInfo) (TbCust
 		log.Error().Err(err).Msg("")
 		return TbCustomImageInfo{}, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		fmt.Println("In RegisterCustomImageWithInfo(); CBStore.Get() returned error.")
-	}
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(content)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Data inserted successfully..")
+		log.Info().Msg("SQL: Insert success")
 	}
 
 	return content, nil
@@ -246,7 +240,7 @@ func RegisterCustomImageWithId(nsId string, u *TbCustomImageReq) (TbCustomImageI
 	if err != nil {
 
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return TbCustomImageInfo{}, err
 		}
 

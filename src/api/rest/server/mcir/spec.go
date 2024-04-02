@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // RestPostSpec godoc
@@ -45,10 +46,10 @@ func RestPostSpec(c echo.Context) error {
 	nsId := c.Param("nsId")
 
 	action := c.QueryParam("action")
-	fmt.Println("[POST Spec] (action: " + action + ")")
+	log.Debug().Msg("[POST Spec] (action: " + action + ")")
 
 	if action == "registerWithInfo" { // `RegisterSpecWithInfo` will be deprecated in Cappuccino.
-		fmt.Println("[Registering Spec with info]")
+		log.Debug().Msg("[Registering Spec with info]")
 		u := &mcir.TbSpecInfo{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
@@ -57,7 +58,7 @@ func RestPostSpec(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, content)
 
 	} else { // if action == "registerWithCspSpecName" { // The default mode.
-		fmt.Println("[Registering Spec with CspSpecName]")
+		log.Debug().Msg("[Registering Spec with CspSpecName]")
 		u := &mcir.TbSpecReq{}
 		if err := c.Bind(u); err != nil {
 			return common.EndRequestWithLog(c, reqID, err, nil)
@@ -156,7 +157,7 @@ func RestLookupSpecList(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Lookup specs]")
+	log.Debug().Msg("[Lookup specs]")
 	content, err := mcir.LookupSpecList(u.ConnectionName)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
@@ -235,7 +236,7 @@ func RestFilterSpecs(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Filter specs]")
+	log.Debug().Msg("[Filter specs]")
 	content, err := mcir.FilterSpecs(nsId, *u)
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
@@ -266,7 +267,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Filter specs]")
+	log.Debug().Msg("[Filter specs]")
 	content, err := mcir.FilterSpecsByRange(nsId, *u)
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
@@ -285,7 +286,7 @@ func RestTestSortSpecs(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	fmt.Println("[Filter specs]")
+	log.Debug().Msg("[Filter specs]")
 	content, err := mcir.FilterSpecs(nsId, *u)
 
 	if err != nil {

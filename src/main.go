@@ -135,7 +135,6 @@ func setConfig() {
 
 // @securityDefinitions.basic BasicAuth
 func main() {
-	fmt.Println("")
 
 	// giving a default value of "1323"
 	port := flag.String("port", "1323", "port number for the restapiserver to listen to")
@@ -167,8 +166,8 @@ func main() {
 	common.AutocontrolDurationMs = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
 
 	// load the latest configuration from DB (if exist)
-	fmt.Println("")
-	fmt.Println("[Update system environment]")
+
+	log.Info().Msg("[Update system environment]")
 	common.UpdateGlobalVariable(common.StrDragonflyRestUrl)
 	common.UpdateGlobalVariable(common.StrSpiderRestUrl)
 	common.UpdateGlobalVariable(common.StrAutocontrolDurationMs)
@@ -177,8 +176,8 @@ func main() {
 	//masterConfigInfos = confighandler.GetMasterConfigInfos()
 
 	//Setup database (meta_db/dat/cbtumblebug.s3db)
-	fmt.Println("")
-	fmt.Println("[Setup SQL Database]")
+
+	log.Info().Msg("[Setup SQL Database]")
 
 	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
 	if err != nil {
@@ -195,15 +194,6 @@ func main() {
 	//common.ORM.SetMapper(names.SameMapper{})
 	common.ORM.SetTableMapper(names.SameMapper{})
 	common.ORM.SetColumnMapper(names.SameMapper{})
-
-	/* // Required if using MySQL // Not required if using SQLite
-	err = common.SelectDatabase(common.DB_DATABASE)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("DB selected successfully..")
-	}
-	*/
 
 	// "CREATE Table IF NOT EXISTS spec(...)"
 	//err = common.CreateSpecTable() // commented out to move to use XORM
@@ -233,8 +223,8 @@ func main() {
 	//defer db.Close()
 
 	//Ticker for MCIS Orchestration Policy
-	fmt.Println("")
-	fmt.Println("[Initiate Multi-Cloud Orchestration]")
+
+	log.Info().Msg("[Initiate Multi-Cloud Orchestration]")
 
 	autoControlDuration, _ := strconv.Atoi(common.AutocontrolDurationMs) //ms
 	ticker := time.NewTicker(time.Millisecond * time.Duration(autoControlDuration))

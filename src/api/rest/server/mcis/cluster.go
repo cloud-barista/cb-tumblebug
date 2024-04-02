@@ -15,7 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -48,7 +47,7 @@ func RestPostCluster(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[POST Cluster]")
+	log.Debug().Msg("[POST Cluster]")
 
 	content, err := mcis.CreateCluster(nsId, u, optionFlag)
 
@@ -107,7 +106,7 @@ func RestPostNodeGroup(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[POST NodeGroup]")
+	log.Debug().Msg("[POST NodeGroup]")
 
 	content, err := mcis.AddNodeGroup(nsId, clusterId, u)
 
@@ -181,7 +180,7 @@ func RestPutSetAutoscaling(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[PUT Set AutoScaling]")
+	log.Debug().Msg("[PUT Set AutoScaling]")
 
 	content, err := mcis.SetAutoscaling(nsId, clusterId, nodeGroupName, u)
 
@@ -218,7 +217,7 @@ func RestPutChangeAutoscaleSize(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[PUT Change AutoScale Size]")
+	log.Debug().Msg("[PUT Change AutoScale Size]")
 
 	content, err := mcis.ChangeAutoscaleSize(nsId, clusterId, nodeGroupName, u)
 
@@ -396,7 +395,7 @@ func RestPutUpgradeCluster(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println("[PUT Upgrade Cluster]")
+	log.Debug().Msg("[PUT Upgrade Cluster]")
 
 	content, err := mcis.UpgradeCluster(nsId, clusterId, u)
 

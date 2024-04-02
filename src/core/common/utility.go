@@ -352,8 +352,6 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 
 	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
 
-	//fmt.Printf("[GetCloudLocation] KEY: %+v\n", key)
-
 	keyValue, err := CBStore.Get(key)
 
 	if err != nil {
@@ -371,7 +369,7 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 
 		rdr := csv.NewReader(bufio.NewReader(file))
 		rows, _ := rdr.ReadAll()
-		for i, row := range rows {
+		for i, _ := range rows {
 			keyLoc := "/cloudtype/" + rows[i][0] + "/region/" + rows[i][1]
 			location.CloudType = rows[i][0]
 			location.NativeRegion = rows[i][1]
@@ -384,10 +382,6 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 				log.Error().Err(dbErr).Msg("")
 				return location
 			}
-			for j := range row {
-				fmt.Printf("%s ", rows[i][j])
-			}
-			fmt.Println()
 		}
 		keyValue, err = CBStore.Get(key)
 		if err != nil {
@@ -397,7 +391,6 @@ func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
 	}
 
 	if keyValue != nil {
-		//fmt.Printf("[GetCloudLocation] %+v %+v\n", keyValue.Key, keyValue.Value)
 		err = json.Unmarshal([]byte(keyValue.Value), &location)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -732,7 +725,7 @@ func GetChildIdList(key string) []string {
 	for _, v := range childIdList {
 		fmt.Println("<" + v + "> \n")
 	}
-	fmt.Println("===============================================")
+
 	return childIdList
 
 }
@@ -747,7 +740,6 @@ func GetObjectList(key string) []string {
 		childIdList = append(childIdList, v.Key)
 	}
 
-	fmt.Println("===============================================")
 	return childIdList
 
 }

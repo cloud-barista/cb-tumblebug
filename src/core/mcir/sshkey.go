@@ -120,7 +120,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 		for _, err := range errs {
 			if err != nil {
 				if _, ok := err.(*validator.InvalidValidationError); ok {
-					fmt.Println(err)
+					log.Err(err).Msg("")
 					return emptyObj, err
 				}
 				return emptyObj, err
@@ -131,7 +131,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -228,7 +228,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	}
 
 	// cb-store
-	fmt.Println("=========================== PUT CreateSshKey")
+	log.Info().Msg("PUT CreateSshKey")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -289,7 +289,7 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (Tb
 	err = json.Unmarshal(toBeSshKeyJSON, &toBeSshKey)
 
 	// cb-store
-	fmt.Println("=========================== PUT UpdateSshKey")
+	log.Info().Msg("PUT UpdateSshKey")
 	Key := common.GenResourceKey(nsId, resourceType, toBeSshKey.Id)
 	Val, _ := json.Marshal(toBeSshKey)
 	err = common.CBStore.Put(Key, string(Val))
@@ -306,7 +306,6 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (Tb
 	}
 
 	fmt.Printf("<%s> \n %s \n", keyValue.Key, keyValue.Value)
-	fmt.Println("===========================")
 
 	return toBeSshKey, nil
 }

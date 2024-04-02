@@ -151,7 +151,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		if err != nil {
 			temp := TbSecurityGroupInfo{}
 			if _, ok := err.(*validator.InvalidValidationError); ok {
-				fmt.Println(err)
+				log.Err(err).Msg("")
 				return temp, err
 			}
 			return temp, err
@@ -161,7 +161,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	err = validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			temp := TbSecurityGroupInfo{}
 			return temp, err
 		}
@@ -321,7 +321,7 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 	}
 
 	// cb-store
-	fmt.Println("=========================== PUT CreateSecurityGroup")
+	log.Info().Msg("PUT CreateSecurityGroup")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -330,15 +330,5 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		return content, err
 	}
 
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CreateSecurityGroup(); CBStore.Get() returned an error.")
-		log.Error().Err(err).Msg("")
-		// return nil, err
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 	return content, nil
 }

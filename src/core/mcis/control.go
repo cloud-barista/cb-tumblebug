@@ -73,9 +73,9 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 		return err.Error(), err
 	}
 
-	fmt.Println("[Get MCIS requested action: " + action)
+	log.Debug().Msg("[Get MCIS requested action: " + action)
 	if action == "suspend" {
-		fmt.Println("[suspend MCIS]")
+		log.Debug().Msg("[suspend MCIS]")
 
 		err := ControlMcisAsync(nsId, mcisId, ActionSuspend, force)
 		if err != nil {
@@ -85,7 +85,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 		return "Suspending the MCIS", nil
 
 	} else if action == "resume" {
-		fmt.Println("[resume MCIS]")
+		log.Debug().Msg("[resume MCIS]")
 
 		err := ControlMcisAsync(nsId, mcisId, ActionResume, force)
 		if err != nil {
@@ -95,7 +95,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 		return "Resuming the MCIS", nil
 
 	} else if action == "reboot" {
-		fmt.Println("[reboot MCIS]")
+		log.Debug().Msg("[reboot MCIS]")
 
 		err := ControlMcisAsync(nsId, mcisId, ActionReboot, force)
 		if err != nil {
@@ -105,7 +105,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 		return "Rebooting the MCIS", nil
 
 	} else if action == "terminate" {
-		fmt.Println("[terminate MCIS]")
+		log.Debug().Msg("[terminate MCIS]")
 
 		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
@@ -125,7 +125,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 		return "Terminated the MCIS", nil
 
 	} else if action == "refine" { // refine delete VMs in StatusFailed or StatusUndefined
-		fmt.Println("[refine MCIS]")
+		log.Debug().Msg("[refine MCIS]")
 
 		vmList, err := ListVmId(nsId, mcisId)
 		if err != nil {
@@ -146,7 +146,7 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 		for _, v := range mcisStatus.Vm {
 
 			// Remove VMs in StatusFailed or StatusUndefined
-			fmt.Println("[vmInfo.Status]", v.Status)
+			log.Debug().Msgf("[vmInfo.Status] %v", v.Status)
 			if v.Status == StatusFailed || v.Status == StatusUndefined {
 				// Delete VM sequentially for safety (for performance, need to use goroutine)
 				err := DelMcisVm(nsId, mcisId, v.Id, "force")
@@ -191,7 +191,7 @@ func HandleMcisVmAction(nsId string, mcisId string, vmId string, action string, 
 		return err.Error(), err
 	}
 
-	fmt.Println("[VM action: " + action)
+	log.Debug().Msg("[VM action: " + action)
 
 	mcis, err := GetMcisStatus(nsId, mcisId)
 	if err != nil {
@@ -357,24 +357,25 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	temp := TbVmInfo{}
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	fmt.Println("[ControlVmAsync] " + key)
+	log.Debug().Msg("[ControlVmAsync] " + key)
 
 	keyValue, err := common.CBStore.Get(key)
 
 	if keyValue == nil || err != nil {
 		callResult.Error = fmt.Errorf("CBStoreGetErr in ControlVmAsync. key[" + key + "]")
-		common.PrintJsonPretty(callResult)
+		log.Fatal().Err(callResult.Error).Msg("Error in ControlVmAsync")
+
 		results <- callResult
 		return
 	} else {
 
 		unmarshalErr := json.Unmarshal([]byte(keyValue.Value), &temp)
 		if unmarshalErr != nil {
-			fmt.Println("Unmarshal error:", unmarshalErr)
+			log.Fatal().Err(unmarshalErr).Msg("Unmarshal error")
 		}
 
 		cspVmId := temp.CspViewVmDetail.IId.NameId
-		common.PrintJsonPretty(temp.CspViewVmDetail)
+		//common.PrintJsonPretty(temp.CspViewVmDetail)
 
 		// Prevent malformed cspVmId
 		if cspVmId == "" || common.CheckString(cspVmId) != nil {

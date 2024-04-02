@@ -14,7 +14,7 @@ func Zerologger() echo.MiddlewareFunc {
 		LogHost:          true,
 		LogMethod:        true,
 		LogURI:           true,
-		LogUserAgent:     true,
+		LogUserAgent:     false,
 		LogStatus:        true,
 		LogLatency:       true,
 		LogContentLength: true,
@@ -24,13 +24,13 @@ func Zerologger() echo.MiddlewareFunc {
 			if v.Error == nil {
 				log.Info().
 					Str("id", v.RequestID).
-					Str("remote_ip", v.RemoteIP).
-					Str("host", v.Host).
+					Str("client_ip", v.RemoteIP).
+					//Str("host", v.Host).
 					Str("method", v.Method).
 					Str("URI", v.URI).
-					Str("user_agent", v.UserAgent).
+					//Str("user_agent", v.UserAgent).
 					Int("status", v.Status).
-					Int64("latency", v.Latency.Nanoseconds()).
+					//Int64("latency", v.Latency.Nanoseconds()).
 					Str("latency_human", v.Latency.String()).
 					Str("bytes_in", v.ContentLength).
 					Int64("bytes_out", v.ResponseSize).
@@ -43,7 +43,7 @@ func Zerologger() echo.MiddlewareFunc {
 					Str("host", v.Host).
 					Str("method", v.Method).
 					Str("URI", v.URI).
-					Str("user_agent", v.UserAgent).
+					//Str("user_agent", v.UserAgent).
 					Int("status", v.Status).
 					Int64("latency", v.Latency.Nanoseconds()).
 					Str("latency_human", v.Latency.String()).

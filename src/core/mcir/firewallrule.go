@@ -51,7 +51,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		if err != nil {
 
 			if _, ok := err.(*validator.InvalidValidationError); ok {
-				fmt.Println(err)
+				log.Err(err).Msg("")
 				temp := TbSecurityGroupInfo{}
 				return temp, err
 			}
@@ -143,7 +143,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	}
 
 	// cb-store
-	fmt.Println("=========================== POST CreateFirewallRule")
+	log.Info().Msg("POST CreateFirewallRule")
 
 	newSecurityGroup := TbSecurityGroupInfo{}
 	newSecurityGroup = oldSecurityGroup
@@ -162,8 +162,8 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	// securityGroupKey := common.GenResourceKey(nsId, common.StrSecurityGroup, securityGroupId)
 	// keyValue, _ := common.CBStore.Get(securityGroupKey)
-	// fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	// fmt.Println("===========================")
+	//
+	//
 	// content := TbSecurityGroupInfo{}
 	// err = json.Unmarshal([]byte(keyValue.Value), &content)
 	// if err != nil {
@@ -196,7 +196,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		if err != nil {
 
 			if _, ok := err.(*validator.InvalidValidationError); ok {
-				fmt.Println(err)
+				log.Err(err).Msg("")
 				temp := TbSecurityGroupInfo{}
 				return temp, err
 			}
@@ -342,7 +342,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
 
 	// cb-store
-	fmt.Println("=========================== DELETE FirewallRule")
+	log.Info().Msg("DELETE FirewallRule")
 
 	newSecurityGroup := TbSecurityGroupInfo{}
 	newSecurityGroup = oldSecurityGroup
@@ -360,8 +360,8 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	// securityGroupKey := common.GenResourceKey(nsId, common.StrSecurityGroup, securityGroupId)
 	// keyValue, _ := common.CBStore.Get(securityGroupKey)
-	// fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	// fmt.Println("===========================")
+	//
+	//
 	// content := TbSecurityGroupInfo{}
 	// err = json.Unmarshal([]byte(keyValue.Value), &content)
 	// if err != nil {

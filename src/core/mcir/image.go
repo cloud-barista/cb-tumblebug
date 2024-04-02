@@ -132,7 +132,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	if err != nil {
 
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Err(err).Msg("")
 			temp := TbImageInfo{}
 			return temp, err
 		}
@@ -177,7 +177,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 	content.AssociatedObjectList = []string{}
 
 	// cb-store
-	fmt.Println("=========================== PUT registerImage")
+	log.Info().Msg("PUT registerImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -185,19 +185,13 @@ func RegisterImageWithId(nsId string, u *TbImageReq) (TbImageInfo, error) {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		fmt.Println("In RegisterImageWithId(); CBStore.Get() returned error.")
-	}
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(&content)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Data inserted successfully..")
+		log.Info().Msg("SQL: Insert success")
 	}
 
 	return content, nil
@@ -235,7 +229,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 	content.Id = content.Name
 	content.AssociatedObjectList = []string{}
 
-	fmt.Println("=========================== PUT registerImage")
+	log.Info().Msg("PUT registerImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
@@ -243,19 +237,13 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo) (TbImageInfo, erro
 		log.Error().Err(err).Msg("")
 		return TbImageInfo{}, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		fmt.Println("In RegisterImageWithInfo(); CBStore.Get() returned error.")
-	}
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	// "INSERT INTO `image`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(content)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("Data inserted successfully..")
+		log.Info().Msg("SQL: Insert success")
 	}
 
 	return *content, nil
@@ -301,7 +289,7 @@ func LookupImageList(connConfig string) (SpiderImageList, error) {
 		return content, err
 	}
 
-	fmt.Println(string(resp.Body()))
+	log.Debug().Msg(string(resp.Body()))
 
 	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
@@ -355,7 +343,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		return content, err
 	}
 
-	fmt.Println(string(resp.Body()))
+	log.Debug().Msg(string(resp.Body()))
 
 	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
 	switch {
@@ -373,7 +361,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 
 // FetchImagesForAllConnConfigs gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
 func FetchImagesForConnConfig(connConfig string, nsId string) (imageCount uint, err error) {
-	fmt.Println("FetchImagesForConnConfig(" + connConfig + ")")
+	log.Debug().Msg("FetchImagesForConnConfig(" + connConfig + ")")
 
 	spiderImageList, err := LookupImageList(connConfig)
 	if err != nil {
@@ -522,8 +510,6 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 	toBeImageJSON, _ := json.Marshal(fieldsToUpdate)
 	err = json.Unmarshal(toBeImageJSON, &toBeImage)
 
-	// cb-store
-	fmt.Println("=========================== PUT UpdateImage")
 	Key := common.GenResourceKey(nsId, resourceType, toBeImage.Id)
 	Val, _ := json.Marshal(toBeImage)
 	err = common.CBStore.Put(Key, string(Val))
@@ -532,23 +518,13 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In UpdateImage(); CBStore.Get() returned an error.")
-		log.Error().Err(err).Msg("")
-		// return nil, err
-	}
-
-	fmt.Println("<" + keyValue.Key + "> \n" + keyValue.Value)
-	fmt.Println("===========================")
 
 	// "UPDATE `image` SET `id`='" + imageId + "', ... WHERE `namespace`='" + nsId + "' AND `id`='" + imageId + "';"
 	_, err = common.ORM.Update(&toBeImage, &TbImageInfo{Namespace: nsId, Id: imageId})
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Err(err).Msg("")
 	} else {
-		fmt.Println("SQL data updated successfully..")
+		log.Info().Msg("SQL: Update success")
 	}
 
 	return toBeImage, nil

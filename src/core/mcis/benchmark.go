@@ -150,7 +150,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
-			fmt.Println("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
+			log.Debug().Msg("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
 
 			hostTmp := BenchmarkReq{}
 			hostTmp.Host = vmIpTmp
@@ -164,7 +164,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 	req, err := http.NewRequest(method, url, strings.NewReader(string(payload)))
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
-		fmt.Println(err)
+		log.Err(err).Msg("")
 	}
 	errStr := ""
 	resultTmp := BenchmarkInfo{}
@@ -246,7 +246,7 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 	resultMap := make(map[string]SpecBenchmarkInfo)
 
 	for i, v := range allBenchCmd {
-		fmt.Println("[Benchmark] " + v)
+		log.Debug().Msg("[Benchmark] " + v)
 		content, err = BenchmarkAction(nsId, mcisId, v, option)
 		for _, k := range content.ResultArray {
 			SpecId := k.SpecId
@@ -325,7 +325,7 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 	cntTargetY := 1
 
 	action = "mrtt"
-	fmt.Println("[Benchmark] " + action)
+	log.Debug().Msg("[Benchmark] " + action)
 	content, err = BenchmarkAction(nsId, mcisId, action, option)
 	for _, k := range content.ResultArray {
 		SpecId := k.SpecId
@@ -462,7 +462,7 @@ func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 	cntTargetY := 1
 
 	action := "mrtt"
-	fmt.Println("[Benchmark] " + action)
+	log.Debug().Msg("[Benchmark] " + action)
 	content, err = BenchmarkAction(nsId, mcisId, action, option)
 	for _, k := range content.ResultArray {
 		SpecId := k.SpecId
@@ -581,7 +581,7 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 
 	target := host
 
-	fmt.Println("[Get MCIS benchmark action: " + action + target)
+	log.Debug().Msg("[Get MCIS benchmark action: " + action + target)
 
 	option := "localhost"
 	option = target
@@ -590,7 +590,7 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 
 	vaildActions := "install init cpus cpum memR memW fioR fioW dbR dbW rtt mrtt clean"
 
-	fmt.Println("[Benchmark] " + action)
+	log.Debug().Msg("[Benchmark] " + action)
 	if strings.Contains(vaildActions, action) {
 		content, err = BenchmarkAction(nsId, mcisId, action, option)
 	} else {

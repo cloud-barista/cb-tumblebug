@@ -143,7 +143,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	fmt.Println("key: " + key)
+	log.Debug().Msg("key: " + key)
 
 	keyValue, _ := common.CBStore.Get(key)
 	// In CheckResource() above, calling 'CBStore.Get()' and checking err parts exist.
@@ -187,7 +187,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		if err != nil {
 			fmt.Println(err.Error())
 		} else {
-			fmt.Println("Data deleted successfully..")
+			log.Debug().Msg("Data deleted successfully..")
 		}
 
 		return nil
@@ -214,7 +214,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
-				fmt.Println("Data deleted successfully..")
+				log.Debug().Msg("Data deleted successfully..")
 			}
 
 			return nil
@@ -242,7 +242,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		if err != nil {
 			fmt.Println(err.Error())
 		} else {
-			fmt.Println("Data deleted successfully..")
+			log.Debug().Msg("Data deleted successfully..")
 		}
 
 		return nil
@@ -346,7 +346,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		if err != nil {
 			fmt.Println(err.Error())
 		} else {
-			fmt.Println("Data deleted successfully..")
+			log.Debug().Msg("Data deleted successfully..")
 		}
 	}
 
@@ -415,10 +415,10 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 	}
 
 	parentResourceKey := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
-	fmt.Println("parentResourceKey: " + parentResourceKey)
+	log.Debug().Msg("parentResourceKey: " + parentResourceKey)
 
 	childResourceKey := common.GenChildResourceKey(nsId, resourceType, parentResourceId, resourceId)
-	fmt.Println("childResourceKey: " + childResourceKey)
+	log.Debug().Msg("childResourceKey: " + childResourceKey)
 
 	parentKeyValue, _ := common.CBStore.Get(parentResourceKey)
 
@@ -612,9 +612,9 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 		return nil, err
 	}
 
-	fmt.Println("[Get] " + resourceType + " list")
+	log.Debug().Msg("[Get] " + resourceType + " list")
 	key := "/ns/" + nsId + "/resources/" + resourceType
-	fmt.Println(key)
+	log.Debug().Msg(key)
 
 	keyValue, err := common.CBStore.GetList(key, true)
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
@@ -947,7 +947,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			return -1, err
 		}
 	*/
-	fmt.Println("[Set count] " + resourceType + ", " + resourceId)
+	log.Debug().Msg("[Set count] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
@@ -1051,7 +1051,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		return nil, err
 	}
 
-	fmt.Println("[Get resource] " + resourceType + ", " + resourceId)
+	log.Debug().Msg("[Get resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
@@ -1453,8 +1453,8 @@ func LoadCommonResource() (common.IdList, error) {
 
 				specReqTmp.Description = "Common Spec Resource"
 
-				fmt.Printf("[%d] Register Common Spec\n", i)
-				common.PrintJsonPretty(specReqTmp)
+				log.Info().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
+				//common.PrintJsonPretty(specReqTmp)
 
 				// Register Spec object
 				_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp)
@@ -1505,8 +1505,8 @@ func LoadCommonResource() (common.IdList, error) {
 					// Even if error, do not return here to update information
 					// return err
 				}
-				fmt.Printf("[%d] Registered Common Spec\n", i)
-				common.PrintJsonPretty(updatedSpecInfo)
+				//fmt.Printf("[%d] Registered Common Spec\n", i)
+				//common.PrintJsonPretty(updatedSpecInfo)
 
 				regiesteredStatus = ""
 				if updatedSpecInfo.Id != "" {
@@ -1565,8 +1565,8 @@ func LoadCommonResource() (common.IdList, error) {
 				imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
 				imageReqTmp.Description = "Common Image Resource"
 
-				fmt.Printf("[%d] Register Common Image\n", i)
-				common.PrintJsonPretty(imageReqTmp)
+				log.Info().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
+				//common.PrintJsonPretty(imageReqTmp)
 
 				// Register Spec object
 				_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp)
@@ -1587,8 +1587,8 @@ func LoadCommonResource() (common.IdList, error) {
 					log.Error().Err(err2).Msg("")
 					//return err
 				}
-				fmt.Printf("[%d] Registered Common Image\n", i)
-				common.PrintJsonPretty(updatedImageInfo)
+				//fmt.Printf("[%d] Registered Common Image\n", i)
+				//common.PrintJsonPretty(updatedImageInfo)
 				regiesteredStatus = ""
 				if updatedImageInfo.Id != "" {
 					if err2 != nil {
@@ -1655,7 +1655,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 			if connectionName != row[1] {
 				continue
 			}
-			fmt.Println("Found a line for the connectionName from file: " + row[1])
+			log.Debug().Msg("Found a line for the connectionName from file: " + row[1])
 		}
 
 		provider := row[0]
@@ -1667,7 +1667,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 		for _, resType := range resList {
 			if resType == "vnet" {
-				fmt.Println("vnet")
+				log.Debug().Msg("vnet")
 
 				reqTmp := TbVNetReq{}
 				reqTmp.ConnectionName = connectionName
@@ -1717,7 +1717,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 				fmt.Printf("[%d] Registered Default vNet\n", i)
 				common.PrintJsonPretty(resultInfo)
 			} else if resType == "sg" || resType == "securitygroup" {
-				fmt.Println("sg")
+				log.Debug().Msg("sg")
 
 				reqTmp := TbSecurityGroupReq{}
 
@@ -1753,7 +1753,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 				common.PrintJsonPretty(resultInfo)
 
 			} else if resType == "sshkey" {
-				fmt.Println("sshkey")
+				log.Debug().Msg("sshkey")
 
 				reqTmp := TbSshKeyReq{}
 
@@ -1778,7 +1778,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 		if connectionName != "" {
 			// After finish handling line for the connectionName, break
 			if connectionName == row[1] {
-				fmt.Println("Handled for the connectionName from file: " + row[1])
+				log.Debug().Msg("Handled for the connectionName from file: " + row[1])
 				break
 			}
 		}

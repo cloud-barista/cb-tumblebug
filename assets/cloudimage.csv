@@ -74,166 +74,166 @@ AWS,aws-af-south-1,ami-03dfab9c5b8844b77,Windows Server 2012 R2
 AWS,aws-eu-south-1,ami-0f274cb646afd3475,Ubuntu 18.04
 AWS,aws-eu-south-1,ami-0fdd5958b81f36e68,Ubuntu 22.04
 AWS,aws-eu-south-1,ami-0c49c6227e9c03e66,Windows Server 2012 R2
-AZURE,azure-westus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-eastus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-northeurope,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-westeurope,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-eastasia,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-southeastasia,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-northcentralus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-southcentralus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-centralus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-eastus2,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-japaneast,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-japanwest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-brazilsouth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-australiaeast,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-australiasoutheast,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-centralindia,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-canadacentral,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-canadaeast,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-westcentralus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-westus2,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-ukwest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-uksouth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-koreacentral,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-koreasouth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-francecentral,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-australiacentral,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-southafricanorth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-uaenorth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-switzerlandnorth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-germanywestcentral,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-norwayeast,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-southindia,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-westindia,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-southafricawest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-switzerlandwest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-germanynorth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-uaecentral,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-norwaywest,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-francesouth,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-australiacentral2,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,azure-westus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-eastus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-northeurope,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-westeurope,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-eastasia,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-southeastasia,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-northcentralus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-southcentralus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-centralus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-eastus2,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-japaneast,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-japanwest,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-brazilsouth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-australiaeast,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-australiasoutheast,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-centralindia,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-canadacentral,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-canadaeast,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-westcentralus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-westus2,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-ukwest,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-uksouth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-koreacentral,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-koreasouth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-francecentral,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-australiacentral,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-southafricanorth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-uaenorth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-switzerlandnorth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-germanywestcentral,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-norwayeast,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-southindia,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-westindia,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-southafricawest,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-switzerlandwest,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-germanynorth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-uaecentral,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-norwaywest,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-francesouth,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-australiacentral2,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,azure-westus,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-eastus,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-northeurope,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-westeurope,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-eastasia,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-southeastasia,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-northcentralus,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-southcentralus,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-centralus,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-eastus2,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-japaneast,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-japanwest,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-brazilsouth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-australiaeast,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-australiasoutheast,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-centralindia,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-canadacentral,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-canadaeast,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-westcentralus,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-westus2,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-ukwest,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-uksouth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-koreacentral,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-koreasouth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-francecentral,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-australiacentral,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-southafricanorth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-uaenorth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-switzerlandnorth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-germanywestcentral,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-norwayeast,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-southindia,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-westindia,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-southafricawest,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-switzerlandwest,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-germanynorth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-uaecentral,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-norwaywest,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-francesouth,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-australiacentral2,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,azure-westus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-eastus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-northeurope,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-westeurope,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-eastasia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-southeastasia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-northcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-southcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-centralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-eastus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-japaneast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-japanwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-brazilsouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-australiaeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-australiasoutheast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-centralindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-canadacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-canadaeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-westcentralus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-westus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-ukwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-uksouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-koreacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-koreasouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-francecentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-australiacentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-southafricanorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-uaenorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-switzerlandnorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-germanywestcentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-norwayeast,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-southindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-westindia,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-southafricawest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-switzerlandwest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-germanynorth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-uaecentral,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-norwaywest,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-francesouth,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-AZURE,azure-australiacentral2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-wus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-eus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-ne,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-we,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-ea,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-sea,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-ncus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-scus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-cus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-eus2,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-jpe,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-jpw,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-brs,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-ae,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-ase,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-inc,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-cnc,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-cne,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-wcus,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-wus2,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-ukw,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-uks,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-krc,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-krs,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-frc,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-acl,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-san,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-uan,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-szn,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-gwc,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-nwe,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-ins,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-inw,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-saw,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-szw,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-gn,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-uac,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-nww,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-frs,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-acl2,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
+AZURE,az-wus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-eus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-ne,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-we,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-ea,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-sea,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-ncus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-scus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-cus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-eus2,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-jpe,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-jpw,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-brs,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-ae,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-ase,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-inc,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-cnc,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-cne,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-wcus,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-wus2,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-ukw,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-uks,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-krc,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-krs,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-frc,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-acl,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-san,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-uan,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-szn,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-gwc,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-nwe,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-ins,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-inw,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-saw,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-szw,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-gn,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-uac,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-nww,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-frs,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-acl2,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
+AZURE,az-wus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-eus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-ne,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-we,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-ea,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-sea,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-ncus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-scus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-cus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-eus2,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-jpe,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-jpw,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-brs,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-ae,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-ase,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-inc,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-cnc,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-cne,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-wcus,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-wus2,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-ukw,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-uks,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-krc,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-krs,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-frc,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-acl,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-san,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-uan,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-szn,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-gwc,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-nwe,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-ins,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-inw,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-saw,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-szw,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-gn,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-uac,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-nww,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-frs,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-acl2,Debian:debian-10:10:0.20220911.1135,Debian 10
+AZURE,az-wus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-eus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-ne,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-we,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-ea,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-sea,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-ncus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-scus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-cus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-eus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-jpe,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-jpw,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-brs,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-ae,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-ase,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-inc,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-cnc,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-cne,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-wcus,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-wus2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-ukw,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-uks,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-krc,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-krs,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-frc,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-acl,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-san,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-uan,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-szn,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-gwc,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-nwe,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-ins,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-inw,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-saw,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-szw,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-gn,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-uac,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-nww,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-frs,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
+AZURE,az-acl2,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
 GCP,gcp-asia-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
 GCP,gcp-europe-west3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
 GCP,gcp-asia-east2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
