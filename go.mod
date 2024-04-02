@@ -3,7 +3,6 @@ module github.com/cloud-barista/cb-tumblebug
 go 1.21.6
 
 require (
-	github.com/cloud-barista/cb-larva v0.0.16
 	github.com/cloud-barista/cb-store v0.8.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.17.0
