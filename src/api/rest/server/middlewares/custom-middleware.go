@@ -3,6 +3,7 @@ package middlewares
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -10,6 +11,20 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
 )
+
+func skipLogging(uri string) bool {
+	skipPatterns := []string{
+		"/tumblebug/api",
+		"/mcis?option=status",
+	}
+
+	for _, pattern := range skipPatterns {
+		if strings.Contains(uri, pattern) {
+			return true
+		}
+	}
+	return false
+}
 
 func Zerologger() echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -26,6 +41,9 @@ func Zerologger() echo.MiddlewareFunc {
 		LogResponseSize:  true,
 		// HandleError:      true, // forwards error to the global error handler, so it can decide appropriate status code
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			if skipLogging(v.URI) {
+				return nil
+			}
 			if v.Error == nil {
 				log.Info().
 					Str("id", v.RequestID).
