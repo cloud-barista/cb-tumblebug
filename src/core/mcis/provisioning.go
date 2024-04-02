@@ -518,20 +518,20 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbVmInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &TbVmInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	err = common.CheckString(vmInfoData.Name)
 	if err != nil {
 		temp := &TbVmInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckVm(nsId, mcisId, vmInfoData.Name)
@@ -589,7 +589,7 @@ func CreateMcisVm(nsId string, mcisId string, vmInfoData *TbVmInfo) (*TbVmInfo, 
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				//mcisTmp.InstallMonAgent = "no"
 			}
 			common.PrintJsonPretty(content)
@@ -643,14 +643,14 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbMcisInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := &TbMcisInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -714,7 +714,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 
 	err = common.CheckString(tentativeVmId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &TbMcisInfo{}, err
 	}
 
@@ -731,7 +731,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		keyValue, err := common.CBStore.Get(key)
 		if err != nil {
 			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 		if keyValue != nil {
 			if newSubGroup {
@@ -739,14 +739,14 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 				existingVmSize, err := strconv.Atoi(subGroupInfoData.SubGroupSize)
 				if err != nil {
 					err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 				}
 				// add the number of existing VMs in the SubGroup with requested number for additions
 				subGroupInfoData.SubGroupSize = strconv.Itoa(existingVmSize + subGroupSize)
 				vmStartIndex = existingVmSize + 1
 			} else {
 				err = fmt.Errorf("Duplicated SubGroup ID")
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 		}
@@ -758,13 +758,13 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		val, _ := json.Marshal(subGroupInfoData)
 		err = common.CBStore.Put(key, string(val))
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 		// check stored subGroup object
 		keyValue, err = common.CBStore.Get(key)
 		if err != nil {
 			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
 
@@ -803,7 +803,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		vmInfoData.ConnectionConfig, err = common.GetConnConfig(vmRequest.ConnectionName)
 		if err != nil {
 			err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 		vmInfoData.SpecId = vmRequest.SpecId
 		vmInfoData.ImageId = vmRequest.ImageId
@@ -867,7 +867,7 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				//mcisTmp.InstallMonAgent = "no"
 			}
 			common.PrintJsonPretty(content)
@@ -894,7 +894,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := &TbMcisInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -941,14 +941,14 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	val, err := json.Marshal(mapA)
 	if err != nil {
 		err := fmt.Errorf("System Error: CreateMcis json.Marshal(mapA) Error")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	err = common.CBStore.Put(key, string(val))
 	if err != nil {
 		err := fmt.Errorf("System Error: CreateMcis CBStore.Put Error")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -956,7 +956,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 	for _, k := range vmRequest {
 		err = common.CheckString(k.Name)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return &TbMcisInfo{}, err
 		}
 	}
@@ -992,7 +992,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			val, _ := json.Marshal(subGroupInfoData)
 			err := common.CBStore.Put(key, string(val))
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 
 		}
@@ -1026,7 +1026,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			vmInfoData.ConnectionConfig, err = common.GetConnConfig(k.ConnectionName)
 			if err != nil {
 				err = fmt.Errorf("Cannot retrieve ConnectionConfig" + err.Error())
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 			vmInfoData.SpecId = k.SpecId
 			vmInfoData.ImageId = k.ImageId
@@ -1058,13 +1058,13 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 	mcisTmp, err := GetMcisObject(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	mcisStatusTmp, err := GetMcisStatus(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -1102,7 +1102,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			fmt.Printf("\n[InstallMonitorAgentToMcis]\n\n")
 			content, err := InstallMonitorAgentToMcis(nsId, mcisId, common.StrMCIS, reqToMon)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				//mcisTmp.InstallMonAgent = "no"
 			}
 			common.PrintJsonPretty(content)
@@ -1112,7 +1112,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 	mcisResult, err := GetMcisInfo(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	return mcisResult, nil
@@ -1126,7 +1126,7 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 	connectionConfigList, err := common.GetConnConfigList()
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList in MCIS dynamic request check.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &mcisReqInfo, err
 	}
 
@@ -1183,7 +1183,7 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 	case "probe":
 		connections, err := common.GetConnConfigList()
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 		for _, v := range connections.Connectionconfig {
@@ -1204,7 +1204,7 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 
 			specList, err := RecommendVm(common.SystemCommonNs, deploymentPlan)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			if len(specList) != 0 {
@@ -1245,12 +1245,12 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	emptyMcis := &TbMcisInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyMcis, err
 	}
 	check, err := CheckMcis(nsId, req.Name)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyMcis, err
 	}
 	if check {
@@ -1293,7 +1293,7 @@ func CreateMcisVmDynamic(nsId string, mcisId string, req *TbVmDynamicReq) (*TbMc
 	subGroupId := req.Name
 	check, err := CheckSubGroup(nsId, mcisId, subGroupId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyMcis, err
 	}
 	if check {
@@ -1303,7 +1303,7 @@ func CreateMcisVmDynamic(nsId string, mcisId string, req *TbVmDynamicReq) (*TbMc
 
 	vmReq, err := getVmReqFromDynamicReq(nsId, req)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyMcis, err
 	}
 
@@ -1323,14 +1323,14 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k.CommonSpec)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the spec " + k.CommonSpec)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &TbVmReq{}, err
 	}
 	specInfo := mcir.TbSpecInfo{}
 	err = common.CopySrcToDest(&tempInterface, &specInfo)
 	if err != nil {
 		err := fmt.Errorf("Failed to CopySrcToDest() " + k.CommonSpec)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &TbVmReq{}, err
 	}
 
@@ -1345,14 +1345,14 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	_, err = common.GetConnConfig(specInfo.RegionName)
 	if err != nil {
 		err := fmt.Errorf("Failed to get RegionName (" + specInfo.RegionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &TbVmReq{}, err
 	}
 	// validate the GetConnConfig for spec
 	_, err = common.GetConnConfig(vmReq.ConnectionName)
 	if err != nil {
 		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &TbVmReq{}, err
 	}
 
@@ -1364,7 +1364,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &TbVmReq{}, err
 	}
 
@@ -1451,9 +1451,9 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	key := common.GenMcisKey(nsId, mcisId, "")
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In AddVmToMcis(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -1466,7 +1466,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	val, _ := json.Marshal(vmInfoData)
 	err = common.CBStore.Put(key, string(val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1488,7 +1488,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	val, _ = json.Marshal(vmInfoData)
 	err = common.CBStore.Put(key, string(val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1499,7 +1499,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 		vmInfoData.Status = StatusFailed
 		vmInfoData.SystemMessage = err.Error()
 		UpdateVmInfo(nsId, mcisId, *vmInfoData)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1511,7 +1511,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	vmStatusInfoTmp, err := FetchVmStatus(nsId, mcisId, vmInfoData.Id)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1561,7 +1561,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	default:
 	}
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1570,7 +1570,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		// IdByCSP is required
 		if vmInfoData.IdByCSP == "" {
 			err := fmt.Errorf("vmInfoData.IdByCSP is empty (required for register VM)")
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 	}
@@ -1615,7 +1615,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 				if requestBody.ReqInfo.ImageName == "" || err != nil {
 					errAgg += err.Error()
 					err = fmt.Errorf(errAgg)
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return err
 				}
 			}
@@ -1630,28 +1630,28 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
 		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
-			common.CBLog.Info(err)
+			log.Info().Msg(err.Error())
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
 			requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				errAgg += err.Error()
 				err = fmt.Errorf(errAgg)
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return err
 			}
 		}
 
 		requestBody.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
 		if requestBody.ReqInfo.VPCName == "" {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
 		requestBody.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
 		if requestBody.ReqInfo.SubnetName == "" {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
@@ -1659,7 +1659,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		for _, v := range vmInfoData.SecurityGroupIds {
 			CspSgId, err := common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 			if CspSgId == "" {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return err
 			}
 
@@ -1673,7 +1673,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			if v != "" {
 				CspDataDiskId, err := common.GetCspResourceId(nsId, common.StrDataDisk, v)
 				if err != nil || CspDataDiskId == "" {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return err
 				}
 				DataDiskIdsTmp = append(DataDiskIdsTmp, CspDataDiskId)
@@ -1683,7 +1683,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		requestBody.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
 		if requestBody.ReqInfo.KeyPairName == "" {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 	}
@@ -1711,7 +1711,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1739,7 +1739,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		// vNet
 		resourceListInNs, err := mcir.ListResource(nsId, common.StrVNet, "cspVNetName", callResult.VpcIID.NameId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		} else {
 			resourcesInNs := resourceListInNs.([]mcir.TbVNetInfo) // type assertion
 			for _, resource := range resourcesInNs {
@@ -1753,7 +1753,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		// access Key
 		resourceListInNs, err = mcir.ListResource(nsId, common.StrSSHKey, "cspSshKeyName", callResult.KeyPairIId.NameId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		} else {
 			resourcesInNs := resourceListInNs.([]mcir.TbSshKeyInfo) // type assertion
 			for _, resource := range resourcesInNs {
@@ -1811,7 +1811,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	_, err = SetBastionNodes(nsId, mcisId, vmInfoData.Id, "")
 	if err != nil {
 		// just log error and continue
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 
 	return nil

@@ -26,6 +26,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/cloud-control-manager/cloud-driver/interfaces/resources/ClusterHandler.go#L1
@@ -416,13 +417,13 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
 		err = common.CheckString(u.Id)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 	*/
@@ -438,7 +439,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 
 	check, err := CheckCluster(nsId, u.Id)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -493,7 +494,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 
 	spVPCName, err := common.GetCspResourceId(nsId, common.StrVNet, u.VNetId)
 	if spVPCName == "" {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -502,7 +503,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 		for _, v := range u.SubnetIds {
 			spSnName, err := common.GetCspResourceId(nsId, common.StrSubnet, v)
 			if spSnName == "" {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return emptyObj, err
 			}
 
@@ -516,13 +517,13 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 
 	tmpInf, err := mcir.GetResource(nsId, common.StrVNet, u.VNetId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 	tbVNetInfo := mcir.TbVNetInfo{}
 	err = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -549,7 +550,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	for _, v := range u.SecurityGroupIds {
 		spSgName, err := common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 		if spSgName == "" {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -560,7 +561,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	for _, v := range u.NodeGroupList {
 		err := common.CheckString(v.Name)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -568,20 +569,20 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 		if v.ImageId != "" {
 			spImgName, err = common.GetCspResourceId(nsId, common.StrImage, v.ImageId)
 			if spImgName == "" {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return emptyObj, err
 			}
 		}
 
 		spSpecName, err := common.GetCspResourceId(nsId, common.StrSpec, v.SpecId)
 		if spSpecName == "" {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
 		spKpName, err := common.GetCspResourceId(nsId, common.StrSSHKey, v.SshKeyId)
 		if spKpName == "" {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
@@ -640,7 +641,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -665,14 +666,14 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 
 	err = common.CBStore.Put(k, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return tbCInfo, err
 	}
 
 	kv, err := common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In CreateCluster(); CBStore.Get() returned an error: " + err.Error())
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 
 	fmt.Println("<" + kv.Key + "> \n" + kv.Value)
@@ -681,7 +682,7 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 	storedTbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 	return storedTbCInfo, nil
 }
@@ -694,13 +695,13 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
 		err = common.CheckString(clusterId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 	*/
@@ -716,7 +717,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 
 	check, err := CheckCluster(nsId, clusterId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -733,7 +734,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	kv, err := common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In AddNodeGroup(); CBStore.Get() returned an error: " + err.Error())
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -742,7 +743,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 
 	err = json.Unmarshal([]byte(kv.Value), &oldTbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -790,7 +791,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	spName := u.Name
 	err = common.CheckString(spName)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -798,20 +799,20 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	if u.ImageId != "" {
 		spImgName, err = common.GetCspResourceId(nsId, common.StrImage, u.ImageId)
 		if spImgName == "" {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 	}
 
 	spSpecName, err := common.GetCspResourceId(nsId, common.StrSpec, u.SpecId)
 	if spSpecName == "" {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
 	spKpName, err := common.GetCspResourceId(nsId, common.StrSSHKey, u.SshKeyId)
 	if spKpName == "" {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -854,7 +855,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -872,14 +873,14 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 
 	err = common.CBStore.Put(k, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return newTbCInfo, err
 	}
 
 	kv, err = common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In AddNodeGroup(); CBStore.Get() returned an error: " + err.Error())
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -889,7 +890,7 @@ func AddNodeGroup(nsId string, clusterId string, u *TbNodeGroupReq) (TbClusterIn
 	storedTbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 	return storedTbCInfo, nil
 
@@ -901,20 +902,20 @@ func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceF
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		err = common.CheckString(clusterId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 	*/
 	check, err := CheckCluster(nsId, clusterId)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -938,7 +939,7 @@ func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceF
 	tbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -965,7 +966,7 @@ func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceF
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -987,20 +988,20 @@ func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSe
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		err = common.CheckString(clusterId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 	*/
 	check, err := CheckCluster(nsId, clusterId)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1011,7 +1012,7 @@ func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSe
 
 	err = common.CheckString(nodeGroupName)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1027,7 +1028,7 @@ func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSe
 	tbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1055,7 +1056,7 @@ func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSe
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1070,20 +1071,20 @@ func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u 
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		err = common.CheckString(clusterId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 	*/
 	check, err := CheckCluster(nsId, clusterId)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1094,7 +1095,7 @@ func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u 
 
 	err = common.CheckString(nodeGroupName)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1110,7 +1111,7 @@ func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u 
 	tbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1140,7 +1141,7 @@ func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u 
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1157,19 +1158,19 @@ func GetCluster(nsId string, clusterId string) (TbClusterInfo, error) {
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 
 		err = common.CheckString(clusterId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return emptyObj, err
 		}
 	*/
 	check, err := CheckCluster(nsId, clusterId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1187,7 +1188,7 @@ func GetCluster(nsId string, clusterId string) (TbClusterInfo, error) {
 
 	kv, err := common.CBStore.Get(k)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1199,7 +1200,7 @@ func GetCluster(nsId string, clusterId string) (TbClusterInfo, error) {
 
 	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return storedTbCInfo, err
 	}
 
@@ -1235,7 +1236,7 @@ func GetCluster(nsId string, clusterId string) (TbClusterInfo, error) {
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1286,13 +1287,13 @@ func CheckCluster(nsId string, clusterId string) (bool, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(clusterId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1302,7 +1303,7 @@ func CheckCluster(nsId string, clusterId string) (bool, error) {
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	if keyValue != nil {
@@ -1315,13 +1316,13 @@ func CheckCluster(nsId string, clusterId string) (bool, error) {
 func GenClusterKey(nsId string, clusterId string) string {
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "/invalidKey"
 	}
 
 	err = common.CheckString(clusterId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "/invalidKey"
 	}
 
@@ -1333,7 +1334,7 @@ func ListClusterId(nsId string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -1345,14 +1346,14 @@ func ListClusterId(nsId string) ([]string, error) {
 	kv, err := common.CBStore.GetList(k, true)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	/* if keyValue == nil, then for-loop below will not be executed, and the empty array will be returned in `resourceList` placeholder.
 	if keyValue == nil {
 		err = fmt.Errorf("ListResourceId(); %s is empty.", key)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	*/
@@ -1375,7 +1376,7 @@ func ListCluster(nsId string, filterKey string, filterVal string) (interface{}, 
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -1391,7 +1392,7 @@ func ListCluster(nsId string, filterKey string, filterVal string) (interface{}, 
 	kv = cbstore_utils.GetChildList(kv, k)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -1402,7 +1403,7 @@ func ListCluster(nsId string, filterKey string, filterVal string) (interface{}, 
 			tbCInfo := TbClusterInfo{}
 			err = json.Unmarshal([]byte(v.Value), &tbCInfo)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			// Check the JSON body includes both filterKey and filterVal strings. (assume key and value)
@@ -1427,20 +1428,20 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		err = common.CheckString(clusterId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 	*/
 	check, err := CheckCluster(nsId, clusterId)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1468,7 +1469,7 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 	tbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1497,13 +1498,13 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 	if forceFlag == "true" {
 		err = common.CBStore.Delete(k)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return false, err
 		}
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1514,7 +1515,7 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 				if forceFlag != "true" {
 					err = common.CBStore.Delete(k)
 					if err != nil {
-						common.CBLog.Error(err)
+						log.Error().Err(err).Msg("")
 						return false, err
 					}
 				}
@@ -1535,7 +1536,7 @@ func DeleteAllCluster(nsId string, subString string, forceFlag string) (common.I
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return deletedClusters, err
 	}
 
@@ -1581,7 +1582,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 
 	check, err := CheckCluster(nsId, clusterId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1598,7 +1599,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 	kv, err := common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In UpgradeCluster(); CBStore.Get() returned an error: " + err.Error())
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1607,7 +1608,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 
 	err = json.Unmarshal([]byte(kv.Value), &oldTbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1676,7 +1677,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -1694,14 +1695,14 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 
 	err = common.CBStore.Put(k, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
 	kv, err = common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In UpgradeCluster(); CBStore.Get() returned an error: " + err.Error())
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -1711,7 +1712,7 @@ func UpgradeCluster(nsId string, clusterId string, u *TbUpgradeClusterReq) (TbCl
 	storedTbCInfo := TbClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbCInfo)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 
 	return storedTbCInfo, nil

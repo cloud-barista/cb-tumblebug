@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
@@ -84,8 +83,6 @@ func Validate(c echo.Context, params []string) error {
 func RestGetHealth(c echo.Context) error {
 	okMessage := common.SimpleMsg{}
 	okMessage.Message = "API server of CB-Tumblebug is alive"
-
-	log.Debug().Msg("Inside of RestGetHealth() handler")
 
 	return c.JSON(http.StatusOK, &okMessage)
 }

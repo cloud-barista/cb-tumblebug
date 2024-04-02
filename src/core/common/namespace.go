@@ -24,6 +24,7 @@ import (
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
@@ -67,7 +68,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	err := CheckString(u.Name)
 	if err != nil {
 		temp := NsInfo{}
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -81,7 +82,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 
 	if err != nil {
 		temp := NsInfo{}
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -99,7 +100,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	Val, _ := json.Marshal(content)
 	err = CBStore.Put(Key, string(Val))
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	keyValue, _ := CBStore.Get(Key)
@@ -117,7 +118,7 @@ func UpdateNs(id string, u *NsReq) (NsInfo, error) {
 
 	err := CheckString(id)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 	check, err := CheckNs(id)
@@ -129,20 +130,20 @@ func UpdateNs(id string, u *NsReq) (NsInfo, error) {
 	}
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 
 	key := "/ns/" + id
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 
@@ -154,22 +155,22 @@ func UpdateNs(id string, u *NsReq) (NsInfo, error) {
 	//mapA := map[string]string{"name": content.Name, "description": content.Description}
 	Val, err := json.Marshal(res)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 	err = CBStore.Put(Key, string(Val))
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 	keyValue, err = CBStore.Get(Key)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
 	return res, nil
@@ -182,7 +183,7 @@ func GetNs(id string) (NsInfo, error) {
 	err := CheckString(id)
 	if err != nil {
 		temp := NsInfo{}
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, err := CheckNs(id)
@@ -197,7 +198,7 @@ func GetNs(id string) (NsInfo, error) {
 
 	if err != nil {
 		temp := NsInfo{}
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -207,7 +208,7 @@ func GetNs(id string) (NsInfo, error) {
 
 	keyValue, err := CBStore.Get(key)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return res, err
 	}
 
@@ -216,7 +217,7 @@ func GetNs(id string) (NsInfo, error) {
 
 	err = json.Unmarshal([]byte(keyValue.Value), &res)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return res, err
 	}
 	return res, nil
@@ -231,7 +232,7 @@ func ListNs() ([]NsInfo, error) {
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if keyValue != nil {
@@ -240,7 +241,7 @@ func ListNs() ([]NsInfo, error) {
 			tempObj := NsInfo{}
 			err = json.Unmarshal([]byte(v.Value), &tempObj)
 			if err != nil {
-				CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			res = append(res, tempObj)
@@ -293,7 +294,7 @@ func ListNsId() ([]string, error) {
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if keyValue != nil {
@@ -312,7 +313,7 @@ func DelNs(id string) error {
 
 	err := CheckString(id)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -325,7 +326,7 @@ func DelNs(id string) error {
 	}
 
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -362,14 +363,14 @@ func DelNs(id string) error {
 		//errString += " \n len(vNicList): " + strconv.Itoa(len(vNicList))
 
 		err := fmt.Errorf(errString)
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
 	// delete ns info
 	err = CBStore.Delete(key)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -406,7 +407,7 @@ func CheckNs(id string) (bool, error) {
 
 	err := CheckString(id)
 	if err != nil {
-		CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 

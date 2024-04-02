@@ -381,7 +381,7 @@ func RestRegisterExistingResources(c echo.Context) error {
 
 	result, err := mcir.RegisterExistingResources(nsId, u.ConnectionName)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		mapA := map[string]string{"message": err.Error()}
 		return c.JSON(http.StatusConflict, &mapA)
 	}

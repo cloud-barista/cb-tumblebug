@@ -89,7 +89,7 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
 
@@ -101,7 +101,7 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 	if len(resourceIdList) == 0 {
 		errString := "There is no " + resourceType + " resource in " + nsId
 		err := fmt.Errorf(errString)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
 
@@ -129,19 +129,19 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -165,7 +165,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	} else {
 		errString := " [Failed]" + " Associated with [" + strings.Join(associatedList[:], ", ") + "]"
 		err := fmt.Errorf(errString)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 	*/
@@ -187,7 +187,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// delete image info
 		err := common.CBStore.Delete(key)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
@@ -204,7 +204,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := TbCustomImageInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
@@ -214,7 +214,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			// delete image info
 			err := common.CBStore.Delete(key)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return err
 			}
 
@@ -236,13 +236,13 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		content := TbSpecInfo{}
 		err := json.Unmarshal([]byte(keyValue.Value), &content)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		err = common.CBStore.Delete(key)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
@@ -259,7 +259,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := TbSshKeyInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
@@ -268,7 +268,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := TbVNetInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
@@ -278,7 +278,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := TbSecurityGroupInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
@@ -287,7 +287,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		temp := TbDataDiskInfo{}
 		err = json.Unmarshal([]byte(keyValue.Value), &temp)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
@@ -333,7 +333,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -345,7 +345,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			// subnetKeys = append(subnetKeys, subnetKey)
 			err = common.CBStore.Delete(subnetKey)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				// return err
 			}
 		}
@@ -361,7 +361,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 	err = common.CBStore.Delete(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 	return nil
@@ -381,19 +381,19 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
 	err = common.CheckString(parentResourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -406,7 +406,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -419,7 +419,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -446,7 +446,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 		temp := TbVNetInfo{}
 		err = json.Unmarshal([]byte(parentKeyValue.Value), &temp)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 		requestBody.ConnectionName = temp.ConnectionName
@@ -476,13 +476,13 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
 	err = common.CBStore.Delete(childResourceKey)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -492,7 +492,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 		oldVNet := TbVNetInfo{}
 		err = json.Unmarshal([]byte(parentKeyValue.Value), &oldVNet)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 
@@ -512,13 +512,13 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 			DelEleInSlice(&newVNet.SubnetInfoList, subnetIndex)
 		} else {
 			err := fmt.Errorf("Failed to find and delete subnet %s in vNet %s.", resourceId, parentResourceId)
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 
 		Val, _ := json.Marshal(newVNet)
 		err = common.CBStore.Put(parentResourceKey, string(Val))
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return err
 		}
 		// default:
@@ -545,7 +545,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -562,7 +562,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 		// continue
 	} else {
 		err = fmt.Errorf("invalid resource type")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -570,14 +570,14 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 	keyValue, err := common.CBStore.GetList(key, true)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	/* if keyValue == nil, then for-loop below will not be executed, and the empty array will be returned in `resourceList` placeholder.
 	if keyValue == nil {
 		err = fmt.Errorf("ListResourceId(); %s is empty.", key)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	*/
@@ -600,7 +600,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -629,7 +629,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if keyValue != nil {
@@ -641,7 +641,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				tempObj := TbImageInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
@@ -662,7 +662,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				tempObj := TbCustomImageInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 
@@ -676,7 +676,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 					tempObj.Id = tempObj.Id
 				}
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					tempObj.Description = err.Error()
 					tempObj.Status = "Error"
 				}
@@ -698,7 +698,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				tempObj := TbSecurityGroupInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
@@ -718,7 +718,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				tempObj := TbSpecInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
@@ -738,7 +738,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				tempObj := TbSshKeyInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
@@ -758,7 +758,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				tempObj := TbVNetInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 				// Check the JSON body inclues both filterKey and filterVal strings. (assume key and value)
@@ -778,7 +778,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				tempObj := TbDataDiskInfo{}
 				err = json.Unmarshal([]byte(v.Value), &tempObj)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 
@@ -786,7 +786,7 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 				// Just calling GetResource(dataDisk) once will update TB DataDisk object's 'status' field
 				newObj, err := GetResource(nsId, common.StrDataDisk, tempObj.Id)
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					tempObj.Status = "Failed"
 					tempObj.SystemMessage = err.Error()
 				} else {
@@ -834,13 +834,13 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return -1, err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return -1, err
 	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
@@ -852,7 +852,7 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return -1, err
 	}
 
@@ -860,7 +860,7 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return -1, err
 	}
 	if keyValue != nil {
@@ -879,13 +879,13 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
@@ -897,7 +897,7 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -905,7 +905,7 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if keyValue != nil {
@@ -916,7 +916,7 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 		res := stringList{}
 		err = json.Unmarshal([]byte(keyValue.Value), &res)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 		result = res.AssociatedObjectList
@@ -933,13 +933,13 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	/*
@@ -952,7 +952,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 		}
 
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return -1, err
 		}
 	*/
@@ -962,7 +962,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -1010,19 +1010,19 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			} else {
 				keyValue.Value, err = sjson.Delete(keyValue.Value, "associatedObjectList."+strconv.Itoa(foundKey))
 				if err != nil {
-					common.CBLog.Error(err)
+					log.Error().Err(err).Msg("")
 					return nil, err
 				}
 			}
 		}
 
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 		err = common.CBStore.Put(key, keyValue.Value)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return nil, err
 		}
 
@@ -1039,18 +1039,18 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	check, err := CheckResource(nsId, resourceType, resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -1066,7 +1066,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if keyValue != nil {
@@ -1075,7 +1075,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			res := TbImageInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			return res, nil
@@ -1083,7 +1083,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			res := TbCustomImageInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 
@@ -1105,7 +1105,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 			resp, err := req.Get(url)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 
@@ -1114,7 +1114,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 				err := fmt.Errorf(string(resp.Body()))
 				fmt.Println("body: ", string(resp.Body()))
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 
@@ -1128,7 +1128,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			res := TbSecurityGroupInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			return res, nil
@@ -1136,7 +1136,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			res := TbSpecInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			return res, nil
@@ -1144,7 +1144,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			res := TbSshKeyInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			return res, nil
@@ -1152,7 +1152,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			res := TbVNetInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return nil, err
 			}
 			return res, nil
@@ -1160,7 +1160,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			res := TbDataDiskInfo{}
 			err = json.Unmarshal([]byte(keyValue.Value), &res)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return res, err
 			}
 
@@ -1182,7 +1182,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 			resp, err := req.Get(url)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return res, err
 			}
 
@@ -1191,7 +1191,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 			case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 				err := fmt.Errorf(string(resp.Body()))
 				fmt.Println("body: ", string(resp.Body()))
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return res, err
 			}
 
@@ -1244,13 +1244,13 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1258,7 +1258,7 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	if keyValue != nil {
@@ -1298,19 +1298,19 @@ func CheckChildResource(nsId string, resourceType string, parentResourceId strin
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(parentResourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
 	err = common.CheckString(resourceId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 
@@ -1321,7 +1321,7 @@ func CheckChildResource(nsId string, resourceType string, parentResourceId strin
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return false, err
 	}
 	if keyValue != nil {
@@ -1407,7 +1407,7 @@ func LoadCommonResource() (common.IdList, error) {
 		nsReq.Description = "Namespace for common resources"
 		_, nsErr := common.CreateNs(&nsReq)
 		if nsErr != nil {
-			common.CBLog.Error(nsErr)
+			log.Error().Err(nsErr).Msg("")
 			return regiesteredIds, nsErr
 		}
 	}
@@ -1416,7 +1416,7 @@ func LoadCommonResource() (common.IdList, error) {
 	file, fileErr := os.Open("../assets/cloudspec.csv")
 	defer file.Close()
 	if fileErr != nil {
-		common.CBLog.Error(fileErr)
+		log.Error().Err(fileErr).Msg("")
 		return regiesteredIds, fileErr
 	}
 
@@ -1468,7 +1468,7 @@ func LoadCommonResource() (common.IdList, error) {
 				// Register Spec object
 				_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp)
 				if err1 != nil {
-					common.CBLog.Error(err1)
+					log.Error().Err(err1).Msg("")
 					// If already exist, error will occur
 					// Even if error, do not return here to update information
 					// return err
@@ -1485,14 +1485,14 @@ func LoadCommonResource() (common.IdList, error) {
 				// Update registered Spec object with Cost info
 				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
 				if err2 != nil {
-					common.CBLog.Error(err2)
+					log.Error().Err(err2).Msg("")
 					// If already exist, error will occur. Even if error, do not return here to update information
 					// return err
 				}
 
 				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[5], " ", ""), 32)
 				if err2 != nil {
-					common.CBLog.Error(err2)
+					log.Error().Err(err2).Msg("")
 					// If already exist, error will occur. Even if error, do not return here to update information
 					// return err
 				}
@@ -1509,7 +1509,7 @@ func LoadCommonResource() (common.IdList, error) {
 
 				updatedSpecInfo, err3 := UpdateSpec(common.SystemCommonNs, specObjId, specUpdateRequest)
 				if err3 != nil {
-					common.CBLog.Error(err3)
+					log.Error().Err(err3).Msg("")
 					// If already exist, error will occur
 					// Even if error, do not return here to update information
 					// return err
@@ -1541,7 +1541,7 @@ func LoadCommonResource() (common.IdList, error) {
 	file, fileErr = os.Open("../assets/cloudimage.csv")
 	defer file.Close()
 	if fileErr != nil {
-		common.CBLog.Error(fileErr)
+		log.Error().Err(fileErr).Msg("")
 		return regiesteredIds, fileErr
 	}
 
@@ -1580,7 +1580,7 @@ func LoadCommonResource() (common.IdList, error) {
 				// Register Spec object
 				_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp)
 				if err1 != nil {
-					common.CBLog.Error(err1)
+					log.Error().Err(err1).Msg("")
 					// If already exist, error will occur
 					// Even if error, do not return here to update information
 					//return err
@@ -1593,7 +1593,7 @@ func LoadCommonResource() (common.IdList, error) {
 
 				updatedImageInfo, err2 := UpdateImage(common.SystemCommonNs, imageObjId, imageUpdateRequest)
 				if err2 != nil {
-					common.CBLog.Error(err2)
+					log.Error().Err(err2).Msg("")
 					//return err
 				}
 				fmt.Printf("[%d] Registered Common Image\n", i)
@@ -1629,7 +1629,7 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 	// Check 'nsId' namespace.
 	_, err := common.GetNs(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1647,14 +1647,14 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 	file, fileErr := os.Open("../assets/cloudconnection.csv")
 	defer file.Close()
 	if fileErr != nil {
-		common.CBLog.Error(fileErr)
+		log.Error().Err(fileErr).Msg("")
 		return fileErr
 	}
 
 	rdr := csv.NewReader(bufio.NewReader(file))
 	rows, err := rdr.ReadAll()
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -1801,7 +1801,7 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 	output := common.IdList{}
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return output, err
 	}
 
@@ -1809,21 +1809,21 @@ func DelAllDefaultResources(nsId string) (common.IdList, error) {
 
 	list, err := DelAllResources(nsId, common.StrSecurityGroup, matchedSubstring, "false")
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
 
 	list, err = DelAllResources(nsId, common.StrSSHKey, matchedSubstring, "false")
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
 
 	list, err = DelAllResources(nsId, common.StrVNet, matchedSubstring, "false")
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		output.IdList = append(output.IdList, err.Error())
 	}
 	output.IdList = append(output.IdList, list.IdList...)
@@ -1869,18 +1869,18 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 		oldJSON := keyValue.Value
 		newJSON, err := json.Marshal(resourceObject)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 
 		isEqualJSON, err := AreEqualJSON(oldJSON, string(newJSON))
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 
 		if !isEqualJSON {
 			err = common.CBStore.Put(key, string(newJSON))
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 		}
 	*/
@@ -1889,14 +1889,14 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 	var oldObject interface{}
 	err = json.Unmarshal([]byte(keyValue.Value), &oldObject)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 
 	if !reflect.DeepEqual(oldObject, resourceObject) {
 		val, _ := json.Marshal(resourceObject)
 		err = common.CBStore.Put(key, string(val))
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 	}
 

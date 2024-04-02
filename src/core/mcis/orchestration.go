@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/rs/zerolog/log"
 )
 
 // Status for mcis automation
@@ -109,7 +110,7 @@ func OrchestrationController() {
 
 	nsList, err := common.ListNsId()
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("an error occurred while getting namespaces' list: " + err.Error())
 		return
 	}
@@ -127,9 +128,9 @@ func OrchestrationController() {
 			key := common.GenMcisPolicyKey(nsId, v, "")
 			keyValue, err := common.CBStore.Get(key)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				err = fmt.Errorf("In OrchestrationController(); CBStore.Get() returned an error.")
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				// return nil, err
 			}
 
@@ -179,7 +180,7 @@ func OrchestrationController() {
 						fmt.Println("[MCIS is exist] " + mcisPolicyTmp.Id)
 						content, err := GetMonitoringData(nsId, mcisPolicyTmp.Id, mcisPolicyTmp.Policy[policyIndex].AutoCondition.Metric)
 						if err != nil {
-							common.CBLog.Error(err)
+							log.Error().Err(err).Msg("")
 							mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
 							break
 						}
@@ -428,7 +429,7 @@ func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 	val, _ := json.Marshal(mcisPolicyInfoData)
 	err := common.CBStore.Put(key, string(val))
 	if err != nil && !strings.Contains(err.Error(), common.CbStoreKeyNotFoundErrorString) {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 }
 
@@ -438,14 +439,14 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyReq) (McisPolicyI
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := McisPolicyInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := McisPolicyInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, _ := CheckMcisPolicy(nsId, mcisId)
@@ -475,14 +476,14 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyReq) (McisPolicyI
 
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return obj, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CreateMcisPolicy(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -498,21 +499,21 @@ func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := McisPolicyInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := McisPolicyInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 	fmt.Println("Key: ", key)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return McisPolicyInfo{}, err
 	}
 	if keyValue == nil {
@@ -531,7 +532,7 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	Mcis := []McisPolicyInfo{}
@@ -542,9 +543,9 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 		key := common.GenMcisPolicyKey(nsId, v, "")
 		keyValue, err := common.CBStore.Get(key)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			err = fmt.Errorf("In GetAllMcisPolicyObject(); CBStore.Get() returned an error.")
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
 
@@ -564,16 +565,16 @@ func ListMcisPolicyId(nsId string) []string {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil
 	}
 
 	key := "/ns/" + nsId + "/policy/mcis"
 	keyValue, err := common.CBStore.GetList(key, true)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In ListMcisPolicyId(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -591,13 +592,13 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 	check, _ := CheckMcisPolicy(nsId, mcisId)
@@ -615,7 +616,7 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 	// delete mcis Policy info
 	err = common.CBStore.Delete(key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return err
 	}
 
@@ -627,7 +628,7 @@ func DelAllMcisPolicy(nsId string) (string, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return "", err
 	}
 	mcisList := ListMcisPolicyId(nsId)
@@ -637,7 +638,7 @@ func DelAllMcisPolicy(nsId string) (string, error) {
 	for _, v := range mcisList {
 		err := DelMcisPolicy(nsId, v)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 
 			return "", fmt.Errorf("Failed to delete All MCIS Policies")
 		}

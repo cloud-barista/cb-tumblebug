@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type TbVmSnapshotReq struct {
@@ -35,7 +36,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	keyValue, err := common.CBStore.Get(vmKey)
 	if keyValue == nil || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return mcir.TbCustomImageInfo{}, err
 	}
 
@@ -72,7 +73,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	// dataDisks_before_snapshot := inspect_result_before_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
-	// 	common.CBLog.Error(err)
+	// 	log.Error().Err(err).Msg("")
 	// 	return mcir.TbCustomImageInfo{}, err
 	// }
 
@@ -86,7 +87,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return mcir.TbCustomImageInfo{}, err
 	}
 
@@ -113,7 +114,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	result, err := mcir.RegisterCustomImageWithInfo(nsId, tempTbCustomImageInfo)
 	if err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return mcir.TbCustomImageInfo{}, err
 	}
 
@@ -123,7 +124,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	// dataDisks_after_snapshot := inspect_result_after_snapshot.Resources.OnTumblebug.Info
 	// if err != nil {
 	// 	err := fmt.Errorf("Failed to get current datadisks' info. \n")
-	// 	common.CBLog.Error(err)
+	// 	log.Error().Err(err).Msg("")
 	// 	return mcir.TbCustomImageInfo{}, err
 	// }
 
@@ -140,7 +141,7 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	// 	_, err = mcir.CreateDataDisk(nsId, &tempTbDataDiskReq, "register")
 	// 	if err != nil {
 	// 		err := fmt.Errorf("Failed to register the created dataDisk %s to TB. \n", v.IdByCsp)
-	// 		common.CBLog.Error(err)
+	// 		log.Error().Err(err).Msg("")
 	// 		continue
 	// 	}
 	// }

@@ -24,6 +24,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // CreateFirewallRules accepts firewallRule creation request, creates and returns an TB securityGroup object
@@ -33,14 +34,14 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSecurityGroupInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(securityGroupId)
 	if err != nil {
 		temp := TbSecurityGroupInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -84,7 +85,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	oldSecurityGroup := TbSecurityGroupInfo{}
 	err = json.Unmarshal([]byte(securityGroupKeyValue.Value), &oldSecurityGroup)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	}
 
@@ -122,7 +123,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 			Post(url)
 
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			content := TbSecurityGroupInfo{}
 			err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 			return content, err
@@ -132,7 +133,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		switch {
 		case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 			err := fmt.Errorf(string(resp.Body()))
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			content := TbSecurityGroupInfo{}
 			return content, err
 		}
@@ -155,7 +156,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	err = common.CBStore.Put(securityGroupKey, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	}
 
@@ -166,7 +167,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	// content := TbSecurityGroupInfo{}
 	// err = json.Unmarshal([]byte(keyValue.Value), &content)
 	// if err != nil {
-	// 	common.CBLog.Error(err)
+	// 	log.Error().Err(err).Msg("")
 	// 	return err
 	// }
 	return newSecurityGroup, nil
@@ -178,14 +179,14 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSecurityGroupInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	err = common.CheckString(securityGroupId)
 	if err != nil {
 		temp := TbSecurityGroupInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -229,7 +230,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	oldSecurityGroup := TbSecurityGroupInfo{}
 	err = json.Unmarshal([]byte(securityGroupKeyValue.Value), &oldSecurityGroup)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	}
 
@@ -262,7 +263,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	if found_flag == false {
 		err := fmt.Errorf("Any of submitted firewall rules does not exist in the SG %s.", securityGroupId)
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	} else {
 		for _, v := range rulesToDelete {
@@ -282,7 +283,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		Delete(url)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := TbSecurityGroupInfo{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -292,7 +293,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := TbSecurityGroupInfo{}
 		return content, err
 	}
@@ -301,7 +302,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	if spiderDeleteSecurityRulesResp.Result != "true" {
 		err := fmt.Errorf("Failed to delete Security Group rules with CB-Spider.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	}
 
@@ -323,7 +324,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 		Get(url)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := TbSecurityGroupInfo{}
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
@@ -333,7 +334,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	switch {
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := TbSecurityGroupInfo{}
 		return content, err
 	}
@@ -353,7 +354,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	err = common.CBStore.Put(securityGroupKey, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	}
 
@@ -364,7 +365,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	// content := TbSecurityGroupInfo{}
 	// err = json.Unmarshal([]byte(keyValue.Value), &content)
 	// if err != nil {
-	// 	common.CBLog.Error(err)
+	// 	log.Error().Err(err).Msg("")
 	// 	return err
 	// }
 	return newSecurityGroup, nil

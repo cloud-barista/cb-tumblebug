@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 // JSONResult is a dummy struct for Swagger annotations.
@@ -316,7 +317,7 @@ func RestDelMcisVm(c echo.Context) error {
 
 	err := mcis.DelMcisVm(nsId, mcisId, vmId, option)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("Failed to delete the VM info")
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}

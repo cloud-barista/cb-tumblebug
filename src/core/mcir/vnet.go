@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // 2020-04-09 https://github.com/cloud-barista/cb-spider/blob/master/cloud-control-manager/cloud-driver/interfaces/resources/VPCHandler.go
@@ -156,7 +157,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -192,13 +193,13 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	for _, v := range u.SubnetInfoList {
 		jsonBody, err := json.Marshal(v)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 
 		spiderSubnetInfo := SpiderSubnetReqInfo{}
 		err = json.Unmarshal(jsonBody, &spiderSubnetInfo)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 
 		requestBody.ReqInfo.SubnetInfoList = append(requestBody.ReqInfo.SubnetInfoList, spiderSubnetInfo)
@@ -229,7 +230,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		common.MediumDuration,
 	)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -257,34 +258,34 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
 	for _, v := range callResult.SubnetInfoList {
 		jsonBody, err := json.Marshal(v)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 
 		tbSubnetReq := TbSubnetReq{}
 		err = json.Unmarshal(jsonBody, &tbSubnetReq)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 		tbSubnetReq.Name = v.IId.NameId
 
 		_, err = CreateSubnet(nsId, content.Id, tbSubnetReq, true)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 		}
 	}
 
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In CreateVNet(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -294,7 +295,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 	result := TbVNetInfo{}
 	err = json.Unmarshal([]byte(keyValue.Value), &result)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 	}
 	return result, nil
 }

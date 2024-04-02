@@ -27,6 +27,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 
 	//"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 
@@ -197,7 +198,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 	if connConfig == "" {
 		content := SpiderSpecList{}
 		err := fmt.Errorf("LookupSpec() called with empty connConfig.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
@@ -221,7 +222,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		content := SpiderSpecList{}
 		return content, err
 	}
@@ -237,12 +238,12 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 	if connConfig == "" {
 		content := SpiderSpecInfo{}
 		err := fmt.Errorf("LookupSpec() called with empty connConfig.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	} else if specName == "" {
 		content := SpiderSpecInfo{}
 		err := fmt.Errorf("LookupSpec() called with empty specName.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
@@ -266,7 +267,7 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 	)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return callResult, err
 	}
 
@@ -279,14 +280,14 @@ func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, er
 
 	spiderSpecList, err := LookupSpecList(connConfig)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, err
 	}
 
 	for _, spiderSpec := range spiderSpecList.Vmspec {
 		tumblebugSpec, err := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			return 0, err
 		}
 
@@ -294,10 +295,10 @@ func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, er
 
 		check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
 		if check {
-			common.CBLog.Infoln("The spec " + tumblebugSpecId + " already exists in TB; continue")
+			log.Info().Msgf("The spec %s already exists in TB; continue", tumblebugSpecId)
 			continue
 		} else if err != nil {
-			common.CBLog.Infoln("Cannot check the existence of " + tumblebugSpecId + " in TB; continue")
+			log.Info().Msgf("Cannot check the existence of %s in TB; continue", tumblebugSpecId)
 			continue
 		} else {
 			tumblebugSpec.Name = tumblebugSpecId
@@ -305,7 +306,7 @@ func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, er
 
 			_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 				return 0, err
 			}
 			specCount++
@@ -319,13 +320,13 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 
 	err = common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, 0, err
 	}
 
 	connConfigs, err := common.GetConnConfigList()
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return 0, 0, err
 	}
 
@@ -345,7 +346,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -366,7 +367,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -378,7 +379,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 
 	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("Error duing lookup spec from CB-Spider: " + err.Error())
 		emptySpecInfoObj := TbSpecInfo{}
 		return emptySpecInfoObj, err
@@ -410,7 +411,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq) (TbSpecInfo, error) 
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
@@ -439,20 +440,20 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	err = common.CheckString(content.Name)
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -472,7 +473,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo) (TbSpecInfo, error) 
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return *content, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
@@ -499,7 +500,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -655,7 +656,7 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 
 	err = sqlQuery.Find(&tempList)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return tempList, err
 	}
 	return tempList, nil
@@ -672,7 +673,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
@@ -944,7 +945,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 
 	err = sqlQuery.Find(&tempList)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return tempList, err
 	}
 
@@ -1095,21 +1096,21 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	if len(fieldsToUpdate.Namespace) > 0 {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("You should not specify 'namespace' in the JSON request body.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	if len(fieldsToUpdate.Id) > 0 {
 		temp := TbSpecInfo{}
 		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -1117,7 +1118,7 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -1153,14 +1154,14 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
 		temp := TbSpecInfo{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In UpdateSpec(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 

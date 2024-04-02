@@ -21,6 +21,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // SpiderKeyPairReqInfoWrapper is a wrapper struct to create JSON body of 'Create keypair request'
@@ -107,7 +108,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -180,7 +181,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	}
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return emptyObj, err
 	}
@@ -190,7 +191,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
 		err := fmt.Errorf(string(resp.Body()))
 		fmt.Println("body: ", string(resp.Body()))
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -232,7 +233,7 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return content, err
 	}
 	return content, nil
@@ -248,20 +249,20 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (Tb
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
 	if len(fieldsToUpdate.Id) > 0 {
 		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, sshKeyId)
 
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
@@ -293,14 +294,14 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (Tb
 	Val, _ := json.Marshal(toBeSshKey)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 	keyValue, err := common.CBStore.Get(Key)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("In UpdateSshKey(); CBStore.Get() returned an error.")
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 

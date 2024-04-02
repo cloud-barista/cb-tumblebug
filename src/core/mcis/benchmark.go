@@ -35,6 +35,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/rs/zerolog/log"
 )
 
 // SpecBenchmarkInfo is struct for SpecBenchmarkInfo
@@ -112,7 +113,7 @@ func InstallBenchmarkAgentToMcis(nsId string, mcisId string, req *McisCmdReq, op
 
 	if err != nil {
 		temp := []SshCmdResult{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
@@ -147,7 +148,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 			vmIdTmp := vm
 			vmIpTmp, _, _, err := GetVmIp(nsId, mcisId, vmIdTmp)
 			if err != nil {
-				common.CBLog.Error(err)
+				log.Error().Err(err).Msg("")
 			}
 			fmt.Println("[Test for vmList " + vmIdTmp + ", " + vmIpTmp + "]")
 
@@ -170,12 +171,12 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 
 	res, err := client.Do(req)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		errStr = err.Error()
 	} else {
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			errStr = err.Error()
 		}
 		defer res.Body.Close()
@@ -185,7 +186,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		switch {
 		case res.StatusCode >= 400 || res.StatusCode < 200:
 			err := fmt.Errorf(string(body))
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			errStr = err.Error()
 		}
 
@@ -193,7 +194,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 
 		err2 := json.Unmarshal(body, &resultTmp)
 		if err2 != nil {
-			common.CBLog.Error(err2)
+			log.Error().Err(err2).Msg("")
 			errStr = err2.Error()
 		}
 	}
@@ -212,14 +213,14 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 	err = common.CheckString(nsId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
 	check, _ := CheckMcis(nsId, mcisId)
@@ -420,14 +421,14 @@ func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 	err = common.CheckString(nsId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
 	check, _ := CheckMcis(nsId, mcisId)
@@ -560,14 +561,14 @@ func CoreGetBenchmark(nsId string, mcisId string, action string, host string) (*
 	err = common.CheckString(nsId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
 
 	err = common.CheckString(mcisId)
 	if err != nil {
 		temp := BenchmarkInfoArray{}
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return &temp, err
 	}
 	check, _ := CheckMcis(nsId, mcisId)
@@ -610,7 +611,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 
 	vmList, err := ListVmId(nsId, mcisId)
 	if err != nil {
-		common.CBLog.Error(err)
+		log.Error().Err(err).Msg("")
 		return BenchmarkInfoArray{}, err
 	}
 
@@ -622,7 +623,7 @@ func BenchmarkAction(nsId string, mcisId string, action string, option string) (
 
 		vmIp, _, _, err := GetVmIp(nsId, mcisId, vmId)
 		if err != nil {
-			common.CBLog.Error(err)
+			log.Error().Err(err).Msg("")
 			wg.Done()
 			// continue to next vm even if error occurs
 		} else {
