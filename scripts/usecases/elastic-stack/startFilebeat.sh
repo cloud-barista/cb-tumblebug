@@ -87,7 +87,7 @@ echo "Configuring Filebeat..."
 sudo sed -i -e 's/- type: filestream/- type: log/' \
             -e 's/  enabled: false/  enabled: true/' \
             -e 's/  id: my-filestream-id/  #id: my-filestream-id/' \
-            -e 's/    - \/var\/log\/\*.log/    - \/var\/log\/cblog\/\*.log/' /etc/filebeat/filebeat.yml
+            -e 's/    - \/var\/log\/\*.log/    - \/var\/log\/tumblebug\/\*.log/' /etc/filebeat/filebeat.yml
 
 # Disable output to Elasticsearch
 sudo sed -i '/output.elasticsearch:/,/hosts: \["localhost:9200"\]/s/^/#/' /etc/filebeat/filebeat.yml
@@ -143,4 +143,4 @@ FILEBEAT_PID_LIST=($(pgrep -f filebeat))
 echo "FILEBEAT_PID List: ${FILEBEAT_PID_LIST[@]}"
 
 echo "Location of the log files collected by Filebeat:"
-echo "/var/log/cblog/*.log"
+echo "/var/log/tumblebug/*.log"

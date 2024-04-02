@@ -446,7 +446,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 
 // Internal functions for SSH
 func init() {
-	//cblog = config.Cblogger
+
 }
 
 type sshInfo struct {

@@ -225,7 +225,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   - `cb-tumblebug/conf` 의 `store_conf.yaml` 내용 확인 및 설정 (cb-store 환경변수, 필요에 따라 변경)
       - storetype 지정 (NUTSDB 또는 ETCD 지정)
       - NUTSDB(local DB) 설정시 DB 데이터가 포함된 주소 지정이 필요 (기본은 `cb-tumblebug/meta_db/dat` 에 파일로 추가됨)
-  - `cb-tumblebug/conf` 의 `log_conf.yaml` 내용 확인 및 설정 (cb-log 환경변수, 필요에 따라 변경)
+
  
 - CB-Tumblebug 실행
     ```bash
@@ -263,11 +263,11 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 
    Access to API dashboard (username: default / password: default)
-   http://xxx.xxx.xxx.xxx:1323/tumblebug/swagger/
+   http://xxx.xxx.xxx.xxx:1323/tumblebug/api
 
   ⇨ http server started on [::]:1323
   ```
-
+  - `cb-tumblebug/conf/setup.env` 기본 설정 활용시, 시스템 로그는 `cb-tumblebug/log/tumblebug.log`에 저장됨 (log는 zerolog를 통해 기록)
 
 ### (4) CB-Tumblebug 멀티 클라우드 환경 설정
 

@@ -43,7 +43,6 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumbleb
 # Setting various environment variables required by the application
 ENV CBTUMBLEBUG_ROOT=/app \
     CBSTORE_ROOT=/app \
-    CBLOG_ROOT=/app \
     SPIDER_CALL_METHOD=REST \
     DRAGONFLY_CALL_METHOD=REST \
     SPIDER_REST_URL=http://cb-spider:1024/spider \

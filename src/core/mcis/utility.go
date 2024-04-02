@@ -36,19 +36,10 @@ import (
 	validator "github.com/go-playground/validator/v10"
 )
 
-// CB-Store
-//var cblog *logrus.Logger
-//var store icbs.Store
-
-//var SPIDER_REST_URL string
-
 // use a single instance of Validate, it caches struct info
 var validate *validator.Validate
 
 func init() {
-	//cblog = config.Cblogger
-	//store = cbstore.GetStore()
-	//SPIDER_REST_URL = os.Getenv("SPIDER_REST_URL")
 
 	validate = validator.New()
 
