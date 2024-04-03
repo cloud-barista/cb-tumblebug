@@ -89,7 +89,12 @@ func RunServer(port string) {
 
 	// Middleware
 	// e.Use(middleware.Logger())
-	e.Use(middlewares.Zerologger())
+	APILogSkipPatterns := []string{
+		"/tumblebug/api",
+		"/mcis?option=status",
+	}
+	e.Use(middlewares.Zerologger(APILogSkipPatterns))
+
 	e.Use(middleware.Recover())
 	// limit the application to 20 requests/sec using the default in-memory store
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(20)))

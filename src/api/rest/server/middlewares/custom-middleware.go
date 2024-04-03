@@ -12,22 +12,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func skipLogging(uri string) bool {
-	skipPatterns := []string{
-		"/tumblebug/api",
-		"/mcis?option=status",
-	}
-
-	for _, pattern := range skipPatterns {
-		if strings.Contains(uri, pattern) {
-			return true
-		}
-	}
-	return false
-}
-
-func Zerologger() echo.MiddlewareFunc {
+func Zerologger(skipPatterns []string) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			for _, pattern := range skipPatterns {
+				if strings.Contains(c.Request().URL.Path, pattern) {
+					return true
+				}
+			}
+			return false
+		},
 		LogError:         true,
 		LogRequestID:     true,
 		LogRemoteIP:      true,
@@ -41,9 +35,6 @@ func Zerologger() echo.MiddlewareFunc {
 		LogResponseSize:  true,
 		// HandleError:      true, // forwards error to the global error handler, so it can decide appropriate status code
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			if skipLogging(v.URI) {
-				return nil
-			}
 			if v.Error == nil {
 				log.Info().
 					Str("id", v.RequestID).
