@@ -3,6 +3,7 @@ package middlewares
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -11,8 +12,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Zerologger() echo.MiddlewareFunc {
+func Zerologger(skipPatterns []string) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			for _, pattern := range skipPatterns {
+				if strings.Contains(c.Request().URL.Path, pattern) {
+					return true
+				}
+			}
+			return false
+		},
 		LogError:         true,
 		LogRequestID:     true,
 		LogRemoteIP:      true,
