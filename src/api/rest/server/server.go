@@ -89,9 +89,9 @@ func RunServer(port string) {
 
 	// Middleware
 	// e.Use(middleware.Logger())
-	APILogSkipPatterns := []string{
-		"/tumblebug/api",
-		"/mcis?option=status",
+	APILogSkipPatterns := [][]string{
+		{"/tumblebug/api"},
+		{"/mcis", "option=status"},
 	}
 	e.Use(middlewares.Zerologger(APILogSkipPatterns))
 
