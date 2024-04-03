@@ -401,6 +401,11 @@ AWS,all,c4.xlarge,0.227,62.93,,,,,,,,,,default,default
 AWS,all,c4.large,0.114,78.3,,,,,,,,,,default,default
 AWS,all,c4.4xlarge,0.907,80.74,,,,,,,,,,default,default
 AWS,all,c4.2xlarge,0.454,92.55,,,,,,,,,,default,default
+AWS,all,g5.xlarge,1.006,34.18,,,,,,,,,,default,default
+AWS,all,g5.2xlarge,1.212,67.18,,,,,,,,,,default,default
+AWS,all,g5.4xlarge,1.624,78.18,,,,,,,,,,default,default
+AWS,all,g5.8xlarge,2.448,89.18,,,,,,,,,,default,default
+AWS,all,g5.12xlarge,5.672,99.18,,,,,,,,,,default,default
 azure,all,Standard_B1s,0.0132,33.85,,,,,,,,,,default,default
 azure,all,Standard_B1ms,0.0264,33.85,,,,,,,,,,default,default
 azure,all,Standard_B2s,0.0528,33.85,,,,,,,,,,default,default

@@ -453,19 +453,19 @@ func RunServer(port string) {
 		// Block until a signal is triggered
 		<-gracefulShutdownContext.Done()
 
-		log.Info().Msg("[Stop] CB-Tumblebug REST Server")
-		ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+		log.Info().Msg("Stopping CB-Tumblebug API Server gracefully... (within 5s)")
+		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 		defer cancel()
 
 		if err := e.Shutdown(ctx); err != nil {
-			log.Error().Err(err).Msg("Error starting the server")
+			log.Error().Err(err).Msg("Error in Stopping CB-Tumblebug API Server")
 			e.Logger.Panic(err)
 		}
 	}(&wg)
 
 	port = fmt.Sprintf(":%s", port)
 	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
-		log.Error().Err(err).Msg("Error starting the server")
+		log.Error().Err(err).Msg("Error in Starting CB-Tumblebug API Server")
 		e.Logger.Panic("Shuttig down the server: ", err)
 	}
 

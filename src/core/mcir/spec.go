@@ -342,54 +342,44 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpecInfo, error) {
 
 	resourceType := common.StrSpec
+	content := TbSpecInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbSpecInfo{}
 		log.Error().Err(err).Msg("")
-		return temp, err
+		return content, err
 	}
 
 	err = validate.Struct(u)
 	if err != nil {
-
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			temp := TbSpecInfo{}
-			return temp, err
+			return content, err
 		}
-
-		temp := TbSpecInfo{}
-		return temp, err
+		return content, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if err != nil {
-		temp := TbSpecInfo{}
 		log.Error().Err(err).Msg("")
-		return temp, err
+		return content, err
 	}
 
 	if !update {
 		if check {
-			temp := TbSpecInfo{}
 			err := fmt.Errorf("The spec " + u.Name + " already exists.")
-			return temp, err
+			return content, err
 		}
 	}
 
 	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		err := fmt.Errorf("Error duing lookup spec from CB-Spider: " + err.Error())
-		emptySpecInfoObj := TbSpecInfo{}
-		return emptySpecInfoObj, err
+		log.Error().Err(err).Msgf("Cannot LookupSpec ConnectionName(%s), CspSpecName(%s)", u.ConnectionName, u.CspSpecName)
+		return content, err
 	}
 
-	content := TbSpecInfo{}
 	content.Namespace = nsId
-	//content.Id = common.GenUid()
 	content.Id = u.Name
 	content.Name = u.Name
 	content.CspSpecName = res.Name
@@ -413,14 +403,14 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpec
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Cannot put data to Key Value Store")
 		return content, err
 	}
 
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(&content)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Cannot insert data to RDB")
 	} else {
 		log.Info().Msg("SQL: Insert success")
 	}

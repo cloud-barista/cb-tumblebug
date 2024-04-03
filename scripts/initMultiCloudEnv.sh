@@ -11,6 +11,7 @@ $CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -x ns
 
 echo -e "${BOLD}"
 while true; do
+    echo "Loading common Specs and Images takes more than 10 minutes."
     read -p 'Load common Specs and Images. Do you want to proceed ? (y/n) : ' CHECKPROCEED
     echo -e "${NC}"
     case $CHECKPROCEED in
@@ -30,8 +31,18 @@ while true; do
     esac
 done
 
+
+
+# Start time
+start_time=$(date +%s)
+
 # Execute the load-common-resource script and capture its output
 output="$("$CBTUMBLEBUG_ROOT"/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb)"
+
+# End time
+end_time=$(date +%s)
+# Calculate duration
+duration=$((end_time - start_time))
 
 # Initialize counters
 successImageCount=0
@@ -66,3 +77,5 @@ done
 echo ""
 echo "- Image Success count: $successImageCount (Failed count: $failedImageCount)"
 echo "- Spec Success count: $successSpecCount (Failed count: $failedSpecCount)"
+echo ""
+echo "Total duration: $duration seconds."

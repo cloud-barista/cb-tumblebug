@@ -1481,79 +1481,61 @@ func LoadCommonResource() (common.IdList, error) {
 				// To avoid naming-rule violation, modify the string
 				specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
 				specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
-
+				specInfoId := specReqTmp.Name
+				rootDiskType := row[14]
+				rootDiskSize := row[15]
 				specReqTmp.Description = "Common Spec Resource"
 
 				log.Info().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 				//common.PrintJsonPretty(specReqTmp)
 
+				regiesteredStatus = ""
+
 				// Register Spec object
 				_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
 				if err1 != nil {
 					log.Error().Err(err1).Msg("")
-					// If already exist, error will occur
-					// Even if error, do not return here to update information
-					// return err
-				}
-
-				specObjId := specReqTmp.Name
-				connection, err1 := common.GetConnConfig(specReqTmp.ConnectionName)
-				regionName := ""
-				if err1 != nil {
-					log.Error().Err(err1).Msg("")
+					regiesteredStatus += "  [Failed] " + err1.Error()
 				} else {
-					regionName = connection.RegionName
-				}
-				rootDiskType := row[14]
-				rootDiskSize := row[15]
-				// Update registered Spec object with Cost info
-				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
-				if err2 != nil {
-					log.Error().Err(err2).Msg("")
-					// If already exist, error will occur. Even if error, do not return here to update information
-					// return err
-				}
-				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
-				if err2 != nil {
-					log.Error().Err(err2).Msg("")
-					// If already exist, error will occur. Even if error, do not return here to update information
-					// return err
-				}
-				specUpdateRequest :=
-					TbSpecInfo{
-						ProviderName:      providerName,
-						RegionName:        regionName,
-						CostPerHour:       float32(costPerHour),
-						RootDiskType:      rootDiskType,
-						RootDiskSize:      rootDiskSize,
-						EvaluationScore01: float32(evaluationScore01),
-					}
-
-				updatedSpecInfo, err3 := UpdateSpec(common.SystemCommonNs, specObjId, specUpdateRequest)
-				if err3 != nil {
-					log.Error().Err(err3).Msg("")
-					// If already exist, error will occur
-					// Even if error, do not return here to update information
-					// return err
-				}
-				//fmt.Printf("[%d] Registered Common Spec\n", i)
-				//common.PrintJsonPretty(updatedSpecInfo)
-
-				regiesteredStatus = ""
-				if updatedSpecInfo.Id != "" {
-					if err3 != nil {
-						regiesteredStatus += "  [Failed] " + err3.Error()
-					}
-				} else {
+					// Update registered Spec object with givn info from asset file
+					connection, err1 := common.GetConnConfig(specReqTmp.ConnectionName)
+					regionName := ""
 					if err1 != nil {
-						regiesteredStatus += "  [Failed] " + err1.Error()
-					} else if err2 != nil {
-						regiesteredStatus += "  [Failed] " + err2.Error()
-					} else if err3 != nil {
+						log.Error().Err(err1).Msg("")
+					} else {
+						regionName = connection.RegionName
+					}
+
+					// Update registered Spec object with Cost info
+					costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+					if err2 != nil {
+						log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
+						costPerHour = -99.9
+					}
+					evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
+					if err2 != nil {
+						log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
+						evaluationScore01 = -99.9
+					}
+					specUpdateRequest :=
+						TbSpecInfo{
+							ProviderName:      providerName,
+							RegionName:        regionName,
+							CostPerHour:       float32(costPerHour),
+							RootDiskType:      rootDiskType,
+							RootDiskSize:      rootDiskSize,
+							EvaluationScore01: float32(evaluationScore01),
+						}
+
+					_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
+					if err3 != nil {
+						log.Error().Err(err3).Msg("UpdateSpec failed")
 						regiesteredStatus += "  [Failed] " + err3.Error()
 					}
+					//fmt.Printf("[%d] Registered Common Spec\n", i)
+					//common.PrintJsonPretty(updatedSpecInfo)
 				}
-				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrSpec+": "+specObjId+regiesteredStatus)
+				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrSpec+": "+specInfoId+regiesteredStatus)
 			}(i, row, lenSpecs)
 		}
 		wait.Wait()
