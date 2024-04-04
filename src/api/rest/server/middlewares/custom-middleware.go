@@ -18,14 +18,14 @@ func Zerologger(skipPatterns [][]string) echo.MiddlewareFunc {
 			path := c.Request().URL.Path
 			query := c.Request().URL.RawQuery
 			for _, patterns := range skipPatterns {
-				match := true
+				isAllMatched := true
 				for _, pattern := range patterns {
 					if !strings.Contains(path+query, pattern) {
-						match = false
+						isAllMatched = false
 						break
 					}
 				}
-				if match {
+				if isAllMatched {
 					return true
 				}
 			}
