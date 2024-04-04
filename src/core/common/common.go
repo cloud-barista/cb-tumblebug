@@ -16,6 +16,7 @@ package common
 
 import (
 	"database/sql"
+	"sync"
 	"time"
 
 	cbstore "github.com/cloud-barista/cb-store"
@@ -30,6 +31,14 @@ type KeyValue struct {
 
 type IdList struct {
 	IdList []string `json:"output"`
+	mux    sync.Mutex
+}
+
+// AddItem adds a new item to the IdList
+func (list *IdList) AddItem(id string) {
+	list.mux.Lock()
+	defer list.mux.Unlock()
+	list.IdList = append(list.IdList, id)
 }
 
 // OptionalParameter is struct for optional parameter for function (ex. VmId)

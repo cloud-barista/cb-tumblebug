@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	//uuid "github.com/google/uuid"
 
@@ -1051,7 +1052,7 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		return nil, err
 	}
 
-	log.Debug().Msg("[Get resource] " + resourceType + ", " + resourceId)
+	log.Trace().Msg("[Get resource] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
@@ -1199,6 +1200,11 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 	errString := "Cannot get " + resourceType + " " + resourceId + "."
 	err = fmt.Errorf(errString)
 	return nil, err
+}
+
+// GenSpecMapKey generates a SpecMap key for storing or accessing data in a map
+func GenSpecMapKey(provider, region, specName string) string {
+	return strings.ToLower(fmt.Sprintf("%s-%s-%s", provider, region, specName))
 }
 
 // CheckResource returns the existence of the TB MCIR resource in bool form.
@@ -1413,6 +1419,51 @@ func LoadCommonResource() (common.IdList, error) {
 		return regiesteredIds, err
 	}
 
+	// LookupSpecList and LookupImageList of all connections in parallel
+	var specMap sync.Map
+	startTime := time.Now()
+	var wg sync.WaitGroup
+	for _, connConfig := range connectionList.Connectionconfig {
+		wg.Add(1)
+		go func(connConfig common.ConnConfig) {
+			defer wg.Done()
+			specsInConnection, err := LookupSpecList(connConfig.ConfigName)
+			if err != nil {
+				log.Error().Err(err).Msgf("Cannot LookupSpecList in %s", connConfig.ConfigName)
+				return
+			}
+			log.Info().Msgf("[%s]#Spec: %d", connConfig.ConfigName, len(specsInConnection.Vmspec))
+			for _, spec := range specsInConnection.Vmspec {
+				key := GenSpecMapKey(connConfig.ProviderName, connConfig.RegionName, spec.Name)
+				// instead of connConfig.RegionName, spec.Region will be used in the future
+				//log.Info().Msgf("specMap.Store(%s, spec)", key)
+				specMap.Store(key, spec)
+			}
+		}(connConfig)
+	}
+
+	// LookupImageList of all connections in parallel takes too long time
+	// disable it for now
+
+	// for i := len(connectionList.Connectionconfig) - 1; i >= 0; i-- {
+	// 	connConfig := connectionList.Connectionconfig[i]
+	// 	wg.Add(1)
+	// 	go func(cc common.ConnConfig) {
+	// 		defer wg.Done()
+	// 		imagesInConnection, err := LookupImageList(cc.ConfigName)
+	// 		if err != nil {
+	// 			log.Error().Err(err).Msgf("Cannot LookupImageList in %s", cc.ConfigName)
+	// 		} else {
+	// 			log.Info().Msgf("[%s]#Image: %d", cc.ConfigName, len(imagesInConnection.Image))
+	// 		}
+	// 	}(connConfig)
+	// }
+	wg.Wait()
+	endTime := time.Now()
+	totalDuration := endTime.Sub(startTime)
+
+	log.Info().Msgf("LookupSpecList in parallel: %s", totalDuration)
+
 	// Read common specs and register spec objects
 	file, fileErr := os.Open("../assets/cloudspec.csv")
 	defer file.Close()
@@ -1422,40 +1473,71 @@ func LoadCommonResource() (common.IdList, error) {
 	}
 
 	rdr := csv.NewReader(bufio.NewReader(file))
-	rows, _ := rdr.ReadAll()
+	rowsSpec, _ := rdr.ReadAll()
 
 	// expending rows with "all" connectionName into each region
 	// "all" means the values in the row are applicable to all connectionNames in a CSP
-	newRows := make([][]string, 0, len(rows))
-	for _, row := range rows {
+	newRowsSpec := make([][]string, 0, len(rowsSpec))
+	for _, row := range rowsSpec {
 		if row[1] == "all" {
 			for _, connConfig := range connectionList.Connectionconfig {
 				if strings.EqualFold(connConfig.ProviderName, row[0]) {
 					newRow := make([]string, len(row))
 					copy(newRow, row)
 					newRow[1] = connConfig.ConfigName
-					newRows = append(newRows, newRow)
-					log.Info().Msgf("Expended row: %s", newRow)
+					newRowsSpec = append(newRowsSpec, newRow)
+					//log.Info().Msgf("Expended row: %s", newRow)
 				}
 			}
 		} else {
-			newRows = append(newRows, row)
+			newRowsSpec = append(newRowsSpec, row)
 		}
 	}
-	rows = newRows
+	rowsSpec = newRowsSpec
+
+	// Read common specs and register spec objects
+	file, fileErr = os.Open("../assets/cloudimage.csv")
+	defer file.Close()
+	if fileErr != nil {
+		log.Error().Err(fileErr).Msg("")
+		return regiesteredIds, fileErr
+	}
+
+	rdr = csv.NewReader(bufio.NewReader(file))
+	rowsImg, _ := rdr.ReadAll()
+
+	// expending rows with "all" connectionName into each region
+	// "all" means the values in the row are applicable to all connectionNames in a CSP
+	newRowsImg := make([][]string, 0, len(rowsImg))
+	for _, row := range rowsImg {
+		if row[1] == "all" {
+			for _, connConfig := range connectionList.Connectionconfig {
+				if strings.EqualFold(connConfig.ProviderName, row[0]) {
+					newRow := make([]string, len(row))
+					copy(newRow, row)
+					newRow[1] = connConfig.ConfigName
+					newRowsImg = append(newRowsImg, newRow)
+					//log.Info().Msgf("Expended row: %s", newRow)
+				}
+			}
+		} else {
+			newRowsImg = append(newRowsImg, row)
+		}
+	}
+	rowsImg = newRowsImg
 
 	waitSpecImg.Add(1)
-	go func(rows [][]string) {
+	go func(rowsSpec [][]string) {
 		defer waitSpecImg.Done()
-		lenSpecs := len(rows[1:])
-		for i, row := range rows[1:] {
+		lenSpecs := len(rowsSpec[1:])
+		for i, row := range rowsSpec[1:] {
 			wait.Add(1)
-			fmt.Printf("[%d] i, row := range rows[1:] %s\n", i, row)
+			fmt.Printf("[%d] i, row := range rowsSpec[1:] %s\n", i, row)
 			// goroutine
 			go func(i int, row []string, lenSpecs int) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(0, lenSpecs/8)
+				common.RandomSleep(0, lenSpecs/10)
 				specReqTmp := TbSpecReq{}
 				// 0	providerName
 				// 1	connectionName
@@ -1486,99 +1568,75 @@ func LoadCommonResource() (common.IdList, error) {
 				rootDiskSize := row[15]
 				specReqTmp.Description = "Common Spec Resource"
 
-				log.Info().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
-				//common.PrintJsonPretty(specReqTmp)
-
+				connection, err1 := common.GetConnConfig(specReqTmp.ConnectionName)
+				regionName := ""
 				regiesteredStatus = ""
-
-				// Register Spec object
-				_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
 				if err1 != nil {
 					log.Error().Err(err1).Msg("")
 					regiesteredStatus += "  [Failed] " + err1.Error()
 				} else {
-					// Update registered Spec object with givn info from asset file
-					connection, err1 := common.GetConnConfig(specReqTmp.ConnectionName)
-					regionName := ""
+					regionName = connection.RegionName
+					log.Info().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
+
+					// Register Spec object
+					searchKey := GenSpecMapKey(providerName, regionName, specReqTmp.CspSpecName)
+					value, ok := specMap.Load(searchKey)
+					if ok {
+						spec := value.(SpiderSpecInfo)
+						log.Info().Msgf("Found spec in the map: %s", spec.Name)
+					} else {
+						log.Info().Msgf("Not Found spec in the map: %s", searchKey)
+					}
+
+					_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
 					if err1 != nil {
 						log.Error().Err(err1).Msg("")
+						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else {
-						regionName = connection.RegionName
-					}
-
-					// Update registered Spec object with Cost info
-					costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
-					if err2 != nil {
-						log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
-						costPerHour = -99.9
-					}
-					evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
-					if err2 != nil {
-						log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
-						evaluationScore01 = -99.9
-					}
-					specUpdateRequest :=
-						TbSpecInfo{
-							ProviderName:      providerName,
-							RegionName:        regionName,
-							CostPerHour:       float32(costPerHour),
-							RootDiskType:      rootDiskType,
-							RootDiskSize:      rootDiskSize,
-							EvaluationScore01: float32(evaluationScore01),
+						// Update registered Spec object with givn info from asset file
+						// Update registered Spec object with Cost info
+						costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+						if err2 != nil {
+							log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
+							costPerHour = -99.9
 						}
+						evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
+						if err2 != nil {
+							log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
+							evaluationScore01 = -99.9
+						}
+						specUpdateRequest :=
+							TbSpecInfo{
+								ProviderName:      providerName,
+								RegionName:        regionName,
+								CostPerHour:       float32(costPerHour),
+								RootDiskType:      rootDiskType,
+								RootDiskSize:      rootDiskSize,
+								EvaluationScore01: float32(evaluationScore01),
+							}
 
-					_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
-					if err3 != nil {
-						log.Error().Err(err3).Msg("UpdateSpec failed")
-						regiesteredStatus += "  [Failed] " + err3.Error()
+						_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
+						if err3 != nil {
+							log.Error().Err(err3).Msg("UpdateSpec failed")
+							regiesteredStatus += "  [Failed] " + err3.Error()
+						}
+						//fmt.Printf("[%d] Registered Common Spec\n", i)
+						//common.PrintJsonPretty(updatedSpecInfo)
 					}
-					//fmt.Printf("[%d] Registered Common Spec\n", i)
-					//common.PrintJsonPretty(updatedSpecInfo)
 				}
-				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrSpec+": "+specInfoId+regiesteredStatus)
+				regiesteredIds.AddItem(common.StrSpec + ": " + specInfoId + regiesteredStatus)
 			}(i, row, lenSpecs)
 		}
 		wait.Wait()
-	}(rows)
-
-	// Read common specs and register spec objects
-	file, fileErr = os.Open("../assets/cloudimage.csv")
-	defer file.Close()
-	if fileErr != nil {
-		log.Error().Err(fileErr).Msg("")
-		return regiesteredIds, fileErr
-	}
-
-	rdr = csv.NewReader(bufio.NewReader(file))
-	rows, _ = rdr.ReadAll()
-
-	// expending rows with "all" connectionName into each region
-	// "all" means the values in the row are applicable to all connectionNames in a CSP
-	newRows = make([][]string, 0, len(rows))
-	for _, row := range rows {
-		if row[1] == "all" {
-			for _, connConfig := range connectionList.Connectionconfig {
-				if strings.EqualFold(connConfig.ProviderName, row[0]) {
-					newRow := make([]string, len(row))
-					copy(newRow, row)
-					newRow[1] = connConfig.ConfigName
-					newRows = append(newRows, newRow)
-					log.Info().Msgf("Expended row: %s", newRow)
-				}
-			}
-		} else {
-			newRows = append(newRows, row)
-		}
-	}
-	rows = newRows
+	}(rowsSpec)
 
 	waitSpecImg.Add(1)
-	go func(rows [][]string) {
+	go func(rowsImg [][]string) {
 		defer waitSpecImg.Done()
-		lenImages := len(rows[1:])
-		for i, row := range rows[1:] {
+		lenImages := len(rowsImg[1:])
+		for i, row := range rowsImg[1:] {
 			wait.Add(1)
-			fmt.Printf("[%d] i, row := range rows[1:] %s\n", i, row)
+			fmt.Printf("[%d] i, row := range rowsImg[1:] %s\n", i, row)
 			// goroutine
 			go func(i int, row []string, lenImages int) {
 				defer wait.Done()
@@ -1596,53 +1654,37 @@ func LoadCommonResource() (common.IdList, error) {
 				// To avoid naming-rule violation, modify the string
 				imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
 				imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
+				imageInfoId := imageReqTmp.Name
 				imageReqTmp.Description = "Common Image Resource"
 
 				log.Info().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
-				//common.PrintJsonPretty(imageReqTmp)
 
 				// Register Spec object
+				regiesteredStatus = ""
 				_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp, true)
 				if err1 != nil {
 					log.Error().Err(err1).Msg("")
-					// If already exist, error will occur
-					// Even if error, do not return here to update information
-					//return err
-				}
-
-				// Update registered image object with OsType info
-				imageObjId := imageReqTmp.Name
-
-				imageUpdateRequest := TbImageInfo{GuestOS: osType}
-
-				updatedImageInfo, err2 := UpdateImage(common.SystemCommonNs, imageObjId, imageUpdateRequest)
-				if err2 != nil {
-					log.Error().Err(err2).Msg("")
-					//return err
-				}
-				//fmt.Printf("[%d] Registered Common Image\n", i)
-				//common.PrintJsonPretty(updatedImageInfo)
-				regiesteredStatus = ""
-				if updatedImageInfo.Id != "" {
-					if err2 != nil {
-						regiesteredStatus += "  [Failed] " + err2.Error()
-					}
+					regiesteredStatus += "  [Failed] " + err1.Error()
 				} else {
-					if err1 != nil {
-						regiesteredStatus += "  [Failed] " + err1.Error()
-					} else if err2 != nil {
+					// Update registered image object with OsType info
+					imageUpdateRequest := TbImageInfo{GuestOS: osType}
+					_, err2 := UpdateImage(common.SystemCommonNs, imageInfoId, imageUpdateRequest)
+					if err2 != nil {
+						log.Error().Err(err2).Msg("UpdateImage failed")
 						regiesteredStatus += "  [Failed] " + err2.Error()
 					}
 				}
+
 				//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)
-				regiesteredIds.IdList = append(regiesteredIds.IdList, common.StrImage+": "+imageObjId+regiesteredStatus)
+				regiesteredIds.AddItem(common.StrImage + ": " + imageInfoId + regiesteredStatus)
 			}(i, row, lenImages)
 		}
 		wait.Wait()
-	}(rows)
+	}(rowsImg)
 
 	waitSpecImg.Wait()
 	sort.Strings(regiesteredIds.IdList)
+	log.Info().Msgf("Registered Common Resources %d", len(regiesteredIds.IdList))
 
 	return regiesteredIds, nil
 }

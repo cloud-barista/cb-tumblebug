@@ -412,7 +412,7 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpec
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot insert data to RDB")
 	} else {
-		log.Info().Msg("SQL: Insert success")
+		log.Trace().Msg("SQL: Insert success")
 	}
 
 	return content, nil
