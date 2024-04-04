@@ -12,11 +12,20 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Zerologger(skipPatterns []string) echo.MiddlewareFunc {
+func Zerologger(skipPatterns [][]string) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		Skipper: func(c echo.Context) bool {
-			for _, pattern := range skipPatterns {
-				if strings.Contains(c.Request().URL.Path, pattern) {
+			path := c.Request().URL.Path
+			query := c.Request().URL.RawQuery
+			for _, patterns := range skipPatterns {
+				isAllMatched := true
+				for _, pattern := range patterns {
+					if !strings.Contains(path+query, pattern) {
+						isAllMatched = false
+						break
+					}
+				}
+				if isAllMatched {
 					return true
 				}
 			}
