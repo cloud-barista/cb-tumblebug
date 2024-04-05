@@ -209,10 +209,10 @@ func ExecuteHttpRequest[B any, T any](
 
 		// Check if result is nil
 		if result == nil {
-			log.Debug().Msg("Fesult is nil, not caching")
+			log.Trace().Msg("Fesult is nil, not caching")
 		} else {
 			clientCache.Store(requestKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
-			log.Debug().Msg("Cached successfully!")
+			log.Trace().Msg("Cached successfully!")
 		}
 	}
 

@@ -193,7 +193,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("SQL: Insert success")
+		log.Trace().Msg("SQL: Insert success")
 	}
 
 	return content, nil
@@ -247,7 +247,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo, update bool) (TbIm
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("SQL: Insert success")
+		log.Trace().Msg("SQL: Insert success")
 	}
 
 	return *content, nil
@@ -324,43 +324,31 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 		return content, err
 	}
 
+	client := resty.New()
+	client.SetTimeout(2 * time.Minute)
 	url := common.SpiderRestUrl + "/vmimage/" + url.QueryEscape(imageId)
-
-	// Create Req body
+	method := "GET"
 	requestBody := common.SpiderConnectionName{}
 	requestBody.ConnectionName = connConfig
+	callResult := SpiderImageInfo{}
 
-	client := resty.New().SetTimeout(2 * time.Minute).SetCloseConnection(true)
-	client.SetAllowGetMethodPayload(true)
-
-	resp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(requestBody).
-		SetResult(&SpiderImageInfo{}). // or SetResult(AuthSuccess{}).
-		//SetError(&AuthError{}).       // or SetError(AuthError{}).
-		Get(url)
+	err := common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		common.MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := SpiderImageInfo{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		return callResult, err
 	}
 
-	log.Debug().Msg(string(resp.Body()))
-
-	fmt.Println("HTTP Status code: " + strconv.Itoa(resp.StatusCode()))
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := SpiderImageInfo{}
-		return content, err
-	}
-
-	temp := resp.Result().(*SpiderImageInfo)
-	return *temp, nil
-
+	return callResult, nil
 }
 
 // FetchImagesForAllConnConfigs gets all conn configs from Spider, lookups all images for each region of conn config, and saves into TB image objects
@@ -459,52 +447,44 @@ func SearchImage(nsId string, keywords ...string) ([]TbImageInfo, error) {
 // updates and returns the updated TB image objects
 func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbImageInfo, error) {
 	resourceType := common.StrImage
-
+	temp := TbImageInfo{}
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbImageInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	if len(fieldsToUpdate.Namespace) > 0 {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("You should not specify 'namespace' in the JSON request body.")
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	if len(fieldsToUpdate.Id) > 0 {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, imageId)
-
 	if err != nil {
-		temp := TbImageInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
 
 	if !check {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("The image " + imageId + " does not exist.")
 		return temp, err
 	}
 
 	tempInterface, err := GetResource(nsId, resourceType, imageId)
 	if err != nil {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("Failed to get the image " + imageId + ".")
 		return temp, err
 	}
 	asIsImage := TbImageInfo{}
 	err = common.CopySrcToDest(&tempInterface, &asIsImage)
 	if err != nil {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("Failed to CopySrcToDest() " + imageId + ".")
 		return temp, err
 	}
@@ -518,7 +498,6 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 	Val, _ := json.Marshal(toBeImage)
 	err = common.CBStore.Put(Key, string(Val))
 	if err != nil {
-		temp := TbImageInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
