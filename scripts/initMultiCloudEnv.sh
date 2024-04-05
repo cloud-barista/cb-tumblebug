@@ -50,6 +50,7 @@ printf "%-100s" "-" | tr " " "-"
 printf "] %d%% " $progress
 
 while kill -0 $PID 2> /dev/null; do
+
     current_time=$(date +%s)
     elapsed=$((current_time - progress_time))
     progress=$((elapsed * 100 / EXPECTED_DURATION))
@@ -61,8 +62,9 @@ while kill -0 $PID 2> /dev/null; do
     printf "] %d%% " $progress
 
     sleep 1
+
 done
-echo " Done."
+
 output=$(<initTmp.out)
 rm initTmp.out
 
@@ -95,6 +97,7 @@ while IFS= read -r line; do
 done <<< "$output"
 
 # Optionally, display failed items
+echo ""
 echo "Failed items:"
 echo "$output" | grep "\[Failed\]" | while read line; do
     echo "$line" | awk -F"  " '{printf "%-50s %-10s\n", $1, $2}'
