@@ -11,7 +11,7 @@ $CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -x ns
 
 echo -e "${BOLD}"
 while true; do
-    echo "Loading common Specs and Images takes more than 10 minutes."
+    echo "Loading common Specs and Images takes around 10 minutes."
     read -p 'Load common Specs and Images. Do you want to proceed ? (y/n) : ' CHECKPROCEED
     echo -e "${NC}"
     case $CHECKPROCEED in
@@ -36,8 +36,35 @@ done
 # Start time
 start_time=$(date +%s)
 
+
 # Execute the load-common-resource script and capture its output
-output="$("$CBTUMBLEBUG_ROOT"/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb)"
+EXPECTED_DURATION=480 # 8 minutes
+progress_time=$(date +%s)
+
+"$CBTUMBLEBUG_ROOT"/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb > initTmp.out &
+PID=$!
+
+progress=0
+printf " ["
+printf "%-100s" "-" | tr " " "-"
+printf "] %d%% " $progress
+
+while kill -0 $PID 2> /dev/null; do
+    current_time=$(date +%s)
+    elapsed=$((current_time - progress_time))
+    progress=$((elapsed * 100 / EXPECTED_DURATION))
+    #progress=$((progress>100?100:progress))
+
+    printf "\r ["
+    printf "%-${progress}s" "#" | tr " " "#"
+    printf "%-$((100-progress))s" "-" | tr " " "-"
+    printf "] %d%% " $progress
+
+    sleep 1
+done
+echo " Done."
+output=$(<initTmp.out)
+rm initTmp.out
 
 # End time
 end_time=$(date +%s)

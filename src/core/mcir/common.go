@@ -1575,6 +1575,8 @@ func LoadCommonResource() (common.IdList, error) {
 					log.Error().Err(err1).Msg("")
 					regiesteredStatus += "  [Failed] " + err1.Error()
 				} else {
+
+					var errRegisterSpec error
 					regionName = connection.RegionName
 					log.Info().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 
@@ -1582,16 +1584,30 @@ func LoadCommonResource() (common.IdList, error) {
 					searchKey := GenSpecMapKey(providerName, regionName, specReqTmp.CspSpecName)
 					value, ok := specMap.Load(searchKey)
 					if ok {
-						spec := value.(SpiderSpecInfo)
-						log.Info().Msgf("Found spec in the map: %s", spec.Name)
+						spiderSpec := value.(SpiderSpecInfo)
+						log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+						tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+						if errConvert != nil {
+							log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
+						}
+
+						tumblebugSpec.Name = specInfoId
+						tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
+						_, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
+						if errRegisterSpec != nil {
+							log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
+						}
+
 					} else {
 						log.Info().Msgf("Not Found spec in the map: %s", searchKey)
+						_, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
+						if errRegisterSpec != nil {
+							log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
+						}
 					}
 
-					_, err1 := RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
-					if err1 != nil {
-						log.Error().Err(err1).Msg("")
-						regiesteredStatus += "  [Failed] " + err1.Error()
+					if errRegisterSpec != nil {
+						regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
 					} else {
 						// Update registered Spec object with givn info from asset file
 						// Update registered Spec object with Cost info

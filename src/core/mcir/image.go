@@ -193,7 +193,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("SQL: Insert success")
+		log.Trace().Msg("SQL: Insert success")
 	}
 
 	return content, nil
@@ -247,7 +247,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo, update bool) (TbIm
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("SQL: Insert success")
+		log.Trace().Msg("SQL: Insert success")
 	}
 
 	return *content, nil

@@ -470,7 +470,7 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpec
 	if err != nil {
 		log.Error().Err(err).Msg("")
 	} else {
-		log.Info().Msg("SQL: Insert success")
+		log.Trace().Msg("SQL: Insert success")
 	}
 
 	return *content, nil
