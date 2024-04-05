@@ -121,7 +121,6 @@ EOF
     fi
 
     # for Cloud Connection Config Info
-    echo "[Cloud Connection Config] ${CONN_CONFIG[$INDEX,$REGION]}"
     resp=$(
         curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/connectionconfig -H 'Content-Type: application/json' -d @- <<EOF
         {
@@ -168,26 +167,6 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 	echo ""
 done
 
-echo -e "${BOLD}"
-while true; do
-    read -p 'Confirm the above configuration. Do you want to proceed ? (y/n) : ' CHECKPROCEED
-    echo -e "${NC}"
-    case $CHECKPROCEED in
-    [Yy]*)
-        break
-        ;;
-    [Nn]*)
-        echo
-        echo "Cancel [$0 $@]"
-        echo "See you soon. :)"
-        echo
-        exit 1
-        ;;
-    *)
-        echo "Please answer yes or no."
-        ;;
-    esac
-done
 
 if [ "${INDEX}" == "0" ]; then
     echo "[Parallel execution for all CSP regions]"

@@ -1585,7 +1585,7 @@ func LoadCommonResource() (common.IdList, error) {
 					value, ok := specMap.Load(searchKey)
 					if ok {
 						spiderSpec := value.(SpiderSpecInfo)
-						log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+						//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
 						tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
 						if errConvert != nil {
 							log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
@@ -1599,11 +1599,12 @@ func LoadCommonResource() (common.IdList, error) {
 						}
 
 					} else {
-						log.Info().Msgf("Not Found spec in the map: %s", searchKey)
-						_, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
-						if errRegisterSpec != nil {
-							log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
-						}
+						errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
+						log.Err(errRegisterSpec).Msgf("")
+						// _, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
+						// if errRegisterSpec != nil {
+						// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
+						// }
 					}
 
 					if errRegisterSpec != nil {
@@ -1657,7 +1658,7 @@ func LoadCommonResource() (common.IdList, error) {
 			go func(i int, row []string, lenImages int) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(0, lenImages/8)
+				common.RandomSleep(0, lenImages/5)
 				imageReqTmp := TbImageReq{}
 				// row0: ProviderName
 				// row1: connectionName
