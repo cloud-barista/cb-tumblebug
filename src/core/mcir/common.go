@@ -1532,7 +1532,7 @@ func LoadCommonResource() (common.IdList, error) {
 		lenSpecs := len(rowsSpec[1:])
 		for i, row := range rowsSpec[1:] {
 			wait.Add(1)
-			fmt.Printf("[%d] i, row := range rowsSpec[1:] %s\n", i, row)
+			// fmt.Printf("[%d] i, row := range rowsSpec[1:] %s\n", i, row)
 			// goroutine
 			go func(i int, row []string, lenSpecs int) {
 				defer wait.Done()
@@ -1572,13 +1572,13 @@ func LoadCommonResource() (common.IdList, error) {
 				regionName := ""
 				regiesteredStatus = ""
 				if err1 != nil {
-					log.Error().Err(err1).Msg("")
+					log.Info().Err(err1).Msgf("[%s] Cannot GetConnConfig ", specReqTmp.ConnectionName)
 					regiesteredStatus += "  [Failed] " + err1.Error()
 				} else {
 
 					var errRegisterSpec error
 					regionName = connection.RegionName
-					log.Info().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
+					log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 
 					// Register Spec object
 					searchKey := GenSpecMapKey(providerName, regionName, specReqTmp.CspSpecName)
@@ -1595,12 +1595,12 @@ func LoadCommonResource() (common.IdList, error) {
 						tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
 						_, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
 						if errRegisterSpec != nil {
-							log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
+							log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
 						}
 
 					} else {
 						errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
-						log.Err(errRegisterSpec).Msgf("")
+						log.Info().Err(errRegisterSpec).Msgf("")
 						// _, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
 						// if errRegisterSpec != nil {
 						// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
@@ -1653,7 +1653,7 @@ func LoadCommonResource() (common.IdList, error) {
 		lenImages := len(rowsImg[1:])
 		for i, row := range rowsImg[1:] {
 			wait.Add(1)
-			fmt.Printf("[%d] i, row := range rowsImg[1:] %s\n", i, row)
+			// fmt.Printf("[%d] i, row := range rowsImg[1:] %s\n", i, row)
 			// goroutine
 			go func(i int, row []string, lenImages int) {
 				defer wait.Done()
@@ -1674,21 +1674,27 @@ func LoadCommonResource() (common.IdList, error) {
 				imageInfoId := imageReqTmp.Name
 				imageReqTmp.Description = "Common Image Resource"
 
-				log.Info().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
+				log.Trace().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
 
 				// Register Spec object
 				regiesteredStatus = ""
-				_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp, true)
-				if err1 != nil {
-					log.Error().Err(err1).Msg("")
-					regiesteredStatus += "  [Failed] " + err1.Error()
+				_, err := common.GetConnConfig(imageReqTmp.ConnectionName)
+				if err != nil {
+					log.Info().Err(err).Msgf("[%s] Cannot GetConnConfig ", imageReqTmp.ConnectionName)
+					regiesteredStatus += "  [Failed] " + err.Error()
 				} else {
-					// Update registered image object with OsType info
-					imageUpdateRequest := TbImageInfo{GuestOS: osType}
-					_, err2 := UpdateImage(common.SystemCommonNs, imageInfoId, imageUpdateRequest)
-					if err2 != nil {
-						log.Error().Err(err2).Msg("UpdateImage failed")
-						regiesteredStatus += "  [Failed] " + err2.Error()
+					_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp, true)
+					if err1 != nil {
+						log.Info().Err(err1).Msg("")
+						regiesteredStatus += "  [Failed] " + err1.Error()
+					} else {
+						// Update registered image object with OsType info
+						imageUpdateRequest := TbImageInfo{GuestOS: osType}
+						_, err2 := UpdateImage(common.SystemCommonNs, imageInfoId, imageUpdateRequest)
+						if err2 != nil {
+							log.Error().Err(err2).Msg("UpdateImage failed")
+							regiesteredStatus += "  [Failed] " + err2.Error()
+						}
 					}
 				}
 
