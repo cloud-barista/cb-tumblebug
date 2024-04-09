@@ -71,22 +71,6 @@ if [ "${INDEX}" == "0" ]; then
 			echo ""
 			echo "[Waiting for deleting of CLUSTER:$CLUSTERID (5s)]"
 			dozing 5
-
-<<COMMENT
-			echo "Checking a CLUSTER object. (upto 5s * 10 trials)"
-			for ((try = 1; try <= 10; try++)); do
-				HTTP_CODE=0
-				HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/ns/$NSID/cluster/${CLUSTERID}" --silent)
-				echo "HTTP status for get CLUSTER object: $HTTP_CODE"
-				if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
-					echo "[$try : CLUSTER object is still ALIVE].."
-					dozing 5
-				else
-					printf "[$try : CLUSTER object is deleted or not existed].."
-					break
-				fi
-			done
-COMMENT			
 		 done
 	done
 	wait
