@@ -25,6 +25,7 @@ cloud:
     driver: alibaba-driver-v1.0.so
     link:
     - https://www.alibabacloud.com/help/en/ecs/product-overview/regions-and-zones
+    - https://www.alibabacloud.com/help/en/cloud-migration-guide-for-beginners/latest/regions-and-zones
     region:
       ap-northeast-1:
         desc: Japan (Tokyo)
@@ -286,43 +287,43 @@ cloud:
         - me-central-1a
         - me-central-1b
       ap-southeast-7:
-        desc: ''
+        desc: Thailand (Bangkok)
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Thailand (Bangkok)
+          latitude: 13.7524938
+          longitude: 100.4935089
         zone:
         - ap-southeast-7a
       cn-nanjing:
-        desc: ''
+        desc: China (Nanjing - Local Region)
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: China (Nanjing - Local Region)
+          latitude: 32.0438284
+          longitude: 118.7788631
         zone:
         - cn-nanjing-a
       cn-fuzhou:
-        desc: ''
+        desc: China (Fuzhou - Local Region)
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: China (Fuzhou - Local Region)
+          latitude: 26.0774954
+          longitude: 119.2918215
         zone:
         - cn-fuzhou-a
       ap-southeast-6:
-        desc: ''
+        desc: Philippines (Manila)
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Philippines (Manila)
+          latitude: 14.5906346
+          longitude: 120.9799964
         zone:
         - ap-southeast-6a
       cn-wuhan-lr:
-        desc: ''
+        desc: China (Wuhan - Local Region)
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: China (Wuhan - Local Region)
+          latitude: 30.5951051
+          longitude: 114.2999353
         zone:
         - cn-wuhan-lr-a
   aws:
@@ -936,7 +937,7 @@ cloud:
           longitude: -3.084
         zone: []
       westcentralus:
-        desc: ' West Central US'
+        desc: West Central US
         location:
           display: West Central US
           latitude: 40.89
@@ -977,116 +978,116 @@ cloud:
         - '2'
         - '3'
       israelcentral:
-        desc: ''
+        desc: israel central
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: israel central
+          latitude: 30.8124247
+          longitude: 34.8594762
         zone:
         - '1'
         - '2'
         - '3'
       swedencentral:
-        desc: ''
+        desc: sweden central
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: sweden central
+          latitude: 59.6749712
+          longitude: 14.5208584
         zone:
         - '1'
         - '2'
         - '3'
       eastus2euap:
-        desc: ''
+        desc: East US 2 EUAP (Early Updates Access Program)
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: East US 2 EUAP
+          latitude: 36.6781
+          longitude: -78.3789
         zone:
         - '1'
         - '2'
         - '3'
       brazilus:
-        desc: ''
+        desc: brazilus
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: brazilus
+          latitude: -10.3333333
+          longitude: -53.2
         zone: []
       qatarcentral:
-        desc: ''
+        desc: qatar central
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: qatar central
+          latitude: 25.3336984
+          longitude: 51.2295295
         zone:
         - '1'
         - '2'
         - '3'
       brazilsoutheast:
-        desc: ''
+        desc: brazil southeast
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: brazil southeast
+          latitude: -22.4666667
+          longitude: -45
         zone: []
       jioindiawest:
-        desc: ''
+        desc: Jio India West
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Jio India West
+          latitude: 19.86858
+          longitude: 73.10469
         zone: []
       jioindiacentral:
-        desc: ''
+        desc: Jio India Central
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Jio India Central
+          latitude: 13.00284
+          longitude: 77.59155
         zone: []
       italynorth:
-        desc: ''
+        desc: Lombardy Italy
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Lombardy Italy
+          latitude: 45.47621
+          longitude: 9.84473
         zone:
         - '1'
         - '2'
         - '3'
       westus3:
-        desc: ''
+        desc: westus3
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Arizona USA
+          latitude: 33.90304
+          longitude: -112.01002
         zone:
         - '1'
         - '2'
         - '3'
       polandcentral:
-        desc: ''
+        desc: polandcentral
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Poland Central
+          latitude: 52.20793
+          longitude: 19.59488
         zone:
         - '1'
         - '2'
         - '3'
       eastusstg:
-        desc: ''
+        desc: East US STG
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: East US STG
+          latitude: 37.3719
+          longitude: -79.8164
         zone: []
       centraluseuap:
-        desc: ''
+        desc: Central US 2 EUAP (Early Updates Access Program)
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Central US 2 EUAP
+          latitude: 41.5908
+          longitude: -93.6208
         zone: []
   gcp:
     desc: Google Cloud Platform
@@ -1580,21 +1581,21 @@ cloud:
         - us-east-2
         - us-east-3
       us-south:
-        desc: ''
+        desc: us-south
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Dallas USA
+          latitude: 32.81248
+          longitude: -96.77619
         zone:
         - us-south-1
         - us-south-2
         - us-south-3
       eu-es:
-        desc: ''
+        desc: eu-es
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Madrid Spain
+          latitude: 40.42695
+          longitude: -3.70872
         zone:
         - eu-es-1
         - eu-es-2
@@ -1603,67 +1604,24 @@ cloud:
     desc: KT Cloud (Classic without VPC)
     driver: ktcloud-driver-v1.0.so
     region:
-      kr-central-a:
-        desc: Cheon-an - South Korea
-        location:
-          display: Cheon-an A - South Korea
-          latitude: 36.812483
-          longitude: 127.107005
-        zone: []
-      kr-central-b:
-        desc: Cheon-an - South Korea
-        location:
-          display: Cheon-an B - South Korea
-          latitude: 36.832583
-          longitude: 127.157205
-        zone: []
-      kr-kimhae:
-        desc: Kimhae - South Korea
-        location:
-          display: Kimhae - South Korea
-          latitude: 35.228545
-          longitude: 128.889352
-        zone: []
-      kr-seoul-m:
-        desc: Seoul - South Korea
-        location:
-          display: South Korea (Seoul)
-          latitude: 37.566535
-          longitude: 126.977969
-        zone: []
-      kr-seoul-m2:
+      KOR-Seoul:
         desc: Seoul - South Korea
         location:
           display: South Korea (Seoul)
           latitude: 37.466535
           longitude: 126.877969
-        zone: []
-      KOR-Seoul:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
         zone:
         - 95e2f517-d64a-4866-8585-5177c256f7c7
         - d7d0177e-6cda-404a-a46f-a5b356d2874e
       KOR-Central:
-        desc: ''
+        desc: Cheonan South Korea
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Cheonan South Korea
+          latitude: 36.802725
+          longitude: 127.177481
         zone:
         - 9845bd17-d438-4bde-816d-1b12f37d5080
         - eceb5d65-6571-4696-875f-5a17949f3317
-      KOR-HA:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
-        zone:
-        - dfd6f03d-dae5-458e-a2ea-cb6a55d0d994
   ktcloudvpc:
     desc: KT Cloud (VPC)
     driver: ktcloudvpc-driver-v1.0.so
@@ -1671,140 +1629,91 @@ cloud:
       kr-dx-m1:
         desc: Seoul - South Korea
         location:
-          display: ''
-          latitude: ''
-          longitude: ''
+          display: Mok-dong Seoul South Korea
+          latitude: 37.536726
+          longitude: 126.874278
         zone: []
   ncp:
     desc: Naver Cloud Platform (Classic without VPC)
     driver: ncp-driver-v1.0.so
     region:
-      den:
+      DEN:
         desc: Germany
         location:
           display: Germany
           latitude: 50.1108
           longitude: 8.6821
-        zone: []
-      jpn:
+        zone:
+        - DEN-1
+      JPN:
         desc: Japan
         location:
           display: Japan
           latitude: 35.6893
           longitude: 139.6917
-        zone: []
-      kr:
+        zone:
+        - JPN-1
+      KR:
         desc: Korea
         location:
           display: South Korea (Seoul)
           latitude: 37.4754
           longitude: 126.8831
-        zone: []
-      sgn:
+        zone:
+        - KR-1
+        - KR-2
+      SGN:
         desc: Singapore
         location:
           display: Singapore
           latitude: 1.3402
           longitude: 103.7041
-        zone: []
+        zone:
+        - SGN-1
       uswn:
         desc: US West
         location:
           display: US Western
           latitude: 37.351
           longitude: -121.963
-        zone: []
-      KR:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
-        zone:
-        - KR-1
-        - KR-2
-      USWN:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
         zone:
         - USWN-1
-      DEN:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
-        zone:
-        - DEN-1
       HK:
-        desc: ''
+        desc: Hong Kong
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Hong Kong
+          latitude: 22.31356
+          longitude: 114.17369
         zone:
         - HK-1
-      SGN:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
-        zone:
-        - SGN-1
-      JPN:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
-        zone:
-        - JPN-1
   ncpvpc:
     desc: Naver Cloud Platform (VPC)
     driver: ncpvpc-driver-v1.0.so
     region:
-      kr:
+      KR:
         desc: Korea 1
         location:
           display: South Korea (Seoul)
           latitude: 37.4754
           longitude: 126.8831
-        zone: []
-      sgn:
-        desc: Singapore 4
-        location:
-          display: Singapore
-          latitude: 1.3402
-          longitude: 103.7041
-        zone: []
-      KR:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
         zone:
         - KR-1
         - KR-2
       SGN:
-        desc: ''
+        desc: Singapore
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Singapore
+          latitude: 1.3402
+          longitude: 103.7041
         zone:
         - SGN-4
         - SGN-5
       JPN:
-        desc: ''
+        desc: Japan
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Japan
+          latitude: 35.51742
+          longitude: 136.80291
         zone:
         - JPN-4
         - JPN-5
@@ -1818,48 +1727,27 @@ cloud:
           display: Japan (Tokyo)
           latitude: 35.412
           longitude: 139.423
-        zone: []
+        zone:
+        - jp-pub-a
+        - jp-pub-b
       kr1:
         desc: South Korea (Pangyo)
         location:
           display: South Korea (Pangyo)
           latitude: 37.390889
           longitude: 127.096792
-        zone: []
+        zone:
+        - kr-pub-a
+        - kr-pub-b
       kr2:
         desc: South Korea (Pyeongchon)
         location:
           display: South Korea (Pyeongchon)
           latitude: 37.392584
           longitude: 126.95145
-        zone: []
-      KR1:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
-        zone:
-        - kr-pub-a
-        - kr-pub-b
-      KR2:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
         zone:
         - kr2-pub-a
         - kr2-pub-b
-      JP1:
-        desc: ''
-        location:
-          display: ''
-          latitude: null
-          longitude: null
-        zone:
-        - jp-pub-a
-        - jp-pub-b
   openstack:
     desc: OpenStack
     driver: openstack-driver-v1.0.so
@@ -2098,10 +1986,10 @@ cloud:
         zone:
         - na-toronto-1
       sa-saopaulo:
-        desc: ''
+        desc: Sao Paulo
         location:
-          display: ''
-          latitude: null
-          longitude: null
+          display: Sao Paulo
+          latitude: -23.55398
+          longitude: -46.64681
         zone:
         - sa-saopaulo-1
