@@ -1,5 +1,27 @@
 basePath: /tumblebug
 definitions:
+  common.CSPDetail:
+    properties:
+      description:
+        type: string
+      driver:
+        type: string
+      links:
+        items:
+          type: string
+        type: array
+      regions:
+        additionalProperties:
+          $ref: '#/definitions/common.RegionDetail'
+        type: object
+    type: object
+  common.CloudInfo:
+    properties:
+      csps:
+        additionalProperties:
+          $ref: '#/definitions/common.CSPDetail'
+        type: object
+    type: object
   common.ConfigInfo:
     properties:
       id:
@@ -81,6 +103,15 @@ definitions:
       value:
         type: string
     type: object
+  common.Location:
+    properties:
+      display:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+    type: object
   common.NsInfo:
     properties:
       description:
@@ -115,6 +146,17 @@ definitions:
       regionName:
         description: ex) "region01"
         type: string
+    type: object
+  common.RegionDetail:
+    properties:
+      description:
+        type: string
+      location:
+        $ref: '#/definitions/common.Location'
+      zones:
+        items:
+          type: string
+        type: array
     type: object
   common.RegionList:
     properties:
@@ -1183,7 +1225,7 @@ definitions:
           type: string
         type: array
       region:
-        $ref: '#/definitions/common.Region'
+        $ref: '#/definitions/common.RegionDetail'
       systemMessage:
         description: Latest system message such as error message
         example: Failed because ...
@@ -2807,6 +2849,29 @@ paths:
       summary: Check resources' existence
       tags:
       - '[Infra resource] MCIR Common'
+  /cloudInfo:
+    get:
+      consumes:
+      - application/json
+      description: Get cloud information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.CloudInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get cloud information
+      tags:
+      - '[Admin] Multi-Cloud environment configuration'
   /config:
     delete:
       consumes:
@@ -7888,7 +7953,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.Region'
+            $ref: '#/definitions/common.RegionDetail'
         "404":
           description: Not Found
           schema:

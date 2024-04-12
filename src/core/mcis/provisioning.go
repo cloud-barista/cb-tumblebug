@@ -263,8 +263,8 @@ type CheckVmDynamicReqInfo struct {
 	// CommonImage		string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
 	//RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
 
-	VmSpec mcir.TbSpecInfo `json:"vmSpec" default:""`
-	Region common.Region   `json:"region" default:""`
+	VmSpec mcir.TbSpecInfo     `json:"vmSpec" default:""`
+	Region common.RegionDetail `json:"region" default:""`
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
@@ -1143,7 +1143,7 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 			errMessage += "//Failed to CopySrcToDest() " + k
 		}
 
-		regionInfo, err := common.GetRegion(specInfo.RegionName)
+		_, regionInfo, err := common.GetRegion(specInfo.RegionName)
 		if err != nil {
 			errMessage += "//Failed to get Region (" + specInfo.RegionName + ") for Spec (" + k + ") is not found."
 		}
@@ -1465,17 +1465,18 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	}
 
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
-	regionTmp, _ := common.GetRegion(configTmp.RegionName)
 
-	nativeRegion := ""
-	for _, v := range regionTmp.KeyValueInfoList {
-		if strings.ToLower(v.Key) == "region" || strings.ToLower(v.Key) == "location" {
-			nativeRegion = v.Value
-			break
-		}
+	nativeRegion, _, err := common.GetRegion(configTmp.RegionName)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
 	}
 
-	vmInfoData.Location = common.GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
+	vmInfoData.Location, err = common.GetCloudLocation(configTmp.ProviderName, nativeRegion)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
 
 	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
 	// Update VM object

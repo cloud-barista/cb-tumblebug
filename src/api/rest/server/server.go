@@ -166,6 +166,7 @@ func RunServer(port string) {
 	// Route
 	e.GET("/tumblebug/checkNs/:nsId", rest_common.RestCheckNs)
 
+	e.GET("/tumblebug/cloudInfo", rest_common.RestGetCloudInfo)
 	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
 	e.GET("/tumblebug/connConfig/:connConfigName", rest_common.RestGetConnConfig)
 	e.GET("/tumblebug/region", rest_common.RestGetRegionList)

@@ -27,30 +27,51 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// CloudInfo is structure for cloud information
 type CloudInfo struct {
-	CSPs map[string]CSPDetail `mapstructure:"cloud"`
+	CSPs map[string]CSPDetail `mapstructure:"cloud" json:"csps"`
 }
 
+// CSPDetail is structure for CSP information
 type CSPDetail struct {
-	Description string                  `mapstructure:"desc"`
-	Driver      string                  `mapstructure:"driver"`
-	Links       []string                `mapstructure:"link"`
-	Regions     map[string]RegionDetail `mapstructure:"region"`
+	Description string                  `mapstructure:"description" json:"description"`
+	Driver      string                  `mapstructure:"driver" json:"driver"`
+	Links       []string                `mapstructure:"link" json:"links"`
+	Regions     map[string]RegionDetail `mapstructure:"region" json:"regions"`
 }
 
+// RegionDetail is structure for region information
 type RegionDetail struct {
-	Description string   `mapstructure:"desc"`
-	Location    Location `mapstructure:"location"`
-	Zones       []string `mapstructure:"zone"`
+	Description string   `mapstructure:"description" json:"description"`
+	Location    Location `mapstructure:"location" json:"location"`
+	Zones       []string `mapstructure:"zone" json:"zones"`
 }
 
+// Location is structure for location information
 type Location struct {
-	Display   string  `mapstructure:"display"`
-	Latitude  float64 `mapstructure:"latitude"`
-	Longitude float64 `mapstructure:"longitude"`
+	Display   string  `mapstructure:"display" json:"display"`
+	Latitude  float64 `mapstructure:"latitude" json:"latitude"`
+	Longitude float64 `mapstructure:"longitude" json:"longitude"`
 }
 
+// RuntimeCloudInfo is global variable for CloudInfo
 var RuntimeCloudInfo = CloudInfo{}
+
+// AdjustKeysToLowercase adjusts the keys of nested maps to lowercase.
+func AdjustKeysToLowercase(cloudInfo *CloudInfo) {
+	newCSPs := make(map[string]CSPDetail)
+	for cspKey, cspDetail := range cloudInfo.CSPs {
+		lowerCSPKey := strings.ToLower(cspKey)
+		newRegions := make(map[string]RegionDetail)
+		for regionKey, regionDetail := range cspDetail.Regions {
+			lowerRegionKey := strings.ToLower(regionKey)
+			newRegions[lowerRegionKey] = regionDetail
+		}
+		cspDetail.Regions = newRegions
+		newCSPs[lowerCSPKey] = cspDetail
+	}
+	cloudInfo.CSPs = newCSPs
+}
 
 // PrintCloudInfoTable prints CloudInfo in table format
 func PrintCloudInfoTable(cloudInfo CloudInfo) {

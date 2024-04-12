@@ -86,6 +86,8 @@ func setConfig() {
 		log.Error().Err(err).Msg("")
 		panic(err)
 	}
+	// make all map keys lowercase
+	common.AdjustKeysToLowercase(&common.RuntimeCloudInfo)
 	// fmt.Printf("%+v\n", common.RuntimeCloudInfo)
 	common.PrintCloudInfoTable(common.RuntimeCloudInfo)
 

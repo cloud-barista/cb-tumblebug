@@ -580,13 +580,16 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 	tempSpiderNLBInfo = resp.Result().(*SpiderNLBInfo)
 
-	regionTmp, _ := common.GetRegion(connConfig.RegionName)
-	nativeRegion := ""
-	for _, v := range regionTmp.KeyValueInfoList {
-		if strings.ToLower(v.Key) == "region" || strings.ToLower(v.Key) == "location" {
-			nativeRegion = v.Value
-			break
-		}
+	nativeRegion, _, err := common.GetRegion(connConfig.RegionName)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyObj, err
+	}
+
+	location, err := common.GetCloudLocation(connConfig.ProviderName, nativeRegion)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyObj, err
 	}
 
 	content := TbNLBInfo{
@@ -623,7 +626,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 			VMs:          vmIDs,
 			KeyValueList: tempSpiderNLBInfo.VMGroup.KeyValueList,
 		},
-		Location: common.GetCloudLocation(strings.ToLower(connConfig.ProviderName), strings.ToLower(nativeRegion)),
+		Location: location,
 	}
 
 	if option == "register" && u.CspNLBId == "" {
