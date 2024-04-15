@@ -38,7 +38,7 @@ start_time=$(date +%s)
 
 
 # Execute the load-common-resource script and capture its output
-EXPECTED_DURATION=480 # 8 minutes
+EXPECTED_DURATION=300 # 5 minutes
 progress_time=$(date +%s)
 
 "$CBTUMBLEBUG_ROOT"/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb > initTmp.out &

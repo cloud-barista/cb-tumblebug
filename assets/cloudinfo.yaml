@@ -4,13 +4,13 @@
 # The file is in YAML format and contains the following fields:
 # cloud: Top level key
 #   <csp>: Name of the CSP
-#     desc: Description of the CSP
+#     description: Description of the CSP
 #     driver: Name of the driver library file (a prepared CB-Spider Driver)
 #     link: 
 #     -URLs to the official documentation of the CSP
 #     region: List of regions
 #       <region>:
-#         desc: Description of the region
+#         description: Description of the region
 #         location: Location details of the region
 #           display: Display name
 #           latitude: Latitude
@@ -21,14 +21,14 @@
 
 cloud:
   alibaba:
-    desc: Alibaba Cloud
+    description: Alibaba Cloud
     driver: alibaba-driver-v1.0.so
     link:
     - https://www.alibabacloud.com/help/en/ecs/product-overview/regions-and-zones
     - https://www.alibabacloud.com/help/en/cloud-migration-guide-for-beginners/latest/regions-and-zones
     region:
       ap-northeast-1:
-        desc: Japan (Tokyo)
+        description: Japan (Tokyo)
         location:
           display: Japan (Tokyo)
           latitude: 35.41
@@ -38,7 +38,7 @@ cloud:
         - ap-northeast-1b
         - ap-northeast-1c
       ap-northeast-2:
-        desc: South Korea (Seoul)
+        description: South Korea (Seoul)
         location:
           display: South Korea (Seoul)
           latitude: 37.36
@@ -46,7 +46,7 @@ cloud:
         zone:
         - ap-northeast-2a
       ap-south-1:
-        desc: Mumbai
+        description: Mumbai
         location:
           display: India (Mumbai)
           latitude: 19.08
@@ -55,7 +55,7 @@ cloud:
         - ap-south-1a
         - ap-south-1b
       ap-southeast-1:
-        desc: Singapore
+        description: Singapore
         location:
           display: Singapore
           latitude: 1.37
@@ -65,7 +65,7 @@ cloud:
         - ap-southeast-1b
         - ap-southeast-1c
       ap-southeast-2:
-        desc: Australia (Sydney)
+        description: Australia (Sydney)
         location:
           display: Australia (Sydney)
           latitude: -33.86
@@ -74,7 +74,7 @@ cloud:
         - ap-southeast-2a
         - ap-southeast-2b
       ap-southeast-3:
-        desc: Malaysia (Kuala Lumpur)
+        description: Malaysia (Kuala Lumpur)
         location:
           display: Malaysia (Kuala Lumpur)
           latitude: 3.1408
@@ -83,7 +83,7 @@ cloud:
         - ap-southeast-3a
         - ap-southeast-3b
       ap-southeast-5:
-        desc: Indonesia (Jakarta)
+        description: Indonesia (Jakarta)
         location:
           display: Indonesia (Jakarta)
           latitude: -6.205
@@ -93,7 +93,7 @@ cloud:
         - ap-southeast-5b
         - ap-southeast-5c
       cn-beijing:
-        desc: China (Beijing)
+        description: China (Beijing)
         location:
           display: China (Beijing)
           latitude: 39.5427
@@ -112,7 +112,7 @@ cloud:
         - cn-beijing-k
         - cn-beijing-l
       cn-chengdu:
-        desc: China (Chengdu)
+        description: China (Chengdu)
         location:
           display: China (Chengdu)
           latitude: 30.657
@@ -121,7 +121,7 @@ cloud:
         - cn-chengdu-a
         - cn-chengdu-b
       cn-guangzhou:
-        desc: China (Guangzhou)
+        description: China (Guangzhou)
         location:
           display: China (Guangzhou)
           latitude: 23.1292
@@ -130,7 +130,7 @@ cloud:
         - cn-guangzhou-a
         - cn-guangzhou-b
       cn-hangzhou:
-        desc: China (Hangzhou)
+        description: China (Hangzhou)
         location:
           display: China (Hangzhou)
           latitude: 30.25
@@ -145,7 +145,7 @@ cloud:
         - cn-hangzhou-j
         - cn-hangzhou-k
       cn-heyuan:
-        desc: China (Heyuan)
+        description: China (Heyuan)
         location:
           display: China (Heyuan)
           latitude: 23.7333
@@ -154,7 +154,7 @@ cloud:
         - cn-heyuan-a
         - cn-heyuan-b
       cn-hongkong:
-        desc: China (Hong Kong)
+        description: China (Hong Kong)
         location:
           display: China (Hong Kong)
           latitude: 22.4464
@@ -164,7 +164,7 @@ cloud:
         - cn-hongkong-c
         - cn-hongkong-d
       cn-huhehaote:
-        desc: China (Huhehaote)
+        description: China (Huhehaote)
         location:
           display: China (Hohhot)
           latitude: 40.5046
@@ -173,7 +173,7 @@ cloud:
         - cn-huhehaote-a
         - cn-huhehaote-b
       cn-qingdao:
-        desc: China (Qingdao)
+        description: China (Qingdao)
         location:
           display: China (Qingdao)
           latitude: 36.3
@@ -182,7 +182,7 @@ cloud:
         - cn-qingdao-b
         - cn-qingdao-c
       cn-shanghai:
-        desc: China (Shanghai)
+        description: China (Shanghai)
         location:
           display: China (Shanghai)
           latitude: 31.224
@@ -200,7 +200,7 @@ cloud:
         - cn-shanghai-m
         - cn-shanghai-n
       cn-shenzhen:
-        desc: China (Shenzhen)
+        description: China (Shenzhen)
         location:
           display: China (Shenzhen)
           latitude: 22.5428
@@ -213,7 +213,7 @@ cloud:
         - cn-shenzhen-e
         - cn-shenzhen-f
       cn-wulanchabu:
-        desc: China (Ulanqab)
+        description: China (Ulanqab)
         location:
           display: China (Ulanqab)
           latitude: 40.9937
@@ -223,7 +223,7 @@ cloud:
         - cn-wulanchabu-b
         - cn-wulanchabu-c
       cn-zhangjiakou:
-        desc: China (Zhangjiakou)
+        description: China (Zhangjiakou)
         location:
           display: China (Zhangjiakou)
           latitude: 40.4836
@@ -233,7 +233,7 @@ cloud:
         - cn-zhangjiakou-b
         - cn-zhangjiakou-c
       eu-central-1:
-        desc: Germany (Frankfurt)
+        description: Germany (Frankfurt)
         location:
           display: Germany (Frankfurt)
           latitude: 50.0
@@ -243,7 +243,7 @@ cloud:
         - eu-central-1b
         - eu-central-1c
       eu-west-1:
-        desc: UK (London)
+        description: UK (London)
         location:
           display: UK (London)
           latitude: 53.0
@@ -252,7 +252,7 @@ cloud:
         - eu-west-1a
         - eu-west-1b
       me-east-1:
-        desc: UAE (Dubai)
+        description: UAE (Dubai)
         location:
           display: UAE (Dubai)
           latitude: 25.277
@@ -260,7 +260,7 @@ cloud:
         zone:
         - me-east-1a
       us-east-1:
-        desc: US (Virginia)
+        description: US (Virginia)
         location:
           display: USA (Virginia)
           latitude: 38.13
@@ -269,7 +269,7 @@ cloud:
         - us-east-1a
         - us-east-1b
       us-west-1:
-        desc: US (Silicon Valley)
+        description: US (Silicon Valley)
         location:
           display: US (Silicon Valley)
           latitude: 37.35
@@ -278,7 +278,7 @@ cloud:
         - us-west-1a
         - us-west-1b
       me-central-1:
-        desc: Middle East (UAE)
+        description: Middle East (UAE)
         location:
           display: UAE
           latitude: 24.0002488
@@ -287,7 +287,7 @@ cloud:
         - me-central-1a
         - me-central-1b
       ap-southeast-7:
-        desc: Thailand (Bangkok)
+        description: Thailand (Bangkok)
         location:
           display: Thailand (Bangkok)
           latitude: 13.7524938
@@ -295,7 +295,7 @@ cloud:
         zone:
         - ap-southeast-7a
       cn-nanjing:
-        desc: China (Nanjing - Local Region)
+        description: China (Nanjing - Local Region)
         location:
           display: China (Nanjing - Local Region)
           latitude: 32.0438284
@@ -303,7 +303,7 @@ cloud:
         zone:
         - cn-nanjing-a
       cn-fuzhou:
-        desc: China (Fuzhou - Local Region)
+        description: China (Fuzhou - Local Region)
         location:
           display: China (Fuzhou - Local Region)
           latitude: 26.0774954
@@ -311,7 +311,7 @@ cloud:
         zone:
         - cn-fuzhou-a
       ap-southeast-6:
-        desc: Philippines (Manila)
+        description: Philippines (Manila)
         location:
           display: Philippines (Manila)
           latitude: 14.5906346
@@ -319,7 +319,7 @@ cloud:
         zone:
         - ap-southeast-6a
       cn-wuhan-lr:
-        desc: China (Wuhan - Local Region)
+        description: China (Wuhan - Local Region)
         location:
           display: China (Wuhan - Local Region)
           latitude: 30.5951051
@@ -327,14 +327,14 @@ cloud:
         zone:
         - cn-wuhan-lr-a
   aws:
-    desc: Amazon Web Services
+    description: Amazon Web Services
     driver: aws-driver-v1.0.so
     link:
     - https://aws.amazon.com/about-aws/global-infrastructure/
     - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
     region:
       af-south-1:
-        desc: Africa (Cape Town)
+        description: Africa (Cape Town)
         location:
           display: Africa (Cape Town)
           latitude: -33.9
@@ -344,7 +344,7 @@ cloud:
         - af-south-1b
         - af-south-1c
       ap-east-1:
-        desc: Asia Pacific (Hong Kong)
+        description: Asia Pacific (Hong Kong)
         location:
           display: Asia Pacific (Hong Kong)
           latitude: 22.2603
@@ -354,7 +354,7 @@ cloud:
         - ap-east-1b
         - ap-east-1c
       ap-northeast-1:
-        desc: Asia Pacific (Tokyo)
+        description: Asia Pacific (Tokyo)
         location:
           display: Japan (Tokyo)
           latitude: 35.41
@@ -364,7 +364,7 @@ cloud:
         - ap-northeast-1c
         - ap-northeast-1d
       ap-northeast-2:
-        desc: Asia Pacific (Seoul)
+        description: Asia Pacific (Seoul)
         location:
           display: South Korea (Seoul)
           latitude: 37.36
@@ -375,7 +375,7 @@ cloud:
         - ap-northeast-2c
         - ap-northeast-2d
       ap-northeast-3:
-        desc: Asia Pacific (Osaka)
+        description: Asia Pacific (Osaka)
         location:
           display: Asia Pacific (Osaka-Local)
           latitude: 34.38
@@ -385,7 +385,7 @@ cloud:
         - ap-northeast-3b
         - ap-northeast-3c
       ap-south-1:
-        desc: Asia Pacific (Mumbai)
+        description: Asia Pacific (Mumbai)
         location:
           display: India (Mumbai)
           latitude: 19.08
@@ -395,7 +395,7 @@ cloud:
         - ap-south-1b
         - ap-south-1c
       ap-southeast-1:
-        desc: Asia Pacific (Singapore)
+        description: Asia Pacific (Singapore)
         location:
           display: Singapore
           latitude: 1.37
@@ -405,7 +405,7 @@ cloud:
         - ap-southeast-1b
         - ap-southeast-1c
       ap-southeast-2:
-        desc: Asia Pacific (Sydney)
+        description: Asia Pacific (Sydney)
         location:
           display: Australia (Sydney)
           latitude: -33.86
@@ -415,7 +415,7 @@ cloud:
         - ap-southeast-2b
         - ap-southeast-2c
       ca-central-1:
-        desc: Canada (Central)
+        description: Canada (Central)
         location:
           display: Canada Central
           latitude: 45.5
@@ -425,7 +425,7 @@ cloud:
         - ca-central-1b
         - ca-central-1d
       eu-central-1:
-        desc: Europe (Frankfurt)
+        description: Europe (Frankfurt)
         location:
           display: Germany (Frankfurt)
           latitude: 50.0
@@ -435,7 +435,7 @@ cloud:
         - eu-central-1b
         - eu-central-1c
       eu-north-1:
-        desc: Europe (Stockholm)
+        description: Europe (Stockholm)
         location:
           display: Europe (Stockholm)
           latitude: 64.6
@@ -445,7 +445,7 @@ cloud:
         - eu-north-1b
         - eu-north-1c
       eu-south-1:
-        desc: Europe (Milan)
+        description: Europe (Milan)
         location:
           display: Europe (Milan)
           latitude: 45.4
@@ -455,7 +455,7 @@ cloud:
         - eu-south-1b
         - eu-south-1c
       eu-west-1:
-        desc: Europe (Ireland)
+        description: Europe (Ireland)
         location:
           display: Ireland
           latitude: 53.0
@@ -465,7 +465,7 @@ cloud:
         - eu-west-1b
         - eu-west-1c
       eu-west-2:
-        desc: Europe (London)
+        description: Europe (London)
         location:
           display: UK (London)
           latitude: 51.0
@@ -475,7 +475,7 @@ cloud:
         - eu-west-2b
         - eu-west-2c
       eu-west-3:
-        desc: Europe (Paris)
+        description: Europe (Paris)
         location:
           display: Paris
           latitude: 48.86
@@ -485,7 +485,7 @@ cloud:
         - eu-west-3b
         - eu-west-3c
       me-south-1:
-        desc: Middle East (Bahrain)
+        description: Middle East (Bahrain)
         location:
           display: Middle East (Bahrain)
           latitude: 25.0
@@ -495,7 +495,7 @@ cloud:
         - me-south-1b
         - me-south-1c
       sa-east-1:
-        desc: South America (Sao Paulo)
+        description: South America (Sao Paulo)
         location:
           display: Brazil (Sao Paulo)
           latitude: -23.34
@@ -505,7 +505,7 @@ cloud:
         - sa-east-1b
         - sa-east-1c
       us-east-1:
-        desc: US East (N. Virginia)
+        description: US East (N. Virginia)
         location:
           display: US East (N. Virginia)
           latitude: 38.13
@@ -518,7 +518,7 @@ cloud:
         - us-east-1e
         - us-east-1f
       us-east-2:
-        desc: US East (Ohio)
+        description: US East (Ohio)
         location:
           display: USA (Ohio)
           latitude: 39.96
@@ -528,7 +528,7 @@ cloud:
         - us-east-2b
         - us-east-2c
       us-west-1:
-        desc: US West (N. California)
+        description: US West (N. California)
         location:
           display: California
           latitude: 37.35
@@ -537,7 +537,7 @@ cloud:
         - us-west-1a
         - us-west-1b
       us-west-2:
-        desc: US West (Oregon)
+        description: US West (Oregon)
         location:
           display: Oregon
           latitude: 46.15
@@ -548,7 +548,7 @@ cloud:
         - us-west-2c
         - us-west-2d
       ap-south-2:
-        desc: Asia Pacific (Hyderabad)
+        description: Asia Pacific (Hyderabad)
         location:
           display: Hyderabad
           latitude: 17.360589
@@ -558,7 +558,7 @@ cloud:
         - ap-south-2b
         - ap-south-2c
       eu-central-2:
-        desc: Europe (Zurich)
+        description: Europe (Zurich)
         location:
           display: Zurich
           latitude: 47.3744489
@@ -568,7 +568,7 @@ cloud:
         - eu-central-2b
         - eu-central-2c
       il-central-1:
-        desc: Israel (Tel Aviv)
+        description: Israel (Tel Aviv)
         location:
           display: Tel Aviv
           latitude: 32.0852997
@@ -578,7 +578,7 @@ cloud:
         - il-central-1b
         - il-central-1c
       ap-southeast-4:
-        desc: Asia Pacific (Melbourne)
+        description: Asia Pacific (Melbourne)
         location:
           display: Melbourne
           latitude: -37.8142454
@@ -588,7 +588,7 @@ cloud:
         - ap-southeast-4b
         - ap-southeast-4c
       ap-southeast-3:
-        desc: Asia Pacific (Jakarta)
+        description: Asia Pacific (Jakarta)
         location:
           display: Jakarta
           latitude: -6.175247
@@ -598,7 +598,7 @@ cloud:
         - ap-southeast-3b
         - ap-southeast-3c
       eu-south-2:
-        desc: Europe (Spain)
+        description: Europe (Spain)
         location:
           display: Spain
           latitude: 39.3260685
@@ -608,7 +608,7 @@ cloud:
         - eu-south-2b
         - eu-south-2c
       me-central-1:
-        desc: Middle East (UAE)
+        description: Middle East (UAE)
         location:
           display: UAE
           latitude: 24.0002488
@@ -618,7 +618,7 @@ cloud:
         - me-central-1b
         - me-central-1c
       ca-west-1:
-        desc: Canada West (Calgary)
+        description: Canada West (Calgary)
         location:
           display: Calgary
           latitude: 51.0456064
@@ -628,25 +628,25 @@ cloud:
         - ca-west-1b
         - ca-west-1c
   azure:
-    desc: Microsoft Azure
+    description: Microsoft Azure
     driver: azure-driver-v1.0.so
     region:
       australiacentral:
-        desc: Australia Central
+        description: Australia Central
         location:
           display: Australia Central
           latitude: -35.3075
           longitude: 149.1244
         zone: []
       australiacentral2:
-        desc: Australia Central 2
+        description: Australia Central 2
         location:
           display: Australia Central 2
           latitude: -35.3085
           longitude: 149.1254
         zone: []
       australiaeast:
-        desc: Australia East
+        description: Australia East
         location:
           display: Australia East
           latitude: -33.86
@@ -656,14 +656,14 @@ cloud:
         - '2'
         - '3'
       australiasoutheast:
-        desc: Australia Southeast
+        description: Australia Southeast
         location:
           display: Australia Southeast
           latitude: -37.8136
           longitude: 144.9631
         zone: []
       brazilsouth:
-        desc: Brazil South
+        description: Brazil South
         location:
           display: Brazil South
           latitude: -23.55
@@ -673,7 +673,7 @@ cloud:
         - '2'
         - '3'
       canadacentral:
-        desc: Canada Central
+        description: Canada Central
         location:
           display: Canada Central
           latitude: 43.653
@@ -683,14 +683,14 @@ cloud:
         - '2'
         - '3'
       canadaeast:
-        desc: Canada East
+        description: Canada East
         location:
           display: Canada East
           latitude: 46.817
           longitude: -71.217
         zone: []
       centralindia:
-        desc: Central India
+        description: Central India
         location:
           display: Central India
           latitude: 18.5822
@@ -700,7 +700,7 @@ cloud:
         - '2'
         - '3'
       centralus:
-        desc: Central US
+        description: Central US
         location:
           display: Central US
           latitude: 41.5908
@@ -710,7 +710,7 @@ cloud:
         - '2'
         - '3'
       eastasia:
-        desc: East Asia
+        description: East Asia
         location:
           display: East Asia
           latitude: 22.267
@@ -720,7 +720,7 @@ cloud:
         - '2'
         - '3'
       eastus:
-        desc: East US
+        description: East US
         location:
           display: East US
           latitude: 37.3719
@@ -730,7 +730,7 @@ cloud:
         - '2'
         - '3'
       eastus2:
-        desc: East US 2
+        description: East US 2
         location:
           display: East US 2
           latitude: 36.6681
@@ -740,7 +740,7 @@ cloud:
         - '2'
         - '3'
       francecentral:
-        desc: France Central
+        description: France Central
         location:
           display: France Central
           latitude: 46.3772
@@ -750,21 +750,21 @@ cloud:
         - '2'
         - '3'
       francesouth:
-        desc: France South
+        description: France South
         location:
           display: France South
           latitude: 43.8345
           longitude: 2.1972
         zone: []
       germanynorth:
-        desc: Germany North
+        description: Germany North
         location:
           display: Germany North
           latitude: 53.0736
           longitude: 8.8064
         zone: []
       germanywestcentral:
-        desc: Germany West Central
+        description: Germany West Central
         location:
           display: Germany West Central
           latitude: 50.1109
@@ -774,7 +774,7 @@ cloud:
         - '2'
         - '3'
       japaneast:
-        desc: Japan East
+        description: Japan East
         location:
           display: Japan East
           latitude: 35.68
@@ -784,14 +784,14 @@ cloud:
         - '2'
         - '3'
       japanwest:
-        desc: Japan West
+        description: Japan West
         location:
           display: Japan West
           latitude: 34.6939
           longitude: 135.5022
         zone: []
       koreacentral:
-        desc: Korea Central
+        description: Korea Central
         location:
           display: Korea Central
           latitude: 37.5665
@@ -801,21 +801,21 @@ cloud:
         - '2'
         - '3'
       koreasouth:
-        desc: Korea South
+        description: Korea South
         location:
           display: Korea South
           latitude: 35.1796
           longitude: 129.0756
         zone: []
       northcentralus:
-        desc: North Central US
+        description: North Central US
         location:
           display: North Central US
           latitude: 41.8819
           longitude: -87.6278
         zone: []
       northeurope:
-        desc: North Europe
+        description: North Europe
         location:
           display: North Europe
           latitude: 53.3478
@@ -825,7 +825,7 @@ cloud:
         - '2'
         - '3'
       norwayeast:
-        desc: Norway East
+        description: Norway East
         location:
           display: Norway East
           latitude: 59.9139
@@ -835,14 +835,14 @@ cloud:
         - '2'
         - '3'
       norwaywest:
-        desc: Norway West
+        description: Norway West
         location:
           display: Norway West
           latitude: 58.97
           longitude: 5.7331
         zone: []
       southafricanorth:
-        desc: South Africa North
+        description: South Africa North
         location:
           display: South Africa North
           latitude: -25.7313
@@ -852,14 +852,14 @@ cloud:
         - '2'
         - '3'
       southafricawest:
-        desc: South Africa West
+        description: South Africa West
         location:
           display: South Africa West
           latitude: -34.0757
           longitude: 18.8433
         zone: []
       southcentralus:
-        desc: South Central US
+        description: South Central US
         location:
           display: South Central US
           latitude: 29.4167
@@ -869,7 +869,7 @@ cloud:
         - '2'
         - '3'
       southeastasia:
-        desc: Southeast Asia
+        description: Southeast Asia
         location:
           display: Southeast Asia
           latitude: 1.283
@@ -879,14 +879,14 @@ cloud:
         - '2'
         - '3'
       southindia:
-        desc: South India
+        description: South India
         location:
           display: South India
           latitude: 12.9822
           longitude: 80.1636
         zone: []
       switzerlandnorth:
-        desc: Switzerland North
+        description: Switzerland North
         location:
           display: Switzerland North
           latitude: 47.4515
@@ -896,21 +896,21 @@ cloud:
         - '2'
         - '3'
       switzerlandwest:
-        desc: Switzerland West
+        description: Switzerland West
         location:
           display: Switzerland West
           latitude: 46.2044
           longitude: 6.1432
         zone: []
       uaecentral:
-        desc: UAE Central
+        description: UAE Central
         location:
           display: UAE Central
           latitude: 24.4667
           longitude: 54.3667
         zone: []
       uaenorth:
-        desc: UAE North
+        description: UAE North
         location:
           display: UAE North
           latitude: 25.2667
@@ -920,7 +920,7 @@ cloud:
         - '2'
         - '3'
       uksouth:
-        desc: UK South
+        description: UK South
         location:
           display: UK South
           latitude: 50.941
@@ -930,21 +930,21 @@ cloud:
         - '2'
         - '3'
       ukwest:
-        desc: UK West
+        description: UK West
         location:
           display: UK West
           latitude: 53.427
           longitude: -3.084
         zone: []
       westcentralus:
-        desc: West Central US
+        description: West Central US
         location:
           display: West Central US
           latitude: 40.89
           longitude: -110.234
         zone: []
       westeurope:
-        desc: West Europe
+        description: West Europe
         location:
           display: West Europe
           latitude: 52.3667
@@ -954,21 +954,21 @@ cloud:
         - '2'
         - '3'
       westindia:
-        desc: West India
+        description: West India
         location:
           display: West India
           latitude: 19.088
           longitude: 72.868
         zone: []
       westus:
-        desc: West US
+        description: West US
         location:
           display: West US
           latitude: 37.783
           longitude: -122.417
         zone: []
       westus2:
-        desc: West US 2
+        description: West US 2
         location:
           display: West US 2
           latitude: 47.233
@@ -978,7 +978,7 @@ cloud:
         - '2'
         - '3'
       israelcentral:
-        desc: israel central
+        description: israel central
         location:
           display: israel central
           latitude: 30.8124247
@@ -988,7 +988,7 @@ cloud:
         - '2'
         - '3'
       swedencentral:
-        desc: sweden central
+        description: sweden central
         location:
           display: sweden central
           latitude: 59.6749712
@@ -998,7 +998,7 @@ cloud:
         - '2'
         - '3'
       eastus2euap:
-        desc: East US 2 EUAP (Early Updates Access Program)
+        description: East US 2 EUAP (Early Updates Access Program)
         location:
           display: East US 2 EUAP
           latitude: 36.6781
@@ -1008,14 +1008,14 @@ cloud:
         - '2'
         - '3'
       brazilus:
-        desc: brazilus
+        description: brazilus
         location:
           display: brazilus
           latitude: -10.3333333
           longitude: -53.2
         zone: []
       qatarcentral:
-        desc: qatar central
+        description: qatar central
         location:
           display: qatar central
           latitude: 25.3336984
@@ -1025,28 +1025,28 @@ cloud:
         - '2'
         - '3'
       brazilsoutheast:
-        desc: brazil southeast
+        description: brazil southeast
         location:
           display: brazil southeast
           latitude: -22.4666667
           longitude: -45
         zone: []
       jioindiawest:
-        desc: Jio India West
+        description: Jio India West
         location:
           display: Jio India West
           latitude: 19.86858
           longitude: 73.10469
         zone: []
       jioindiacentral:
-        desc: Jio India Central
+        description: Jio India Central
         location:
           display: Jio India Central
           latitude: 13.00284
           longitude: 77.59155
         zone: []
       italynorth:
-        desc: Lombardy Italy
+        description: Lombardy Italy
         location:
           display: Lombardy Italy
           latitude: 45.47621
@@ -1056,7 +1056,7 @@ cloud:
         - '2'
         - '3'
       westus3:
-        desc: westus3
+        description: westus3
         location:
           display: Arizona USA
           latitude: 33.90304
@@ -1066,7 +1066,7 @@ cloud:
         - '2'
         - '3'
       polandcentral:
-        desc: polandcentral
+        description: polandcentral
         location:
           display: Poland Central
           latitude: 52.20793
@@ -1076,27 +1076,27 @@ cloud:
         - '2'
         - '3'
       eastusstg:
-        desc: East US STG
+        description: East US STG
         location:
           display: East US STG
           latitude: 37.3719
           longitude: -79.8164
         zone: []
       centraluseuap:
-        desc: Central US 2 EUAP (Early Updates Access Program)
+        description: Central US 2 EUAP (Early Updates Access Program)
         location:
           display: Central US 2 EUAP
           latitude: 41.5908
           longitude: -93.6208
         zone: []
   gcp:
-    desc: Google Cloud Platform
+    description: Google Cloud Platform
     driver: gcp-driver-v1.0.so
     link:
     - https://cloud.google.com/compute/docs/regions-zones
     region:
       asia-east1:
-        desc: Changhua County Taiwan
+        description: Changhua County Taiwan
         location:
           display: Changhua County Taiwan
           latitude: 24.0756
@@ -1106,7 +1106,7 @@ cloud:
         - asia-east1-b
         - asia-east1-c
       asia-east2:
-        desc: Hong Kong
+        description: Hong Kong
         location:
           display: Hong Kong
           latitude: 22.3964
@@ -1116,7 +1116,7 @@ cloud:
         - asia-east2-b
         - asia-east2-c
       asia-northeast1:
-        desc: Tokyo Japan
+        description: Tokyo Japan
         location:
           display: Japan (Tokyo)
           latitude: 35.6896
@@ -1126,7 +1126,7 @@ cloud:
         - asia-northeast1-b
         - asia-northeast1-c
       asia-northeast2:
-        desc: Osaka Japan
+        description: Osaka Japan
         location:
           display: Osaka Japan
           latitude: 34.6937
@@ -1136,7 +1136,7 @@ cloud:
         - asia-northeast2-b
         - asia-northeast2-c
       asia-northeast3:
-        desc: Seoul South Korea
+        description: Seoul South Korea
         location:
           display: South Korea (Seoul)
           latitude: 37.2
@@ -1146,7 +1146,7 @@ cloud:
         - asia-northeast3-b
         - asia-northeast3-c
       asia-south1:
-        desc: Mumbai India
+        description: Mumbai India
         location:
           display: India (Mumbai)
           latitude: 19.0761
@@ -1156,7 +1156,7 @@ cloud:
         - asia-south1-b
         - asia-south1-c
       asia-southeast1:
-        desc: Jurong West Singapore
+        description: Jurong West Singapore
         location:
           display: Singapore
           latitude: 1.3409
@@ -1166,7 +1166,7 @@ cloud:
         - asia-southeast1-b
         - asia-southeast1-c
       asia-southeast2:
-        desc: Jakarta Indonesia
+        description: Jakarta Indonesia
         location:
           display: Jakarta Indonesia
           latitude: -6.201
@@ -1176,7 +1176,7 @@ cloud:
         - asia-southeast2-b
         - asia-southeast2-c
       australia-southeast1:
-        desc: Sydney Australia
+        description: Sydney Australia
         location:
           display: Australia (Sydney)
           latitude: -33.8651
@@ -1186,7 +1186,7 @@ cloud:
         - australia-southeast1-b
         - australia-southeast1-c
       europe-central2:
-        desc: Warsaw Poland
+        description: Warsaw Poland
         location:
           display: Warsaw Poland
           latitude: 52.237049
@@ -1196,7 +1196,7 @@ cloud:
         - europe-central2-b
         - europe-central2-c
       europe-north1:
-        desc: Hamina Finland
+        description: Hamina Finland
         location:
           display: Hamina Finland
           latitude: 60.57
@@ -1206,7 +1206,7 @@ cloud:
         - europe-north1-b
         - europe-north1-c
       europe-west1:
-        desc: St. Ghislain Belgium
+        description: St. Ghislain Belgium
         location:
           display: St. Ghislain Belgium
           latitude: 50.4482
@@ -1216,7 +1216,7 @@ cloud:
         - europe-west1-c
         - europe-west1-d
       europe-west2:
-        desc: London England  UK
+        description: London England  UK
         location:
           display: UK (London)
           latitude: 51.5099
@@ -1226,7 +1226,7 @@ cloud:
         - europe-west2-b
         - europe-west2-c
       europe-west3:
-        desc: Frankfurt Germany
+        description: Frankfurt Germany
         location:
           display: Germany (Frankfurt)
           latitude: 50.1109
@@ -1236,7 +1236,7 @@ cloud:
         - europe-west3-b
         - europe-west3-c
       europe-west4:
-        desc: Eemshaven Netherlands
+        description: Eemshaven Netherlands
         location:
           display: Eemshaven Netherlands
           latitude: 53.4423
@@ -1246,7 +1246,7 @@ cloud:
         - europe-west4-b
         - europe-west4-c
       europe-west6:
-        desc: Zurich Switzerland
+        description: Zurich Switzerland
         location:
           display: Zurich Switzerland
           latitude: 47.3667
@@ -1256,7 +1256,7 @@ cloud:
         - europe-west6-b
         - europe-west6-c
       northamerica-northeast1:
-        desc: Montreal Quebec Canada
+        description: Montreal Quebec Canada
         location:
           display: Montreal Quebec Canada
           latitude: 45.5089
@@ -1266,7 +1266,7 @@ cloud:
         - northamerica-northeast1-b
         - northamerica-northeast1-c
       southamerica-east1:
-        desc: Osasco (Sao Paulo)  Brazil
+        description: Osasco (Sao Paulo)  Brazil
         location:
           display: Brazil (Sao Paulo)
           latitude: -23.5325
@@ -1276,7 +1276,7 @@ cloud:
         - southamerica-east1-b
         - southamerica-east1-c
       us-central1:
-        desc: Council Bluffs Iowa  USA
+        description: Council Bluffs Iowa  USA
         location:
           display: Council Bluffs Iowa USA
           latitude: 41.2522
@@ -1287,7 +1287,7 @@ cloud:
         - us-central1-c
         - us-central1-f
       us-east1:
-        desc: Moncks Corner South Carolina USA
+        description: Moncks Corner South Carolina USA
         location:
           display: Moncks Corner South Carolina USA
           latitude: 33.1913
@@ -1297,7 +1297,7 @@ cloud:
         - us-east1-c
         - us-east1-d
       us-east4:
-        desc: Ashburn Northern Virginia USA
+        description: Ashburn Northern Virginia USA
         location:
           display: USA (Virginia)
           latitude: 39.0403
@@ -1307,7 +1307,7 @@ cloud:
         - us-east4-b
         - us-east4-c
       us-west1:
-        desc: Dalles Oregon USA
+        description: Dalles Oregon USA
         location:
           display: The Dalles Oregon USA
           latitude: 45.5946
@@ -1317,7 +1317,7 @@ cloud:
         - us-west1-b
         - us-west1-c
       us-west2:
-        desc: LA California USA
+        description: LA California USA
         location:
           display: Los Angeles California USA
           latitude: 34.0522
@@ -1327,7 +1327,7 @@ cloud:
         - us-west2-b
         - us-west2-c
       us-west3:
-        desc: Salt Lake City Utah USA
+        description: Salt Lake City Utah USA
         location:
           display: Salt Lake City Utah USA
           latitude: 40.7587
@@ -1337,7 +1337,7 @@ cloud:
         - us-west3-b
         - us-west3-c
       us-west4:
-        desc: Las Vegas USA
+        description: Las Vegas USA
         location:
           display: Las Vegas Nevada USA
           latitude: 36.1146
@@ -1347,7 +1347,7 @@ cloud:
         - us-west4-b
         - us-west4-c
       europe-southwest1:
-        desc: Madrid, Spain, Europe
+        description: Madrid, Spain, Europe
         location:
           display: Madrid, Spain, Europe
           latitude: 40.4167047
@@ -1357,7 +1357,7 @@ cloud:
         - europe-southwest1-b
         - europe-southwest1-c
       europe-west8:
-        desc: Milan, Italy, Europe
+        description: Milan, Italy, Europe
         location:
           display: Milan, Italy, Europe
           latitude: 45.4641943
@@ -1367,7 +1367,7 @@ cloud:
         - europe-west8-b
         - europe-west8-c
       me-central2:
-        desc: Dammam, Saudi Arabia, Middle East
+        description: Dammam, Saudi Arabia, Middle East
         location:
           display: Dammam, Saudi Arabia, Middle East
           latitude: 26.4367824
@@ -1377,7 +1377,7 @@ cloud:
         - me-central2-b
         - me-central2-c
       europe-west12:
-        desc: Turin, Italy, Europe
+        description: Turin, Italy, Europe
         location:
           display: Turin, Italy, Europe
           latitude: 45.0677551
@@ -1387,7 +1387,7 @@ cloud:
         - europe-west12-b
         - europe-west12-c
       me-central1:
-        desc: Doha, Qatar, Middle East
+        description: Doha, Qatar, Middle East
         location:
           display: Doha, Qatar, Middle East
           latitude: 25.2856329
@@ -1397,7 +1397,7 @@ cloud:
         - me-central1-b
         - me-central1-c
       northamerica-northeast2:
-        desc: Toronto, Ontario, North America
+        description: Toronto, Ontario, North America
         location:
           display: Toronto, Ontario, North America
           latitude: 43.6534817
@@ -1407,7 +1407,7 @@ cloud:
         - northamerica-northeast2-b
         - northamerica-northeast2-c
       us-south1:
-        desc: Dallas, Texas, North America
+        description: Dallas, Texas, North America
         location:
           display: Dallas, Texas, North America
           latitude: 32.7762719
@@ -1417,7 +1417,7 @@ cloud:
         - us-south1-b
         - us-south1-c
       australia-southeast2:
-        desc: Melbourne, Australia, APAC
+        description: Melbourne, Australia, APAC
         location:
           display: Melbourne, Australia, APAC
           latitude: -37.8142454
@@ -1427,7 +1427,7 @@ cloud:
         - australia-southeast2-b
         - australia-southeast2-c
       europe-west9:
-        desc: Paris, France, Europe
+        description: Paris, France, Europe
         location:
           display: Paris, France, Europe
           latitude: 48.8588897
@@ -1437,7 +1437,7 @@ cloud:
         - europe-west9-b
         - europe-west9-c
       africa-south1:
-        desc: Johannesburg, South Africa
+        description: Johannesburg, South Africa
         location:
           display: Johannesburg, South Africa
           latitude: -26.205
@@ -1447,7 +1447,7 @@ cloud:
         - africa-south1-b
         - africa-south1-c
       asia-south2:
-        desc: Delhi, India, APAC
+        description: Delhi, India, APAC
         location:
           display: Delhi, India, APAC
           latitude: 28.6273928
@@ -1457,7 +1457,7 @@ cloud:
         - asia-south2-b
         - asia-south2-c
       southamerica-west1:
-        desc: Santiago, Chile, South America
+        description: Santiago, Chile, South America
         location:
           display: Santiago, Chile, South America
           latitude: -33.4377756
@@ -1467,7 +1467,7 @@ cloud:
         - southamerica-west1-b
         - southamerica-west1-c
       me-west1:
-        desc: Tel Aviv, Israel, Middle East
+        description: Tel Aviv, Israel, Middle East
         location:
           display: Tel Aviv, Israel, Middle East
           latitude: 32.0956658
@@ -1477,7 +1477,7 @@ cloud:
         - me-west1-b
         - me-west1-c
       us-east5:
-        desc: Columbus, Ohio, North America
+        description: Columbus, Ohio, North America
         location:
           display: Columbus, Ohio, North America
           latitude: 39.9622601
@@ -1487,7 +1487,7 @@ cloud:
         - us-east5-b
         - us-east5-c
       europe-west10:
-        desc: Berlin, Germany, Europe
+        description: Berlin, Germany, Europe
         location:
           display: Berlin, Germany, Europe
           latitude: 52.5170365
@@ -1497,11 +1497,11 @@ cloud:
         - europe-west10-b
         - europe-west10-c
   ibm:
-    desc: IBM Cloud
+    description: IBM Cloud
     driver: ibm-driver-v1.0.so
     region:
       au-syd:
-        desc: Sydney (Australia)
+        description: Sydney (Australia)
         location:
           display: Australia (Sydney)
           latitude: -33.86882
@@ -1511,7 +1511,7 @@ cloud:
         - au-syd-2
         - au-syd-3
       br-sao:
-        desc: Sao Paulo (Brazil)
+        description: Sao Paulo (Brazil)
         location:
           display: Brazil (Sao Paulo)
           latitude: -23.55052
@@ -1521,7 +1521,7 @@ cloud:
         - br-sao-2
         - br-sao-3
       ca-tor:
-        desc: Toronto (Canada)
+        description: Toronto (Canada)
         location:
           display: Toronto (Canada)
           latitude: 43.655226
@@ -1531,7 +1531,7 @@ cloud:
         - ca-tor-2
         - ca-tor-3
       eu-de:
-        desc: Frankfurt (Germany)
+        description: Frankfurt (Germany)
         location:
           display: Germany (Frankfurt)
           latitude: 50.110722
@@ -1541,7 +1541,7 @@ cloud:
         - eu-de-2
         - eu-de-3
       eu-gb:
-        desc: London (United Kingdom)
+        description: London (United Kingdom)
         location:
           display: UK (London)
           latitude: 51.507351
@@ -1551,7 +1551,7 @@ cloud:
         - eu-gb-2
         - eu-gb-3
       jp-osa:
-        desc: Osaka (Japan)
+        description: Osaka (Japan)
         location:
           display: Osaka (Japan)
           latitude: 34.693738
@@ -1561,7 +1561,7 @@ cloud:
         - jp-osa-2
         - jp-osa-3
       jp-tok:
-        desc: Tokyo (Japan)
+        description: Tokyo (Japan)
         location:
           display: Japan (Tokyo)
           latitude: 35.689588
@@ -1571,7 +1571,7 @@ cloud:
         - jp-tok-2
         - jp-tok-3
       us-east:
-        desc: Washington DC (US East)
+        description: Washington DC (US East)
         location:
           display: Washington DC (US East)
           latitude: 38.907192
@@ -1581,7 +1581,7 @@ cloud:
         - us-east-2
         - us-east-3
       us-south:
-        desc: us-south
+        description: us-south
         location:
           display: Dallas USA
           latitude: 32.81248
@@ -1591,7 +1591,7 @@ cloud:
         - us-south-2
         - us-south-3
       eu-es:
-        desc: eu-es
+        description: eu-es
         location:
           display: Madrid Spain
           latitude: 40.42695
@@ -1601,11 +1601,11 @@ cloud:
         - eu-es-2
         - eu-es-3
   ktcloud:
-    desc: KT Cloud (Classic without VPC)
+    description: KT Cloud (Classic without VPC)
     driver: ktcloud-driver-v1.0.so
     region:
       KOR-Seoul:
-        desc: Seoul - South Korea
+        description: Seoul - South Korea
         location:
           display: South Korea (Seoul)
           latitude: 37.466535
@@ -1614,7 +1614,7 @@ cloud:
         - 95e2f517-d64a-4866-8585-5177c256f7c7
         - d7d0177e-6cda-404a-a46f-a5b356d2874e
       KOR-Central:
-        desc: Cheonan South Korea
+        description: Cheonan South Korea
         location:
           display: Cheonan South Korea
           latitude: 36.802725
@@ -1623,22 +1623,22 @@ cloud:
         - 9845bd17-d438-4bde-816d-1b12f37d5080
         - eceb5d65-6571-4696-875f-5a17949f3317
   ktcloudvpc:
-    desc: KT Cloud (VPC)
+    description: KT Cloud (VPC)
     driver: ktcloudvpc-driver-v1.0.so
     region:
       kr-dx-m1:
-        desc: Seoul - South Korea
+        description: Seoul - South Korea
         location:
           display: Mok-dong Seoul South Korea
           latitude: 37.536726
           longitude: 126.874278
         zone: []
   ncp:
-    desc: Naver Cloud Platform (Classic without VPC)
+    description: Naver Cloud Platform (Classic without VPC)
     driver: ncp-driver-v1.0.so
     region:
       DEN:
-        desc: Germany
+        description: Germany
         location:
           display: Germany
           latitude: 50.1108
@@ -1646,7 +1646,7 @@ cloud:
         zone:
         - DEN-1
       JPN:
-        desc: Japan
+        description: Japan
         location:
           display: Japan
           latitude: 35.6893
@@ -1654,7 +1654,7 @@ cloud:
         zone:
         - JPN-1
       KR:
-        desc: Korea
+        description: Korea
         location:
           display: South Korea (Seoul)
           latitude: 37.4754
@@ -1663,7 +1663,7 @@ cloud:
         - KR-1
         - KR-2
       SGN:
-        desc: Singapore
+        description: Singapore
         location:
           display: Singapore
           latitude: 1.3402
@@ -1671,7 +1671,7 @@ cloud:
         zone:
         - SGN-1
       uswn:
-        desc: US West
+        description: US West
         location:
           display: US Western
           latitude: 37.351
@@ -1679,7 +1679,7 @@ cloud:
         zone:
         - USWN-1
       HK:
-        desc: Hong Kong
+        description: Hong Kong
         location:
           display: Hong Kong
           latitude: 22.31356
@@ -1687,11 +1687,11 @@ cloud:
         zone:
         - HK-1
   ncpvpc:
-    desc: Naver Cloud Platform (VPC)
+    description: Naver Cloud Platform (VPC)
     driver: ncpvpc-driver-v1.0.so
     region:
       KR:
-        desc: Korea 1
+        description: Korea 1
         location:
           display: South Korea (Seoul)
           latitude: 37.4754
@@ -1700,7 +1700,7 @@ cloud:
         - KR-1
         - KR-2
       SGN:
-        desc: Singapore
+        description: Singapore
         location:
           display: Singapore
           latitude: 1.3402
@@ -1709,7 +1709,7 @@ cloud:
         - SGN-4
         - SGN-5
       JPN:
-        desc: Japan
+        description: Japan
         location:
           display: Japan
           latitude: 35.51742
@@ -1718,11 +1718,11 @@ cloud:
         - JPN-4
         - JPN-5
   nhncloud:
-    desc: NHN Cloud
+    description: NHN Cloud
     driver: nhncloud-driver-v1.0.so
     region:
       jp1:
-        desc: Japan (Tokyo)
+        description: Japan (Tokyo)
         location:
           display: Japan (Tokyo)
           latitude: 35.412
@@ -1731,7 +1731,7 @@ cloud:
         - jp-pub-a
         - jp-pub-b
       kr1:
-        desc: South Korea (Pangyo)
+        description: South Korea (Pangyo)
         location:
           display: South Korea (Pangyo)
           latitude: 37.390889
@@ -1740,7 +1740,7 @@ cloud:
         - kr-pub-a
         - kr-pub-b
       kr2:
-        desc: South Korea (Pyeongchon)
+        description: South Korea (Pyeongchon)
         location:
           display: South Korea (Pyeongchon)
           latitude: 37.392584
@@ -1749,22 +1749,22 @@ cloud:
         - kr2-pub-a
         - kr2-pub-b
   openstack:
-    desc: OpenStack
+    description: OpenStack
     driver: openstack-driver-v1.0.so
     region:
       regionone:
-        desc: Korea Daejeon (Internal)
+        description: Korea Daejeon (Internal)
         location:
           display: South Korea (Daejeon)
           latitude: 36.3804
           longitude: 127.365
         zone: []
   tencent:
-    desc: Tencent Cloud
+    description: Tencent Cloud
     driver: tencent-driver-v1.0.so
     region:
       ap-bangkok:
-        desc: Bangkok
+        description: Bangkok
         location:
           display: Southeast Asia (Bangkok)
           latitude: 13.756331
@@ -1773,7 +1773,7 @@ cloud:
         - ap-bangkok-1
         - ap-bangkok-2
       ap-beijing:
-        desc: Beijing
+        description: Beijing
         location:
           display: North China (Beijing)
           latitude: 39.9042
@@ -1799,7 +1799,7 @@ cloud:
         - ap-beijing-tez-shenyang-2
         - ap-beijing-tez-shijiazhuang-2
       ap-chengdu:
-        desc: Chengdu
+        description: Chengdu
         location:
           display: Southwest China (Chengdu)
           latitude: 30.572815
@@ -1814,7 +1814,7 @@ cloud:
         - ap-chengdu-tez-kunming-2
         - ap-chengdu-tez-xian-1
       ap-chongqing:
-        desc: Chongqing
+        description: Chongqing
         location:
           display: Southwest China (Chongqing)
           latitude: 29.431586
@@ -1822,7 +1822,7 @@ cloud:
         zone:
         - ap-chongqing-1
       ap-guangzhou:
-        desc: Guangzhou
+        description: Guangzhou
         location:
           display: South China (Guangzhou)
           latitude: 23.12911
@@ -1849,7 +1849,7 @@ cloud:
         - ap-guangzhou-tez-wuhan-1
         - ap-guangzhou-tez-zhengzhou-1
       ap-hongkong:
-        desc: HongKong
+        description: HongKong
         location:
           display: Hong Kong
           latitude: 22.396228
@@ -1860,7 +1860,7 @@ cloud:
         - ap-hongkong-3
         - ap-hongkong-cdz-lsszy-1
       ap-jakarta:
-        desc: Jakarta
+        description: Jakarta
         location:
           display: Southeast Asia (Jakarta)
           latitude: -6.17511
@@ -1869,7 +1869,7 @@ cloud:
         - ap-jakarta-1
         - ap-jakarta-2
       ap-mumbai:
-        desc: Mumbai
+        description: Mumbai
         location:
           display: India (Mumbai)
           latitude: 19.075983
@@ -1878,7 +1878,7 @@ cloud:
         - ap-mumbai-1
         - ap-mumbai-2
       ap-nanjing:
-        desc: Nanjing
+        description: Nanjing
         location:
           display: East China (Nanjing)
           latitude: 32.060255
@@ -1888,7 +1888,7 @@ cloud:
         - ap-nanjing-2
         - ap-nanjing-3
       ap-seoul:
-        desc: Seoul
+        description: Seoul
         location:
           display: South Korea (Seoul)
           latitude: 37.566536
@@ -1897,7 +1897,7 @@ cloud:
         - ap-seoul-1
         - ap-seoul-2
       ap-shanghai:
-        desc: Shanghai
+        description: Shanghai
         location:
           display: East China (Shanghai)
           latitude: 31.23039
@@ -1922,7 +1922,7 @@ cloud:
         - ap-shanghai-tez-wuxi-1
         - ap-shanghai-tez-wuxi-2
       ap-singapore:
-        desc: Singapore
+        description: Singapore
         location:
           display: Singapore
           latitude: 1.352083
@@ -1934,7 +1934,7 @@ cloud:
         - ap-singapore-4
         - ap-singapore-cdz-grm-1
       ap-tokyo:
-        desc: Tokyo
+        description: Tokyo
         location:
           display: Japan (Tokyo)
           latitude: 35.689487
@@ -1943,7 +1943,7 @@ cloud:
         - ap-tokyo-1
         - ap-tokyo-2
       eu-frankfurt:
-        desc: Frankfurt
+        description: Frankfurt
         location:
           display: Germany (Frankfurt)
           latitude: 50.110922
@@ -1953,14 +1953,14 @@ cloud:
         - eu-frankfurt-2
         - eu-frankfurt-3
       eu-moscow:
-        desc: Moscow
+        description: Moscow
         location:
           display: Europe (Moscow)
           latitude: 55.755826
           longitude: 37.6173
         zone: []
       na-ashburn:
-        desc: Virginia
+        description: Virginia
         location:
           display: USA (Virginia)
           latitude: 37.431573
@@ -1969,7 +1969,7 @@ cloud:
         - na-ashburn-1
         - na-ashburn-2
       na-siliconvalley:
-        desc: SiliconValley
+        description: SiliconValley
         location:
           display: Western US (Silicon Valley)
           latitude: 37.387474
@@ -1978,7 +1978,7 @@ cloud:
         - na-siliconvalley-1
         - na-siliconvalley-2
       na-toronto:
-        desc: Toronto
+        description: Toronto
         location:
           display: North America (Toronto)
           latitude: 43.653226
@@ -1986,7 +1986,7 @@ cloud:
         zone:
         - na-toronto-1
       sa-saopaulo:
-        desc: Sao Paulo
+        description: Sao Paulo
         location:
           display: Sao Paulo
           latitude: -23.55398

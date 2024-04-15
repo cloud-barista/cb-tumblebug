@@ -1203,8 +1203,8 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 }
 
 // GenSpecMapKey generates a SpecMap key for storing or accessing data in a map
-func GenSpecMapKey(provider, region, specName string) string {
-	return strings.ToLower(fmt.Sprintf("%s-%s-%s", provider, region, specName))
+func GenSpecMapKey(region, specName string) string {
+	return strings.ToLower(fmt.Sprintf("%s-%s", region, specName))
 }
 
 // CheckResource returns the existence of the TB MCIR resource in bool form.
@@ -1434,7 +1434,7 @@ func LoadCommonResource() (common.IdList, error) {
 			}
 			log.Info().Msgf("[%s]#Spec: %d", connConfig.ConfigName, len(specsInConnection.Vmspec))
 			for _, spec := range specsInConnection.Vmspec {
-				key := GenSpecMapKey(connConfig.ProviderName, connConfig.RegionName, spec.Name)
+				key := GenSpecMapKey(connConfig.RegionName, spec.Name)
 				// instead of connConfig.RegionName, spec.Region will be used in the future
 				//log.Info().Msgf("specMap.Store(%s, spec)", key)
 				specMap.Store(key, spec)
@@ -1529,120 +1529,113 @@ func LoadCommonResource() (common.IdList, error) {
 	waitSpecImg.Add(1)
 	go func(rowsSpec [][]string) {
 		defer waitSpecImg.Done()
-		lenSpecs := len(rowsSpec[1:])
+		//lenSpecs := len(rowsSpec[1:])
 		for i, row := range rowsSpec[1:] {
-			wait.Add(1)
-			// fmt.Printf("[%d] i, row := range rowsSpec[1:] %s\n", i, row)
-			// goroutine
-			go func(i int, row []string, lenSpecs int) {
-				defer wait.Done()
-				// RandomSleep for safe parallel executions
-				common.RandomSleep(0, lenSpecs/10)
-				specReqTmp := TbSpecReq{}
-				// 0	providerName
-				// 1	connectionName
-				// 2	cspSpecName
-				// 3	CostPerHour
-				// 4	evaluationScore01
-				// 5	evaluationScore02
-				// 6	evaluationScore03
-				// 7	evaluationScore04
-				// 8	evaluationScore05
-				// 9	evaluationScore06
-				// 10	evaluationScore07
-				// 11	evaluationScore08
-				// 12	evaluationScore09
-				// 13	evaluationScore10
-				// 14	rootDiskType
-				// 15	rootDiskSize
+			// wait.Add(1)
+			// go func(i int, row []string, lenSpecs int) {
+			// 	defer wait.Done()
+			// 	common.RandomSleep(0, lenSpecs/20)
 
-				providerName := row[0]
-				specReqTmp.ConnectionName = row[1]
-				specReqTmp.CspSpecName = row[2]
-				// Give a name for spec object by combining ConnectionName and CspSpecName
-				// To avoid naming-rule violation, modify the string
-				specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
-				specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
-				specInfoId := specReqTmp.Name
-				rootDiskType := row[14]
-				rootDiskSize := row[15]
-				specReqTmp.Description = "Common Spec Resource"
+			specReqTmp := TbSpecReq{}
+			// 0	providerName
+			// 1	connectionName
+			// 2	cspSpecName
+			// 3	CostPerHour
+			// 4	evaluationScore01
+			// 5	evaluationScore02
+			// 6	evaluationScore03
+			// 7	evaluationScore04
+			// 8	evaluationScore05
+			// 9	evaluationScore06
+			// 10	evaluationScore07
+			// 11	evaluationScore08
+			// 12	evaluationScore09
+			// 13	evaluationScore10
+			// 14	rootDiskType
+			// 15	rootDiskSize
 
-				connection, err1 := common.GetConnConfig(specReqTmp.ConnectionName)
-				regionName := ""
-				regiesteredStatus = ""
-				if err1 != nil {
-					log.Info().Err(err1).Msgf("[%s] Cannot GetConnConfig ", specReqTmp.ConnectionName)
-					regiesteredStatus += "  [Failed] " + err1.Error()
-				} else {
+			providerName := row[0]
+			specReqTmp.ConnectionName = row[1]
+			specReqTmp.CspSpecName = row[2]
+			// Give a name for spec object by combining ConnectionName and CspSpecName
+			// To avoid naming-rule violation, modify the string
+			specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
+			specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
+			specInfoId := specReqTmp.Name
+			rootDiskType := row[14]
+			rootDiskSize := row[15]
+			specReqTmp.Description = "Common Spec Resource"
 
-					var errRegisterSpec error
-					regionName = connection.RegionName
-					log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
+			regionName := specReqTmp.ConnectionName // assume regionName is the same as connectionName
+			regiesteredStatus = ""
 
-					// Register Spec object
-					searchKey := GenSpecMapKey(providerName, regionName, specReqTmp.CspSpecName)
-					value, ok := specMap.Load(searchKey)
-					if ok {
-						spiderSpec := value.(SpiderSpecInfo)
-						//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
-						tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
-						if errConvert != nil {
-							log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
-						}
+			var errRegisterSpec error
 
-						tumblebugSpec.Name = specInfoId
-						tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
-						_, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
-						if errRegisterSpec != nil {
-							log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
-						}
+			log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 
-					} else {
-						errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
-						log.Info().Err(errRegisterSpec).Msgf("")
-						// _, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
-						// if errRegisterSpec != nil {
-						// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
-						// }
-					}
-
-					if errRegisterSpec != nil {
-						regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
-					} else {
-						// Update registered Spec object with givn info from asset file
-						// Update registered Spec object with Cost info
-						costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
-						if err2 != nil {
-							log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
-							costPerHour = -99.9
-						}
-						evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
-						if err2 != nil {
-							log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
-							evaluationScore01 = -99.9
-						}
-						specUpdateRequest :=
-							TbSpecInfo{
-								ProviderName:      providerName,
-								RegionName:        regionName,
-								CostPerHour:       float32(costPerHour),
-								RootDiskType:      rootDiskType,
-								RootDiskSize:      rootDiskSize,
-								EvaluationScore01: float32(evaluationScore01),
-							}
-
-						_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
-						if err3 != nil {
-							log.Error().Err(err3).Msg("UpdateSpec failed")
-							regiesteredStatus += "  [Failed] " + err3.Error()
-						}
-						//fmt.Printf("[%d] Registered Common Spec\n", i)
-						//common.PrintJsonPretty(updatedSpecInfo)
-					}
+			// Register Spec object
+			searchKey := GenSpecMapKey(regionName, specReqTmp.CspSpecName)
+			value, ok := specMap.Load(searchKey)
+			if ok {
+				spiderSpec := value.(SpiderSpecInfo)
+				//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+				tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+				if errConvert != nil {
+					log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
 				}
-				regiesteredIds.AddItem(common.StrSpec + ": " + specInfoId + regiesteredStatus)
-			}(i, row, lenSpecs)
+
+				tumblebugSpec.Name = specInfoId
+				tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
+				_, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
+				if errRegisterSpec != nil {
+					log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
+				}
+
+			} else {
+				errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
+				log.Info().Err(errRegisterSpec).Msgf("")
+				// _, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
+				// if errRegisterSpec != nil {
+				// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
+				// }
+			}
+
+			if errRegisterSpec != nil {
+				regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
+			} else {
+				// Update registered Spec object with givn info from asset file
+				// Update registered Spec object with Cost info
+				costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+				if err2 != nil {
+					log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
+					costPerHour = 99999999.9
+				}
+				evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
+				if err2 != nil {
+					log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
+					evaluationScore01 = -99.9
+				}
+				specUpdateRequest :=
+					TbSpecInfo{
+						ProviderName:      providerName,
+						RegionName:        regionName,
+						CostPerHour:       float32(costPerHour),
+						RootDiskType:      rootDiskType,
+						RootDiskSize:      rootDiskSize,
+						EvaluationScore01: float32(evaluationScore01),
+					}
+
+				_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
+				if err3 != nil {
+					log.Error().Err(err3).Msg("UpdateSpec failed")
+					regiesteredStatus += "  [Failed] " + err3.Error()
+				}
+				//fmt.Printf("[%d] Registered Common Spec\n", i)
+				//common.PrintJsonPretty(updatedSpecInfo)
+			}
+
+			regiesteredIds.AddItem(common.StrSpec + ": " + specInfoId + regiesteredStatus)
+			// }(i, row, lenSpecs)
 		}
 		wait.Wait()
 	}(rowsSpec)
@@ -1658,7 +1651,7 @@ func LoadCommonResource() (common.IdList, error) {
 			go func(i int, row []string, lenImages int) {
 				defer wait.Done()
 				// RandomSleep for safe parallel executions
-				common.RandomSleep(0, lenImages/5)
+				common.RandomSleep(0, lenImages/10)
 				imageReqTmp := TbImageReq{}
 				// row0: ProviderName
 				// row1: connectionName
@@ -1732,155 +1725,140 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 	}
 
 	// Read default resources from file and create objects
-	// HEADER: ProviderName, CONN_CONFIG, RegionName, NativeRegionName, RegionLocation, DriverLibFileName, DriverName
-	file, fileErr := os.Open("../assets/cloudconnection.csv")
-	defer file.Close()
-	if fileErr != nil {
-		log.Error().Err(fileErr).Msg("")
-		return fileErr
-	}
 
-	rdr := csv.NewReader(bufio.NewReader(file))
-	rows, err := rdr.ReadAll()
+	connectionList, err := common.GetConnConfigList()
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Cannot GetConnConfig")
 		return err
 	}
-
-	for i, row := range rows[1:] {
-		if connectionName != "" {
-			// find only given connectionName (if not skip)
-			if connectionName != row[1] {
-				continue
-			}
-			log.Debug().Msg("Found a line for the connectionName from file: " + row[1])
-		}
-
-		provider := row[0]
-		connectionName := row[1]
-		//resourceName := connectionName
-		// Default resource name has this pattern (nsId + "-systemdefault-" + connectionName)
-		resourceName := nsId + common.StrDefaultResourceName + connectionName
-		description := "Generated Default Resource"
-
-		for _, resType := range resList {
-			if resType == "vnet" {
-				log.Debug().Msg("vnet")
-
-				reqTmp := TbVNetReq{}
-				reqTmp.ConnectionName = connectionName
-				reqTmp.Name = resourceName
-				reqTmp.Description = description
-
-				// set isolated private address space for each cloud region (10.i.0.0/16)
-				reqTmp.CidrBlock = "10." + strconv.Itoa(i) + ".0.0/16"
-				if strings.EqualFold(provider, "cloudit") {
-					// CLOUDIT: the list of subnets that can be created is
-					// 10.0.4.0/22,10.0.8.0/22,10.0.12.0/22,10.0.28.0/22,10.0.32.0/22,
-					// 10.0.36.0/22,10.0.40.0/22,10.0.44.0/22,10.0.48.0/22,10.0.52.0/22,
-					// 10.0.56.0/22,10.0.60.0/22,10.0.64.0/22,10.0.68.0/22,10.0.72.0/22,
-					// 10.0.76.0/22,10.0.80.0/22,10.0.84.0/22,10.0.88.0/22,10.0.92.0/22,
-					// 10.0.96.0/22,10.0.100.0/22,10.0.104.0/22,10.0.108.0/22,10.0.112.0/22,
-					// 10.0.116.0/22,10.0.120.0/22,10.0.124.0/22,10.0.132.0/22,10.0.136.0/22,
-					// 10.0.140.0/22,10.0.144.0/22,10.0.148.0/22,10.0.152.0/22,10.0.156.0/22,
-					// 10.0.160.0/22,10.0.164.0/22,10.0.168.0/22,10.0.172.0/22,10.0.176.0/22,
-					// 10.0.180.0/22,10.0.184.0/22,10.0.188.0/22,10.0.192.0/22,10.0.196.0/22,
-					// 10.0.200.0/22,10.0.204.0/22,10.0.208.0/22,10.0.212.0/22,10.0.216.0/22,
-					// 10.0.220.0/22,10.0.224.0/22,10.0.228.0/22,10.0.232.0/22,10.0.236.0/22,
-					// 10.0.240.0/22,10.0.244.0/22,10.0.248.0/22
-
-					// temporally assign 10.0.40.0/22 until new policy.
-					reqTmp.CidrBlock = "10.0.40.0/22"
-				}
-
-				// Consist 2 subnets (10.i.0.0/18, 10.i.64.0/18)
-				// Reserve spaces for tentative 2 subnets (10.i.128.0/18, 10.i.192.0/18)
-				subnetName := reqTmp.Name
-				subnetCidr := "10." + strconv.Itoa(i) + ".0.0/18"
-				subnet := TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
-
-				subnetName = reqTmp.Name + "-01"
-				subnetCidr = "10." + strconv.Itoa(i) + ".64.0/18"
-				subnet = TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
-				reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
-
-				common.PrintJsonPretty(reqTmp)
-
-				resultInfo, err := CreateVNet(nsId, &reqTmp, "")
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to create vNet")
-					return err
-				}
-				fmt.Printf("[%d] Registered Default vNet\n", i)
-				common.PrintJsonPretty(resultInfo)
-			} else if resType == "sg" || resType == "securitygroup" {
-				log.Debug().Msg("sg")
-
-				reqTmp := TbSecurityGroupReq{}
-
-				reqTmp.ConnectionName = connectionName
-				reqTmp.Name = resourceName
-				reqTmp.Description = description
-
-				reqTmp.VNetId = resourceName
-
-				// open all firewall for default securityGroup
-				rule := TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-				var ruleList []TbFirewallRuleInfo
-				ruleList = append(ruleList, rule)
-				rule = TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-				ruleList = append(ruleList, rule)
-				// CloudIt only offers tcp, udp Protocols
-				if !strings.EqualFold(provider, "cloudit") {
-					rule = TbFirewallRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
-					ruleList = append(ruleList, rule)
-				}
-
-				common.PrintJsonPretty(ruleList)
-				reqTmp.FirewallRules = &ruleList
-
-				common.PrintJsonPretty(reqTmp)
-
-				resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to create SecurityGroup")
-					return err
-				}
-				fmt.Printf("[%d] Registered Default SecurityGroup\n", i)
-				common.PrintJsonPretty(resultInfo)
-
-			} else if resType == "sshkey" {
-				log.Debug().Msg("sshkey")
-
-				reqTmp := TbSshKeyReq{}
-
-				reqTmp.ConnectionName = connectionName
-				reqTmp.Name = resourceName
-				reqTmp.Description = description
-
-				common.PrintJsonPretty(reqTmp)
-
-				resultInfo, err := CreateSshKey(nsId, &reqTmp, "")
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to create SshKey")
-					return err
-				}
-				fmt.Printf("[%d] Registered Default SSHKey\n", i)
-				common.PrintJsonPretty(resultInfo)
-			} else {
-				return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
-			}
-		}
-
-		if connectionName != "" {
-			// After finish handling line for the connectionName, break
-			if connectionName == row[1] {
-				log.Debug().Msg("Handled for the connectionName from file: " + row[1])
-				break
-			}
+	sliceIndex := -1
+	provider := ""
+	for i, connConfig := range connectionList.Connectionconfig {
+		if connConfig.ConfigName == connectionName {
+			log.Info().Msgf("[%d] connectionName: %s", i, connectionName)
+			sliceIndex = i
+			provider = strings.ToLower(connConfig.ProviderName)
 		}
 	}
+	if sliceIndex == -1 {
+		err := fmt.Errorf("Cannot find the connection config: %s", connectionName)
+		log.Error().Err(err).Msg("Failed to LoadDefaultResource")
+		return err
+	}
+	sliceIndex = (sliceIndex % 254) + 1
+
+	//resourceName := connectionName
+	// Default resource name has this pattern (nsId + "-systemdefault-" + connectionName)
+	resourceName := nsId + common.StrDefaultResourceName + connectionName
+	description := "Generated Default Resource"
+
+	for _, resType := range resList {
+		if resType == "vnet" {
+			log.Debug().Msg("vnet")
+
+			reqTmp := TbVNetReq{}
+			reqTmp.ConnectionName = connectionName
+			reqTmp.Name = resourceName
+			reqTmp.Description = description
+
+			// set isolated private address space for each cloud region (10.i.0.0/16)
+			reqTmp.CidrBlock = "10." + strconv.Itoa(sliceIndex) + ".0.0/16"
+			if strings.EqualFold(provider, "cloudit") {
+				// CLOUDIT: the list of subnets that can be created is
+				// 10.0.4.0/22,10.0.8.0/22,10.0.12.0/22,10.0.28.0/22,10.0.32.0/22,
+				// 10.0.36.0/22,10.0.40.0/22,10.0.44.0/22,10.0.48.0/22,10.0.52.0/22,
+				// 10.0.56.0/22,10.0.60.0/22,10.0.64.0/22,10.0.68.0/22,10.0.72.0/22,
+				// 10.0.76.0/22,10.0.80.0/22,10.0.84.0/22,10.0.88.0/22,10.0.92.0/22,
+				// 10.0.96.0/22,10.0.100.0/22,10.0.104.0/22,10.0.108.0/22,10.0.112.0/22,
+				// 10.0.116.0/22,10.0.120.0/22,10.0.124.0/22,10.0.132.0/22,10.0.136.0/22,
+				// 10.0.140.0/22,10.0.144.0/22,10.0.148.0/22,10.0.152.0/22,10.0.156.0/22,
+				// 10.0.160.0/22,10.0.164.0/22,10.0.168.0/22,10.0.172.0/22,10.0.176.0/22,
+				// 10.0.180.0/22,10.0.184.0/22,10.0.188.0/22,10.0.192.0/22,10.0.196.0/22,
+				// 10.0.200.0/22,10.0.204.0/22,10.0.208.0/22,10.0.212.0/22,10.0.216.0/22,
+				// 10.0.220.0/22,10.0.224.0/22,10.0.228.0/22,10.0.232.0/22,10.0.236.0/22,
+				// 10.0.240.0/22,10.0.244.0/22,10.0.248.0/22
+
+				// temporally assign 10.0.40.0/22 until new policy.
+				reqTmp.CidrBlock = "10.0.40.0/22"
+			}
+
+			// Consist 2 subnets (10.i.0.0/18, 10.i.64.0/18)
+			// Reserve spaces for tentative 2 subnets (10.i.128.0/18, 10.i.192.0/18)
+			subnetName := reqTmp.Name
+			subnetCidr := "10." + strconv.Itoa(sliceIndex) + ".0.0/18"
+			subnet := TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
+			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
+
+			subnetName = reqTmp.Name + "-01"
+			subnetCidr = "10." + strconv.Itoa(sliceIndex) + ".64.0/18"
+			subnet = TbSubnetReq{Name: subnetName, IPv4_CIDR: subnetCidr}
+			reqTmp.SubnetInfoList = append(reqTmp.SubnetInfoList, subnet)
+
+			common.PrintJsonPretty(reqTmp)
+
+			resultInfo, err := CreateVNet(nsId, &reqTmp, "")
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to create vNet")
+				return err
+			}
+			common.PrintJsonPretty(resultInfo)
+		} else if resType == "sg" || resType == "securitygroup" {
+			log.Debug().Msg("sg")
+
+			reqTmp := TbSecurityGroupReq{}
+
+			reqTmp.ConnectionName = connectionName
+			reqTmp.Name = resourceName
+			reqTmp.Description = description
+
+			reqTmp.VNetId = resourceName
+
+			// open all firewall for default securityGroup
+			rule := TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "tcp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+			var ruleList []TbFirewallRuleInfo
+			ruleList = append(ruleList, rule)
+			rule = TbFirewallRuleInfo{FromPort: "1", ToPort: "65535", IPProtocol: "udp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+			ruleList = append(ruleList, rule)
+			// CloudIt only offers tcp, udp Protocols
+			if !strings.EqualFold(provider, "cloudit") {
+				rule = TbFirewallRuleInfo{FromPort: "-1", ToPort: "-1", IPProtocol: "icmp", Direction: "inbound", CIDR: "0.0.0.0/0"}
+				ruleList = append(ruleList, rule)
+			}
+
+			common.PrintJsonPretty(ruleList)
+			reqTmp.FirewallRules = &ruleList
+
+			common.PrintJsonPretty(reqTmp)
+
+			resultInfo, err := CreateSecurityGroup(nsId, &reqTmp, "")
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to create SecurityGroup")
+				return err
+			}
+			common.PrintJsonPretty(resultInfo)
+
+		} else if resType == "sshkey" {
+			log.Debug().Msg("sshkey")
+
+			reqTmp := TbSshKeyReq{}
+
+			reqTmp.ConnectionName = connectionName
+			reqTmp.Name = resourceName
+			reqTmp.Description = description
+
+			common.PrintJsonPretty(reqTmp)
+
+			resultInfo, err := CreateSshKey(nsId, &reqTmp, "")
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to create SshKey")
+				return err
+			}
+			common.PrintJsonPretty(resultInfo)
+		} else {
+			return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
+		}
+	}
+
 	return nil
 }
 

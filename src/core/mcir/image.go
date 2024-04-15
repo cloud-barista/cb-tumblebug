@@ -179,7 +179,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 	content.AssociatedObjectList = []string{}
 
 	// cb-store
-	log.Info().Msg("PUT registerImage")
+	//log.Info().Msg("PUT registerImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
 	err = common.CBStore.Put(Key, string(Val))

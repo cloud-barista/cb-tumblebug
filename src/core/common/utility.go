@@ -15,9 +15,7 @@ limitations under the License.
 package common
 
 import (
-	"bufio"
 	"math/rand"
-	"os"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -30,7 +28,6 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 
@@ -332,118 +329,72 @@ type GeoLocation struct {
 }
 
 // GetCloudLocation is to get location of clouds (need error handling)
-func GetCloudLocation(cloudType string, nativeRegion string) GeoLocation {
+func GetCloudLocation(cloudType string, nativeRegion string) (GeoLocation, error) {
 	cloudType = strings.ToLower(cloudType)
 	nativeRegion = strings.ToLower(nativeRegion)
 
-	location := GeoLocation{}
-
-	if cloudType == "" || nativeRegion == "" {
-
-		// need error handling instead of assigning default value
-		location.CloudType = "ufc"
-		location.NativeRegion = "ufc"
-		location.BriefAddr = "South Korea (Seoul)"
-		location.Latitude = "37.4767"
-		location.Longitude = "126.8841"
-
-		return location
+	cspDetail, ok := RuntimeCloudInfo.CSPs[cloudType]
+	if !ok {
+		return GeoLocation{}, fmt.Errorf("cloudType '%s' not found", cloudType)
 	}
 
-	key := "/cloudtype/" + cloudType + "/region/" + nativeRegion
-
-	keyValue, err := CBStore.Get(key)
-
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return location
+	regionDetail, ok := cspDetail.Regions[nativeRegion]
+	if !ok {
+		return GeoLocation{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
 	}
 
-	if keyValue == nil {
-		file, fileErr := os.Open("../assets/cloudlocation.csv")
-		defer file.Close()
-		if fileErr != nil {
-			log.Error().Err(fileErr).Msg("")
-			return location
-		}
-
-		rdr := csv.NewReader(bufio.NewReader(file))
-		rows, _ := rdr.ReadAll()
-		for i, _ := range rows {
-			keyLoc := "/cloudtype/" + rows[i][0] + "/region/" + rows[i][1]
-			location.CloudType = rows[i][0]
-			location.NativeRegion = rows[i][1]
-			location.BriefAddr = rows[i][2]
-			location.Latitude = rows[i][3]
-			location.Longitude = rows[i][4]
-			valLoc, _ := json.Marshal(location)
-			dbErr := CBStore.Put(keyLoc, string(valLoc))
-			if dbErr != nil {
-				log.Error().Err(dbErr).Msg("")
-				return location
-			}
-		}
-		keyValue, err = CBStore.Get(key)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return location
-		}
-	}
-
-	if keyValue != nil {
-		err = json.Unmarshal([]byte(keyValue.Value), &location)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return location
-		}
-	}
-
-	return location
+	return GeoLocation{
+		Latitude:     fmt.Sprintf("%f", regionDetail.Location.Latitude),
+		Longitude:    fmt.Sprintf("%f", regionDetail.Location.Longitude),
+		BriefAddr:    regionDetail.Location.Display,
+		CloudType:    cloudType,
+		NativeRegion: nativeRegion,
+	}, nil
 }
 
 // GetConnConfig is func to get connection config from CB-Spider
 func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
+	var callResult ConnConfig
+	client := resty.New()
 	url := SpiderRestUrl + "/connectionconfig/" + ConnConfigName
+	method := "GET"
+	requestBody := NoBody
 
-	client := resty.New().SetCloseConnection(true)
-
-	resp, err := client.R().
-		SetResult(&ConnConfig{}).
-		//SetError(&SimpleMsg{}).
-		Get(url)
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		MediumDuration,
+	)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		content := ConnConfig{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
 		return content, err
 	}
-
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := ConnConfig{}
-		return content, err
-	}
-
-	temp, _ := resp.Result().(*ConnConfig)
 
 	// Get geolocation
-	nativeRegion, err := GetNativeRegion(temp.ConfigName)
+	nativeRegion, _, err := GetRegion(callResult.RegionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		content := ConnConfig{}
 		return content, err
 	}
 
-	location := GetCloudLocation(strings.ToLower(temp.ProviderName), strings.ToLower(nativeRegion))
-	temp.Location = location
+	location, err := GetCloudLocation(callResult.ProviderName, nativeRegion)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		content := ConnConfig{}
+		return content, err
+	}
+	callResult.Location = location
 
-	return *temp, nil
-
+	return callResult, nil
 }
 
 // ConnConfigList is struct for containing a CB-Spider struct for connection config list
@@ -479,15 +430,17 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	// Get geolocations
 	for i, connConfig := range callResult.Connectionconfig {
-		nativeRegion, err := GetNativeRegion(connConfig.ConfigName)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			content := ConnConfigList{}
-			return content, err
-		}
 
-		location := GetCloudLocation(strings.ToLower(connConfig.ProviderName), strings.ToLower(nativeRegion))
-		callResult.Connectionconfig[i].Location = location
+		nativeRegion, _, err := GetRegion(connConfig.RegionName)
+		if err != nil {
+			log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
+		} else {
+			location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
+			if err != nil {
+				log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
+			}
+			callResult.Connectionconfig[i].Location = location
+		}
 	}
 
 	return callResult, nil
@@ -501,80 +454,83 @@ type Region struct {
 	KeyValueInfoList []KeyValue // ex) { {region, us-east1}, {zone, us-east1-c} }
 }
 
-// GetRegion is func to get region from CB-Spider
-func GetRegion(RegionName string) (Region, error) {
+// RegisterRegionZone is func to register all regions to CB-Spider
+/*
+WIP: need to be implemented when cb-spider supports region-multi-zone registration
+func RegisterRegionZone(cspName string, regionName string) error {
 
-	url := SpiderRestUrl + "/region/" + RegionName
+	for zoneName, zoneValue := range RuntimeCloudInfo.CSPs[cspName].Regions[regionName].Zones {
 
-	client := resty.New().SetCloseConnection(true)
 
-	resp, err := client.R().
-		SetResult(&Region{}).
-		//SetError(&SimpleMsg{}).
-		Get(url)
+		client := resty.New()
+		url := SpiderRestUrl + "/region"
+		method := "POST"
+		var callResult Region
 
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		content := Region{}
-		err := fmt.Errorf("an error occurred while requesting to CB-Spider")
-		return content, err
+		requestBody := Region{}
+		requestBody.RegionName = strings.Join(regionName, "-")
+		requestBody.ProviderName = cspName
+		requestBody.KeyValueInfoList = keyValueInfoList
+
+		err := ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			MediumDuration,
+		)
+
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+
 	}
 
-	switch {
-	case resp.StatusCode() >= 400 || resp.StatusCode() < 200:
-		fmt.Println(" - HTTP Status: " + strconv.Itoa(resp.StatusCode()) + " in " + GetFuncName())
-		err := fmt.Errorf(string(resp.Body()))
-		log.Error().Err(err).Msg("")
-		content := Region{}
-		return content, err
-	}
-
-	temp, _ := resp.Result().(*Region)
-	return *temp, nil
-
+	return nil
 }
+*/
 
-// GetRegion is func to get NativRegion from file
-func GetNativeRegion(connectionName string) (string, error) {
-	// Read default resources from file and create objects
-	// HEADER: ProviderName, CONN_CONFIG, RegionName, NativeRegionName, RegionLocation, DriverLibFileName, DriverName
-	file, fileErr := os.Open("../assets/cloudconnection.csv")
-	defer file.Close()
-	if fileErr != nil {
-		log.Error().Err(fileErr).Msg("")
-		return "", fileErr
+// GetRegion is func to get regionInfo with the native region name
+func GetRegion(RegionName string) (string, RegionDetail, error) {
+	nativeRegion := ""
+
+	parts := strings.SplitN(RegionName, "-", 2)
+	if len(parts) != 2 {
+		return nativeRegion, RegionDetail{}, fmt.Errorf("invalid RegionName format")
 	}
 
-	rdr := csv.NewReader(bufio.NewReader(file))
-	rows, err := rdr.ReadAll()
+	cloudType, nativeRegion := strings.ToLower(parts[0]), strings.ToLower(parts[1])
+
+	cloudInfo, err := GetCloudInfo()
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return "", err
+		return nativeRegion, RegionDetail{}, err
 	}
 
-	nativeRegionName := ""
-
-	for _, row := range rows[1:] {
-		if connectionName != "" {
-			// find only given connectionName (if not skip)
-			if connectionName != row[1] {
-				continue
-			}
-			//fmt.Println("Found a line for the connectionName from file: " + row[1])
-		}
-
-		if connectionName != "" {
-			// After finish handling line for the connectionName, break
-			if connectionName == row[1] {
-				nativeRegionName = row[3]
-				//fmt.Println("Handled for the connectionName from file: " + row[1])
-				break
-			}
-		}
-
+	cspDetail, ok := cloudInfo.CSPs[cloudType]
+	if !ok {
+		return nativeRegion, RegionDetail{}, fmt.Errorf("cloudType '%s' not found", cloudType)
 	}
-	return strings.ToLower(nativeRegionName), nil
 
+	// using map directly is not working because of the prefix
+	// need to be used after we deprecate zone description in test scripts
+	// regionDetail, ok := cspDetail.Regions[nativeRegion]
+	// if !ok {
+	// 	return nativeRegion, RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
+	// }
+
+	// return nativeRegion, regionDetail, nil
+
+	for key, regionDetail := range cspDetail.Regions {
+		if strings.HasPrefix(nativeRegion, key) {
+			return key, regionDetail, nil
+		}
+	}
+
+	return nativeRegion, RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
 }
 
 // RegionList is array struct for Region
@@ -613,6 +569,11 @@ func GetRegionList() (RegionList, error) {
 	temp, _ := resp.Result().(*RegionList)
 	return *temp, nil
 
+}
+
+// GetCloudInfo is func to get all cloud info from the asset
+func GetCloudInfo() (CloudInfo, error) {
+	return RuntimeCloudInfo, nil
 }
 
 // ConvertToMessage is func to change input data to gRPC message

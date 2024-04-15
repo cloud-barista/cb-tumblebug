@@ -78,9 +78,6 @@ type ParameterKeyVal struct {
 
 // // Info manage for MCIS recommendation
 func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
-
-	log.Debug().Msg("RecommendVm")
-
 	// Filtering first
 
 	u := &mcir.FilterSpecsByRangeRequest{}
@@ -339,7 +336,8 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				go func(i int) {
 					defer wg.Done() // Decrement the counter when the goroutine completes
 
-					distance, err := getDistance(latitude, longitude, (*specList)[i].ConnectionName)
+					var distance float64
+					distance, err = getDistance(latitude, longitude, (*specList)[i].RegionName)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						mu.Lock()
@@ -348,7 +346,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 						once.Do(func() {
 							// If an error occurs, stop all operations (this block is executed only once)
-							return
+							distance = 99999999 // Set a very large value to avoid using this value in the calculation
 						})
 					}
 
@@ -363,7 +361,8 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 			wg.Wait() // Wait for all goroutines to finish
 
 			if globalErr != nil { // If there's an error from any goroutine, return it
-				return []mcir.TbSpecInfo{}, globalErr
+				// log.Error().Err(globalErr).Msg("")
+				// return []mcir.TbSpecInfo{}, globalErr
 			}
 
 			sort.Slice(distances, func(i, j int) bool {
@@ -442,7 +441,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				go func(i int) {
 					defer wg.Done() // Decrement the counter when the goroutine completes
 
-					distance, err := getDistance(latitude, longitude, (*specList)[i].ConnectionName)
+					distance, err := getDistance(latitude, longitude, (*specList)[i].RegionName)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						mu.Lock()
@@ -529,30 +528,16 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 	return result, nil
 }
 
-// getDistance func get geographical distance between given coordinate and connectionConfig
-func getDistance(latitude float64, longitude float64, ConnectionName string) (float64, error) {
-	configTmp, _ := common.GetConnConfig(ConnectionName)
-	regionTmp, _ := common.GetRegion(configTmp.RegionName)
+// getDistance func get geographical distance between given coordinate and region
+func getDistance(latitude float64, longitude float64, regionName string) (float64, error) {
 
-	nativeRegion := ""
-	for _, v := range regionTmp.KeyValueInfoList {
-		if strings.ToLower(v.Key) == "region" || strings.ToLower(v.Key) == "location" {
-			nativeRegion = v.Value
-			break
-		}
-	}
-	Location := common.GetCloudLocation(strings.ToLower(configTmp.ProviderName), strings.ToLower(nativeRegion))
-
-	cloudLatitude, err := strconv.ParseFloat(strings.ReplaceAll(Location.Latitude, " ", ""), 32)
+	_, regionInfo, err := common.GetRegion(regionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return 0, err
+		return 999999, err
 	}
-	cloudLongitude, err := strconv.ParseFloat(strings.ReplaceAll(Location.Longitude, " ", ""), 32)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return 0, err
-	}
+	cloudLatitude := regionInfo.Location.Latitude
+	cloudLongitude := regionInfo.Location.Longitude
 
 	// first := math.Pow(float64(cloudLatitude-latitude), 2)
 	// second := math.Pow(float64(cloudLongitude-longitude), 2)

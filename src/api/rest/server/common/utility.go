@@ -192,7 +192,7 @@ func RestGetConnConfigList(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param regionName path string true "Name of region to retrieve"
-// @Success 200 {object} common.Region
+// @Success 200 {object} common.RegionDetail
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /region/{regionName} [get]
@@ -203,7 +203,7 @@ func RestGetRegion(c echo.Context) error {
 	}
 	regionName := c.Param("regionName")
 
-	content, err := common.GetRegion(regionName)
+	_, content, err := common.GetRegion(regionName)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }
@@ -227,6 +227,26 @@ func RestGetRegionList(c echo.Context) error {
 	content, err := common.GetRegionList()
 	return common.EndRequestWithLog(c, reqID, err, content)
 
+}
+
+// RestGetCloudInfo func is a rest api wrapper for CloudInfo.
+// RestGetCloudInfo godoc
+// @Summary Get cloud information
+// @Description Get cloud information
+// @Tags [Admin] Multi-Cloud environment configuration
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.CloudInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /cloudInfo [get]
+func RestGetCloudInfo(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	content, err := common.GetCloudInfo()
+	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
 // ObjectList struct consists of object IDs

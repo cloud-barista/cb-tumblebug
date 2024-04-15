@@ -35,16 +35,16 @@ csp_commands = {
 
 csp_connection_names = {
     'gcp': 'gcp-asia-east1',
-    'azure': 'az-eus',
+    'azure': 'azure-eastus',
     'aws': 'aws-us-east-1',
     'ibm': 'ibm-us-east',
     'alibaba': 'alibaba-us-east-1',
     'tencent': 'tencent-ap-singapore',
     'ncp': 'ncp-korea1',
-    'ncpvpc': 'ncpvpc-kr-1',
-    'ktcloud': 'kt-kr-central-a',
-    'ktcloudvpc': 'ktvpc-kr-dx-m1',
-    'nhncloud': 'nhncloud-kr-pangyo1'
+    'ncpvpc': 'ncpvpc-kr',
+    'ktcloud': 'ktcloud-kor-central-a',
+    'ktcloudvpc': 'ktcloudvpc-kr-dx-m1',
+    'nhncloud': 'nhncloud-kr1'
     # Add more CSPs here
 }
 

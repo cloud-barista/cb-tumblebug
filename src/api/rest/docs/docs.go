@@ -23,6 +23,41 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/cloudInfo": {
+            "get": {
+                "description": "Get cloud information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud environment configuration"
+                ],
+                "summary": "Get cloud information",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.CloudInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/config": {
             "get": {
                 "description": "List all configs",
@@ -7570,7 +7605,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.Region"
+                            "$ref": "#/definitions/common.RegionDetail"
                         }
                     },
                     "404": {
@@ -8071,6 +8106,40 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "common.CSPDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "driver": {
+                    "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "regions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/common.RegionDetail"
+                    }
+                }
+            }
+        },
+        "common.CloudInfo": {
+            "type": "object",
+            "properties": {
+                "csps": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/common.CSPDetail"
+                    }
+                }
+            }
+        },
         "common.ConfigInfo": {
             "type": "object",
             "properties": {
@@ -8193,6 +8262,20 @@ const docTemplate = `{
                 }
             }
         },
+        "common.Location": {
+            "type": "object",
+            "properties": {
+                "display": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                }
+            }
+        },
         "common.NsInfo": {
             "type": "object",
             "properties": {
@@ -8240,6 +8323,23 @@ const docTemplate = `{
                 "regionName": {
                     "description": "ex) \"region01\"",
                     "type": "string"
+                }
+            }
+        },
+        "common.RegionDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/common.Location"
+                },
+                "zones": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -9798,7 +9898,7 @@ const docTemplate = `{
                     }
                 },
                 "region": {
-                    "$ref": "#/definitions/common.Region"
+                    "$ref": "#/definitions/common.RegionDetail"
                 },
                 "systemMessage": {
                     "description": "Latest system message such as error message",
