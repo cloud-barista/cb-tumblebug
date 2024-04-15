@@ -768,8 +768,6 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 		return &McisStatusInfo{}, err
 	}
 
-	log.Debug().Msg("[GetMcisStatus]" + mcisId)
-
 	key := common.GenMcisKey(nsId, mcisId, "")
 
 	keyValue, err := common.CBStore.Get(key)

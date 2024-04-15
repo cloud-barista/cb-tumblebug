@@ -78,9 +78,6 @@ type ParameterKeyVal struct {
 
 // // Info manage for MCIS recommendation
 func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
-
-	log.Debug().Msg("RecommendVm")
-
 	// Filtering first
 
 	u := &mcir.FilterSpecsByRangeRequest{}
@@ -537,7 +534,7 @@ func getDistance(latitude float64, longitude float64, regionName string) (float6
 	_, regionInfo, err := common.GetRegion(regionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		return 0, err
+		return 999999, err
 	}
 	cloudLatitude := regionInfo.Location.Latitude
 	cloudLongitude := regionInfo.Location.Longitude

@@ -515,12 +515,22 @@ func GetRegion(RegionName string) (string, RegionDetail, error) {
 		return nativeRegion, RegionDetail{}, fmt.Errorf("cloudType '%s' not found", cloudType)
 	}
 
-	regionDetail, ok := cspDetail.Regions[nativeRegion]
-	if !ok {
-		return nativeRegion, RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
+	// using map directly is not working because of the prefix
+	// need to be used after we deprecate zone description in test scripts
+	// regionDetail, ok := cspDetail.Regions[nativeRegion]
+	// if !ok {
+	// 	return nativeRegion, RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
+	// }
+
+	// return nativeRegion, regionDetail, nil
+
+	for key, regionDetail := range cspDetail.Regions {
+		if strings.HasPrefix(nativeRegion, key) {
+			return key, regionDetail, nil
+		}
 	}
 
-	return nativeRegion, regionDetail, nil
+	return nativeRegion, RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
 }
 
 // RegionList is array struct for Region

@@ -280,9 +280,9 @@ NCP,ncp-us-western,SPSW0LINUX000130,Ubuntu 18.04
 NCP,ncp-germany,SPSW0LINUX000130,Ubuntu 18.04
 NCP,ncp-singapore,SPSW0LINUX000130,Ubuntu 18.04
 NCP,ncp-japan,SPSW0LINUX000130,Ubuntu 18.04
-NCPVPC,ncpvpc-kr-1,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
-NCPVPC,ncpvpc-sgn-4,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
-NCPVPC,ncpvpc-jpn-4,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
+NCPVPC,ncpvpc-kr,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
+NCPVPC,ncpvpc-sgn,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
+NCPVPC,ncpvpc-jpn,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
 CLOUDIT,cloudit-region01,ee441331-0872-49c3-886c-1873a6e32e09,Ubuntu 18.04
 CLOUDIT,cloudit-region01,b765d58f-507a-4b2d-8ff7-115714fdbf2d,Debian 10
 CLOUDIT,cloudit-region01,14e7d45f-8ff7-4ba9-84e9-924552b4e202,Windows Server 2012 R2
@@ -306,12 +306,12 @@ TENCENT,tencent-ap-chengdu,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-chongqing,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-hongkong,img-pi0ii46r,Ubuntu 18.04
 TENCENT,tencent-ap-hongkong,img-2tddq003,Windows Server 2012 R2
-KTCLOUD,kt-kr-central-a,87838094-af4f-449f-a2f4-f5b4b581eb29,Ubuntu 22.04
-KTCLOUD,kt-kr-central-b,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUD,kt-kr-seoul-m,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUD,kt-kr-seoul-m2,63de6d04-7f1b-4924-8e95-1acd6581ca0c,Ubuntu 22.04
-KTCLOUD,kt-kr-kimhae,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUDVPC,ktvpc-kr-dx-m1,be9a35ed-5988-49d2-b86d-2ca9b375564b,Ubuntu 22.04
+KTCLOUD,ktcloud-kor-central-a,87838094-af4f-449f-a2f4-f5b4b581eb29,Ubuntu 22.04
+KTCLOUD,ktcloud-kor-central-b,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
+KTCLOUD,ktcloud-kr-seoul-m,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
+KTCLOUD,ktcloud-kr-seoul-m2,63de6d04-7f1b-4924-8e95-1acd6581ca0c,Ubuntu 22.04
+KTCLOUD,ktcloud-kr-kimhae,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
+KTCLOUDVPC,ktcloudvpc-kr-dx-m1,be9a35ed-5988-49d2-b86d-2ca9b375564b,Ubuntu 22.04
 IBM,ibm-us-south,r006-9de77234-3189-42f8-982d-f2266477cfe0,Ubuntu 18.04
 IBM,ibm-us-south,r006-b4d8d8d4-7768-4a1b-9434-9483ca821a0d,Windows Server 2012 R2
 IBM,ibm-br-sao,r042-92d1cd12-f014-4b9a-abf8-c5ca6494a9e5,Ubuntu 18.04
@@ -323,8 +323,8 @@ IBM,ibm-jp-osa,r034-522c639c-52e1-4cab-8dfb-bc0fb9f6f577,Ubuntu 18.04
 IBM,ibm-au-syd,r026-a8c25ce6-0ca1-43e9-9b41-411c6217b8b8,Ubuntu 18.04
 IBM,ibm-au-syd,r026-3d2be426-8032-4215-a82b-d61075a49a1c,Debian 10
 IBM,ibm-jp-tok,r022-61fdadec-6b03-4bd2-bfca-62cd16f5673f,Ubuntu 18.04
-NHNCLOUD,nhncloud-kr-pangyo1,68fb7e1a-191c-45bf-8328-b7864f9fbaf4,Ubuntu 22.04
-NHNCLOUD,nhncloud-kr-pyeongchon1,71893505-923c-4982-b0eb-844eb520661c,Ubuntu 22.04
-NHNCLOUD,nhncloud-jp-tokyo1,ca69fad9-92f3-4c9b-a6e4-7e8b0e4d3a58,Ubuntu 22.04
+NHNCLOUD,nhncloud-kr1,68fb7e1a-191c-45bf-8328-b7864f9fbaf4,Ubuntu 22.04
+NHNCLOUD,nhncloud-kr2,71893505-923c-4982-b0eb-844eb520661c,Ubuntu 22.04
+NHNCLOUD,nhncloud-jp1,ca69fad9-92f3-4c9b-a6e4-7e8b0e4d3a58,Ubuntu 22.04
 CLOUDTWIN,cloudtwin-region01,ubuntu18.04-sshd-systemd,Ubuntu 18.04
 MOCK,mock-seoul,mock-vmimage-01,Ubuntu 18.04
