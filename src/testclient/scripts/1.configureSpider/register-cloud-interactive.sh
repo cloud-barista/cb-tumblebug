@@ -70,31 +70,7 @@ EOF
 function CallSpiderPostRegion() {
     # for Cloud Region Info
     # Differenciate Cloud Region Value for Resource Group Name
-    if [ "${CSP}" == "azure" ]; then
-        # echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
-        resp=$(
-            curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
-            {
-            "ProviderName" : "${ProviderName[$INDEX]}",
-            "KeyValueInfoList" : [
-                {
-                    "Key" : "${RegionKey01[$INDEX,$REGION]:-NULL}",
-                    "Value" : "${RegionVal01[$INDEX,$REGION]:-NULL}"
-                },
-                {
-                    "Key" : "${RegionKey02[$INDEX,$REGION]:-NULL}",
-                    "Value" : "${RegionVal02[$INDEX,$REGION]:-NULL}-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
-                }
-            ],
-            "RegionName" : "${RegionName[$INDEX,$REGION]}"
-        }
-EOF
-        )
-        # echo ${resp} |
-        #     jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
-        #     column -t
-        # echo ""
-    else
+
         # echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
         resp=$(
             curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
@@ -118,7 +94,7 @@ EOF
         #     jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
         #     column -t
         # echo ""
-    fi
+
 
     # for Cloud Connection Config Info
     resp=$(
@@ -169,7 +145,6 @@ done
 
 
 if [ "${INDEX}" == "0" ]; then
-    echo "[Parallel execution for all CSP regions]"
     INDEXX=${TotalNumCSP}
     for ((cspi = 1; cspi <= INDEXX; cspi++)); do
         INDEXY=${TotalNumRegion[$cspi]}

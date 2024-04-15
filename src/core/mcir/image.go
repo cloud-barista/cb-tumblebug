@@ -90,7 +90,7 @@ type TbImageInfo struct {
 // ConvertSpiderImageToTumblebugImage accepts an Spider image object, converts to and returns an TB image object
 func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInfo, error) {
 	if spiderImage.IId.NameId == "" {
-		err := fmt.Errorf("ConvertSpiderImageToTumblebugImage failed; spiderImage.IId.NameId == \"\" ")
+		err := fmt.Errorf("ConvertSpiderImageToTumblebugImage failed; spiderImage.IId.NameId == EmptyString")
 		emptyTumblebugImage := TbImageInfo{}
 		return emptyTumblebugImage, err
 	}
@@ -120,57 +120,55 @@ func ConvertSpiderImageToTumblebugImage(spiderImage SpiderImageInfo) (TbImageInf
 func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, error) {
 
 	resourceType := common.StrImage
+	content := TbImageInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		temp := TbImageInfo{}
 		log.Error().Err(err).Msg("")
-		return temp, err
+		return content, err
 	}
 
 	err = validate.Struct(u)
 	if err != nil {
-
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			log.Err(err).Msg("")
-			temp := TbImageInfo{}
-			return temp, err
+			return content, err
 		}
-
-		temp := TbImageInfo{}
-		return temp, err
+		return content, err
 	}
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
 
 	if !update {
 		if check {
-			temp := TbImageInfo{}
 			err := fmt.Errorf("The image " + u.Name + " already exists.")
-			return temp, err
+			return content, err
 		}
 	}
 
 	if err != nil {
-		temp := TbImageInfo{}
 		err := fmt.Errorf("Failed to check the existence of the image " + u.Name + ".")
-		return temp, err
+		return content, err
 	}
 
 	res, err := LookupImage(u.ConnectionName, u.CspImageId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		//err := fmt.Errorf("an error occurred while lookup image via CB-Spider")
-		emptyImageInfoObj := TbImageInfo{}
-		return emptyImageInfoObj, err
+
+		return content, err
+	}
+	if res.IId.NameId == "" {
+		err := fmt.Errorf("CB-Spider returned empty IId.NameId with no error: %s", u.ConnectionName)
+		log.Error().Err(err).Msgf("Cannot LookupImage %s %v", u.CspImageId, res)
+		return content, err
 	}
 
-	content, err := ConvertSpiderImageToTumblebugImage(res)
+	content, err = ConvertSpiderImageToTumblebugImage(res)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		//err := fmt.Errorf("an error occurred while converting Spider image info to Tumblebug image info.")
-		emptyImageInfoObj := TbImageInfo{}
-		return emptyImageInfoObj, err
+		return content, err
 	}
 	content.Namespace = nsId
 	content.ConnectionName = u.ConnectionName
@@ -344,7 +342,7 @@ func LookupImage(connConfig string, imageId string) (SpiderImageInfo, error) {
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Trace().Err(err).Msg("")
 		return callResult, err
 	}
 
