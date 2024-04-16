@@ -568,7 +568,7 @@ NHNCLOUD,nhncloud-kr2,m2.c4m8,,,,,,,,,,,,default,default
 NHNCLOUD,nhncloud-jp1,m2.c4m8,,,,,,,,,,,,default,default
 KTCLOUD,ktcloud-kor-central-a,d3530ad2-462b-43ad-97d5-e1087b952b7d!_disk20GB,,,,,,,,,,,,default,default
 KTCLOUD,ktcloud-kor-central-b,385df834-6cf7-485b-bca8-de4d4f59b0b0,,,,,,,,,,,,default,default
-KTCLOUD,ktcloud-kr-seoul-m,385df834-6cf7-485b-bca8-de4d4f59b0b0,,,,,,,,,,,,default,default
-KTCLOUD,ktcloud-kr-seoul-m2,753c80b0-b03f-4a91-98a7-6b11233f85a8,,,,,,,,,,,,default,default
+KTCLOUD,ktcloud-kor-seoul-m,385df834-6cf7-485b-bca8-de4d4f59b0b0,,,,,,,,,,,,default,default
+KTCLOUD,ktcloud-kor-seoul-m2,753c80b0-b03f-4a91-98a7-6b11233f85a8,,,,,,,,,,,,default,default
 KTCLOUD,ktcloud-kr-kimhae,385df834-6cf7-485b-bca8-de4d4f59b0b0,,,,,,,,,,,,default,default
 KTCLOUDVPC,ktcloudvpc-kr-dx-m1,4x16.itl,,,,,,,,,,,,default,default

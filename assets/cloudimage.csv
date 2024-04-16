@@ -1,7 +1,4 @@
 ProviderName,connectionName,cspImageId,OsType
-MOCK,testcloud01-seoul,mock-vmimage-01,Ubuntu 18.04
-MOCK,testcloud02-canada,mock-vmimage-01,Ubuntu 18.04
-MOCK,testcloud03-frankfurt,mock-vmimage-01,Ubuntu 18.04
 AWS,aws-ap-southeast-1,ami-061eb2b23f9f8839c,Ubuntu 18.04
 AWS,aws-ap-southeast-1,ami-02ee763250491e04a,Ubuntu 22.04
 AWS,aws-ap-southeast-1,ami-0d55f20871d03244b,Debian 10
@@ -74,244 +71,21 @@ AWS,aws-af-south-1,ami-03dfab9c5b8844b77,Windows Server 2012 R2
 AWS,aws-eu-south-1,ami-0f274cb646afd3475,Ubuntu 18.04
 AWS,aws-eu-south-1,ami-0fdd5958b81f36e68,Ubuntu 22.04
 AWS,aws-eu-south-1,ami-0c49c6227e9c03e66,Windows Server 2012 R2
-AZURE,all,Canonical:UbuntuServer:18.04-LTS:18.04.202106220,Ubuntu 18.04
-AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202211011,Ubuntu 22.04
-AZURE,all,Debian:debian-10:10:0.20220911.1135,Debian 10
-AZURE,all,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.20671.221105,Windows Server 2012 R2
-GCP,gcp-asia-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-europe-west3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-east2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-northeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-northeast2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-northeast3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-us-west4,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-southeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-australia-southeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-europe-north1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-europe-west1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-europe-west2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-europe-west4,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-europe-west6,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-northamerica-northeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-southamerica-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-us-central1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-us-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-us-east4,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-us-west1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-us-west2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-us-west3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-south1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-southeast2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-europe-central2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-1804-bionic-v20220505,Ubuntu 18.04
-GCP,gcp-asia-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-europe-west3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-east2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-northeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-northeast2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-northeast3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-us-west4,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-southeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-australia-southeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-europe-north1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-europe-west1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-europe-west2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-europe-west4,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-europe-west6,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-northamerica-northeast1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-southamerica-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-us-central1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-us-east1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-us-east4,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-us-west1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-us-west2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-us-west3,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-south1,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-southeast2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-europe-central2,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20221101a,Ubuntu 22.04
-GCP,gcp-asia-east1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-europe-west3,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-east2,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-northeast1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-northeast2,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-northeast3,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-us-west4,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-southeast1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-australia-southeast1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-europe-north1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-europe-west1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-europe-west2,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-europe-west4,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-europe-west6,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-northamerica-northeast1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-southamerica-east1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-us-central1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-us-east1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-us-east4,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-us-west1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-us-west2,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-us-west3,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-south1,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-southeast2,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-europe-central2,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,gcp-asia-east1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-europe-west3,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-asia-east2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-asia-northeast1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-asia-northeast2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-asia-northeast3,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-us-west4,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-asia-southeast1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-australia-southeast1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-europe-north1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-europe-west1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-europe-west2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-europe-west4,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-europe-west6,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-northamerica-northeast1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-southamerica-east1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-us-central1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-us-east1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-us-east4,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-us-west1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-us-west2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-us-west3,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-asia-south1,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-asia-southeast2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-GCP,gcp-europe-central2,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-ALIBABA,alibaba-ap-northeast-2,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-northeast-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-south-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-2,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-3,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-southeast-5,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-us-west-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-us-east-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-eu-central-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-eu-west-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-me-east-1,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-hongkong,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-shanghai,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-beijing,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-qingdao,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-zhangjiakou,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-huhehaote,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-hangzhou,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-shenzhen,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-heyuan,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-chengdu,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-wulanchabu,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-cn-guangzhou,ubuntu_18_04_x64_20G_alibase_20231019.vhd,Ubuntu 18.04
-ALIBABA,alibaba-ap-northeast-2,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-northeast-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-south-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-2,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-3,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-southeast-5,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-us-west-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-us-east-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-eu-central-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-eu-west-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-me-east-1,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-hongkong,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-shanghai,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-beijing,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-qingdao,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-zhangjiakou,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-huhehaote,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-hangzhou,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-shenzhen,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-heyuan,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-chengdu,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-wulanchabu,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-cn-guangzhou,ubuntu_22_04_x64_20G_alibase_20231019.vhd,Ubuntu 22.04
-ALIBABA,alibaba-ap-northeast-2,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-ap-northeast-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-ap-south-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-2,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-3,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-ap-southeast-5,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-us-west-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-us-east-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-eu-central-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-eu-west-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-me-east-1,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-hongkong,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-shanghai,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-beijing,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-qingdao,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-zhangjiakou,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-huhehaote,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-hangzhou,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-shenzhen,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-heyuan,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-chengdu,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-wulanchabu,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-cn-guangzhou,debian_10_2_x64_20G_alibase_20230216.vhd,Debian 10
-ALIBABA,alibaba-ap-northeast-2,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-northeast-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-south-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-2,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-3,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-ap-southeast-5,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-us-west-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-us-east-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-eu-central-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-eu-west-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-me-east-1,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-hongkong,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-shanghai,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-beijing,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-qingdao,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-zhangjiakou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-huhehaote,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-hangzhou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-shenzhen,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-heyuan,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-chengdu,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-wulanchabu,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-ALIBABA,alibaba-cn-guangzhou,win2012r2_9600_x64_dtc_en-us_40G_alibase_20230915.vhd,Windows Server 2012 R2
-OPENSTACK,openstack-region01,ubuntu-18.04,Ubuntu 18.04
-NCP,ncp-korea1,SPSW0LINUX000130,Ubuntu 18.04
-NCP,ncp-us-western,SPSW0LINUX000130,Ubuntu 18.04
-NCP,ncp-germany,SPSW0LINUX000130,Ubuntu 18.04
-NCP,ncp-singapore,SPSW0LINUX000130,Ubuntu 18.04
-NCP,ncp-japan,SPSW0LINUX000130,Ubuntu 18.04
-NCPVPC,ncpvpc-kr,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
-NCPVPC,ncpvpc-sgn,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
-NCPVPC,ncpvpc-jpn,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
-CLOUDIT,cloudit-region01,ee441331-0872-49c3-886c-1873a6e32e09,Ubuntu 18.04
-CLOUDIT,cloudit-region01,b765d58f-507a-4b2d-8ff7-115714fdbf2d,Debian 10
-CLOUDIT,cloudit-region01,14e7d45f-8ff7-4ba9-84e9-924552b4e202,Windows Server 2012 R2
-TENCENT,tencent-ap-singapore,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-jakarta,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-seoul,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-tokyo,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-mumbai,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-bangkok,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-na-toronto,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-na-siliconvalley,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-na-ashburn,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-eu-frankfurt,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-eu-moscow,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-guangzhou,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-shanghai,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-nanjing,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-beijing,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-beijing,img-h1yvvfw1,Debian 10
-TENCENT,tencent-ap-chengdu,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-chongqing,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-hongkong,img-pi0ii46r,Ubuntu 18.04
-TENCENT,tencent-ap-hongkong,img-2tddq003,Windows Server 2012 R2
-KTCLOUD,ktcloud-kor-central-a,87838094-af4f-449f-a2f4-f5b4b581eb29,Ubuntu 22.04
-KTCLOUD,ktcloud-kor-central-b,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUD,ktcloud-kr-seoul-m,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUD,ktcloud-kr-seoul-m2,63de6d04-7f1b-4924-8e95-1acd6581ca0c,Ubuntu 22.04
-KTCLOUD,ktcloud-kr-kimhae,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUDVPC,ktcloudvpc-kr-dx-m1,be9a35ed-5988-49d2-b86d-2ca9b375564b,Ubuntu 22.04
+AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202404080,Ubuntu 20.04
+AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202404090,Ubuntu 22.04
+AZURE,all,Debian:debian-10:10:0.20240204.1647,Debian 10
+AZURE,all,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.21620.231004,Windows Server 2012 R2
+GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,Ubuntu 20.04
+GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20240319,Ubuntu 22.04
+GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
+GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
+ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04
+ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240220.vhd,Ubuntu 20.04
+ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240220.vhd,Ubuntu 22.04
+TENCENT,all,img-pi0ii46r,Ubuntu 18.04
+TENCENT,all,img-22trbn9x,Ubuntu 20.04
+TENCENT,all,img-487zeit5,Ubuntu 22.04
+TENCENT,all,img-bpsjtw7n,Windows Server 2012 R2
 IBM,ibm-us-south,r006-9de77234-3189-42f8-982d-f2266477cfe0,Ubuntu 18.04
 IBM,ibm-us-south,r006-b4d8d8d4-7768-4a1b-9434-9483ca821a0d,Windows Server 2012 R2
 IBM,ibm-br-sao,r042-92d1cd12-f014-4b9a-abf8-c5ca6494a9e5,Ubuntu 18.04
@@ -326,5 +100,10 @@ IBM,ibm-jp-tok,r022-61fdadec-6b03-4bd2-bfca-62cd16f5673f,Ubuntu 18.04
 NHNCLOUD,nhncloud-kr1,68fb7e1a-191c-45bf-8328-b7864f9fbaf4,Ubuntu 22.04
 NHNCLOUD,nhncloud-kr2,71893505-923c-4982-b0eb-844eb520661c,Ubuntu 22.04
 NHNCLOUD,nhncloud-jp1,ca69fad9-92f3-4c9b-a6e4-7e8b0e4d3a58,Ubuntu 22.04
-CLOUDTWIN,cloudtwin-region01,ubuntu18.04-sshd-systemd,Ubuntu 18.04
-MOCK,mock-seoul,mock-vmimage-01,Ubuntu 18.04
+NCP,all,SPSW0LINUX000130,Ubuntu 18.04
+NCPVPC,all,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
+KTCLOUD,ktcloud-kor-central-a,87838094-af4f-449f-a2f4-f5b4b581eb29,Ubuntu 22.04
+KTCLOUD,ktcloud-kor-central-b,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
+KTCLOUD,ktcloud-kor-seoul-m,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
+KTCLOUD,ktcloud-kor-seoul-m2,63de6d04-7f1b-4924-8e95-1acd6581ca0c,Ubuntu 22.04
+KTCLOUDVPC,ktcloudvpc-kr-dx-m1,be9a35ed-5988-49d2-b86d-2ca9b375564b,Ubuntu 22.04

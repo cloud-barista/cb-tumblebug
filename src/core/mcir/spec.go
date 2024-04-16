@@ -197,7 +197,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 
 	if connConfig == "" {
 		content := SpiderSpecList{}
-		err := fmt.Errorf("LookupSpec() called with empty connConfig.")
+		err := fmt.Errorf("LookupSpec called with empty connConfig.")
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
@@ -222,7 +222,7 @@ func LookupSpecList(connConfig string) (SpiderSpecList, error) {
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Trace().Err(err).Msg("")
 		content := SpiderSpecList{}
 		return content, err
 	}

@@ -38,7 +38,7 @@ start_time=$(date +%s)
 
 
 # Execute the load-common-resource script and capture its output
-EXPECTED_DURATION=300 # 5 minutes
+EXPECTED_DURATION=240 # 4 minutes
 progress_time=$(date +%s)
 
 "$CBTUMBLEBUG_ROOT"/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb > initTmp.out &
@@ -86,7 +86,7 @@ done
 
 echo ""
 echo ""
-echo " Done"
+echo "Done"
 output=$(<initTmp.out)
 rm initTmp.out
 
@@ -127,7 +127,7 @@ done <<< "$output"
 
 # Display the counts
 echo ""
-echo "- Image Success count: $successImageCount (Failed count: $failedImageCount)"
-echo "- Spec Success count: $successSpecCount (Failed count: $failedSpecCount)"
+echo "- Image Success count: $successImageCount (not registered: $failedImageCount)"
+echo "- Spec Success count: $successSpecCount (not registered: $failedSpecCount)"
 echo ""
 echo "Total duration: $duration seconds."
