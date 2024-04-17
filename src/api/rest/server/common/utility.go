@@ -17,7 +17,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -515,7 +515,7 @@ func RestForwardAnyReqToAny(c echo.Context) error {
 	method := "GET"
 	var requestBody interface{}
 	if c.Request().Body != nil {
-		bodyBytes, err := ioutil.ReadAll(c.Request().Body)
+		bodyBytes, err := io.ReadAll(c.Request().Body)
 		if err != nil {
 			return common.EndRequestWithLog(c, reqID, fmt.Errorf("Failed to read request body: %v", err), nil)
 		}

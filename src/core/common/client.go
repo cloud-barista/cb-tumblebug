@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -250,13 +250,13 @@ func ExtractRequestInfo(r *http.Request) RequestInfo {
 	//var bodyString string
 	var bodyObject interface{}
 	if r.Body != nil { // Check if the body is not nil
-		bodyBytes, err := ioutil.ReadAll(r.Body)
+		bodyBytes, err := io.ReadAll(r.Body)
 		if err == nil {
 			//bodyString = string(bodyBytes)
 			json.Unmarshal(bodyBytes, &bodyObject) // Try to unmarshal to a JSON object
 
 			// Important: Write the body back for further processing
-			r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
 	}
 
