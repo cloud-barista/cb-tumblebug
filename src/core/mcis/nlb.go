@@ -1066,17 +1066,17 @@ func DelAllNLB(nsId string, mcisId string, subString string, forceFlag string) (
 	for _, v := range resourceIdList {
 		// if subString is provided, check the resourceId contains the subString.
 		if subString == "" || strings.Contains(v, subString) {
-			deleteStatus = ""
+
+			deleteStatus = "[Done] "
+			errString := ""
 
 			err := DelNLB(nsId, mcisId, v, forceFlag)
-
 			if err != nil {
-				deleteStatus = err.Error()
-			} else {
-				deleteStatus = " [Done]"
+				deleteStatus = "[Failed] "
+				errString = " (" + err.Error() + ")"
 			}
 
-			deletedResources.IdList = append(deletedResources.IdList, "NLB: "+v+deleteStatus)
+			deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"NLB: "+v+errString)
 		}
 	}
 	return deletedResources, nil

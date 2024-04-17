@@ -1656,7 +1656,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 
 	option = common.ToLower(option)
 	deletedResources := common.IdList{}
-	deleteStatus := " [Done]"
+	deleteStatus := "[Done] "
 
 	err := common.CheckString(nsId)
 	if err != nil {
@@ -1727,10 +1727,14 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	key := common.GenMcisKey(nsId, mcisId, "")
 
 	// delete associated MCIS Policy
-	err = DelMcisPolicy(nsId, mcisId)
-	if err == nil {
-		log.Error().Err(err).Msg("")
-		deletedResources.IdList = append(deletedResources.IdList, "Policy: "+mcisId+deleteStatus)
+	check, _ = CheckMcisPolicy(nsId, mcisId)
+	if check {
+		err = DelMcisPolicy(nsId, mcisId)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return deletedResources, err
+		}
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"Policy: "+mcisId)
 	}
 
 	vmList, err := ListVmId(nsId, mcisId)
@@ -1773,7 +1777,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 		for _, v2 := range vmInfo.DataDiskIds {
 			mcir.UpdateAssociatedObjectList(nsId, common.StrDataDisk, v2, common.StrDelete, vmKey)
 		}
-		deletedResources.IdList = append(deletedResources.IdList, "VM: "+v+deleteStatus)
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"VM: "+v)
 	}
 
 	// delete subGroup info
@@ -1789,7 +1793,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
 		}
-		deletedResources.IdList = append(deletedResources.IdList, "SubGroup: "+v+deleteStatus)
+		deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"SubGroup: "+v)
 	}
 
 	// delete associated CSP NLBs
@@ -1822,7 +1826,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
 	}
-	deletedResources.IdList = append(deletedResources.IdList, "MCIS: "+mcisId+deleteStatus)
+	deletedResources.IdList = append(deletedResources.IdList, deleteStatus+"MCIS: "+mcisId)
 
 	return deletedResources, nil
 }

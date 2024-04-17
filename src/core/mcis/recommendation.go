@@ -240,7 +240,7 @@ func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]Param
 			sort.Slice(distances, func(i, j int) bool {
 				return distances[i].distance < distances[j].distance
 			})
-			fmt.Printf("\n[Latency]\n %v \n", distances)
+			//fmt.Printf("\n[Latency]\n %v \n", distances)
 
 			priorityCnt := 1
 			for i := range distances {

@@ -100,17 +100,16 @@ func DelAllResources(nsId string, resourceType string, subString string, forceFl
 	for _, v := range resourceIdList {
 		// if subString is provided, check the resourceId contains the subString.
 		if subString == "" || strings.Contains(v, subString) {
-			deleteStatus = ""
+
+			deleteStatus = "[Done] "
+			errString := ""
 
 			err := DelResource(nsId, resourceType, v, forceFlag)
-
 			if err != nil {
-				deleteStatus = err.Error()
-			} else {
-				deleteStatus = " [Done]"
+				deleteStatus = "[Failed] "
+				errString = " (" + err.Error() + ")"
 			}
-
-			deletedResources.IdList = append(deletedResources.IdList, resourceType+": "+v+deleteStatus)
+			deletedResources.IdList = append(deletedResources.IdList, deleteStatus+resourceType+": "+v+errString)
 		}
 	}
 	return deletedResources, nil
@@ -144,8 +143,6 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	log.Debug().Msg("key: " + key)
-
 	keyValue, _ := common.CBStore.Get(key)
 	// In CheckResource() above, calling 'CBStore.Get()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
