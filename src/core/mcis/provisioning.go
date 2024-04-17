@@ -847,7 +847,6 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 
 	// Install CB-Dragonfly monitoring agent
 
-	fmt.Printf("\n[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisId, mcisTmp.InstallMonAgent)
 	if !strings.Contains(mcisTmp.InstallMonAgent, "no") {
 
 		// Sleep for 60 seconds for a safe DF agent installation.
@@ -1076,8 +1075,6 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 
 	// Install CB-Dragonfly monitoring agent
 
-	fmt.Printf("[Init monitoring agent] for %+v\n - req.InstallMonAgent: %+v\n\n", mcisTmp.Id, req.InstallMonAgent)
-
 	mcisTmp.InstallMonAgent = req.InstallMonAgent
 	UpdateMcisInfo(nsId, mcisTmp)
 
@@ -1255,7 +1252,21 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 	}
 
 	vmRequest := req.Vm
-	// Check whether VM names meet requirement. If not, generate default resources dynamically.
+	// Check whether VM names meet requirement.
+	errStr := ""
+	for i, k := range vmRequest {
+		err = checkCommonResAvailable(&k)
+		if err != nil {
+			log.Error().Err(err).Msgf("[%d] Failed to find common resource for MCIS provision", i)
+			errStr += "{[" + strconv.Itoa(i+1) + "] " + err.Error() + "} "
+		}
+	}
+	if errStr != "" {
+		err = fmt.Errorf(errStr)
+		return emptyMcis, err
+	}
+
+	//If not, generate default resources dynamically.
 	for _, k := range vmRequest {
 		vmReq, err := getVmReqFromDynamicReq(nsId, &k)
 		if err != nil {
@@ -1304,6 +1315,62 @@ func CreateMcisVmDynamic(nsId string, mcisId string, req *TbVmDynamicReq) (*TbMc
 	}
 
 	return CreateMcisGroupVm(nsId, mcisId, vmReq, true)
+}
+
+// checkCommonResAvailable is func to check common resources availability
+func checkCommonResAvailable(req *TbVmDynamicReq) error {
+
+	vmRequest := req
+	// Check whether VM names meet requirement.
+	k := vmRequest
+
+	vmReq := &TbVmReq{}
+	tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k.CommonSpec)
+	if err != nil {
+		err := fmt.Errorf("Failed to get the spec " + k.CommonSpec)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	specInfo := mcir.TbSpecInfo{}
+	err = common.CopySrcToDest(&tempInterface, &specInfo)
+	if err != nil {
+		err := fmt.Errorf("Failed to CopySrcToDest() " + k.CommonSpec)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	// remake vmReqest from given input and check resource availability
+	vmReq.ConnectionName = specInfo.ConnectionName
+
+	// If ConnectionName is specified by the request, Use ConnectionName from the request
+	if k.ConnectionName != "" {
+		vmReq.ConnectionName = k.ConnectionName
+	}
+
+	// validate the region for spec
+	_, err = common.GetConnConfig(specInfo.RegionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get RegionName (" + specInfo.RegionName + ") for Spec (" + k.CommonSpec + ") is not found.")
+		log.Error().Err(err).Msg("")
+		return err
+	}
+	// validate the GetConnConfig for spec
+	_, err = common.GetConnConfig(vmReq.ConnectionName)
+	if err != nil {
+		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
+	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
+	if err != nil {
+		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	return nil
 }
 
 // getVmReqForDynamicMcis is func to getVmReqFromDynamicReq
@@ -1448,9 +1515,8 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
 		log.Fatal().Err(err).Msg("AddVmToMcis(); CBStore.Get() returned an error.")
-		// return nil, err
+		return err
 	}
-
 	if keyValue == nil {
 		return fmt.Errorf("AddVmToMcis: Cannot find mcisId. Key: %s", key)
 	}
@@ -1529,8 +1595,6 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 // CreateVm is func to create VM (option = "register" for register existing VM)
 func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) error {
-
-	fmt.Printf("\n[CreateVm]\n")
 
 	var err error = nil
 	switch {

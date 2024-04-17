@@ -496,19 +496,6 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyReq) (McisPolicyI
 func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 	log.Debug().Msg("[GetMcisPolicyObject]" + mcisId)
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := McisPolicyInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
-
-	err = common.CheckString(mcisId)
-	if err != nil {
-		temp := McisPolicyInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 	log.Debug().Msgf("Key: %v", key)
 	keyValue, err := common.CBStore.Get(key)
@@ -604,7 +591,7 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 	check, _ := CheckMcisPolicy(nsId, mcisId)
 
 	if !check {
-		err := fmt.Errorf("The mcis Policy" + mcisId + " does not exist.")
+		err := fmt.Errorf("The mcis Policy " + mcisId + " does not exist.")
 		return err
 	}
 
