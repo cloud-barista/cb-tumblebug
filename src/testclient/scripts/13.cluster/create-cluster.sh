@@ -28,7 +28,7 @@ fi
 if [ -n "${K8S_VERSION[$INDEX,$REGION]}" ]; then
 	VERSION=${K8S_VERSION[$INDEX,$REGION]}
 else
-	echo "You need to specify K8S_VERION[\$IX,\$IY] in conf.env!!!"
+	echo "You need to specify K8S_VERSION[\$IX,\$IY] in conf.env!!!"
 	exit
 fi
 
