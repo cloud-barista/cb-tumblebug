@@ -40,7 +40,7 @@ csp_connection_names = {
     'ibm': 'ibm-us-east',
     'alibaba': 'alibaba-us-east-1',
     'tencent': 'tencent-ap-singapore',
-    'ncp': 'ncp-korea1',
+    'ncp': 'ncp-kr-kr-1',
     'ncpvpc': 'ncpvpc-kr',
     'ktcloud': 'ktcloud-kor-central-a',
     'ktcloudvpc': 'ktcloudvpc-kr-dx-m1',
