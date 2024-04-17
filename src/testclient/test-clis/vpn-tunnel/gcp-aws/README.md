@@ -19,7 +19,7 @@ source conf/setup.env
 
 ##### Build the app
 ```bash
-cd $$CBTUMBLEBUG_ROOT/testclient/test-clis/vpn-tunnel/gcp-aws
+cd $CBTUMBLEBUG_ROOT/testclient/test-clis/vpn-tunnel/gcp-aws
 go build -o app
 ```
 
