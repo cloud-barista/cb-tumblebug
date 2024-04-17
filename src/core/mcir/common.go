@@ -1596,7 +1596,7 @@ func LoadCommonResource() (common.IdList, error) {
 
 				} else {
 					errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
-					log.Info().Msgf(errRegisterSpec.Error())
+					log.Trace().Msgf(errRegisterSpec.Error())
 					// _, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
 					// if errRegisterSpec != nil {
 					// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")

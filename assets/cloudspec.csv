@@ -555,11 +555,11 @@ TENCENT,tencent-eu-moscow,S2.MEDIUM4,0.06,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-ashburn,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-siliconvalley,SA2.MEDIUM4,0.04,59.98,,,,,,,,,,default,default
 TENCENT,tencent-na-toronto,S2.MEDIUM4,0.09,59.98,,,,,,,,,,default,default
-NCP,ncp-korea1,SPSVRSTAND000073,,,,,,,,,,,,default,default
-NCP,ncp-us-western,SPSVRSTAND000073,,,,,,,,,,,,default,default
-NCP,ncp-germany,SPSVRSTAND000073,,,,,,,,,,,,default,default
-NCP,ncp-singapore,SPSVRSTAND000073,,,,,,,,,,,,default,default
-NCP,ncp-japan,SPSVRSTAND000073,,,,,,,,,,,,default,default
+NCP,ncp-kr-kr-1,SPSVRSTAND000073,,,,,,,,,,,,default,default
+NCP,ncp-uswn-uswn-1,SPSVRSTAND000073,,,,,,,,,,,,default,default
+NCP,ncp-den-den-1,SPSVRSTAND000073,,,,,,,,,,,,default,default
+NCP,ncp-sgn-sgn-1,SPSVRSTAND000073,,,,,,,,,,,,default,default
+NCP,ncp-jpn-jpn-1,SPSVRSTAND000073,,,,,,,,,,,,default,default
 NCPVPC,ncpvpc-kr,SVR.VSVR.HICPU.C002.M004.NET.SSD.B050.G002,,,,,,,,,,,,default,default
 NCPVPC,ncpvpc-sgn,SVR.VSVR.HICPU.C002.M004.NET.SSD.B050.G002,,,,,,,,,,,,default,default
 NCPVPC,ncpvpc-jpn,SVR.VSVR.HICPU.C002.M004.NET.SSD.B050.G002,,,,,,,,,,,,default,default
@@ -570,5 +570,4 @@ KTCLOUD,ktcloud-kor-central-a,d3530ad2-462b-43ad-97d5-e1087b952b7d!_disk20GB,,,,
 KTCLOUD,ktcloud-kor-central-b,385df834-6cf7-485b-bca8-de4d4f59b0b0,,,,,,,,,,,,default,default
 KTCLOUD,ktcloud-kor-seoul-m,385df834-6cf7-485b-bca8-de4d4f59b0b0,,,,,,,,,,,,default,default
 KTCLOUD,ktcloud-kor-seoul-m2,753c80b0-b03f-4a91-98a7-6b11233f85a8,,,,,,,,,,,,default,default
-KTCLOUD,ktcloud-kr-kimhae,385df834-6cf7-485b-bca8-de4d4f59b0b0,,,,,,,,,,,,default,default
 KTCLOUDVPC,ktcloudvpc-kr-dx-m1,4x16.itl,,,,,,,,,,,,default,default
