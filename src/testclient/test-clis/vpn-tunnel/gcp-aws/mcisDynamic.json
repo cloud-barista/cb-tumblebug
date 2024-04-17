@@ -1,0 +1,21 @@
+{
+    "description": "Test infra for VPN tunnel",
+    "installMonAgent": "no",
+    "label": "DynamicVM",
+    "name": "",
+    "systemLabel": "",
+    "vm": [
+        {
+            "commonImage": "ubuntu18.04",
+            "commonSpec": "aws-ap-northeast-2-t3-small"
+        },
+        {
+            "commonImage": "ubuntu18.04",
+            "commonSpec": "az-krc-standard-b1s"
+        },
+        {
+            "commonImage": "ubuntu18.04",
+            "commonSpec": "gcp-asia-northeast3-g1-small"
+        }
+    ]
+}
