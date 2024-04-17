@@ -16,24 +16,17 @@ package mcis
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 	"github.com/tidwall/gjson"
-
-	"fmt"
-	"io/ioutil"
-
-	//"log"
-
-	"strconv"
-	"strings"
-
-	// REST API (echo)
-	"net/http"
-
-	"sync"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 )
@@ -130,7 +123,7 @@ func CheckDragonflyEndpoint() error {
 		return err
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Err(err).Msg("")
 		return err
@@ -236,7 +229,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		errStr += "/ " + err.Error()
 	} else {
 
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			errStr += "/ " + err.Error()
@@ -496,7 +489,7 @@ func CallGetMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, vmID
 			errStr = err1.Error()
 		}
 
-		body, err2 := ioutil.ReadAll(res.Body)
+		body, err2 := io.ReadAll(res.Body)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("")
 			errStr = err2.Error()

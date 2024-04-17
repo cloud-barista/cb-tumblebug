@@ -17,7 +17,7 @@ package mcis
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	//"log"
 	"strconv"
@@ -174,7 +174,7 @@ func CallMilkyway(wg *sync.WaitGroup, vmList []string, nsId string, mcisId strin
 		log.Error().Err(err).Msg("")
 		errStr = err.Error()
 	} else {
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			errStr = err.Error()
