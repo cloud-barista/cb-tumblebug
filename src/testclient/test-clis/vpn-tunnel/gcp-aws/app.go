@@ -52,15 +52,12 @@ func setConfig() {
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:   "./demo",
+		Use:   "./app",
 		Short: "[Demo] VPN tunnel on MCIS",
 		Long: `
 ########################################################################
 ## [Demo] This program demonstrates VPN tunnel configuration on MCIS. ##
 ########################################################################`,
-		Example: `
-  [Long] ./demo --namespaceId "ns01" --mcisId "mcis01" --resourceGroupId "rg01"
-  [Short] ./demo -n "ns01" -m "mcis01" -r "rg01"`,
 	}
 
 	var createCmd = &cobra.Command{
@@ -923,7 +920,7 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	// Print the response
 	resp := new(common.SimpleMsg)
 	if err := json.Unmarshal(respBytes, resp); err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
@@ -978,7 +975,7 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 		urlDeleteMcis += "?" + queryParams
 	}
 
-	respBytes, err = callApi("GET", urlDeleteMcis, tbAuth, nil)
+	respBytes, err = callApi("DELETE", urlDeleteMcis, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
