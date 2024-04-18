@@ -119,7 +119,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   or
 
   ```bash
-  docker run -p 1323:1323 -p 50252:50252 \
+  docker run -p 1323:1323 \
   -v ${HOME}/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
   --name cb-tumblebug \
   cloudbaristaorg/cb-tumblebug:x.x.x
@@ -154,7 +154,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     - 설치 예시
       - Go 다운로드 및 압축 해제 
         ```bash
-        wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz
+        wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz;
         sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
         ```
       - `.bashrc` 파일 하단에 다음을 추가 
@@ -162,18 +162,27 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
         echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
         echo 'export GOPATH=$HOME/go' >> ~/.bashrc
         ```
-      - `.bashrc` 변경 내용을 적용
+      - `.bashrc` 변경 내용을 적용하고 설치 현황 확인
         ```bash
         source ~/.bashrc
         echo $GOPATH
+        go env
+        go version
         ```
 
 - CB-Tumblebug 소스 다운로드
   - CB-Tumblebug 저장소 클론
     ```bash
-    git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
+    git clone --depth 1 https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
     ```
+
+    `--depth 1` 옵션은 commit 히스토리를 제한적으로 다운로드하여 용량을 줄이므로, 
+    기여를 위해서는 해당 옵션을 지정하지 않거나 하기 명령어로 commit 히스토리를 다시 다운로드하는 것을 권장.
+    ```bash
+    git fetch --unshallow
+    ```
+
   - CB-Tumblebug 디렉토리 이동 alias 등록 (편의를 위한 선택 사항. cdtb, cbtbsrc, cdtbtest 키워드로 디렉토리 이동)
     ```bash
     echo "alias cdtb='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug'" >> ~/.bashrc
@@ -184,14 +193,13 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 ### (2) CB-Tumblebug 빌드
 
-- 빌드 명령어
+- 빌드 실행
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
-  export GO111MODULE=on
   make
   ```
 
-- Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
+- (참고) Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
   - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
   - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/ 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
   - Swagger 기반 [API 문서 업데이트 방법 상세 정보](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
@@ -199,24 +207,28 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 ### (3) CB-Tumblebug 실행
 
 - CB-Spider 실행 
-  - CB-Tumblebug은 클라우드 제어를 위해서 CB-Spider를 활용(필수 구동)
+  CB-Tumblebug은 클라우드 제어를 위해서 CB-Spider를 활용(필수 구동)
+
   - (추천 실행 방법) CB-TB 스크립트를 통한 CB-Spider 컨테이너 실행 (가급적 지정된 버전 사용)
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
     ./scripts/runSpider.sh
     ```
-  - 상세 설치 방법은 [CB-Spider](https://github.com/cloud-barista/cb-spider) 참고
+    Docker가 설치되어 있어야 하며 설치되어 있지 않은 경우, 아래 스크립트 활용 가능 (프로덕션용 구성은 아님)
+    ```
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    ./scripts/installDocker.sh
+    ```
+    컨테이너 이외의 설치 방법은 [CB-Spider](https://github.com/cloud-barista/cb-spider) 참고
  
 - CB-Tumblebug 실행에 필요한 환경변수 설정 (다른 탭에서)
   - `cb-tumblebug/conf/setup.env` 내용 확인 및 설정 (CB-Tumblebug 환경변수, 필요에 따라 변경)
     - 환경변수를 시스템에 반영 
       ```bash
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-      cat conf/setup.env
       source conf/setup.env
       ```
-    - 필요에 따라 SELF_ENDPOINT 환경변수(외부에서 접속 가능한 주소)를 스크립트를 통해 자동으로 지정 
+    - (참고) 필요에 따라 SELF_ENDPOINT 환경변수(외부에서 접속 가능한 주소)를 스크립트를 통해 자동으로 지정 
       - CB-Tumblebug을 실행하면 Swagger API Dashboard가 활성화되며, 외부에서 Dashboard에 접속 및 제어하려는 경우에 필요
       ```bash
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
@@ -285,13 +297,13 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 - 모든 멀티 클라우드 연결 정보 및 공통 자원 등록 
    - 개요
      - CB-TB의 멀티클라우드 인프라를 생성하기 위해서 클라우드에 대한 연결 정보 (크리덴셜, 클라우드 종류, 클라우드 리젼 등), 공통 활용 이미지 및 스펙 등의 등록이 필요
-     - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env): 클라우드 리젼 등 기본 정보 제공 (수정없이 사용 가능)
    - 등록 방법: `initMultiCloudEnv.sh` 스크립트 실행 (모든 확인 메시지에 대해 'y' 입력)
        ```bash
        cd ~/go/src/github.com/cloud-barista/cb-tumblebug
        ./scripts/initMultiCloudEnv.sh
        ```
-     - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 연결 정보 자동 등록됨
+     - [`conf/credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/conf/template.credentials.conf)의 크레덴셜 등록  
+     - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 클라우드 정보 자동 등록됨
      - [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets)의 파일에 기록된 공통 이미지 및 스펙 자동 등록됨
 
 ***
@@ -310,7 +322,6 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   - (추천 실행 방법) CB-TB 스크립트를 통한 CB-MapUI 컨테이너 실행
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    export CBTUMBLEBUG_ROOT=$HOME/go/src/github.com/cloud-barista/cb-tumblebug
     ./scripts/runMapUI.sh
     ```
   - 웹브라우저에서 http://{HostIP}:1324 에 접속하여 활용
@@ -381,7 +392,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     - `10.nlb`  # NLB 관련 스크립트 모음
     - `11.dataDisk`  # dataDisk 관련 스크립트 모음
     - `12.customImage`  # customImage 관련 스크립트 모음
-    - `13.cluster`  # cluster 관련 스크립트 모음
+    - `13.cluster`  # K8s cluster 관련 스크립트 모음
 
 #### 통합 제어 시험
 - `src/testclient/scripts/sequentialFullTest/` 에 포함된 `create-all.sh` 및 `clean-all.sh` 을 수행하면 전체 과정을 한번에 테스트 가능
@@ -462,7 +473,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   - MCIS SSH 원격 커맨드 실행을 통해 VM 통합 커맨드 확인
     - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
-  - K8s 클러스터 테스트
+  - K8s 클러스터 테스트 (WIP: CSP별 안정화 작업 진행 중)
     - `initMultiCloudEnv.sh`를 사전 실행함을 가정
     - `./create-mcir-ns-cloud.sh -n tb -f ../testSet.env`  # K8s 클러스터 생성에 필요한 MCIR 생성
     - `./create-cluster-only.sh -n tb -f ../testSet.env -x 1 -z 1`  # K8s 클러스터를 생성(-x 최대노드수 -z 노드그룹 및 클러스터 추가 이름)
