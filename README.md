@@ -198,7 +198,9 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
   make
   ```
-
+  의존성이 있는 패키지는 자동 다운로드됨.
+  처음 빌드하는 경우 시간이 다소 소요되며, 이후 Go 빌드 캐시를 통해 빌드 속도가 향상됨.
+  
 - (참고) Swagger API 문서 업데이트 필요 시 `cb-tumblebug/src/` 에서 `make swag` 실행
   - API 문서 파일은 `cb-tumblebug/src/api/rest/docs/swagger.yaml` 에 생성됨
   - 해당 API 문서는 http://localhost:1323/tumblebug/swagger/ 로컬에서 웹브라우저로 확인 가능 (CB-Tumblebug 구동 시 자동으로 제공)
@@ -305,6 +307,29 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
      - [`conf/credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/conf/template.credentials.conf)의 크레덴셜 등록  
      - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 클라우드 정보 자동 등록됨
      - [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets)의 파일에 기록된 공통 이미지 및 스펙 자동 등록됨
+
+### (5) CB-Tumblebug 서버 종료 및 버전 업그레이드
+
+- CB-Tumblebug & CB-Spider 서버 종료
+  - CB-Spider: `ctrl`+`c` 를 통해서 서버 종료
+  - CB-Tumblebug: `ctrl`+`c` 를 통해서 서버 종료 (종료 이벤트 발생시, Graceful shutdown이 동작: 10초 내에 처리 가능한 API 요청 마무리)
+  - 시스템 내부 오류 등 정리가 필요한 경우
+    - CB-Tumblebug을 통해 생성한 자원 확인 및 삭제
+    - CB-Tumblebug & CB-Spider 메타데이터 삭제
+      ```bash
+      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+      ./scripts/cleanDB.sh
+      ```
+
+- CB-Tumblebug & CB-Spider 버전 업그레이드시
+  (업그레이드의 영향을 명확하게 파악하고 있는 경우 하기 정리 작업 불필요) 
+  - CB-Tumblebug을 통해 생성한 자원 확인 및 삭제
+  - CB-Tumblebug & CB-Spider 메타데이터 삭제
+    ```bash
+    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+    ./scripts/cleanDB.sh
+    ```
+  - 업그레이드된 버전으로 재구동
 
 ***
 ***
