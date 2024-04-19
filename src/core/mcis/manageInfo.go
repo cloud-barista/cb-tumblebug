@@ -432,7 +432,7 @@ func GetMcisAccessInfo(nsId string, mcisId string, option string) (*McisAccessIn
 				vmInfo, err := GetVmCurrentPublicIp(nsId, mcisId, vmId)
 				vmAccessInfo := McisVmAccessInfo{}
 				if err != nil {
-					log.Error().Err(err).Msg("")
+					log.Info().Err(err).Msg("")
 					vmAccessInfo.PublicIP = ""
 					vmAccessInfo.PrivateIP = ""
 					vmAccessInfo.SSHPort = ""
@@ -1017,7 +1017,7 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Trace().Err(err).Msg("")
 		return errorInfo, err
 	}
 

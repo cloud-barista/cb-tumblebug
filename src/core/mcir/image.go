@@ -153,7 +153,7 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 
 	res, err := LookupImage(u.ConnectionName, u.CspImageId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Trace().Err(err).Msg("")
 		//err := fmt.Errorf("an error occurred while lookup image via CB-Spider")
 
 		return content, err

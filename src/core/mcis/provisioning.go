@@ -1867,7 +1867,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	_, err = SetBastionNodes(nsId, mcisId, vmInfoData.Id, "")
 	if err != nil {
 		// just log error and continue
-		log.Error().Err(err).Msg("")
+		log.Info().Err(err).Msg("")
 	}
 
 	return nil

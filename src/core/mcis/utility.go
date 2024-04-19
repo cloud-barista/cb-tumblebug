@@ -115,7 +115,6 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	log.Debug().Msg("[Check mcis] " + mcisId)
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 

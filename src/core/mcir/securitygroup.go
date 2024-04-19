@@ -68,6 +68,11 @@ type SpiderSecurityInfo struct {
 	KeyValueList []common.KeyValue
 }
 
+// SpiderSecurityInfoList is a struct to handle 'List security group' response from CB-Spider.
+type SpiderSecurityInfoList struct {
+	SecurityGroup []SpiderSecurityInfo
+}
+
 // TbSecurityGroupReq is a struct to handle 'Create security group' request toward CB-Tumblebug.
 type TbSecurityGroupReq struct { // Tumblebug
 	Name           string                `json:"name" validate:"required"`
