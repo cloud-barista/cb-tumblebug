@@ -79,11 +79,11 @@ func PrintCloudInfoTable(cloudInfo CloudInfo) {
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"CSP", "Region", "Location", "(Lati:Long)", "Zones"})
 
-	for cspName, cspDetail := range cloudInfo.CSPs {
+	for providerName, cspDetail := range cloudInfo.CSPs {
 		for regionName, regionDetail := range cspDetail.Regions {
 			latLong := formatLatLong(regionDetail.Location.Latitude, regionDetail.Location.Longitude)
 			zones := formatZones(regionDetail.Zones)
-			t.AppendRow(table.Row{cspName, regionName, regionDetail.Location.Display, latLong, zones})
+			t.AppendRow(table.Row{providerName, regionName, regionDetail.Location.Display, latLong, zones})
 		}
 	}
 	t.SortBy([]table.SortBy{

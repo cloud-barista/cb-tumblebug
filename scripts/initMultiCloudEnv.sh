@@ -7,8 +7,6 @@ fi
 
 $CBTUMBLEBUG_ROOT/src/testclient/scripts/1.configureSpider/register-cloud-interactive.sh -n tb
 
-$CBTUMBLEBUG_ROOT/src/testclient/scripts/2.configureTumblebug/create-ns.sh -x ns01
-
 echo -e "${BOLD}"
 while true; do
     echo "Loading common Specs and Images takes time."

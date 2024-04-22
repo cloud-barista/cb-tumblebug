@@ -758,8 +758,6 @@ func CheckNLB(nsId string, mcisId string, resourceId string) (bool, error) {
 		return false, err
 	}
 
-	log.Debug().Msg("[Check NLB] " + resourceId)
-
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
 	key := GenNLBKey(nsId, mcisId, resourceId)
 

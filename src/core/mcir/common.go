@@ -945,7 +945,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			return -1, err
 		}
 	*/
-	log.Debug().Msg("[Set count] " + resourceType + ", " + resourceId)
+	log.Trace().Msg("[Set count] " + resourceType + ", " + resourceId)
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 

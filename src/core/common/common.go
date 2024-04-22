@@ -58,6 +58,7 @@ var DBDatabase string
 var DBUser string
 var DBPassword string
 var AutocontrolDurationMs string
+var DefaultNamespace string
 var MyDB *sql.DB
 var err error
 var ORM *xorm.Engine

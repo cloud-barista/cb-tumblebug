@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	cbstore_utils "github.com/cloud-barista/cb-store/utils"
@@ -309,7 +310,7 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	}
 }
 
-// ConnConfig is struct for containing a CB-Spider struct for connection config
+// ConnConfig is struct for containing modified CB-Spider struct for connection config
 type ConnConfig struct { // Spider
 	ConfigName     string
 	ProviderName   string
@@ -317,6 +318,21 @@ type ConnConfig struct { // Spider
 	CredentialName string
 	RegionName     string
 	Location       GeoLocation
+	Enabled        bool
+}
+
+// CloudDriverInfo is struct for containing a CB-Spider struct for cloud driver info
+type CloudDriverInfo struct {
+	DriverName        string
+	ProviderName      string
+	DriverLibFileName string
+}
+
+// CloudInfo is struct for containing a CB-Spider struct for cloud info
+type CredentialInfo struct {
+	CredentialName   string
+	ProviderName     string
+	KeyValueInfoList []KeyValue
 }
 
 // GeoLocation is struct for geographical location
@@ -402,9 +418,37 @@ type ConnConfigList struct { // Spider
 	Connectionconfig []ConnConfig `json:"connectionconfig"`
 }
 
+// CheckConnConfigAvailable is func to check if connection config is available by checking allkeypair list
+func CheckConnConfigAvailable(connConfigName string) (bool, error) {
+
+	var callResult interface{}
+	client := resty.New()
+	url := SpiderRestUrl + "/allkeypair"
+	method := "GET"
+	requestBody := SpiderConnectionName{}
+	requestBody.ConnectionName = connConfigName
+
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		ShortDuration,
+	)
+
+	if err != nil {
+		log.Info().Err(err).Msg("")
+		return false, err
+	}
+
+	return true, nil
+}
+
 // GetConnConfigList is func to list connection configs from CB-Spider
 func GetConnConfigList() (ConnConfigList, error) {
-
 	var callResult ConnConfigList
 	client := resty.New()
 	url := SpiderRestUrl + "/connectionconfig"
@@ -424,52 +468,151 @@ func GetConnConfigList() (ConnConfigList, error) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := ConnConfigList{}
-		return content, err
+		return ConnConfigList{}, err
 	}
 
-	// Get geolocations
-	for i, connConfig := range callResult.Connectionconfig {
+	var wg sync.WaitGroup
+	results := make(chan ConnConfig, len(callResult.Connectionconfig))
 
-		nativeRegion, _, err := GetRegion(connConfig.RegionName)
-		if err != nil {
-			log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
-		} else {
-			location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
+	for _, connConfig := range callResult.Connectionconfig {
+		wg.Add(1)
+		go func(connConfig ConnConfig) {
+			defer wg.Done()
+			RandomSleep(0, 10)
+			enabled, err := CheckConnConfigAvailable(connConfig.ConfigName)
 			if err != nil {
-				log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
+				log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
 			}
-			callResult.Connectionconfig[i].Location = location
+			connConfig.Enabled = enabled
+			if enabled {
+				nativeRegion, _, err := GetRegion(connConfig.RegionName)
+				if err != nil {
+					log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
+					connConfig.Enabled = false
+				} else {
+					location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
+					if err != nil {
+						log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
+					}
+					connConfig.Location = location
+				}
+			}
+			results <- connConfig
+		}(connConfig)
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	var availableConnection ConnConfigList
+	for result := range results {
+		if result.Enabled {
+			availableConnection.Connectionconfig = append(availableConnection.Connectionconfig, result)
 		}
 	}
 
-	return callResult, nil
-
+	return availableConnection, nil
 }
 
 // Region is struct for containing region struct of CB-Spider
 type Region struct {
-	RegionName       string     // ex) "region01"
-	ProviderName     string     // ex) "GCP"
-	KeyValueInfoList []KeyValue // ex) { {region, us-east1}, {zone, us-east1-c} }
+	RegionName        string     // ex) "region01"
+	ProviderName      string     // ex) "GCP"
+	KeyValueInfoList  []KeyValue // ex) { {region, us-east1}, {zone, us-east1-c} }
+	AvailableZoneList []string
+}
+
+// RegisterAllCloudInfo is func to register all cloud info from asset to CB-Spider
+func RegisterAllCloudInfo() error {
+	for providerName, _ := range RuntimeCloudInfo.CSPs {
+		err := RegisterCloudInfo(providerName)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+		}
+	}
+	return nil
+}
+
+// RegisterCloudInfo is func to register cloud info from asset to CB-Spider
+func RegisterCloudInfo(providerName string) error {
+
+	driverName := RuntimeCloudInfo.CSPs[providerName].Driver
+
+	client := resty.New()
+	url := SpiderRestUrl + "/driver"
+	method := "POST"
+	var callResult CloudDriverInfo
+	requestBody := CloudDriverInfo{ProviderName: providerName, DriverName: driverName, DriverLibFileName: driverName}
+
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		MediumDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	for regionName, _ := range RuntimeCloudInfo.CSPs[providerName].Regions {
+		err := RegisterRegionZone(providerName, regionName)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
+
+	return nil
 }
 
 // RegisterRegionZone is func to register all regions to CB-Spider
-/*
-WIP: need to be implemented when cb-spider supports region-multi-zone registration
-func RegisterRegionZone(cspName string, regionName string) error {
+func RegisterRegionZone(providerName string, regionName string) error {
+	client := resty.New()
+	url := SpiderRestUrl + "/region"
+	method := "POST"
+	var callResult Region
+	requestBody := Region{ProviderName: providerName, RegionName: regionName}
 
-	for zoneName, zoneValue := range RuntimeCloudInfo.CSPs[cspName].Regions[regionName].Zones {
+	if RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones == nil {
+		requestBody.RegionName = providerName + "-" + regionName
+		keyValueInfoList := []KeyValue{
+			{Key: "Region", Value: regionName},
+			{Key: "Zone", Value: "N/A"},
+		}
+		requestBody.KeyValueInfoList = keyValueInfoList
 
+		err := ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			SetUseBody(requestBody),
+			&requestBody,
+			&callResult,
+			MediumDuration,
+		)
 
-		client := resty.New()
-		url := SpiderRestUrl + "/region"
-		method := "POST"
-		var callResult Region
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
 
-		requestBody := Region{}
-		requestBody.RegionName = strings.Join(regionName, "-")
-		requestBody.ProviderName = cspName
+	for _, zoneName := range RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones {
+		requestBody.RegionName = providerName + "-" + regionName + "-" + zoneName
+		keyValueInfoList := []KeyValue{
+			{Key: "Region", Value: regionName},
+			{Key: "Zone", Value: zoneName},
+		}
+		requestBody.AvailableZoneList = RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones
 		requestBody.KeyValueInfoList = keyValueInfoList
 
 		err := ExecuteHttpRequest(
@@ -492,7 +635,6 @@ func RegisterRegionZone(cspName string, regionName string) error {
 
 	return nil
 }
-*/
 
 // GetRegion is func to get regionInfo with the native region name
 func GetRegion(RegionName string) (string, RegionDetail, error) {

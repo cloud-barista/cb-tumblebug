@@ -45,7 +45,87 @@ import (
 
 // init for main
 func init() {
+
+	common.SpiderRestUrl = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
+	common.DragonflyRestUrl = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+	common.DBUrl = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
+	common.DBDatabase = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
+	common.DBUser = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
+	common.DBPassword = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
+	common.AutocontrolDurationMs = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
+	common.DefaultNamespace = common.NVL(os.Getenv("DEFAULT_NAMESPACE"), "ns01")
+
+	// load the latest configuration from DB (if exist)
+
+	log.Info().Msg("[Update system environment]")
+	common.UpdateGlobalVariable(common.StrDragonflyRestUrl)
+	common.UpdateGlobalVariable(common.StrSpiderRestUrl)
+	common.UpdateGlobalVariable(common.StrAutocontrolDurationMs)
+
+	// load config
+	//masterConfigInfos = confighandler.GetMasterConfigInfos()
+
+	//Setup database (meta_db/dat/cbtumblebug.s3db)
+
+	log.Info().Msg("[Setup SQL Database]")
+
+	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	//err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db") // commented out to move to use XORM
+	common.ORM, err = xorm.NewEngine("sqlite3", "../meta_db/dat/cbtumblebug.s3db")
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	} else {
+		log.Info().Msg("Database access info set successfully")
+	}
+	//common.ORM.SetMapper(names.SameMapper{})
+	common.ORM.SetTableMapper(names.SameMapper{})
+	common.ORM.SetColumnMapper(names.SameMapper{})
+
+	// "CREATE Table IF NOT EXISTS spec(...)"
+	//err = common.CreateSpecTable() // commented out to move to use XORM
+	err = common.ORM.Sync2(new(mcir.TbSpecInfo))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	} else {
+		log.Info().Msg("Table spec set successfully..")
+	}
+
+	// "CREATE Table IF NOT EXISTS image(...)"
+	//err = common.CreateImageTable() // commented out to move to use XORM
+	err = common.ORM.Sync2(new(mcir.TbImageInfo))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	} else {
+		log.Info().Msg("Table image set successfully..")
+	}
+
+	err = common.ORM.Sync2(new(mcir.TbCustomImageInfo))
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	} else {
+		log.Info().Msg("Table customImage set successfully..")
+	}
+
 	setConfig()
+
+	_, err = common.GetNs(common.DefaultNamespace)
+	if err != nil {
+		if common.DefaultNamespace != "" {
+			defaultNS := common.NsReq{Name: common.DefaultNamespace, Description: "Default Namespace"}
+			_, err := common.CreateNs(&defaultNS)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				panic(err)
+			}
+		} else {
+			log.Error().Msg("Default namespace is not set")
+			panic("Default namespace is not set, please set DEFAULT_NAMESPACE in setup.env or environment variable")
+		}
+	}
 }
 
 // setConfig get cloud settings from a config file
@@ -90,6 +170,12 @@ func setConfig() {
 	common.AdjustKeysToLowercase(&common.RuntimeCloudInfo)
 	// fmt.Printf("%+v\n", common.RuntimeCloudInfo)
 	common.PrintCloudInfoTable(common.RuntimeCloudInfo)
+
+	err = common.RegisterAllCloudInfo()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to register cloud info")
+		panic(err)
+	}
 
 	// const mrttArrayXMax = 300
 	// const mrttArrayYMax = 300
@@ -158,71 +244,6 @@ func main() {
 		fmt.Printf("Please retry with a valid port number (ex: -port=[1-65535]).\n")
 		os.Exit(1)
 	}
-
-	common.SpiderRestUrl = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-	common.DragonflyRestUrl = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-	common.DBUrl = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
-	common.DBDatabase = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-	common.DBUser = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-	common.DBPassword = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-	common.AutocontrolDurationMs = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
-
-	// load the latest configuration from DB (if exist)
-
-	log.Info().Msg("[Update system environment]")
-	common.UpdateGlobalVariable(common.StrDragonflyRestUrl)
-	common.UpdateGlobalVariable(common.StrSpiderRestUrl)
-	common.UpdateGlobalVariable(common.StrAutocontrolDurationMs)
-
-	// load config
-	//masterConfigInfos = confighandler.GetMasterConfigInfos()
-
-	//Setup database (meta_db/dat/cbtumblebug.s3db)
-
-	log.Info().Msg("[Setup SQL Database]")
-
-	err := os.MkdirAll("../meta_db/dat/", os.ModePerm)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	}
-
-	//err = common.OpenSQL("../meta_db/dat/cbtumblebug.s3db") // commented out to move to use XORM
-	common.ORM, err = xorm.NewEngine("sqlite3", "../meta_db/dat/cbtumblebug.s3db")
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	} else {
-		log.Info().Msg("Database access info set successfully")
-	}
-	//common.ORM.SetMapper(names.SameMapper{})
-	common.ORM.SetTableMapper(names.SameMapper{})
-	common.ORM.SetColumnMapper(names.SameMapper{})
-
-	// "CREATE Table IF NOT EXISTS spec(...)"
-	//err = common.CreateSpecTable() // commented out to move to use XORM
-	err = common.ORM.Sync2(new(mcir.TbSpecInfo))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	} else {
-		log.Info().Msg("Table spec set successfully..")
-	}
-
-	// "CREATE Table IF NOT EXISTS image(...)"
-	//err = common.CreateImageTable() // commented out to move to use XORM
-	err = common.ORM.Sync2(new(mcir.TbImageInfo))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	} else {
-		log.Info().Msg("Table image set successfully..")
-	}
-
-	err = common.ORM.Sync2(new(mcir.TbCustomImageInfo))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-	} else {
-		log.Info().Msg("Table customImage set successfully..")
-	}
-
-	//defer db.Close()
 
 	//Ticker for MCIS Orchestration Policy
 
