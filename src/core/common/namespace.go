@@ -92,11 +92,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 	content.Name = u.Name
 	content.Description = u.Description
 
-	// TODO here: implement the logic
-
-	fmt.Println("CreateNs();")
 	Key := "/ns/" + content.Id
-	//mapA := map[string]string{"name": content.Name, "description": content.Description}
 	Val, _ := json.Marshal(content)
 	err = CBStore.Put(Key, string(Val))
 	if err != nil {
@@ -104,9 +100,7 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 		return content, err
 	}
 	keyValue, _ := CBStore.Get(Key)
-	fmt.Println("CreateNs(); ===========================")
-	fmt.Println("CreateNs(); Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
-	fmt.Println("CreateNs(); ===========================")
+	fmt.Println("CreateNs: Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
 	return content, nil
 }
 

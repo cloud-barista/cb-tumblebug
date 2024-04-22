@@ -427,9 +427,12 @@ func RunServer(port string) {
 	selfEndpoint := os.Getenv("SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/api"
 
+	fmt.Println(" Default Namespace: " + common.DefaultNamespace + "\n")
+
 	if enableAuth {
 		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
 	}
+
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 

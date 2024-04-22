@@ -53,6 +53,7 @@ func init() {
 	common.DBUser = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
 	common.DBPassword = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 	common.AutocontrolDurationMs = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
+	common.DefaultNamespace = common.NVL(os.Getenv("DEFAULT_NAMESPACE"), "ns01")
 
 	// load the latest configuration from DB (if exist)
 
@@ -110,6 +111,21 @@ func init() {
 	}
 
 	setConfig()
+
+	_, err = common.GetNs(common.DefaultNamespace)
+	if err != nil {
+		if common.DefaultNamespace != "" {
+			defaultNS := common.NsReq{Name: common.DefaultNamespace, Description: "Default Namespace"}
+			_, err := common.CreateNs(&defaultNS)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				panic(err)
+			}
+		} else {
+			log.Error().Msg("Default namespace is not set")
+			panic("Default namespace is not set, please set DEFAULT_NAMESPACE in setup.env or environment variable")
+		}
+	}
 }
 
 // setConfig get cloud settings from a config file
