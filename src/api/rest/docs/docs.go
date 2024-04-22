@@ -8182,6 +8182,9 @@ const docTemplate = `{
                 "driverName": {
                     "type": "string"
                 },
+                "enabled": {
+                    "type": "boolean"
+                },
                 "location": {
                     "$ref": "#/definitions/common.GeoLocation"
                 },
@@ -8309,6 +8312,12 @@ const docTemplate = `{
         "common.Region": {
             "type": "object",
             "properties": {
+                "availableZoneList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "keyValueInfoList": {
                     "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
                     "type": "array",

@@ -51,6 +51,8 @@ definitions:
         type: string
       driverName:
         type: string
+      enabled:
+        type: boolean
       location:
         $ref: '#/definitions/common.GeoLocation'
       providerName:
@@ -135,6 +137,10 @@ definitions:
     type: object
   common.Region:
     properties:
+      availableZoneList:
+        items:
+          type: string
+        type: array
       keyValueInfoList:
         description: ex) { {region, us-east1}, {zone, us-east1-c} }
         items:
