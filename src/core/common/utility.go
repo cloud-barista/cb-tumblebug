@@ -311,14 +311,15 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 }
 
 // ConnConfig is struct for containing modified CB-Spider struct for connection config
-type ConnConfig struct { // Spider
-	ConfigName     string
-	ProviderName   string
-	DriverName     string
-	CredentialName string
-	RegionName     string
-	Location       GeoLocation
-	Enabled        bool
+type ConnConfig struct {
+	ConfigName       string      `json:"configName"`
+	ProviderName     string      `json:"providerName"`
+	DriverName       string      `json:"driverName"`
+	CredentialName   string      `json:"credentialName"`
+	CredentialHolder string      `json:"credentialHolder"`
+	RegionName       string      `json:"regionName"`
+	Location         GeoLocation `json:"location"`
+	Enabled          bool        `json:"enabled"`
 }
 
 // CloudDriverInfo is struct for containing a CB-Spider struct for cloud driver info
@@ -328,11 +329,19 @@ type CloudDriverInfo struct {
 	DriverLibFileName string
 }
 
-// CloudInfo is struct for containing a CB-Spider struct for cloud info
+// CredentialReq is struct for containing a struct for credential request
+type CredentialReq struct {
+	CredentialHolder string     `json:"credentialHolder"`
+	ProviderName     string     `json:"providerName"`
+	KeyValueInfoList []KeyValue `json:"keyValueInfoList"`
+}
+
+// CredentialInfo is struct for containing a struct for credential info
 type CredentialInfo struct {
-	CredentialName   string
-	ProviderName     string
-	KeyValueInfoList []KeyValue
+	CredentialName   string     `json:"credentialName"`
+	CredentialHolder string     `json:"credentialHolder"`
+	ProviderName     string     `json:"providerName"`
+	KeyValueInfoList []KeyValue `json:"keyValueInfoList"`
 }
 
 // GeoLocation is struct for geographical location
@@ -447,8 +456,11 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 	return true, nil
 }
 
-// GetConnConfigList is func to list connection configs from CB-Spider
-func GetConnConfigList() (ConnConfigList, error) {
+// GetConnConfigList is func to list filtered connection configs from CB-Spider
+func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filterRegionRepresentative bool) (ConnConfigList, error) {
+	var filteredConnections ConnConfigList
+	var tmpConnections ConnConfigList
+
 	var callResult ConnConfigList
 	client := resty.New()
 	url := SpiderRestUrl + "/connectionconfig"
@@ -471,49 +483,96 @@ func GetConnConfigList() (ConnConfigList, error) {
 		return ConnConfigList{}, err
 	}
 
-	var wg sync.WaitGroup
-	results := make(chan ConnConfig, len(callResult.Connectionconfig))
+	filteredConnections = callResult
+	tmpConnections = ConnConfigList{}
+	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 
-	for _, connConfig := range callResult.Connectionconfig {
-		wg.Add(1)
-		go func(connConfig ConnConfig) {
-			defer wg.Done()
-			RandomSleep(0, 10)
-			enabled, err := CheckConnConfigAvailable(connConfig.ConfigName)
-			if err != nil {
-				log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
-			}
-			connConfig.Enabled = enabled
-			if enabled {
-				nativeRegion, _, err := GetRegion(connConfig.RegionName)
-				if err != nil {
-					log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
-					connConfig.Enabled = false
-				} else {
-					location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
-					if err != nil {
-						log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
-					}
-					connConfig.Location = location
-				}
-			}
-			results <- connConfig
-		}(connConfig)
-	}
+	// filter by credential holder
+	if filterCredentialHolder == "" {
+		tmpConnections = filteredConnections
+	} else {
+		for _, connConfig := range filteredConnections.Connectionconfig {
 
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	var availableConnection ConnConfigList
-	for result := range results {
-		if result.Enabled {
-			availableConnection.Connectionconfig = append(availableConnection.Connectionconfig, result)
+			// TODO: this is temporary solution for filtering by credential holder
+			// if filterCredentialHolder == connConfig.CredentialHolder {
+			//	tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
+			//}
+			tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
 		}
 	}
+	filteredConnections = tmpConnections
+	tmpConnections = ConnConfigList{}
+	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 
-	return availableConnection, nil
+	// filter only verified
+	if filterVerified {
+		var wg sync.WaitGroup
+		results := make(chan ConnConfig, len(filteredConnections.Connectionconfig))
+
+		for _, connConfig := range filteredConnections.Connectionconfig {
+			wg.Add(1)
+			go func(connConfig ConnConfig) {
+				defer wg.Done()
+				RandomSleep(0, 10)
+				enabled, err := CheckConnConfigAvailable(connConfig.ConfigName)
+				if err != nil {
+					log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
+				}
+				connConfig.Enabled = enabled
+				if enabled {
+					nativeRegion, _, err := GetRegion(connConfig.RegionName)
+					if err != nil {
+						log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
+						connConfig.Enabled = false
+					} else {
+						location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
+						if err != nil {
+							log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
+						}
+						connConfig.Location = location
+					}
+				}
+				results <- connConfig
+			}(connConfig)
+		}
+
+		go func() {
+			wg.Wait()
+			close(results)
+		}()
+
+		for result := range results {
+			if result.Enabled {
+				tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, result)
+			}
+		}
+	}
+	filteredConnections = tmpConnections
+	tmpConnections = ConnConfigList{}
+	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
+
+	// filter only region representative
+	if filterRegionRepresentative {
+
+		regionRepresentative := make(map[string]ConnConfig)
+		for _, connConfig := range filteredConnections.Connectionconfig {
+			prefix := connConfig.ProviderName + "-" + connConfig.Location.NativeRegion
+			prefix = strings.ToLower(prefix)
+			if strings.HasPrefix(connConfig.RegionName, prefix) {
+				if _, exists := regionRepresentative[prefix]; !exists {
+					regionRepresentative[prefix] = connConfig
+				}
+			}
+		}
+		for _, connConfig := range regionRepresentative {
+			tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
+		}
+		filteredConnections = tmpConnections
+	}
+
+	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
+
+	return filteredConnections, nil
 }
 
 // Region is struct for containing region struct of CB-Spider
@@ -634,6 +693,117 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	}
 
 	return nil
+}
+
+// RegisterCredential is func to register credential and all releated connection configs
+func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
+
+	req.CredentialHolder = strings.ToLower(req.CredentialHolder)
+	req.ProviderName = strings.ToLower(req.ProviderName)
+	genneratedCredentialName := req.CredentialHolder + "-" + req.ProviderName
+	if req.CredentialHolder == DefaultCredentialHolder {
+		// credential with default credental holder (e.g., admin) has no prefix
+		genneratedCredentialName = req.ProviderName
+	}
+
+	reqToSpider := CredentialInfo{
+		CredentialName:   genneratedCredentialName,
+		ProviderName:     req.ProviderName,
+		KeyValueInfoList: req.KeyValueInfoList,
+	}
+
+	client := resty.New()
+	url := SpiderRestUrl + "/credential"
+	method := "POST"
+	var callResult CredentialInfo
+	requestBody := reqToSpider
+
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		MediumDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return CredentialInfo{}, err
+	}
+
+	callResult.CredentialHolder = req.CredentialHolder
+	callResult.ProviderName = strings.ToLower(callResult.ProviderName)
+	for callResultKey, _ := range callResult.KeyValueInfoList {
+		callResult.KeyValueInfoList[callResultKey].Value = "************"
+	}
+
+	cloudInfo, err := GetCloudInfo()
+	if err != nil {
+		return callResult, err
+	}
+	cspDetail, ok := cloudInfo.CSPs[callResult.ProviderName]
+	if !ok {
+		return callResult, fmt.Errorf("cloudType '%s' not found", callResult.ProviderName)
+	}
+
+	// register connection config for all regions with the credential
+	allRegisteredRegions, err := GetRegionList()
+	if err != nil {
+		return callResult, err
+	}
+	for _, region := range allRegisteredRegions.Region {
+		if strings.ToLower(region.ProviderName) == callResult.ProviderName {
+			configName := callResult.CredentialHolder + "-" + region.RegionName
+			if callResult.CredentialHolder == DefaultCredentialHolder {
+				configName = region.RegionName
+			}
+			connConfig := ConnConfig{
+				ConfigName:     configName,
+				ProviderName:   callResult.ProviderName,
+				DriverName:     cspDetail.Driver,
+				CredentialName: callResult.CredentialName,
+				RegionName:     region.RegionName,
+			}
+			registeredConnection, err := RegisterConnectionConfig(connConfig)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return callResult, err
+			}
+			log.Info().Msgf("Registered connection config: %s", registeredConnection.ConfigName)
+		}
+	}
+
+	return callResult, nil
+}
+
+// RegisterConnectionConfig is func to register connection config to CB-Spider
+func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
+	client := resty.New()
+	url := SpiderRestUrl + "/connectionconfig"
+	method := "POST"
+	var callResult ConnConfig
+	requestBody := connConfig
+
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		MediumDuration,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return ConnConfig{}, err
+	}
+
+	return callResult, nil
 }
 
 // GetRegion is func to get regionInfo with the native region name

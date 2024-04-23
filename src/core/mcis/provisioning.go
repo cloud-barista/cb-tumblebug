@@ -1116,7 +1116,7 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 
 	mcisReqInfo := CheckMcisDynamicReqInfo{}
 
-	connectionConfigList, err := common.GetConnConfigList()
+	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList in MCIS dynamic request check.")
 		log.Error().Err(err).Msg("")
@@ -1174,7 +1174,7 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 
 	switch option {
 	case "probe":
-		connections, err := common.GetConnConfigList()
+		connections, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err

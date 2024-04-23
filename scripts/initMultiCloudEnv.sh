@@ -1,11 +1,58 @@
 #!/bin/bash
 
+# CB-Tumblebug API Server
+TumblebugServer=localhost:1323
+
+# CB-Tumblebug API BasicAuth Header
+ApiUsername=default
+ApiPassword=default
+AUTH="Authorization: Basic $(echo -n $ApiUsername:$ApiPassword | base64)"
+
 if [ -z "$CBTUMBLEBUG_ROOT" ]; then
     SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
     export CBTUMBLEBUG_ROOT=`cd $SCRIPT_DIR && cd .. && pwd`
 fi
 
-$CBTUMBLEBUG_ROOT/src/testclient/scripts/1.configureSpider/register-cloud-interactive.sh -n tb
+CRED_FILE_NAME="credentials.yaml"
+CRED_PATH="$HOME/.cloud-barista"
+if [ ! -d "$CRED_PATH" ]; then
+    echo "Error: $CRED_PATH does not exist. Please run scripts/genCredential.sh first."
+    exit 1
+elif [ ! -f "$CRED_PATH/$CRED_FILE_NAME" ]; then
+    echo "Error: $CRED_PATH/$CRED_FILE_NAME does not exist. Please check if it has been generated."
+    exit 1
+fi
+
+# Load credentials from YAML file
+declare -A credentials
+mapfile -t csp_list < <(yq eval '.credentialholder.admin | keys' $CRED_PATH/$CRED_FILE_NAME)
+
+# Register credentials to TumblebugServer
+for csp in "${csp_list[@]}"; do
+    echo "Processing $csp credentials..."
+    # Check if all required keys have values
+    filled=$(yq eval-all '. as $item ireduce ({}; . * $item)' $CRED_PATH/$CRED_FILE_NAME -j | jq -r --arg CSP "$csp" '.credentialholder.admin[$CSP] | all(. != null and . != "")')
+    if [[ $filled == "true" ]]; then
+        # Read and prepare credential data
+        credential_data=$(yq eval -o=json ".credentialholder.admin.$csp" $CRED_PATH/$CRED_FILE_NAME)
+        keyValueInfoList=$(echo $credential_data | jq 'to_entries | map({key, value: .value})')
+
+        # Post credentials
+        resp=$(curl -H "${AUTH}" -sX POST "http://$TumblebugServer/tumblebug/credential" -H 'Content-Type: application/json' -d @- <<EOF
+{
+    "credentialHolder": "admin",
+    "keyValueInfoList": $keyValueInfoList,
+    "providerName": "$csp"
+}
+EOF
+)
+        echo ${resp} | jq ''
+    else
+        echo "Incomplete credentials for $csp, skipping..."
+    fi
+done
+
+echo "Credential registration completed."
 
 echo -e "${BOLD}"
 while true; do
@@ -39,7 +86,7 @@ start_time=$(date +%s)
 EXPECTED_DURATION=240 # 4 minutes
 progress_time=$(date +%s)
 
-"$CBTUMBLEBUG_ROOT"/src/testclient/scripts/2.configureTumblebug/load-common-resource.sh -n tb > initTmp.out &
+curl -H "${AUTH}" -sX GET http://"$TumblebugServer"/tumblebug/loadCommonResource | jq '' > initTmp.out &
 PID=$!
 
 # Initialize the progress bar

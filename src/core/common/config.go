@@ -57,6 +57,12 @@ type Location struct {
 // RuntimeCloudInfo is global variable for CloudInfo
 var RuntimeCloudInfo = CloudInfo{}
 
+type Credential struct {
+	Credentialholder map[string]map[string]map[string]string `yaml:"credentialholder"`
+}
+
+var RuntimeCredential = Credential{}
+
 // AdjustKeysToLowercase adjusts the keys of nested maps to lowercase.
 func AdjustKeysToLowercase(cloudInfo *CloudInfo) {
 	newCSPs := make(map[string]CSPDetail)
@@ -89,6 +95,27 @@ func PrintCloudInfoTable(cloudInfo CloudInfo) {
 	t.SortBy([]table.SortBy{
 		{Name: "CSP", Mode: table.Asc},
 		{Name: "Region", Mode: table.Asc},
+	})
+	t.Render()
+}
+
+// PrintCredentialInfo prints Credential information in table format
+func PrintCredentialInfo(credential Credential) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Credentialholder", "Cloud Service Provider", "Credential Key", "Credential Value"})
+
+	for credentialholder, providers := range credential.Credentialholder {
+		for provider, credentials := range providers {
+			for key, _ := range credentials {
+				t.AppendRow(table.Row{credentialholder, provider, key, "********"})
+			}
+		}
+	}
+	t.SortBy([]table.SortBy{
+		{Name: "Credentialholder", Mode: table.Asc},
+		{Name: "Cloud Service Provider", Mode: table.Asc},
+		{Name: "Credential Key", Mode: table.Asc},
 	})
 	t.Render()
 }

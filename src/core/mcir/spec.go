@@ -324,7 +324,7 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 		return 0, 0, err
 	}
 
-	connConfigs, err := common.GetConnConfigList()
+	connConfigs, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, 0, err

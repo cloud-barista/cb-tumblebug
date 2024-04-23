@@ -47,6 +47,8 @@ definitions:
     properties:
       configName:
         type: string
+      credentialHolder:
+        type: string
       credentialName:
         type: string
       driverName:
@@ -66,6 +68,30 @@ definitions:
         items:
           $ref: '#/definitions/common.ConnConfig'
         type: array
+    type: object
+  common.CredentialInfo:
+    properties:
+      credentialHolder:
+        type: string
+      credentialName:
+        type: string
+      keyValueInfoList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      providerName:
+        type: string
+    type: object
+  common.CredentialReq:
+    properties:
+      credentialHolder:
+        type: string
+      keyValueInfoList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      providerName:
+        type: string
     type: object
   common.GeoLocation:
     properties:
@@ -3010,6 +3036,30 @@ paths:
       consumes:
       - application/json
       description: List all registered ConnConfig
+      parameters:
+      - default: ""
+        description: filter objects by Credential Holder
+        in: query
+        name: filterCredentialHolder
+        type: string
+      - default: true
+        description: filter verified connections only
+        enum:
+        - true
+        - false
+        in: query
+        name: filterVerified
+        required: true
+        type: boolean
+      - default: false
+        description: filter connections with the representative region only
+        enum:
+        - true
+        - false
+        in: query
+        name: filterRegionRepresentative
+        required: true
+        type: boolean
       produces:
       - application/json
       responses:
@@ -3055,6 +3105,36 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
+      tags:
+      - '[Admin] Multi-Cloud environment configuration'
+  /credential:
+    post:
+      consumes:
+      - application/json
+      description: Post register Credential info
+      parameters:
+      - description: Credential request info
+        in: body
+        name: CredentialReq
+        required: true
+        schema:
+          $ref: '#/definitions/common.CredentialReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.CredentialInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Post register Credential info
       tags:
       - '[Admin] Multi-Cloud environment configuration'
   /forward/{path}:

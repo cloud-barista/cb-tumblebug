@@ -1406,7 +1406,7 @@ func LoadCommonResource() (common.IdList, error) {
 		}
 	}
 
-	connectionList, err := common.GetConnConfigList()
+	connectionList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot GetConnConfigList")
 		return regiesteredIds, err
@@ -1728,9 +1728,12 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 		resList = append(resList, strings.ToLower(resType))
 	}
 
+	// TODO: This is a temporary solution. need to be changed after the policy is decided.
+	credentialHolder := common.DefaultCredentialHolder
+
 	// Read default resources from file and create objects
 
-	connectionList, err := common.GetConnConfigList()
+	connectionList, err := common.GetConnConfigList(credentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot GetConnConfig")
 		return err

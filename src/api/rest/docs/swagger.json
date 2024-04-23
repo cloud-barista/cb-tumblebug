@@ -256,6 +256,39 @@
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "List all registered ConnConfig",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "filter objects by Credential Holder",
+                        "name": "filterCredentialHolder",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            true,
+                            false
+                        ],
+                        "type": "boolean",
+                        "default": true,
+                        "description": "filter verified connections only",
+                        "name": "filterVerified",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            true,
+                            false
+                        ],
+                        "type": "boolean",
+                        "default": false,
+                        "description": "filter connections with the representative region only",
+                        "name": "filterRegionRepresentative",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -305,6 +338,52 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/common.ConnConfig"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/credential": {
+            "post": {
+                "description": "Post register Credential info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud environment configuration"
+                ],
+                "summary": "Post register Credential info",
+                "parameters": [
+                    {
+                        "description": "Credential request info",
+                        "name": "CredentialReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/common.CredentialReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.CredentialInfo"
                         }
                     },
                     "404": {
@@ -8169,6 +8248,9 @@
                 "configName": {
                     "type": "string"
                 },
+                "credentialHolder": {
+                    "type": "string"
+                },
                 "credentialName": {
                     "type": "string"
                 },
@@ -8197,6 +8279,43 @@
                     "items": {
                         "$ref": "#/definitions/common.ConnConfig"
                     }
+                }
+            }
+        },
+        "common.CredentialInfo": {
+            "type": "object",
+            "properties": {
+                "credentialHolder": {
+                    "type": "string"
+                },
+                "credentialName": {
+                    "type": "string"
+                },
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.CredentialReq": {
+            "type": "object",
+            "properties": {
+                "credentialHolder": {
+                    "type": "string"
+                },
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "type": "string"
                 }
             }
         },
