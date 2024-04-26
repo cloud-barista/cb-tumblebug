@@ -1258,7 +1258,6 @@ func isEqualTbClusterInfoExceptStatus(info1 TbClusterInfo, info2 TbClusterInfo) 
 	if info1.Id != info2.Id ||
 		info1.Name != info2.Name ||
 		info1.ConnectionName != info2.ConnectionName ||
-		info1.Version != info2.Version ||
 		info1.Description != info2.Description ||
 		info1.CspClusterId != info2.CspClusterId ||
 		info1.CspClusterName != info2.CspClusterName ||
