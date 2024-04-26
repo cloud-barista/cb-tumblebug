@@ -280,8 +280,7 @@ const docTemplate = `{
                         "default": true,
                         "description": "filter verified connections only",
                         "name": "filterVerified",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "enum": [
@@ -292,8 +291,7 @@ const docTemplate = `{
                         "default": false,
                         "description": "filter connections with the representative region only",
                         "name": "filterRegionRepresentative",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -8273,8 +8271,14 @@ const docTemplate = `{
                 "providerName": {
                     "type": "string"
                 },
+                "regionDetail": {
+                    "$ref": "#/definitions/common.RegionDetail"
+                },
                 "regionName": {
                     "type": "string"
+                },
+                "regionRepresentative": {
+                    "type": "boolean"
                 }
             }
         },

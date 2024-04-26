@@ -59,8 +59,12 @@ definitions:
         $ref: '#/definitions/common.GeoLocation'
       providerName:
         type: string
+      regionDetail:
+        $ref: '#/definitions/common.RegionDetail'
       regionName:
         type: string
+      regionRepresentative:
+        type: boolean
     type: object
   common.ConnConfigList:
     properties:
@@ -3049,7 +3053,6 @@ paths:
         - false
         in: query
         name: filterVerified
-        required: true
         type: boolean
       - default: false
         description: filter connections with the representative region only
@@ -3058,7 +3061,6 @@ paths:
         - false
         in: query
         name: filterRegionRepresentative
-        required: true
         type: boolean
       produces:
       - application/json

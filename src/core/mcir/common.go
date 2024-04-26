@@ -1434,7 +1434,7 @@ func LoadCommonResource() (common.IdList, error) {
 			}
 			log.Info().Msgf("[%s] #Spec: %d", connConfig.ConfigName, len(specsInConnection.Vmspec))
 			for _, spec := range specsInConnection.Vmspec {
-				key := GenSpecMapKey(connConfig.RegionName, spec.Name)
+				key := GenSpecMapKey(connConfig.ProviderName+"-"+connConfig.Location.NativeRegion, spec.Name)
 				// instead of connConfig.RegionName, spec.Region will be used in the future
 				//log.Info().Msgf("specMap.Store(%s, spec)", key)
 				specMap.Store(key, spec)

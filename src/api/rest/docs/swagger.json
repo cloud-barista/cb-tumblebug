@@ -273,8 +273,7 @@
                         "default": true,
                         "description": "filter verified connections only",
                         "name": "filterVerified",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "enum": [
@@ -285,8 +284,7 @@
                         "default": false,
                         "description": "filter connections with the representative region only",
                         "name": "filterRegionRepresentative",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -8266,8 +8264,14 @@
                 "providerName": {
                     "type": "string"
                 },
+                "regionDetail": {
+                    "$ref": "#/definitions/common.RegionDetail"
+                },
                 "regionName": {
                     "type": "string"
+                },
+                "regionRepresentative": {
+                    "type": "boolean"
                 }
             }
         },

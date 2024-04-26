@@ -200,8 +200,8 @@ func RestGetConnConfig(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param filterCredentialHolder query string false "filter objects by Credential Holder" default()
-// @Param filterVerified query boolean true "filter verified connections only" Enums(true, false) default(true)
-// @Param filterRegionRepresentative query boolean true "filter connections with the representative region only" Enums(true, false) default(false)
+// @Param filterVerified query boolean false "filter verified connections only" Enums(true, false) default(true)
+// @Param filterRegionRepresentative query boolean false "filter connections with the representative region only" Enums(true, false) default(false)
 // @Success 200 {object} common.ConnConfigList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -217,11 +217,11 @@ func RestGetConnConfigList(c echo.Context) error {
 
 	filterVerifiedBool, err := strconv.ParseBool(filterVerified)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		filterVerifiedBool = true
 	}
 	filterRegionRepresentativeBool, err := strconv.ParseBool(filterRegionRepresentative)
 	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		filterRegionRepresentativeBool = false
 	}
 
 	content, err := common.GetConnConfigList(filterCredentialHolder, filterVerifiedBool, filterRegionRepresentativeBool)

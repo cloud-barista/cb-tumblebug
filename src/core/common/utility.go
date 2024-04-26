@@ -167,6 +167,11 @@ func GenMcisPolicyKey(nsId string, mcisId string, vmId string) string {
 	}
 }
 
+// GenConnectionKey is func to generate a key for connection info
+func GenConnectionKey(connectionId string) string {
+	return "/connection/" + connectionId
+}
+
 // LookupKeyValueList is func to lookup KeyValue list
 func LookupKeyValueList(kvl []KeyValue, key string) string {
 	for _, v := range kvl {
@@ -312,14 +317,16 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 
 // ConnConfig is struct for containing modified CB-Spider struct for connection config
 type ConnConfig struct {
-	ConfigName       string      `json:"configName"`
-	ProviderName     string      `json:"providerName"`
-	DriverName       string      `json:"driverName"`
-	CredentialName   string      `json:"credentialName"`
-	CredentialHolder string      `json:"credentialHolder"`
-	RegionName       string      `json:"regionName"`
-	Location         GeoLocation `json:"location"`
-	Enabled          bool        `json:"enabled"`
+	ConfigName           string       `json:"configName"`
+	ProviderName         string       `json:"providerName"`
+	DriverName           string       `json:"driverName"`
+	CredentialName       string       `json:"credentialName"`
+	CredentialHolder     string       `json:"credentialHolder"`
+	RegionName           string       `json:"regionName"`
+	RegionDetail         RegionDetail `json:"regionDetail"`
+	RegionRepresentative bool         `json:"regionRepresentative"`
+	Location             GeoLocation  `json:"location"`
+	Enabled              bool         `json:"enabled"`
 }
 
 // CloudDriverInfo is struct for containing a CB-Spider struct for cloud driver info
@@ -377,49 +384,27 @@ func GetCloudLocation(cloudType string, nativeRegion string) (GeoLocation, error
 	}, nil
 }
 
-// GetConnConfig is func to get connection config from CB-Spider
+// GetConnConfig is func to get connection config
 func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 
-	var callResult ConnConfig
-	client := resty.New()
-	url := SpiderRestUrl + "/connectionconfig/" + ConnConfigName
-	method := "GET"
-	requestBody := NoBody
+	connConfig := ConnConfig{}
 
-	err := ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		MediumDuration,
-	)
-
+	key := GenConnectionKey(ConnConfigName)
+	keyValue, err := CBStore.Get(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := ConnConfig{}
-		return content, err
+		return ConnConfig{}, err
 	}
-
-	// Get geolocation
-	nativeRegion, _, err := GetRegion(callResult.RegionName)
+	if keyValue == nil {
+		return ConnConfig{}, fmt.Errorf("Cannot find the ConnConfig " + key)
+	}
+	err = json.Unmarshal([]byte(keyValue.Value), &connConfig)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		content := ConnConfig{}
-		return content, err
+		return ConnConfig{}, err
 	}
 
-	location, err := GetCloudLocation(callResult.ProviderName, nativeRegion)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		content := ConnConfig{}
-		return content, err
-	}
-	callResult.Location = location
-
-	return callResult, nil
+	return connConfig, nil
 }
 
 // ConnConfigList is struct for containing a CB-Spider struct for connection config list
@@ -461,116 +446,65 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 	var filteredConnections ConnConfigList
 	var tmpConnections ConnConfigList
 
-	var callResult ConnConfigList
-	client := resty.New()
-	url := SpiderRestUrl + "/connectionconfig"
-	method := "GET"
-	requestBody := NoBody
-
-	err := ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		SetUseBody(requestBody),
-		&requestBody,
-		&callResult,
-		MediumDuration,
-	)
+	key := "/connection"
+	keyValue, err := CBStore.GetList(key, true)
+	keyValue = cbstore_utils.GetChildList(keyValue, key)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return ConnConfigList{}, err
 	}
+	if keyValue != nil {
+		for _, v := range keyValue {
+			tempObj := ConnConfig{}
+			err = json.Unmarshal([]byte(v.Value), &tempObj)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return filteredConnections, err
+			}
+			filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, tempObj)
+		}
+	} else {
+		return ConnConfigList{}, nil
+	}
 
-	filteredConnections = callResult
-	tmpConnections = ConnConfigList{}
 	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 
 	// filter by credential holder
-	if filterCredentialHolder == "" {
-		tmpConnections = filteredConnections
-	} else {
+	if filterCredentialHolder != "" {
 		for _, connConfig := range filteredConnections.Connectionconfig {
-
-			// TODO: this is temporary solution for filtering by credential holder
-			// if filterCredentialHolder == connConfig.CredentialHolder {
-			//	tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
-			//}
-			tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
+			if strings.EqualFold(connConfig.CredentialHolder, filterCredentialHolder) {
+				tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
+			}
 		}
+		filteredConnections = tmpConnections
+		tmpConnections = ConnConfigList{}
+		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	}
-	filteredConnections = tmpConnections
-	tmpConnections = ConnConfigList{}
-	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 
 	// filter only verified
 	if filterVerified {
-		var wg sync.WaitGroup
-		results := make(chan ConnConfig, len(filteredConnections.Connectionconfig))
-
 		for _, connConfig := range filteredConnections.Connectionconfig {
-			wg.Add(1)
-			go func(connConfig ConnConfig) {
-				defer wg.Done()
-				RandomSleep(0, 10)
-				enabled, err := CheckConnConfigAvailable(connConfig.ConfigName)
-				if err != nil {
-					log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
-				}
-				connConfig.Enabled = enabled
-				if enabled {
-					nativeRegion, _, err := GetRegion(connConfig.RegionName)
-					if err != nil {
-						log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
-						connConfig.Enabled = false
-					} else {
-						location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
-						if err != nil {
-							log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
-						}
-						connConfig.Location = location
-					}
-				}
-				results <- connConfig
-			}(connConfig)
-		}
-
-		go func() {
-			wg.Wait()
-			close(results)
-		}()
-
-		for result := range results {
-			if result.Enabled {
-				tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, result)
+			if connConfig.Enabled {
+				tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
 			}
 		}
+		filteredConnections = tmpConnections
+		tmpConnections = ConnConfigList{}
+		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	}
-	filteredConnections = tmpConnections
-	tmpConnections = ConnConfigList{}
-	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 
 	// filter only region representative
 	if filterRegionRepresentative {
-
-		regionRepresentative := make(map[string]ConnConfig)
 		for _, connConfig := range filteredConnections.Connectionconfig {
-			prefix := connConfig.ProviderName + "-" + connConfig.Location.NativeRegion
-			prefix = strings.ToLower(prefix)
-			if strings.HasPrefix(connConfig.RegionName, prefix) {
-				if _, exists := regionRepresentative[prefix]; !exists {
-					regionRepresentative[prefix] = connConfig
-				}
+			if connConfig.RegionRepresentative {
+				tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
 			}
 		}
-		for _, connConfig := range regionRepresentative {
-			tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
-		}
 		filteredConnections = tmpConnections
+		tmpConnections = ConnConfigList{}
+		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	}
-
-	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 
 	return filteredConnections, nil
 }
@@ -761,18 +695,122 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 				configName = region.RegionName
 			}
 			connConfig := ConnConfig{
-				ConfigName:     configName,
-				ProviderName:   callResult.ProviderName,
-				DriverName:     cspDetail.Driver,
-				CredentialName: callResult.CredentialName,
-				RegionName:     region.RegionName,
+				ConfigName:       configName,
+				ProviderName:     callResult.ProviderName,
+				DriverName:       cspDetail.Driver,
+				CredentialName:   callResult.CredentialName,
+				RegionName:       region.RegionName,
+				CredentialHolder: req.CredentialHolder,
 			}
-			registeredConnection, err := RegisterConnectionConfig(connConfig)
+			_, err := RegisterConnectionConfig(connConfig)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return callResult, err
 			}
-			log.Info().Msgf("Registered connection config: %s", registeredConnection.ConfigName)
+		}
+	}
+
+	validate := true
+	// filter only verified
+	if validate {
+		allConnections, err := GetConnConfigList(req.CredentialHolder, false, false)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return callResult, err
+		}
+
+		filteredConnections := ConnConfigList{}
+		for _, connConfig := range allConnections.Connectionconfig {
+			if strings.EqualFold(callResult.ProviderName, connConfig.ProviderName) {
+				connConfig.ProviderName = strings.ToLower(connConfig.ProviderName)
+				filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, connConfig)
+			}
+		}
+
+		var wg sync.WaitGroup
+		results := make(chan ConnConfig, len(filteredConnections.Connectionconfig))
+
+		for _, connConfig := range filteredConnections.Connectionconfig {
+			wg.Add(1)
+			go func(connConfig ConnConfig) {
+				defer wg.Done()
+				RandomSleep(0, 10)
+				enabled, err := CheckConnConfigAvailable(connConfig.ConfigName)
+				if err != nil {
+					log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
+				}
+				connConfig.Enabled = enabled
+				if enabled {
+					nativeRegion, regionInfo, err := GetRegion(connConfig.RegionName)
+					if err != nil {
+						log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
+						connConfig.Enabled = false
+					} else {
+						location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
+						if err != nil {
+							log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
+						}
+						connConfig.Location = location
+						connConfig.RegionDetail = regionInfo
+					}
+				}
+				results <- connConfig
+			}(connConfig)
+		}
+
+		go func() {
+			wg.Wait()
+			close(results)
+		}()
+
+		for result := range results {
+			if result.Enabled {
+				key := GenConnectionKey(result.ConfigName)
+				val, err := json.Marshal(result)
+				if err != nil {
+					return CredentialInfo{}, err
+				}
+				err = CBStore.Put(string(key), string(val))
+			}
+		}
+	}
+
+	setRegionRepresentative := true
+	if setRegionRepresentative {
+		allConnections, err := GetConnConfigList(req.CredentialHolder, false, false)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return callResult, err
+		}
+
+		filteredConnections := ConnConfigList{}
+		for _, connConfig := range allConnections.Connectionconfig {
+			if strings.EqualFold(req.ProviderName, connConfig.ProviderName) {
+				filteredConnections.Connectionconfig = append(filteredConnections.Connectionconfig, connConfig)
+			}
+		}
+		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
+		regionRepresentative := make(map[string]ConnConfig)
+		for _, connConfig := range allConnections.Connectionconfig {
+			prefix := req.ProviderName + "-" + connConfig.Location.NativeRegion
+			prefix = strings.ToLower(prefix)
+			if strings.HasPrefix(connConfig.RegionName, prefix) {
+				if _, exists := regionRepresentative[prefix]; !exists {
+					regionRepresentative[prefix] = connConfig
+				}
+			}
+		}
+		for _, connConfig := range regionRepresentative {
+			connConfig.RegionRepresentative = true
+			key := GenConnectionKey(connConfig.ConfigName)
+			val, err := json.Marshal(connConfig)
+			if err != nil {
+				return callResult, err
+			}
+			err = CBStore.Put(string(key), string(val))
+			if err != nil {
+				return callResult, err
+			}
 		}
 	}
 
@@ -798,6 +836,40 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 		MediumDuration,
 	)
 
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return ConnConfig{}, err
+	}
+
+	// Register connection to cb-tumblebug with availability check
+	// enabled, err := CheckConnConfigAvailable(callResult.ConfigName)
+	// if err != nil {
+	// 	log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
+	// }
+	// callResult.ProviderName = strings.ToLower(callResult.ProviderName)
+	// if enabled {
+	// 	nativeRegion, _, err := GetRegion(callResult.RegionName)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Msgf("Cannot get region for %s", callResult.RegionName)
+	// 		callResult.Enabled = false
+	// 	} else {
+	// 		location, err := GetCloudLocation(callResult.ProviderName, nativeRegion)
+	// 		if err != nil {
+	// 			log.Error().Err(err).Msgf("Cannot get location for %s/%s", callResult.ProviderName, nativeRegion)
+	// 		}
+	// 		callResult.Location = location
+	// 	}
+	// }
+
+	callResult.CredentialHolder = connConfig.CredentialHolder
+	callResult.ProviderName = strings.ToLower(callResult.ProviderName)
+
+	key := GenConnectionKey(callResult.ConfigName)
+	val, err := json.Marshal(callResult)
+	if err != nil {
+		return ConnConfig{}, err
+	}
+	err = CBStore.Put(string(key), string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return ConnConfig{}, err
