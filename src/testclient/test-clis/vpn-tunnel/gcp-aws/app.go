@@ -917,20 +917,22 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// Print the response
-	resp := new(common.SimpleMsg)
-	if err := json.Unmarshal(respBytes, resp); err != nil {
-		log.Error().Err(err).Msg(string(respBytes))
-		return
-	}
+	respText := string(respBytes)
 
-	prettyResp, err := json.MarshalIndent(resp, "", "   ")
-	if err != nil {
-		log.Error().Err(err).Msgf("")
-		return
-	}
+	// // Print the response
+	// resp := new(common.SimpleMsg)
+	// if err := json.Unmarshal(respBytes, resp); err != nil {
+	// 	log.Error().Err(err).Msg(string(respBytes))
+	// 	return
+	// }
 
-	log.Debug().Msgf("[Response] %+v", string(prettyResp))
+	// prettyResp, err := json.MarshalIndent(resp, "", "   ")
+	// if err != nil {
+	// 	log.Error().Err(err).Msgf("")
+	// 	return
+	// }
+
+	log.Debug().Msgf("[Response] %+v", respText)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Tumblebug API: Terminate MCIS
@@ -949,20 +951,21 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	respText = string(respBytes)
 	// Print the response
-	resp = new(common.SimpleMsg)
-	if err := json.Unmarshal(respBytes, resp); err != nil {
-		log.Error().Err(err).Msg("")
-		return
-	}
+	// resp = new(common.SimpleMsg)
+	// if err := json.Unmarshal(respBytes, resp); err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return
+	// }
 
-	prettyResp, err = json.MarshalIndent(resp, "", "   ")
-	if err != nil {
-		log.Error().Err(err).Msgf("")
-		return
-	}
+	// prettyResp, err = json.MarshalIndent(resp, "", "   ")
+	// if err != nil {
+	// 	log.Error().Err(err).Msgf("")
+	// 	return
+	// }
 
-	log.Debug().Msgf("[Response] %+v", string(prettyResp))
+	log.Debug().Msgf("[Response] %+v", respText)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Tumblebug API: Terminate MCIS
@@ -982,13 +985,13 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	resp = new(common.SimpleMsg)
+	resp := new(common.SimpleMsg)
 	if err := json.Unmarshal(respBytes, resp); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyResp, err = json.MarshalIndent(resp, "", "   ")
+	prettyResp, err := json.MarshalIndent(resp, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
