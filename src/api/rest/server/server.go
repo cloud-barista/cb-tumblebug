@@ -169,8 +169,8 @@ func RunServer(port string) {
 	e.GET("/tumblebug/cloudInfo", rest_common.RestGetCloudInfo)
 	e.GET("/tumblebug/connConfig", rest_common.RestGetConnConfigList)
 	e.GET("/tumblebug/connConfig/:connConfigName", rest_common.RestGetConnConfig)
-	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
-	e.GET("/tumblebug/region/:regionName", rest_common.RestGetRegion)
+	e.GET("/tumblebug/provider/:providerName/region", rest_common.RestGetRegionList)
+	e.GET("/tumblebug/provider/:providerName/region/:regionName", rest_common.RestGetRegion)
 	e.POST("/tumblebug/credential", rest_common.RestRegisterCredential)
 
 	e.POST("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)

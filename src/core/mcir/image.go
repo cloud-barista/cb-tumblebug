@@ -128,14 +128,14 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 		return content, err
 	}
 
-	err = validate.Struct(u)
-	if err != nil {
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			log.Err(err).Msg("")
-			return content, err
-		}
-		return content, err
-	}
+	// err = validate.Struct(u)
+	// if err != nil {
+	// 	if _, ok := err.(*validator.InvalidValidationError); ok {
+	// 		log.Err(err).Msg("")
+	// 		return content, err
+	// 	}
+	// 	return content, err
+	// }
 
 	check, err := CheckResource(nsId, resourceType, u.Name)
 

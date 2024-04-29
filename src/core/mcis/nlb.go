@@ -580,7 +580,7 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 
 	tempSpiderNLBInfo = resp.Result().(*SpiderNLBInfo)
 
-	nativeRegion, _, err := common.GetRegion(connConfig.RegionName)
+	nativeRegion := connConfig.Location.NativeRegion
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err

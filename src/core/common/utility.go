@@ -441,7 +441,7 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 	return true, nil
 }
 
-// GetConnConfigList is func to list filtered connection configs from CB-Spider
+// GetConnConfigList is func to list filtered connection configs
 func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filterRegionRepresentative bool) (ConnConfigList, error) {
 	var filteredConnections ConnConfigList
 	var tmpConnections ConnConfigList
@@ -537,7 +537,7 @@ func RegisterCloudInfo(providerName string) error {
 	url := SpiderRestUrl + "/driver"
 	method := "POST"
 	var callResult CloudDriverInfo
-	requestBody := CloudDriverInfo{ProviderName: providerName, DriverName: driverName, DriverLibFileName: driverName}
+	requestBody := CloudDriverInfo{ProviderName: strings.ToUpper(providerName), DriverName: driverName, DriverLibFileName: driverName}
 
 	err := ExecuteHttpRequest(
 		client,
@@ -572,7 +572,7 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	url := SpiderRestUrl + "/region"
 	method := "POST"
 	var callResult Region
-	requestBody := Region{ProviderName: providerName, RegionName: regionName}
+	requestBody := Region{ProviderName: strings.ToUpper(providerName), RegionName: regionName}
 
 	if RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones == nil {
 		requestBody.RegionName = providerName + "-" + regionName
@@ -640,9 +640,14 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		genneratedCredentialName = req.ProviderName
 	}
 
+	// replace `\\n` with `\n` in the value to restore the original PEM value
+	for i, keyValue := range req.KeyValueInfoList {
+		req.KeyValueInfoList[i].Value = strings.ReplaceAll(keyValue.Value, "\\n", "\n")
+	}
+
 	reqToSpider := CredentialInfo{
 		CredentialName:   genneratedCredentialName,
-		ProviderName:     req.ProviderName,
+		ProviderName:     strings.ToUpper(req.ProviderName),
 		KeyValueInfoList: req.KeyValueInfoList,
 	}
 
@@ -651,6 +656,8 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 	method := "POST"
 	var callResult CredentialInfo
 	requestBody := reqToSpider
+
+	PrintJsonPretty(requestBody)
 
 	err := ExecuteHttpRequest(
 		client,
@@ -667,6 +674,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		log.Error().Err(err).Msg("")
 		return CredentialInfo{}, err
 	}
+	PrintJsonPretty(callResult)
 
 	callResult.CredentialHolder = req.CredentialHolder
 	callResult.ProviderName = strings.ToLower(callResult.ProviderName)
@@ -696,7 +704,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 			}
 			connConfig := ConnConfig{
 				ConfigName:       configName,
-				ProviderName:     callResult.ProviderName,
+				ProviderName:     strings.ToUpper(callResult.ProviderName),
 				DriverName:       cspDetail.Driver,
 				CredentialName:   callResult.CredentialName,
 				RegionName:       region.RegionName,
@@ -734,21 +742,21 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 			wg.Add(1)
 			go func(connConfig ConnConfig) {
 				defer wg.Done()
-				RandomSleep(0, 10)
+				RandomSleep(0, 30)
 				enabled, err := CheckConnConfigAvailable(connConfig.ConfigName)
 				if err != nil {
 					log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
 				}
 				connConfig.Enabled = enabled
 				if enabled {
-					nativeRegion, regionInfo, err := GetRegion(connConfig.RegionName)
+					regionInfo, err := GetRegion(connConfig.ProviderName, connConfig.Location.NativeRegion)
 					if err != nil {
 						log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
 						connConfig.Enabled = false
 					} else {
-						location, err := GetCloudLocation(connConfig.ProviderName, nativeRegion)
+						location, err := GetCloudLocation(connConfig.ProviderName, connConfig.Location.NativeRegion)
 						if err != nil {
-							log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, nativeRegion)
+							log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, connConfig.Location.NativeRegion)
 						}
 						connConfig.Location = location
 						connConfig.RegionDetail = regionInfo
@@ -879,24 +887,19 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 }
 
 // GetRegion is func to get regionInfo with the native region name
-func GetRegion(RegionName string) (string, RegionDetail, error) {
-	nativeRegion := ""
+func GetRegion(ProviderName, RegionName string) (RegionDetail, error) {
 
-	parts := strings.SplitN(RegionName, "-", 2)
-	if len(parts) != 2 {
-		return nativeRegion, RegionDetail{}, fmt.Errorf("invalid RegionName format")
-	}
-
-	cloudType, nativeRegion := strings.ToLower(parts[0]), strings.ToLower(parts[1])
+	ProviderName = strings.ToLower(ProviderName)
+	RegionName = strings.ToLower(RegionName)
 
 	cloudInfo, err := GetCloudInfo()
 	if err != nil {
-		return nativeRegion, RegionDetail{}, err
+		return RegionDetail{}, err
 	}
 
-	cspDetail, ok := cloudInfo.CSPs[cloudType]
+	cspDetail, ok := cloudInfo.CSPs[ProviderName]
 	if !ok {
-		return nativeRegion, RegionDetail{}, fmt.Errorf("cloudType '%s' not found", cloudType)
+		return RegionDetail{}, fmt.Errorf("cloudType '%s' not found", ProviderName)
 	}
 
 	// using map directly is not working because of the prefix
@@ -909,12 +912,12 @@ func GetRegion(RegionName string) (string, RegionDetail, error) {
 	// return nativeRegion, regionDetail, nil
 
 	for key, regionDetail := range cspDetail.Regions {
-		if strings.HasPrefix(nativeRegion, key) {
-			return key, regionDetail, nil
+		if strings.HasPrefix(RegionName, key) {
+			return regionDetail, nil
 		}
 	}
 
-	return nativeRegion, RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
+	return RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", RegionName, ProviderName)
 }
 
 // RegionList is array struct for Region

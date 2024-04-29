@@ -239,15 +239,16 @@ func RestGetConnConfigList(c echo.Context) error {
 // @Success 200 {object} common.RegionDetail
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /region/{regionName} [get]
+// @Router /provider/{providerName}/region/{regionName} [get]
 func RestGetRegion(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
+	providerName := c.Param("providerName")
 	regionName := c.Param("regionName")
 
-	_, content, err := common.GetRegion(regionName)
+	content, err := common.GetRegion(providerName, regionName)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }

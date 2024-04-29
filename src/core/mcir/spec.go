@@ -429,12 +429,12 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpec
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	err = common.CheckString(content.Name)
-	if err != nil {
-		temp := TbSpecInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+	// err = common.CheckString(content.Name)
+	// if err != nil {
+	// 	temp := TbSpecInfo{}
+	// 	log.Error().Err(err).Msg("")
+	// 	return temp, err
+	// }
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if err != nil {

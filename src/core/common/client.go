@@ -159,7 +159,7 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	// Perform the HTTP request using Resty
-	// client.SetDebug(true)
+	//client.SetDebug(true)
 	// SetAllowGetMethodPayload should be set to true for GET method to allow payload
 	// NOTE: Need to removed when cb-spider api is stopped to use GET method with payload
 	client.SetAllowGetMethodPayload(true)

@@ -8001,30 +8001,7 @@ paths:
       summary: List all objects for a given key
       tags:
       - '[Admin] System management'
-  /region:
-    get:
-      consumes:
-      - application/json
-      description: List all registered regions
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.RegionList'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List all registered regions
-      tags:
-      - '[Admin] Multi-Cloud environment configuration'
-  /region/{regionName}:
+  /provider/{providerName}/region/{regionName}:
     get:
       consumes:
       - application/json
@@ -8051,6 +8028,29 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
+      tags:
+      - '[Admin] Multi-Cloud environment configuration'
+  /region:
+    get:
+      consumes:
+      - application/json
+      description: List all registered regions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.RegionList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all registered regions
       tags:
       - '[Admin] Multi-Cloud environment configuration'
   /registerCspResources:

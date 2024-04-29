@@ -1140,13 +1140,13 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 			errMessage += "//Failed to CopySrcToDest() " + k
 		}
 
-		_, regionInfo, err := common.GetRegion(specInfo.RegionName)
+		regionInfo, err := common.GetRegion(specInfo.ProviderName, specInfo.RegionName)
 		if err != nil {
 			errMessage += "//Failed to get Region (" + specInfo.RegionName + ") for Spec (" + k + ") is not found."
 		}
 
 		for _, connectionConfig := range connectionConfigList.Connectionconfig {
-			if connectionConfig.RegionName == specInfo.RegionName {
+			if connectionConfig.ProviderName == specInfo.ProviderName && strings.Contains(connectionConfig.RegionName, specInfo.RegionName) {
 				vmReqInfo.ConnectionConfigCandidates = append(vmReqInfo.ConnectionConfigCandidates, connectionConfig.ConfigName)
 			}
 		}
@@ -1347,22 +1347,16 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 		vmReq.ConnectionName = k.ConnectionName
 	}
 
-	// validate the region for spec
-	_, err = common.GetConnConfig(specInfo.RegionName)
-	if err != nil {
-		err := fmt.Errorf("Failed to get RegionName (" + specInfo.RegionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-		log.Error().Err(err).Msg("")
-		return err
-	}
 	// validate the GetConnConfig for spec
-	_, err = common.GetConnConfig(vmReq.ConnectionName)
+	connection, err := common.GetConnConfig(vmReq.ConnectionName)
 	if err != nil {
 		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
 		log.Error().Err(err).Msg("")
 		return err
 	}
 
-	vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
+	osType := strings.ReplaceAll(k.CommonImage, " ", "")
+	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.Location.NativeRegion, "", osType)
 	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
@@ -1404,15 +1398,9 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	if k.ConnectionName != "" {
 		vmReq.ConnectionName = k.ConnectionName
 	}
-	// validate the region for spec
-	_, err = common.GetConnConfig(specInfo.RegionName)
-	if err != nil {
-		err := fmt.Errorf("Failed to get RegionName (" + specInfo.RegionName + ") for Spec (" + k.CommonSpec + ") is not found.")
-		log.Error().Err(err).Msg("")
-		return &TbVmReq{}, err
-	}
+
 	// validate the GetConnConfig for spec
-	_, err = common.GetConnConfig(vmReq.ConnectionName)
+	connection, err := common.GetConnConfig(vmReq.ConnectionName)
 	if err != nil {
 		err := fmt.Errorf("Failed to get ConnectionName (" + vmReq.ConnectionName + ") for Spec (" + k.CommonSpec + ") is not found.")
 		log.Error().Err(err).Msg("")
@@ -1423,7 +1411,8 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	resourceName := nsId + common.StrDefaultResourceName + vmReq.ConnectionName
 
 	vmReq.SpecId = specInfo.Id
-	vmReq.ImageId = mcir.ToNamingRuleCompatible(vmReq.ConnectionName + "-" + k.CommonImage)
+	osType := strings.ReplaceAll(k.CommonImage, " ", "")
+	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.Location.NativeRegion, "", osType)
 	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
@@ -1532,7 +1521,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 
 	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
 
-	nativeRegion, _, err := common.GetRegion(configTmp.RegionName)
+	nativeRegion := configTmp.Location.NativeRegion
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err

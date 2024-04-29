@@ -337,7 +337,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 					defer wg.Done() // Decrement the counter when the goroutine completes
 
 					var distance float64
-					distance, err = getDistance(latitude, longitude, (*specList)[i].RegionName)
+					distance, err = getDistance(latitude, longitude, (*specList)[i].ProviderName, (*specList)[i].RegionName)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						mu.Lock()
@@ -441,7 +441,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 				go func(i int) {
 					defer wg.Done() // Decrement the counter when the goroutine completes
 
-					distance, err := getDistance(latitude, longitude, (*specList)[i].RegionName)
+					distance, err := getDistance(latitude, longitude, (*specList)[i].ProviderName, (*specList)[i].RegionName)
 					if err != nil {
 						log.Error().Err(err).Msg("")
 						mu.Lock()
@@ -529,9 +529,9 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 }
 
 // getDistance func get geographical distance between given coordinate and region
-func getDistance(latitude float64, longitude float64, regionName string) (float64, error) {
+func getDistance(latitude float64, longitude float64, providerName string, regionName string) (float64, error) {
 
-	_, regionInfo, err := common.GetRegion(regionName)
+	regionInfo, err := common.GetRegion(providerName, regionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 999999, err
