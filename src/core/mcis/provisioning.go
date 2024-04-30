@@ -203,7 +203,7 @@ type TbMcisDynamicReq struct {
 	Name string `json:"name" validate:"required" example:"mcis01"`
 
 	// InstallMonAgent Option for CB-Dragonfly agent installation ([yes/no] default:yes)
-	InstallMonAgent string `json:"installMonAgent" example:"no" default:"yes" enums:"yes,no"` // yes or no
+	InstallMonAgent string `json:"installMonAgent" example:"no" default:"no" enums:"yes,no"` // yes or no
 
 	// Label is for describing the mcis in a keyword (any string can be used)
 	Label string `json:"label" example:"DynamicVM" default:""`
@@ -222,21 +222,21 @@ type TbVmDynamicReq struct {
 	Name string `json:"name" example:"g1-1"`
 
 	// if subGroupSize is (not empty) && (> 0), subGroup will be gernetad. VMs will be created accordingly.
-	SubGroupSize string `json:"subGroupSize" example:"3" default:""`
+	SubGroupSize string `json:"subGroupSize" example:"3" default:"1"`
 
 	Label string `json:"label" example:"DynamicVM"`
 
 	Description string `json:"description" example:"Description"`
 
 	// CommonSpec is field for id of a spec in common namespace
-	CommonSpec string `json:"commonSpec" validate:"required" example:"aws-ap-northeast-2-t2-small"`
+	CommonSpec string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small"`
 	// CommonImage is field for id of a image in common namespace
 	CommonImage string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
 
-	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
+	RootDiskType string `json:"rootDiskType,omitempty" example:"default, TYPE1, ..." default:"default"`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_essd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..." default:"default"` // "default", Integer (GB): ["50", ..., "1000"]
 
-	VmUserPassword string `json:"vmUserPassword" default:""`
+	VmUserPassword string `json:"vmUserPassword,omitempty" default:""`
 	// if ConnectionName is given, the VM tries to use associtated credential.
 	// if not, it will use predefined ConnectionName in Spec objects
 	ConnectionName string `json:"connectionName,omitempty" default:""`
@@ -245,7 +245,7 @@ type TbVmDynamicReq struct {
 // McisConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCIS instance dynamically (with default resource option)
 type McisConnectionConfigCandidatesReq struct {
 	// CommonSpec is field for id of a spec in common namespace
-	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws-ap-northeast-2-t2-small,gcp-us-west1-g1-small"`
+	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1.small"`
 }
 
 // CheckMcisDynamicReqInfo is struct to check requirements to create a new MCIS instance dynamically (with default resource option)
