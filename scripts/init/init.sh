@@ -2,6 +2,18 @@
 
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 
+# Check if python3-venv is installed
+if ! dpkg -s python3-venv &> /dev/null; then
+    echo "python3-venv package is not installed. Installing..."
+    sudo apt-get update && sudo apt-get install python3-venv
+    if [ $? -ne 0 ]; then
+        echo "Failed to install python3-venv. Please install it manually."
+        exit 1
+    fi
+else
+    echo "python3-venv package is already installed."
+fi
+
 echo "Creating and activating the virtual environment..."
 python3 -m venv "$SCRIPT_DIR/initPyEnv"
 source "$SCRIPT_DIR/initPyEnv/bin/activate"

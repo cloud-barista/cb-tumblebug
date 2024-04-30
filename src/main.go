@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/user"
 	"strconv"
 	"sync"
 	"time"
@@ -180,26 +181,28 @@ func setConfig() {
 	}
 
 	// Load credentials
+	usr, err := user.Current()
+	if err != nil {
+		log.Error().Err(err).Msg("")
+	}
+	credPath := usr.HomeDir + "/.cloud-barista"
 	credViper := viper.New()
-	fileName = "cred"
-	credViper.AddConfigPath(".")
-	credViper.AddConfigPath("./conf/.cred/")
-	credViper.AddConfigPath("../conf/.cred/")
+	fileName = "credentials"
+	credViper.AddConfigPath(credPath)
 	credViper.SetConfigName(fileName)
 	credViper.SetConfigType("yaml")
 	err = credViper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("fatal error reading credential file: %w", err))
+		log.Info().Err(err).Msg("")
+	} else {
+		log.Info().Msg(credViper.ConfigFileUsed())
+		err = credViper.Unmarshal(&common.RuntimeCredential)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			panic(err)
+		}
+		common.PrintCredentialInfo(common.RuntimeCredential)
 	}
-
-	log.Info().Msg(credViper.ConfigFileUsed())
-	err = credViper.Unmarshal(&common.RuntimeCredential)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		panic(err)
-	}
-
-	common.PrintCredentialInfo(common.RuntimeCredential)
 
 	// err = common.RegisterAllCloudInfo()
 	// if err != nil {
