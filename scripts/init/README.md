@@ -16,21 +16,21 @@ The `init.py` script is designed to automate the process of registering credenti
 
 ## Usage
 ### Direct Execution
-\```bash
+```bash
 pip3 install -r requirements.txt
-\```
+```
 
-\```bash
+```bash
 python3 init.py
-\```
-### Options
-- `-y, --yes`: Automatically answer yes to prompts and proceed without manual confirmation.
+```
+
+- Options: `-y, --yes` (Automatically answer yes to prompts and proceed without manual confirmation)
 
 ### Execution via Script
-\```bash
-./init.sh
-\```
-The `init.sh` script supports passing options to `init.py`, such as the `-y` flag for automatic execution.
+```bash
+init.sh
+```
+- Options: `-y, --yes` (Automatically answer yes to prompts and proceed without manual confirmation)
 
 ## Configuration
 Before running the script, ensure the following environment variables are set according to your Tumblebug server configuration:
