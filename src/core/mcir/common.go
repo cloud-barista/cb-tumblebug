@@ -926,11 +926,11 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 		return nil, err
 	}
 
-	err = common.CheckString(resourceId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
+	// err = common.CheckString(resourceId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return nil, err
+	// }
 	/*
 		check, err := CheckResource(nsId, resourceType, resourceId)
 
@@ -1032,11 +1032,11 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 		return nil, err
 	}
 
-	err = common.CheckString(resourceId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
+	// err = common.CheckString(resourceId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return nil, err
+	// }
 	check, err := CheckResource(nsId, resourceType, resourceId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -1204,6 +1204,21 @@ func GenSpecMapKey(region, specName string) string {
 	return strings.ToLower(fmt.Sprintf("%s-%s", region, specName))
 }
 
+func GetProviderRegionZoneResourceKey(providerName, regionName, zoneName, resourceName string) string {
+
+	div := "+"
+
+	if regionName == "" && zoneName == "" {
+		return strings.ToLower(fmt.Sprintf("%s%s%s", providerName, div, resourceName))
+	}
+
+	if zoneName == "" {
+		return strings.ToLower(fmt.Sprintf("%s%s%s%s%s", providerName, div, regionName, div, resourceName))
+	}
+
+	return strings.ToLower(fmt.Sprintf("%s%s%s%s%s%s%s", providerName, div, regionName, div, zoneName, div, resourceName))
+}
+
 // CheckResource returns the existence of the TB MCIR resource in bool form.
 func CheckResource(nsId string, resourceType string, resourceId string) (bool, error) {
 
@@ -1242,11 +1257,11 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 		return false, err
 	}
 
-	err = common.CheckString(resourceId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return false, err
-	}
+	// err = common.CheckString(resourceId)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("")
+	// 	return false, err
+	// }
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
@@ -1406,7 +1421,7 @@ func LoadCommonResource() (common.IdList, error) {
 		}
 	}
 
-	connectionList, err := common.GetConnConfigList()
+	connectionList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot GetConnConfigList")
 		return regiesteredIds, err
@@ -1420,6 +1435,9 @@ func LoadCommonResource() (common.IdList, error) {
 	var specMap sync.Map
 	// ignoreConnectionMap is used to store connection names that failed to lookup specs
 	var ignoreConnectionMap sync.Map
+	// validRepresentativeConnectionMap is used to store connection names that valid representative connection
+	var validRepresentativeConnectionMap sync.Map
+
 	startTime := time.Now()
 	var wg sync.WaitGroup
 	for _, connConfig := range connectionList.Connectionconfig {
@@ -1433,8 +1451,9 @@ func LoadCommonResource() (common.IdList, error) {
 				return
 			}
 			log.Info().Msgf("[%s] #Spec: %d", connConfig.ConfigName, len(specsInConnection.Vmspec))
+			validRepresentativeConnectionMap.Store(connConfig.ProviderName+"-"+connConfig.RegionDetail.RegionName, connConfig)
 			for _, spec := range specsInConnection.Vmspec {
-				key := GenSpecMapKey(connConfig.RegionName, spec.Name)
+				key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
 				// instead of connConfig.RegionName, spec.Region will be used in the future
 				//log.Info().Msgf("specMap.Store(%s, spec)", key)
 				specMap.Store(key, spec)
@@ -1484,7 +1503,7 @@ func LoadCommonResource() (common.IdList, error) {
 				if strings.EqualFold(connConfig.ProviderName, row[0]) {
 					newRow := make([]string, len(row))
 					copy(newRow, row)
-					newRow[1] = connConfig.ConfigName
+					newRow[1] = connConfig.RegionDetail.RegionName
 					newRowsSpec = append(newRowsSpec, newRow)
 					//log.Info().Msgf("Expended row: %s", newRow)
 				}
@@ -1515,7 +1534,7 @@ func LoadCommonResource() (common.IdList, error) {
 				if strings.EqualFold(connConfig.ProviderName, row[0]) {
 					newRow := make([]string, len(row))
 					copy(newRow, row)
-					newRow[1] = connConfig.ConfigName
+					newRow[1] = connConfig.RegionDetail.RegionName
 					newRowsImg = append(newRowsImg, newRow)
 					//log.Info().Msgf("Expended row: %s", newRow)
 				}
@@ -1538,7 +1557,7 @@ func LoadCommonResource() (common.IdList, error) {
 
 			specReqTmp := TbSpecReq{}
 			// 0	providerName
-			// 1	connectionName
+			// 1	regionName
 			// 2	cspSpecName
 			// 3	CostPerHour
 			// 4	evaluationScore01
@@ -1554,22 +1573,33 @@ func LoadCommonResource() (common.IdList, error) {
 			// 14	rootDiskType
 			// 15	rootDiskSize
 
-			providerName := row[0]
-			specReqTmp.ConnectionName = row[1]
+			providerName := strings.ToLower(row[0])
+			regionName := strings.ToLower(row[1])
 			specReqTmp.CspSpecName = row[2]
+			rootDiskType := row[14]
+			rootDiskSize := row[15]
+			specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
 
-			_, ok := ignoreConnectionMap.Load(specReqTmp.ConnectionName)
+			//get connetion for lookup (if regionName is "all", use providerName only)
+			validRepresentativeConnectionMapKey := providerName + "-" + regionName
+			connectionForLookup, ok := validRepresentativeConnectionMap.Load(validRepresentativeConnectionMapKey)
+			if ok {
+				specReqTmp.ConnectionName = connectionForLookup.(common.ConnConfig).ConfigName
+			} else {
+				specReqTmp.ConnectionName = "invalid"
+			}
+
+			_, ok = ignoreConnectionMap.Load(specReqTmp.ConnectionName)
 			if !ok {
 				// Give a name for spec object by combining ConnectionName and CspSpecName
 				// To avoid naming-rule violation, modify the string
-				specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
-				specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
+
+				// specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
+				// specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
 				specInfoId := specReqTmp.Name
-				rootDiskType := row[14]
-				rootDiskSize := row[15]
+
 				specReqTmp.Description = "Common Spec Resource"
 
-				regionName := specReqTmp.ConnectionName // assume regionName is the same as connectionName
 				regiesteredStatus = ""
 
 				var errRegisterSpec error
@@ -1577,7 +1607,7 @@ func LoadCommonResource() (common.IdList, error) {
 				log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 
 				// Register Spec object
-				searchKey := GenSpecMapKey(regionName, specReqTmp.CspSpecName)
+				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
 				value, ok := specMap.Load(searchKey)
 				if ok {
 					spiderSpec := value.(SpiderSpecInfo)
@@ -1657,21 +1687,32 @@ func LoadCommonResource() (common.IdList, error) {
 
 				imageReqTmp := TbImageReq{}
 				// row0: ProviderName
-				// row1: connectionName
+				// row1: regionName
 				// row2: cspImageId
 				// row3: OsType
-				imageReqTmp.ConnectionName = row[1]
-				_, ok := ignoreConnectionMap.Load(imageReqTmp.ConnectionName)
+				providerName := strings.ToLower(row[0])
+				regionName := strings.ToLower(row[1])
+				imageReqTmp.CspImageId = row[2]
+				osType := strings.ReplaceAll(row[3], " ", "")
+				// Give a name for spec object by combining ConnectionName and OsType
+				imageReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", osType)
+
+				//get connetion for lookup (if regionName is "all", use providerName only)
+				validRepresentativeConnectionMapKey := providerName + "-" + regionName
+				connectionForLookup, ok := validRepresentativeConnectionMap.Load(validRepresentativeConnectionMapKey)
+				if ok {
+					imageReqTmp.ConnectionName = connectionForLookup.(common.ConnConfig).ConfigName
+				} else {
+					imageReqTmp.ConnectionName = "invalid"
+				}
+				_, ok = ignoreConnectionMap.Load(imageReqTmp.ConnectionName)
 				if !ok {
 					// RandomSleep for safe parallel executions
 					common.RandomSleep(0, lenImages/8)
 
-					imageReqTmp.CspImageId = row[2]
-					osType := strings.ReplaceAll(row[3], " ", "")
-					// Give a name for spec object by combining ConnectionName and OsType
 					// To avoid naming-rule violation, modify the string
-					imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
-					imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
+					// imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
+					// imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
 					imageInfoId := imageReqTmp.Name
 					imageReqTmp.Description = "Common Image Resource"
 
@@ -1682,7 +1723,7 @@ func LoadCommonResource() (common.IdList, error) {
 
 					_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp, true)
 					if err1 != nil {
-						log.Info().Msg(err1.Error())
+						log.Info().Msg(imageReqTmp.ConnectionName + err1.Error())
 						regiesteredStatus += "  [Failed] " + err1.Error()
 					} else {
 						// Update registered image object with OsType info
@@ -1728,9 +1769,12 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 		resList = append(resList, strings.ToLower(resType))
 	}
 
+	// TODO: This is a temporary solution. need to be changed after the policy is decided.
+	credentialHolder := common.DefaultCredentialHolder
+
 	// Read default resources from file and create objects
 
-	connectionList, err := common.GetConnConfigList()
+	connectionList, err := common.GetConnConfigList(credentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot GetConnConfig")
 		return err

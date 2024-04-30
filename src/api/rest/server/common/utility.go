@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -140,6 +141,33 @@ func RestGetSwagger(c echo.Context) error {
 }
 */
 
+// RestRegisterCredential func is a rest api wrapper for RegisterCredential.
+// RestRegisterCredential godoc
+// @Summary Post register Credential info
+// @Description Post register Credential info
+// @Tags [Admin] Multi-Cloud environment configuration
+// @Accept  json
+// @Produce  json
+// @Param CredentialReq body common.CredentialReq true "Credential request info"
+// @Success 200 {object} common.CredentialInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /credential [post]
+func RestRegisterCredential(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	u := &common.CredentialReq{}
+	if err := c.Bind(u); err != nil {
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	content, err := common.RegisterCredential(*u)
+	return common.EndRequestWithLog(c, reqID, err, content)
+
+}
+
 // RestGetConnConfig func is a rest api wrapper for GetConnConfig.
 // RestGetConnConfig godoc
 // @Summary Get registered ConnConfig info
@@ -171,6 +199,9 @@ func RestGetConnConfig(c echo.Context) error {
 // @Tags [Admin] Multi-Cloud environment configuration
 // @Accept  json
 // @Produce  json
+// @Param filterCredentialHolder query string false "filter objects by Credential Holder" default()
+// @Param filterVerified query boolean false "filter verified connections only" Enums(true, false) default(true)
+// @Param filterRegionRepresentative query boolean false "filter connections with the representative region only" Enums(true, false) default(false)
 // @Success 200 {object} common.ConnConfigList
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -180,7 +211,20 @@ func RestGetConnConfigList(c echo.Context) error {
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
-	content, err := common.GetConnConfigList()
+	filterCredentialHolder := c.QueryParam("filterCredentialHolder")
+	filterVerified := c.QueryParam("filterVerified")
+	filterRegionRepresentative := c.QueryParam("filterRegionRepresentative")
+
+	filterVerifiedBool, err := strconv.ParseBool(filterVerified)
+	if err != nil {
+		filterVerifiedBool = true
+	}
+	filterRegionRepresentativeBool, err := strconv.ParseBool(filterRegionRepresentative)
+	if err != nil {
+		filterRegionRepresentativeBool = false
+	}
+
+	content, err := common.GetConnConfigList(filterCredentialHolder, filterVerifiedBool, filterRegionRepresentativeBool)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
@@ -195,15 +239,16 @@ func RestGetConnConfigList(c echo.Context) error {
 // @Success 200 {object} common.RegionDetail
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
-// @Router /region/{regionName} [get]
+// @Router /provider/{providerName}/region/{regionName} [get]
 func RestGetRegion(c echo.Context) error {
 	reqID, idErr := common.StartRequestWithLog(c)
 	if idErr != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
+	providerName := c.Param("providerName")
 	regionName := c.Param("regionName")
 
-	_, content, err := common.GetRegion(regionName)
+	content, err := common.GetRegion(providerName, regionName)
 	return common.EndRequestWithLog(c, reqID, err, content)
 
 }

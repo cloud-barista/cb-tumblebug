@@ -263,6 +263,37 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "List all registered ConnConfig",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "filter objects by Credential Holder",
+                        "name": "filterCredentialHolder",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            true,
+                            false
+                        ],
+                        "type": "boolean",
+                        "default": true,
+                        "description": "filter verified connections only",
+                        "name": "filterVerified",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            true,
+                            false
+                        ],
+                        "type": "boolean",
+                        "default": false,
+                        "description": "filter connections with the representative region only",
+                        "name": "filterRegionRepresentative",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -312,6 +343,52 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/common.ConnConfig"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/credential": {
+            "post": {
+                "description": "Post register Credential info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud environment configuration"
+                ],
+                "summary": "Post register Credential info",
+                "parameters": [
+                    {
+                        "description": "Credential request info",
+                        "name": "CredentialReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/common.CredentialReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.CredentialInfo"
                         }
                     },
                     "404": {
@@ -7544,42 +7621,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/region": {
-            "get": {
-                "description": "List all registered regions",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Admin] Multi-Cloud environment configuration"
-                ],
-                "summary": "List all registered regions",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.RegionList"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
-        "/region/{regionName}": {
+        "/provider/{providerName}/region/{regionName}": {
             "get": {
                 "description": "Get registered region info",
                 "consumes": [
@@ -7606,6 +7648,41 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/common.RegionDetail"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/region": {
+            "get": {
+                "description": "List all registered regions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud environment configuration"
+                ],
+                "summary": "List all registered regions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.RegionList"
                         }
                     },
                     "404": {
@@ -8176,6 +8253,9 @@ const docTemplate = `{
                 "configName": {
                     "type": "string"
                 },
+                "credentialHolder": {
+                    "type": "string"
+                },
                 "credentialName": {
                     "type": "string"
                 },
@@ -8185,13 +8265,19 @@ const docTemplate = `{
                 "enabled": {
                     "type": "boolean"
                 },
-                "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
-                },
                 "providerName": {
                     "type": "string"
                 },
-                "regionName": {
+                "regionDetail": {
+                    "$ref": "#/definitions/common.RegionDetail"
+                },
+                "regionRepresentative": {
+                    "type": "boolean"
+                },
+                "regionZoneInfo": {
+                    "$ref": "#/definitions/common.RegionZoneInfo"
+                },
+                "regionZoneInfoName": {
                     "type": "string"
                 }
             }
@@ -8207,22 +8293,39 @@ const docTemplate = `{
                 }
             }
         },
-        "common.GeoLocation": {
+        "common.CredentialInfo": {
             "type": "object",
             "properties": {
-                "briefAddr": {
+                "credentialHolder": {
                     "type": "string"
                 },
-                "cloudType": {
+                "credentialName": {
                     "type": "string"
                 },
-                "latitude": {
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.CredentialReq": {
+            "type": "object",
+            "properties": {
+                "credentialHolder": {
                     "type": "string"
                 },
-                "longitude": {
-                    "type": "string"
+                "keyValueInfoList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
                 },
-                "nativeRegion": {
+                "providerName": {
                     "type": "string"
                 }
             }
@@ -8309,32 +8412,6 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Region": {
-            "type": "object",
-            "properties": {
-                "availableZoneList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "keyValueInfoList": {
-                    "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "providerName": {
-                    "description": "ex) \"GCP\"",
-                    "type": "string"
-                },
-                "regionName": {
-                    "description": "ex) \"region01\"",
-                    "type": "string"
-                }
-            }
-        },
         "common.RegionDetail": {
             "type": "object",
             "properties": {
@@ -8343,6 +8420,9 @@ const docTemplate = `{
                 },
                 "location": {
                     "$ref": "#/definitions/common.Location"
+                },
+                "regionName": {
+                    "type": "string"
                 },
                 "zones": {
                     "type": "array",
@@ -8358,8 +8438,19 @@ const docTemplate = `{
                 "region": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.Region"
+                        "$ref": "#/definitions/common.SpiderRegionZoneInfo"
                     }
+                }
+            }
+        },
+        "common.RegionZoneInfo": {
+            "type": "object",
+            "properties": {
+                "assignedRegion": {
+                    "type": "string"
+                },
+                "assignedZone": {
+                    "type": "string"
                 }
             }
         },
@@ -8497,6 +8588,32 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Any message"
+                }
+            }
+        },
+        "common.SpiderRegionZoneInfo": {
+            "type": "object",
+            "properties": {
+                "availableZoneList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "keyValueInfoList": {
+                    "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "description": "ex) \"GCP\"",
+                    "type": "string"
+                },
+                "regionName": {
+                    "description": "ex) \"region01\"",
+                    "type": "string"
                 }
             }
         },
@@ -11333,7 +11450,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/mcis.TbNLBListenerInfo"
                 },
                 "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
+                    "$ref": "#/definitions/common.Location"
                 },
                 "name": {
                     "type": "string"
@@ -11648,7 +11765,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
+                    "$ref": "#/definitions/common.Location"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",
@@ -11849,7 +11966,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
+                    "$ref": "#/definitions/common.Location"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",

@@ -705,7 +705,7 @@ type inspectOverview struct {
 func InspectResourcesOverview() (InspectResourceAllResult, error) {
 	startTime := time.Now()
 
-	connectionConfigList, err := common.GetConnConfigList()
+	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList")
 		log.Error().Err(err).Msg("")
@@ -872,7 +872,7 @@ type registerationOverview struct {
 func RegisterCspNativeResourcesAll(nsId string, mcisId string, option string, mcisFlag string) (RegisterResourceAllResult, error) {
 	startTime := time.Now()
 
-	connectionConfigList, err := common.GetConnConfigList()
+	connectionConfigList, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
 		err := fmt.Errorf("Cannot load ConnectionConfigList")
 		log.Error().Err(err).Msg("")

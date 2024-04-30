@@ -54,6 +54,7 @@ func init() {
 	common.DBPassword = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
 	common.AutocontrolDurationMs = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
 	common.DefaultNamespace = common.NVL(os.Getenv("DEFAULT_NAMESPACE"), "ns01")
+	common.DefaultCredentialHolder = common.NVL(os.Getenv("DEFAULT_CREDENTIALHOLDER"), "admin")
 
 	// load the latest configuration from DB (if exist)
 
@@ -148,6 +149,7 @@ func setConfig() {
 		panic(err)
 	}
 
+	// Load cloudinfo
 	cloudInfoViper := viper.New()
 	fileName = "cloudinfo"
 	cloudInfoViper.AddConfigPath(".")
@@ -176,6 +178,34 @@ func setConfig() {
 		log.Error().Err(err).Msg("Failed to register cloud info")
 		panic(err)
 	}
+
+	// Load credentials
+	credViper := viper.New()
+	fileName = "cred"
+	credViper.AddConfigPath(".")
+	credViper.AddConfigPath("./conf/.cred/")
+	credViper.AddConfigPath("../conf/.cred/")
+	credViper.SetConfigName(fileName)
+	credViper.SetConfigType("yaml")
+	err = credViper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error reading credential file: %w", err))
+	}
+
+	log.Info().Msg(credViper.ConfigFileUsed())
+	err = credViper.Unmarshal(&common.RuntimeCredential)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		panic(err)
+	}
+
+	common.PrintCredentialInfo(common.RuntimeCredential)
+
+	// err = common.RegisterAllCloudInfo()
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("Failed to register credentials")
+	// 	panic(err)
+	// }
 
 	// const mrttArrayXMax = 300
 	// const mrttArrayYMax = 300

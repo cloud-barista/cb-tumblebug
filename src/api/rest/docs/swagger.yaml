@@ -47,17 +47,23 @@ definitions:
     properties:
       configName:
         type: string
+      credentialHolder:
+        type: string
       credentialName:
         type: string
       driverName:
         type: string
       enabled:
         type: boolean
-      location:
-        $ref: '#/definitions/common.GeoLocation'
       providerName:
         type: string
-      regionName:
+      regionDetail:
+        $ref: '#/definitions/common.RegionDetail'
+      regionRepresentative:
+        type: boolean
+      regionZoneInfo:
+        $ref: '#/definitions/common.RegionZoneInfo'
+      regionZoneInfoName:
         type: string
     type: object
   common.ConnConfigList:
@@ -67,17 +73,28 @@ definitions:
           $ref: '#/definitions/common.ConnConfig'
         type: array
     type: object
-  common.GeoLocation:
+  common.CredentialInfo:
     properties:
-      briefAddr:
+      credentialHolder:
         type: string
-      cloudType:
+      credentialName:
         type: string
-      latitude:
+      keyValueInfoList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      providerName:
         type: string
-      longitude:
+    type: object
+  common.CredentialReq:
+    properties:
+      credentialHolder:
         type: string
-      nativeRegion:
+      keyValueInfoList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      providerName:
         type: string
     type: object
   common.IID:
@@ -135,30 +152,14 @@ definitions:
         example: ns01
         type: string
     type: object
-  common.Region:
-    properties:
-      availableZoneList:
-        items:
-          type: string
-        type: array
-      keyValueInfoList:
-        description: ex) { {region, us-east1}, {zone, us-east1-c} }
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      providerName:
-        description: ex) "GCP"
-        type: string
-      regionName:
-        description: ex) "region01"
-        type: string
-    type: object
   common.RegionDetail:
     properties:
       description:
         type: string
       location:
         $ref: '#/definitions/common.Location'
+      regionName:
+        type: string
       zones:
         items:
           type: string
@@ -168,8 +169,15 @@ definitions:
     properties:
       region:
         items:
-          $ref: '#/definitions/common.Region'
+          $ref: '#/definitions/common.SpiderRegionZoneInfo'
         type: array
+    type: object
+  common.RegionZoneInfo:
+    properties:
+      assignedRegion:
+        type: string
+      assignedZone:
+        type: string
     type: object
   common.RequestDetails:
     properties:
@@ -265,6 +273,24 @@ definitions:
     properties:
       message:
         example: Any message
+        type: string
+    type: object
+  common.SpiderRegionZoneInfo:
+    properties:
+      availableZoneList:
+        items:
+          type: string
+        type: array
+      keyValueInfoList:
+        description: ex) { {region, us-east1}, {zone, us-east1-c} }
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      providerName:
+        description: ex) "GCP"
+        type: string
+      regionName:
+        description: ex) "region01"
         type: string
     type: object
   common.TbConnectionName:
@@ -2233,7 +2259,7 @@ definitions:
       listener:
         $ref: '#/definitions/mcis.TbNLBListenerInfo'
       location:
-        $ref: '#/definitions/common.GeoLocation'
+        $ref: '#/definitions/common.Location'
       name:
         type: string
       scope:
@@ -2467,7 +2493,7 @@ definitions:
       label:
         type: string
       location:
-        $ref: '#/definitions/common.GeoLocation'
+        $ref: '#/definitions/common.Location'
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -2614,7 +2640,7 @@ definitions:
       id:
         type: string
       location:
-        $ref: '#/definitions/common.GeoLocation'
+        $ref: '#/definitions/common.Location'
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -3010,6 +3036,28 @@ paths:
       consumes:
       - application/json
       description: List all registered ConnConfig
+      parameters:
+      - default: ""
+        description: filter objects by Credential Holder
+        in: query
+        name: filterCredentialHolder
+        type: string
+      - default: true
+        description: filter verified connections only
+        enum:
+        - true
+        - false
+        in: query
+        name: filterVerified
+        type: boolean
+      - default: false
+        description: filter connections with the representative region only
+        enum:
+        - true
+        - false
+        in: query
+        name: filterRegionRepresentative
+        type: boolean
       produces:
       - application/json
       responses:
@@ -3055,6 +3103,36 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered ConnConfig info
+      tags:
+      - '[Admin] Multi-Cloud environment configuration'
+  /credential:
+    post:
+      consumes:
+      - application/json
+      description: Post register Credential info
+      parameters:
+      - description: Credential request info
+        in: body
+        name: CredentialReq
+        required: true
+        schema:
+          $ref: '#/definitions/common.CredentialReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.CredentialInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Post register Credential info
       tags:
       - '[Admin] Multi-Cloud environment configuration'
   /forward/{path}:
@@ -7919,30 +7997,7 @@ paths:
       summary: List all objects for a given key
       tags:
       - '[Admin] System management'
-  /region:
-    get:
-      consumes:
-      - application/json
-      description: List all registered regions
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.RegionList'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List all registered regions
-      tags:
-      - '[Admin] Multi-Cloud environment configuration'
-  /region/{regionName}:
+  /provider/{providerName}/region/{regionName}:
     get:
       consumes:
       - application/json
@@ -7969,6 +8024,29 @@ paths:
           schema:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get registered region info
+      tags:
+      - '[Admin] Multi-Cloud environment configuration'
+  /region:
+    get:
+      consumes:
+      - application/json
+      description: List all registered regions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.RegionList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all registered regions
       tags:
       - '[Admin] Multi-Cloud environment configuration'
   /registerCspResources:

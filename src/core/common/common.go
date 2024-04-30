@@ -24,9 +24,10 @@ import (
 	"xorm.io/xorm"
 )
 
+// KeyValue is struct for key-value pair
 type KeyValue struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type IdList struct {
@@ -59,6 +60,7 @@ var DBUser string
 var DBPassword string
 var AutocontrolDurationMs string
 var DefaultNamespace string
+var DefaultCredentialHolder string
 var MyDB *sql.DB
 var err error
 var ORM *xorm.Engine

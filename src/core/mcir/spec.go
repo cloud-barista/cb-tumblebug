@@ -324,7 +324,7 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 		return 0, 0, err
 	}
 
-	connConfigs, err := common.GetConnConfigList()
+	connConfigs, err := common.GetConnConfigList(common.DefaultCredentialHolder, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return 0, 0, err
@@ -429,12 +429,12 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpec
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	err = common.CheckString(content.Name)
-	if err != nil {
-		temp := TbSpecInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+	// err = common.CheckString(content.Name)
+	// if err != nil {
+	// 	temp := TbSpecInfo{}
+	// 	log.Error().Err(err).Msg("")
+	// 	return temp, err
+	// }
 	check, err := CheckResource(nsId, resourceType, content.Name)
 
 	if err != nil {
