@@ -48,10 +48,11 @@ type OptionalParameter struct {
 	Set   bool
 }
 
+// SystemReady is global variable for checking SystemReady status
+var SystemReady bool
+
 // CB-Store
-
 var CBStore icbs.Store
-
 var SpiderRestUrl string
 var DragonflyRestUrl string
 var DBUrl string

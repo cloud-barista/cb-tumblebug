@@ -46,6 +46,7 @@ import (
 
 // init for main
 func init() {
+	common.SystemReady = false
 
 	common.SpiderRestUrl = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
 	common.DragonflyRestUrl = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")

@@ -118,7 +118,7 @@ func RunServer(port string) {
 
 	// e.GET("/tumblebug/swagger/*", echoSwagger.WrapHandler)
 	// e.GET("/tumblebug/swaggerActive", rest_common.RestGetSwagger)
-	e.GET("/tumblebug/health", rest_common.RestGetHealth)
+	e.GET("/tumblebug/readyz", rest_common.RestGetReadyz)
 	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
 
 	allowedOrigins := os.Getenv("ALLOW_ORIGINS")
@@ -470,6 +470,7 @@ func RunServer(port string) {
 	}(&wg)
 
 	port = fmt.Sprintf(":%s", port)
+	common.SystemReady = true
 	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
 		log.Error().Err(err).Msg("Error in Starting CB-Tumblebug API Server")
 		e.Logger.Panic("Shuttig down the server: ", err)
