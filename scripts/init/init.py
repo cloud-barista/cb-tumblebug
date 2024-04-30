@@ -51,7 +51,7 @@ print(" - " + Fore.CYAN + "expected completion time:" + Fore.RESET + f" {expecte
 
 # Check server health before proceeding
 print(Fore.YELLOW + "Checking server health...")
-health_check_url = f"http://{TUMBLEBUG_SERVER}/tumblebug/health"
+health_check_url = f"http://{TUMBLEBUG_SERVER}/tumblebug/readyz"
 try:
     health_response = requests.get(health_check_url, headers=HEADERS)
     if health_response.status_code == 200:
