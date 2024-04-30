@@ -1,0 +1,11 @@
+# Used for handling HTTP requests
+requests==2.31.0
+
+# Used for parsing and creating YAML files
+PyYAML==6.0.1
+
+# Used for displaying progress bars
+tqdm==4.66.2
+
+# Used for coloring and styling console output
+colorama==0.4.6

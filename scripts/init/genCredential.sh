@@ -5,12 +5,9 @@ LGREEN='\033[1;32m'
 PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
-if [ -z "$CBTUMBLEBUG_ROOT" ]; then
-    SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
-    export CBTUMBLEBUG_ROOT=`cd $SCRIPT_DIR && cd .. && pwd`
-fi
+SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 
-CONF_PATH="$CBTUMBLEBUG_ROOT/conf"
+CONF_PATH="$SCRIPT_DIR"
 TEMPLATE_FILE_NAME="template.credentials.yaml"
 
 CRED_FILE_NAME="credentials.yaml"
