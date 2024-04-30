@@ -114,7 +114,7 @@ func RestPostSystemMcis(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisReq body TbMcisDynamicReq true "Details for MCIS object"
+// @Param mcisReq body TbMcisDynamicReq true "Request body to provision MCIS dynamically"
 // @Success 200 {object} TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
