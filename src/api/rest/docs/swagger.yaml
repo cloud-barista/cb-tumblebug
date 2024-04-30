@@ -53,8 +53,6 @@ definitions:
         type: string
       driverName:
         type: string
-      enabled:
-        type: boolean
       providerName:
         type: string
       regionDetail:
@@ -65,6 +63,8 @@ definitions:
         $ref: '#/definitions/common.RegionZoneInfo'
       regionZoneInfoName:
         type: string
+      verified:
+        type: boolean
     type: object
   common.ConnConfigList:
     properties:

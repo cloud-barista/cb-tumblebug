@@ -8255,9 +8255,6 @@
                 "driverName": {
                     "type": "string"
                 },
-                "enabled": {
-                    "type": "boolean"
-                },
                 "providerName": {
                     "type": "string"
                 },
@@ -8272,6 +8269,9 @@
                 },
                 "regionZoneInfoName": {
                     "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
                 }
             }
         },

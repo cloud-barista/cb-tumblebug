@@ -8262,9 +8262,6 @@ const docTemplate = `{
                 "driverName": {
                     "type": "string"
                 },
-                "enabled": {
-                    "type": "boolean"
-                },
                 "providerName": {
                     "type": "string"
                 },
@@ -8279,6 +8276,9 @@ const docTemplate = `{
                 },
                 "regionZoneInfoName": {
                     "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
                 }
             }
         },
