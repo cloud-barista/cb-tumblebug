@@ -356,7 +356,7 @@ type TbVmInfo struct {
 	// defined if the VM is in a group
 	SubGroupId string `json:"subGroupId"`
 
-	Location common.GeoLocation `json:"location"`
+	Location common.Location `json:"location"`
 
 	// Required by CB-Tumblebug
 	Status       string `json:"status"`
@@ -1146,7 +1146,7 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 		}
 
 		for _, connectionConfig := range connectionConfigList.Connectionconfig {
-			if connectionConfig.ProviderName == specInfo.ProviderName && strings.Contains(connectionConfig.RegionName, specInfo.RegionName) {
+			if connectionConfig.ProviderName == specInfo.ProviderName && strings.Contains(connectionConfig.RegionDetail.RegionName, specInfo.RegionName) {
 				vmReqInfo.ConnectionConfigCandidates = append(vmReqInfo.ConnectionConfigCandidates, connectionConfig.ConfigName)
 			}
 		}
@@ -1187,9 +1187,9 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 
 			deploymentPlan := DeploymentPlan{}
 			condition := []Operation{}
-			condition = append(condition, Operation{Operand: v.RegionName})
+			condition = append(condition, Operation{Operand: v.RegionZoneInfoName})
 
-			log.Debug().Msg(" - v.RegionName: " + v.RegionName)
+			log.Debug().Msg(" - v.RegionName: " + v.RegionZoneInfoName)
 
 			deploymentPlan.Filter.Policy = append(deploymentPlan.Filter.Policy, FilterCondition{Metric: "region", Condition: condition})
 			deploymentPlan.Limit = "1"
@@ -1356,7 +1356,7 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 	}
 
 	osType := strings.ReplaceAll(k.CommonImage, " ", "")
-	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.Location.NativeRegion, "", osType)
+	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
 	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
@@ -1412,7 +1412,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 
 	vmReq.SpecId = specInfo.Id
 	osType := strings.ReplaceAll(k.CommonImage, " ", "")
-	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.Location.NativeRegion, "", osType)
+	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
 	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
@@ -1519,19 +1519,12 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 		return err
 	}
 
-	configTmp, _ := common.GetConnConfig(vmInfoData.ConnectionName)
-
-	nativeRegion := configTmp.Location.NativeRegion
+	configTmp, err := common.GetConnConfig(vmInfoData.ConnectionName)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
 	}
-
-	vmInfoData.Location, err = common.GetCloudLocation(configTmp.ProviderName, nativeRegion)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
+	vmInfoData.Location = configTmp.RegionDetail.Location
 
 	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
 	// Update VM object

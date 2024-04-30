@@ -177,7 +177,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 
 	url := common.DragonflyRestUrl + cmd
 	log.Debug().Msg("\n[Calling DRAGONFLY] START")
-	log.Debug().Msg("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.Location.CloudType + ", service_type:" + mcisServiceType)
+	log.Debug().Msg("VM:" + nsID + "/" + mcisID + "/" + vmID + ", URL:" + url + ", userName:" + userName + ", cspType:" + vmInfoTmp.ConnectionConfig.ProviderName + ", service_type:" + mcisServiceType)
 
 	requestBody := monAgentInstallReq{
 		NsId:        nsID,
@@ -187,7 +187,7 @@ func CallMonitoringAsync(wg *sync.WaitGroup, nsID string, mcisID string, mcisSer
 		Port:        sshPort,
 		UserName:    userName,
 		SshKey:      privateKey,
-		CspType:     vmInfoTmp.Location.CloudType,
+		CspType:     vmInfoTmp.ConnectionConfig.ProviderName,
 		ServiceType: mcisServiceType,
 	}
 	if requestBody.SshKey == "" {

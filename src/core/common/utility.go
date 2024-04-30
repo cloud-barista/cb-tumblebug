@@ -317,16 +317,25 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 
 // ConnConfig is struct for containing modified CB-Spider struct for connection config
 type ConnConfig struct {
-	ConfigName           string       `json:"configName"`
-	ProviderName         string       `json:"providerName"`
-	DriverName           string       `json:"driverName"`
-	CredentialName       string       `json:"credentialName"`
-	CredentialHolder     string       `json:"credentialHolder"`
-	RegionName           string       `json:"regionName"`
-	RegionDetail         RegionDetail `json:"regionDetail"`
-	RegionRepresentative bool         `json:"regionRepresentative"`
-	Location             GeoLocation  `json:"location"`
-	Enabled              bool         `json:"enabled"`
+	ConfigName           string         `json:"configName"`
+	ProviderName         string         `json:"providerName"`
+	DriverName           string         `json:"driverName"`
+	CredentialName       string         `json:"credentialName"`
+	CredentialHolder     string         `json:"credentialHolder"`
+	RegionZoneInfoName   string         `json:"regionZoneInfoName"`
+	RegionZoneInfo       RegionZoneInfo `json:"regionZoneInfo"`
+	RegionDetail         RegionDetail   `json:"regionDetail"`
+	RegionRepresentative bool           `json:"regionRepresentative"`
+	Verified             bool           `json:"verified"`
+}
+
+// SpiderConnConfig is struct for containing a CB-Spider struct for connection config
+type SpiderConnConfig struct {
+	ConfigName     string
+	ProviderName   string
+	DriverName     string
+	CredentialName string
+	RegionName     string
 }
 
 // CloudDriverInfo is struct for containing a CB-Spider struct for cloud driver info
@@ -349,39 +358,6 @@ type CredentialInfo struct {
 	CredentialHolder string     `json:"credentialHolder"`
 	ProviderName     string     `json:"providerName"`
 	KeyValueInfoList []KeyValue `json:"keyValueInfoList"`
-}
-
-// GeoLocation is struct for geographical location
-type GeoLocation struct {
-	Latitude     string `json:"latitude"`
-	Longitude    string `json:"longitude"`
-	BriefAddr    string `json:"briefAddr"`
-	CloudType    string `json:"cloudType"`
-	NativeRegion string `json:"nativeRegion"`
-}
-
-// GetCloudLocation is to get location of clouds (need error handling)
-func GetCloudLocation(cloudType string, nativeRegion string) (GeoLocation, error) {
-	cloudType = strings.ToLower(cloudType)
-	nativeRegion = strings.ToLower(nativeRegion)
-
-	cspDetail, ok := RuntimeCloudInfo.CSPs[cloudType]
-	if !ok {
-		return GeoLocation{}, fmt.Errorf("cloudType '%s' not found", cloudType)
-	}
-
-	regionDetail, ok := cspDetail.Regions[nativeRegion]
-	if !ok {
-		return GeoLocation{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
-	}
-
-	return GeoLocation{
-		Latitude:     fmt.Sprintf("%f", regionDetail.Location.Latitude),
-		Longitude:    fmt.Sprintf("%f", regionDetail.Location.Longitude),
-		BriefAddr:    regionDetail.Location.Display,
-		CloudType:    cloudType,
-		NativeRegion: nativeRegion,
-	}, nil
 }
 
 // GetConnConfig is func to get connection config
@@ -485,7 +461,7 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 	// filter only verified
 	if filterVerified {
 		for _, connConfig := range filteredConnections.Connectionconfig {
-			if connConfig.Enabled {
+			if connConfig.Verified {
 				tmpConnections.Connectionconfig = append(tmpConnections.Connectionconfig, connConfig)
 			}
 		}
@@ -509,12 +485,18 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 	return filteredConnections, nil
 }
 
-// Region is struct for containing region struct of CB-Spider
-type Region struct {
+// SpiderRegionZoneInfo is struct for containing region struct of CB-Spider
+type SpiderRegionZoneInfo struct {
 	RegionName        string     // ex) "region01"
 	ProviderName      string     // ex) "GCP"
 	KeyValueInfoList  []KeyValue // ex) { {region, us-east1}, {zone, us-east1-c} }
 	AvailableZoneList []string
+}
+
+// RegionZoneInfo is struct for containing region struct
+type RegionZoneInfo struct {
+	AssignedRegion string `json:"assignedRegion"`
+	AssignedZone   string `json:"assignedZone"`
 }
 
 // RegisterAllCloudInfo is func to register all cloud info from asset to CB-Spider
@@ -571,8 +553,8 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	client := resty.New()
 	url := SpiderRestUrl + "/region"
 	method := "POST"
-	var callResult Region
-	requestBody := Region{ProviderName: strings.ToUpper(providerName), RegionName: regionName}
+	var callResult SpiderRegionZoneInfo
+	requestBody := SpiderRegionZoneInfo{ProviderName: strings.ToUpper(providerName), RegionName: regionName}
 
 	if RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones == nil {
 		requestBody.RegionName = providerName + "-" + regionName
@@ -703,12 +685,12 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 				configName = region.RegionName
 			}
 			connConfig := ConnConfig{
-				ConfigName:       configName,
-				ProviderName:     strings.ToUpper(callResult.ProviderName),
-				DriverName:       cspDetail.Driver,
-				CredentialName:   callResult.CredentialName,
-				RegionName:       region.RegionName,
-				CredentialHolder: req.CredentialHolder,
+				ConfigName:         configName,
+				ProviderName:       strings.ToUpper(callResult.ProviderName),
+				DriverName:         cspDetail.Driver,
+				CredentialName:     callResult.CredentialName,
+				RegionZoneInfoName: region.RegionName,
+				CredentialHolder:   req.CredentialHolder,
 			}
 			_, err := RegisterConnectionConfig(connConfig)
 			if err != nil {
@@ -743,22 +725,17 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 			go func(connConfig ConnConfig) {
 				defer wg.Done()
 				RandomSleep(0, 30)
-				enabled, err := CheckConnConfigAvailable(connConfig.ConfigName)
+				verified, err := CheckConnConfigAvailable(connConfig.ConfigName)
 				if err != nil {
 					log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
 				}
-				connConfig.Enabled = enabled
-				if enabled {
-					regionInfo, err := GetRegion(connConfig.ProviderName, connConfig.Location.NativeRegion)
+				connConfig.Verified = verified
+				if verified {
+					regionInfo, err := GetRegion(connConfig.ProviderName, connConfig.RegionDetail.RegionName)
 					if err != nil {
-						log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionName)
-						connConfig.Enabled = false
+						log.Error().Err(err).Msgf("Cannot get region for %s", connConfig.RegionDetail.RegionName)
+						connConfig.Verified = false
 					} else {
-						location, err := GetCloudLocation(connConfig.ProviderName, connConfig.Location.NativeRegion)
-						if err != nil {
-							log.Error().Err(err).Msgf("Cannot get location for %s/%s", connConfig.ProviderName, connConfig.Location.NativeRegion)
-						}
-						connConfig.Location = location
 						connConfig.RegionDetail = regionInfo
 					}
 				}
@@ -772,7 +749,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		}()
 
 		for result := range results {
-			if result.Enabled {
+			if result.Verified {
 				key := GenConnectionKey(result.ConfigName)
 				val, err := json.Marshal(result)
 				if err != nil {
@@ -800,9 +777,9 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 		regionRepresentative := make(map[string]ConnConfig)
 		for _, connConfig := range allConnections.Connectionconfig {
-			prefix := req.ProviderName + "-" + connConfig.Location.NativeRegion
+			prefix := req.ProviderName + "-" + connConfig.RegionDetail.RegionName
 			prefix = strings.ToLower(prefix)
-			if strings.HasPrefix(connConfig.RegionName, prefix) {
+			if strings.HasPrefix(connConfig.RegionZoneInfoName, prefix) {
 				if _, exists := regionRepresentative[prefix]; !exists {
 					regionRepresentative[prefix] = connConfig
 				}
@@ -830,8 +807,13 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	client := resty.New()
 	url := SpiderRestUrl + "/connectionconfig"
 	method := "POST"
-	var callResult ConnConfig
-	requestBody := connConfig
+	var callResult SpiderConnConfig
+	requestBody := SpiderConnConfig{}
+	requestBody.ConfigName = connConfig.ConfigName
+	requestBody.ProviderName = connConfig.ProviderName
+	requestBody.DriverName = connConfig.DriverName
+	requestBody.CredentialName = connConfig.CredentialName
+	requestBody.RegionName = connConfig.RegionZoneInfoName
 
 	err := ExecuteHttpRequest(
 		client,
@@ -850,16 +832,16 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	}
 
 	// Register connection to cb-tumblebug with availability check
-	// enabled, err := CheckConnConfigAvailable(callResult.ConfigName)
+	// verified, err := CheckConnConfigAvailable(callResult.ConfigName)
 	// if err != nil {
 	// 	log.Error().Err(err).Msgf("Cannot check ConnConfig %s is available", connConfig.ConfigName)
 	// }
 	// callResult.ProviderName = strings.ToLower(callResult.ProviderName)
-	// if enabled {
+	// if verified {
 	// 	nativeRegion, _, err := GetRegion(callResult.RegionName)
 	// 	if err != nil {
 	// 		log.Error().Err(err).Msgf("Cannot get region for %s", callResult.RegionName)
-	// 		callResult.Enabled = false
+	// 		callResult.Verified = false
 	// 	} else {
 	// 		location, err := GetCloudLocation(callResult.ProviderName, nativeRegion)
 	// 		if err != nil {
@@ -869,11 +851,54 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	// 	}
 	// }
 
-	callResult.CredentialHolder = connConfig.CredentialHolder
-	callResult.ProviderName = strings.ToLower(callResult.ProviderName)
+	connection := ConnConfig{}
+	connection.ConfigName = callResult.ConfigName
+	connection.ProviderName = strings.ToLower(callResult.ProviderName)
+	connection.DriverName = callResult.DriverName
+	connection.CredentialName = callResult.CredentialName
+	connection.RegionZoneInfoName = callResult.RegionName
+	connection.CredentialHolder = connConfig.CredentialHolder
 
-	key := GenConnectionKey(callResult.ConfigName)
-	val, err := json.Marshal(callResult)
+	// load region info
+	url = SpiderRestUrl + "/region/" + connection.RegionZoneInfoName
+	method = "GET"
+	var callResultRegion SpiderRegionZoneInfo
+	requestNoBody := NoBody
+
+	err = ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestNoBody),
+		&requestNoBody,
+		&callResultRegion,
+		MediumDuration,
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return ConnConfig{}, err
+	}
+	regionZoneInfo := RegionZoneInfo{}
+	for _, keyVal := range callResultRegion.KeyValueInfoList {
+		if keyVal.Key == "Region" {
+			regionZoneInfo.AssignedRegion = keyVal.Value
+		}
+		if keyVal.Key == "Zone" {
+			regionZoneInfo.AssignedZone = keyVal.Value
+		}
+	}
+	connection.RegionZoneInfo = regionZoneInfo
+
+	regionDetail, err := GetRegion(connection.ProviderName, connection.RegionZoneInfo.AssignedRegion)
+	if err != nil {
+		log.Error().Err(err).Msgf("Cannot get region for %s", connection.RegionZoneInfo.AssignedRegion)
+		return ConnConfig{}, err
+	}
+	connection.RegionDetail = regionDetail
+
+	key := GenConnectionKey(connection.ConfigName)
+	val, err := json.Marshal(connection)
 	if err != nil {
 		return ConnConfig{}, err
 	}
@@ -883,7 +908,7 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 		return ConnConfig{}, err
 	}
 
-	return callResult, nil
+	return connection, nil
 }
 
 // GetRegion is func to get regionInfo with the native region name
@@ -917,12 +942,12 @@ func GetRegion(ProviderName, RegionName string) (RegionDetail, error) {
 		}
 	}
 
-	return RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", RegionName, ProviderName)
+	return RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
 }
 
 // RegionList is array struct for Region
 type RegionList struct {
-	Region []Region `json:"region"`
+	Region []SpiderRegionZoneInfo `json:"region"`
 }
 
 // GetRegionList is func to retrieve region list

@@ -91,7 +91,7 @@ type TbVmStatusInfo struct {
 	PrivateIp string `json:"privateIp"`
 	SSHPort   string `json:"sshPort"`
 
-	Location common.GeoLocation `json:"location"`
+	Location common.Location `json:"location"`
 }
 
 // ListMcisId is func to list MCIS ID

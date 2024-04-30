@@ -42,6 +42,7 @@ type CSPDetail struct {
 
 // RegionDetail is structure for region information
 type RegionDetail struct {
+	RegionName  string   `mapstructure:"regionName" json:"regionName"`
 	Description string   `mapstructure:"description" json:"description"`
 	Location    Location `mapstructure:"location" json:"location"`
 	Zones       []string `mapstructure:"zone" json:"zones"`
@@ -71,6 +72,7 @@ func AdjustKeysToLowercase(cloudInfo *CloudInfo) {
 		newRegions := make(map[string]RegionDetail)
 		for regionKey, regionDetail := range cspDetail.Regions {
 			lowerRegionKey := strings.ToLower(regionKey)
+			regionDetail.RegionName = lowerRegionKey
 			newRegions[lowerRegionKey] = regionDetail
 		}
 		cspDetail.Regions = newRegions

@@ -1451,9 +1451,9 @@ func LoadCommonResource() (common.IdList, error) {
 				return
 			}
 			log.Info().Msgf("[%s] #Spec: %d", connConfig.ConfigName, len(specsInConnection.Vmspec))
-			validRepresentativeConnectionMap.Store(connConfig.ProviderName+"-"+connConfig.Location.NativeRegion, connConfig)
+			validRepresentativeConnectionMap.Store(connConfig.ProviderName+"-"+connConfig.RegionDetail.RegionName, connConfig)
 			for _, spec := range specsInConnection.Vmspec {
-				key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.Location.NativeRegion, "", spec.Name)
+				key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
 				// instead of connConfig.RegionName, spec.Region will be used in the future
 				//log.Info().Msgf("specMap.Store(%s, spec)", key)
 				specMap.Store(key, spec)
@@ -1503,7 +1503,7 @@ func LoadCommonResource() (common.IdList, error) {
 				if strings.EqualFold(connConfig.ProviderName, row[0]) {
 					newRow := make([]string, len(row))
 					copy(newRow, row)
-					newRow[1] = connConfig.Location.NativeRegion
+					newRow[1] = connConfig.RegionDetail.RegionName
 					newRowsSpec = append(newRowsSpec, newRow)
 					//log.Info().Msgf("Expended row: %s", newRow)
 				}
@@ -1534,7 +1534,7 @@ func LoadCommonResource() (common.IdList, error) {
 				if strings.EqualFold(connConfig.ProviderName, row[0]) {
 					newRow := make([]string, len(row))
 					copy(newRow, row)
-					newRow[1] = connConfig.Location.NativeRegion
+					newRow[1] = connConfig.RegionDetail.RegionName
 					newRowsImg = append(newRowsImg, newRow)
 					//log.Info().Msgf("Expended row: %s", newRow)
 				}

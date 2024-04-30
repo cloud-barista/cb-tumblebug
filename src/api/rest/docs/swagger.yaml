@@ -55,16 +55,16 @@ definitions:
         type: string
       enabled:
         type: boolean
-      location:
-        $ref: '#/definitions/common.GeoLocation'
       providerName:
         type: string
       regionDetail:
         $ref: '#/definitions/common.RegionDetail'
-      regionName:
-        type: string
       regionRepresentative:
         type: boolean
+      regionZoneInfo:
+        $ref: '#/definitions/common.RegionZoneInfo'
+      regionZoneInfoName:
+        type: string
     type: object
   common.ConnConfigList:
     properties:
@@ -95,19 +95,6 @@ definitions:
           $ref: '#/definitions/common.KeyValue'
         type: array
       providerName:
-        type: string
-    type: object
-  common.GeoLocation:
-    properties:
-      briefAddr:
-        type: string
-      cloudType:
-        type: string
-      latitude:
-        type: string
-      longitude:
-        type: string
-      nativeRegion:
         type: string
     type: object
   common.IID:
@@ -165,30 +152,14 @@ definitions:
         example: ns01
         type: string
     type: object
-  common.Region:
-    properties:
-      availableZoneList:
-        items:
-          type: string
-        type: array
-      keyValueInfoList:
-        description: ex) { {region, us-east1}, {zone, us-east1-c} }
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      providerName:
-        description: ex) "GCP"
-        type: string
-      regionName:
-        description: ex) "region01"
-        type: string
-    type: object
   common.RegionDetail:
     properties:
       description:
         type: string
       location:
         $ref: '#/definitions/common.Location'
+      regionName:
+        type: string
       zones:
         items:
           type: string
@@ -198,8 +169,15 @@ definitions:
     properties:
       region:
         items:
-          $ref: '#/definitions/common.Region'
+          $ref: '#/definitions/common.SpiderRegionZoneInfo'
         type: array
+    type: object
+  common.RegionZoneInfo:
+    properties:
+      assignedRegion:
+        type: string
+      assignedZone:
+        type: string
     type: object
   common.RequestDetails:
     properties:
@@ -295,6 +273,24 @@ definitions:
     properties:
       message:
         example: Any message
+        type: string
+    type: object
+  common.SpiderRegionZoneInfo:
+    properties:
+      availableZoneList:
+        items:
+          type: string
+        type: array
+      keyValueInfoList:
+        description: ex) { {region, us-east1}, {zone, us-east1-c} }
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      providerName:
+        description: ex) "GCP"
+        type: string
+      regionName:
+        description: ex) "region01"
         type: string
     type: object
   common.TbConnectionName:
@@ -2263,7 +2259,7 @@ definitions:
       listener:
         $ref: '#/definitions/mcis.TbNLBListenerInfo'
       location:
-        $ref: '#/definitions/common.GeoLocation'
+        $ref: '#/definitions/common.Location'
       name:
         type: string
       scope:
@@ -2497,7 +2493,7 @@ definitions:
       label:
         type: string
       location:
-        $ref: '#/definitions/common.GeoLocation'
+        $ref: '#/definitions/common.Location'
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'
@@ -2644,7 +2640,7 @@ definitions:
       id:
         type: string
       location:
-        $ref: '#/definitions/common.GeoLocation'
+        $ref: '#/definitions/common.Location'
       monAgentStatus:
         description: Montoring agent status
         example: '[installed, notInstalled, failed]'

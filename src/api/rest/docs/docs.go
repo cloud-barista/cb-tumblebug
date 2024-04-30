@@ -8265,20 +8265,20 @@ const docTemplate = `{
                 "enabled": {
                     "type": "boolean"
                 },
-                "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
-                },
                 "providerName": {
                     "type": "string"
                 },
                 "regionDetail": {
                     "$ref": "#/definitions/common.RegionDetail"
                 },
-                "regionName": {
-                    "type": "string"
-                },
                 "regionRepresentative": {
                     "type": "boolean"
+                },
+                "regionZoneInfo": {
+                    "$ref": "#/definitions/common.RegionZoneInfo"
+                },
+                "regionZoneInfoName": {
+                    "type": "string"
                 }
             }
         },
@@ -8326,26 +8326,6 @@ const docTemplate = `{
                     }
                 },
                 "providerName": {
-                    "type": "string"
-                }
-            }
-        },
-        "common.GeoLocation": {
-            "type": "object",
-            "properties": {
-                "briefAddr": {
-                    "type": "string"
-                },
-                "cloudType": {
-                    "type": "string"
-                },
-                "latitude": {
-                    "type": "string"
-                },
-                "longitude": {
-                    "type": "string"
-                },
-                "nativeRegion": {
                     "type": "string"
                 }
             }
@@ -8432,32 +8412,6 @@ const docTemplate = `{
                 }
             }
         },
-        "common.Region": {
-            "type": "object",
-            "properties": {
-                "availableZoneList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "keyValueInfoList": {
-                    "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/common.KeyValue"
-                    }
-                },
-                "providerName": {
-                    "description": "ex) \"GCP\"",
-                    "type": "string"
-                },
-                "regionName": {
-                    "description": "ex) \"region01\"",
-                    "type": "string"
-                }
-            }
-        },
         "common.RegionDetail": {
             "type": "object",
             "properties": {
@@ -8466,6 +8420,9 @@ const docTemplate = `{
                 },
                 "location": {
                     "$ref": "#/definitions/common.Location"
+                },
+                "regionName": {
+                    "type": "string"
                 },
                 "zones": {
                     "type": "array",
@@ -8481,8 +8438,19 @@ const docTemplate = `{
                 "region": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/common.Region"
+                        "$ref": "#/definitions/common.SpiderRegionZoneInfo"
                     }
+                }
+            }
+        },
+        "common.RegionZoneInfo": {
+            "type": "object",
+            "properties": {
+                "assignedRegion": {
+                    "type": "string"
+                },
+                "assignedZone": {
+                    "type": "string"
                 }
             }
         },
@@ -8620,6 +8588,32 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Any message"
+                }
+            }
+        },
+        "common.SpiderRegionZoneInfo": {
+            "type": "object",
+            "properties": {
+                "availableZoneList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "keyValueInfoList": {
+                    "description": "ex) { {region, us-east1}, {zone, us-east1-c} }",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "providerName": {
+                    "description": "ex) \"GCP\"",
+                    "type": "string"
+                },
+                "regionName": {
+                    "description": "ex) \"region01\"",
+                    "type": "string"
                 }
             }
         },
@@ -11456,7 +11450,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/mcis.TbNLBListenerInfo"
                 },
                 "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
+                    "$ref": "#/definitions/common.Location"
                 },
                 "name": {
                     "type": "string"
@@ -11771,7 +11765,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
+                    "$ref": "#/definitions/common.Location"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",
@@ -11972,7 +11966,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "location": {
-                    "$ref": "#/definitions/common.GeoLocation"
+                    "$ref": "#/definitions/common.Location"
                 },
                 "monAgentStatus": {
                     "description": "Montoring agent status",
