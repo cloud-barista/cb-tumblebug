@@ -8,7 +8,6 @@ if ! dpkg -s python3-venv &> /dev/null; then
     sudo apt-get update && sudo apt-get install python3-venv
     if [ $? -ne 0 ]; then
         echo "Failed to install python3-venv. Please install it manually."
-        exit 1
     fi
 else
     echo "python3-venv package is already installed."

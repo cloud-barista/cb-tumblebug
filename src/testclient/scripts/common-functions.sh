@@ -138,7 +138,7 @@ function printElapsed() {
 function checkPrerequisite() {
 	# echo "Check http://$TumblebugServer/tumblebug is accessible."
 	HTTP_CODE=0
-	HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/health" --silent)
+	HTTP_CODE=$(curl -H "${AUTH}" -o /dev/null --write-out "%{http_code}\n" "http://$TumblebugServer/tumblebug/readyz" --silent)
 	if [ ${HTTP_CODE} -ge 200 -a ${HTTP_CODE} -le 204 ]; then
 		 echo "[CB-Tumblebug is READY]"	
 	else
