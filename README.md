@@ -290,6 +290,12 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
      - `credentials.yaml` 는 CB-TB가 지원하는 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 사용자 인증 정보를 입력 및 보관하는 파일
      - `~/.cloud-barista/` 디렉토리에 위치해야 함
      - [`template.credentials.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/template.credentials.yaml)를 참조하여 `credentials.yaml` 파일 생성 및 내용 입력 필요
+   - 파일 생성 방법: CB-TB 스크립트를 통해 `credentials.yaml` 파일 자동 생성 (`~/.cloud-barista/`)
+     ```bash
+     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+     ./scripts/init/genCredential.sh
+     ```
+   - 정보 입력 방법: ``~/.cloud-barista/credentials.yaml`에 사용자 계정 정보 입력 ([참고: CSP별 인증 정보 획득 방법](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials))
        ```example
        ### Cloud credentials for credential holders (default: admin)
        credentialholder:
@@ -310,13 +316,6 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
              ClientSecret:
            ...
        ```
-   - 파일 생성 방법: CB-TB 스크립트를 통해 `credentials.yaml` 파일 자동 생성 (`~/.cloud-barista/`)
-     ```bash
-     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-     ./scripts/init/genCredential.sh
-     ```
-   - 정보 입력 방법: ``~/.cloud-barista/credentials.yaml`에 사용자 계정 정보 입력 ([참고: CSP별 인증 정보 획득 방법](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials))
-
 - 모든 멀티 클라우드 연결 정보 및 공통 자원 등록 
    - 개요
      - CB-TB의 멀티클라우드 인프라를 생성하기 위해서 클라우드에 대한 연결 정보 (크리덴셜), 공통 활용 이미지 및 스펙 등의 등록이 필요
@@ -325,9 +324,9 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
        cd ~/go/src/github.com/cloud-barista/cb-tumblebug
        ./scripts/init/init.sh
        ```
-     - `~/.cloud-barista/credentials.yaml`의 크레덴셜이 자동 등록됨
-     - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 클라우드 정보 자동 등록됨
-     - [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets)의 파일에 기록된 공통 이미지 및 스펙 자동 등록됨
+     - `~/.cloud-barista/credentials.yaml`의 크레덴셜이 자동 등록됨 ([`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml)에 기록된 모든 CSP 및 리전 정보가 시스템에 자동 등록됨
+       - 참고: 해당 파일은 [`update-cloudinfo.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/misc/update-cloudinfo.py)를 통해 최신 CSP 현황을 확인하고, 리뷰 파일을 검토하여 업데이트할 수 있음 (업데이트 기여 환영)
+     - [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets)의 [`cloudimage.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudimage.csv) [`cloudspec.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudspec.csv) 파일에 기록된 공통 이미지 및 스펙 자동 등록됨
 
 ### (5) CB-Tumblebug 서버 종료 및 버전 업그레이드
 
