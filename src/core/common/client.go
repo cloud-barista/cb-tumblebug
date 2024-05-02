@@ -191,10 +191,12 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	if err != nil {
+		requestDone(requestKey)
 		return fmt.Errorf("[Error from: %s] Message: %s", url, err.Error())
 	}
 
 	if resp.IsError() {
+		requestDone(requestKey)
 		return fmt.Errorf("[Error from: %s] Status code: %s, Message: %s", url, resp.Status(), resp.Body())
 	}
 

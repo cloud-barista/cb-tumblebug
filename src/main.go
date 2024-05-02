@@ -175,6 +175,24 @@ func setConfig() {
 	// fmt.Printf("%+v\n", common.RuntimeCloudInfo)
 	common.PrintCloudInfoTable(common.RuntimeCloudInfo)
 
+	// Wait until CB-Spider is ready
+	maxAttempts := 60 // (3 mins)
+	attempt := 0
+
+	for attempt < maxAttempts {
+		if common.CheckSpiderReady() == nil {
+			log.Info().Msg("CB-Spider is now ready.")
+			break
+		}
+		log.Info().Msgf("CB-Spider at %s is not ready. Attempt %d/%d", common.SpiderRestUrl, attempt+1, maxAttempts)
+		time.Sleep(3 * time.Second)
+		attempt++
+	}
+
+	if attempt == maxAttempts {
+		panic("Failed to confirm CB-Spider readiness within the allowed time. \nCheck the connection to CB-Spider.")
+	}
+
 	err = common.RegisterAllCloudInfo()
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to register cloud info")

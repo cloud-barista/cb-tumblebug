@@ -417,6 +417,34 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 	return true, nil
 }
 
+// CheckSpiderStatus is func to check if CB-Spider is ready
+func CheckSpiderReady() error {
+
+	var callResult interface{}
+	client := resty.New()
+	url := SpiderRestUrl + "/readyz"
+	method := "GET"
+	requestBody := NoBody
+
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		ShortDuration,
+	)
+
+	if err != nil {
+		//log.Err(err).Msg("")
+		return err
+	}
+
+	return nil
+}
+
 // GetConnConfigList is func to list filtered connection configs
 func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filterRegionRepresentative bool) (ConnConfigList, error) {
 	var filteredConnections ConnConfigList
@@ -647,7 +675,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 	var callResult CredentialInfo
 	requestBody := reqToSpider
 
-	PrintJsonPretty(requestBody)
+	//PrintJsonPretty(requestBody)
 
 	err := ExecuteHttpRequest(
 		client,
@@ -664,7 +692,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		log.Error().Err(err).Msg("")
 		return CredentialInfo{}, err
 	}
-	PrintJsonPretty(callResult)
+	//PrintJsonPretty(callResult)
 
 	callResult.CredentialHolder = req.CredentialHolder
 	callResult.ProviderName = strings.ToLower(callResult.ProviderName)
