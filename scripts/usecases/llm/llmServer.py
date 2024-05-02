@@ -30,11 +30,9 @@ template = {
 }
 swagger = Swagger(app, template=template)
 
-model="tiiuae/falcon-7b-instruct"
-
 parser = argparse.ArgumentParser(description='Start a Flask app with a specified model.')
 parser.add_argument('--port', type=int, default=5000, help='Port number to run the Flask app on.')
-parser.add_argument('--model', type=str, default=model, help='Model name to load.')
+parser.add_argument('--model', type=str, default="tiiuae/falcon-7b-instruct", help='Model name to load.')
 parser.add_argument('--token', type=int, default=1024, help='Set max_new_tokens.')
 args = parser.parse_args()
 
