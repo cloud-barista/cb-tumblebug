@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Remove subnet in ${MCIRRegionName}"
+	echo "- Remove subnet in ${MCIRRegionNativeName}"
 
 	CIDRNum=$(($INDEX+1))
 	CIDRDiff=$(($CIDRNum*$REGION))
@@ -30,9 +30,9 @@ function CallTB() {
             CSP=${CSPType[$cspi]}
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 				
-				MCIRRegionName=${RegionName[$cspi,$cspj]}
+				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallTB
 
@@ -44,7 +44,7 @@ function CallTB() {
 	else
 		echo ""
 		
-		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

@@ -37,7 +37,7 @@ for ((cspi = 1; cspi <= INDEXX; cspi++)); do
 			RootDiskSize="${DISK_SIZE[$cspi,$cspj]}"
 		fi
 
-		echo -e "${BLUE}${BOLD}   [$cspi,$cspj] Region : ${RegionName[$cspi,$cspj]} (${RegionLocation[$cspi,$cspj]}) ${NC}" 
+		echo -e "${BLUE}${BOLD}   [$cspi,$cspj] Region : ${RegionNativeName[$cspi,$cspj]} (${RegionLocation[$cspi,$cspj]}) ${NC}" 
 		echo -e "    - VM SPEC : ${SPEC_NAME[$cspi,$cspj]} "
 		echo -e "    - VM DISK : ${RootDiskType} (${RootDiskSize} GB) "
 		echo -e "    - VM IMAGE : ${IMAGE_TYPE[$cspi,$cspj]} (${IMAGE_NAME[$cspi,$cspj]}) "

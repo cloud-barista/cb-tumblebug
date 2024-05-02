@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Create vNet in ${MCIRRegionName}"
+	echo "- Create vNet in ${MCIRRegionNativeName}"
 
 	CIDRNum=$(($INDEX+1))
 	CIDRDiff=$(($CIDRNum*$REGION))
@@ -50,9 +50,9 @@ EOF
             CSP=${CSPType[$cspi]}
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 				
-				MCIRRegionName=${RegionName[$cspi,$cspj]}
+				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallTB
 
@@ -64,7 +64,7 @@ EOF
 	else
 		echo ""
 		
-		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

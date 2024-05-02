@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Get conn config in ${MCIRRegionName}"
+	echo "- Get conn config in ${MCIRRegionNativeName}"
 
 	# for Cloud Connection Config Info
     curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/connConfig/${CONN_CONFIG[$INDEX,$REGION]} | jq ''
@@ -31,8 +31,8 @@ function CallTB() {
 				REGION=$cspj
 				echo $CSP
 				echo $REGION
-				echo ${RegionName[$cspi,$cspj]}
-				MCIRRegionName=${RegionName[$cspi,$cspj]}
+				echo ${RegionNativeName[$cspi,$cspj]}
+				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallTB
 
@@ -44,7 +44,7 @@ function CallTB() {
 	else
 		echo ""
 		
-		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

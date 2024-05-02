@@ -556,31 +556,39 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	var callResult SpiderRegionZoneInfo
 	requestBody := SpiderRegionZoneInfo{ProviderName: strings.ToUpper(providerName), RegionName: regionName}
 
-	if RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones == nil {
-		requestBody.RegionName = providerName + "-" + regionName
-		keyValueInfoList := []KeyValue{
+	// register representative regionZone (region only)
+	requestBody.RegionName = providerName + "-" + regionName
+	keyValueInfoList := []KeyValue{}
+	if len(RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones) > 0 {
+		keyValueInfoList = []KeyValue{
+			{Key: "Region", Value: regionName},
+			{Key: "Zone", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones[0]},
+		}
+	} else {
+		keyValueInfoList = []KeyValue{
 			{Key: "Region", Value: regionName},
 			{Key: "Zone", Value: "N/A"},
 		}
-		requestBody.KeyValueInfoList = keyValueInfoList
+	}
+	requestBody.KeyValueInfoList = keyValueInfoList
 
-		err := ExecuteHttpRequest(
-			client,
-			method,
-			url,
-			nil,
-			SetUseBody(requestBody),
-			&requestBody,
-			&callResult,
-			MediumDuration,
-		)
+	err := ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		SetUseBody(requestBody),
+		&requestBody,
+		&callResult,
+		MediumDuration,
+	)
 
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return err
 	}
 
+	// register all regionZones
 	for _, zoneName := range RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones {
 		requestBody.RegionName = providerName + "-" + regionName + "-" + zoneName
 		keyValueInfoList := []KeyValue{
@@ -756,6 +764,9 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 					return CredentialInfo{}, err
 				}
 				err = CBStore.Put(string(key), string(val))
+				if err != nil {
+					return callResult, err
+				}
 			}
 		}
 	}
@@ -778,8 +789,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 		regionRepresentative := make(map[string]ConnConfig)
 		for _, connConfig := range allConnections.Connectionconfig {
 			prefix := req.ProviderName + "-" + connConfig.RegionDetail.RegionName
-			prefix = strings.ToLower(prefix)
-			if strings.HasPrefix(connConfig.RegionZoneInfoName, prefix) {
+			if strings.EqualFold(connConfig.RegionZoneInfoName, prefix) {
 				if _, exists := regionRepresentative[prefix]; !exists {
 					regionRepresentative[prefix] = connConfig
 				}
@@ -795,6 +805,46 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 			err = CBStore.Put(string(key), string(val))
 			if err != nil {
 				return callResult, err
+			}
+		}
+	}
+
+	verifyRegionRepresentativeAndUpdateZone := true
+	if verifyRegionRepresentativeAndUpdateZone {
+		verifiedConnections, err := GetConnConfigList(req.CredentialHolder, true, false)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return callResult, err
+		}
+		allRepresentativeRegionConnections, err := GetConnConfigList(req.CredentialHolder, false, true)
+		for _, connConfig := range allRepresentativeRegionConnections.Connectionconfig {
+			if strings.EqualFold(req.ProviderName, connConfig.ProviderName) {
+				verified := false
+				for _, verifiedConnConfig := range verifiedConnections.Connectionconfig {
+					if strings.EqualFold(connConfig.ConfigName, verifiedConnConfig.ConfigName) {
+						verified = true
+					}
+				}
+				// update representative regionZone with the verified regionZone
+				if !verified {
+					for _, verifiedConnConfig := range verifiedConnections.Connectionconfig {
+						if strings.HasPrefix(verifiedConnConfig.ConfigName, connConfig.ConfigName) {
+							connConfig.RegionZoneInfoName = verifiedConnConfig.RegionZoneInfoName
+							connConfig.RegionZoneInfo = verifiedConnConfig.RegionZoneInfo
+							break
+						}
+					}
+					// update DB
+					key := GenConnectionKey(connConfig.ConfigName)
+					val, err := json.Marshal(connConfig)
+					if err != nil {
+						return callResult, err
+					}
+					err = CBStore.Put(string(key), string(val))
+					if err != nil {
+						return callResult, err
+					}
+				}
 			}
 		}
 	}

@@ -14,7 +14,7 @@ echo -e "${BLUE}${BOLD}[Cloud Region]${NC}"
 echo -e "${BLUE}"
 curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region |
     jq '.region' |
-    jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), (.[] | [.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+    jq -r '(["RegionNativeName","ProviderName","Region","Zone"] | (., map(length*"-"))), (.[] | [.RegionNativeName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
     column -t
 echo -e "${NC}"
 echo ""
@@ -42,7 +42,7 @@ echo -e "${BLUE}${BOLD}[Cloud Connection Config]${NC}"
 echo -e "${BLUE}"
 curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig |
     jq '.connectionconfig' |
-    jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), (.[] | [.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
+    jq -r '(["ConfigName","RegionNativeName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), (.[] | [.ConfigName, .RegionNativeName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
     column -t
 echo -e "${NC}"
 #}
