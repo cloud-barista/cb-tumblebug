@@ -83,7 +83,7 @@ fi
 
 # Step 4: Run the Python script in the background using nohup and virtual environment's python
 echo "[$SERVICE_NAME] Starting LLM service in the background..."
-nohup $VENV_PATH/bin/python $SOURCE_FILE --ip "$IP" --port "$PORT" --model "$MODEL" --token "$TOKEN" > $LOG_FILE 2>&1 &
+nohup $VENV_PATH/bin/python $SOURCE_FILE --port "$PORT" --model "$MODEL" --token "$TOKEN" > $LOG_FILE 2>&1 &
 # Sleep for 20 seconds to allow the service to start
 sleep 20
 
