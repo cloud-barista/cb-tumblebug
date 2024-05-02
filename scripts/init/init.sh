@@ -3,11 +3,20 @@
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 
 # Python version check
-MIN_MAJOR=3
-MIN_MINOR=8
-if ! python3 -c "import sys; assert sys.version_info >= ($MIN_MAJOR, $MIN_MINOR), f'Python $MIN_MAJOR.$MIN_MINOR or newer is required'"; then
-    echo "Your Python version is too old. Please upgrade to $MIN_MAJOR.$MIN_MINOR or newer."
-    exit 1
+PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+echo "Detected Python version: $PYTHON_VERSION"
+PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+
+# Install python3-venv
+if ! dpkg -s python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv &> /dev/null; then
+    echo "python3-venv package for Python ${PYTHON_MAJOR}.${PYTHON_MINOR} is not installed. Installing..."
+    sudo apt update
+    sudo apt install -y python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to install python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv. Please check the package availability or use DeadSnakes PPA."
+        exit 1
+    fi
 fi
 
 echo "Creating and activating the virtual environment..."
