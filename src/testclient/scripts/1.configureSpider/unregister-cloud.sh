@@ -7,7 +7,7 @@ function CallSpider() {
 
 
 	# for Cloud Region Info
-	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} | jq ''
+	curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/region/${RegionNativeName[$INDEX,$REGION]} | jq ''
     echo ""
 
 
@@ -42,7 +42,7 @@ function CallSpider() {
             CSP=${CSPType[$cspi]}
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 				
 				CallSpider
 

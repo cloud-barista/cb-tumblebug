@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallSpider() {
-    echo "- Delete vNet in ${MCIRRegionName}"
+    echo "- Delete vNet in ${MCIRRegionNativeName}"
 
     resp=$(
         curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/vpc/$NSID-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d '{ "ConnectionName": "'${CONN_CONFIG[$INDEX,$REGION]}'"}' 
@@ -25,9 +25,9 @@ function CallSpider() {
             CSP=${CSPType[$cspi]}
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionName=${RegionName[$cspi,$cspj]}
+				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallSpider
 
@@ -39,7 +39,7 @@ function CallSpider() {
 	else
 		echo ""
 		
-		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallSpider
 

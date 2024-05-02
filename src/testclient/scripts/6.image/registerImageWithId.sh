@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallTB() {
-	echo "- Register image in ${MCIRRegionName}"
+	echo "- Register image in ${MCIRRegionNativeName}"
 
 	resp=$(
         curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?action=registerWithId -H 'Content-Type: application/json' -d @- <<EOF
@@ -17,7 +17,7 @@ EOF
 	echo ""
 
 	if [ -n "${CONTAINER_IMAGE_NAME[$INDEX,$REGION]}" ]; then
-	    echo "- Register K8s node image in ${MCIRRegionName}"
+	    echo "- Register K8s node image in ${MCIRRegionNativeName}"
 
 	    resp=$(
 	    curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/image?action=registerWithId -H 'Content-Type: application/json' -d @- <<EOF
@@ -50,9 +50,9 @@ EOF
             CSP=${CSPType[$cspi]}
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionName=${CONN_CONFIG[$cspi,$cspj]}
+				MCIRRegionNativeName=${CONN_CONFIG[$cspi,$cspj]}
 
 				INDEX=$cspi
 				REGION=$cspj
@@ -66,7 +66,7 @@ EOF
 	else
 		echo ""
 		
-		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallTB
 

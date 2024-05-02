@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1744,7 +1743,7 @@ func LoadCommonResource() (common.IdList, error) {
 	}(rowsImg)
 
 	waitSpecImg.Wait()
-	sort.Strings(regiesteredIds.IdList)
+	// sort.Strings(regiesteredIds.IdList)
 	log.Info().Msgf("Registered Common Resources %d", len(regiesteredIds.IdList))
 
 	return regiesteredIds, nil

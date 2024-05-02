@@ -31,7 +31,7 @@ function test_sequence() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIR:${MCIRRegionName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionNativeName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	#cat ./executionStatus
@@ -65,7 +65,7 @@ function test_sequence_allcsp_mcir() {
 
 	echo ""
 	echo "[Logging to notify latest command history]"
-	echo "[MCIR:${MCIRRegionName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
+	echo "[MCIR:${MCIRRegionNativeName}(${SECONDS}s)] ${_self} (MCIR) ${CSP} ${REGION} ${POSTFIX} ${TestSetFile}" >>./executionStatus
 	echo ""
 	echo "[Executed Command List]"
 	cat ./executionStatus
@@ -73,7 +73,7 @@ function test_sequence_allcsp_mcir() {
 	echo ""
 
 	duration=$SECONDS
-	printElapsed $CSP $REGION $POSTFIX $TestSetFile $MCIRRegionName
+	printElapsed $CSP $REGION $POSTFIX $TestSetFile $MCIRRegionNativeName
 
 }
 SECONDS=0
@@ -100,9 +100,9 @@ if [ "${INDEX}" == "0" ]; then
 			REGION=$cspj
 			echo $CSP
 			echo $REGION
-			echo ${RegionName[1,1]}
-			MCIRRegionName=${RegionName[$cspi,$cspj]}
-			echo "- Create MCIR in ${MCIRRegionName}"		
+			echo ${RegionNativeName[1,1]}
+			MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
+			echo "- Create MCIR in ${MCIRRegionNativeName}"		
 
 			test_sequence_allcsp_mcir $CSP $REGION $POSTFIX $TestSetFile ${0##*/} &
 			# dozing 1
@@ -120,7 +120,7 @@ else
 	echo ""
 	TOTALVM=$((1 * 1 * NUMVM))
 	echo "[Create MCIS] VMs($TOTALVM) = Cloud(1) * Region(1) * subGroup($NUMVM)"
-	MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+	MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 	test_sequence $CSP $REGION $POSTFIX $TestSetFile $NUMVM ${0##*/}
 

@@ -2,9 +2,9 @@
 
 function CallSpider() {
     # for Cloud Region Info
-    echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
-    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionName[$INDEX,$REGION]} |
-    jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+    echo "[Cloud Region] ${RegionNativeName[$INDEX,$REGION]}"
+    curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/region/${RegionNativeName[$INDEX,$REGION]} |
+    jq -r '(["RegionNativeName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionNativeName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
     column -t
     echo ""
     echo ""
@@ -31,7 +31,7 @@ function CallSpider() {
     # for Cloud Connection Config Info
     echo "[Cloud Connection Config] ${CONN_CONFIG[$INDEX,$REGION]}"
     curl -H "${AUTH}" -sX GET http://$SpiderServer/spider/connectionconfig/${CONN_CONFIG[$INDEX,$REGION]} |
-    jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
+    jq -r '(["ConfigName","RegionNativeName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionNativeName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
     column -t
     echo ""
 
@@ -62,7 +62,7 @@ function CallSpider() {
             CSP=${CSPType[$cspi]}
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
                 
                 CallSpider
 

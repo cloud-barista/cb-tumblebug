@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function CallSpider() {
-    echo "- Delete dataDisk in ${MCIRRegionName}"
+    echo "- Delete dataDisk in ${MCIRRegionNativeName}"
 
     resp=$(
         curl -H "${AUTH}" -sX DELETE http://$SpiderServer/spider/disk/$NSID-${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}?force=true -H 'Content-Type: application/json' -d @- <<EOF
@@ -29,9 +29,9 @@ EOF
             CSP=${CSPType[$cspi]}
             echo "[$cspi] $CSP details"
             for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-                echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+                echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
-				MCIRRegionName=${RegionName[$cspi,$cspj]}
+				MCIRRegionNativeName=${RegionNativeName[$cspi,$cspj]}
 
 				CallSpider
 
@@ -43,7 +43,7 @@ EOF
 	else
 		echo ""
 		
-		MCIRRegionName=${CONN_CONFIG[$INDEX,$REGION]}
+		MCIRRegionNativeName=${CONN_CONFIG[$INDEX,$REGION]}
 
 		CallSpider
 

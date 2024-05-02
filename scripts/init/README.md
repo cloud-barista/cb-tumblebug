@@ -27,6 +27,10 @@ python3 init.py
 - Options: `-y, --yes` (Automatically answer yes to prompts and proceed without manual confirmation)
 
 ### Execution via Script
+The `init.sh` script is provided to automate the setup of a Python virtual environment and running the `init.py` script. This is the recommended way to run the script.
+
+Requires Python3.8 and above.
+
 ```bash
 init.sh
 ```

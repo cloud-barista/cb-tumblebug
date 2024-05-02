@@ -62,27 +62,24 @@ EOF
 
     # for Cloud Region Info
     # Differenciate Cloud Region Value for Resource Group Name
-        echo "[Cloud Region] ${RegionName[$INDEX,$REGION]}"
+        echo "[Cloud Region] ${RegionNativeName[$INDEX,$REGION]}"
         resp=$(
             curl -H "${AUTH}" -sX POST http://$SpiderServer/spider/region -H 'Content-Type: application/json' -d @- <<EOF
             {
             "ProviderName" : "${ProviderName[$INDEX]}",
             "KeyValueInfoList" : [
                 {
-                    "Key" : "${RegionKey01[$INDEX,$REGION]:-NULL}",
                     "Value" : "${RegionVal01[$INDEX,$REGION]:-NULL}"
                 },
                 {
-                    "Key" : "${RegionKey02[$INDEX,$REGION]:-NULL}",
-                    "Value" : "${RegionVal02[$INDEX,$REGION]:-NULL}"
                 }
             ],
-            "RegionName" : "${RegionName[$INDEX,$REGION]}"
+            "RegionNativeName" : "${RegionNativeName[$INDEX,$REGION]}"
         }
 EOF
         )
         echo ${resp} |
-            jq -r '(["RegionName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
+            jq -r '(["RegionNativeName","ProviderName","Region","Zone"] | (., map(length*"-"))), ([.RegionNativeName, .ProviderName, .KeyValueInfoList[0].Value, .KeyValueInfoList[1].Value]) | @tsv' |
             column -t
         echo ""
         echo ""
@@ -97,12 +94,12 @@ EOF
             "CredentialName" : "${CredentialName[$INDEX]}",
             "ProviderName" : "${ProviderName[$INDEX]}",
             "DriverName" : "${DriverName[$INDEX]}",
-            "RegionName" : "${RegionName[$INDEX,$REGION]}"
+            "RegionNativeName" : "${RegionNativeName[$INDEX,$REGION]}"
         }
 EOF
     )
     echo ${resp} |
-        jq -r '(["ConfigName","RegionName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
+        jq -r '(["ConfigName","RegionNativeName","CredentialName","DriverName","ProviderName"] | (., map(length*"-"))), ([.ConfigName, .RegionNativeName, .CredentialName, .DriverName, .ProviderName]) | @tsv' |
         column -t
     echo ""
 }
@@ -132,7 +129,7 @@ if [ "${INDEX}" == "0" ]; then
         CSP=${CSPType[$cspi]}
         echo "[$cspi] $CSP details"
         for ((cspj = 1; cspj <= INDEXY; cspj++)); do
-            echo "[$cspi,$cspj] ${RegionName[$cspi,$cspj]}"
+            echo "[$cspi,$cspj] ${RegionNativeName[$cspi,$cspj]}"
 
             CallSpider
 
