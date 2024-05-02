@@ -285,26 +285,47 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 ### (4) CB-Tumblebug 멀티 클라우드 환경 설정
 
-- 클라우드 credential 등록을 위한 `credentials.conf` 생성 및 정보 입력
+- 클라우드 credential 등록을 위한 `credentials.yaml` 생성 및 정보 입력
    - 개요
-     - `credentials.conf` 는 CB-TB가 지원하는 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 사용자 인증 정보를 입력 및 보관하는 파일
-     - [`conf/template.credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/conf/template.credentials.conf)를 참조하여 `credentials.conf` 파일 생성 및 내용 입력 필요
-   - 파일 생성 방법: CB-TB 스크립트를 통해 `credentials.conf` 파일 자동 생성
+     - `credentials.yaml` 는 CB-TB가 지원하는 클라우드 타입 (AWS, GCP, AZURE, ALIBABA 등)에 대해 사용자 인증 정보를 입력 및 보관하는 파일
+     - `~/.cloud-barista/` 디렉토리에 위치해야 함
+     - [`template.credentials.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/template.credentials.yaml)를 참조하여 `credentials.yaml` 파일 생성 및 내용 입력 필요
+       ```example
+       ### Cloud credentials for credential holders (default: admin)
+       credentialholder:
+         admin:
+           alibaba:
+             # ClientId(ClientId): client ID of the EIAM application
+             # Example: app_mkv7rgt4d7i4u7zqtzev2mxxxx
+             ClientId: 
+             # ClientSecret(ClientSecret): client secret of the EIAM application
+             # Example: CSEHDcHcrUKHw1CuxkJEHPveWRXBGqVqRsxxxx
+             ClientSecret: 
+           aws:
+             # ClientId(aws_access_key_id)
+             # ex: AKIASSSSSSSSSSS56DJH
+             ClientId: 
+             # ClientSecret(aws_secret_access_key)
+             # ex: jrcy9y0Psejjfeosifj3/yxYcgadklwihjdljMIQ0
+             ClientSecret:
+           ...
+       ```
+   - 파일 생성 방법: CB-TB 스크립트를 통해 `credentials.yaml` 파일 자동 생성 (`~/.cloud-barista/`)
      ```bash
      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-     ./scripts/genCredencialFile.sh
+     ./scripts/init/genCredential.sh
      ```
-   - 정보 입력 방법: `conf/credentials.conf`에 사용자 정보 입력 ([참고: CSP별 인증 정보 획득 방법](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials))
+   - 정보 입력 방법: ``~/.cloud-barista/credentials.yaml`에 사용자 계정 정보 입력 ([참고: CSP별 인증 정보 획득 방법](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials))
 
 - 모든 멀티 클라우드 연결 정보 및 공통 자원 등록 
    - 개요
-     - CB-TB의 멀티클라우드 인프라를 생성하기 위해서 클라우드에 대한 연결 정보 (크리덴셜, 클라우드 종류, 클라우드 리젼 등), 공통 활용 이미지 및 스펙 등의 등록이 필요
-   - 등록 방법: `initMultiCloudEnv.sh` 스크립트 실행 (모든 확인 메시지에 대해 'y' 입력)
+     - CB-TB의 멀티클라우드 인프라를 생성하기 위해서 클라우드에 대한 연결 정보 (크리덴셜), 공통 활용 이미지 및 스펙 등의 등록이 필요
+   - 등록 방법: [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/README.md)를 참고하여, [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/init.py) 스크립트 실행 (확인 메시지에 대해 'y' 입력)
        ```bash
        cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-       ./scripts/initMultiCloudEnv.sh
+       ./scripts/init/init.sh
        ```
-     - [`conf/credentials.conf`](https://github.com/cloud-barista/cb-tumblebug/blob/main/conf/template.credentials.conf)의 크레덴셜 등록  
+     - `~/.cloud-barista/credentials.yaml`의 크레덴셜이 자동 등록됨
      - [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)의 클라우드 정보 자동 등록됨
      - [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets)의 파일에 기록된 공통 이미지 및 스펙 자동 등록됨
 
