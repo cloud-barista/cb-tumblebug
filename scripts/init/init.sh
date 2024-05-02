@@ -8,15 +8,19 @@ echo "Detected Python version: $PYTHON_VERSION"
 PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
 
-# Install python3-venv
-if ! dpkg -s python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv &> /dev/null; then
-    echo "python3-venv package for Python ${PYTHON_MAJOR}.${PYTHON_MINOR} is not installed. Installing..."
-    sudo apt update
-    sudo apt install -y python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv
-    if [[ $? -ne 0 ]]; then
-        echo "Failed to install python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv. Please check the package availability or use DeadSnakes PPA."
-        exit 1
+# Check if venv module is available and python3-venv is installed
+if ! python3 -c "import venv" &> /dev/null; then
+    if ! dpkg -s python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv &> /dev/null; then
+        echo "python3-venv package for Python ${PYTHON_MAJOR}.${PYTHON_MINOR} is not installed. Installing..."
+        sudo apt update
+        sudo apt install -y python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv
+        if [[ $? -ne 0 ]]; then
+            echo "Failed to install python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv. Please check the package availability or use DeadSnakes PPA."
+            exit 1
+        fi
     fi
+else
+    echo "venv module is available."
 fi
 
 echo "Creating and activating the virtual environment..."

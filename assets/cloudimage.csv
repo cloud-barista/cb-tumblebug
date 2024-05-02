@@ -1,109 +1,111 @@
-ProviderName,regionName,cspImageId,OsType
-AWS,ap-southeast-1,ami-061eb2b23f9f8839c,Ubuntu 18.04
-AWS,ap-southeast-1,ami-02ee763250491e04a,Ubuntu 22.04
-AWS,ap-southeast-1,ami-0d55f20871d03244b,Debian 10
-AWS,ap-southeast-1,ami-06ff89fde394bfd6d,Windows Server 2012 R2
-AWS,ca-central-1,ami-0d0eaed20348a3389,Ubuntu 18.04
-AWS,ca-central-1,ami-0b6937ac543fe96d7,Ubuntu 22.04
-AWS,ca-central-1,ami-0b572790c607396bb,Debian 10
-AWS,ca-central-1,ami-08bb451e17239bc35,Windows Server 2012 R2
-AWS,us-west-1,ami-0dd655843c87b6930,Ubuntu 18.04
-AWS,us-west-1,ami-085284d24fe829cd0,Ubuntu 22.04
-AWS,us-west-1,ami-0a2a0146cce54add1,Debian 10
-AWS,us-west-1,ami-007ecccd0b872e690,Windows Server 2012 R2
-AWS,us-east-1,ami-085925f297f89fce1,Ubuntu 18.04
-AWS,us-east-1,ami-052efd3df9dad4825,Ubuntu 22.04
-AWS,us-east-1,ami-0e3370550517d663c,Debian 10
-AWS,us-east-1,ami-0a115baff5798ce9f,Windows Server 2012 R2
-AWS,ap-northeast-1,ami-0cd744adeca97abb1,Ubuntu 18.04
-AWS,ap-northeast-1,ami-07200fa04af91f087,Ubuntu 22.04
-AWS,ap-northeast-1,ami-039ed92b1a75d78cc,Debian 10
-AWS,ap-northeast-1,ami-006b8cbbcbb9386e7,Windows Server 2012 R2
-AWS,ap-south-1,ami-0123b531fc646552f,Ubuntu 18.04
-AWS,ap-south-1,ami-068257025f72f470d,Ubuntu 22.04
-AWS,ap-south-1,ami-01c4fc7cb18b931d3,Debian 10
-AWS,ap-south-1,ami-0c267eb626faf52fc,Windows Server 2012 R2
-AWS,ap-southeast-2,ami-00a54827eb7ffcd3c,Ubuntu 18.04
-AWS,ap-southeast-2,ami-0e040c48614ad1327,Ubuntu 22.04
-AWS,ap-southeast-2,ami-0b059f50f9974fc49,Windows Server 2012 R2
-AWS,eu-west-2,ami-0be057a22c63962cb,Ubuntu 18.04
-AWS,eu-west-2,ami-0fb391cce7a602d1f,Ubuntu 22.04
-AWS,eu-west-2,ami-0fc22514827f2e7de,Windows Server 2012 R2
-AWS,us-east-2,ami-01e7ca2ef94a0ae86,Ubuntu 18.04
-AWS,us-east-2,ami-02f3416038bdb17fb,Ubuntu 22.04
-AWS,us-east-2,ami-0eb31daebdf3775ac,Windows Server 2012 R2
-AWS,us-east-2,ami-0ad87058f66b00409,Debian 10
-AWS,us-east-2,ami-0c616d2c080a12072,Ubuntu 20.04
-AWS,us-west-2,ami-02701bcdc5509e57b,Ubuntu 18.04
-AWS,us-west-2,ami-0d70546e43a941d70,Ubuntu 22.04
-AWS,us-west-2,ami-0be1488bb453a4e59,Windows Server 2012 R2
-AWS,ap-northeast-3,ami-0e958e6a9363c29ad,Ubuntu 18.04
-AWS,ap-northeast-3,ami-096d800410995ae84,Ubuntu 22.04
-AWS,ap-northeast-3,ami-0f8631249f16ca5c0,Windows Server 2012 R2
-AWS,eu-central-1,ami-0e0102e3ff768559b,Ubuntu 18.04
-AWS,eu-central-1,ami-065deacbcaac64cf2,Ubuntu 22.04
-AWS,eu-central-1,ami-08bf6933faf9f2610,Windows Server 2012 R2
-AWS,eu-west-1,ami-06fd78dc2f0b69910,Ubuntu 18.04
-AWS,eu-west-1,ami-0d75513e7706cf2d9,Ubuntu 22.04
-AWS,eu-west-1,ami-01ebc54e4d18b85ef,Windows Server 2012 R2
-AWS,eu-west-3,ami-0a0d71ff90f62f72a,Ubuntu 18.04
-AWS,eu-west-3,ami-09e513e9eacab10c1,Ubuntu 22.04
-AWS,eu-west-3,ami-0da74102f47e3c02a,Windows Server 2012 R2
-AWS,eu-north-1,ami-0f269726c071d0e96,Ubuntu 18.04
-AWS,eu-north-1,ami-0440e5026412ff23f,Ubuntu 22.04
-AWS,eu-north-1,ami-028b9d976ede1a204,Windows Server 2012 R2
-AWS,sa-east-1,ami-0bd91caaa9bc42cf3,Ubuntu 18.04
-AWS,sa-east-1,ami-08ae71fd7f1449df1,Ubuntu 22.04
-AWS,sa-east-1,ami-0f96e31470b42a40c,Windows Server 2012 R2
-AWS,ap-northeast-2,ami-00379ec40a3e30f87,Ubuntu 18.04
-AWS,ap-northeast-2,ami-058165de3b7202099,Ubuntu 22.04
-AWS,ap-northeast-2,ami-0ec892301ee1c788c,Windows Server 2012 R2
-AWS,ap-east-1,ami-036915aa0cb1d91a1,Ubuntu 18.04
-AWS,ap-east-1,ami-0ecb6d8435affe2b6,Ubuntu 22.04
-AWS,ap-east-1,ami-046ab0ba1e9a60ff6,Windows Server 2012 R2
-AWS,me-south-1,ami-026dde872642a6ffe,Ubuntu 18.04
-AWS,me-south-1,ami-0c9b2924fcd9b73a4,Ubuntu 22.04
-AWS,me-south-1,ami-08ca9d63b8d4ec276,Debian 10
-AWS,me-south-1,ami-098a156f95e80a167,Windows Server 2012 R2
-AWS,af-south-1,ami-0e4b4778694305983,Ubuntu 18.04
-AWS,af-south-1,ami-080bc3824e96f9b8d,Ubuntu 22.04
-AWS,af-south-1,ami-03dfab9c5b8844b77,Windows Server 2012 R2
-AWS,eu-south-1,ami-0f274cb646afd3475,Ubuntu 18.04
-AWS,eu-south-1,ami-0fdd5958b81f36e68,Ubuntu 22.04
-AWS,eu-south-1,ami-0c49c6227e9c03e66,Windows Server 2012 R2
-AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202404080,Ubuntu 20.04
-AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202404090,Ubuntu 22.04
-AZURE,all,Debian:debian-10:10:0.20240204.1647,Debian 10
-AZURE,all,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.21620.231004,Windows Server 2012 R2
-GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,Ubuntu 20.04
-GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20240319,Ubuntu 22.04
-GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10
-GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2
-ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04
-ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240220.vhd,Ubuntu 20.04
-ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240220.vhd,Ubuntu 22.04
-TENCENT,all,img-pi0ii46r,Ubuntu 18.04
-TENCENT,all,img-22trbn9x,Ubuntu 20.04
-TENCENT,all,img-487zeit5,Ubuntu 22.04
-TENCENT,all,img-bpsjtw7n,Windows Server 2012 R2
-IBM,us-south,r006-9de77234-3189-42f8-982d-f2266477cfe0,Ubuntu 18.04
-IBM,us-south,r006-b4d8d8d4-7768-4a1b-9434-9483ca821a0d,Windows Server 2012 R2
-IBM,br-sao,r042-92d1cd12-f014-4b9a-abf8-c5ca6494a9e5,Ubuntu 18.04
-IBM,ca-tor,r038-e92647cf-8be9-438a-b94c-251cc86bc99a,Ubuntu 18.04
-IBM,us-east,r014-dc446598-a1b5-41c3-a1d6-add3afaf264e,Ubuntu 18.04
-IBM,eu-de,r010-1f68eb2d-f35c-4959-8f4b-2b2f9cf78102,Ubuntu 18.04
-IBM,eu-gb,r018-1d7417c6-893e-49d4-b14d-9643d6b29812,Ubuntu 18.04
-IBM,jp-osa,r034-522c639c-52e1-4cab-8dfb-bc0fb9f6f577,Ubuntu 18.04
-IBM,au-syd,r026-a8c25ce6-0ca1-43e9-9b41-411c6217b8b8,Ubuntu 18.04
-IBM,au-syd,r026-3d2be426-8032-4215-a82b-d61075a49a1c,Debian 10
-IBM,jp-tok,r022-61fdadec-6b03-4bd2-bfca-62cd16f5673f,Ubuntu 18.04
-NHNCLOUD,kr1,68fb7e1a-191c-45bf-8328-b7864f9fbaf4,Ubuntu 22.04
-NHNCLOUD,kr2,71893505-923c-4982-b0eb-844eb520661c,Ubuntu 22.04
-NHNCLOUD,jp1,ca69fad9-92f3-4c9b-a6e4-7e8b0e4d3a58,Ubuntu 22.04
-NCP,all,SPSW0LINUX000130,Ubuntu 18.04
-NCPVPC,all,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04
-KTCLOUD,kor-central-a,87838094-af4f-449f-a2f4-f5b4b581eb29,Ubuntu 22.04
-KTCLOUD,kor-central-b,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUD,kor-seoul-m,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04
-KTCLOUD,kor-seoul-m2,63de6d04-7f1b-4924-8e95-1acd6581ca0c,Ubuntu 22.04
-KTCLOUDVPC,kr-dx-m1,be9a35ed-5988-49d2-b86d-2ca9b375564b,Ubuntu 22.04
+ProviderName,regionName,cspImageId,OsType,description,supportedInstance
+AWS,ap-southeast-1,ami-061eb2b23f9f8839c,Ubuntu 18.04,,
+AWS,ap-southeast-1,ami-02ee763250491e04a,Ubuntu 22.04,,
+AWS,ap-southeast-1,ami-0d55f20871d03244b,Debian 10,,
+AWS,ap-southeast-1,ami-06ff89fde394bfd6d,Windows Server 2012 R2,,
+AWS,ca-central-1,ami-0d0eaed20348a3389,Ubuntu 18.04,,
+AWS,ca-central-1,ami-0b6937ac543fe96d7,Ubuntu 22.04,,
+AWS,ca-central-1,ami-0b572790c607396bb,Debian 10,,
+AWS,ca-central-1,ami-08bb451e17239bc35,Windows Server 2012 R2,,
+AWS,us-west-1,ami-0dd655843c87b6930,Ubuntu 18.04,,
+AWS,us-west-1,ami-085284d24fe829cd0,Ubuntu 22.04,,
+AWS,us-west-1,ami-0a2a0146cce54add1,Debian 10,,
+AWS,us-west-1,ami-007ecccd0b872e690,Windows Server 2012 R2,,
+AWS,us-east-1,ami-085925f297f89fce1,Ubuntu 18.04,,
+AWS,us-east-1,ami-052efd3df9dad4825,Ubuntu 22.04,,
+AWS,us-east-1,ami-0e3370550517d663c,Debian 10,,
+AWS,us-east-1,ami-0a115baff5798ce9f,Windows Server 2012 R2,,
+AWS,ap-northeast-1,ami-0cd744adeca97abb1,Ubuntu 18.04,,
+AWS,ap-northeast-1,ami-07200fa04af91f087,Ubuntu 22.04,,
+AWS,ap-northeast-1,ami-039ed92b1a75d78cc,Debian 10,,
+AWS,ap-northeast-1,ami-006b8cbbcbb9386e7,Windows Server 2012 R2,,
+AWS,ap-northeast-1,ami-0bded5720a0796acb,Ubuntu 20.04,Deep Learning OSS Nvidia Driver AMI GPU TensorFlow 2.15 (Ubuntu 20.04) 20240423,G4dn G5 G6 Gr6 P4 P4de P5
+AWS,ap-south-1,ami-0123b531fc646552f,Ubuntu 18.04,,
+AWS,ap-south-1,ami-068257025f72f470d,Ubuntu 22.04,,
+AWS,ap-south-1,ami-01c4fc7cb18b931d3,Debian 10,,
+AWS,ap-south-1,ami-0c267eb626faf52fc,Windows Server 2012 R2,,
+AWS,ap-southeast-2,ami-00a54827eb7ffcd3c,Ubuntu 18.04,,
+AWS,ap-southeast-2,ami-0e040c48614ad1327,Ubuntu 22.04,,
+AWS,ap-southeast-2,ami-0b059f50f9974fc49,Windows Server 2012 R2,,
+AWS,eu-west-2,ami-0be057a22c63962cb,Ubuntu 18.04,,
+AWS,eu-west-2,ami-0fb391cce7a602d1f,Ubuntu 22.04,,
+AWS,eu-west-2,ami-0fc22514827f2e7de,Windows Server 2012 R2,,
+AWS,us-east-2,ami-01e7ca2ef94a0ae86,Ubuntu 18.04,,
+AWS,us-east-2,ami-02f3416038bdb17fb,Ubuntu 22.04,,
+AWS,us-east-2,ami-0eb31daebdf3775ac,Windows Server 2012 R2,,
+AWS,us-east-2,ami-0ad87058f66b00409,Debian 10,,
+AWS,us-east-2,ami-028faa7f1b7384e6e,Ubuntu 20.04,Deep Learning OSS Nvidia Driver AMI GPU TensorFlow 2.15 (Ubuntu 20.04) 20240423,G4dn G5 G6 Gr6 P4 P4de P5
+AWS,us-west-2,ami-02701bcdc5509e57b,Ubuntu 18.04,,
+AWS,us-west-2,ami-0d70546e43a941d70,Ubuntu 22.04,,
+AWS,us-west-2,ami-0be1488bb453a4e59,Windows Server 2012 R2,,
+AWS,ap-northeast-3,ami-0e958e6a9363c29ad,Ubuntu 18.04,,
+AWS,ap-northeast-3,ami-096d800410995ae84,Ubuntu 22.04,,
+AWS,ap-northeast-3,ami-0f8631249f16ca5c0,Windows Server 2012 R2,,
+AWS,eu-central-1,ami-0e0102e3ff768559b,Ubuntu 18.04,,
+AWS,eu-central-1,ami-065deacbcaac64cf2,Ubuntu 22.04,,
+AWS,eu-central-1,ami-08bf6933faf9f2610,Windows Server 2012 R2,,
+AWS,eu-west-1,ami-06fd78dc2f0b69910,Ubuntu 18.04,,
+AWS,eu-west-1,ami-0d75513e7706cf2d9,Ubuntu 22.04,,
+AWS,eu-west-1,ami-01ebc54e4d18b85ef,Windows Server 2012 R2,,
+AWS,eu-west-3,ami-0a0d71ff90f62f72a,Ubuntu 18.04,,
+AWS,eu-west-3,ami-09e513e9eacab10c1,Ubuntu 22.04,,
+AWS,eu-west-3,ami-0da74102f47e3c02a,Windows Server 2012 R2,,
+AWS,eu-north-1,ami-0f269726c071d0e96,Ubuntu 18.04,,
+AWS,eu-north-1,ami-0440e5026412ff23f,Ubuntu 22.04,,
+AWS,eu-north-1,ami-028b9d976ede1a204,Windows Server 2012 R2,,
+AWS,sa-east-1,ami-0bd91caaa9bc42cf3,Ubuntu 18.04,,
+AWS,sa-east-1,ami-08ae71fd7f1449df1,Ubuntu 22.04,,
+AWS,sa-east-1,ami-0f96e31470b42a40c,Windows Server 2012 R2,,
+AWS,ap-northeast-2,ami-00379ec40a3e30f87,Ubuntu 18.04,,
+AWS,ap-northeast-2,ami-058165de3b7202099,Ubuntu 22.04,,
+AWS,ap-northeast-2,ami-0ec892301ee1c788c,Windows Server 2012 R2,,
+AWS,ap-east-1,ami-036915aa0cb1d91a1,Ubuntu 18.04,,
+AWS,ap-east-1,ami-0ecb6d8435affe2b6,Ubuntu 22.04,,
+AWS,ap-east-1,ami-046ab0ba1e9a60ff6,Windows Server 2012 R2,,
+AWS,me-south-1,ami-026dde872642a6ffe,Ubuntu 18.04,,
+AWS,me-south-1,ami-0c9b2924fcd9b73a4,Ubuntu 22.04,,
+AWS,me-south-1,ami-08ca9d63b8d4ec276,Debian 10,,
+AWS,me-south-1,ami-098a156f95e80a167,Windows Server 2012 R2,,
+AWS,af-south-1,ami-0e4b4778694305983,Ubuntu 18.04,,
+AWS,af-south-1,ami-080bc3824e96f9b8d,Ubuntu 22.04,,
+AWS,af-south-1,ami-03dfab9c5b8844b77,Windows Server 2012 R2,,
+AWS,eu-south-1,ami-0f274cb646afd3475,Ubuntu 18.04,,
+AWS,eu-south-1,ami-0fdd5958b81f36e68,Ubuntu 22.04,,
+AWS,eu-south-1,ami-0c49c6227e9c03e66,Windows Server 2012 R2,,
+AZURE,all,Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202404080,Ubuntu 20.04,,
+AZURE,all,Canonical:0001-com-ubuntu-server-jammy:22_04-lts:22.04.202404090,Ubuntu 22.04,,
+AZURE,all,Debian:debian-10:10:0.20240204.1647,Debian 10,,
+AZURE,all,MicrosoftWindowsServer:WindowsServer:2012-R2-Datacenter:9600.21620.231004,Windows Server 2012 R2,,
+GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,Ubuntu 20.04,,
+GCP,all,https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20240319,Ubuntu 22.04,,
+GCP,all,https://www.googleapis.com/compute/v1/projects/debian-cloud/global/debian-10-buster-v20221102,Debian 10,,
+GCP,all,c1-deeplearning-tf-2-15-cu121-v20240417-debian-11,Debian 11,"Google, Deep Learning VM for TensorFlow 2.15 with CUDA 12.1, M120, Debian 11, Python 3.10, with TensorFlow 2.15 for CUDA 12.1 with Intel MKL-DNN preinstalled",
+GCP,all,https://www.googleapis.com/compute/v1/projects/windows-cloud/global/images/windows-server-2012-r2-dc-v20221014,Windows Server 2012 R2,,
+ALIBABA,all,ubuntu_18_04_x64_20G_alibase_20240223.vhd,Ubuntu 18.04,,
+ALIBABA,all,ubuntu_20_04_x64_20G_alibase_20240220.vhd,Ubuntu 20.04,,
+ALIBABA,all,ubuntu_22_04_x64_20G_alibase_20240220.vhd,Ubuntu 22.04,,
+TENCENT,all,img-pi0ii46r,Ubuntu 18.04,,
+TENCENT,all,img-22trbn9x,Ubuntu 20.04,,
+TENCENT,all,img-487zeit5,Ubuntu 22.04,,
+TENCENT,all,img-bpsjtw7n,Windows Server 2012 R2,,
+IBM,us-south,r006-9de77234-3189-42f8-982d-f2266477cfe0,Ubuntu 18.04,,
+IBM,us-south,r006-b4d8d8d4-7768-4a1b-9434-9483ca821a0d,Windows Server 2012 R2,,
+IBM,br-sao,r042-92d1cd12-f014-4b9a-abf8-c5ca6494a9e5,Ubuntu 18.04,,
+IBM,ca-tor,r038-e92647cf-8be9-438a-b94c-251cc86bc99a,Ubuntu 18.04,,
+IBM,us-east,r014-dc446598-a1b5-41c3-a1d6-add3afaf264e,Ubuntu 18.04,,
+IBM,eu-de,r010-1f68eb2d-f35c-4959-8f4b-2b2f9cf78102,Ubuntu 18.04,,
+IBM,eu-gb,r018-1d7417c6-893e-49d4-b14d-9643d6b29812,Ubuntu 18.04,,
+IBM,jp-osa,r034-522c639c-52e1-4cab-8dfb-bc0fb9f6f577,Ubuntu 18.04,,
+IBM,au-syd,r026-a8c25ce6-0ca1-43e9-9b41-411c6217b8b8,Ubuntu 18.04,,
+IBM,au-syd,r026-3d2be426-8032-4215-a82b-d61075a49a1c,Debian 10,,
+IBM,jp-tok,r022-61fdadec-6b03-4bd2-bfca-62cd16f5673f,Ubuntu 18.04,,
+NHNCLOUD,kr1,68fb7e1a-191c-45bf-8328-b7864f9fbaf4,Ubuntu 22.04,,
+NHNCLOUD,kr2,71893505-923c-4982-b0eb-844eb520661c,Ubuntu 22.04,,
+NHNCLOUD,jp1,ca69fad9-92f3-4c9b-a6e4-7e8b0e4d3a58,Ubuntu 22.04,,
+NCP,all,SPSW0LINUX000130,Ubuntu 18.04,,
+NCPVPC,all,SW.VSVR.OS.LNX64.UBNTU.SVR1804.B050,Ubuntu 18.04,,
+KTCLOUD,kor-central-a,87838094-af4f-449f-a2f4-f5b4b581eb29,Ubuntu 22.04,,
+KTCLOUD,kor-central-b,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04,,
+KTCLOUD,kor-seoul-m,45e20478-6c24-4c32-a5e5-2ba2d464a8d1,Ubuntu 22.04,,
+KTCLOUD,kor-seoul-m2,63de6d04-7f1b-4924-8e95-1acd6581ca0c,Ubuntu 22.04,,
+KTCLOUDVPC,kr-dx-m1,be9a35ed-5988-49d2-b86d-2ca9b375564b,Ubuntu 22.04,,
