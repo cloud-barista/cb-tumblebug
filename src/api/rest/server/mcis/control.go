@@ -51,15 +51,20 @@ func RestGetControlMcis(c echo.Context) error {
 	if force == "true" {
 		forceOption = true
 	}
+	returnObj := common.SimpleMsg{}
 
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
 
-		result, err := mcis.HandleMcisAction(nsId, mcisId, action, forceOption)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		resultString, err := mcis.HandleMcisAction(nsId, mcisId, action, forceOption)
+		if err != nil {
+			return common.EndRequestWithLog(c, reqID, err, returnObj)
+		}
+		returnObj.Message = resultString
+		return common.EndRequestWithLog(c, reqID, err, returnObj)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, reqID, err, returnObj)
 	}
 }
 
@@ -94,14 +99,20 @@ func RestGetControlMcisVm(c echo.Context) error {
 		forceOption = true
 	}
 
+	returnObj := common.SimpleMsg{}
+
 	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" {
 
-		result, err := mcis.HandleMcisVmAction(nsId, mcisId, vmId, action, forceOption)
-		return common.EndRequestWithLog(c, reqID, err, result)
+		resultString, err := mcis.HandleMcisVmAction(nsId, mcisId, vmId, action, forceOption)
+		if err != nil {
+			return common.EndRequestWithLog(c, reqID, err, returnObj)
+		}
+		returnObj.Message = resultString
+		return common.EndRequestWithLog(c, reqID, err, returnObj)
 
 	} else {
 		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
-		return common.EndRequestWithLog(c, reqID, err, nil)
+		return common.EndRequestWithLog(c, reqID, err, returnObj)
 	}
 }
 
@@ -134,5 +145,8 @@ func RestPostMcisVmSnapshot(c echo.Context) error {
 	}
 
 	result, err := mcis.CreateVmSnapshot(nsId, mcisId, vmId, u.Name)
+	if err != nil {
+		return common.EndRequestWithLog(c, reqID, err, common.SimpleMsg{Message: "Failed to create a snapshot"})
+	}
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
