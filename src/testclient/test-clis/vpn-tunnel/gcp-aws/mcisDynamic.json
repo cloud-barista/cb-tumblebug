@@ -7,15 +7,15 @@
     "vm": [
         {
             "commonImage": "ubuntu22.04",
-            "commonSpec": "aws-ap-northeast-2-t3-small"
+            "commonSpec": "aws+ap-northeast-2+t3.small"
         },
         {
             "commonImage": "ubuntu22.04",
-            "commonSpec": "azure-koreacentral-standard-b1s"
+            "commonSpec": "azure+koreacentral+standard_b1s"
         },
         {
             "commonImage": "ubuntu22.04",
-            "commonSpec": "gcp-asia-northeast3-g1-small"
+            "commonSpec": "gcp+asia-northeast3+g1-small"
         }
     ]
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
@@ -194,44 +195,34 @@ func createMcis(cmd *cobra.Command, args []string) {
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: health check
+	// Tumblebug API: check readiness
 
 	// Set the API path
-	urlTumblebugHealth := fmt.Sprintf("%s/health", tbApiBase)
+	urlTumblebugReadiness := fmt.Sprintf("%s/readyz", tbApiBase)
 
-	// Request health check
+	// Request readiness check
 	var respBytes []byte
-	respBytes, err = callApi("GET", urlTumblebugHealth, tbAuth, nil)
+	respBytes, err = callApi("GET", urlTumblebugReadiness, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	health := new(common.SimpleMsg)
-	if err := json.Unmarshal(respBytes, health); err != nil {
+	resTbReadiness := new(common.SimpleMsg)
+	if err := json.Unmarshal(respBytes, resTbReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyHealth, err := json.MarshalIndent(health, "", "   ")
+	prettyResTbReadiness, err := json.MarshalIndent(resTbReadiness, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
-	log.Debug().Msgf("[Response] %+v", string(prettyHealth))
+	log.Debug().Msgf("[Response] %+v", string(prettyResTbReadiness))
 
-	isTbHealthy := false
-	if health.Message == "API server of CB-Tumblebug is alive" {
-		isTbHealthy = true
-	}
-
-	if !isTbHealthy {
-		log.Error().Msg("Tumblebug API server is not healthy")
-		return
-	}
-
-	log.Info().Msg("Tumblebug API server is healthy")
+	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Tumblebug API: mcisDynamic
@@ -352,44 +343,34 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: health check
+	// Tumblebug API: readiness check
 
 	// Set the API path
-	urlTumblebugHealth := fmt.Sprintf("%s/health", tbApiBase)
+	urlTumblebugReadiness := fmt.Sprintf("%s/readyz", tbApiBase)
 
-	// Request health check
+	// Request readiness check
 	var respBytes []byte
-	respBytes, err = callApi("GET", urlTumblebugHealth, tbAuth, nil)
+	respBytes, err = callApi("GET", urlTumblebugReadiness, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	health := new(common.SimpleMsg)
-	if err := json.Unmarshal(respBytes, health); err != nil {
+	resTbReadiness := new(common.SimpleMsg)
+	if err := json.Unmarshal(respBytes, resTbReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyHealth, err := json.MarshalIndent(health, "", "   ")
+	prettyResTbReadiness, err := json.MarshalIndent(resTbReadiness, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
-	log.Debug().Msgf("[Response] %+v", string(prettyHealth))
+	log.Debug().Msgf("[Response] %+v", string(prettyResTbReadiness))
 
-	isTbHealthy := false
-	if health.Message == "API server of CB-Tumblebug is alive" {
-		isTbHealthy = true
-	}
-
-	if !isTbHealthy {
-		log.Error().Msg("Tumblebug API server is not healthy")
-		return
-	}
-
-	log.Info().Msg("Tumblebug API server is healthy")
+	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Tumblebug API: Get MCIS
@@ -463,15 +444,16 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	vNetId := ""
 	// Print the mcisInfo
 	for _, vm := range mcisInfo.Vm {
-		switch vm.ConnectionConfig.ProviderName {
-		case "AWS":
+		providerName := strings.ToLower(vm.ConnectionConfig.ProviderName)
+		switch providerName {
+		case "aws":
 			awsRegion = vm.CspViewVmDetail.Region.Region
 			awsVpcId = vm.CspViewVmDetail.VpcIID.SystemId
 			awsSubnetId = vm.CspViewVmDetail.SubnetIID.SystemId
-		case "GCP":
+		case "gcp":
 			gcpRegion = vm.CspViewVmDetail.Region.Region
 			gcpVpcNetworkName = vm.CspViewVmDetail.VpcIID.SystemId
-		case "AZURE":
+		case "azure":
 			azureRegion = vm.CspViewVmDetail.Region.Region
 
 			// Sample
@@ -545,12 +527,12 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	mcNetAuth := tbAuth
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: Health check
+	// MC-Net API: readiness check
 
-	urlMcNetHealth := fmt.Sprintf("%s/health", mcNetApiBase)
+	urlMcNetReadiness := fmt.Sprintf("%s/readyz", mcNetApiBase)
 
-	// Request health check
-	respBytes, err = callApi("GET", urlMcNetHealth, mcNetAuth, nil)
+	// Request readiness check
+	respBytes, err = callApi("GET", urlMcNetReadiness, mcNetAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
@@ -562,33 +544,27 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-
-	mcNetHealth := new(Response)
-	if err := json.Unmarshal(respBytes, mcNetHealth); err != nil {
+	resMcNetReadiness := new(Response)
+	if err := json.Unmarshal(respBytes, resMcNetReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyMcNetHealth, err := json.MarshalIndent(mcNetHealth, "", "   ")
+	prettyResMcNetReadiness, err := json.MarshalIndent(resMcNetReadiness, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
-	log.Debug().Msgf("[Response] %+v", string(prettyMcNetHealth))
+	log.Debug().Msgf("[Response] %+v", string(prettyResMcNetReadiness))
 
-	if !mcNetHealth.Success {
-		log.Error().Msg("mc-net API server is not healthy")
-		return
-	}
-
-	log.Info().Msg("mc-net API server is healthy")
+	log.Info().Msg(resMcNetReadiness.Text)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// MC-Net API: Initialize providers for VPN tunnel (i.e, GCP and AwS)
 
 	urlInit := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/init", mcNetApiBase, rgId)
 
-	// Request health check
+	// Request init
 	respBytes, err = callApi("POST", urlInit, mcNetAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
@@ -737,12 +713,12 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 	mcNetAuth := tbAuth
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: Health check
+	// MC-Net API: readiness check
 
-	urlMcNetHealth := fmt.Sprintf("%s/health", mcNetApiBase)
+	urlMcNetReadiness := fmt.Sprintf("%s/readyz", mcNetApiBase)
 
 	// Request health check
-	respBytes, err := callApi("GET", urlMcNetHealth, mcNetAuth, nil)
+	respBytes, err := callApi("GET", urlMcNetReadiness, mcNetAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
@@ -754,25 +730,20 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	mcNetHealth := new(Response)
-	if err := json.Unmarshal(respBytes, mcNetHealth); err != nil {
+	resMcNetReadiness := new(Response)
+	if err := json.Unmarshal(respBytes, resMcNetReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyMcNetHealth, err := json.MarshalIndent(mcNetHealth, "", "   ")
+	prettyResMcNetReadiness, err := json.MarshalIndent(resMcNetReadiness, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
-	log.Debug().Msgf("[Response] %+v", string(prettyMcNetHealth))
+	log.Debug().Msgf("[Response] %+v", string(prettyResMcNetReadiness))
 
-	if !mcNetHealth.Success {
-		log.Error().Msg("mc-net API server is not healthy")
-		return
-	}
-
-	log.Info().Msg("mc-net API server is healthy")
+	log.Info().Msg(resMcNetReadiness.Text)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// MC-Net API: Destory providers for VPN tunnel (i.e, GCP and AWS)
@@ -861,44 +832,34 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: health check
+	// Tumblebug API: readiness check
 
 	// Set the API path
-	urlTumblebugHealth := fmt.Sprintf("%s/health", tbApiBase)
+	urlTumblebugReadiness := fmt.Sprintf("%s/readyz", tbApiBase)
 
-	// Request health check
+	// Request readiness check
 	var respBytes []byte
-	respBytes, err = callApi("GET", urlTumblebugHealth, tbAuth, nil)
+	respBytes, err = callApi("GET", urlTumblebugReadiness, tbAuth, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	health := new(common.SimpleMsg)
-	if err := json.Unmarshal(respBytes, health); err != nil {
+	resTbReadiness := new(common.SimpleMsg)
+	if err := json.Unmarshal(respBytes, resTbReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyHealth, err := json.MarshalIndent(health, "", "   ")
+	prettyResTbReadiness, err := json.MarshalIndent(resTbReadiness, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
-	log.Debug().Msgf("[Response] %+v", string(prettyHealth))
+	log.Debug().Msgf("[Response] %+v", string(prettyResTbReadiness))
 
-	isTbHealthy := false
-	if health.Message == "API server of CB-Tumblebug is alive" {
-		isTbHealthy = true
-	}
-
-	if !isTbHealthy {
-		log.Error().Msg("Tumblebug API server is not healthy")
-		return
-	}
-
-	log.Info().Msg("Tumblebug API server is healthy")
+	log.Info().Msg(resTbReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Tumblebug API: Suspend MCIS
@@ -935,6 +896,41 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("[Response] %+v", respText)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Tumblebug API: Keep checking the status of MCIS until it is suspended
+
+	for {
+		time.Sleep(5 * time.Second)
+
+		// Set the API path
+		queryParams = "" //"option=status"
+		urlGetMcisStatus := fmt.Sprintf("%s/ns/%s/mcis/%s", tbApiBase, nsId, mcisId)
+		if queryParams != "" {
+			urlGetMcisStatus += "?" + queryParams
+		}
+
+		// Request to create an mcis dynamically
+		respBytes, err = callApi("GET", urlGetMcisStatus, tbAuth, nil)
+		if err != nil {
+			log.Error().Err(err).Msg(string(respBytes))
+			return
+		}
+
+		// Print the response
+		mcisInfo := new(mcis.TbMcisInfo)
+		if err := json.Unmarshal(respBytes, mcisInfo); err != nil {
+			log.Error().Err(err).Msg("")
+			return
+		}
+
+		if strings.Contains(mcisInfo.Status, "Suspended") && !strings.Contains(mcisInfo.Status, "Partial") {
+			log.Info().Msgf("MCIS(id: %s) status: ", mcisInfo.Status)
+			break
+		} else {
+			log.Debug().Msgf("MCIS(id: %s) status: ", mcisInfo.Status)
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Tumblebug API: Terminate MCIS
 
 	// Set the API path
@@ -968,7 +964,42 @@ func terminateMcis(cmd *cobra.Command, args []string) {
 	log.Debug().Msgf("[Response] %+v", respText)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Tumblebug API: Terminate MCIS
+	// Tumblebug API: Keep checking the status of MCIS until it is terminated
+
+	for {
+		time.Sleep(5 * time.Second)
+
+		// Set the API path
+		queryParams = "" //"option=status"
+		urlGetMcisStatus := fmt.Sprintf("%s/ns/%s/mcis/%s", tbApiBase, nsId, mcisId)
+		if queryParams != "" {
+			urlGetMcisStatus += "?" + queryParams
+		}
+
+		// Request to create an mcis dynamically
+		respBytes, err = callApi("GET", urlGetMcisStatus, tbAuth, nil)
+		if err != nil {
+			log.Error().Err(err).Msg(string(respBytes))
+			return
+		}
+
+		// Print the response
+		mcisInfo := new(mcis.TbMcisInfo)
+		if err := json.Unmarshal(respBytes, mcisInfo); err != nil {
+			log.Error().Err(err).Msg("")
+			return
+		}
+
+		if strings.Contains(mcisInfo.Status, "Terminated") && !strings.Contains(mcisInfo.Status, "Partial") {
+			log.Info().Msgf("MCIS(id: %s) status: %s", mcisInfo.Id, mcisInfo.Status)
+			break
+		} else {
+			log.Debug().Msgf("MCIS(id: %s) status: %s", mcisInfo.Id, mcisInfo.Status)
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Tumblebug API: Delete MCIS
 
 	// Set the API path
 	queryParams = ""
