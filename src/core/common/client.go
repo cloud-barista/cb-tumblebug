@@ -41,6 +41,8 @@ var clientCache = sync.Map{}
 var clientRequestCounter = sync.Map{}
 
 const (
+	// VeryShortDuration is a duration for very short-term cache
+	VeryShortDuration = 1 * time.Second
 	// ShortDuration is a duration for short-term cache
 	ShortDuration = 2 * time.Second
 	// MediumDuration is a duration for medium-term cache

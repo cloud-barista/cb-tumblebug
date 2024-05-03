@@ -959,7 +959,7 @@ func RemoveNodeGroup(nsId string, clusterId string, nodeGroupName string, forceF
 		common.SetUseBody(requestBody),
 		&requestBody,
 		&ifRes,
-		common.ShortDuration,
+		common.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1049,7 +1049,7 @@ func SetAutoscaling(nsId string, clusterId string, nodeGroupName string, u *TbSe
 		common.SetUseBody(requestBody),
 		&requestBody,
 		&ifRes,
-		common.ShortDuration,
+		common.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1134,7 +1134,7 @@ func ChangeAutoscaleSize(nsId string, clusterId string, nodeGroupName string, u 
 		common.SetUseBody(requestBody),
 		&requestBody,
 		&spChangeAutoscaleSizeRes,
-		common.ShortDuration,
+		common.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -1488,7 +1488,7 @@ func DeleteCluster(nsId string, clusterId string, forceFlag string) (bool, error
 		common.SetUseBody(requestBody),
 		&requestBody,
 		&ifRes,
-		common.ShortDuration,
+		common.VeryShortDuration,
 	)
 
 	if forceFlag == "true" {

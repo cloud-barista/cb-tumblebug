@@ -434,7 +434,7 @@ func CheckSpiderReady() error {
 		SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		ShortDuration,
+		VeryShortDuration,
 	)
 
 	if err != nil {
@@ -472,8 +472,6 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 		return ConnConfigList{}, nil
 	}
 
-	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
-
 	// filter by credential holder
 	if filterCredentialHolder != "" {
 		for _, connConfig := range filteredConnections.Connectionconfig {
@@ -483,7 +481,6 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 		}
 		filteredConnections = tmpConnections
 		tmpConnections = ConnConfigList{}
-		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	}
 
 	// filter only verified
@@ -495,7 +492,6 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 		}
 		filteredConnections = tmpConnections
 		tmpConnections = ConnConfigList{}
-		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	}
 
 	// filter only region representative
@@ -507,9 +503,8 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 		}
 		filteredConnections = tmpConnections
 		tmpConnections = ConnConfigList{}
-		log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	}
-
+	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	return filteredConnections, nil
 }
 
