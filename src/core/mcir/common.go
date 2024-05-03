@@ -317,7 +317,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		common.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.ShortDuration,
+		common.VeryShortDuration,
 	)
 
 	if err != nil {
@@ -460,7 +460,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 		common.SetUseBody(requestBody),
 		&requestBody,
 		&callResult,
-		common.ShortDuration,
+		common.VeryShortDuration,
 	)
 
 	if err != nil {
