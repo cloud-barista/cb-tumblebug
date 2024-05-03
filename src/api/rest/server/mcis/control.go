@@ -33,7 +33,7 @@ import (
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate, refine)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {string} string
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/control/mcis/{mcisId} [get]
@@ -74,7 +74,7 @@ func RestGetControlMcis(c echo.Context) error {
 // @Param vmId path string true "VM ID" default(g1-1)
 // @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {string} string
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/control/mcis/{mcisId}/vm/{vmId} [get]

@@ -2044,7 +2044,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -2128,7 +2128,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "type": "string"
                         }
                     },
                     "404": {
