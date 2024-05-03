@@ -1,4 +1,4 @@
-providerName,regionName,cspSpecName,CostPerHour,evaluationScore01,evaluationScore02,evaluationScore03,evaluationScore04,evaluationScore05,evaluationScore06,evaluationScore07,evaluationScore08,evaluationScore09,evaluationScore10,rootDiskType,rootDiskSize,acceleratorType,acceleratorModel,acceleratorCount,acceleratorMemory,acceleratorDetails
+providerName,regionName,cspSpecName,CostPerHour,evaluationScore01,evaluationScore02,evaluationScore03,evaluationScore04,evaluationScore05,evaluationScore06,evaluationScore07,evaluationScore08,evaluationScore09,evaluationScore10,rootDiskType,rootDiskSize,acceleratorType,acceleratorModel,acceleratorCount,acceleratorMemory,description
 ALIBABA,ap-northeast-2,ecs.g6e.large,0.12122,78.43,,,,,,,,,,cloud_essd,40,,,,,
 ALIBABA,ap-northeast-2,ecs.g6e.xlarge,0.24244,78.43,,,,,,,,,,cloud_essd,40,,,,,
 ALIBABA,ap-northeast-2,ecs.g6e.2xlarge,0.48488,78.43,,,,,,,,,,cloud_essd,40,,,,,

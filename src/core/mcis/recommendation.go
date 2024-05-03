@@ -136,12 +136,36 @@ func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 					u.CostPerHour.Max = operand
 					u.CostPerHour.Min = operand
 				}
+			case "acceleratorCount":
+				switch condition.Operator {
+				case "<=":
+					u.AcceleratorCount.Max = operand
+				case ">=":
+					u.AcceleratorCount.Min = operand
+				case "==":
+					u.AcceleratorCount.Max = operand
+					u.AcceleratorCount.Min = operand
+				}
+			case "acceleratorMemory":
+				switch condition.Operator {
+				case "<=":
+					u.AcceleratorMemory.Max = operand
+				case ">=":
+					u.AcceleratorMemory.Min = operand
+				case "==":
+					u.AcceleratorMemory.Max = operand
+					u.AcceleratorMemory.Min = operand
+				}
 			case "region":
 				u.RegionName = condition.Operand
 			case "provider":
 				u.ProviderName = condition.Operand
-			case "specname":
-				u.CspSpecName = condition.Operand
+			case "acceleratorModel":
+				u.AcceleratorModel = condition.Operand
+			case "acceleratortype":
+				u.AcceleratorType = condition.Operand
+			case "description":
+				u.Description = condition.Operand
 			default:
 				log.Debug().Msg("[Checking] Not available metric " + metric)
 			}

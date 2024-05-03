@@ -63,6 +63,8 @@ func RestDelResource(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
 	resourceId := c.Param("resourceId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	forceFlag := c.QueryParam("force")
 
@@ -85,6 +87,10 @@ func RestDelChildResource(c echo.Context) error {
 
 	parentResourceId := c.Param("parentResourceId")
 	childResourceId := c.Param("childResourceId")
+	parentResourceId = strings.ReplaceAll(parentResourceId, " ", "+")
+	parentResourceId = strings.ReplaceAll(parentResourceId, "%2B", "+")
+	childResourceId = strings.ReplaceAll(childResourceId, " ", "+")
+	childResourceId = strings.ReplaceAll(childResourceId, "%2B", "+")
 
 	forceFlag := c.QueryParam("force")
 
@@ -193,6 +199,9 @@ func RestGetResource(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/resources/spec/:specId
 
 	resourceId := c.Param("resourceId")
+	// make " " and "+" to be "+" (web utilizes "+" for " " in URL)
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	result, err := mcir.GetResource(nsId, resourceType, resourceId)
 	if err != nil {
@@ -222,6 +231,8 @@ func RestCheckResource(c echo.Context) error {
 	nsId := c.Param("nsId")
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	exists, err := mcir.CheckResource(nsId, resourceType, resourceId)
 
@@ -246,6 +257,8 @@ func RestTestAddObjectAssociation(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/testAddObjectAssociation/:resourceType/:resourceId
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	content, err := mcir.UpdateAssociatedObjectList(nsId, resourceType, resourceId, common.StrAdd, "/test/vm/key")
 
@@ -264,6 +277,8 @@ func RestTestDeleteObjectAssociation(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	content, err := mcir.UpdateAssociatedObjectList(nsId, resourceType, resourceId, common.StrDelete, "/test/vm/key")
 	return common.EndRequestWithLog(c, reqID, err, content)
@@ -281,6 +296,8 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 	// c.Path(): /tumblebug/ns/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId
 	resourceType := c.Param("resourceType")
 	resourceId := c.Param("resourceId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	associatedObjectCount, err := mcir.GetAssociatedObjectCount(nsId, resourceType, resourceId)
 	content := map[string]int{"associatedObjectCount": associatedObjectCount}
