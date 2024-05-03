@@ -1668,10 +1668,12 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
 		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
-			log.Info().Msg(err.Error())
+			log.Warn().Msg(err.Error())
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
 			requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
+			log.Info().Msgf("Use the common VMSpecName: %s", requestBody.ReqInfo.VMSpecName)
+
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				errAgg += err.Error()
 				err = fmt.Errorf(errAgg)
