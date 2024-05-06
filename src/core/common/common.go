@@ -153,10 +153,10 @@ func CreateSpecTable() error {
 		"maxTotalStorage_TiB SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"netBwGbps SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"ebsBwMbps MEDIUMINT," + // MEDIUMINT: -8388608 to 8388607
-		"gpuModel varchar(50)," +
-		"numGpu SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"gpumemGiB SMALLINT," + // SMALLINT: -32768 ~ 32767
-		"gpuP2p varchar(50)," +
+		"acceleratorModel varchar(50)," +
+		"acceleratorCount SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"acceleratorMemory SMALLINT," + // SMALLINT: -32768 ~ 32767
+		"acceleratorType varchar(50)," +
 		"orderInFilteredResult SMALLINT," + // SMALLINT: -32768 ~ 32767
 		"evaluationStatus varchar(50)," +
 		"evaluationScore01 FLOAT," +

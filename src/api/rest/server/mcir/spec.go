@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -88,7 +89,7 @@ func RestPostSpec(c echo.Context) error {
 // @Produce  json
 // @Param specInfo body mcir.TbSpecInfo true "Details for an spec object"
 // @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
-// @Param specId path string true "Spec ID"
+// @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -99,7 +100,9 @@ func RestPutSpec(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	specId := c.Param("resourceId")
+	specId := c.Param("specId")
+	specId = strings.ReplaceAll(specId, " ", "+")
+	specId = strings.ReplaceAll(specId, "%2B", "+")
 
 	u := &mcir.TbSpecInfo{}
 	if err := c.Bind(u); err != nil {
@@ -313,7 +316,7 @@ func RestTestSortSpecs(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
-// @Param specId path string true "Spec ID"
+// @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -354,7 +357,7 @@ func RestGetAllSpec(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
-// @Param specId path string true "Spec ID"
+// @Param specId path string true "Spec ID ({providerName}+{regionName}+{specName})"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [delete]

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -93,7 +94,7 @@ func RestPostImage(c echo.Context) error {
 // @Produce  json
 // @Param imageInfo body mcir.TbImageInfo true "Details for an image object"
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param imageId path string true "Image ID"
+// @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
 // @Success 200 {object} mcir.TbImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -104,14 +105,16 @@ func RestPutImage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	imageId := c.Param("resourceId")
+	resourceId := c.Param("imageId")
+	resourceId = strings.ReplaceAll(resourceId, " ", "+")
+	resourceId = strings.ReplaceAll(resourceId, "%2B", "+")
 
 	u := &mcir.TbImageInfo{}
 	if err := c.Bind(u); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	content, err := mcir.UpdateImage(nsId, imageId, *u)
+	content, err := mcir.UpdateImage(nsId, resourceId, *u)
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
@@ -226,7 +229,7 @@ func RestFetchImages(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param imageId path string true "Image ID"
+// @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
 // @Success 200 {object} mcir.TbImageInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -267,7 +270,7 @@ func RestGetAllImage(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param imageId path string true "Image ID"
+// @Param imageId path string true "Image ID ({providerName}+{regionName}+{imageName})"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/image/{imageId} [delete]

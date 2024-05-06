@@ -5750,7 +5750,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Image ID",
+                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -5809,7 +5809,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Image ID",
+                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -5859,7 +5859,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Image ID",
+                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -6539,7 +6539,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID",
+                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -6598,7 +6598,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID",
+                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -6648,7 +6648,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID",
+                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -8654,6 +8654,18 @@
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
             "properties": {
+                "acceleratorCount": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "acceleratorMemory": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -8702,15 +8714,6 @@
                 "evaluationStatus": {
                     "type": "string"
                 },
-                "gpuMemGiB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "gpuModel": {
-                    "type": "string"
-                },
-                "gpuP2p": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -8727,9 +8730,6 @@
                     "type": "string"
                 },
                 "netBwGbps": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "numGpu": {
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "numStorage": {
@@ -9467,6 +9467,18 @@
         "mcir.TbSpecInfo": {
             "type": "object",
             "properties": {
+                "acceleratorCount": {
+                    "type": "integer"
+                },
+                "acceleratorMemory": {
+                    "type": "number"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
                 "associatedObjectList": {
                     "type": "array",
                     "items": {
@@ -9521,15 +9533,6 @@
                 "evaluationStatus": {
                     "type": "string"
                 },
-                "gpuMemGiB": {
-                    "type": "number"
-                },
-                "gpuModel": {
-                    "type": "string"
-                },
-                "gpuP2p": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -9556,9 +9559,6 @@
                     "type": "integer"
                 },
                 "numCore": {
-                    "type": "integer"
-                },
-                "numGpu": {
                     "type": "integer"
                 },
                 "numStorage": {

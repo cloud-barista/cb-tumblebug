@@ -1571,12 +1571,28 @@ func LoadCommonResource() (common.IdList, error) {
 			// 13	evaluationScore10
 			// 14	rootDiskType
 			// 15	rootDiskSize
+			// 17	acceleratorModel
+			// 18	acceleratorCount
+			// 19	acceleratorMemory
+			// 20	acceleratorDetails
 
 			providerName := strings.ToLower(row[0])
 			regionName := strings.ToLower(row[1])
 			specReqTmp.CspSpecName = row[2]
 			rootDiskType := row[14]
 			rootDiskSize := row[15]
+			acceleratorType := row[16]
+			acceleratorModel := row[17]
+			acceleratorCount := 0
+			if s, err := strconv.Atoi(row[18]); err == nil {
+				acceleratorCount = s
+			}
+			acceleratorMemory := 0.0
+			if s, err := strconv.ParseFloat(row[19], 32); err == nil {
+				acceleratorMemory = s
+			}
+			description := row[20]
+
 			specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
 
 			//get connetion for lookup (if regionName is "all", use providerName only)
@@ -1654,6 +1670,11 @@ func LoadCommonResource() (common.IdList, error) {
 							CostPerHour:       float32(costPerHour),
 							RootDiskType:      rootDiskType,
 							RootDiskSize:      rootDiskSize,
+							AcceleratorType:   acceleratorType,
+							AcceleratorModel:  acceleratorModel,
+							AcceleratorCount:  uint8(acceleratorCount),
+							AcceleratorMemory: float32(acceleratorMemory),
+							Description:       description,
 							EvaluationScore01: float32(evaluationScore01),
 						}
 

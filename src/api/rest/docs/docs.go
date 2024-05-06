@@ -5757,7 +5757,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Image ID",
+                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -5816,7 +5816,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Image ID",
+                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -5866,7 +5866,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Image ID",
+                        "description": "Image ID ({providerName}+{regionName}+{imageName})",
                         "name": "imageId",
                         "in": "path",
                         "required": true
@@ -6546,7 +6546,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID",
+                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -6605,7 +6605,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID",
+                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -6655,7 +6655,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Spec ID",
+                        "description": "Spec ID ({providerName}+{regionName}+{specName})",
                         "name": "specId",
                         "in": "path",
                         "required": true
@@ -8661,6 +8661,18 @@ const docTemplate = `{
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
             "properties": {
+                "acceleratorCount": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "acceleratorMemory": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
                 "connectionName": {
                     "type": "string"
                 },
@@ -8709,15 +8721,6 @@ const docTemplate = `{
                 "evaluationStatus": {
                     "type": "string"
                 },
-                "gpuMemGiB": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "gpuModel": {
-                    "type": "string"
-                },
-                "gpuP2p": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -8734,9 +8737,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "netBwGbps": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "numGpu": {
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "numStorage": {
@@ -9474,6 +9474,18 @@ const docTemplate = `{
         "mcir.TbSpecInfo": {
             "type": "object",
             "properties": {
+                "acceleratorCount": {
+                    "type": "integer"
+                },
+                "acceleratorMemory": {
+                    "type": "number"
+                },
+                "acceleratorModel": {
+                    "type": "string"
+                },
+                "acceleratorType": {
+                    "type": "string"
+                },
                 "associatedObjectList": {
                     "type": "array",
                     "items": {
@@ -9528,15 +9540,6 @@ const docTemplate = `{
                 "evaluationStatus": {
                     "type": "string"
                 },
-                "gpuMemGiB": {
-                    "type": "number"
-                },
-                "gpuModel": {
-                    "type": "string"
-                },
-                "gpuP2p": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -9563,9 +9566,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "numCore": {
-                    "type": "integer"
-                },
-                "numGpu": {
                     "type": "integer"
                 },
                 "numStorage": {

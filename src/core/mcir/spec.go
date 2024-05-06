@@ -102,10 +102,10 @@ type TbSpecInfo struct { // Tumblebug
 	MaxTotalStorageTiB    uint16   `json:"maxTotalStorageTiB,omitempty"`
 	NetBwGbps             uint16   `json:"netBwGbps,omitempty"`
 	EbsBwMbps             uint32   `json:"ebsBwMbps,omitempty"`
-	GpuModel              string   `json:"gpuModel,omitempty"`
-	NumGpu                uint8    `json:"numGpu,omitempty"`
-	GpuMemGiB             float32  `json:"gpuMemGiB,omitempty"`
-	GpuP2p                string   `json:"gpuP2p,omitempty"`
+	AcceleratorModel      string   `json:"acceleratorModel,omitempty"`
+	AcceleratorCount      uint8    `json:"acceleratorCount,omitempty"`
+	AcceleratorMemory     float32  `json:"acceleratorMemory,omitempty"`
+	AcceleratorType       string   `json:"acceleratorType,omitempty"`
 	OrderInFilteredResult uint16   `json:"orderInFilteredResult,omitempty"`
 	EvaluationStatus      string   `json:"evaluationStatus,omitempty"`
 	EvaluationScore01     float32  `json:"evaluationScore01"`
@@ -147,10 +147,10 @@ type FilterSpecsByRangeRequest struct {
 	MaxTotalStorageTiB Range  `json:"maxTotalStorageTiB"`
 	NetBwGbps          Range  `json:"netBwGbps"`
 	EbsBwMbps          Range  `json:"ebsBwMbps"`
-	GpuModel           string `json:"gpuModel"`
-	NumGpu             Range  `json:"numGpu"`
-	GpuMemGiB          Range  `json:"gpuMemGiB"`
-	GpuP2p             string `json:"gpuP2p"`
+	AcceleratorModel   string `json:"acceleratorModel"`
+	AcceleratorCount   Range  `json:"acceleratorCount"`
+	AcceleratorMemory  Range  `json:"acceleratorMemory"`
+	AcceleratorType    string `json:"acceleratorType"`
 	EvaluationStatus   string `json:"evaluationStatus"`
 	EvaluationScore01  Range  `json:"evaluationScore01"`
 	EvaluationScore02  Range  `json:"evaluationScore02"`
@@ -571,23 +571,23 @@ func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
 		//sqlQuery += " AND `ebsBwMbps`=" + strconv.Itoa(int(filter.EbsBwMbps))
 		sqlQuery = sqlQuery.And("EbsBwMbps = ?", filter.EbsBwMbps)
 	}
-	if filter.GpuModel != "" {
-		//sqlQuery += " AND `gpuModel` LIKE '%" + filter.GpuModel + "%'"
-		filter.GpuModel = ToNamingRuleCompatible(filter.GpuModel)
-		sqlQuery = sqlQuery.And("GpuModel LIKE ?", "%"+filter.GpuModel+"%")
+	if filter.AcceleratorModel != "" {
+		//sqlQuery += " AND `acceleratorModel` LIKE '%" + filter.AcceleratorModel + "%'"
+		filter.AcceleratorModel = ToNamingRuleCompatible(filter.AcceleratorModel)
+		sqlQuery = sqlQuery.And("AcceleratorModel LIKE ?", "%"+filter.AcceleratorModel+"%")
 	}
-	if filter.NumGpu > 0 {
-		//sqlQuery += " AND `numGpu`=" + strconv.Itoa(int(filter.NumGpu))
-		sqlQuery = sqlQuery.And("NumGpu = ?", filter.NumGpu)
+	if filter.AcceleratorCount > 0 {
+		//sqlQuery += " AND `acceleratorCount`=" + strconv.Itoa(int(filter.AcceleratorCount))
+		sqlQuery = sqlQuery.And("AcceleratorCount = ?", filter.AcceleratorCount)
 	}
-	if filter.GpuMemGiB > 0 {
-		//sqlQuery += " AND `gpuMemGiB`=" + strconv.Itoa(int(filter.GpuMemGiB))
-		sqlQuery = sqlQuery.And("GpuMemGiB = ?", filter.GpuMemGiB)
+	if filter.AcceleratorMemory > 0 {
+		//sqlQuery += " AND `acceleratorMemory`=" + strconv.Itoa(int(filter.AcceleratorMemory))
+		sqlQuery = sqlQuery.And("AcceleratorMemory = ?", filter.AcceleratorMemory)
 	}
-	if filter.GpuP2p != "" {
-		//sqlQuery += " AND `gpuP2p` LIKE '%" + filter.GpuP2p + "%'"
-		filter.GpuP2p = ToNamingRuleCompatible(filter.GpuP2p)
-		sqlQuery = sqlQuery.And("GpuP2p LIKE ?", "%"+filter.GpuP2p+"%")
+	if filter.AcceleratorType != "" {
+		//sqlQuery += " AND `acceleratorType` LIKE '%" + filter.AcceleratorType + "%'"
+		filter.AcceleratorType = ToNamingRuleCompatible(filter.AcceleratorType)
+		sqlQuery = sqlQuery.And("AcceleratorType LIKE ?", "%"+filter.AcceleratorType+"%")
 	}
 	if filter.EvaluationStatus != "" {
 		//sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
@@ -799,34 +799,34 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		sqlQuery = sqlQuery.And("EbsBwMbps <= ?", filter.EbsBwMbps.Max)
 	}
 
-	if filter.GpuModel != "" {
-		//sqlQuery += " AND `GpuModel` LIKE '%" + filter.GpuModel + "%'"
-		filter.GpuModel = ToNamingRuleCompatible(filter.GpuModel)
-		sqlQuery = sqlQuery.And("GpuModel LIKE ?", "%"+filter.GpuModel+"%")
+	if filter.AcceleratorModel != "" {
+		//sqlQuery += " AND `AcceleratorModel` LIKE '%" + filter.AcceleratorModel + "%'"
+		filter.AcceleratorModel = ToNamingRuleCompatible(filter.AcceleratorModel)
+		sqlQuery = sqlQuery.And("AcceleratorModel LIKE ?", "%"+filter.AcceleratorModel+"%")
 	}
 
-	if filter.NumGpu.Min > 0 {
-		//sqlQuery += " AND `NumGpu`>=" + fmt.Sprintf("%.6f", filter.NumGpu.Min)
-		sqlQuery = sqlQuery.And("NumGpu >= ?", filter.NumGpu.Min)
+	if filter.AcceleratorCount.Min > 0 {
+		//sqlQuery += " AND `AcceleratorCount`>=" + fmt.Sprintf("%.6f", filter.AcceleratorCount.Min)
+		sqlQuery = sqlQuery.And("AcceleratorCount >= ?", filter.AcceleratorCount.Min)
 	}
-	if filter.NumGpu.Max > 0 {
-		//sqlQuery += " AND `NumGpu`<=" + fmt.Sprintf("%.6f", filter.NumGpu.Max)
-		sqlQuery = sqlQuery.And("NumGpu <= ?", filter.NumGpu.Max)
-	}
-
-	if filter.GpuMemGiB.Min > 0 {
-		//sqlQuery += " AND `GpuMemGiB`>=" + fmt.Sprintf("%.6f", filter.GpuMemGiB.Min)
-		sqlQuery = sqlQuery.And("GpuMemGiB >= ?", filter.GpuMemGiB.Min)
-	}
-	if filter.GpuMemGiB.Max > 0 {
-		//sqlQuery += " AND `GpuMemGiB`<=" + fmt.Sprintf("%.6f", filter.GpuMemGiB.Max)
-		sqlQuery = sqlQuery.And("GpuMemGiB <= ?", filter.GpuMemGiB.Max)
+	if filter.AcceleratorCount.Max > 0 {
+		//sqlQuery += " AND `AcceleratorCount`<=" + fmt.Sprintf("%.6f", filter.AcceleratorCount.Max)
+		sqlQuery = sqlQuery.And("AcceleratorCount <= ?", filter.AcceleratorCount.Max)
 	}
 
-	if filter.GpuP2p != "" {
-		//sqlQuery += " AND `GpuP2p` LIKE '%" + filter.GpuP2p + "%'"
-		filter.GpuP2p = ToNamingRuleCompatible(filter.GpuP2p)
-		sqlQuery = sqlQuery.And("GpuP2p LIKE ?", "%"+filter.GpuP2p+"%")
+	if filter.AcceleratorMemory.Min > 0 {
+		//sqlQuery += " AND `AcceleratorMemory`>=" + fmt.Sprintf("%.6f", filter.AcceleratorMemory.Min)
+		sqlQuery = sqlQuery.And("AcceleratorMemory >= ?", filter.AcceleratorMemory.Min)
+	}
+	if filter.AcceleratorMemory.Max > 0 {
+		//sqlQuery += " AND `AcceleratorMemory`<=" + fmt.Sprintf("%.6f", filter.AcceleratorMemory.Max)
+		sqlQuery = sqlQuery.And("AcceleratorMemory <= ?", filter.AcceleratorMemory.Max)
+	}
+
+	if filter.AcceleratorType != "" {
+		//sqlQuery += " AND `AcceleratorType` LIKE '%" + filter.AcceleratorType + "%'"
+		filter.AcceleratorType = ToNamingRuleCompatible(filter.AcceleratorType)
+		sqlQuery = sqlQuery.And("AcceleratorType LIKE ?", "%"+filter.AcceleratorType+"%")
 	}
 	if filter.EvaluationStatus != "" {
 		//sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
