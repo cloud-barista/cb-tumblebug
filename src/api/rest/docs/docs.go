@@ -5429,59 +5429,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/resources/filterSpecs": {
-            "post": {
-                "description": "Filter specs",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra resource] MCIR Spec management"
-                ],
-                "summary": "Filter specs",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "system-purpose-common-ns",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Filter for filtering specs",
-                        "name": "specFilter",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/mcir.TbSpecInfo"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/mcir.RestFilterSpecsResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/ns/{nsId}/resources/filterSpecsByRange": {
             "post": {
                 "description": "Filter specs by range",

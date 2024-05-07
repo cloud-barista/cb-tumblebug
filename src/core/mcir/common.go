@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -1971,13 +1970,13 @@ func ToNamingRuleCompatible(rawName string) string {
 	// Convert all uppercase letters to lowercase
 	rawName = strings.ToLower(rawName)
 
-	// Replace all non-alphanumeric characters with '-'
-	nonAlphanumericRegex := regexp.MustCompile(`[^a-z0-9]+`)
-	rawName = nonAlphanumericRegex.ReplaceAllString(rawName, "-")
+	// // Replace all non-alphanumeric characters with '-'
+	// nonAlphanumericRegex := regexp.MustCompile(`[^a-z0-9]+`)
+	// rawName = nonAlphanumericRegex.ReplaceAllString(rawName, "-")
 
-	// Remove leading and trailing '-' from the result string
-	trimLeadingTrailingDashRegex := regexp.MustCompile(`^-+|-+$`)
-	rawName = trimLeadingTrailingDashRegex.ReplaceAllString(rawName, "")
+	// // Remove leading and trailing '-' from the result string
+	// trimLeadingTrailingDashRegex := regexp.MustCompile(`^-+|-+$`)
+	// rawName = trimLeadingTrailingDashRegex.ReplaceAllString(rawName, "")
 
 	return rawName
 }

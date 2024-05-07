@@ -6539,41 +6539,6 @@ paths:
       summary: Fetch specs
       tags:
       - '[Infra resource] MCIR Spec management'
-  /ns/{nsId}/resources/filterSpecs:
-    post:
-      consumes:
-      - application/json
-      description: Filter specs
-      parameters:
-      - default: system-purpose-common-ns
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Filter for filtering specs
-        in: body
-        name: specFilter
-        schema:
-          $ref: '#/definitions/mcir.TbSpecInfo'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcir.RestFilterSpecsResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Filter specs
-      tags:
-      - '[Infra resource] MCIR Spec management'
   /ns/{nsId}/resources/filterSpecsByRange:
     post:
       consumes:

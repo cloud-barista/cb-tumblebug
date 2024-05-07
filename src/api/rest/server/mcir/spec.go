@@ -222,37 +222,6 @@ type RestFilterSpecsResponse struct {
 	Spec []mcir.TbSpecInfo `json:"spec"`
 }
 
-// RestFilterSpecs godoc
-// @Summary Filter specs
-// @Description Filter specs
-// @Tags [Infra resource] MCIR Spec management
-// @Accept  json
-// @Produce  json
-// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
-// @Param specFilter body mcir.TbSpecInfo false "Filter for filtering specs"
-// @Success 200 {object} RestFilterSpecsResponse
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
-// @Router /ns/{nsId}/resources/filterSpecs [post]
-func RestFilterSpecs(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
-	nsId := c.Param("nsId")
-
-	u := &mcir.TbSpecInfo{}
-	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
-	}
-
-	log.Debug().Msg("[Filter specs]")
-	content, err := mcir.FilterSpecs(nsId, *u)
-	result := RestFilterSpecsResponse{}
-	result.Spec = content
-	return common.EndRequestWithLog(c, reqID, err, result)
-}
-
 // RestFilterSpecsByRange godoc
 // @Summary Filter specs by range
 // @Description Filter specs by range
@@ -279,31 +248,6 @@ func RestFilterSpecsByRange(c echo.Context) error {
 
 	log.Debug().Msg("[Filter specs]")
 	content, err := mcir.FilterSpecsByRange(nsId, *u)
-	result := RestFilterSpecsResponse{}
-	result.Spec = content
-	return common.EndRequestWithLog(c, reqID, err, result)
-}
-
-func RestTestSortSpecs(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
-	nsId := c.Param("nsId")
-
-	u := &mcir.TbSpecInfo{}
-	if err := c.Bind(u); err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
-	}
-
-	log.Debug().Msg("[Filter specs]")
-	content, err := mcir.FilterSpecs(nsId, *u)
-
-	if err != nil {
-		return common.EndRequestWithLog(c, reqID, err, nil)
-	}
-
-	content, err = mcir.SortSpecs(content, "memGiB", "descending")
 	result := RestFilterSpecsResponse{}
 	result.Spec = content
 	return common.EndRequestWithLog(c, reqID, err, result)

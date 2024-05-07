@@ -17,12 +17,11 @@ package mcir
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
-	"time"
-
 	"strings"
-	"unicode"
+	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	validator "github.com/go-playground/validator/v10"
@@ -476,173 +475,6 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpec
 	return *content, nil
 }
 
-// FilterSpecs accepts criteria for filtering, and returns the list of filtered TB spec objects
-func FilterSpecs(nsId string, filter TbSpecInfo) ([]TbSpecInfo, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
-
-	tempList := []TbSpecInfo{}
-
-	//sqlQuery := "SELECT * FROM `spec` WHERE `namespace`='" + nsId + "'"
-	sqlQuery := common.ORM.Where("Namespace = ?", nsId)
-
-	if filter.Id != "" {
-		//sqlQuery += " AND `id` LIKE '%" + filter.Id + "%'"
-		filter.Id = ToNamingRuleCompatible(filter.Id)
-		sqlQuery = sqlQuery.And("Id LIKE ?", "%"+filter.Id+"%")
-	}
-	if filter.Name != "" {
-		//sqlQuery += " AND `name` LIKE '%" + filter.Name + "%'"
-		filter.Name = ToNamingRuleCompatible(filter.Name)
-		sqlQuery = sqlQuery.And("Name LIKE ?", "%"+filter.Name+"%")
-	}
-	if filter.ConnectionName != "" {
-		//sqlQuery += " AND `connectionName` LIKE '%" + filter.ConnectionName + "%'"
-		filter.ConnectionName = ToNamingRuleCompatible(filter.ConnectionName)
-		sqlQuery = sqlQuery.And("ConnectionName LIKE ?", "%"+filter.ConnectionName+"%")
-	}
-	if filter.RegionName != "" {
-		//sqlQuery += " AND `regionName` LIKE '%" + filter.RegionName + "%'"
-		filter.RegionName = ToNamingRuleCompatible(filter.RegionName)
-		sqlQuery = sqlQuery.And("RegionName LIKE ?", "%"+filter.RegionName+"%")
-	}
-	if filter.ProviderName != "" {
-		//sqlQuery += " AND `providerName` LIKE '%" + filter.ProviderName + "%'"
-		filter.ProviderName = ToNamingRuleCompatible(filter.ProviderName)
-		sqlQuery = sqlQuery.And("ProviderName LIKE ?", "%"+filter.ProviderName+"%")
-	}
-	if filter.CspSpecName != "" {
-		//sqlQuery += " AND `cspSpecName` LIKE '%" + filter.CspSpecName + "%'"
-		filter.CspSpecName = ToNamingRuleCompatible(filter.CspSpecName)
-		sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+filter.CspSpecName+"%")
-	}
-	if filter.OsType != "" {
-		//sqlQuery += " AND `osType` LIKE '%" + filter.OsType + "%'"
-		filter.OsType = ToNamingRuleCompatible(filter.OsType)
-		sqlQuery = sqlQuery.And("OsType LIKE ?", "%"+filter.OsType+"%")
-	}
-
-	if filter.NumvCPU > 0 {
-		//sqlQuery += " AND `numvCPU`=" + strconv.Itoa(int(filter.NumvCPU))
-		sqlQuery = sqlQuery.And("NumvCPU = ?", filter.NumvCPU)
-	}
-	if filter.NumCore > 0 {
-		//sqlQuery += " AND `numCore`=" + strconv.Itoa(int(filter.NumCore))
-		sqlQuery = sqlQuery.And("NumCore = ?", filter.NumCore)
-	}
-	if filter.MemGiB > 0 {
-		//sqlQuery += " AND `memGiB`=" + strconv.Itoa(int(filter.MemGiB))
-		sqlQuery = sqlQuery.And("MemGiB = ?", filter.MemGiB)
-	}
-	if filter.StorageGiB > 0 {
-		//sqlQuery += " AND `storageGiB`=" + strconv.Itoa(int(filter.StorageGiB))
-		sqlQuery = sqlQuery.And("StorageGiB = ?", filter.StorageGiB)
-	}
-	if filter.Description != "" {
-		//sqlQuery += " AND `description` LIKE '%" + filter.Description + "%'"
-		filter.Description = ToNamingRuleCompatible(filter.Description)
-		sqlQuery = sqlQuery.And("Description LIKE ?", "%"+filter.Description+"%")
-	}
-	if filter.CostPerHour > 0 {
-		//sqlQuery += " AND `costPerHour`=" + fmt.Sprintf("%.6f", filter.CostPerHour)
-		sqlQuery = sqlQuery.And("CostPerHour = ?", filter.CostPerHour)
-	}
-	if filter.NumStorage > 0 {
-		//sqlQuery += " AND `numStorage`=" + strconv.Itoa(int(filter.NumStorage))
-		sqlQuery = sqlQuery.And("NumStorage = ?", filter.NumStorage)
-	}
-	if filter.MaxNumStorage > 0 {
-		//sqlQuery += " AND `maxNumStorage`=" + strconv.Itoa(int(filter.MaxNumStorage))
-		sqlQuery = sqlQuery.And("MaxNumStorage = ?", filter.MaxNumStorage)
-	}
-	if filter.MaxTotalStorageTiB > 0 {
-		//sqlQuery += " AND `maxTotalStorageTiB`=" + strconv.Itoa(int(filter.MaxTotalStorageTiB))
-		sqlQuery = sqlQuery.And("MaxTotalStorageTiB = ?", filter.MaxTotalStorageTiB)
-	}
-	if filter.NetBwGbps > 0 {
-		//sqlQuery += " AND `netBwGbps`=" + strconv.Itoa(int(filter.NetBwGbps))
-		sqlQuery = sqlQuery.And("NetBwGbps = ?", filter.NetBwGbps)
-	}
-	if filter.EbsBwMbps > 0 {
-		//sqlQuery += " AND `ebsBwMbps`=" + strconv.Itoa(int(filter.EbsBwMbps))
-		sqlQuery = sqlQuery.And("EbsBwMbps = ?", filter.EbsBwMbps)
-	}
-	if filter.AcceleratorModel != "" {
-		//sqlQuery += " AND `acceleratorModel` LIKE '%" + filter.AcceleratorModel + "%'"
-		filter.AcceleratorModel = ToNamingRuleCompatible(filter.AcceleratorModel)
-		sqlQuery = sqlQuery.And("AcceleratorModel LIKE ?", "%"+filter.AcceleratorModel+"%")
-	}
-	if filter.AcceleratorCount > 0 {
-		//sqlQuery += " AND `acceleratorCount`=" + strconv.Itoa(int(filter.AcceleratorCount))
-		sqlQuery = sqlQuery.And("AcceleratorCount = ?", filter.AcceleratorCount)
-	}
-	if filter.AcceleratorMemory > 0 {
-		//sqlQuery += " AND `acceleratorMemory`=" + strconv.Itoa(int(filter.AcceleratorMemory))
-		sqlQuery = sqlQuery.And("AcceleratorMemory = ?", filter.AcceleratorMemory)
-	}
-	if filter.AcceleratorType != "" {
-		//sqlQuery += " AND `acceleratorType` LIKE '%" + filter.AcceleratorType + "%'"
-		filter.AcceleratorType = ToNamingRuleCompatible(filter.AcceleratorType)
-		sqlQuery = sqlQuery.And("AcceleratorType LIKE ?", "%"+filter.AcceleratorType+"%")
-	}
-	if filter.EvaluationStatus != "" {
-		//sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
-		filter.EvaluationStatus = ToNamingRuleCompatible(filter.EvaluationStatus)
-		sqlQuery = sqlQuery.And("EvaluationStatus LIKE ?", "%"+filter.EvaluationStatus+"%")
-	}
-	if filter.EvaluationScore01 > 0 {
-		//sqlQuery += " AND `evaluationScore01`=" + fmt.Sprintf("%.6f", filter.EvaluationScore01)
-		sqlQuery = sqlQuery.And("EvaluationScore01 = ?", filter.EvaluationScore01)
-	}
-	if filter.EvaluationScore02 > 0 {
-		//sqlQuery += " AND `evaluationScore02`=" + fmt.Sprintf("%.6f", filter.EvaluationScore02)
-		sqlQuery = sqlQuery.And("EvaluationScore02 = ?", filter.EvaluationScore02)
-	}
-	if filter.EvaluationScore03 > 0 {
-		//sqlQuery += " AND `evaluationScore03`=" + fmt.Sprintf("%.6f", filter.EvaluationScore03)
-		sqlQuery = sqlQuery.And("EvaluationScore03 = ?", filter.EvaluationScore03)
-	}
-	if filter.EvaluationScore04 > 0 {
-		//sqlQuery += " AND `evaluationScore04`=" + fmt.Sprintf("%.6f", filter.EvaluationScore04)
-		sqlQuery = sqlQuery.And("EvaluationScore04 = ?", filter.EvaluationScore04)
-	}
-	if filter.EvaluationScore05 > 0 {
-		//sqlQuery += " AND `evaluationScore05`=" + fmt.Sprintf("%.6f", filter.EvaluationScore05)
-		sqlQuery = sqlQuery.And("EvaluationScore05 = ?", filter.EvaluationScore05)
-	}
-	if filter.EvaluationScore06 > 0 {
-		//sqlQuery += " AND `evaluationScore06`=" + fmt.Sprintf("%.6f", filter.EvaluationScore06)
-		sqlQuery = sqlQuery.And("EvaluationScore06 = ?", filter.EvaluationScore06)
-	}
-	if filter.EvaluationScore07 > 0 {
-		//sqlQuery += " AND `evaluationScore07`=" + fmt.Sprintf("%.6f", filter.EvaluationScore07)
-		sqlQuery = sqlQuery.And("EvaluationScore07 = ?", filter.EvaluationScore07)
-	}
-	if filter.EvaluationScore08 > 0 {
-		//sqlQuery += " AND `evaluationScore08`=" + fmt.Sprintf("%.6f", filter.EvaluationScore08)
-		sqlQuery = sqlQuery.And("EvaluationScore08 = ?", filter.EvaluationScore08)
-	}
-	if filter.EvaluationScore09 > 0 {
-		//sqlQuery += " AND `evaluationScore09`=" + fmt.Sprintf("%.6f", filter.EvaluationScore09)
-		sqlQuery = sqlQuery.And("EvaluationScore09 = ?", filter.EvaluationScore09)
-	}
-	if filter.EvaluationScore10 > 0 {
-		//sqlQuery += " AND `evaluationScore10`=" + fmt.Sprintf("%.6f", filter.EvaluationScore10)
-		sqlQuery = sqlQuery.And("EvaluationScore10 = ?", filter.EvaluationScore10)
-	}
-
-	err = sqlQuery.Find(&tempList)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return tempList, err
-	}
-	return tempList, nil
-}
-
 // Range struct is for 'FilterSpecsByRange'
 type Range struct {
 	Min float32 `json:"min"`
@@ -651,286 +483,55 @@ type Range struct {
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
 func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpecInfo, error) {
-
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("Invalid namespace ID")
 		return nil, err
 	}
 
-	tempList := []TbSpecInfo{}
+	// Start building the query using field names as database column names
+	session := common.ORM.Where("Namespace = ?", nsId)
 
-	//sqlQuery := "SELECT * FROM `spec` WHERE `namespace`='" + nsId + "'"
-	sqlQuery := common.ORM.Where("Namespace = ?", nsId)
+	// Use reflection to iterate over filter struct
+	val := reflect.ValueOf(filter)
+	typ := val.Type()
 
-	if filter.Id != "" {
-		//sqlQuery += " AND `id` LIKE '%" + filter.Id + "%'"
-		filter.Id = ToNamingRuleCompatible(filter.Id)
-		sqlQuery = sqlQuery.And("Id LIKE ?", "%"+filter.Id+"%")
-	}
-	if filter.Name != "" {
-		//sqlQuery += " AND `name` LIKE '%" + filter.Name + "%'"
-		filter.Name = ToNamingRuleCompatible(filter.Name)
-		sqlQuery = sqlQuery.And("Name LIKE ?", "%"+filter.Name+"%")
-	}
-	if filter.ConnectionName != "" {
-		//sqlQuery += " AND `connectionName` LIKE '%" + filter.ConnectionName + "%'"
-		filter.ConnectionName = ToNamingRuleCompatible(filter.ConnectionName)
-		sqlQuery = sqlQuery.And("ConnectionName LIKE ?", "%"+filter.ConnectionName+"%")
-	}
-	if filter.RegionName != "" {
-		//sqlQuery += " AND `regionName` LIKE '%" + filter.RegionName + "%'"
-		filter.RegionName = ToNamingRuleCompatible(filter.RegionName)
-		sqlQuery = sqlQuery.And("RegionName LIKE ?", "%"+filter.RegionName+"%")
-	}
-	if filter.ProviderName != "" {
-		//sqlQuery += " AND `providerName` LIKE '%" + filter.ProviderName + "%'"
-		filter.ProviderName = ToNamingRuleCompatible(filter.ProviderName)
-		sqlQuery = sqlQuery.And("ProviderName LIKE ?", "%"+filter.ProviderName+"%")
-	}
-	if filter.CspSpecName != "" {
-		keywords := strings.FieldsFunc(filter.CspSpecName, func(r rune) bool {
-			return !unicode.IsLetter(r) && !unicode.IsNumber(r)
-		})
+	for i := 0; i < val.NumField(); i++ {
+		field := typ.Field(i)
+		value := val.Field(i)
 
-		for _, keyword := range keywords {
-			sqlQuery = sqlQuery.And("CspSpecName LIKE ?", "%"+keyword+"%")
+		// Convert the first letter of the field name to lowercase to match typical database column naming conventions
+		dbFieldName := strings.ToLower(field.Name[:1]) + field.Name[1:]
+		log.Info().Msgf("Field: %s, Value: %v", dbFieldName, value)
+
+		if value.Kind() == reflect.Struct {
+			// Handle range filters like NumvCPU, MemGiB, etc.
+			min := value.FieldByName("Min")
+			max := value.FieldByName("Max")
+
+			if min.IsValid() && !min.IsZero() {
+				session = session.And(dbFieldName+" >= ?", min.Interface())
+			}
+			if max.IsValid() && !max.IsZero() {
+				session = session.And(dbFieldName+" <= ?", max.Interface())
+			}
+		} else if value.IsValid() && !value.IsZero() {
+			switch value.Kind() {
+			case reflect.String:
+				cleanValue := ToNamingRuleCompatible(value.String())
+				session = session.And(dbFieldName+" LIKE ?", "%"+cleanValue+"%")
+				log.Info().Msgf("Filtering by %s: %s", dbFieldName, cleanValue)
+			}
 		}
 	}
-	if filter.OsType != "" {
-		//sqlQuery += " AND `osType` LIKE '%" + filter.OsType + "%'"
-		filter.OsType = ToNamingRuleCompatible(filter.OsType)
-		sqlQuery = sqlQuery.And("OsType LIKE ?", "%"+filter.OsType+"%")
-	}
 
-	if filter.NumvCPU.Min > 0 {
-		//sqlQuery += " AND `NumvCPU`>=" + fmt.Sprintf("%.6f", filter.NumvCPU.Min)
-		sqlQuery = sqlQuery.And("NumvCPU >= ?", filter.NumvCPU.Min)
-	}
-	if filter.NumvCPU.Max > 0 {
-		//sqlQuery += " AND `NumvCPU`<=" + fmt.Sprintf("%.6f", filter.NumvCPU.Max)
-		sqlQuery = sqlQuery.And("NumvCPU <= ?", filter.NumvCPU.Max)
-	}
-
-	if filter.NumCore.Min > 0 {
-		//sqlQuery += " AND `NumCore`>=" + fmt.Sprintf("%.6f", filter.NumCore.Min)
-		sqlQuery = sqlQuery.And("NumCore >= ?", filter.NumCore.Min)
-	}
-	if filter.NumCore.Max > 0 {
-		//sqlQuery += " AND `NumCore`<=" + fmt.Sprintf("%.6f", filter.NumCore.Max)
-		sqlQuery = sqlQuery.And("NumCore <= ?", filter.NumCore.Max)
-	}
-
-	if filter.MemGiB.Min > 0 {
-		//sqlQuery += " AND `MemGiB`>=" + fmt.Sprintf("%.6f", filter.MemGiB.Min)
-		sqlQuery = sqlQuery.And("MemGiB >= ?", filter.MemGiB.Min)
-	}
-	if filter.MemGiB.Max > 0 {
-		//sqlQuery += " AND `MemGiB`<=" + fmt.Sprintf("%.6f", filter.MemGiB.Max)
-		sqlQuery = sqlQuery.And("MemGiB <= ?", filter.MemGiB.Max)
-	}
-
-	if filter.StorageGiB.Min > 0 {
-		//sqlQuery += " AND `StorageGiB`>=" + fmt.Sprintf("%.6f", filter.StorageGiB.Min)
-		sqlQuery = sqlQuery.And("StorageGiB >= ?", filter.StorageGiB.Min)
-	}
-	if filter.StorageGiB.Max > 0 {
-		//sqlQuery += " AND `StorageGiB`<=" + fmt.Sprintf("%.6f", filter.StorageGiB.Max)
-		sqlQuery = sqlQuery.And("StorageGiB <= ?", filter.StorageGiB.Max)
-	}
-
-	if filter.Description != "" {
-		//sqlQuery += " AND `description` LIKE '%" + filter.Description + "%'"
-		filter.Description = ToNamingRuleCompatible(filter.Description)
-		sqlQuery = sqlQuery.And("Description LIKE ?", "%"+filter.Description+"%")
-	}
-
-	if filter.CostPerHour.Min > 0 {
-		//sqlQuery += " AND `CostPerHour`>=" + fmt.Sprintf("%.6f", filter.CostPerHour.Min)
-		sqlQuery = sqlQuery.And("CostPerHour >= ?", filter.CostPerHour.Min)
-	}
-	if filter.CostPerHour.Max > 0 {
-		//sqlQuery += " AND `CostPerHour`<=" + fmt.Sprintf("%.6f", filter.CostPerHour.Max)
-		sqlQuery = sqlQuery.And("CostPerHour <= ?", filter.CostPerHour.Max)
-	}
-
-	if filter.NumStorage.Min > 0 {
-		//sqlQuery += " AND `num_storage`>=" + fmt.Sprintf("%.6f", filter.Num_storage.Min)
-		sqlQuery = sqlQuery.And("NumStorage >= ?", filter.NumStorage.Min)
-	}
-	if filter.NumStorage.Max > 0 {
-		//sqlQuery += " AND `NumStorage`<=" + fmt.Sprintf("%.6f", filter.NumStorage.Max)
-		sqlQuery = sqlQuery.And("NumStorage <= ?", filter.NumStorage.Max)
-	}
-
-	if filter.MaxNumStorage.Min > 0 {
-		//sqlQuery += " AND `MaxNumStorage`>=" + fmt.Sprintf("%.6f", filter.MaxNumStorage.Min)
-		sqlQuery = sqlQuery.And("MaxNumStorage >= ?", filter.MaxNumStorage.Min)
-	}
-	if filter.MaxNumStorage.Max > 0 {
-		//sqlQuery += " AND `MaxNumStorage`<=" + fmt.Sprintf("%.6f", filter.MaxNumStorage.Max)
-		sqlQuery = sqlQuery.And("MaxNumStorage <= ?", filter.MaxNumStorage.Max)
-	}
-
-	if filter.MaxTotalStorageTiB.Min > 0 {
-		//sqlQuery += " AND `MaxTotalStorageTiB`>=" + fmt.Sprintf("%.6f", filter.MaxTotalStorageTiB.Min)
-		sqlQuery = sqlQuery.And("MaxTotalStorageTiB >= ?", filter.MaxTotalStorageTiB.Min)
-	}
-	if filter.MaxTotalStorageTiB.Max > 0 {
-		//sqlQuery += " AND `MaxTotalStorageTiB`<=" + fmt.Sprintf("%.6f", filter.MaxTotalStorageTiB.Max)
-		sqlQuery = sqlQuery.And("MaxTotalStorageTiB <= ?", filter.MaxTotalStorageTiB.Max)
-	}
-
-	if filter.NetBwGbps.Min > 0 {
-		//sqlQuery += " AND `NetBwGbps`>=" + fmt.Sprintf("%.6f", filter.NetBwGbps.Min)
-		sqlQuery = sqlQuery.And("NetBwGbps >= ?", filter.NetBwGbps.Min)
-	}
-	if filter.NetBwGbps.Max > 0 {
-		//sqlQuery += " AND `NetBwGbps`<=" + fmt.Sprintf("%.6f", filter.NetBwGbps.Max)
-		sqlQuery = sqlQuery.And("NetBwGbps <= ?", filter.NetBwGbps.Max)
-	}
-
-	if filter.EbsBwMbps.Min > 0 {
-		//sqlQuery += " AND `EbsBwMbps`>=" + fmt.Sprintf("%.6f", filter.EbsBwMbps.Min)
-		sqlQuery = sqlQuery.And("EbsBwMbps >= ?", filter.EbsBwMbps.Min)
-	}
-	if filter.EbsBwMbps.Max > 0 {
-		//sqlQuery += " AND `EbsBwMbps`<=" + fmt.Sprintf("%.6f", filter.EbsBwMbps.Max)
-		sqlQuery = sqlQuery.And("EbsBwMbps <= ?", filter.EbsBwMbps.Max)
-	}
-
-	if filter.AcceleratorModel != "" {
-		//sqlQuery += " AND `AcceleratorModel` LIKE '%" + filter.AcceleratorModel + "%'"
-		filter.AcceleratorModel = ToNamingRuleCompatible(filter.AcceleratorModel)
-		sqlQuery = sqlQuery.And("AcceleratorModel LIKE ?", "%"+filter.AcceleratorModel+"%")
-	}
-
-	if filter.AcceleratorCount.Min > 0 {
-		//sqlQuery += " AND `AcceleratorCount`>=" + fmt.Sprintf("%.6f", filter.AcceleratorCount.Min)
-		sqlQuery = sqlQuery.And("AcceleratorCount >= ?", filter.AcceleratorCount.Min)
-	}
-	if filter.AcceleratorCount.Max > 0 {
-		//sqlQuery += " AND `AcceleratorCount`<=" + fmt.Sprintf("%.6f", filter.AcceleratorCount.Max)
-		sqlQuery = sqlQuery.And("AcceleratorCount <= ?", filter.AcceleratorCount.Max)
-	}
-
-	if filter.AcceleratorMemory.Min > 0 {
-		//sqlQuery += " AND `AcceleratorMemory`>=" + fmt.Sprintf("%.6f", filter.AcceleratorMemory.Min)
-		sqlQuery = sqlQuery.And("AcceleratorMemory >= ?", filter.AcceleratorMemory.Min)
-	}
-	if filter.AcceleratorMemory.Max > 0 {
-		//sqlQuery += " AND `AcceleratorMemory`<=" + fmt.Sprintf("%.6f", filter.AcceleratorMemory.Max)
-		sqlQuery = sqlQuery.And("AcceleratorMemory <= ?", filter.AcceleratorMemory.Max)
-	}
-
-	if filter.AcceleratorType != "" {
-		//sqlQuery += " AND `AcceleratorType` LIKE '%" + filter.AcceleratorType + "%'"
-		filter.AcceleratorType = ToNamingRuleCompatible(filter.AcceleratorType)
-		sqlQuery = sqlQuery.And("AcceleratorType LIKE ?", "%"+filter.AcceleratorType+"%")
-	}
-	if filter.EvaluationStatus != "" {
-		//sqlQuery += " AND `evaluationStatus` LIKE '%" + filter.EvaluationStatus + "%'"
-		filter.EvaluationStatus = ToNamingRuleCompatible(filter.EvaluationStatus)
-		sqlQuery = sqlQuery.And("EvaluationStatus LIKE ?", "%"+filter.EvaluationStatus+"%")
-	}
-
-	if filter.EvaluationScore01.Min > 0 {
-		//sqlQuery += " AND `evaluationScore01`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore01.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore01 >= ?", filter.EvaluationScore01.Min)
-	}
-	if filter.EvaluationScore01.Max > 0 {
-		//sqlQuery += " AND `evaluationScore01`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore01.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore01 <= ?", filter.EvaluationScore01.Max)
-	}
-
-	if filter.EvaluationScore02.Min > 0 {
-		//sqlQuery += " AND `evaluationScore02`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore02.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore02 >= ?", filter.EvaluationScore02.Min)
-	}
-	if filter.EvaluationScore02.Max > 0 {
-		//sqlQuery += " AND `evaluationScore02`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore02.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore02 <= ?", filter.EvaluationScore02.Max)
-	}
-
-	if filter.EvaluationScore03.Min > 0 {
-		//sqlQuery += " AND `evaluationScore03`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore03.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore03 >= ?", filter.EvaluationScore03.Min)
-	}
-	if filter.EvaluationScore03.Max > 0 {
-		//sqlQuery += " AND `evaluationScore03`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore03.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore03 <= ?", filter.EvaluationScore03.Max)
-	}
-
-	if filter.EvaluationScore04.Min > 0 {
-		//sqlQuery += " AND `evaluationScore04`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore04.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore04 >= ?", filter.EvaluationScore04.Min)
-	}
-	if filter.EvaluationScore04.Max > 0 {
-		//sqlQuery += " AND `evaluationScore04`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore04.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore04 <= ?", filter.EvaluationScore04.Max)
-	}
-
-	if filter.EvaluationScore05.Min > 0 {
-		//sqlQuery += " AND `evaluationScore05`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore05.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore05 >= ?", filter.EvaluationScore05.Min)
-	}
-	if filter.EvaluationScore05.Max > 0 {
-		//sqlQuery += " AND `evaluationScore05`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore05.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore05 <= ?", filter.EvaluationScore05.Max)
-	}
-
-	if filter.EvaluationScore06.Min > 0 {
-		//sqlQuery += " AND `evaluationScore06`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore06.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore06 >= ?", filter.EvaluationScore06.Min)
-	}
-	if filter.EvaluationScore06.Max > 0 {
-		//sqlQuery += " AND `evaluationScore06`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore06.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore06 <= ?", filter.EvaluationScore06.Max)
-	}
-
-	if filter.EvaluationScore07.Min > 0 {
-		//sqlQuery += " AND `evaluationScore07`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore07.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore07 >= ?", filter.EvaluationScore07.Min)
-	}
-	if filter.EvaluationScore07.Max > 0 {
-		//sqlQuery += " AND `evaluationScore07`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore07.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore07 <= ?", filter.EvaluationScore07.Max)
-	}
-
-	if filter.EvaluationScore08.Min > 0 {
-		//sqlQuery += " AND `evaluationScore08`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore08.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore08 >= ?", filter.EvaluationScore08.Min)
-	}
-	if filter.EvaluationScore08.Max > 0 {
-		//sqlQuery += " AND `evaluationScore08`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore08.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore08 <= ?", filter.EvaluationScore08.Max)
-	}
-
-	if filter.EvaluationScore09.Min > 0 {
-		//sqlQuery += " AND `evaluationScore09`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore09.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore09 >= ?", filter.EvaluationScore09.Min)
-	}
-	if filter.EvaluationScore09.Max > 0 {
-		//sqlQuery += " AND `evaluationScore09`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore09.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore09 <= ?", filter.EvaluationScore09.Max)
-	}
-
-	if filter.EvaluationScore10.Min > 0 {
-		//sqlQuery += " AND `evaluationScore10`>=" + fmt.Sprintf("%.6f", filter.EvaluationScore10.Min)
-		sqlQuery = sqlQuery.And("EvaluationScore10 >= ?", filter.EvaluationScore10.Min)
-	}
-	if filter.EvaluationScore10.Max > 0 {
-		//sqlQuery += " AND `evaluationScore10`<=" + fmt.Sprintf("%.6f", filter.EvaluationScore10.Max)
-		sqlQuery = sqlQuery.And("EvaluationScore10 <= ?", filter.EvaluationScore10.Max)
-	}
-
-	err = sqlQuery.Find(&tempList)
+	var specs []TbSpecInfo
+	err := session.Find(&specs)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return tempList, err
+		log.Error().Err(err).Msg("Failed to execute query")
+		return nil, err
 	}
 
-	return tempList, nil
+	return specs, nil
 }
 
 // SortSpecs accepts the list of TB spec objects, criteria and sorting direction,
