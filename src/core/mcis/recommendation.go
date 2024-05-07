@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
@@ -74,103 +76,84 @@ type ParameterKeyVal struct {
 	Val []string `json:"val" example:"44.146838/-116.411403"`                                                   // ["Latitude,Longitude","12,543",..,"31,433"]
 }
 
-///
+// toUpperFirst converts the first letter of a string to uppercase
+func toUpperFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
+}
 
-// // Info manage for MCIS recommendation
+// applyFilterPolicies dynamically sets filters on the request based on the policies.
+func applyFilterPolicies(request *mcir.FilterSpecsByRangeRequest, plan *DeploymentPlan) error {
+	val := reflect.ValueOf(request).Elem()
+
+	for _, policy := range plan.Filter.Policy {
+		for _, condition := range policy.Condition {
+			fieldName := toUpperFirst(policy.Metric) // Correctly capitalize the first letter
+			field := val.FieldByName(fieldName)
+			if !field.IsValid() {
+				return fmt.Errorf("invalid metric: %s", policy.Metric)
+			}
+			if err := setFieldCondition(field, condition); err != nil {
+				return fmt.Errorf("setting condition failed: %v", err)
+			}
+		}
+	}
+	return nil
+}
+
+// setFieldCondition applies the specified condition to the field.
+func setFieldCondition(field reflect.Value, condition Operation) error {
+	if field.Kind() == reflect.Struct && (field.Type().Name() == "Range" || field.Type().Name() == "range") {
+		operand, err := strconv.ParseFloat(condition.Operand, 32)
+		if err != nil {
+			return err
+		}
+		return applyRange(field, condition.Operator, float32(operand))
+	} else if field.Kind() == reflect.String {
+		// Directly set the string value without checking operator.
+		field.SetString(condition.Operand)
+	}
+	return nil
+}
+
+// applyRange sets min and max on Range type struct fields based on operator.
+func applyRange(field reflect.Value, operator string, operand float32) error {
+	min := field.FieldByName("Min")
+	max := field.FieldByName("Max")
+	switch operator {
+	case "<=":
+		max.SetFloat(float64(operand))
+	case ">=":
+		min.SetFloat(float64(operand))
+	case "==":
+		min.SetFloat(float64(operand))
+		max.SetFloat(float64(operand))
+	default:
+		return fmt.Errorf("unsupported operator: %s", operator)
+	}
+	return nil
+}
+
+// RecommendVm is func to recommend a VM
 func RecommendVm(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
 	// Filtering first
 
 	u := &mcir.FilterSpecsByRangeRequest{}
+	// Apply filter policies dynamically.
+	if err := applyFilterPolicies(u, &plan); err != nil {
+		log.Error().Err(err).Msg("Failed to apply filter policies")
+		return nil, err
+	}
 
 	// veryLargeValue := float32(math.MaxFloat32)
 	// verySmallValue := float32(0)
 
 	// Filtering
 	log.Debug().Msg("[Filtering specs]")
-
-	for _, v := range plan.Filter.Policy {
-		metric := mcir.ToNamingRuleCompatible(v.Metric)
-		conditions := v.Condition
-		for _, condition := range conditions {
-
-			var operand64 float64
-			var operand float32
-			var err error
-			if metric == "cpu" || metric == "memory" || metric == "cost" {
-				operand64, err = strconv.ParseFloat(strings.ReplaceAll(condition.Operand, " ", ""), 32)
-				operand = float32(operand64)
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					return []mcir.TbSpecInfo{}, err
-				}
-			}
-
-			switch metric {
-			case "cpu":
-				switch condition.Operator {
-				case "<=":
-					u.NumvCPU.Max = operand
-				case ">=":
-					u.NumvCPU.Min = operand
-				case "==":
-					u.NumvCPU.Max = operand
-					u.NumvCPU.Min = operand
-				}
-			case "memory":
-				switch condition.Operator {
-				case "<=":
-					u.MemGiB.Max = operand
-				case ">=":
-					u.MemGiB.Min = operand
-				case "==":
-					u.MemGiB.Max = operand
-					u.MemGiB.Min = operand
-				}
-			case "cost":
-				switch condition.Operator {
-				case "<=":
-					u.CostPerHour.Max = operand
-				case ">=":
-					u.CostPerHour.Min = operand
-				case "==":
-					u.CostPerHour.Max = operand
-					u.CostPerHour.Min = operand
-				}
-			case "acceleratorCount":
-				switch condition.Operator {
-				case "<=":
-					u.AcceleratorCount.Max = operand
-				case ">=":
-					u.AcceleratorCount.Min = operand
-				case "==":
-					u.AcceleratorCount.Max = operand
-					u.AcceleratorCount.Min = operand
-				}
-			case "acceleratorMemory":
-				switch condition.Operator {
-				case "<=":
-					u.AcceleratorMemory.Max = operand
-				case ">=":
-					u.AcceleratorMemory.Min = operand
-				case "==":
-					u.AcceleratorMemory.Max = operand
-					u.AcceleratorMemory.Min = operand
-				}
-			case "region":
-				u.RegionName = condition.Operand
-			case "provider":
-				u.ProviderName = condition.Operand
-			case "acceleratorModel":
-				u.AcceleratorModel = condition.Operand
-			case "acceleratortype":
-				u.AcceleratorType = condition.Operand
-			case "description":
-				u.Description = condition.Operand
-			default:
-				log.Debug().Msg("[Checking] Not available metric " + metric)
-			}
-		}
-	}
 
 	filteredSpecs, err := mcir.FilterSpecsByRange(nsId, *u)
 
