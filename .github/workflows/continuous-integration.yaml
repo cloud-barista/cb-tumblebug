@@ -1,0 +1,65 @@
+# This workflow performs continuous integration (CI).
+# This workflow will build the container image for amd64 arch. (as a basic build test)
+name: Continuous Integration (CI)
+
+on:
+  # On pull-request event with detailed condition below.
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - ".all-contributorsrc"
+      - ".gitignore"
+      - "LICENSE"
+      - "CODEOWNERS"
+      - "assets/**"
+      - "scripts/**"
+      - "src/testclient/scripts/**"
+      - "docs/**"
+
+jobs:
+  # The job key (i.e., ID) is "build-source-code"
+  build-source-code:
+    # Job name is "Building source code"
+    # This job runs on Ubuntu-latest (Ubuntu 22.04 LTS checked on 2023-12-13)
+    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+    name: Build source code
+    strategy:
+      matrix:
+        go-version: ["1.21"]
+        os: [ubuntu-22.04]
+        #os: [ubuntu-22.04, ubuntu-20.04, windows-2022, windows-2019]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{matrix.go-version}}
+
+      - name: Build
+        run: make # cd src/ && go build -v -o cb-tumblebug
+
+      # - name: Test
+      #   run: go test -v ./...
+
+  # The job key is "build-container-image"
+  build-container-image:
+    # Job name is "Build a container image"
+    name: Build a container image
+
+    # This job runs on Ubuntu-latest (Ubuntu 22.04 LTS checked on 2023-12-13)
+    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+    runs-on: ubuntu-22.04
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Build image
+        env:
+          IMAGE_NAME: ${{ github.event.repository.name }}
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME

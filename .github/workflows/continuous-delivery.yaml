@@ -1,0 +1,132 @@
+# This workflow performs continuous delivery (CD).
+# This workflow will build a container image and publish it to container registries.
+name: Continuous Delivery (CD)
+
+# When it's time to do a release,
+# do a full cross-platform build for all supported architectures and
+# push all of them to Docker Hub and GitHub Container Registry (GHCR).
+
+on:
+  # "Build and publish" on merged
+  # Actually, there's no "merged" event.
+  # A "push" event is occurred after the pull request "close" event with "merged" true condition.
+  # The "push" event could replace "merged" event.
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "scripts/**"
+      - "**.md"
+      - ".gitignore"
+      - "LICENSE"
+      - "CODEOWNERS"
+      - ".all-contributorsrc"
+      - "assets/**"
+      - "src/testclient/scripts/**"
+      - "src/testclient/test-clis/**"
+  # workflow trigger button
+  # workflow_dispatch:
+
+env:
+  DOCKER_REGISTRY_NAME: cloudbaristaorg
+  GHCR_REGISTRY_NAME: ${{ github.repository_owner }}
+  IMAGE_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  # The job key is "publish-container-image"
+  publish-container-image:
+    # Job name is "Publish a container image"
+    name: Publish a container image
+
+    if: github.repository_owner == 'cloud-barista'
+
+    # This job runs on Ubuntu-latest (Ubuntu 20.04 LTS checked on 2022-09-06)
+    # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # About billing for GitHub Packages
+      # https://docs.github.com/en/billing/managing-billing-for-github-packages/about-billing-for-github-packages
+      - name: Extract metadata from Git reference and GitHub events
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            # image name for Docker Hub
+            ${{env.DOCKER_REGISTRY_NAME}}/${{env.IMAGE_NAME}}
+            # image name for GitHub Container Registry (GHCR)
+            ghcr.io/${{env.GHCR_REGISTRY_NAME}}/${{env.IMAGE_NAME}}
+          tags: |
+            # See `tags` input: https://github.com/docker/metadata-action?tab=readme-ov-file#tags-input
+            ## Tags for a push tag event
+            # minimal (e.g., 1.2.3)
+            type=semver,enable=true,pattern={{version}}
+            # type=semver,pattern={{major}}.{{minor}}
+            ## Tags for a push branch event
+            # Tags to reflect the last commit of the active branch
+            type=edge,enable=true,branch=main
+            ## Other types (currently the followings may be out of scope in this project)
+            ## Tags for a push branch event
+            # minimal (short sha)
+            # type=sha,enable=true,format=short            
+            ## Tags for a push or pull_request event
+            # type=ref,event=branch
+            # type=ref,event=tag
+            # type=ref,event=pr
+            ## Tags for a schedule event - handlebars with timezone (e.g. 20200110-093000)
+            # type=schedule,enable=true,pattern={{date 'YYYYMMDD-hhmmss' tz='Asia/Tokyo'}}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # TODO: Create a PAT with `read:packages` and `write:packages` scopes and save it as an Actions secret `CR_PAT`
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Build and publish
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: ./
+          file: ./Dockerfile
+          target: prod
+          platforms: linux/amd64 # linux/arm/v7,linux/arm64,linux/386,linux/ppc64le,linux/s390x,linux/arm/v6
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}

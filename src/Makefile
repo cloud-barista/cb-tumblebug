@@ -1,5 +1,5 @@
 default:
-	go build -o cb-tumblebug
+	go build -v -o cb-tumblebug
 
 cc:
 	GOOS=linux GOARCH=arm go build -o cb-tumblebug-arm
