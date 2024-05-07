@@ -10,7 +10,7 @@ The `init.py` script is designed to automate the process of registering credenti
 - **Resource Loading**: Initiates the loading of common specs and images into Tumblebug.
 
 ## Prerequisites
-- Python 3.x installed
+- Python 3.7.5 or higher is installed
 - Python packages listed in `requirements.txt`
 - The `python3-venv` package should be installed for running the script using `init.sh`.
 
