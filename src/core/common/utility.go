@@ -172,6 +172,11 @@ func GenConnectionKey(connectionId string) string {
 	return "/connection/" + connectionId
 }
 
+// GenCredentialHolderKey is func to generate a key for credentialHolder info
+func GenCredentialHolderKey(holderId string) string {
+	return "/credentialHolder/" + holderId
+}
+
 // LookupKeyValueList is func to lookup KeyValue list
 func LookupKeyValueList(kvl []KeyValue, key string) string {
 	for _, v := range kvl {
@@ -524,13 +529,22 @@ type RegionZoneInfo struct {
 
 // RegisterAllCloudInfo is func to register all cloud info from asset to CB-Spider
 func RegisterAllCloudInfo() error {
-	for providerName, _ := range RuntimeCloudInfo.CSPs {
+	for providerName := range RuntimeCloudInfo.CSPs {
 		err := RegisterCloudInfo(providerName)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
 	}
 	return nil
+}
+
+// GetProviderList is func to list all cloud providers
+func GetProviderList() (*IdList, error) {
+	providers := IdList{}
+	for providerName := range RuntimeCloudInfo.CSPs {
+		providers.IdList = append(providers.IdList, providerName)
+	}
+	return &providers, nil
 }
 
 // RegisterCloudInfo is func to register cloud info from asset to CB-Spider
@@ -691,9 +705,11 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 
 	callResult.CredentialHolder = req.CredentialHolder
 	callResult.ProviderName = strings.ToLower(callResult.ProviderName)
-	for callResultKey, _ := range callResult.KeyValueInfoList {
+	for callResultKey := range callResult.KeyValueInfoList {
 		callResult.KeyValueInfoList[callResultKey].Value = "************"
 	}
+
+	// TODO: add code to register CredentialHolder object
 
 	cloudInfo, err := GetCloudInfo()
 	if err != nil {

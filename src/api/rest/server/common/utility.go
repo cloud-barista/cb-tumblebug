@@ -230,6 +230,27 @@ func RestGetConnConfigList(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
+// RestGetProviderList func is a rest api wrapper for GetProviderList.
+// RestGetProviderList godoc
+// @Summary List all registered Providers
+// @Description List all registered Providers
+// @Tags [Admin] Multi-Cloud environment configuration
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.IdList
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /provider [get]
+func RestGetProviderList(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	content, err := common.GetProviderList()
+	return common.EndRequestWithLog(c, reqID, err, content)
+
+}
+
 // RestGetRegion func is a rest api wrapper for GetRegion.
 // RestGetRegion godoc
 // @Summary Get registered region info

@@ -9,7 +9,7 @@ source ../init.sh
 resp=$(
     curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/testSortSpecs -H 'Content-Type: application/json' -d @- <<EOF
 	    { 
-		    "numvCPU": 4
+		    "vCPU": 4
 	    }
 EOF
 )

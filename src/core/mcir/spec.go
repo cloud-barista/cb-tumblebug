@@ -90,21 +90,17 @@ type TbSpecInfo struct { // Tumblebug
 	RegionName            string   `json:"regionName,omitempty"`
 	CspSpecName           string   `json:"cspSpecName,omitempty"`
 	OsType                string   `json:"osType,omitempty"`
-	NumvCPU               uint16   `json:"numvCPU,omitempty"`
-	NumCore               uint16   `json:"numCore,omitempty"`
-	MemGiB                float32  `json:"memGiB,omitempty"`
+	VCPU                  uint16   `json:"vCPU,omitempty"`
+	MemoryGiB             float32  `json:"memoryGiB,omitempty"`
 	StorageGiB            uint32   `json:"storageGiB,omitempty"`
-	Description           string   `json:"description,omitempty"`
-	CostPerHour           float32  `json:"costPerHour,omitempty"`
-	NumStorage            uint8    `json:"numStorage,omitempty"`
-	MaxNumStorage         uint8    `json:"maxNumStorage,omitempty"`
 	MaxTotalStorageTiB    uint16   `json:"maxTotalStorageTiB,omitempty"`
 	NetBwGbps             uint16   `json:"netBwGbps,omitempty"`
-	EbsBwMbps             uint32   `json:"ebsBwMbps,omitempty"`
 	AcceleratorModel      string   `json:"acceleratorModel,omitempty"`
 	AcceleratorCount      uint8    `json:"acceleratorCount,omitempty"`
-	AcceleratorMemory     float32  `json:"acceleratorMemory,omitempty"`
+	AcceleratorMemoryGB   float32  `json:"acceleratorMemoryGB,omitempty"`
 	AcceleratorType       string   `json:"acceleratorType,omitempty"`
+	CostPerHour           float32  `json:"costPerHour,omitempty"`
+	Description           string   `json:"description,omitempty"`
 	OrderInFilteredResult uint16   `json:"orderInFilteredResult,omitempty"`
 	EvaluationStatus      string   `json:"evaluationStatus,omitempty"`
 	EvaluationScore01     float32  `json:"evaluationScore01"`
@@ -128,39 +124,35 @@ type TbSpecInfo struct { // Tumblebug
 
 // FilterSpecsByRangeRequest is for 'FilterSpecsByRange'
 type FilterSpecsByRangeRequest struct {
-	Id                 string `json:"id"`
-	Name               string `json:"name"`
-	ConnectionName     string `json:"connectionName"`
-	ProviderName       string `json:"providerName"`
-	RegionName         string `json:"regionName"`
-	CspSpecName        string `json:"cspSpecName"`
-	OsType             string `json:"osType"`
-	NumvCPU            Range  `json:"numvCPU"`
-	NumCore            Range  `json:"numcore"`
-	MemGiB             Range  `json:"memGiB"`
-	StorageGiB         Range  `json:"storageGiB"`
-	Description        string `json:"description"`
-	CostPerHour        Range  `json:"costPerHour"`
-	NumStorage         Range  `json:"numStorage"`
-	MaxNumStorage      Range  `json:"maxNumStorage"`
-	MaxTotalStorageTiB Range  `json:"maxTotalStorageTiB"`
-	NetBwGbps          Range  `json:"netBwGbps"`
-	EbsBwMbps          Range  `json:"ebsBwMbps"`
-	AcceleratorModel   string `json:"acceleratorModel"`
-	AcceleratorCount   Range  `json:"acceleratorCount"`
-	AcceleratorMemory  Range  `json:"acceleratorMemory"`
-	AcceleratorType    string `json:"acceleratorType"`
-	EvaluationStatus   string `json:"evaluationStatus"`
-	EvaluationScore01  Range  `json:"evaluationScore01"`
-	EvaluationScore02  Range  `json:"evaluationScore02"`
-	EvaluationScore03  Range  `json:"evaluationScore03"`
-	EvaluationScore04  Range  `json:"evaluationScore04"`
-	EvaluationScore05  Range  `json:"evaluationScore05"`
-	EvaluationScore06  Range  `json:"evaluationScore06"`
-	EvaluationScore07  Range  `json:"evaluationScore07"`
-	EvaluationScore08  Range  `json:"evaluationScore08"`
-	EvaluationScore09  Range  `json:"evaluationScore09"`
-	EvaluationScore10  Range  `json:"evaluationScore10"`
+	Id                  string `json:"id"`
+	Name                string `json:"name"`
+	ConnectionName      string `json:"connectionName"`
+	ProviderName        string `json:"providerName"`
+	RegionName          string `json:"regionName"`
+	CspSpecName         string `json:"cspSpecName"`
+	OsType              string `json:"osType"`
+	VCPU                Range  `json:"vCPU"`
+	MemoryGiB           Range  `json:"memoryGiB"`
+	StorageGiB          Range  `json:"storageGiB"`
+	MaxTotalStorageTiB  Range  `json:"maxTotalStorageTiB"`
+	NetBwGbps           Range  `json:"netBwGbps"`
+	AcceleratorModel    string `json:"acceleratorModel"`
+	AcceleratorCount    Range  `json:"acceleratorCount"`
+	AcceleratorMemoryGB Range  `json:"acceleratorMemoryGB"`
+	AcceleratorType     string `json:"acceleratorType"`
+	CostPerHour         Range  `json:"costPerHour"`
+	Description         string `json:"description"`
+	EvaluationStatus    string `json:"evaluationStatus"`
+	EvaluationScore01   Range  `json:"evaluationScore01"`
+	EvaluationScore02   Range  `json:"evaluationScore02"`
+	EvaluationScore03   Range  `json:"evaluationScore03"`
+	EvaluationScore04   Range  `json:"evaluationScore04"`
+	EvaluationScore05   Range  `json:"evaluationScore05"`
+	EvaluationScore06   Range  `json:"evaluationScore06"`
+	EvaluationScore07   Range  `json:"evaluationScore07"`
+	EvaluationScore08   Range  `json:"evaluationScore08"`
+	EvaluationScore09   Range  `json:"evaluationScore09"`
+	EvaluationScore10   Range  `json:"evaluationScore10"`
 }
 
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
@@ -177,9 +169,9 @@ func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, er
 	tumblebugSpec.CspSpecName = spiderSpec.Name
 	tumblebugSpec.RegionName = spiderSpec.Region
 	tempUint64, _ := strconv.ParseUint(spiderSpec.VCpu.Count, 10, 16)
-	tumblebugSpec.NumvCPU = uint16(tempUint64)
+	tumblebugSpec.VCPU = uint16(tempUint64)
 	tempFloat64, _ := strconv.ParseFloat(spiderSpec.Mem, 32)
-	tumblebugSpec.MemGiB = float32(tempFloat64 / 1024)
+	tumblebugSpec.MemoryGiB = float32(tempFloat64 / 1024)
 
 	return tumblebugSpec, nil
 }
@@ -386,12 +378,12 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpec
 	content.AssociatedObjectList = []string{}
 
 	tempUint64, _ := strconv.ParseUint(res.VCpu.Count, 10, 16)
-	content.NumvCPU = uint16(tempUint64)
+	content.VCPU = uint16(tempUint64)
 
 	//content.Num_core = res.Num_core
 
 	tempFloat64, _ := strconv.ParseFloat(res.Mem, 32)
-	content.MemGiB = float32(tempFloat64 / 1024)
+	content.MemoryGiB = float32(tempFloat64 / 1024)
 
 	//content.StorageGiB = res.StorageGiB
 	//content.Description = res.Description
@@ -504,7 +496,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 		log.Info().Msgf("Field: %s, Value: %v", dbFieldName, value)
 
 		if value.Kind() == reflect.Struct {
-			// Handle range filters like NumvCPU, MemGiB, etc.
+			// Handle range filters like VCPU, MemoryGiB, etc.
 			min := value.FieldByName("Min")
 			max := value.FieldByName("Max")
 
@@ -540,20 +532,20 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 	var err error = nil
 
 	sort.Slice(specList, func(i, j int) bool {
-		if orderBy == "numvCPU" {
+		if orderBy == "vCPU" {
 			if direction == "descending" {
-				return specList[i].NumvCPU > specList[j].NumvCPU
+				return specList[i].VCPU > specList[j].VCPU
 			} else if direction == "ascending" {
-				return specList[i].NumvCPU < specList[j].NumvCPU
+				return specList[i].VCPU < specList[j].VCPU
 			} else {
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
 			}
-		} else if orderBy == "memGiB" {
+		} else if orderBy == "memoryGiB" {
 			if direction == "descending" {
-				return specList[i].MemGiB > specList[j].MemGiB
+				return specList[i].MemoryGiB > specList[j].MemoryGiB
 			} else if direction == "ascending" {
-				return specList[i].MemGiB < specList[j].MemGiB
+				return specList[i].MemoryGiB < specList[j].MemoryGiB
 			} else {
 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
 				return true
@@ -658,7 +650,7 @@ func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpe
 				return true
 			}
 		} else {
-			err = fmt.Errorf("'orderBy' should one of these: numvCPU, memGiB, storageGiB")
+			err = fmt.Errorf("'orderBy' should one of these: vCPU, memoryGiB, storageGiB")
 			return true
 		}
 	})

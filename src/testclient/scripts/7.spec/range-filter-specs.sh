@@ -10,11 +10,11 @@ resp=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/resources/filterSpecsByRange -H 'Content-Type: application/json' -d @- <<EOF
 	    { 
 		"connectionName": "aws",
-		    "numvCPU": {
+		    "vCPU": {
 			    "min": 2,
 			    "max": 2
 		    }, 
-		    "memGiB": {
+		    "memoryGiB": {
 			    "min": 4
 		    },
 		    "storageGiB": {

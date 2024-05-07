@@ -7526,6 +7526,41 @@
                 }
             }
         },
+        "/provider": {
+            "get": {
+                "description": "List all registered Providers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud environment configuration"
+                ],
+                "summary": "List all registered Providers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.IdList"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/provider/{providerName}/region/{regionName}": {
             "get": {
                 "description": "Get registered region info",
@@ -8401,11 +8436,7 @@
                 },
                 "requestInfo": {
                     "description": "Extracted information about the request.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.RequestInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.RequestInfo"
                 },
                 "responseData": {
                     "description": "The data sent back in response to the request."
@@ -8570,41 +8601,13 @@
                 }
             }
         },
-        "mcir.CustomImageStatus": {
-            "type": "string",
-            "enum": [
-                "Available",
-                "Unavailable"
-            ],
-            "x-enum-varnames": [
-                "MyImageAvailable",
-                "MyImageUnavailable"
-            ]
-        },
-        "mcir.DiskStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Available",
-                "Attached",
-                "Deleting",
-                "Error"
-            ],
-            "x-enum-varnames": [
-                "DiskCreating",
-                "DiskAvailable",
-                "DiskAttached",
-                "DiskDeleting",
-                "DiskError"
-            ]
-        },
         "mcir.FilterSpecsByRangeRequest": {
             "type": "object",
             "properties": {
                 "acceleratorCount": {
                     "$ref": "#/definitions/mcir.Range"
                 },
-                "acceleratorMemory": {
+                "acceleratorMemoryGB": {
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "acceleratorModel": {
@@ -8624,9 +8627,6 @@
                 },
                 "description": {
                     "type": "string"
-                },
-                "ebsBwMbps": {
-                    "$ref": "#/definitions/mcir.Range"
                 },
                 "evaluationScore01": {
                     "$ref": "#/definitions/mcir.Range"
@@ -8664,28 +8664,16 @@
                 "id": {
                     "type": "string"
                 },
-                "maxNumStorage": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
                 "maxTotalStorageTiB": {
                     "$ref": "#/definitions/mcir.Range"
                 },
-                "memGiB": {
+                "memoryGiB": {
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "name": {
                     "type": "string"
                 },
                 "netBwGbps": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "numStorage": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "numcore": {
-                    "$ref": "#/definitions/mcir.Range"
-                },
-                "numvCPU": {
                     "$ref": "#/definitions/mcir.Range"
                 },
                 "osType": {
@@ -8698,6 +8686,9 @@
                     "type": "string"
                 },
                 "storageGiB": {
+                    "$ref": "#/definitions/mcir.Range"
+                },
+                "vCPU": {
                     "$ref": "#/definitions/mcir.Range"
                 }
             }
@@ -8863,11 +8854,7 @@
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "keyValueList": {
                     "type": "array",
@@ -9018,11 +9005,7 @@
                     "example": "aws-ap-southeast-1-1"
                 },
                 "status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.CustomImageStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -9112,11 +9095,7 @@
                 },
                 "status": {
                     "description": "Available, Unavailable, Attached, ...",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcir.DiskStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Available"
                 },
                 "systemLabel": {
@@ -9417,7 +9396,7 @@
                 "acceleratorCount": {
                     "type": "integer"
                 },
-                "acceleratorMemory": {
+                "acceleratorMemoryGB": {
                     "type": "number"
                 },
                 "acceleratorModel": {
@@ -9443,9 +9422,6 @@
                 },
                 "description": {
                     "type": "string"
-                },
-                "ebsBwMbps": {
-                    "type": "integer"
                 },
                 "evaluationScore01": {
                     "type": "number"
@@ -9486,13 +9462,10 @@
                 "isAutoGenerated": {
                     "type": "boolean"
                 },
-                "maxNumStorage": {
-                    "type": "integer"
-                },
                 "maxTotalStorageTiB": {
                     "type": "integer"
                 },
-                "memGiB": {
+                "memoryGiB": {
                     "type": "number"
                 },
                 "name": {
@@ -9503,15 +9476,6 @@
                     "type": "string"
                 },
                 "netBwGbps": {
-                    "type": "integer"
-                },
-                "numCore": {
-                    "type": "integer"
-                },
-                "numStorage": {
-                    "type": "integer"
-                },
-                "numvCPU": {
                     "type": "integer"
                 },
                 "orderInFilteredResult": {
@@ -9539,6 +9503,9 @@
                     "description": "SystemLabel is for describing the MCIR in a keyword (any string can be used) for special System purpose",
                     "type": "string",
                     "example": "Managed by CB-Tumblebug"
+                },
+                "vCPU": {
+                    "type": "integer"
                 }
             }
         },
@@ -9848,11 +9815,7 @@
                 },
                 "postCommand": {
                     "description": "PostCommand is field for providing command to VMs after its creation. example:\"wget https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/scripts/setweb.sh -O ~/setweb.sh; chmod +x ~/setweb.sh; sudo ~/setweb.sh\"",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.McisCmdReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.McisCmdReq"
                 },
                 "vmDynamicReq": {
                     "$ref": "#/definitions/mcis.TbVmDynamicReq"
@@ -9969,23 +9932,6 @@
                     "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
-        },
-        "mcis.ClusterStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Active",
-                "Inactive",
-                "Updating",
-                "Deleting"
-            ],
-            "x-enum-varnames": [
-                "ClusterCreating",
-                "ClusterActive",
-                "ClusterInactive",
-                "ClusterUpdating",
-                "ClusterDeleting"
-            ]
         },
         "mcis.DeploymentPlan": {
             "type": "object",
@@ -10380,23 +10326,6 @@
                 }
             }
         },
-        "mcis.NodeGroupStatus": {
-            "type": "string",
-            "enum": [
-                "Creating",
-                "Active",
-                "Inactive",
-                "Updating",
-                "Deleting"
-            ],
-            "x-enum-varnames": [
-                "NodeGroupCreating",
-                "NodeGroupActive",
-                "NodeGroupInactive",
-                "NodeGroupUpdating",
-                "NodeGroupDeleting"
-            ]
-        },
         "mcis.Operation": {
             "type": "object",
             "properties": {
@@ -10628,17 +10557,6 @@
                 }
             }
         },
-        "mcis.SpiderImageType": {
-            "type": "string",
-            "enum": [
-                "PublicImage",
-                "MyImage"
-            ],
-            "x-enum-varnames": [
-                "PublicImage",
-                "MyImage"
-            ]
-        },
         "mcis.SpiderVMInfo": {
             "type": "object",
             "properties": {
@@ -10660,11 +10578,7 @@
                 },
                 "iid": {
                     "description": "Fields for response",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "imageIId": {
                     "$ref": "#/definitions/common.IID"
@@ -10673,7 +10587,7 @@
                     "type": "string"
                 },
                 "imageType": {
-                    "$ref": "#/definitions/mcis.SpiderImageType"
+                    "type": "string"
                 },
                 "keyPairIId": {
                     "$ref": "#/definitions/common.IID"
@@ -10709,11 +10623,7 @@
                 },
                 "region": {
                     "description": "ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "description": "\"/dev/sda1\", ...",
@@ -10748,11 +10658,7 @@
                 },
                 "subnetIID": {
                     "description": "AWS, ex) subnet-8c4a53e4",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/common.IID"
-                        }
-                    ]
+                    "$ref": "#/definitions/common.IID"
                 },
                 "subnetName": {
                     "type": "string"
@@ -10929,11 +10835,7 @@
                 },
                 "status": {
                     "description": "Creating, Active, Inactive, Updating, Deleting",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.ClusterStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Creating"
                 },
                 "systemLabel": {
@@ -11029,11 +10931,7 @@
                 },
                 "status": {
                     "description": "---",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.NodeGroupStatus"
-                        }
-                    ],
+                    "type": "string",
                     "example": "Creating"
                 }
             }
@@ -11460,19 +11358,11 @@
                 },
                 "healthChecker": {
                     "description": "HealthChecker",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBHealthCheckerReq"
                 },
                 "listener": {
                     "description": "Frontend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.NLBListenerReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.NLBListenerReq"
                 },
                 "scope": {
                     "description": "REGION(V) | GLOBAL",
@@ -11485,11 +11375,7 @@
                 },
                 "targetGroup": {
                     "description": "Backend",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.TbNLBTargetGroupReq"
                 },
                 "type": {
                     "description": "PUBLIC(V) | INTERNAL",
@@ -11731,11 +11617,7 @@
                 },
                 "region": {
                     "description": "AWS, ex) {us-east1, us-east1-c} or {ap-northeast-2}",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mcis.RegionInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/mcis.RegionInfo"
                 },
                 "rootDeviceName": {
                     "type": "string"
@@ -12175,11 +12057,7 @@
             "type": "object",
             "properties": {
                 "type": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/netutil.SubnettingRuleType"
-                        }
-                    ],
+                    "type": "string",
                     "example": "minSubnets"
                 },
                 "value": {
@@ -12187,17 +12065,6 @@
                     "example": 2
                 }
             }
-        },
-        "netutil.SubnettingRuleType": {
-            "type": "string",
-            "enum": [
-                "minSubnets",
-                "minHosts"
-            ],
-            "x-enum-varnames": [
-                "SubnettingRuleTypeMinSubnets",
-                "SubnettingRuleTypeMinHosts"
-            ]
         }
     },
     "securityDefinitions": {
