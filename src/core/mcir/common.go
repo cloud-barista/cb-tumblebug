@@ -1572,7 +1572,7 @@ func LoadCommonResource() (common.IdList, error) {
 			// 15	rootDiskSize
 			// 17	acceleratorModel
 			// 18	acceleratorCount
-			// 19	acceleratorMemory
+			// 19	acceleratorMemoryGB
 			// 20	acceleratorDetails
 
 			providerName := strings.ToLower(row[0])
@@ -1586,9 +1586,9 @@ func LoadCommonResource() (common.IdList, error) {
 			if s, err := strconv.Atoi(row[18]); err == nil {
 				acceleratorCount = s
 			}
-			acceleratorMemory := 0.0
+			acceleratorMemoryGB := 0.0
 			if s, err := strconv.ParseFloat(row[19], 32); err == nil {
-				acceleratorMemory = s
+				acceleratorMemoryGB = s
 			}
 			description := row[20]
 
@@ -1664,17 +1664,17 @@ func LoadCommonResource() (common.IdList, error) {
 					}
 					specUpdateRequest :=
 						TbSpecInfo{
-							ProviderName:      providerName,
-							RegionName:        regionName,
-							CostPerHour:       float32(costPerHour),
-							RootDiskType:      rootDiskType,
-							RootDiskSize:      rootDiskSize,
-							AcceleratorType:   acceleratorType,
-							AcceleratorModel:  acceleratorModel,
-							AcceleratorCount:  uint8(acceleratorCount),
-							AcceleratorMemory: float32(acceleratorMemory),
-							Description:       description,
-							EvaluationScore01: float32(evaluationScore01),
+							ProviderName:        providerName,
+							RegionName:          regionName,
+							CostPerHour:         float32(costPerHour),
+							RootDiskType:        rootDiskType,
+							RootDiskSize:        rootDiskSize,
+							AcceleratorType:     acceleratorType,
+							AcceleratorModel:    acceleratorModel,
+							AcceleratorCount:    uint8(acceleratorCount),
+							AcceleratorMemoryGB: float32(acceleratorMemoryGB),
+							Description:         description,
+							EvaluationScore01:   float32(evaluationScore01),
 						}
 
 					_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)

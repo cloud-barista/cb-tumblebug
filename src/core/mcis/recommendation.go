@@ -298,7 +298,7 @@ func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]Param
 	// fmt.Printf("\n result : %v \n", result)
 
 	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
-	// content, err = mcir.SortSpecs(*specList, "memGiB", "descending")
+	// content, err = mcir.SortSpecs(*specList, "memoryGiB", "descending")
 	return result, nil
 }
 
@@ -531,7 +531,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 	// fmt.Printf("\n result : %v \n", result)
 
 	// updatedSpec, err := mcir.UpdateSpec(nsId, *result)
-	// content, err = mcir.SortSpecs(*specList, "memGiB", "descending")
+	// content, err = mcir.SortSpecs(*specList, "memoryGiB", "descending")
 	return result, nil
 }
 
