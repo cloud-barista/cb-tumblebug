@@ -141,7 +141,7 @@ func RunServer(port string) {
 	if enableAuth {
 		e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 			Skipper: func(c echo.Context) bool {
-				if c.Path() == "/tumblebug/health" ||
+				if c.Path() == "/tumblebug/readyz" ||
 					c.Path() == "/tumblebug/httpVersion" {
 					return true
 				}
