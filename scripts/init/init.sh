@@ -25,23 +25,30 @@ else
     exit 1
 fi
 
-# Check if venv module is available and python3-venv is installed
-if ! python3 -c "import venv ensurepip" &> /dev/null; then
-    if ! dpkg -s python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv &> /dev/null; then
-        echo "python3-venv package for Python ${PYTHON_MAJOR}.${PYTHON_MINOR} is not installed. Installing..."
+# Try creating the virtual environment first
+echo "Attempting to create a virtual environment..."
+if python3 -m venv "$SCRIPT_DIR/initPyEnv"; then
+    echo "Virtual environment created successfully."
+else
+    echo "Failed to create the virtual environment. Checking for ensurepip..."
+    # Check if venv module and ensurepip are available
+    if ! python3 -c "import venv, ensurepip" &> /dev/null; then
+        echo "venv or ensurepip module is not available. Installing python3-venv..."
         sudo apt update
         sudo apt install -y python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv
         if [[ $? -ne 0 ]]; then
-            echo "Failed to install python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv. Please check the package availability or use DeadSnakes PPA."
+            echo "Failed to install python${PYTHON_MAJOR}.${PYTHON_MINOR}-venv. Please check the package availability."
+            exit 1
+        fi
+        # Retry creating the virtual environment
+        if ! python3 -m venv "$SCRIPT_DIR/initPyEnv"; then
+            echo "Failed to create the virtual environment after installing python3-venv."
             exit 1
         fi
     fi
-else
-    echo "venv module is available."
 fi
 
-echo "Creating and activating the virtual environment..."
-python3 -m venv "$SCRIPT_DIR/initPyEnv"
+# Activate the virtual environment
 source "$SCRIPT_DIR/initPyEnv/bin/activate"
 
 echo
