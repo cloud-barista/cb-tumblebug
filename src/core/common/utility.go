@@ -415,7 +415,7 @@ func CheckConnConfigAvailable(connConfigName string) (bool, error) {
 	)
 
 	if err != nil {
-		log.Info().Err(err).Msg("")
+		//log.Info().Err(err).Msg("")
 		return false, err
 	}
 
@@ -509,7 +509,7 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 		filteredConnections = tmpConnections
 		tmpConnections = ConnConfigList{}
 	}
-	log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
+	//log.Info().Msgf("Filtered connection config count: %d", len(filteredConnections.Connectionconfig))
 	return filteredConnections, nil
 }
 
