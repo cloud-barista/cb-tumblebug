@@ -79,6 +79,9 @@ func limitConcurrentRequests(requestKey string, limit int) bool {
 // requestDone decreases the request counter
 func requestDone(requestKey string) {
 	count, _ := clientRequestCounter.Load(requestKey)
+	if count == nil {
+		return
+	}
 	currentCount := count.(int)
 
 	if currentCount > 0 {
@@ -193,12 +196,16 @@ func ExecuteHttpRequest[B any, T any](
 	}
 
 	if err != nil {
-		requestDone(requestKey)
+		if method == "GET" {
+			requestDone(requestKey)
+		}
 		return fmt.Errorf("[Error from: %s] Message: %s", url, err.Error())
 	}
 
 	if resp.IsError() {
-		requestDone(requestKey)
+		if method == "GET" {
+			requestDone(requestKey)
+		}
 		return fmt.Errorf("[Error from: %s] Status code: %s, Message: %s", url, resp.Status(), resp.Body())
 	}
 
