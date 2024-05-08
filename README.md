@@ -1,7 +1,7 @@
 # CB-Tumblebug (Multi-Cloud Infra Service Management)
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
-[![Build](https://img.shields.io/github/actions/workflow/status/cloud-barista/cb-tumblebug/build-amd64-container-image.yaml)](https://github.com/cloud-barista/cb-tumblebug/actions/workflows/build-amd64-container-image.yaml?query=workflow%3A%22Build+amd64+container+image%22)
+[![Build](https://img.shields.io/github/actions/workflow/status/cloud-barista/cb-tumblebug/continuous-integration.yaml)](https://github.com/cloud-barista/cb-tumblebug/actions/workflows/continuous-integration.yaml?query=workflow%3AContinuous-Integration-%28CI%29) 
 [![Top Language](https://img.shields.io/github/languages/top/cloud-barista/cb-tumblebug)](https://github.com/cloud-barista/cb-tumblebug/search?l=go)
 [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cloud-barista/cb-tumblebug?label=go.mod)](https://github.com/cloud-barista/cb-tumblebug/blob/main/go.mod)
 [![Repo Size](https://img.shields.io/github/repo-size/cloud-barista/cb-tumblebug)](#)
