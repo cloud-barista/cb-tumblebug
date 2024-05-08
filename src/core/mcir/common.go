@@ -1599,95 +1599,93 @@ func LoadCommonResource() (common.IdList, error) {
 			connectionForLookup, ok := validRepresentativeConnectionMap.Load(validRepresentativeConnectionMapKey)
 			if ok {
 				specReqTmp.ConnectionName = connectionForLookup.(common.ConnConfig).ConfigName
-			} else {
-				specReqTmp.ConnectionName = "invalid"
-			}
 
-			_, ok = ignoreConnectionMap.Load(specReqTmp.ConnectionName)
-			if !ok {
-				// Give a name for spec object by combining ConnectionName and CspSpecName
-				// To avoid naming-rule violation, modify the string
+				_, ignoreCase := ignoreConnectionMap.Load(specReqTmp.ConnectionName)
+				if !ignoreCase {
+					// Give a name for spec object by combining ConnectionName and CspSpecName
+					// To avoid naming-rule violation, modify the string
 
-				// specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
-				// specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
-				specInfoId := specReqTmp.Name
+					// specReqTmp.Name = specReqTmp.ConnectionName + "-" + specReqTmp.CspSpecName
+					// specReqTmp.Name = ToNamingRuleCompatible(specReqTmp.Name)
+					specInfoId := specReqTmp.Name
 
-				specReqTmp.Description = "Common Spec Resource"
+					specReqTmp.Description = "Common Spec Resource"
 
-				regiesteredStatus = ""
+					regiesteredStatus = ""
 
-				var errRegisterSpec error
+					var errRegisterSpec error
 
-				log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
+					log.Trace().Msgf("[%d] register Common Spec: %s", i, specReqTmp.Name)
 
-				// Register Spec object
-				searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
-				value, ok := specMap.Load(searchKey)
-				if ok {
-					spiderSpec := value.(SpiderSpecInfo)
-					//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
-					tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
-					if errConvert != nil {
-						log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
-					}
-
-					tumblebugSpec.Name = specInfoId
-					tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
-					_, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
-					if errRegisterSpec != nil {
-						log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
-					}
-
-				} else {
-					errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
-					log.Trace().Msgf(errRegisterSpec.Error())
-					// _, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
-					// if errRegisterSpec != nil {
-					// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
-					// }
-				}
-
-				if errRegisterSpec != nil {
-					regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
-				} else {
-					// Update registered Spec object with givn info from asset file
-					// Update registered Spec object with Cost info
-					costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
-					if err2 != nil {
-						log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
-						costPerHour = 99999999.9
-					}
-					evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
-					if err2 != nil {
-						log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
-						evaluationScore01 = -99.9
-					}
-					specUpdateRequest :=
-						TbSpecInfo{
-							ProviderName:        providerName,
-							RegionName:          regionName,
-							CostPerHour:         float32(costPerHour),
-							RootDiskType:        rootDiskType,
-							RootDiskSize:        rootDiskSize,
-							AcceleratorType:     acceleratorType,
-							AcceleratorModel:    acceleratorModel,
-							AcceleratorCount:    uint8(acceleratorCount),
-							AcceleratorMemoryGB: float32(acceleratorMemoryGB),
-							Description:         description,
-							EvaluationScore01:   float32(evaluationScore01),
+					// Register Spec object
+					searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
+					value, ok := specMap.Load(searchKey)
+					if ok {
+						spiderSpec := value.(SpiderSpecInfo)
+						//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+						tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+						if errConvert != nil {
+							log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
 						}
 
-					_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
-					if err3 != nil {
-						log.Error().Err(err3).Msg("UpdateSpec failed")
-						regiesteredStatus += "  [Failed] " + err3.Error()
-					}
-					//fmt.Printf("[%d] Registered Common Spec\n", i)
-					//common.PrintJsonPretty(updatedSpecInfo)
-				}
+						tumblebugSpec.Name = specInfoId
+						tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
+						_, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
+						if errRegisterSpec != nil {
+							log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
+						}
 
-				regiesteredIds.AddItem(common.StrSpec + ": " + specInfoId + regiesteredStatus)
-				// }(i, row, lenSpecs)
+					} else {
+						errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
+						log.Trace().Msgf(errRegisterSpec.Error())
+						// _, errRegisterSpec = RegisterSpecWithCspSpecName(common.SystemCommonNs, &specReqTmp, true)
+						// if errRegisterSpec != nil {
+						// 	log.Error().Err(errRegisterSpec).Msg("RegisterSpec WithCspSpecName failed")
+						// }
+					}
+
+					if errRegisterSpec != nil {
+						regiesteredStatus += "  [Failed] " + errRegisterSpec.Error()
+					} else {
+						// Update registered Spec object with givn info from asset file
+						// Update registered Spec object with Cost info
+						costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
+						if err2 != nil {
+							log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
+							costPerHour = 99999999.9
+						}
+						evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
+						if err2 != nil {
+							log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
+							evaluationScore01 = -99.9
+						}
+						specUpdateRequest :=
+							TbSpecInfo{
+								ProviderName:        providerName,
+								RegionName:          regionName,
+								CostPerHour:         float32(costPerHour),
+								RootDiskType:        rootDiskType,
+								RootDiskSize:        rootDiskSize,
+								AcceleratorType:     acceleratorType,
+								AcceleratorModel:    acceleratorModel,
+								AcceleratorCount:    uint8(acceleratorCount),
+								AcceleratorMemoryGB: float32(acceleratorMemoryGB),
+								Description:         description,
+								EvaluationScore01:   float32(evaluationScore01),
+							}
+
+						_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
+						if err3 != nil {
+							log.Error().Err(err3).Msg("UpdateSpec failed")
+							regiesteredStatus += "  [Failed] " + err3.Error()
+						}
+						//fmt.Printf("[%d] Registered Common Spec\n", i)
+						//common.PrintJsonPretty(updatedSpecInfo)
+					}
+
+					regiesteredIds.AddItem(common.StrSpec + ": " + specInfoId + regiesteredStatus)
+					// }(i, row, lenSpecs)
+				}
 			}
 		}
 		wait.Wait()
@@ -1721,41 +1719,40 @@ func LoadCommonResource() (common.IdList, error) {
 				connectionForLookup, ok := validRepresentativeConnectionMap.Load(validRepresentativeConnectionMapKey)
 				if ok {
 					imageReqTmp.ConnectionName = connectionForLookup.(common.ConnConfig).ConfigName
-				} else {
-					imageReqTmp.ConnectionName = "invalid"
-				}
-				_, ok = ignoreConnectionMap.Load(imageReqTmp.ConnectionName)
-				if !ok {
-					// RandomSleep for safe parallel executions
-					common.RandomSleep(0, lenImages/8)
 
-					// To avoid naming-rule violation, modify the string
-					// imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
-					// imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
-					imageInfoId := imageReqTmp.Name
-					imageReqTmp.Description = "Common Image Resource"
+					_, ignoreCase := ignoreConnectionMap.Load(imageReqTmp.ConnectionName)
+					if !ignoreCase {
+						// RandomSleep for safe parallel executions
+						common.RandomSleep(0, lenImages/8)
 
-					log.Trace().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
+						// To avoid naming-rule violation, modify the string
+						// imageReqTmp.Name = imageReqTmp.ConnectionName + "-" + osType
+						// imageReqTmp.Name = ToNamingRuleCompatible(imageReqTmp.Name)
+						imageInfoId := imageReqTmp.Name
+						imageReqTmp.Description = "Common Image Resource"
 
-					// Register Spec object
-					regiesteredStatus = ""
+						log.Trace().Msgf("[%d] register Common Image: %s", i, imageReqTmp.Name)
 
-					_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp, true)
-					if err1 != nil {
-						log.Info().Msg(imageReqTmp.ConnectionName + err1.Error())
-						regiesteredStatus += "  [Failed] " + err1.Error()
-					} else {
-						// Update registered image object with OsType info
-						imageUpdateRequest := TbImageInfo{GuestOS: osType}
-						_, err2 := UpdateImage(common.SystemCommonNs, imageInfoId, imageUpdateRequest)
-						if err2 != nil {
-							log.Error().Err(err2).Msg("UpdateImage failed")
-							regiesteredStatus += "  [Failed] " + err2.Error()
+						// Register Spec object
+						regiesteredStatus = ""
+
+						_, err1 := RegisterImageWithId(common.SystemCommonNs, &imageReqTmp, true)
+						if err1 != nil {
+							log.Info().Msgf("Provider: %s, Region: %s, CspImageId: %s Error: %s", providerName, regionName, imageReqTmp.CspImageId, err1.Error())
+							regiesteredStatus += "  [Failed] " + err1.Error()
+						} else {
+							// Update registered image object with OsType info
+							imageUpdateRequest := TbImageInfo{GuestOS: osType}
+							_, err2 := UpdateImage(common.SystemCommonNs, imageInfoId, imageUpdateRequest)
+							if err2 != nil {
+								log.Error().Err(err2).Msg("UpdateImage failed")
+								regiesteredStatus += "  [Failed] " + err2.Error()
+							}
 						}
-					}
 
-					//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)
-					regiesteredIds.AddItem(common.StrImage + ": " + imageInfoId + regiesteredStatus)
+						//regiesteredStatus = strings.Replace(regiesteredStatus, "\\", "", -1)
+						regiesteredIds.AddItem(common.StrImage + ": " + imageInfoId + regiesteredStatus)
+					}
 				}
 			}(i, row, lenImages)
 		}
