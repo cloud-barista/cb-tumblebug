@@ -339,7 +339,7 @@ func CreateMcSwNlb(nsId string, mcisId string, req *TbNLBReq, option string) (Mc
 	vmDynamicReq := TbVmDynamicReq{Name: vmGroupName, CommonSpec: commonSpec, CommonImage: commonImage, SubGroupSize: subGroupSize}
 	mcisDynamicReq.Vm = append(mcisDynamicReq.Vm, vmDynamicReq)
 
-	mcisInfo, err := CreateMcisDynamic(nsId, &mcisDynamicReq)
+	mcisInfo, err := CreateMcisDynamic(nsId, &mcisDynamicReq, "")
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err

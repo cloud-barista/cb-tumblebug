@@ -2021,7 +2021,9 @@ const docTemplate = `{
                             "resume",
                             "reboot",
                             "terminate",
-                            "refine"
+                            "refine",
+                            "continue",
+                            "withdraw"
                         ],
                         "type": "string",
                         "description": "Action to MCIS",
@@ -4214,6 +4216,15 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/mcis.TbMcisDynamicReq"
                         }
+                    },
+                    {
+                        "enum": [
+                            "hold"
+                        ],
+                        "type": "string",
+                        "description": "Option for MCIS creation",
+                        "name": "option",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -8396,6 +8407,9 @@ const docTemplate = `{
                 },
                 "location": {
                     "$ref": "#/definitions/common.Location"
+                },
+                "regionId": {
+                    "type": "string"
                 },
                 "regionName": {
                     "type": "string"

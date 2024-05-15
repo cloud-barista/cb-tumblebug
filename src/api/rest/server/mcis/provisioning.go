@@ -115,6 +115,7 @@ func RestPostSystemMcis(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisReq body TbMcisDynamicReq true "Request body to provision MCIS dynamically"
+// @Param option query string false "Option for MCIS creation" Enums(hold)
 // @Success 200 {object} TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -125,13 +126,14 @@ func RestPostMcisDynamic(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
+	option := c.QueryParam("option")
 
 	req := &mcis.TbMcisDynamicReq{}
 	if err := c.Bind(req); err != nil {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.CreateMcisDynamic(nsId, req)
+	result, err := mcis.CreateMcisDynamic(nsId, req, option)
 	return common.EndRequestWithLog(c, reqID, err, result)
 }
 

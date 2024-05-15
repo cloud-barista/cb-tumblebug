@@ -31,7 +31,7 @@ import (
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
-// @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate, refine)
+// @Param action query string true "Action to MCIS" Enums(suspend, resume, reboot, terminate, refine, continue, withdraw)
 // @Param force query string false "Force control to skip checking controllable status" Enums(false, true)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -53,7 +53,7 @@ func RestGetControlMcis(c echo.Context) error {
 	}
 	returnObj := common.SimpleMsg{}
 
-	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" {
+	if action == "suspend" || action == "resume" || action == "reboot" || action == "terminate" || action == "refine" || action == "continue" || action == "withdraw" {
 
 		resultString, err := mcis.HandleMcisAction(nsId, mcisId, action, forceOption)
 		if err != nil {
@@ -63,7 +63,7 @@ func RestGetControlMcis(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, returnObj)
 
 	} else {
-		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine")
+		err := fmt.Errorf("'action' should be one of these: suspend, resume, reboot, terminate, refine, continue, withdraw")
 		return common.EndRequestWithLog(c, reqID, err, returnObj)
 	}
 }

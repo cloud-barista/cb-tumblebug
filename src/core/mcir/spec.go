@@ -493,7 +493,7 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 
 		// Convert the first letter of the field name to lowercase to match typical database column naming conventions
 		dbFieldName := strings.ToLower(field.Name[:1]) + field.Name[1:]
-		log.Info().Msgf("Field: %s, Value: %v", dbFieldName, value)
+		log.Debug().Msgf("Field: %s, Value: %v", dbFieldName, value)
 
 		if value.Kind() == reflect.Struct {
 			// Handle range filters like VCPU, MemoryGiB, etc.

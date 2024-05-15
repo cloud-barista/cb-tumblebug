@@ -124,6 +124,20 @@ func HandleMcisAction(nsId string, mcisId string, action string, force bool) (st
 
 		return "Terminated the MCIS", nil
 
+	} else if action == "continue" {
+		log.Debug().Msg("[continue MCIS provisioning]")
+		key := common.GenMcisKey(nsId, mcisId, "")
+		holdingMcisMap.Store(key, action)
+
+		return "Continue the holding MCIS", nil
+
+	} else if action == "withdraw" {
+		log.Debug().Msg("[withdraw MCIS provisioning]")
+		key := common.GenMcisKey(nsId, mcisId, "")
+		holdingMcisMap.Store(key, action)
+
+		return "Withdraw the holding MCIS", nil
+
 	} else if action == "refine" { // refine delete VMs in StatusFailed or StatusUndefined
 		log.Debug().Msg("[refine MCIS]")
 
