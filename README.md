@@ -399,7 +399,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
    - [통합 제어 시험](#통합-제어-시험) (추천 테스트 방법) `src/testclient/scripts/sequentialFullTest/`
  - 3 단계: [멀티 클라우드 인프라 유스케이스 자동 배포](#멀티-클라우드-인프라-유스케이스)
 
-#### 클라우드 인증 정보 및 테스트 기본 정보 입력
+#### 클라우드 테스트 기본 정보 입력
 1. [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts) 이동
 2. [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env) 설정
    - CB-Spider 및 CB-Tumblebug 서버 엔드포인트, 클라우드 리젼, 테스트용 이미지명, 테스트용 스팩명 등 테스트 기본 정보 제공
@@ -519,7 +519,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     - `./command-mcis.sh -n shson -f ../testSetCustom.env`  # MCIS의 모든 VM에 IP 및 Hostname 조회를 수행
 
   - K8s 클러스터 테스트 (WIP: CSP별 안정화 작업 진행 중)
-    - `initMultiCloudEnv.sh`를 사전 실행함을 가정
+    - `init.sh`를 사전 실행함을 가정
     - `./create-mcir-ns-cloud.sh -n tb -f ../testSet.env`  # K8s 클러스터 생성에 필요한 MCIR 생성
     - `./create-cluster-only.sh -n tb -f ../testSet.env -x 1 -z 1`  # K8s 클러스터를 생성(-x 최대노드수 -z 노드그룹 및 클러스터 추가 이름)
     - `./get-cluster.sh -n tb -f ../testSet.env -z 1`  # K8s 클러스터 정보 얻기
