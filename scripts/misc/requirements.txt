@@ -1,0 +1,6 @@
+# Used for handling HTTP requests
+requests==2.31.0
+
+# Used for parsing and creating YAML files
+PyYAML==6.0.1
+
