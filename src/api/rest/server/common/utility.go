@@ -258,6 +258,7 @@ func RestGetProviderList(c echo.Context) error {
 // @Tags [Admin] Multi-Cloud environment configuration
 // @Accept  json
 // @Produce  json
+// @Param providerName path string true "Name of the CSP to retrieve"
 // @Param regionName path string true "Name of region to retrieve"
 // @Success 200 {object} common.RegionDetail
 // @Failure 404 {object} common.SimpleMsg

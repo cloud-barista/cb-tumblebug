@@ -7965,6 +7965,11 @@ paths:
       - application/json
       description: Get registered region info
       parameters:
+      - description: Name of the CSP to retrieve
+        in: path
+        name: providerName
+        required: true
+        type: string
       - description: Name of region to retrieve
         in: path
         name: regionName
