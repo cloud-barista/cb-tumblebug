@@ -7595,6 +7595,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Name of the CSP to retrieve",
+                        "name": "providerName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "Name of region to retrieve",
                         "name": "regionName",
                         "in": "path",
