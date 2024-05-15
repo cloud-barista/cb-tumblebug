@@ -1605,6 +1605,7 @@ cloud:
     driver: ktcloud-driver-v1.0.so
     region:
       KOR-Seoul:
+        id: KOR-Seoul
         description: Seoul - South Korea
         location:
           display: South Korea (Seoul)
@@ -1614,6 +1615,7 @@ cloud:
         - 95e2f517-d64a-4866-8585-5177c256f7c7
         - d7d0177e-6cda-404a-a46f-a5b356d2874e
       KOR-Central:
+        id: KOR-Central
         description: Cheonan South Korea
         location:
           display: Cheonan South Korea
@@ -1626,18 +1628,21 @@ cloud:
     description: KT Cloud (VPC)
     driver: ktcloudvpc-driver-v1.0.so
     region:
-      kr-dx-m1:
+      KR1:
+        id: KR1
         description: Seoul - South Korea
         location:
           display: Mok-dong Seoul South Korea
           latitude: 37.536726
           longitude: 126.874278
-        zone: []
+        zone:
+        - DX-M1
   ncp:
     description: Naver Cloud Platform (Classic without VPC)
     driver: ncp-driver-v1.0.so
     region:
       DEN:
+        id: DEN
         description: Germany
         location:
           display: Germany
@@ -1646,6 +1651,7 @@ cloud:
         zone:
         - DEN-1
       JPN:
+        id: JPN
         description: Japan
         location:
           display: Japan
@@ -1654,6 +1660,7 @@ cloud:
         zone:
         - JPN-1
       KR:
+        id: KR
         description: Korea
         location:
           display: South Korea (Seoul)
@@ -1663,6 +1670,7 @@ cloud:
         - KR-1
         - KR-2
       SGN:
+        id: SGN
         description: Singapore
         location:
           display: Singapore
@@ -1670,7 +1678,8 @@ cloud:
           longitude: 103.7041
         zone:
         - SGN-1
-      uswn:
+      USWN:
+        id: USWN
         description: US West
         location:
           display: US Western
@@ -1679,6 +1688,7 @@ cloud:
         zone:
         - USWN-1
       HK:
+        id: HK
         description: Hong Kong
         location:
           display: Hong Kong
@@ -1691,6 +1701,7 @@ cloud:
     driver: ncpvpc-driver-v1.0.so
     region:
       KR:
+        id: KR
         description: Korea 1
         location:
           display: South Korea (Seoul)
@@ -1700,6 +1711,7 @@ cloud:
         - KR-1
         - KR-2
       SGN:
+        id: SGN
         description: Singapore
         location:
           display: Singapore
@@ -1709,6 +1721,7 @@ cloud:
         - SGN-4
         - SGN-5
       JPN:
+        id: JPN
         description: Japan
         location:
           display: Japan
@@ -1722,6 +1735,7 @@ cloud:
     driver: nhncloud-driver-v1.0.so
     region:
       jp1:
+        id: JP1
         description: Japan (Tokyo)
         location:
           display: Japan (Tokyo)
@@ -1731,6 +1745,7 @@ cloud:
         - jp-pub-a
         - jp-pub-b
       kr1:
+        id: KR1
         description: South Korea (Pangyo)
         location:
           display: South Korea (Pangyo)
@@ -1740,6 +1755,7 @@ cloud:
         - kr-pub-a
         - kr-pub-b
       kr2:
+        id: KR2
         description: South Korea (Pyeongchon)
         location:
           display: South Korea (Pyeongchon)
@@ -1779,25 +1795,9 @@ cloud:
           latitude: 39.9042
           longitude: 116.407396
         zone:
-        - ap-beijing-1
-        - ap-beijing-2
         - ap-beijing-3
-        - ap-beijing-4
-        - ap-beijing-5
         - ap-beijing-6
         - ap-beijing-7
-        - ap-beijing-8
-        - ap-beijing-cdz-haerbin-1
-        - ap-beijing-cdz-haerbindianxin-1
-        - ap-beijing-cdz-kscs-1
-        - ap-beijing-cdz-tmap-1
-        - ap-beijing-cdz-zhuanzhuan-1
-        - ap-beijing-ez-taiyuan-1
-        - ap-beijing-tez-changchun-1
-        - ap-beijing-tez-haerbin-1
-        - ap-beijing-tez-shenyang-1
-        - ap-beijing-tez-shenyang-2
-        - ap-beijing-tez-shijiazhuang-2
       ap-chengdu:
         description: Chengdu
         location:
@@ -1806,13 +1806,6 @@ cloud:
           longitude: 104.066801
         zone:
         - ap-chengdu-1
-        - ap-chengdu-2
-        - ap-chengdu-tez-chengdu-1
-        - ap-chengdu-tez-chengdu-2
-        - ap-chengdu-tez-chongqing-1
-        - ap-chengdu-tez-kunming-1
-        - ap-chengdu-tez-kunming-2
-        - ap-chengdu-tez-xian-1
       ap-chongqing:
         description: Chongqing
         location:
@@ -1828,26 +1821,8 @@ cloud:
           latitude: 23.12911
           longitude: 113.264385
         zone:
-        - ap-guangzhou-1
-        - ap-guangzhou-2
-        - ap-guangzhou-3
-        - ap-guangzhou-4
-        - ap-guangzhou-5
-        - ap-guangzhou-51
         - ap-guangzhou-6
         - ap-guangzhou-7
-        - ap-guangzhou-8
-        - ap-guangzhou-tez-changsha-1
-        - ap-guangzhou-tez-dongguan-1
-        - ap-guangzhou-tez-guangzhou-1
-        - ap-guangzhou-tez-guangzhou-2
-        - ap-guangzhou-tez-guangzhou-3
-        - ap-guangzhou-tez-nanning-1
-        - ap-guangzhou-tez-nanning-2
-        - ap-guangzhou-tez-nanning-3
-        - ap-guangzhou-tez-shenzhen-1
-        - ap-guangzhou-tez-wuhan-1
-        - ap-guangzhou-tez-zhengzhou-1
       ap-hongkong:
         description: HongKong
         location:
@@ -1855,10 +1830,8 @@ cloud:
           latitude: 22.396228
           longitude: 114.108497
         zone:
-        - ap-hongkong-1
         - ap-hongkong-2
         - ap-hongkong-3
-        - ap-hongkong-cdz-lsszy-1
       ap-jakarta:
         description: Jakarta
         location:
@@ -1885,7 +1858,6 @@ cloud:
           longitude: 118.796877
         zone:
         - ap-nanjing-1
-        - ap-nanjing-2
         - ap-nanjing-3
       ap-seoul:
         description: Seoul
@@ -1903,24 +1875,9 @@ cloud:
           latitude: 31.23039
           longitude: 121.473702
         zone:
-        - ap-shanghai-1
         - ap-shanghai-2
-        - ap-shanghai-3
-        - ap-shanghai-4
         - ap-shanghai-5
-        - ap-shanghai-6
-        - ap-shanghai-7
         - ap-shanghai-8
-        - ap-shanghai-cdz-yrkj-1
-        - ap-shanghai-ez-nanchang-1
-        - ap-shanghai-tez-hefei-1
-        - ap-shanghai-tez-jinan-1
-        - ap-shanghai-tez-nanchang-1
-        - ap-shanghai-tez-ningbo-1
-        - ap-shanghai-tez-ningbo-2
-        - ap-shanghai-tez-qingdao-1
-        - ap-shanghai-tez-wuxi-1
-        - ap-shanghai-tez-wuxi-2
       ap-singapore:
         description: Singapore
         location:
@@ -1932,7 +1889,6 @@ cloud:
         - ap-singapore-2
         - ap-singapore-3
         - ap-singapore-4
-        - ap-singapore-cdz-grm-1
       ap-tokyo:
         description: Tokyo
         location:
@@ -1951,7 +1907,6 @@ cloud:
         zone:
         - eu-frankfurt-1
         - eu-frankfurt-2
-        - eu-frankfurt-3
       eu-moscow:
         description: Moscow
         location:
