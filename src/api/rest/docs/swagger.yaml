@@ -158,6 +158,8 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/common.Location'
+      regionId:
+        type: string
       regionName:
         type: string
       zones:
@@ -4211,6 +4213,8 @@ paths:
         - reboot
         - terminate
         - refine
+        - continue
+        - withdraw
         in: query
         name: action
         required: true
@@ -5702,6 +5706,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/mcis.TbMcisDynamicReq'
+      - description: Option for MCIS creation
+        enum:
+        - hold
+        in: query
+        name: option
+        type: string
       produces:
       - application/json
       responses:

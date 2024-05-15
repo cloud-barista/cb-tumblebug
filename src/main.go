@@ -181,7 +181,7 @@ func setConfig() {
 
 	for attempt < maxAttempts {
 		if common.CheckSpiderReady() == nil {
-			log.Info().Msg("CB-Spider is now ready.")
+			log.Info().Msg("CB-Spider is now ready. Initializing CB-Tumblebug...")
 			break
 		}
 		log.Info().Msgf("CB-Spider at %s is not ready. Attempt %d/%d", common.SpiderRestUrl, attempt+1, maxAttempts)

@@ -510,6 +510,8 @@ type TbVmRecommendInfo struct {
 	PlacementParam []common.KeyValue `json:"placementParam"`
 }
 
+var holdingMcisMap sync.Map
+
 // MCIS and VM Provisioning
 
 // CreateMcisVm is func to post (create) McisVm
@@ -957,6 +959,32 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 		}
 	}
 
+	// hold option will hold the MCIS creation process until the user releases it.
+	if option == "hold" {
+		key := common.GenMcisKey(nsId, mcisId, "")
+		holdingMcisMap.Store(key, "holding")
+		for {
+			value, ok := holdingMcisMap.Load(key)
+			if !ok {
+				break
+			}
+			if value == "continue" {
+				holdingMcisMap.Delete(key)
+				break
+			} else if value == "withdraw" {
+				holdingMcisMap.Delete(key)
+				DelMcis(nsId, mcisId, "force")
+				err := fmt.Errorf("Withdrawed MCIS creation")
+				log.Error().Err(err).Msg("")
+				return nil, err
+			}
+
+			log.Info().Msgf("MCIS: %s (holding)", key)
+			time.Sleep(5 * time.Second)
+		}
+		option = "create"
+	}
+
 	//goroutin
 	var wg sync.WaitGroup
 
@@ -1222,11 +1250,11 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 		return nil, err
 	}
 
-	return CreateMcisDynamic(nsId, req)
+	return CreateMcisDynamic(nsId, req, "")
 }
 
 // CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
-func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) {
+func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq, deployOption string) (*TbMcisInfo, error) {
 
 	mcisReq := TbMcisReq{}
 	mcisReq.Name = req.Name
@@ -1290,6 +1318,9 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq) (*TbMcisInfo, error) 
 
 	// Run create MCIS with the generated MCIS request (option != register)
 	option := "create"
+	if deployOption == "hold" {
+		option = "hold"
+	}
 	return CreateMcis(nsId, &mcisReq, option)
 }
 
@@ -1643,6 +1674,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		// Try lookup customImage
 		requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
 		if requestBody.ReqInfo.ImageName == "" || err != nil {
+			log.Warn().Msgf("Not found the Image: %s in nsId: %s, find it from SystemCommonNs", vmInfoData.ImageId, nsId)
 			errAgg := err.Error()
 			// If customImage doesn't exist, then try lookup image
 			requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
@@ -1668,7 +1700,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
 		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
-			log.Warn().Msg(err.Error())
+			log.Warn().Msgf("Not found the Spec: %s in nsId: %s, find it from SystemCommonNs", vmInfoData.SpecId, nsId)
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
 			requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)

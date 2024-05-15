@@ -1651,12 +1651,12 @@ func LoadCommonResource() (common.IdList, error) {
 						// Update registered Spec object with Cost info
 						costPerHour, err2 := strconv.ParseFloat(strings.ReplaceAll(row[3], " ", ""), 32)
 						if err2 != nil {
-							log.Error().Err(err2).Msg("Not valid CostPerHour value in the asset")
+							log.Error().Msgf("Not valid CostPerHour value in the asset: %s", specInfoId)
 							costPerHour = 99999999.9
 						}
 						evaluationScore01, err2 := strconv.ParseFloat(strings.ReplaceAll(row[4], " ", ""), 32)
 						if err2 != nil {
-							log.Error().Err(err2).Msg("Not valid evaluationScore01 value in the asset")
+							log.Error().Msgf("Not valid evaluationScore01 value in the asset: %s", specInfoId)
 							evaluationScore01 = -99.9
 						}
 						specUpdateRequest :=
@@ -1912,12 +1912,12 @@ func LoadDefaultResource(nsId string, resType string, connectionName string) err
 
 			common.PrintJsonPretty(reqTmp)
 
-			resultInfo, err := CreateSshKey(nsId, &reqTmp, "")
+			_, err := CreateSshKey(nsId, &reqTmp, "")
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to create SshKey")
 				return err
 			}
-			common.PrintJsonPretty(resultInfo)
+			// common.PrintJsonPretty(resultInfo)
 		} else {
 			return errors.New("Not valid option (provide sg, sshkey, vnet, or all)")
 		}
@@ -1981,9 +1981,8 @@ func ToNamingRuleCompatible(rawName string) string {
 // UpdateResourceObject is func to update the resource object
 func UpdateResourceObject(nsId string, resourceType string, resourceObject interface{}) {
 	resourceId, err := GetIdFromStruct(resourceObject)
-	fmt.Printf("in UpdateResourceObject; extracted resourceId: %s \n", resourceId) // for debug
 	if resourceId == "" || err != nil {
-		fmt.Printf("in UpdateResourceObject; failed to extract resourceId. \n") // for debug
+		log.Debug().Msgf("in UpdateResourceObject; failed to extract resourceId") // for debug
 		return
 	}
 

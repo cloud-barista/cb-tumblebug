@@ -596,14 +596,15 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	// register representative regionZone (region only)
 	requestBody.RegionName = providerName + "-" + regionName
 	keyValueInfoList := []KeyValue{}
+
 	if len(RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones) > 0 {
 		keyValueInfoList = []KeyValue{
-			{Key: "Region", Value: regionName},
+			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
 			{Key: "Zone", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones[0]},
 		}
 	} else {
 		keyValueInfoList = []KeyValue{
-			{Key: "Region", Value: regionName},
+			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
 			{Key: "Zone", Value: "N/A"},
 		}
 	}
@@ -629,7 +630,7 @@ func RegisterRegionZone(providerName string, regionName string) error {
 	for _, zoneName := range RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones {
 		requestBody.RegionName = providerName + "-" + regionName + "-" + zoneName
 		keyValueInfoList := []KeyValue{
-			{Key: "Region", Value: regionName},
+			{Key: "Region", Value: RuntimeCloudInfo.CSPs[providerName].Regions[regionName].RegionId},
 			{Key: "Zone", Value: zoneName},
 		}
 		requestBody.AvailableZoneList = RuntimeCloudInfo.CSPs[providerName].Regions[regionName].Zones
