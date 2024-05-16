@@ -4179,6 +4179,367 @@
                 }
             }
         },
+        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws": {
+            "get": {
+                "description": "Update VPN tunnels between GCP and AWS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] GCP-AWS VPN tunnel (under development)"
+                ],
+                "summary": "Get resource info of VPN tunnels between GCP and AWS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "refined",
+                        "description": "Resource info by detail (refined, raw)",
+                        "name": "detail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update VPN tunnels between GCP and AWS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] GCP-AWS VPN tunnel (under development)"
+                ],
+                "summary": "(To be provided) Update VPN tunnels between GCP and AWS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
+                        "name": "vpnReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostVpnGcpToAwsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] GCP-AWS VPN tunnel (under development)"
+                ],
+                "summary": "Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
+                        "name": "vpnReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostVpnGcpToAwsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] GCP-AWS VPN tunnel (under development)"
+                ],
+                "summary": "Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws/request/{requestId}": {
+            "get": {
+                "description": "Check the status of a specific request by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] GCP-AWS VPN tunnel (under development)"
+                ],
+                "summary": "Check the status of a specific request by its ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "requestId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mcisDynamic": {
             "post": {
                 "description": "Create MCIS Dynamically from common spec and image",
@@ -12149,6 +12510,78 @@
                 },
                 "onTumblebug": {
                     "$ref": "#/definitions/mcis.resourceOnTumblebug"
+                }
+            }
+        },
+        "model.Response": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "string",
+                    "example": "Any details"
+                },
+                "list": {
+                    "type": "array",
+                    "items": {}
+                },
+                "object": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Any text"
+                }
+            }
+        },
+        "model.RestPostVpnGcpToAwsRequest": {
+            "type": "object",
+            "properties": {
+                "tfVars": {
+                    "$ref": "#/definitions/model.TfVarsGcpAwsVpnTunnel"
+                }
+            }
+        },
+        "model.TfVarsGcpAwsVpnTunnel": {
+            "type": "object",
+            "required": [
+                "aws-region",
+                "aws-subnet-id",
+                "aws-vpc-id",
+                "gcp-region",
+                "gcp-vpc-network-name"
+            ],
+            "properties": {
+                "aws-region": {
+                    "type": "string",
+                    "default": "ap-northeast-2",
+                    "example": "ap-northeast-2"
+                },
+                "aws-subnet-id": {
+                    "type": "string",
+                    "example": "subnet-xxxxx"
+                },
+                "aws-vpc-id": {
+                    "type": "string",
+                    "example": "vpc-xxxxx"
+                },
+                "gcp-region": {
+                    "type": "string",
+                    "default": "asia-northeast3",
+                    "example": "asia-northeast3"
+                },
+                "gcp-vpc-network-name": {
+                    "type": "string",
+                    "default": "vpc01",
+                    "example": "vpc01"
+                },
+                "resource-group-id": {
+                    "type": "string",
+                    "example": ""
                 }
             }
         },

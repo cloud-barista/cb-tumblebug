@@ -2771,6 +2771,59 @@ definitions:
       onTumblebug:
         $ref: '#/definitions/mcis.resourceOnTumblebug'
     type: object
+  model.Response:
+    properties:
+      details:
+        example: Any details
+        type: string
+      list:
+        items: {}
+        type: array
+      object:
+        additionalProperties: true
+        type: object
+      success:
+        example: true
+        type: boolean
+      text:
+        example: Any text
+        type: string
+    type: object
+  model.RestPostVpnGcpToAwsRequest:
+    properties:
+      tfVars:
+        $ref: '#/definitions/model.TfVarsGcpAwsVpnTunnel'
+    type: object
+  model.TfVarsGcpAwsVpnTunnel:
+    properties:
+      aws-region:
+        default: ap-northeast-2
+        example: ap-northeast-2
+        type: string
+      aws-subnet-id:
+        example: subnet-xxxxx
+        type: string
+      aws-vpc-id:
+        example: vpc-xxxxx
+        type: string
+      gcp-region:
+        default: asia-northeast3
+        example: asia-northeast3
+        type: string
+      gcp-vpc-network-name:
+        default: vpc01
+        example: vpc01
+        type: string
+      resource-group-id:
+        example: ""
+        type: string
+    required:
+    - aws-region
+    - aws-subnet-id
+    - aws-vpc-id
+    - gcp-region
+    - gcp-vpc-network-name
+    type: object
   netutil.Network:
     properties:
       cidrBlock:
@@ -5692,6 +5745,255 @@ paths:
       summary: Create VM Dynamically and add it to MCIS
       tags:
       - '[Infra service] MCIS Provisioning management'
+  /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws:
+    delete:
+      consumes:
+      - application/json
+      description: Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vpn01
+        description: VPN ID
+        in: path
+        name: vpnId
+        required: true
+        type: string
+      produces:
+      - application/x-json-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)
+      tags:
+      - '[VPN] GCP-AWS VPN tunnel (under development)'
+    get:
+      consumes:
+      - application/json
+      description: Update VPN tunnels between GCP and AWS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vpn01
+        description: VPN ID
+        in: path
+        name: vpnId
+        required: true
+        type: string
+      - default: refined
+        description: Resource info by detail (refined, raw)
+        in: query
+        name: detail
+        type: string
+      produces:
+      - application/x-json-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Get resource info of VPN tunnels between GCP and AWS
+      tags:
+      - '[VPN] GCP-AWS VPN tunnel (under development)'
+    post:
+      consumes:
+      - application/json
+      description: Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vpn01
+        description: VPN ID
+        in: path
+        name: vpnId
+        required: true
+        type: string
+      - description: Resources info for VPN tunnel configuration between GCP and AWS
+        in: body
+        name: vpnReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.RestPostVpnGcpToAwsRequest'
+      produces:
+      - application/x-json-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
+      tags:
+      - '[VPN] GCP-AWS VPN tunnel (under development)'
+    put:
+      consumes:
+      - application/json
+      description: Update VPN tunnels between GCP and AWS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vpn01
+        description: VPN ID
+        in: path
+        name: vpnId
+        required: true
+        type: string
+      - description: Resources info for VPN tunnel configuration between GCP and AWS
+        in: body
+        name: vpnReq
+        required: true
+        schema:
+          $ref: '#/definitions/model.RestPostVpnGcpToAwsRequest'
+      produces:
+      - application/x-json-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: (To be provided) Update VPN tunnels between GCP and AWS
+      tags:
+      - '[VPN] GCP-AWS VPN tunnel (under development)'
+  /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws/request/{requestId}:
+    get:
+      consumes:
+      - application/json
+      description: Check the status of a specific request by its ID
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      - default: vpn01
+        description: VPN ID
+        in: path
+        name: vpnId
+        required: true
+        type: string
+      - description: Request ID
+        in: path
+        name: requestId
+        required: true
+        type: string
+      produces:
+      - application/x-json-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Check the status of a specific request by its ID
+      tags:
+      - '[VPN] GCP-AWS VPN tunnel (under development)'
   /ns/{nsId}/mcisDynamic:
     post:
       consumes:

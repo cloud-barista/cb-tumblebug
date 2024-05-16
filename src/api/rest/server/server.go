@@ -280,6 +280,13 @@ func RunServer(port string) {
 	g.POST("/:nsId/benchmarkAll/mcis/:mcisId", rest_mcis.RestGetAllBenchmark)
 	g.GET("/:nsId/benchmarkLatency/mcis/:mcisId", rest_mcis.RestGetBenchmarkLatency)
 
+	// VPN Management
+	g.POST("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestPostVpnGcpToAws)
+	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestGetVpnGcpToAws)
+	g.PUT("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestPutVpnGcpToAws)
+	g.DELETE("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestDeleteVpnGcpToAws)
+	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws/request/:requestId", rest_mcis.RestGetRequestStatusOfGcpAwsVpn)
+
 	//MCIS AUTO Policy
 	g.POST("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPostMcisPolicy)
 	g.GET("/:nsId/policy/mcis/:mcisId", rest_mcis.RestGetMcisPolicy)

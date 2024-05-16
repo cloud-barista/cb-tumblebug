@@ -50,6 +50,7 @@ func init() {
 
 	common.SpiderRestUrl = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
 	common.DragonflyRestUrl = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+	common.TerrariumRestUrl = common.NVL(os.Getenv("TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
 	common.DBUrl = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
 	common.DBDatabase = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
 	common.DBUser = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
@@ -63,6 +64,7 @@ func init() {
 	log.Info().Msg("[Update system environment]")
 	common.UpdateGlobalVariable(common.StrDragonflyRestUrl)
 	common.UpdateGlobalVariable(common.StrSpiderRestUrl)
+	common.UpdateGlobalVariable(common.TerrariumRestUrl)
 	common.UpdateGlobalVariable(common.StrAutocontrolDurationMs)
 
 	// load config

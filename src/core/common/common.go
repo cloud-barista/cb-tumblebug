@@ -55,6 +55,7 @@ var SystemReady bool
 var CBStore icbs.Store
 var SpiderRestUrl string
 var DragonflyRestUrl string
+var TerrariumRestUrl string
 var DBUrl string
 var DBDatabase string
 var DBUser string
@@ -69,6 +70,7 @@ var ORM *xorm.Engine
 const (
 	StrSpiderRestUrl              string = "SPIDER_REST_URL"
 	StrDragonflyRestUrl           string = "DRAGONFLY_REST_URL"
+	StrTerrariumRestUrl           string = "TERRARIUM_REST_URL"
 	StrDBUrl                      string = "DB_URL"
 	StrDBDatabase                 string = "DB_DATABASE"
 	StrDBUser                     string = "DB_USER"

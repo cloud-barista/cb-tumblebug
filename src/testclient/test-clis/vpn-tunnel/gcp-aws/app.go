@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
@@ -17,17 +18,19 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/go-resty/resty/v2"
 
+	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var tbApiBase string
-var mcNetApiBase string
+var epTerrarium string
 
 func init() {
 	setConfig()
-	tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug" // ex) "http://localhost:1323/tumblebug"
-	mcNetApiBase = viper.GetString("mcnet.endpoint") + "/mc-net"     // ex) "http://localhost:8080/mc-net"
+	tbApiBase = viper.GetString("tumblebug.endpoint") + "/tumblebug"   // ex) "http://localhost:1323/tumblebug"
+	epTerrarium = viper.GetString("terrarium.endpoint") + "/terrarium" // ex) "http://localhost:8888/terrarium"
 }
 
 // setConfig get cloud settings from a config file
@@ -298,7 +301,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	if rgId == "" {
-		rgId = viper.GetString("mcnet.demo.resourceGroupId")
+		rgId = viper.GetString("terrarium.demo.resourceGroupId")
 	}
 
 	log.Debug().
@@ -523,56 +526,51 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// Configure VPN tunnel
 
-	// Prepare to call mc-net APIs
-	mcNetAuth := tbAuth
+	// Prepare to call mc-terrarium APIs
+	authTerrarium := tbAuth
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: readiness check
+	// mc-terrarium: readiness check
 
-	urlMcNetReadiness := fmt.Sprintf("%s/readyz", mcNetApiBase)
+	urlTerrariumReadiness := fmt.Sprintf("%s/readyz", epTerrarium)
 
 	// Request readiness check
-	respBytes, err = callApi("GET", urlMcNetReadiness, mcNetAuth, nil)
+	respBytes, err = callApi("GET", urlTerrariumReadiness, authTerrarium, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
-	type Response struct {
-		Success bool   `json:"success" example:"true"`
-		Text    string `json:"text" example:"Any text"`
-	}
-
 	// Print the response
-	resMcNetReadiness := new(Response)
-	if err := json.Unmarshal(respBytes, resMcNetReadiness); err != nil {
+	resTerrariumReadiness := new(terrariumModel.Response)
+	if err := json.Unmarshal(respBytes, resTerrariumReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyResMcNetReadiness, err := json.MarshalIndent(resMcNetReadiness, "", "   ")
+	prettyResTerrariumReadiness, err := json.MarshalIndent(resTerrariumReadiness, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
-	log.Debug().Msgf("[Response] %+v", string(prettyResMcNetReadiness))
+	log.Debug().Msgf("[Response] %+v", string(prettyResTerrariumReadiness))
 
-	log.Info().Msg(resMcNetReadiness.Text)
+	log.Info().Msg(resTerrariumReadiness.Text)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: Initialize providers for VPN tunnel (i.e, GCP and AwS)
+	// mc-terrarium: Initialize a multi-cloud terrarium for GCP to AWS VPN tunnel
 
-	urlInit := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/init", mcNetApiBase, rgId)
+	urlInitTerrarium := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/terrarium", epTerrarium, rgId)
 
 	// Request init
-	respBytes, err = callApi("POST", urlInit, mcNetAuth, nil)
+	respBytes, err = callApi("POST", urlInitTerrarium, authTerrarium, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	initRes := new(Response)
+	initRes := new(model.Response)
 	if err := json.Unmarshal(respBytes, initRes); err != nil {
 		log.Error().Err(err).Msg("")
 		return
@@ -581,25 +579,12 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	log.Trace().Msgf("[Response] %+v", initRes.Text)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: Create blueprints of GCP-AWS VPN tunnel
-	type TfVarsGcpAwsVpnTunnel struct {
-		AwsRegion         string `json:"aws-region" default:"ap-northeast-2"`
-		AwsVpcId          string `json:"aws-vpc-id" default:""`
-		AwsSubnetId       string `json:"aws-subnet-id" default:""`
-		GcpRegion         string `json:"gcp-region" default:"asia-northeast3"`
-		GcpVpcNetworkName string `json:"gcp-vpc-network-name" default:"tofu-gcp-vpc"`
-		// GcpBgpAsn                   string `json:"gcp-bgp-asn" default:"65530"`
-	}
-	type CreateBluprintOfGcpAwsVpnRequest struct {
-		ResourceGroupId string                `json:"resourceGroupId" default:"tofu-rg-01"`
-		TfVars          TfVarsGcpAwsVpnTunnel `json:"tfVars"`
-	}
+	// mc-terrarium: Create blueprints of GCP-AWS VPN tunnel
+	urlInfracode := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/infracode", epTerrarium, rgId)
 
-	urlBlueprint := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/blueprint", mcNetApiBase, rgId)
-
-	reqBody := CreateBluprintOfGcpAwsVpnRequest{
-		ResourceGroupId: rgId,
-		TfVars: TfVarsGcpAwsVpnTunnel{
+	reqBody := terrariumModel.CreateInfracodeOfGcpAwsVpnRequest{
+		TfVars: terrariumModel.TfVarsGcpAwsVpnTunnel{
+			ResourceGroupId:   rgId,
 			AwsRegion:         awsRegion,
 			AwsVpcId:          awsVpcId,
 			AwsSubnetId:       awsSubnetId,
@@ -608,41 +593,41 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	respBytes, err = callApi("POST", urlBlueprint, mcNetAuth, reqBody)
+	respBytes, err = callApi("POST", urlInfracode, authTerrarium, reqBody)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	resBlueprint := new(Response)
-	if err := json.Unmarshal(respBytes, resBlueprint); err != nil {
+	resInfracode := new(terrariumModel.Response)
+	if err := json.Unmarshal(respBytes, resInfracode); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	log.Trace().Msgf("[Response] %+v", resBlueprint.Text)
+	log.Trace().Msgf("[Response] %+v", resInfracode.Detail)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: Create GCP-AWS VPN tunnel
+	// mc-terrarium: Create GCP-AWS VPN tunnel
 
-	urlCreateGcpToAwsVpnTunnel := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", mcNetApiBase, rgId)
+	urlCreateGcpToAwsVpnTunnel := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", epTerrarium, rgId)
 
-	respBytes, err = callApi("POST", urlCreateGcpToAwsVpnTunnel, mcNetAuth, nil)
+	respBytes, err = callApi("POST", urlCreateGcpToAwsVpnTunnel, authTerrarium, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
 	}
 
 	// Print the response
-	resCreateGcpToAwsVpnTunnel := new(Response)
+	resCreateGcpToAwsVpnTunnel := new(terrariumModel.Response)
 	if err := json.Unmarshal(respBytes, resCreateGcpToAwsVpnTunnel); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	log.Trace().Msgf("[Response] %+v", resCreateGcpToAwsVpnTunnel.Text)
-	fmt.Printf("[Response] %+v\n", resCreateGcpToAwsVpnTunnel.Text)
+	log.Trace().Msgf("[Response] %+v", resCreateGcpToAwsVpnTunnel.Detail)
+	fmt.Printf("[Response] %+v\n", resCreateGcpToAwsVpnTunnel.Detail)
 
 	// type TfVarsGcpAzureVpnTunnel struct {
 	// 	AzureRegion                 string `json:"azure-region" default:"koreacentral"`
@@ -669,7 +654,7 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 		Msg("[args]")
 
 	if rgId == "" {
-		rgId = viper.GetString("mcnet.demo.resourceGroupId")
+		rgId = viper.GetString("terrarium.demo.resourceGroupId")
 	}
 
 	log.Debug().
@@ -709,16 +694,16 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// Prepare to call mc-net APIs
-	mcNetAuth := tbAuth
+	// Prepare to call mc-terrarium APIs
+	authTerrarium := tbAuth
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: readiness check
+	// mc-terrarium: readiness check
 
-	urlMcNetReadiness := fmt.Sprintf("%s/readyz", mcNetApiBase)
+	urlTerrariumReadiness := fmt.Sprintf("%s/readyz", epTerrarium)
 
 	// Request health check
-	respBytes, err := callApi("GET", urlMcNetReadiness, mcNetAuth, nil)
+	respBytes, err := callApi("GET", urlTerrariumReadiness, authTerrarium, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
@@ -730,27 +715,27 @@ func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 
 	// Print the response
-	resMcNetReadiness := new(Response)
-	if err := json.Unmarshal(respBytes, resMcNetReadiness); err != nil {
+	resTerrariumReadiness := new(Response)
+	if err := json.Unmarshal(respBytes, resTerrariumReadiness); err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}
 
-	prettyResMcNetReadiness, err := json.MarshalIndent(resMcNetReadiness, "", "   ")
+	prettyResTerrariumReadiness, err := json.MarshalIndent(resTerrariumReadiness, "", "   ")
 	if err != nil {
 		log.Error().Err(err).Msgf("")
 		return
 	}
-	log.Debug().Msgf("[Response] %+v", string(prettyResMcNetReadiness))
+	log.Debug().Msgf("[Response] %+v", string(prettyResTerrariumReadiness))
 
-	log.Info().Msg(resMcNetReadiness.Text)
+	log.Info().Msg(resTerrariumReadiness.Text)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// MC-Net API: Destory providers for VPN tunnel (i.e, GCP and AWS)
+	// mc-terrarium: Destory providers for VPN tunnel (i.e, GCP and AWS)
 
-	urlDestroy := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", mcNetApiBase, rgId)
+	urlDestroy := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", epTerrarium, rgId)
 
-	respBytes, err = callApi("DELETE", urlDestroy, mcNetAuth, nil)
+	respBytes, err = callApi("DELETE", urlDestroy, authTerrarium, nil)
 	if err != nil {
 		log.Error().Err(err).Msg(string(respBytes))
 		return
