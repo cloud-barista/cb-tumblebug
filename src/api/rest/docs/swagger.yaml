@@ -1242,14 +1242,18 @@ definitions:
         items:
           type: string
         type: array
+      image:
+        items:
+          $ref: '#/definitions/mcir.TbImageInfo'
+        type: array
       region:
         $ref: '#/definitions/common.RegionDetail'
+      spec:
+        $ref: '#/definitions/mcir.TbSpecInfo'
       systemMessage:
         description: Latest system message such as error message
         example: Failed because ...
         type: string
-      vmSpec:
-        $ref: '#/definitions/mcir.TbSpecInfo'
     type: object
   mcis.ClusterStatus:
     enum:
@@ -1287,10 +1291,10 @@ definitions:
         type: array
       metric:
         enum:
-        - cpu
-        - memory
-        - cost
-        example: cpu
+        - vCPU
+        - memoryGiB
+        - costPerHour
+        example: vCPU
         type: string
     type: object
   mcis.FilterInfo:
@@ -1386,7 +1390,7 @@ definitions:
         description: CommonSpec is field for id of a spec in common namespace
         example:
         - aws+ap-northeast-2+t2.small
-        - gcp+us-west1+g1.small
+        - gcp+us-west1+g1-small
         items:
           type: string
         type: array
@@ -5700,7 +5704,11 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Request body to provision MCIS dynamically
+      - description: 'Request body to provision MCIS dynamically. Must include commonSpec
+          and commonImage info of each VM request.(ex: {name: mcis01,vm: [{commonImage:
+          aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]}
+          ) You can use /mcisRecommendVm and /mcisDynamicCheckRequest to get it) Check
+          the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570'
         in: body
         name: mcisReq
         required: true

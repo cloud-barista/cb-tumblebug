@@ -245,7 +245,7 @@ type TbVmDynamicReq struct {
 // McisConnectionConfigCandidatesReq is struct for a request to check requirements to create a new MCIS instance dynamically (with default resource option)
 type McisConnectionConfigCandidatesReq struct {
 	// CommonSpec is field for id of a spec in common namespace
-	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1.small"`
+	CommonSpecs []string `json:"commonSpec" validate:"required" example:"aws+ap-northeast-2+t2.small,gcp+us-west1+g1-small"`
 }
 
 // CheckMcisDynamicReqInfo is struct to check requirements to create a new MCIS instance dynamically (with default resource option)
@@ -259,11 +259,10 @@ type CheckVmDynamicReqInfo struct {
 	// ConnectionConfigCandidates will provide ConnectionConfig options
 	ConnectionConfigCandidates []string `json:"connectionConfigCandidates" default:""`
 
-	// CommonImage is field for id of a image in common namespace
-	// CommonImage		string `json:"commonImage" validate:"required" example:"ubuntu18.04"`
 	//RootDiskSize string `json:"rootDiskSize,omitempty" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
 
-	VmSpec mcir.TbSpecInfo     `json:"vmSpec" default:""`
+	Spec   mcir.TbSpecInfo     `json:"spec" default:""`
+	Image  []mcir.TbImageInfo  `json:"image" default:""`
 	Region common.RegionDetail `json:"region" default:""`
 
 	// Latest system message such as error message
@@ -1179,7 +1178,13 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 			}
 		}
 
-		vmReqInfo.VmSpec = specInfo
+		vmReqInfo.Spec = specInfo
+		imageSearchKey := specInfo.ProviderName + "+" + specInfo.RegionName
+		availableImageList, err := mcir.SearchImage(common.SystemCommonNs, imageSearchKey)
+		if err != nil {
+			errMessage += "//Failed to search images for Spec (" + k + ")"
+		}
+		vmReqInfo.Image = availableImageList
 		vmReqInfo.Region = regionInfo
 		vmReqInfo.SystemMessage = errMessage
 		mcisReqInfo.ReqCheck = append(mcisReqInfo.ReqCheck, vmReqInfo)
@@ -1388,6 +1393,10 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 
 	osType := strings.ReplaceAll(k.CommonImage, " ", "")
 	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
+	// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
+	if strings.Contains(k.CommonImage, "+") {
+		vmReq.ImageId = k.CommonImage
+	}
 	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
@@ -1444,6 +1453,10 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	vmReq.SpecId = specInfo.Id
 	osType := strings.ReplaceAll(k.CommonImage, " ", "")
 	vmReq.ImageId = mcir.GetProviderRegionZoneResourceKey(connection.ProviderName, connection.RegionDetail.RegionName, "", osType)
+	// incase of user provided image id completely (e.g. aws+ap-northeast-2+ubuntu22.04)
+	if strings.Contains(k.CommonImage, "+") {
+		vmReq.ImageId = k.CommonImage
+	}
 	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)

@@ -48,7 +48,7 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric" example:"cpu" enums:"cpu,memory,cost"`
+	Metric    string      `json:"metric" example:"vCPU" enums:"vCPU,memoryGiB,costPerHour"`
 	Condition []Operation `json:"condition"`
 }
 
