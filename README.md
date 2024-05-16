@@ -374,6 +374,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 
 ### CB-Tumblebug REST API 사용
+- REST API AUTH: CB-TB API는 기본 Bacis auth로 인코딩되어 있으며, 서버 실행시 입력한 `Username`과 `Password`를 Base64로 인코딩하여 API header에 포함하여 한다.
 - [빠르게 MCIS 생성하는 방법](https://github.com/cloud-barista/cb-tumblebug/discussions/1570)
 
 1. CB-Tumblebug 멀티 클라우드 네임스페이스 관리 API를 통해서 Namespace 생성
