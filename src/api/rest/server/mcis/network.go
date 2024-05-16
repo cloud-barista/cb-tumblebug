@@ -28,17 +28,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var epTerrarium string
-
-func init() {
-	epTerrarium = os.Getenv("TERRARIUM_REST_URL")
-	if epTerrarium == "" {
-		log.Warn().Msg("TERRARIUM_REST_URL is not set, use the default value (http://localhost:8888/terrarium)")
-		epTerrarium = "http://localhost:8888/terrarium"
-	}
-	log.Info().Msgf("mc-terrarium endpoint: %s", epTerrarium)
-}
-
 // RestPostVpnGcpToAws godoc
 // @Summary Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
 // @Description Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
@@ -109,6 +98,9 @@ func RestPostVpnGcpToAws(c echo.Context) error {
 	client.SetBasicAuth(apiUser, apiPass)
 
 	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+
+	// set endpoint
+	epTerrarium := common.TerrariumRestUrl
 
 	// check readyz
 	method := "GET"
@@ -349,6 +341,9 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 	client.SetBasicAuth(apiUser, apiPass)
 
 	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+
+	// set endpoint
+	epTerrarium := common.TerrariumRestUrl
 
 	// check readyz
 	method := "GET"
@@ -616,6 +611,9 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 
 	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
 
+	// set endpoint
+	epTerrarium := common.TerrariumRestUrl
+
 	// check readyz
 	method := "GET"
 	url := fmt.Sprintf("%s/readyz", epTerrarium)
@@ -762,6 +760,9 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 	client.SetBasicAuth(apiUser, apiPass)
 
 	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+
+	// set endpoint
+	epTerrarium := common.TerrariumRestUrl
 
 	// Get resource info
 	method := "GET"

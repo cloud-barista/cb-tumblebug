@@ -273,6 +273,9 @@ func UpdateGlobalVariable(id string) error {
 	case StrDragonflyRestUrl:
 		DragonflyRestUrl = configInfo.Value
 		log.Debug().Msg("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+	case StrTerrariumRestUrl:
+		TerrariumRestUrl = configInfo.Value
+		log.Debug().Msg("<TERRARIUM_REST_URL> " + TerrariumRestUrl)
 	case StrDBUrl:
 		DBUrl = configInfo.Value
 		log.Debug().Msg("<DB_URL> " + DBUrl)
@@ -304,6 +307,9 @@ func InitConfig(id string) error {
 	case StrDragonflyRestUrl:
 		DragonflyRestUrl = NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
 		log.Debug().Msg("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+	case StrTerrariumRestUrl:
+		TerrariumRestUrl = NVL(os.Getenv("TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
+		log.Debug().Msg("<TERRARIUM_REST_URL> " + TerrariumRestUrl)
 	case StrDBUrl:
 		DBUrl = NVL(os.Getenv("DB_URL"), "localhost:3306")
 		log.Debug().Msg("<DB_URL> " + DBUrl)
