@@ -4209,7 +4209,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Request body to provision MCIS dynamically",
+                        "description": "Request body to provision MCIS dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mcis01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mcisRecommendVm and /mcisDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570",
                         "name": "mcisReq",
                         "in": "body",
                         "required": true,
@@ -9996,16 +9996,22 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mcir.TbImageInfo"
+                    }
+                },
                 "region": {
                     "$ref": "#/definitions/common.RegionDetail"
+                },
+                "spec": {
+                    "$ref": "#/definitions/mcir.TbSpecInfo"
                 },
                 "systemMessage": {
                     "description": "Latest system message such as error message",
                     "type": "string",
                     "example": "Failed because ..."
-                },
-                "vmSpec": {
-                    "$ref": "#/definitions/mcir.TbSpecInfo"
                 }
             }
         },
@@ -10058,11 +10064,11 @@ const docTemplate = `{
                 "metric": {
                     "type": "string",
                     "enum": [
-                        "cpu",
-                        "memory",
-                        "cost"
+                        "vCPU",
+                        "memoryGiB",
+                        "costPerHour"
                     ],
-                    "example": "cpu"
+                    "example": "vCPU"
                 }
             }
         },
@@ -10212,7 +10218,7 @@ const docTemplate = `{
                     },
                     "example": [
                         "aws+ap-northeast-2+t2.small",
-                        "gcp+us-west1+g1.small"
+                        "gcp+us-west1+g1-small"
                     ]
                 }
             }

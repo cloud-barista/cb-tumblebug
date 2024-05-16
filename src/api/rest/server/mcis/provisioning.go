@@ -114,7 +114,7 @@ func RestPostSystemMcis(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param mcisReq body TbMcisDynamicReq true "Request body to provision MCIS dynamically"
+// @Param mcisReq body TbMcisDynamicReq true "Request body to provision MCIS dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mcis01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mcisRecommendVm and /mcisDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
 // @Param option query string false "Option for MCIS creation" Enums(hold)
 // @Success 200 {object} TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
