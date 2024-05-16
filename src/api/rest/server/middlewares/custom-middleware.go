@@ -193,7 +193,17 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 						details.ResponseData = responseJsonArray
 					} else {
 						// single response
-						details.ResponseData = resData
+						// type casting is required
+						switch data := resData.(type) {
+						case map[string]interface{}:
+							details.ResponseData = data
+						case []interface{}:
+							details.ResponseData = data
+						case string:
+							details.ResponseData = data
+						default:
+							log.Error().Msg("unexpected response data type")
+						}
 					}
 
 					// Store details of the request
