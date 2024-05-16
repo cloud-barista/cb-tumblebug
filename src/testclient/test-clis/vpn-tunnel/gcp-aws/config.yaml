@@ -1,4 +1,3 @@
-
 tumblebug:
   endpoint: http://localhost:1323
   auth:
@@ -10,10 +9,9 @@ tumblebug:
     mcisDynamic:
       reqBody: mcisDynamic.json
 
-mcnet: 
+terrarium:
   endpoint: http://localhost:8888
   auth:
     info: auth.json
   demo:
-    resourceGroupId: mc-net-rg01
-    
+    resourceGroupId: kdemo-rg01

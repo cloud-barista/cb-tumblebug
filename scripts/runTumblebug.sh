@@ -17,44 +17,48 @@ if [[ -n "$external_ip" ]]; then
     # If external IP retrieval was successful, prompt user to select the ENDPOINT
     echo "Please select endpoints to be used:"
     echo "1) Use External IP for all components: $external_ip"
-    echo "2) Use 'host.docker.internal' to communicate with Spider and Dragonfly containers, 'localhost' for Tumblebug"
+    echo "2) Use 'localhost' for Tumblebug and use 'host.docker.internal' to communicate with Spider/Dragonfly/Terrarium containers"
     read -p "Enter your choice (1 or 2): " user_choice
 
-
+    # Note - EP: Endpoint
     case $user_choice in
         1)
-            SP_ENDPOINT=$external_ip
-            DF_ENDPOINT=$external_ip
-            TB_ENDPOINT=$external_ip
+            EP_TUMBLEBUG=$external_ip
+            EP_SPIDER=$external_ip
+            EP_DRAGONFLY=$external_ip
+            EP_TERRARIUM=$external_ip
             ;;
         2)
-            SP_ENDPOINT="host.docker.internal"
-            DF_ENDPOINT="host.docker.internal"
-            TB_ENDPOINT="localhost"
+            EP_TUMBLEBUG="localhost"
+            EP_SPIDER="host.docker.internal"
+            EP_DRAGONFLY="host.docker.internal"
+            EP_TERRARIUM="host.docker.internal"            
             ;;
         *)
-            echo "Invalid choice, use 'host.docker.internal' and 'localhost' as the default."
-            SP_ENDPOINT="host.docker.internal"
-            DF_ENDPOINT="host.docker.internal"
-            TB_ENDPOINT="localhost"
+            echo "Invalid choice, use 'localhost' and 'host.docker.internal' as the default."
+            EP_SPIDER="host.docker.internal"
+            EP_DRAGONFLY="host.docker.internal"
+            EP_TUMBLEBUG="localhost"
+            EP_TERRARIUM="host.docker.internal"
             ;;
     esac
 else
     # If external IP retrieval failed, default to localhost
-    echo "Failed to retrieve external IP, use 'host.docker.internal' and 'localhost' as the default."
-    SP_ENDPOINT="host.docker.internal"
-    DF_ENDPOINT="host.docker.internal"
-    TB_ENDPOINT="localhost"
+    echo "Failed to retrieve external IP, use 'localhost' and 'host.docker.internal' as the default."
+    EP_TUMBLEBUG="localhost"
+    EP_SPIDER="host.docker.internal"
+    EP_DRAGONFLY="host.docker.internal"    
+    EP_TERRARIUM="host.docker.internal"
 fi
 
 echo
-echo "This script assume CB-Spider container is running in the same host. ($external_ip)"
+echo "Note - this script assumes CB-Spider/CB-Dragonfly/MC-Terrarium container is running in the same host. ($external_ip)"
 echo
 
 if [ "$user_choice" != "1" ]; then
-    CONTAINER_ENV="--add-host host.docker.internal:host-gateway -e SPIDER_REST_URL=http://$SP_ENDPOINT:1024/spider -e DRAGONFLY_REST_URL=http://$DF_ENDPOINT:9090/dragonfly -e SELF_ENDPOINT=$TB_ENDPOINT:1323"
+    CONTAINER_ENV="--add-host host.docker.internal:host-gateway -e SPIDER_REST_URL=http://$EP_SPIDER:1024/spider -e DRAGONFLY_REST_URL=http://$EP_DRAGONFLY:9090/dragonfly -e TERRARIUM_REST_URL=http://$EP_TERRARIUM:8888/terrarium -e SELF_ENDPOINT=$EP_TUMBLEBUG:1323"
 else
-    CONTAINER_ENV="-e SPIDER_REST_URL=http://$SP_ENDPOINT:1024/spider -e DRAGONFLY_REST_URL=http://$DF_ENDPOINT:9090/dragonfly -e SELF_ENDPOINT=$TB_ENDPOINT:1323"    
+    CONTAINER_ENV="-e SPIDER_REST_URL=http://$EP_SPIDER:1024/spider -e DRAGONFLY_REST_URL=http://$EP_DRAGONFLY:9090/dragonfly -e SELF_ENDPOINT=$EP_TUMBLEBUG:1323"    
 fi
 
 ./runContainer.sh "$CONTAINER_NAME_READ" "$CONTAINER_VERSION" "$CONTAINER_PORT" "$CONTAINER_DATA_PATH" "$CONTAINER_ENV"

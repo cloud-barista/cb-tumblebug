@@ -18,7 +18,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
-	github.com/tidwall/gjson v1.17.0
+	github.com/tidwall/gjson v1.17.1
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/crypto v0.22.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -30,6 +30,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/cloud-barista/cb-log v0.8.0 // indirect
+	github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516045927-43023b6a0e18 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
