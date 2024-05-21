@@ -2794,6 +2794,48 @@ definitions:
       tfVars:
         $ref: '#/definitions/model.TfVarsGcpAwsVpnTunnel'
     type: object
+  model.SiteDetail:
+    properties:
+      csp:
+        example: aws
+        type: string
+      gatewaySubnetCidr:
+        example: xxx.xxx.xxx.xxx/xx
+        type: string
+      region:
+        example: ap-northeast-2
+        type: string
+      resourceGroup:
+        example: rg-xxxxx
+        type: string
+      subnet:
+        example: subnet-xxxxx
+        type: string
+      vnet:
+        example: vpc-xxxxx
+        type: string
+      zone:
+        example: ap-northeast-2a
+        type: string
+    type: object
+  model.SitesInfo:
+    properties:
+      count:
+        example: 3
+        type: integer
+      mcisId:
+        example: mcis-01
+        type: string
+      nsId:
+        example: ns-01
+        type: string
+      sites:
+        additionalProperties:
+          additionalProperties:
+            $ref: '#/definitions/model.SiteDetail'
+          type: object
+        type: object
+    type: object
   model.TfVarsGcpAwsVpnTunnel:
     properties:
       aws-region:
@@ -5133,6 +5175,46 @@ paths:
       summary: Add VMs to NLB
       tags:
       - '[Infra resource] NLB management (for developer)'
+  /ns/{nsId}/mcis/{mcisId}/site:
+    get:
+      consumes:
+      - application/json
+      description: Get sites in MCIS
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: mcis01
+        description: MCIS ID
+        in: path
+        name: mcisId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SitesInfo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get sites in MCIS
+      tags:
+      - '[VPN] Sites in MCIS (under development)'
   /ns/{nsId}/mcis/{mcisId}/subgroup:
     get:
       consumes:

@@ -23,10 +23,158 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/model"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
+
+// RestGetSitesInMcis godoc
+// @Summary Get sites in MCIS
+// @Description Get sites in MCIS
+// @Tags [VPN] Sites in MCIS (under development)
+// @Accept  json
+// @Produce  json
+// @Param nsId path string true "Namespace ID" default(ns01)
+// @Param mcisId path string true "MCIS ID" default(mcis01)
+// @Success 200 {object} model.SitesInfo "OK"
+// @Failure 400 {object} common.SimpleMsg "Bad Request"
+// @Failure 500 {object} common.SimpleMsg "Internal Server Error"
+// @Failure 503 {object} common.SimpleMsg "Service Unavailable"
+// @Router /ns/{nsId}/mcis/{mcisId}/site [get]
+func RestGetSitesInMcis(c echo.Context) error {
+
+	nsId := c.Param("nsId")
+	if nsId == "" {
+		err := fmt.Errorf("invalid request, namespace ID (nsId: %s) is required", nsId)
+		log.Warn().Msg(err.Error())
+		res := common.SimpleMsg{
+			Message: err.Error(),
+		}
+
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	mcisId := c.Param("mcisId")
+	if mcisId == "" {
+		err := fmt.Errorf("invalid request, MCIS ID (mcisId: %s) is required", mcisId)
+		log.Warn().Msg(err.Error())
+		res := common.SimpleMsg{
+			Message: err.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	SitesInfo, err := ExtractSitesInfoFromMcisInfo(nsId, mcisId)
+	if err != nil {
+		log.Err(err).Msg("")
+		res := common.SimpleMsg{
+			Message: err.Error(),
+		}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	return c.JSON(http.StatusOK, SitesInfo)
+}
+
+func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error) {
+	// Get MCIS info
+	mcisInfo, err := mcis.GetMcisInfo(nsId, mcisId)
+	if err != nil {
+		log.Err(err).Msg("")
+		return nil, err
+	}
+
+	// Newly create the SitesInfo structure
+	sitesInfo := model.NewSiteInfo(nsId, mcisId)
+
+	for _, vm := range mcisInfo.Vm {
+		providerName := vm.ConnectionConfig.ProviderName
+		if providerName == "" {
+			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
+			continue
+		}
+
+		vNetId := vm.VNetId
+		if vNetId == "" {
+			log.Warn().Msgf("VNet ID is empty for VM ID: %s", vm.Id)
+			continue
+		}
+
+		// Add or update the site detail in the map based on the provider
+		providerName = strings.ToLower(providerName)
+
+		// Use vNetId as the site ID
+		if _, exists := sitesInfo.Sites[providerName][vm.VNetId]; !exists {
+			var site = model.SiteDetail{}
+			switch providerName {
+			case "aws":
+				site.CSP = vm.ConnectionConfig.ProviderName
+				site.Region = vm.CspViewVmDetail.Region.Region
+
+				// Note - It must be updated.
+				// Temporarily use the subnet ID to which the VM is attached/deployed
+				// Set VNet and subnet IDs
+				site.VNet = vm.CspViewVmDetail.SubnetIID.SystemId
+				site.Subnet = vm.CspViewVmDetail.SubnetIID.SystemId
+
+			case "azure":
+				site.CSP = vm.ConnectionConfig.ProviderName
+				site.Region = vm.CspViewVmDetail.Region.Region
+
+				// Parse vNet and resource group names
+				parts := strings.Split(vm.CspViewVmDetail.VpcIID.SystemId, "/")
+				log.Debug().Msgf("parts: %+v", parts)
+				ParsedResourceGroupName := parts[4]
+				ParsedVirtualNetworkName := parts[8]
+
+				// Set VNet and resource group names
+				site.VNet = ParsedVirtualNetworkName
+				site.ResourceGroup = ParsedResourceGroupName
+
+				// Get vNet info
+				resourceType := "vNet"
+				resourceId := vm.VNetId
+				result, err := mcir.GetResource(nsId, resourceType, resourceId)
+				if err != nil {
+					log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
+					continue
+				}
+				vNetInfo := result.(mcir.TbVNetInfo)
+
+				// Get the last subnet CIDR block
+				subnetCount := len(vNetInfo.SubnetInfoList)
+				lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
+				lastSubnetCidr := lastSubnet.IPv4_CIDR
+
+				// (Currently unsafe) Calculate the next subnet CIDR block
+				nextCidr, err := netutil.NextSubnet(lastSubnetCidr, vNetInfo.CidrBlock)
+				if err != nil {
+					log.Warn().Msgf("Failed to get the next subnet CIDR")
+				}
+
+				// Set the site detail
+				site.GatewaySubnetCidr = nextCidr
+
+			case "gcp":
+				site.CSP = vm.ConnectionConfig.ProviderName
+				site.Region = vm.CspViewVmDetail.Region.Region
+				site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
+			default:
+				log.Warn().Msgf("Unsupported provider name: %s", providerName)
+			}
+
+			if site != (model.SiteDetail{}) {
+				sitesInfo.Sites[providerName][vm.VNetId] = site
+				sitesInfo.Count++
+			}
+		}
+	}
+
+	return sitesInfo, nil
+}
 
 // RestPostVpnGcpToAws godoc
 // @Summary Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)

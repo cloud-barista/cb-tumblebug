@@ -14,20 +14,46 @@ limitations under the License.
 // Package mcis is to handle REST API for mcis
 package model
 
-// type ResponseText struct {
-// 	Success bool   `json:"success" example:"true"`
-// 	Text    string `json:"text" example:"Any text"`
-// }
+var ProviderNames = map[string]string{
+	"AWS":   "aws",
+	"Azure": "azure",
+	"GCP":   "gcp",
+}
 
-// type ResponseList struct {
-// 	Success bool          `json:"success" example:"true"`
-// 	List    []interface{} `json:"list"`
-// }
+// SiteDetail struct represents the structure for detailed site information
+type SiteDetail struct {
+	CSP               string `json:"csp" example:"aws"`
+	Region            string `json:"region" example:"ap-northeast-2"`
+	Zone              string `json:"zone,omitempty" example:"ap-northeast-2a"`
+	VNet              string `json:"vnet" example:"vpc-xxxxx"`
+	Subnet            string `json:"subnet,omitempty" example:"subnet-xxxxx"`
+	GatewaySubnetCidr string `json:"gatewaySubnetCidr,omitempty" example:"xxx.xxx.xxx.xxx/xx"`
+	ResourceGroup     string `json:"resourceGroup,omitempty" example:"rg-xxxxx"`
+}
 
-//	type ResponseObject struct {
-//		Success bool                   `json:"success" example:"true"`
-//		Object  map[string]interface{} `json:"object"`
-//	}
+// SitesInfo struct represents the overall site information including namespace and MCIS ID
+type SitesInfo struct {
+	NsId   string                           `json:"nsId" example:"ns-01"`
+	McisId string                           `json:"mcisId" example:"mcis-01"`
+	Count  int                              `json:"count" example:"3"`
+	Sites  map[string]map[string]SiteDetail `json:"sites"`
+}
+
+func NewSiteInfo(nsId, mcisId string) *SitesInfo {
+	siteInfo := &SitesInfo{
+		NsId:   nsId,
+		McisId: mcisId,
+		Count:  0,
+		Sites:  make(map[string]map[string]SiteDetail),
+	}
+
+	for _, providerName := range ProviderNames {
+		siteInfo.Sites[providerName] = make(map[string]SiteDetail)
+	}
+
+	return siteInfo
+}
+
 type Response struct {
 	Success bool                   `json:"success" example:"true"`
 	Text    string                 `json:"text" example:"Any text"`
