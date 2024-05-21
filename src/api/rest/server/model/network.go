@@ -41,8 +41,10 @@ type SitesInfo struct {
 
 func NewSiteInfo(nsId, mcisId string) *SitesInfo {
 	siteInfo := &SitesInfo{
-		Count: 0,
-		Sites: make(map[string]map[string]SiteDetail),
+		NsId:   nsId,
+		McisId: mcisId,
+		Count:  0,
+		Sites:  make(map[string]map[string]SiteDetail),
 	}
 
 	for _, providerName := range ProviderNames {
