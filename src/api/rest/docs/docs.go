@@ -3290,6 +3290,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/ns/{nsId}/mcis/{mcisId}/site": {
+            "get": {
+                "description": "Get sites in MCIS",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[VPN] Sites in MCIS (under development)"
+                ],
+                "summary": "Get sites in MCIS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SitesInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/ns/{nsId}/mcis/{mcisId}/subgroup": {
             "get": {
                 "description": "List SubGroup IDs in a specified MCIS",
@@ -12550,6 +12609,65 @@ const docTemplate = `{
             "properties": {
                 "tfVars": {
                     "$ref": "#/definitions/model.TfVarsGcpAwsVpnTunnel"
+                }
+            }
+        },
+        "model.SiteDetail": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "type": "string",
+                    "example": "aws"
+                },
+                "gatewaySubnetCidr": {
+                    "type": "string",
+                    "example": "xxx.xxx.xxx.xxx/xx"
+                },
+                "region": {
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "resourceGroup": {
+                    "type": "string",
+                    "example": "rg-xxxxx"
+                },
+                "subnet": {
+                    "type": "string",
+                    "example": "subnet-xxxxx"
+                },
+                "vnet": {
+                    "type": "string",
+                    "example": "vpc-xxxxx"
+                },
+                "zone": {
+                    "type": "string",
+                    "example": "ap-northeast-2a"
+                }
+            }
+        },
+        "model.SitesInfo": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "mcisId": {
+                    "type": "string",
+                    "example": "mcis-01"
+                },
+                "nsId": {
+                    "type": "string",
+                    "example": "ns-01"
+                },
+                "sites": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/definitions/model.SiteDetail"
+                        }
+                    }
                 }
             }
         },
