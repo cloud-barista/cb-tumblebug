@@ -10132,6 +10132,9 @@
                 "id": {
                     "type": "string"
                 },
+                "idFromCsp": {
+                    "type": "string"
+                },
                 "ipv4_CIDR": {
                     "type": "string"
                 },
@@ -10154,6 +10157,9 @@
             ],
             "properties": {
                 "description": {
+                    "type": "string"
+                },
+                "idFromCsp": {
                     "type": "string"
                 },
                 "ipv4_CIDR": {

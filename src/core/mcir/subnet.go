@@ -156,6 +156,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	}
 	tbSubnetInfo.Id = req.Name
 	tbSubnetInfo.Name = req.Name
+	tbSubnetInfo.IdFromCsp = req.IdFromCsp
 
 	newVNet.SubnetInfoList = append(newVNet.SubnetInfoList, tbSubnetInfo)
 	Val, _ = json.Marshal(newVNet)
