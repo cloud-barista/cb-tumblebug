@@ -116,6 +116,7 @@ type TbVNetInfo struct { // Tumblebug
 // TbSubnetReq is a struct that represents TB subnet object.
 type TbSubnetReq struct { // Tumblebug
 	Name         string `validate:"required"`
+	IdFromCsp    string
 	IPv4_CIDR    string `validate:"required"`
 	KeyValueList []common.KeyValue
 	Description  string
@@ -137,6 +138,7 @@ func TbSubnetReqStructLevelValidation(sl validator.StructLevel) {
 type TbSubnetInfo struct { // Tumblebug
 	Id           string
 	Name         string `validate:"required"`
+	IdFromCsp    string
 	IPv4_CIDR    string `validate:"required"`
 	BastionNodes []BastionNode
 	KeyValueList []common.KeyValue
@@ -274,6 +276,7 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 			log.Error().Err(err).Msg("")
 		}
 		tbSubnetReq.Name = v.IId.NameId
+		tbSubnetReq.IdFromCsp = v.IId.SystemId
 
 		_, err = CreateSubnet(nsId, content.Id, tbSubnetReq, true)
 		if err != nil {

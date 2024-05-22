@@ -10139,6 +10139,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "idFromCsp": {
+                    "type": "string"
+                },
                 "ipv4_CIDR": {
                     "type": "string"
                 },
@@ -10161,6 +10164,9 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
+                    "type": "string"
+                },
+                "idFromCsp": {
                     "type": "string"
                 },
                 "ipv4_CIDR": {
