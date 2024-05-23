@@ -748,3 +748,134 @@ func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendI
 
 	return VmRecommend, nil
 }
+
+func RecommendK8sClusterSpec(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInfo, error) {
+	//
+	// Get Recommend Specs in NodeGroup Level
+	//
+	limitK8s := plan.Limit
+	plan.Limit = strconv.Itoa(math.MaxInt)
+	rcmVmSpecs, err := RecommendVm(nsId, plan)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return []mcir.TbSpecInfo{}, err
+	}
+
+	//
+	// Validate k8sclusterinfo.yaml
+	//
+	result := []mcir.TbSpecInfo{}
+	limitNum, err := strconv.Atoi(limitK8s)
+	if err != nil {
+		limitNum = math.MaxInt
+	}
+
+	log.Debug().Msg("[Filtering specs for K8sClusterInfo]")
+
+	count := 0
+	for _, spec := range rcmVmSpecs {
+		// check k8sclusterinfo.yaml
+		valid := isValidSpecInK8sClusterInfo(&spec)
+		if valid == false {
+			continue
+		}
+
+		result = append(result, spec)
+		if count == (limitNum - 1) {
+			break
+		}
+		count = count + 1
+	}
+
+	log.Debug().Msgf("RecommendedK8sClusterspec: %v", result)
+
+	return result, nil
+}
+
+func isValidSpecInK8sClusterInfo(spec *mcir.TbSpecInfo) bool {
+	//
+	// Check for Provider
+	//
+
+	providerName := strings.ToLower(spec.ProviderName)
+
+	var k8sClusterDetail *common.K8sClusterDetail = nil
+	for provider, detail := range common.RuntimeK8sClusterInfo.CSPs {
+		provider = strings.ToLower(provider)
+		if provider == providerName {
+			k8sClusterDetail = &detail
+			break
+		}
+	}
+	if k8sClusterDetail == nil {
+		return false
+	}
+
+	//
+	// Check for Region
+	//
+
+	regionName := strings.ToLower(spec.RegionName)
+
+	// Check for Version
+	isExist := false
+	for _, versionDetail := range k8sClusterDetail.Version {
+		for _, region := range versionDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				if len(versionDetail.Available) > 0 {
+					isExist = true
+					break
+				}
+			}
+		}
+		if isExist == true {
+			break
+		}
+	}
+	if isExist == false {
+		return false
+	}
+
+	// Check for NodeImage
+	isExist = false
+	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
+		for _, region := range nodeImageDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				if len(nodeImageDetail.Available) > 0 {
+					isExist = true
+					break
+				}
+			}
+		}
+		if isExist == true {
+			break
+		}
+	}
+	if isExist == false {
+		return false
+	}
+
+	// Check for RootDisk
+	isExist = false
+	for _, rootDiskDetail := range k8sClusterDetail.RootDisk {
+		for _, region := range rootDiskDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				if len(rootDiskDetail.Type) > 0 {
+					isExist = true
+					break
+				}
+			}
+		}
+		if isExist == true {
+			break
+		}
+	}
+	if isExist == false {
+		return false
+	}
+
+	return true
+}

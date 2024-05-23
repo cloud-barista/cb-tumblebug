@@ -49,6 +49,33 @@ func RestRecommendVm(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
+// RestRecommendK8sClusterSpec godoc
+// @Summary Recommend K8s Cluster plan (filter and priority)
+// @Description Recommend K8s Cluster plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+// @Tags [Infra service] Cluster Provisioning Management
+// @Accept json
+// @Produce json
+// @Param deploymentPlan body mcis.DeploymentPlan false "Recommend K8s Cluster plan (filter and priority)"
+// @Success 200 {object} []mcir.TbSpecInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /recommendK8sClusterSpec [post]
+func RestRecommendK8sClusterSpec(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	nsId := common.SystemCommonNs
+
+	u := &mcis.DeploymentPlan{}
+	if err := c.Bind(u); err != nil {
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+
+	content, err := mcis.RecommendK8sClusterSpec(nsId, *u)
+	return common.EndRequestWithLog(c, reqID, err, content)
+}
+
 type RestPostMcisRecommendResponse struct {
 	//VmReq          []TbVmRecommendReq    `json:"vmReq"`
 	VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
