@@ -108,31 +108,42 @@ func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error)
 
 		// Use vNetId as the site ID
 		if _, exists := sitesInfo.Sites[providerName][vm.VNetId]; !exists {
+
 			var site = model.SiteDetail{}
+			site.CSP = vm.ConnectionConfig.ProviderName
+			site.Region = vm.CspViewVmDetail.Region.Region
+
 			switch providerName {
 			case "aws":
-				site.CSP = vm.ConnectionConfig.ProviderName
-				site.Region = vm.CspViewVmDetail.Region.Region
+				// Get vNet info
+				resourceType := "vNet"
+				resourceId := vm.VNetId
+				result, err := mcir.GetResource(nsId, resourceType, resourceId)
+				if err != nil {
+					log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
+					continue
+				}
+				vNetInfo := result.(mcir.TbVNetInfo)
 
-				// Note - It must be updated.
-				// Temporarily use the subnet ID to which the VM is attached/deployed
-				// Set VNet and subnet IDs
-				site.VNet = vm.CspViewVmDetail.SubnetIID.SystemId
-				site.Subnet = vm.CspViewVmDetail.SubnetIID.SystemId
+				// Get the last subnet
+				subnetCount := len(vNetInfo.SubnetInfoList)
+				lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
+				lastSubnetIdFromCSP := lastSubnet.IdFromCsp
+
+				// Set VNet and the last subnet IDs
+				site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
+				site.Subnet = lastSubnetIdFromCSP
 
 			case "azure":
-				site.CSP = vm.ConnectionConfig.ProviderName
-				site.Region = vm.CspViewVmDetail.Region.Region
-
 				// Parse vNet and resource group names
 				parts := strings.Split(vm.CspViewVmDetail.VpcIID.SystemId, "/")
 				log.Debug().Msgf("parts: %+v", parts)
-				ParsedResourceGroupName := parts[4]
-				ParsedVirtualNetworkName := parts[8]
+				parsedResourceGroupName := parts[4]
+				parsedVirtualNetworkName := parts[8]
 
 				// Set VNet and resource group names
-				site.VNet = ParsedVirtualNetworkName
-				site.ResourceGroup = ParsedResourceGroupName
+				site.VNet = parsedVirtualNetworkName
+				site.ResourceGroup = parsedResourceGroupName
 
 				// Get vNet info
 				resourceType := "vNet"
@@ -159,9 +170,9 @@ func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error)
 				site.GatewaySubnetCidr = nextCidr
 
 			case "gcp":
-				site.CSP = vm.ConnectionConfig.ProviderName
-				site.Region = vm.CspViewVmDetail.Region.Region
+				// Set vNet ID
 				site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
+
 			default:
 				log.Warn().Msgf("Unsupported provider name: %s", providerName)
 			}
