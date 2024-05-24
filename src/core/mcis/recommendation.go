@@ -48,7 +48,7 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric" example:"vCPU" enums:"vCPU,memoryGiB,costPerHour"`
+	Metric    string      `json:"metric" example:"vCPU" enums:"vCPU,memoryGiB,costPerHour,version"`
 	Condition []Operation `json:"condition"`
 }
 
@@ -84,6 +84,25 @@ func toUpperFirst(s string) string {
 	r := []rune(s)
 	r[0] = unicode.ToUpper(r[0])
 	return string(r)
+}
+
+// applyK8sClusterFilterPolicies dynamically sets filters on the request based on the policies.
+func applyK8sClusterFilterPolicies(request *mcir.FilterK8sClusterByRangeRequest, plan *DeploymentPlan) error {
+	val := reflect.ValueOf(request).Elem()
+
+	for _, policy := range plan.Filter.Policy {
+		for _, condition := range policy.Condition {
+			fieldName := toUpperFirst(policy.Metric) // Correctly capitalize the first letter
+			field := val.FieldByName(fieldName)
+			if !field.IsValid() {
+				return fmt.Errorf("invalid metric: %s", policy.Metric)
+			}
+			if err := setFieldCondition(field, condition); err != nil {
+				return fmt.Errorf("setting condition failed: %v", err)
+			}
+		}
+	}
+	return nil
 }
 
 // applyFilterPolicies dynamically sets filters on the request based on the policies.
@@ -753,29 +772,68 @@ func RecommendK8sClusterSpec(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInf
 	//
 	// Get Recommend Specs in NodeGroup Level
 	//
-	limitK8s := plan.Limit
-	plan.Limit = strconv.Itoa(math.MaxInt)
-	rcmVmSpecs, err := RecommendVm(nsId, plan)
+
+	u := &mcir.FilterK8sClusterByRangeRequest{}
+
+	// Apply filter policies dynamically.
+	if err := applyK8sClusterFilterPolicies(u, &plan); err != nil {
+		log.Error().Err(err).Msg("Failed to apply k8s cluster filter policies")
+		return nil, err
+	}
+
+	log.Debug().Msg("[Filtering specs]")
+
+	filteredSpecs, err := mcir.FilterSpecsByRange(nsId, u.FilterSpecsByRangeRequest)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return []mcir.TbSpecInfo{}, err
+	}
+	if len(filteredSpecs) == 0 {
+		return []mcir.TbSpecInfo{}, nil
+	}
+
+	// Prioritizing
+	log.Debug().Msg("[Prioritizing specs]")
+	prioritySpecs := []mcir.TbSpecInfo{}
+
+	for _, v := range plan.Priority.Policy {
+		metric := v.Metric
+
+		switch metric {
+		case "location":
+			prioritySpecs, err = RecommendVmLocation(nsId, &filteredSpecs, &v.Parameter)
+		case "performance":
+			prioritySpecs, err = RecommendVmPerformance(nsId, &filteredSpecs)
+		case "cost":
+			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
+		case "random":
+			prioritySpecs, err = RecommendVmRandom(nsId, &filteredSpecs)
+		case "latency":
+			prioritySpecs, err = RecommendVmLatency(nsId, &filteredSpecs, &v.Parameter)
+		default:
+			prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
+		}
+	}
+	if plan.Priority.Policy == nil {
+		prioritySpecs, err = RecommendVmCost(nsId, &filteredSpecs)
 	}
 
 	//
 	// Validate k8sclusterinfo.yaml
 	//
+
+	log.Debug().Msg("[Filtering specs for K8sClusterInfo]")
+
 	result := []mcir.TbSpecInfo{}
-	limitNum, err := strconv.Atoi(limitK8s)
+	limitNum, err := strconv.Atoi(plan.Limit)
 	if err != nil {
 		limitNum = math.MaxInt
 	}
 
-	log.Debug().Msg("[Filtering specs for K8sClusterInfo]")
-
 	count := 0
-	for _, spec := range rcmVmSpecs {
+	for _, spec := range prioritySpecs {
 		// check k8sclusterinfo.yaml
-		valid := isValidSpecInK8sClusterInfo(&spec)
+		valid := isAvailableSpecVersionInK8sClusterInfo(&spec, u.Version)
 		if valid == false {
 			continue
 		}
@@ -792,7 +850,7 @@ func RecommendK8sClusterSpec(nsId string, plan DeploymentPlan) ([]mcir.TbSpecInf
 	return result, nil
 }
 
-func isValidSpecInK8sClusterInfo(spec *mcir.TbSpecInfo) bool {
+func isAvailableSpecVersionInK8sClusterInfo(spec *mcir.TbSpecInfo, k8sVersion string) bool {
 	//
 	// Check for Provider
 	//
@@ -823,9 +881,18 @@ func isValidSpecInK8sClusterInfo(spec *mcir.TbSpecInfo) bool {
 		for _, region := range versionDetail.Region {
 			region = strings.ToLower(region)
 			if region == "all" || region == regionName {
-				if len(versionDetail.Available) > 0 {
-					isExist = true
-					break
+				if k8sVersion == "" { // no planned version
+					if len(versionDetail.Available) > 0 {
+						isExist = true
+						break
+					}
+				} else {
+					for _, versionAvailable := range versionDetail.Available {
+						if versionAvailable.Name == k8sVersion {
+							isExist = true
+							break
+						}
+					}
 				}
 			}
 		}
