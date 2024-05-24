@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# This script should be run as root, so we check for root privileges
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root"
+  exit
+fi
+
 echo "[Start Xonotic FPS Game Server Installation]"
 
 SECONDS=0
@@ -9,48 +15,32 @@ serverPort=${2:-26000}
 numBot=${3:-2}
 numMaxUser=32
 FILE="xonotic-0.8.6.zip"
-DOWNLOADLINK="https://dl.unvanquished.net/share/xonotic/release/xonotic-0.8.6.zip"
-DIR="$HOME/Xonotic"
-INSTALL_PATH="$HOME"
-SERVICE_FILE="$HOME/.config/systemd/user/xonotic.service"
-LOG_DIR="$HOME/.xonotic/logs"
+DIR="/root/Xonotic"
+INSTALL_PATH="/root"
+SERVICE_FILE="/etc/systemd/system/xonotic.service"
+LOG_DIR="/var/log/xonotic"
 XONOTIC_BINARY="xonotic-linux64-dedicated"
-CONFIG_DIR="$HOME/.xonotic/data"
-
-# Create necessary directories
-mkdir -p "$INSTALL_PATH" "$DIR" "$LOG_DIR" "$CONFIG_DIR"
+CONFIG_DIR="$INSTALL_PATH/.xonotic/data"
 
 # Download and unzip Xonotic if it's not already present
 if [ ! -f "$INSTALL_PATH/$FILE" ]; then
-  sudo apt-get update > /dev/null
-  sudo apt install unzip -y
-  wget -O "$INSTALL_PATH/$FILE" "$DOWNLOADLINK"
-  chmod +x "$INSTALL_PATH/$FILE"
+  apt-get update > /dev/null
+  wget -O "$INSTALL_PATH/$FILE" "https://dl.unvanquished.net/share/xonotic/release/xonotic-0.8.6.zip"
 fi
 
-unzip "$INSTALL_PATH/$FILE"
-
-
-# Ensure the binary exists and is executable
-if [ ! -f "$DIR/$XONOTIC_BINARY" ]; then
-  echo "Xonotic binary not found at $DIR/$XONOTIC_BINARY"
-  exit 1
+if [ ! -d "$DIR" ]; then
+  apt install unzip -y
+  unzip "$INSTALL_PATH/$FILE" -d "$INSTALL_PATH"
 fi
-chmod +x "$DIR/$XONOTIC_BINARY"
 
 # Create configuration file with user inputs
-appendConfig="port $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
-if [ -f "$DIR/server/server.cfg" ]; then
-  cp "$DIR/server/server.cfg" "$CONFIG_DIR"
-else
-  echo "server.cfg not found at $DIR/server/server.cfg"
-  exit 1
-fi
+appendConfig="sv_public 1\nport $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
+mkdir -p "$CONFIG_DIR"
+cp "$DIR/server/server.cfg" "$CONFIG_DIR"
 echo -e "${appendConfig}" >> "$CONFIG_DIR/server.cfg"
 
 # Create systemd service file
 echo "Creating systemd service file for Xonotic Server"
-mkdir -p "$(dirname $SERVICE_FILE)"
 cat <<EOF > $SERVICE_FILE
 [Unit]
 Description=Xonotic Dedicated Server
@@ -58,6 +48,8 @@ After=network.target
 
 [Service]
 Type=simple
+User=root
+Group=root
 ExecStart=$DIR/$XONOTIC_BINARY -dedicated
 WorkingDirectory=$DIR
 StandardOutput=file:$LOG_DIR/server.log
@@ -65,7 +57,7 @@ StandardError=file:$LOG_DIR/error.log
 SyslogIdentifier=xonotic
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
 EOF
 
 # Create log directory
@@ -93,3 +85,4 @@ PID=$(pgrep -f xonotic-linux64-dedicated)
 echo "[Start Xonotic: complete] PID=$PID"
 echo "Access to $IP:$serverPort by using your Xonotic Client"
 echo "Hostname: $serverName"
+
