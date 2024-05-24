@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This script should be run as root, so we check for root privileges
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root"
@@ -32,13 +34,7 @@ if [ ! -d "$DIR" ]; then
 fi
 
 # Create configuration file with user inputs
-appendConfig="port $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
-mkdir -p "$CONFIG_DIR"
-cp "$DIR/server/server.cfg" "$CONFIG_DIR"
-echo -e "${appendConfig}" >> "$CONFIG_DIR/server.cfg"
-
-# Create configuration file with user inputs
-appendConfig="port $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
+appendConfig="sv_public 1\nport $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
 mkdir -p "$CONFIG_DIR"
 cp "$DIR/server/server.cfg" "$CONFIG_DIR"
 echo -e "${appendConfig}" >> "$CONFIG_DIR/server.cfg"
