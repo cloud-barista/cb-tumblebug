@@ -8,6 +8,9 @@ fi
 
 echo "[Start Xonotic FPS Game Server Installation]"
 
+# Set the debconf frontend to noninteractive
+export DEBIAN_FRONTEND=noninteractive
+
 SECONDS=0
 
 serverName=${1:-Xonotic-0.8.6-Cloud-Barista}
