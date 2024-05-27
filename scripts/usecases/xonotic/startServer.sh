@@ -25,12 +25,19 @@ CONFIG_DIR="$INSTALL_PATH/.xonotic/data"
 # Download and unzip Xonotic if it's not already present
 if [ ! -f "$INSTALL_PATH/$FILE" ]; then
   apt-get update > /dev/null
-  wget -O "$INSTALL_PATH/$FILE" "https://dl.unvanquished.net/share/xonotic/release/xonotic-0.8.6.zip"
+  wget -q -O "$INSTALL_PATH/$FILE" "https://dl.unvanquished.net/share/xonotic/release/xonotic-0.8.6.zip"
+fi
+
+if [ ! -f "$INSTALL_PATH/$FILE" ]; then
+    echo "Error: Failed to download the Xonotic server files." >&2
+    exit 1
 fi
 
 if [ ! -d "$DIR" ]; then
-  apt install unzip -y
-  unzip "$INSTALL_PATH/$FILE" -d "$INSTALL_PATH"
+  echo "Installing unzip package..."
+  apt-get install -qq unzip -y
+  echo "Unzipping the downloaded file..."
+  unzip -q "$INSTALL_PATH/$FILE" -d "$INSTALL_PATH"
 fi
 
 # Create configuration file with user inputs
@@ -84,5 +91,6 @@ PID=$(pgrep -f xonotic-linux64-dedicated)
 # Display the server information
 echo "[Start Xonotic: complete] PID=$PID"
 echo "Access to $IP:$serverPort by using your Xonotic Client"
+echo "Xonotic Client Download: https://xonotic.org/download/"
 echo "Hostname: $serverName"
 
