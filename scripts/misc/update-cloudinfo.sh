@@ -3,7 +3,7 @@
 SCRIPT_DIR=$(cd $(dirname "$0") && pwd)
 
 # Python version check
-REQUIRED_VERSION="3.7.5"
+REQUIRED_VERSION="3.8.0"
 
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
 echo "Detected Python version: $PYTHON_VERSION"
@@ -11,10 +11,10 @@ PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
 PYTHON_PATCH=$(echo $PYTHON_VERSION | cut -d. -f3)
 
-# Check if the Python3 version is 3.7.5 or higher
+# Check if the Python3 version is 3.8.0 or higher
 REQUIRED_MAJOR=3
-REQUIRED_MINOR=7
-REQUIRED_PATCH=5
+REQUIRED_MINOR=8
+REQUIRED_PATCH=0
 
 if [[ $PYTHON_MAJOR -gt $REQUIRED_MAJOR ]] || \
    [[ $PYTHON_MAJOR -eq $REQUIRED_MAJOR && $PYTHON_MINOR -gt $REQUIRED_MINOR ]] || \
@@ -53,6 +53,7 @@ source "$SCRIPT_DIR/tmpPyEnv/bin/activate"
 
 echo
 echo "Installing dependencies..."
+python3 -m pip install --upgrade pip
 pip3 install -r "$SCRIPT_DIR/requirements.txt"
 
 echo
