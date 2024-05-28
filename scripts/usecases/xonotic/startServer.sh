@@ -16,6 +16,7 @@ SECONDS=0
 serverName=${1:-Xonotic-0.8.6-Cloud-Barista}
 serverPort=${2:-26000}
 numBot=${3:-2}
+skillBot=${4:-5}
 numMaxUser=32
 FILE="xonotic-0.8.6.zip"
 DIR="/root/Xonotic"
@@ -44,7 +45,7 @@ if [ ! -d "$DIR" ]; then
 fi
 
 # Create configuration file with user inputs
-appendConfig="sv_public 1\nport $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot"
+appendConfig="sv_public 1\nport $serverPort\nhostname \"$serverName\"\nmaxplayers $numMaxUser\nbot_number $numBot\nskill $skillBot"
 mkdir -p "$CONFIG_DIR"
 cp "$DIR/server/server.cfg" "$CONFIG_DIR"
 echo -e "${appendConfig}" >> "$CONFIG_DIR/server.cfg"
