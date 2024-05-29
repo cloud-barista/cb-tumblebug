@@ -9,7 +9,7 @@ fi
 echo "[Start Xonotic FPS Game Server Installation]"
 
 # Set the debconf frontend to noninteractive
-export DEBIAN_FRONTEND=noninteractive
+# export DEBIAN_FRONTEND=noninteractive
 
 SECONDS=0
 
