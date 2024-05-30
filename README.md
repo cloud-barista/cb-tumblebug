@@ -14,7 +14,7 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-41-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-42-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 A sub-system of Cloud-Barista Platform to Deploy and Manage Multi-Cloud Infrastructure.
@@ -885,6 +885,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Rohit-R2000"><img src="https://avatars.githubusercontent.com/u/83547290?v=4?s=100" width="100px;" alt="Rohit Rajput"/><br /><sub><b>Rohit Rajput</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=Rohit-R2000" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/arshad-k7"><img src="https://avatars.githubusercontent.com/u/49522121?v=4?s=100" width="100px;" alt="Arshad"/><br /><sub><b>Arshad</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=arshad-k7" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://thearchivelog.dev"><img src="https://avatars.githubusercontent.com/u/44025432?v=4?s=100" width="100px;" alt="Jongwoo Han"/><br /><sub><b>Jongwoo Han</b></sub></a><br /><a href="https://github.com/cloud-barista/cb-tumblebug/commits?author=jongwooo" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://blog.naver.com/dev4unet"><img src="https://avatars.githubusercontent.com/u/8984372?v=4?s=100" width="100px;" alt="Yoo Jae-Sung"/><br /><sub><b>Yoo Jae-Sung</b></sub></a><br /><a href="#userTesting-dev4unet" title="User Testing">📓</a></td>
     </tr>
   </tbody>
 </table>
