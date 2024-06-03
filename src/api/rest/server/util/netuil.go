@@ -17,6 +17,7 @@ type RestPostUtilToDesignNetworkReponse struct {
 }
 
 // RestPostUtilToDesignNetwork godoc
+// @ID PostUtilToDesignNetwork
 // @Summary Design a multi-cloud network configuration
 // @Description Design a hierarchical network configuration of a VPC network or multi-cloud network consisting of multiple VPC networks
 // @Tags [Utility] Multi-cloud network design
@@ -55,6 +56,7 @@ type RestPostUtilToValidateNetworkRequest struct {
 }
 
 // RestPostUtilToValidateNetwork godoc
+// @ID PostUtilToValidateNetwork
 // @Summary Validate a multi-cloud network configuration
 // @Description Validate a hierarchical configuration of a VPC network or multi-cloud network consisting of multiple VPC networks
 // @Tags [Utility] Multi-cloud network design

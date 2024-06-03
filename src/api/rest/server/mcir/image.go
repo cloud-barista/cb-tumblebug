@@ -27,6 +27,7 @@ import (
 )
 
 // RestPostImage godoc
+// @ID PostImage
 // @Summary Register image
 // @Description Register image
 // @Tags [Infra resource] MCIR Image management
@@ -87,6 +88,7 @@ func RestPostImage(c echo.Context) error {
 }
 
 // RestPutImage godoc
+// @ID PutImage
 // @Summary Update image
 // @Description Update image
 // @Tags [Infra resource] MCIR Image management
@@ -125,6 +127,7 @@ type RestLookupImageRequest struct {
 }
 
 // RestLookupImage godoc
+// @ID LookupImage
 // @Summary Lookup image
 // @Description Lookup image
 // @Tags [Infra resource] MCIR Common
@@ -152,6 +155,7 @@ func RestLookupImage(c echo.Context) error {
 }
 
 // RestLookupImageList godoc
+// @ID LookupImageList
 // @Summary Lookup image list
 // @Description Lookup image list
 // @Tags [Infra resource] MCIR Common
@@ -179,6 +183,7 @@ func RestLookupImageList(c echo.Context) error {
 }
 
 // RestFetchImages godoc
+// @ID FetchImages
 // @Summary Fetch images
 // @Description Fetch images
 // @Tags [Infra resource] MCIR Image management
@@ -223,6 +228,7 @@ func RestFetchImages(c echo.Context) error {
 }
 
 // RestGetImage godoc
+// @ID GetImage
 // @Summary Get image
 // @Description Get image
 // @Tags [Infra resource] MCIR Image management
@@ -245,6 +251,7 @@ type RestGetAllImageResponse struct {
 }
 
 // RestGetAllImage godoc
+// @ID GetAllImage
 // @Summary List all images or images' ID
 // @Description List all images or images' ID
 // @Tags [Infra resource] MCIR Image management
@@ -264,6 +271,7 @@ func RestGetAllImage(c echo.Context) error {
 }
 
 // RestDelImage godoc
+// @ID DelImage
 // @Summary Delete image
 // @Description Delete image
 // @Tags [Infra resource] MCIR Image management
@@ -280,6 +288,7 @@ func RestDelImage(c echo.Context) error {
 }
 
 // RestDelAllImage godoc
+// @ID DelAllImage
 // @Summary Delete all images
 // @Description Delete all images
 // @Tags [Infra resource] MCIR Image management
@@ -301,6 +310,7 @@ type RestSearchImageRequest struct {
 }
 
 // RestSearchImage godoc
+// @ID SearchImage
 // @Summary Search image
 // @Description Search image
 // @Tags [Infra resource] MCIR Image management

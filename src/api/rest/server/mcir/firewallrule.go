@@ -27,6 +27,7 @@ type TbFirewallRulesWrapper struct {
 }
 
 // RestPostFirewallRules godoc
+// @ID PostFirewallRules
 // @Summary Create FirewallRules
 // @Description Create FirewallRules
 // @Tags [Infra resource] MCIR Security group management
@@ -57,6 +58,7 @@ func RestPostFirewallRules(c echo.Context) error {
 
 /* function RestPutFirewallRules not yet implemented
 // RestPutFirewallRules godoc
+// @ID PutFirewallRules
 // @Summary Update FirewallRules
 // @Description Update FirewallRules
 // @Tags [Infra resource] MCIR Security group management
@@ -77,6 +79,7 @@ func RestPutFirewallRules(c echo.Context) error {
 
 /*
 // RestGetFirewallRules godoc
+// @ID GetFirewallRules
 // @Summary Get FirewallRules
 // @Description Get FirewallRules
 // @Tags [Infra resource] MCIR Security group management
@@ -100,6 +103,7 @@ type RestGetAllFirewallRulesResponse struct {
 */
 
 // RestDelFirewallRules godoc
+// @ID DelFirewallRules
 // @Summary Delete FirewallRules
 // @Description Delete FirewallRules
 // @Tags [Infra resource] MCIR Security group management

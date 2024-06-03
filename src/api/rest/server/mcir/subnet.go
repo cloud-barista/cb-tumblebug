@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostSubnet godoc
+// @ID PostSubnet
 // @Summary Create Subnet
 // @Description Create Subnet
 // @Tags [Infra resource] MCIR Network management
@@ -54,6 +55,7 @@ func RestPostSubnet(c echo.Context) error {
 
 /* function RestPutSubnet not yet implemented
 // RestPutSubnet godoc
+// @ID PutSubnet
 // @Summary Update Subnet
 // @Description Update Subnet
 // @Tags [Infra resource] MCIR Network management
@@ -73,6 +75,7 @@ func RestPutSubnet(c echo.Context) error {
 
 /*
 // RestGetSubnet godoc
+// @ID GetSubnet
 // @Summary Get Subnet
 // @Description Get Subnet
 // @Tags [Infra resource] MCIR Network management
@@ -95,6 +98,7 @@ type RestGetAllSubnetResponse struct {
 }
 
 // RestGetAllSubnet godoc
+// @ID GetAllSubnet
 // @Summary List all Subnets or Subnets' ID
 // @Description List all Subnets or Subnets' ID
 // @Tags [Infra resource] MCIR Network management
@@ -113,6 +117,7 @@ func RestGetAllSubnet(c echo.Context) error {
 */
 
 // RestDelSubnet godoc
+// @ID DelSubnet
 // @Summary Delete Subnet
 // @Description Delete Subnet
 // @Tags [Infra resource] MCIR Network management
@@ -131,6 +136,7 @@ func RestDelSubnet(c echo.Context) error {
 
 /*
 // RestDelAllSubnet godoc
+// @ID DelAllSubnet
 // @Summary Delete all Subnets
 // @Description Delete all Subnets
 // @Tags [Infra resource] MCIR Network management

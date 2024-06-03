@@ -35,6 +35,7 @@ type JSONResult struct {
 // Annotation for API documention Need to be revised.
 
 // RestGetMcis godoc
+// @ID GetMcis
 // @Summary Get MCIS object (option: status, accessInfo, vmId)
 // @Description Get MCIS object (option: status, accessInfo, vmId)
 // @Tags [Infra service] MCIS Provisioning management
@@ -107,6 +108,7 @@ type RestGetAllMcisStatusResponse struct {
 }
 
 // RestGetAllMcis godoc
+// @ID GetAllMcis
 // @Summary List all MCISs or MCISs' ID
 // @Description List all MCISs or MCISs' ID
 // @Tags [Infra service] MCIS Provisioning management
@@ -166,6 +168,7 @@ func RestGetAllMcis(c echo.Context) error {
 	function RestPutMcis not yet implemented
 
 // RestPutMcis godoc
+// @ID PutMcis
 // @Summary Update MCIS
 // @Description Update MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -182,6 +185,7 @@ func RestPutMcis(c echo.Context) error {
 */
 
 // RestDelMcis godoc
+// @ID DelMcis
 // @Summary Delete MCIS
 // @Description Delete MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -207,6 +211,7 @@ func RestDelMcis(c echo.Context) error {
 }
 
 // RestDelAllMcis godoc
+// @ID DelAllMcis
 // @Summary Delete all MCISs
 // @Description Delete all MCISs
 // @Tags [Infra service] MCIS Provisioning management
@@ -233,6 +238,7 @@ func RestDelAllMcis(c echo.Context) error {
 // Annotation for API documention needs to be revised.
 
 // RestGetMcisVm godoc
+// @ID GetMcisVm
 // @Summary Get VM in specified MCIS
 // @Description Get VM in specified MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -274,6 +280,7 @@ func RestGetMcisVm(c echo.Context) error {
 
 /* RestPutMcisVm function not yet implemented
 // RestPutSshKey godoc
+// @ID PutSshKey
 // @Summary Update MCIS
 // @Description Update MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -293,6 +300,7 @@ func RestPutMcisVm(c echo.Context) error {
 */
 
 // RestDelMcisVm godoc
+// @ID DelMcisVm
 // @Summary Delete VM in specified MCIS
 // @Description Delete VM in specified MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -327,6 +335,7 @@ func RestDelMcisVm(c echo.Context) error {
 }
 
 // RestGetMcisGroupVms godoc
+// @ID GetMcisGroupVms
 // @Summary List VMs with a SubGroup label in a specified MCIS
 // @Description List VMs with a SubGroup label in a specified MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -357,6 +366,7 @@ func RestGetMcisGroupVms(c echo.Context) error {
 }
 
 // RestGetMcisGroupIds godoc
+// @ID GetMcisGroupIds
 // @Summary List SubGroup IDs in a specified MCIS
 // @Description List SubGroup IDs in a specified MCIS
 // @Tags [Infra service] MCIS Provisioning management

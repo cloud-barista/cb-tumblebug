@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostSecurityGroup godoc
+// @ID PostSecurityGroup
 // @Summary Create Security Group
 // @Description Create Security Group
 // @Tags [Infra resource] MCIR Security group management
@@ -57,6 +58,7 @@ func RestPostSecurityGroup(c echo.Context) error {
 	function RestPutSecurityGroup not yet implemented
 
 // RestPutSecurityGroup godoc
+// @ID PutSecurityGroup
 // @Summary Update Security Group
 // @Description Update Security Group
 // @Tags [Infra resource] MCIR Security group management
@@ -75,6 +77,7 @@ func RestPutSecurityGroup(c echo.Context) error {
 }
 
 // RestGetSecurityGroup godoc
+// @ID GetSecurityGroup
 // @Summary Get Security Group
 // @Description Get Security Group
 // @Tags [Infra resource] MCIR Security group management
@@ -97,6 +100,7 @@ type RestGetAllSecurityGroupResponse struct {
 }
 
 // RestGetAllSecurityGroup godoc
+// @ID GetAllSecurityGroup
 // @Summary List all Security Groups or Security Groups' ID
 // @Description List all Security Groups or Security Groups' ID
 // @Tags [Infra resource] MCIR Security group management
@@ -116,6 +120,7 @@ func RestGetAllSecurityGroup(c echo.Context) error {
 }
 
 // RestDelSecurityGroup godoc
+// @ID DelSecurityGroup
 // @Summary Delete Security Group
 // @Description Delete Security Group
 // @Tags [Infra resource] MCIR Security group management
@@ -132,6 +137,7 @@ func RestDelSecurityGroup(c echo.Context) error {
 }
 
 // RestDelAllSecurityGroup godoc
+// @ID DelAllSecurityGroup
 // @Summary Delete all Security Groups
 // @Description Delete all Security Groups
 // @Tags [Infra resource] MCIR Security group management

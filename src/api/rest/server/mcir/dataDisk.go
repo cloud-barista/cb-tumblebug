@@ -26,6 +26,7 @@ import (
 )
 
 // RestPostDataDisk godoc
+// @ID PostDataDisk
 // @Summary Create Data Disk
 // @Description Create Data Disk
 // @Tags [Infra resource] MCIR Data Disk management
@@ -58,6 +59,7 @@ func RestPostDataDisk(c echo.Context) error {
 }
 
 // RestPutDataDisk godoc
+// @ID PutDataDisk
 // @Summary Upsize Data Disk
 // @Description Upsize Data Disk
 // @Tags [Infra resource] MCIR Data Disk management
@@ -89,6 +91,7 @@ func RestPutDataDisk(c echo.Context) error {
 }
 
 // RestGetDataDisk godoc
+// @ID GetDataDisk
 // @Summary Get Data Disk
 // @Description Get Data Disk
 // @Tags [Infra resource] MCIR Data Disk management
@@ -111,6 +114,7 @@ type RestGetAllDataDiskResponse struct {
 }
 
 // RestGetAllDataDisk godoc
+// @ID GetAllDataDisk
 // @Summary List all Data Disks or Data Disks' ID
 // @Description List all Data Disks or Data Disks' ID
 // @Tags [Infra resource] MCIR Data Disk management
@@ -130,6 +134,7 @@ func RestGetAllDataDisk(c echo.Context) error {
 }
 
 // RestDelDataDisk godoc
+// @ID DelDataDisk
 // @Summary Delete Data Disk
 // @Description Delete Data Disk
 // @Tags [Infra resource] MCIR Data Disk management
@@ -146,6 +151,7 @@ func RestDelDataDisk(c echo.Context) error {
 }
 
 // RestDelAllDataDisk godoc
+// @ID DelAllDataDisk
 // @Summary Delete all Data Disks
 // @Description Delete all Data Disks
 // @Tags [Infra resource] MCIR Data Disk management
@@ -162,6 +168,7 @@ func RestDelAllDataDisk(c echo.Context) error {
 }
 
 // RestPutVmDataDisk godoc
+// @ID PutVmDataDisk
 // @Summary Attach/Detach available dataDisk
 // @Description Attach/Detach available dataDisk
 // @Tags [Infra resource] MCIR Data Disk management
@@ -216,6 +223,7 @@ func RestPutVmDataDisk(c echo.Context) error {
 }
 
 // RestPostVmDataDisk godoc
+// @ID PostVmDataDisk
 // @Summary Provisioning (Create and attach) dataDisk
 // @Description Provisioning (Create and attach) dataDisk
 // @Tags [Infra resource] MCIR Data Disk management
@@ -251,6 +259,7 @@ func RestPostVmDataDisk(c echo.Context) error {
 }
 
 // RestGetVmDataDisk godoc
+// @ID GetVmDataDisk
 // @Summary Get available dataDisks for a VM
 // @Description Get available dataDisks for a VM
 // @Tags [Infra resource] MCIR Data Disk management

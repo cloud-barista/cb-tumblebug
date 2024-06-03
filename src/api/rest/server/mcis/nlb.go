@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostNLB godoc
+// @ID PostNLB
 // @Summary Create NLB
 // @Description Create NLB
 // @Tags [Infra resource] NLB management
@@ -56,6 +57,7 @@ func RestPostNLB(c echo.Context) error {
 }
 
 // RestPostMcNLB godoc
+// @ID PostMcNLB
 // @Summary Create a special purpose MCIS for NLB and depoly and setting SW NLB
 // @Description Create a special purpose MCIS for NLB and depoly and setting SW NLB
 // @Tags [Infra resource] NLB management
@@ -89,6 +91,7 @@ func RestPostMcNLB(c echo.Context) error {
 	function RestPutNLB not yet implemented
 
 // RestPutNLB godoc
+// @ID PutNLB
 // @Summary Update NLB
 // @Description Update NLB
 // @Tags [Infra resource] NLB management
@@ -111,6 +114,7 @@ func RestPutNLB(c echo.Context) error {
 }
 
 // RestGetNLB godoc
+// @ID GetNLB
 // @Summary Get NLB
 // @Description Get NLB
 // @Tags [Infra resource] NLB management
@@ -142,6 +146,7 @@ type RestGetAllNLBResponse struct {
 }
 
 // RestGetAllNLB godoc
+// @ID GetAllNLB
 // @Summary List all NLBs or NLBs' ID
 // @Description List all NLBs or NLBs' ID
 // @Tags [Infra resource] NLB management
@@ -190,6 +195,7 @@ func RestGetAllNLB(c echo.Context) error {
 }
 
 // RestDelNLB godoc
+// @ID DelNLB
 // @Summary Delete NLB
 // @Description Delete NLB
 // @Tags [Infra resource] NLB management
@@ -218,6 +224,7 @@ func RestDelNLB(c echo.Context) error {
 }
 
 // RestDelAllNLB godoc
+// @ID DelAllNLB
 // @Summary Delete all NLBs
 // @Description Delete all NLBs
 // @Tags [Infra resource] NLB management
@@ -245,6 +252,7 @@ func RestDelAllNLB(c echo.Context) error {
 }
 
 // RestGetNLBHealth godoc
+// @ID GetNLBHealth
 // @Summary Get NLB Health
 // @Description Get NLB Health
 // @Tags [Infra resource] NLB management
@@ -273,6 +281,7 @@ func RestGetNLBHealth(c echo.Context) error {
 // The REST APIs below are for dev/test only
 
 // RestAddNLBVMs godoc
+// @ID AddNLBVMs
 // @Summary Add VMs to NLB
 // @Description Add VMs to NLB
 // @Tags [Infra resource] NLB management (for developer)
@@ -304,6 +313,7 @@ func RestAddNLBVMs(c echo.Context) error {
 }
 
 // RestRemoveNLBVMs godoc
+// @ID RemoveNLBVMs
 // @Summary Delete VMs from NLB
 // @Description Delete VMs from NLB
 // @Tags [Infra resource] NLB management (for developer)

@@ -2942,6 +2942,7 @@ paths:
       consumes:
       - application/json
       description: Check resources' existence
+      operationId: CheckResource
       parameters:
       - default: ns01
         description: Namespace ID
@@ -2978,6 +2979,7 @@ paths:
       consumes:
       - application/json
       description: Get cloud information
+      operationId: GetCloudInfo
       produces:
       - application/json
       responses:
@@ -3001,6 +3003,7 @@ paths:
       consumes:
       - application/json
       description: Init all configs
+      operationId: InitAllConfig
       produces:
       - application/json
       responses:
@@ -3019,6 +3022,7 @@ paths:
       consumes:
       - application/json
       description: List all configs
+      operationId: GetAllConfig
       produces:
       - application/json
       responses:
@@ -3041,6 +3045,7 @@ paths:
       consumes:
       - application/json
       description: Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)
+      operationId: PostConfig
       parameters:
       - description: Key and Value for configuration
         in: body
@@ -3071,6 +3076,7 @@ paths:
       consumes:
       - application/json
       description: Init config
+      operationId: InitConfig
       parameters:
       - description: Config ID
         in: path
@@ -3099,6 +3105,7 @@ paths:
       consumes:
       - application/json
       description: Get config
+      operationId: GetConfig
       parameters:
       - description: Config ID
         in: path
@@ -3128,6 +3135,7 @@ paths:
       consumes:
       - application/json
       description: List all registered ConnConfig
+      operationId: GetConnConfigList
       parameters:
       - default: ""
         description: filter objects by Credential Holder
@@ -3173,6 +3181,7 @@ paths:
       consumes:
       - application/json
       description: Get registered ConnConfig info
+      operationId: GetConnConfig
       parameters:
       - description: Name of connection config (cloud config)
         in: path
@@ -3202,6 +3211,7 @@ paths:
       consumes:
       - application/json
       description: Post register Credential info
+      operationId: RegisterCredential
       parameters:
       - description: Credential request info
         in: body
@@ -3232,6 +3242,7 @@ paths:
       consumes:
       - application/json
       description: Forward any (GET) request to CB-Spider
+      operationId: ForwardAnyReqToAny
       parameters:
       - default: vmspec
         description: Internal call path to CB-Spider (path without /spider/ prefix)
@@ -3264,6 +3275,7 @@ paths:
       - application/json
       description: Checks and logs the HTTP version of the incoming request to the
         server console.
+      operationId: CheckHTTPVersion
       produces:
       - application/json
       responses:
@@ -3288,6 +3300,7 @@ paths:
       - application/json
       description: Inspect Resources (vNet, securityGroup, sshKey, vm) registered
         in CB-Tumblebug, CB-Spider, CSP
+      operationId: InspectResources
       parameters:
       - description: Specify connectionName and resource type
         in: body
@@ -3320,6 +3333,7 @@ paths:
       - application/json
       description: Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered
         in CB-Tumblebug and CSP for all connections
+      operationId: InspectResourcesOverview
       produces:
       - application/json
       responses:
@@ -3344,6 +3358,7 @@ paths:
       consumes:
       - application/json
       description: Load Common Resources from internal asset files (Spec, Image)
+      operationId: LoadCommonResource
       produces:
       - application/json
       responses:
@@ -3363,6 +3378,7 @@ paths:
       consumes:
       - application/json
       description: Lookup image
+      operationId: LookupImage
       parameters:
       - description: Specify connectionName & cspImageId
         in: body
@@ -3393,6 +3409,7 @@ paths:
       consumes:
       - application/json
       description: Lookup image list
+      operationId: LookupImageList
       parameters:
       - description: Specify connectionName
         in: body
@@ -3423,6 +3440,7 @@ paths:
       consumes:
       - application/json
       description: Lookup spec
+      operationId: LookupSpec
       parameters:
       - description: Specify connectionName & cspSpecName
         in: body
@@ -3453,6 +3471,7 @@ paths:
       consumes:
       - application/json
       description: Lookup spec list
+      operationId: LookupSpecList
       parameters:
       - description: Specify connectionName
         in: body
@@ -3484,6 +3503,7 @@ paths:
       - application/json
       description: Check available ConnectionConfig list before create MCIS Dynamically
         from common spec and image
+      operationId: PostMcisDynamicCheckRequest
       parameters:
       - description: Details for MCIS dynamic request information
         in: body
@@ -3514,6 +3534,7 @@ paths:
       consumes:
       - application/json
       description: Recommend MCIS plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234
+      operationId: RecommendVm
       parameters:
       - description: Recommend MCIS plan (filter and priority)
         in: body
@@ -3545,6 +3566,7 @@ paths:
       consumes:
       - application/json
       description: Delete all namespaces
+      operationId: DelAllNs
       produces:
       - application/json
       responses:
@@ -3563,6 +3585,7 @@ paths:
       consumes:
       - application/json
       description: List all namespaces or namespaces' ID
+      operationId: GetAllNs
       parameters:
       - description: Option
         enum:
@@ -3599,6 +3622,7 @@ paths:
       consumes:
       - application/json
       description: Create namespace
+      operationId: PostNs
       parameters:
       - description: Details for a new namespace
         in: body
@@ -3629,6 +3653,7 @@ paths:
       consumes:
       - application/json
       description: Delete namespace
+      operationId: DelNs
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3654,6 +3679,7 @@ paths:
       consumes:
       - application/json
       description: Get namespace
+      operationId: GetNs
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3683,6 +3709,7 @@ paths:
       consumes:
       - application/json
       description: Update namespace
+      operationId: PutNs
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3719,6 +3746,7 @@ paths:
       consumes:
       - application/json
       description: Run MCIS benchmark for a single performance metric and return results
+      operationId: GetBenchmark
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3780,6 +3808,7 @@ paths:
       consumes:
       - application/json
       description: Run MCIS benchmark for all performance metrics and return results
+      operationId: GetAllBenchmark
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3822,6 +3851,7 @@ paths:
       consumes:
       - application/json
       description: Run MCIS benchmark for network latency
+      operationId: GetLatencyBenchmark
       parameters:
       - default: system-purpose-common-ns
         description: Namespace ID
@@ -3858,6 +3888,7 @@ paths:
       consumes:
       - application/json
       description: Delete all Clusters
+      operationId: DeleteAllCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3888,6 +3919,7 @@ paths:
       consumes:
       - application/json
       description: List all Clusters or Clusters' ID
+      operationId: GetAllCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3938,6 +3970,7 @@ paths:
       consumes:
       - application/json
       description: Create Cluster
+      operationId: PostCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3981,6 +4014,7 @@ paths:
       consumes:
       - application/json
       description: Delete Cluster
+      operationId: DeleteCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4011,6 +4045,7 @@ paths:
       consumes:
       - application/json
       description: Get Cluster
+      operationId: GetCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4047,6 +4082,7 @@ paths:
       consumes:
       - application/json
       description: Add a NodeGroup
+      operationId: PostNodeGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4088,6 +4124,7 @@ paths:
       consumes:
       - application/json
       description: Remove a NodeGroup
+      operationId: DeleteNodeGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4124,6 +4161,7 @@ paths:
       consumes:
       - application/json
       description: Change a NodeGroup's Autoscale Size
+      operationId: PutChangeAutoscaleSize
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4164,6 +4202,7 @@ paths:
       consumes:
       - application/json
       description: Set a NodeGroup's Autoscaling On/Off
+      operationId: PutSetAutoscaling
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4204,6 +4243,7 @@ paths:
       consumes:
       - application/json
       description: Upgrade a Cluster's version
+      operationId: PutClusterUpgrade
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4239,6 +4279,7 @@ paths:
       consumes:
       - application/json
       description: Send a command to specified MCIS
+      operationId: PostCmdMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4296,6 +4337,7 @@ paths:
       - application/json
       description: Control the lifecycle of MCIS (refine, suspend, resume, reboot,
         terminate)
+      operationId: GetControlMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4352,6 +4394,7 @@ paths:
       consumes:
       - application/json
       description: Control the lifecycle of VM (suspend, resume, reboot, terminate)
+      operationId: GetControlMcisVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4411,6 +4454,7 @@ paths:
       consumes:
       - application/json
       description: Delete all Default Resource Objects in the given namespace
+      operationId: DelAllDefaultResources
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4437,6 +4481,7 @@ paths:
       consumes:
       - application/json
       description: Install the benchmark agent to specified MCIS
+      operationId: PostInstallBenchmarkAgentToMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4485,6 +4530,7 @@ paths:
       consumes:
       - application/json
       description: Load Default Resource from internal asset file
+      operationId: LoadDefaultResource
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4526,6 +4572,7 @@ paths:
       consumes:
       - application/json
       description: Delete all MCISs
+      operationId: DelAllMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4557,6 +4604,7 @@ paths:
       consumes:
       - application/json
       description: List all MCISs or MCISs' ID
+      operationId: GetAllMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4605,6 +4653,7 @@ paths:
       consumes:
       - application/json
       description: Create MCIS
+      operationId: PostMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4641,6 +4690,7 @@ paths:
       consumes:
       - application/json
       description: Delete MCIS
+      operationId: DelMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4679,6 +4729,7 @@ paths:
       consumes:
       - application/json
       description: 'Get MCIS object (option: status, accessInfo, vmId)'
+      operationId: GetMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4747,6 +4798,7 @@ paths:
       consumes:
       - application/json
       description: Remove a bastion VM from all vNets
+      operationId: RemoveBastionNodes
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4790,6 +4842,7 @@ paths:
       - application/json
       description: Create a special purpose MCIS for NLB and depoly and setting SW
         NLB
+      operationId: PostMcNLB
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4832,6 +4885,7 @@ paths:
       consumes:
       - application/json
       description: Delete all NLBs
+      operationId: DelAllNLB
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4868,6 +4922,7 @@ paths:
       consumes:
       - application/json
       description: List all NLBs or NLBs' ID
+      operationId: GetAllNLB
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4924,6 +4979,7 @@ paths:
       consumes:
       - application/json
       description: Create NLB
+      operationId: PostNLB
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4973,6 +5029,7 @@ paths:
       consumes:
       - application/json
       description: Delete NLB
+      operationId: DelNLB
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5009,6 +5066,7 @@ paths:
       consumes:
       - application/json
       description: Get NLB
+      operationId: GetNLB
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5051,6 +5109,7 @@ paths:
       consumes:
       - application/json
       description: Get NLB Health
+      operationId: GetNLBHealth
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5093,6 +5152,7 @@ paths:
       consumes:
       - application/json
       description: Delete VMs from NLB
+      operationId: RemoveNLBVMs
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5136,6 +5196,7 @@ paths:
       consumes:
       - application/json
       description: Add VMs to NLB
+      operationId: AddNLBVMs
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5184,6 +5245,7 @@ paths:
       consumes:
       - application/json
       description: Get sites in MCIS
+      operationId: GetSitesInMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5224,6 +5286,7 @@ paths:
       consumes:
       - application/json
       description: List SubGroup IDs in a specified MCIS
+      operationId: GetMcisGroupIds
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5260,6 +5323,7 @@ paths:
       consumes:
       - application/json
       description: List VMs with a SubGroup label in a specified MCIS
+      operationId: GetMcisGroupVms
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5307,6 +5371,7 @@ paths:
       consumes:
       - application/json
       description: ScaleOut subGroup in specified MCIS
+      operationId: PostMcisSubGroupScaleOut
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5356,6 +5421,7 @@ paths:
       - application/json
       description: Create and add homogeneous VMs(subGroup) to a specified MCIS (Set
         subGroupSize for multiple VMs)
+      operationId: PostMcisVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5399,6 +5465,7 @@ paths:
       consumes:
       - application/json
       description: Get bastion nodes for a VM
+      operationId: GetBastionNodes
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5443,6 +5510,7 @@ paths:
       consumes:
       - application/json
       description: Set bastion nodes for a VM
+      operationId: SetBastionNodes
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5491,6 +5559,7 @@ paths:
       consumes:
       - application/json
       description: Delete VM in specified MCIS
+      operationId: DelMcisVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5534,6 +5603,7 @@ paths:
       consumes:
       - application/json
       description: Get VM in specified MCIS
+      operationId: GetMcisVm
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5593,6 +5663,7 @@ paths:
       consumes:
       - application/json
       description: Get available dataDisks for a VM
+      operationId: GetVmDataDisk
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5641,6 +5712,7 @@ paths:
       consumes:
       - application/json
       description: Provisioning (Create and attach) dataDisk
+      operationId: PostVmDataDisk
       parameters:
       - description: Details for an Data Disk object
         in: body
@@ -5684,6 +5756,7 @@ paths:
       consumes:
       - application/json
       description: Attach/Detach available dataDisk
+      operationId: PutVmDataDisk
       parameters:
       - description: Request body to attach/detach dataDisk
         in: body
@@ -5746,6 +5819,7 @@ paths:
       consumes:
       - application/json
       description: Snapshot VM and create a Custom Image Object using the Snapshot
+      operationId: PostMcisVmSnapshot
       parameters:
       - description: Request body to create VM snapshot
         in: body
@@ -5794,6 +5868,7 @@ paths:
       consumes:
       - application/json
       description: Create VM Dynamically and add it to MCIS
+      operationId: PostMcisVmDynamic
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5836,6 +5911,7 @@ paths:
       consumes:
       - application/json
       description: Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)
+      operationId: DeleteVpnGcpToAws
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5881,6 +5957,7 @@ paths:
       consumes:
       - application/json
       description: Update VPN tunnels between GCP and AWS
+      operationId: GetVpnGcpToAws
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5931,6 +6008,7 @@ paths:
       consumes:
       - application/json
       description: Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
+      operationId: PostVpnGcpToAws
       parameters:
       - default: ns01
         description: Namespace ID
@@ -5982,6 +6060,7 @@ paths:
       consumes:
       - application/json
       description: Update VPN tunnels between GCP and AWS
+      operationId: PutVpnGcpToAws
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6034,6 +6113,7 @@ paths:
       consumes:
       - application/json
       description: Check the status of a specific request by its ID
+      operationId: GetRequestStatusOfGcpAwsVpn
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6085,6 +6165,7 @@ paths:
       consumes:
       - application/json
       description: Create MCIS Dynamically from common spec and image
+      operationId: PostMcisDynamic
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6131,6 +6212,7 @@ paths:
       consumes:
       - application/json
       description: Install monitoring agent (CB-Dragonfly agent) to MCIS
+      operationId: PostInstallMonitorAgentToMcis
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6174,6 +6256,7 @@ paths:
       - application/json
       description: Get monitoring data of specified MCIS for specified monitoring
         metric (cpu, memory, disk, network)
+      operationId: GetMonitorData
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6217,6 +6300,7 @@ paths:
       - application/json
       description: Set monitoring agent (CB-Dragonfly agent) installation status installed
         (for Windows VM only)
+      operationId: PutMonitorAgentStatusInstalled
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6260,6 +6344,7 @@ paths:
       consumes:
       - application/json
       description: Delete all MCIS policies
+      operationId: DelAllMcisPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6285,6 +6370,7 @@ paths:
       consumes:
       - application/json
       description: List all MCIS policies
+      operationId: GetAllMcisPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6315,6 +6401,7 @@ paths:
       consumes:
       - application/json
       description: Delete MCIS Policy
+      operationId: DelMcisPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6346,6 +6433,7 @@ paths:
       consumes:
       - application/json
       description: Get MCIS Policy
+      operationId: GetMcisPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6381,6 +6469,7 @@ paths:
       consumes:
       - application/json
       description: Create MCIS Automation policy
+      operationId: PostMcisPolicy
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6423,6 +6512,7 @@ paths:
       consumes:
       - application/json
       description: Register existing VM in a CSP to Cloud-Barista MCIS
+      operationId: PostRegisterCSPNativeVM
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6459,6 +6549,7 @@ paths:
       consumes:
       - application/json
       description: Delete all customImages
+      operationId: DelAllCustomImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6489,6 +6580,7 @@ paths:
       consumes:
       - application/json
       description: List all customImages or customImages' ID
+      operationId: GetAllCustomImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6539,6 +6631,7 @@ paths:
       consumes:
       - application/json
       description: Register existing Custom Image in a CSP (option=register)
+      operationId: PostCustomImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6582,6 +6675,7 @@ paths:
       consumes:
       - application/json
       description: Delete customImage
+      operationId: DelCustomImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6612,6 +6706,7 @@ paths:
       consumes:
       - application/json
       description: Get customImage
+      operationId: GetCustomImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6647,6 +6742,7 @@ paths:
       consumes:
       - application/json
       description: Delete all Data Disks
+      operationId: DelAllDataDisk
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6677,6 +6773,7 @@ paths:
       consumes:
       - application/json
       description: List all Data Disks or Data Disks' ID
+      operationId: GetAllDataDisk
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6727,6 +6824,7 @@ paths:
       consumes:
       - application/json
       description: Create Data Disk
+      operationId: PostDataDisk
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6769,6 +6867,7 @@ paths:
       consumes:
       - application/json
       description: Delete Data Disk
+      operationId: DelDataDisk
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6799,6 +6898,7 @@ paths:
       consumes:
       - application/json
       description: Get Data Disk
+      operationId: GetDataDisk
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6833,6 +6933,7 @@ paths:
       consumes:
       - application/json
       description: Upsize Data Disk
+      operationId: PutDataDisk
       parameters:
       - description: Request body to upsize the dataDisk
         in: body
@@ -6874,6 +6975,7 @@ paths:
       consumes:
       - application/json
       description: Fetch images
+      operationId: FetchImages
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6904,6 +7006,7 @@ paths:
       consumes:
       - application/json
       description: Fetch specs
+      operationId: FetchSpecs
       parameters:
       - default: system-purpose-common-ns
         description: Namespace ID
@@ -6934,6 +7037,7 @@ paths:
       consumes:
       - application/json
       description: Filter specs by range
+      operationId: FilterSpecsByRange
       parameters:
       - default: system-purpose-common-ns
         description: Namespace ID
@@ -6969,6 +7073,7 @@ paths:
       consumes:
       - application/json
       description: Delete all images
+      operationId: DelAllImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6999,6 +7104,7 @@ paths:
       consumes:
       - application/json
       description: List all images or images' ID
+      operationId: GetAllImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7049,6 +7155,7 @@ paths:
       consumes:
       - application/json
       description: Register image
+      operationId: PostImage
       parameters:
       - description: registeringMethod (registerWithInfo or registerWithId)
         in: query
@@ -7099,6 +7206,7 @@ paths:
       consumes:
       - application/json
       description: Delete image
+      operationId: DelImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7129,6 +7237,7 @@ paths:
       consumes:
       - application/json
       description: Get image
+      operationId: GetImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7163,6 +7272,7 @@ paths:
       consumes:
       - application/json
       description: Update image
+      operationId: PutImage
       parameters:
       - description: Details for an image object
         in: body
@@ -7204,6 +7314,7 @@ paths:
       consumes:
       - application/json
       description: Search image
+      operationId: SearchImage
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7240,6 +7351,7 @@ paths:
       consumes:
       - application/json
       description: Delete all Security Groups
+      operationId: DelAllSecurityGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7270,6 +7382,7 @@ paths:
       consumes:
       - application/json
       description: List all Security Groups or Security Groups' ID
+      operationId: GetAllSecurityGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7320,6 +7433,7 @@ paths:
       consumes:
       - application/json
       description: Create Security Group
+      operationId: PostSecurityGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7363,6 +7477,7 @@ paths:
       consumes:
       - application/json
       description: Delete Security Group
+      operationId: DelSecurityGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7393,6 +7508,7 @@ paths:
       consumes:
       - application/json
       description: Get Security Group
+      operationId: GetSecurityGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7428,6 +7544,7 @@ paths:
       consumes:
       - application/json
       description: Delete FirewallRules
+      operationId: DelFirewallRules
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7459,6 +7576,7 @@ paths:
       consumes:
       - application/json
       description: Create FirewallRules
+      operationId: PostFirewallRules
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7495,6 +7613,7 @@ paths:
       consumes:
       - application/json
       description: Delete all specs
+      operationId: DelAllSpec
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7525,6 +7644,7 @@ paths:
       consumes:
       - application/json
       description: List all specs or specs' ID
+      operationId: GetAllSpec
       parameters:
       - default: system-purpose-common-ns
         description: Namespace ID
@@ -7575,6 +7695,7 @@ paths:
       consumes:
       - application/json
       description: Register spec
+      operationId: PostSpec
       parameters:
       - description: registerWithInfo or else
         in: query
@@ -7625,6 +7746,7 @@ paths:
       consumes:
       - application/json
       description: Delete spec
+      operationId: DelSpec
       parameters:
       - default: system-purpose-common-ns
         description: Namespace ID
@@ -7655,6 +7777,7 @@ paths:
       consumes:
       - application/json
       description: Get spec
+      operationId: GetSpec
       parameters:
       - default: system-purpose-common-ns
         description: Namespace ID
@@ -7689,6 +7812,7 @@ paths:
       consumes:
       - application/json
       description: Update spec
+      operationId: PutSpec
       parameters:
       - description: Details for an spec object
         in: body
@@ -7730,6 +7854,7 @@ paths:
       consumes:
       - application/json
       description: Delete all SSH Keys
+      operationId: DelAllSshKey
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7760,6 +7885,7 @@ paths:
       consumes:
       - application/json
       description: List all SSH Keys or SSH Keys' ID
+      operationId: GetAllSshKey
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7810,6 +7936,7 @@ paths:
       consumes:
       - application/json
       description: Create SSH Key
+      operationId: PostSshKey
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7853,6 +7980,7 @@ paths:
       consumes:
       - application/json
       description: Delete SSH Key
+      operationId: DelSshKey
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7883,6 +8011,7 @@ paths:
       consumes:
       - application/json
       description: Get SSH Key
+      operationId: GetSshKey
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7917,6 +8046,7 @@ paths:
       consumes:
       - application/json
       description: Update SSH Key
+      operationId: PutSshKey
       parameters:
       - description: Details for an SSH Key object
         in: body
@@ -7958,6 +8088,7 @@ paths:
       consumes:
       - application/json
       description: Delete all VNets
+      operationId: DelAllVNet
       parameters:
       - default: ns01
         description: Namespace ID
@@ -7988,6 +8119,7 @@ paths:
       consumes:
       - application/json
       description: List all VNets or VNets' ID
+      operationId: GetAllVNet
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8038,6 +8170,7 @@ paths:
       consumes:
       - application/json
       description: Create VNet
+      operationId: PostVNet
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8081,6 +8214,7 @@ paths:
       consumes:
       - application/json
       description: Delete VNet
+      operationId: DelVNet
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8111,6 +8245,7 @@ paths:
       consumes:
       - application/json
       description: Get VNet
+      operationId: GetVNet
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8146,6 +8281,7 @@ paths:
       consumes:
       - application/json
       description: Create Subnet
+      operationId: PostSubnet
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8187,6 +8323,7 @@ paths:
       consumes:
       - application/json
       description: Delete Subnet
+      operationId: DelSubnet
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8223,6 +8360,7 @@ paths:
       consumes:
       - application/json
       description: Delete an object
+      operationId: DeleteObject
       parameters:
       - description: delete object value by key
         in: query
@@ -8251,6 +8389,7 @@ paths:
       consumes:
       - application/json
       description: Get value of an object
+      operationId: GetObject
       parameters:
       - description: get object value by key
         in: query
@@ -8280,6 +8419,7 @@ paths:
       consumes:
       - application/json
       description: Delete child objects along with the given object
+      operationId: DeleteObjects
       parameters:
       - description: Delete child objects based on the given key string
         in: query
@@ -8308,6 +8448,7 @@ paths:
       consumes:
       - application/json
       description: List all objects for a given key
+      operationId: GetObjects
       parameters:
       - description: retrieve objects by key
         in: query
@@ -8337,6 +8478,7 @@ paths:
       consumes:
       - application/json
       description: List all registered Providers
+      operationId: GetProviderList
       produces:
       - application/json
       responses:
@@ -8360,6 +8502,7 @@ paths:
       consumes:
       - application/json
       description: Get registered region info
+      operationId: GetRegion
       parameters:
       - description: Name of the CSP to retrieve
         in: path
@@ -8394,6 +8537,7 @@ paths:
       consumes:
       - application/json
       description: Check Tumblebug is ready
+      operationId: GetReadyz
       produces:
       - application/json
       responses:
@@ -8413,6 +8557,7 @@ paths:
       consumes:
       - application/json
       description: List all registered regions
+      operationId: GetRegionList
       produces:
       - application/json
       responses:
@@ -8437,6 +8582,7 @@ paths:
       - application/json
       description: Register CSP Native Resources (vNet, securityGroup, sshKey, vm)
         to CB-Tumblebug
+      operationId: RegisterCspNativeResources
       parameters:
       - description: Specify connectionName, NS Id, and MCIS Name
         in: body
@@ -8484,6 +8630,7 @@ paths:
       - application/json
       description: Register CSP Native Resources (vNet, securityGroup, sshKey, vm)
         from all Clouds to CB-Tumblebug
+      operationId: RegisterCspNativeResourcesAll
       parameters:
       - description: Specify NS Id and MCIS Name
         in: body
@@ -8530,6 +8677,7 @@ paths:
       consumes:
       - application/json
       description: Delete details of a specific request
+      operationId: DeleteRequest
       parameters:
       - description: Request ID to delete
         in: path
@@ -8550,6 +8698,7 @@ paths:
       consumes:
       - application/json
       description: Get details of a specific request
+      operationId: GetRequest
       parameters:
       - description: Request ID acquired from X-Request-ID header
         in: path
@@ -8579,6 +8728,7 @@ paths:
       consumes:
       - application/json
       description: Delete details of all requests
+      operationId: DeleteAllRequests
       produces:
       - application/json
       responses:
@@ -8593,6 +8743,7 @@ paths:
       consumes:
       - application/json
       description: Get details of all requests with optional filters.
+      operationId: GetAllRequests
       parameters:
       - description: Filter by request status (Handling, Error, Success)
         in: query
@@ -8633,6 +8784,7 @@ paths:
       consumes:
       - application/json
       description: Create System MCIS Dynamically for Special Purpose
+      operationId: PostSystemMcis
       parameters:
       - description: Option for the purpose of system MCIS
         enum:
@@ -8664,6 +8816,7 @@ paths:
       - application/json
       description: Design a hierarchical network configuration of a VPC network or
         multi-cloud network consisting of multiple VPC networks
+      operationId: PostUtilToDesignNetwork
       parameters:
       - description: A root/main network CIDR block and subnetting rules
         in: body
@@ -8695,6 +8848,7 @@ paths:
       - application/json
       description: Validate a hierarchical configuration of a VPC network or multi-cloud
         network consisting of multiple VPC networks
+      operationId: PostUtilToValidateNetwork
       parameters:
       - description: A hierarchical network configuration
         in: body

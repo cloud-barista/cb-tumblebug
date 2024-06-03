@@ -72,6 +72,7 @@ func Validate(c echo.Context, params []string) error {
 }
 
 // RestGetReadyz func is for checking CB-Tumblebug server is ready.
+// @ID GetReadyz
 // RestGetReadyz godoc
 // @Summary Check Tumblebug is ready
 // @Description Check Tumblebug is ready
@@ -92,6 +93,7 @@ func RestGetReadyz(c echo.Context) error {
 }
 
 // RestCheckHTTPVersion godoc
+// @ID CheckHTTPVersion
 // @Summary Check HTTP version of incoming request
 // @Description Checks and logs the HTTP version of the incoming request to the server console.
 // @Tags [Admin] System management
@@ -145,6 +147,7 @@ func RestGetSwagger(c echo.Context) error {
 
 // RestRegisterCredential func is a rest api wrapper for RegisterCredential.
 // RestRegisterCredential godoc
+// @ID RegisterCredential
 // @Summary Post register Credential info
 // @Description Post register Credential info
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -172,6 +175,7 @@ func RestRegisterCredential(c echo.Context) error {
 
 // RestGetConnConfig func is a rest api wrapper for GetConnConfig.
 // RestGetConnConfig godoc
+// @ID GetConnConfig
 // @Summary Get registered ConnConfig info
 // @Description Get registered ConnConfig info
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -196,6 +200,7 @@ func RestGetConnConfig(c echo.Context) error {
 
 // RestGetConnConfigList func is a rest api wrapper for GetConnConfigList.
 // RestGetConnConfigList godoc
+// @ID GetConnConfigList
 // @Summary List all registered ConnConfig
 // @Description List all registered ConnConfig
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -232,6 +237,7 @@ func RestGetConnConfigList(c echo.Context) error {
 
 // RestGetProviderList func is a rest api wrapper for GetProviderList.
 // RestGetProviderList godoc
+// @ID GetProviderList
 // @Summary List all registered Providers
 // @Description List all registered Providers
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -253,6 +259,7 @@ func RestGetProviderList(c echo.Context) error {
 
 // RestGetRegion func is a rest api wrapper for GetRegion.
 // RestGetRegion godoc
+// @ID GetRegion
 // @Summary Get registered region info
 // @Description Get registered region info
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -279,6 +286,7 @@ func RestGetRegion(c echo.Context) error {
 
 // RestGetRegionList func is a rest api wrapper for GetRegionList.
 // RestGetRegionList godoc
+// @ID GetRegionList
 // @Summary List all registered regions
 // @Description List all registered regions
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -300,6 +308,7 @@ func RestGetRegionList(c echo.Context) error {
 
 // RestGetCloudInfo func is a rest api wrapper for CloudInfo.
 // RestGetCloudInfo godoc
+// @ID GetCloudInfo
 // @Summary Get cloud information
 // @Description Get cloud information
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -325,6 +334,7 @@ type ObjectList struct {
 
 // func RestGetObjects is a rest api wrapper for GetObjectList.
 // RestGetObjects godoc
+// @ID GetObjects
 // @Summary List all objects for a given key
 // @Description List all objects for a given key
 // @Tags [Admin] System management
@@ -348,6 +358,7 @@ func RestGetObjects(c echo.Context) error {
 
 // func RestGetObject is a rest api wrapper for GetObject.
 // RestGetObject godoc
+// @ID GetObject
 // @Summary Get value of an object
 // @Description Get value of an object
 // @Tags [Admin] System management
@@ -375,6 +386,7 @@ func RestGetObject(c echo.Context) error {
 
 // func RestDeleteObject is a rest api wrapper for DeleteObject.
 // RestDeleteObject godoc
+// @ID DeleteObject
 // @Summary Delete an object
 // @Description Delete an object
 // @Tags [Admin] System management
@@ -404,6 +416,7 @@ func RestDeleteObject(c echo.Context) error {
 
 // func RestDeleteObjects is a rest api wrapper for DeleteObjects.
 // RestDeleteObjects godoc
+// @ID DeleteObjects
 // @Summary Delete child objects along with the given object
 // @Description Delete child objects along with the given object
 // @Tags [Admin] System management
@@ -433,6 +446,7 @@ type RestInspectResourcesRequest struct {
 }
 
 // RestInspectResources godoc
+// @ID InspectResources
 // @Summary Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
 // @Description Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP
 // @Tags [Admin] System management
@@ -468,6 +482,7 @@ func RestInspectResources(c echo.Context) error {
 }
 
 // RestInspectResourcesOverview godoc
+// @ID InspectResourcesOverview
 // @Summary Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
 // @Description Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections
 // @Tags [Admin] System management
@@ -494,6 +509,7 @@ type RestRegisterCspNativeResourcesRequest struct {
 }
 
 // RestRegisterCspNativeResources godoc
+// @ID RegisterCspNativeResources
 // @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
 // @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug
 // @Tags [Admin] System management
@@ -530,6 +546,7 @@ type RestRegisterCspNativeResourcesRequestAll struct {
 }
 
 // RestRegisterCspNativeResourcesAll godoc
+// @ID RegisterCspNativeResourcesAll
 // @Summary Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
 // @Description Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug
 // @Tags [Admin] System management
@@ -559,6 +576,7 @@ func RestRegisterCspNativeResourcesAll(c echo.Context) error {
 }
 
 // RestForwardAnyReqToAny godoc
+// @ID ForwardAnyReqToAny
 // @Summary Forward any (GET) request to CB-Spider
 // @Description Forward any (GET) request to CB-Spider
 // @Tags [Admin] System utility

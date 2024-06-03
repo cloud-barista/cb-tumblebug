@@ -24,6 +24,7 @@ import (
 )
 
 // RestPostCustomImage godoc
+// @ID PostCustomImage
 // @Summary Register existing Custom Image in a CSP
 // @Description Register existing Custom Image in a CSP (option=register)
 // @Tags [Infra resource] Snapshot and Custom Image Management
@@ -60,6 +61,7 @@ func RestPostCustomImage(c echo.Context) error {
 }
 
 // RestGetCustomImage godoc
+// @ID GetCustomImage
 // @Summary Get customImage
 // @Description Get customImage
 // @Tags [Infra resource] Snapshot and Custom Image Management
@@ -82,6 +84,7 @@ type RestGetAllCustomImageResponse struct {
 }
 
 // RestGetAllCustomImage godoc
+// @ID GetAllCustomImage
 // @Summary List all customImages or customImages' ID
 // @Description List all customImages or customImages' ID
 // @Tags [Infra resource] Snapshot and Custom Image Management
@@ -101,6 +104,7 @@ func RestGetAllCustomImage(c echo.Context) error {
 }
 
 // RestDelCustomImage godoc
+// @ID DelCustomImage
 // @Summary Delete customImage
 // @Description Delete customImage
 // @Tags [Infra resource] Snapshot and Custom Image Management
@@ -117,6 +121,7 @@ func RestDelCustomImage(c echo.Context) error {
 }
 
 // RestDelAllCustomImage godoc
+// @ID DelAllCustomImage
 // @Summary Delete all customImages
 // @Description Delete all customImages
 // @Tags [Infra resource] Snapshot and Custom Image Management
@@ -127,7 +132,7 @@ func RestDelCustomImage(c echo.Context) error {
 // @Success 200 {object} common.IdList
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/customImage [delete]
-func RestDelAllCustomcustomImage(c echo.Context) error {
+func RestDelAllCustomImage(c echo.Context) error {
 	// This is a dummy function for Swagger.
 	return nil
 }

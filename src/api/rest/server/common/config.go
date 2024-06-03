@@ -31,6 +31,7 @@ import (
 )
 
 // RestInitConfig godoc
+// @ID InitConfig
 // @Summary Init config
 // @Description Init config
 // @Tags [Admin] System environment
@@ -63,6 +64,7 @@ func RestInitConfig(c echo.Context) error {
 }
 
 // RestGetConfig godoc
+// @ID GetConfig
 // @Summary Get config
 // @Description Get config
 // @Tags [Admin] System environment
@@ -99,6 +101,7 @@ type RestGetAllConfigResponse struct {
 }
 
 // RestGetAllConfig godoc
+// @ID GetAllConfig
 // @Summary List all configs
 // @Description List all configs
 // @Tags [Admin] System environment
@@ -121,6 +124,7 @@ func RestGetAllConfig(c echo.Context) error {
 }
 
 // RestPostConfig godoc
+// @ID PostConfig
 // @Summary Create or Update config
 // @Description Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)
 // @Tags [Admin] System environment
@@ -148,6 +152,7 @@ func RestPostConfig(c echo.Context) error {
 }
 
 // RestInitAllConfig godoc
+// @ID InitAllConfig
 // @Summary Init all configs
 // @Description Init all configs
 // @Tags [Admin] System environment
@@ -168,6 +173,7 @@ func RestInitAllConfig(c echo.Context) error {
 }
 
 // RestGetRequest godoc
+// @ID GetRequest
 // @Summary Get request details
 // @Description Get details of a specific request
 // @Tags [Admin] Request tracking
@@ -189,6 +195,7 @@ func RestGetRequest(c echo.Context) error {
 }
 
 // RestGetAllRequests godoc
+// @ID GetAllRequests
 // @Summary Get all requests
 // @Description Get details of all requests with optional filters.
 // @Tags [Admin] Request tracking
@@ -250,6 +257,7 @@ func RestGetAllRequests(c echo.Context) error {
 }
 
 // RestDeleteRequest godoc
+// @ID DeleteRequest
 // @Summary Delete a specific request's details
 // @Description Delete details of a specific request
 // @Tags [Admin] Request tracking
@@ -270,6 +278,7 @@ func RestDeleteRequest(c echo.Context) error {
 }
 
 // RestDeleteAllRequests godoc
+// @ID DeleteAllRequests
 // @Summary Delete all requests' details
 // @Description Delete details of all requests
 // @Tags [Admin] Request tracking

@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostMcis godoc
+// @ID PostMcis
 // @Summary Create MCIS
 // @Description Create MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -52,6 +53,7 @@ func RestPostMcis(c echo.Context) error {
 }
 
 // RestPostRegisterCSPNativeVM godoc
+// @ID PostRegisterCSPNativeVM
 // @Summary Register existing VM in a CSP to Cloud-Barista MCIS
 // @Description Register existing VM in a CSP to Cloud-Barista MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -81,6 +83,7 @@ func RestPostRegisterCSPNativeVM(c echo.Context) error {
 }
 
 // RestPostSystemMcis godoc
+// @ID PostSystemMcis
 // @Summary Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns
 // @Description Create System MCIS Dynamically for Special Purpose
 // @Tags [Infra service] MCIS Provisioning management
@@ -108,6 +111,7 @@ func RestPostSystemMcis(c echo.Context) error {
 }
 
 // RestPostMcisDynamic godoc
+// @ID PostMcisDynamic
 // @Summary Create MCIS Dynamically
 // @Description Create MCIS Dynamically from common spec and image
 // @Tags [Infra service] MCIS Provisioning management
@@ -138,6 +142,7 @@ func RestPostMcisDynamic(c echo.Context) error {
 }
 
 // RestPostMcisVmDynamic godoc
+// @ID PostMcisVmDynamic
 // @Summary Create VM Dynamically and add it to MCIS
 // @Description Create VM Dynamically and add it to MCIS
 // @Tags [Infra service] MCIS Provisioning management
@@ -168,6 +173,7 @@ func RestPostMcisVmDynamic(c echo.Context) error {
 }
 
 // RestPostMcisDynamicCheckRequest godoc
+// @ID PostMcisDynamicCheckRequest
 // @Summary Check available ConnectionConfig list for creating MCIS Dynamically
 // @Description Check available ConnectionConfig list before create MCIS Dynamically from common spec and image
 // @Tags [Infra service] MCIS Provisioning management
@@ -193,6 +199,7 @@ func RestPostMcisDynamicCheckRequest(c echo.Context) error {
 }
 
 // RestPostMcisVm godoc
+// @ID PostMcisVm
 // @Summary Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)
 // @Description Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)
 // @Tags [Infra service] MCIS Provisioning management
@@ -222,6 +229,7 @@ func RestPostMcisVm(c echo.Context) error {
 }
 
 // RestPostMcisSubGroupScaleOut godoc
+// @ID PostMcisSubGroupScaleOut
 // @Summary ScaleOut subGroup in specified MCIS
 // @Description ScaleOut subGroup in specified MCIS
 // @Tags [Infra service] MCIS Provisioning management
