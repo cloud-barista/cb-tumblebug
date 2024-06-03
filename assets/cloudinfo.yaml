@@ -1606,9 +1606,9 @@ cloud:
     region:
       KOR-Seoul:
         id: KOR-Seoul
-        description: Seoul - South Korea
+        description: Seoul (South Korea)
         location:
-          display: South Korea (Seoul)
+          display: Seoul (South Korea)
           latitude: 37.466535
           longitude: 126.877969
         zone:
@@ -1616,23 +1616,23 @@ cloud:
         - d7d0177e-6cda-404a-a46f-a5b356d2874e
       KOR-Central:
         id: KOR-Central
-        description: Cheonan South Korea
+        description: Cheonan (South Korea)
         location:
-          display: Cheonan South Korea
+          display: Cheonan (South Korea)
           latitude: 36.802725
           longitude: 127.177481
         zone:
-        - 9845bd17-d438-4bde-816d-1b12f37d5080
         - eceb5d65-6571-4696-875f-5a17949f3317
+        - 9845bd17-d438-4bde-816d-1b12f37d5080        
   ktcloudvpc:
     description: KT Cloud (VPC)
     driver: ktcloudvpc-driver-v1.0.so
     region:
       KR1:
         id: KR1
-        description: Seoul - South Korea
+        description: Mok-dong - Seoul (South Korea)
         location:
-          display: Mok-dong Seoul South Korea
+          display: Mok-dong - Seoul (South Korea)
           latitude: 37.536726
           longitude: 126.874278
         zone:
@@ -1641,43 +1641,16 @@ cloud:
     description: Naver Cloud Platform (Classic without VPC)
     driver: ncp-driver-v1.0.so
     region:
-      DEN:
-        id: DEN
-        description: Germany
-        location:
-          display: Germany
-          latitude: 50.1108
-          longitude: 8.6821
-        zone:
-        - DEN-1
-      JPN:
-        id: JPN
-        description: Japan
-        location:
-          display: Japan
-          latitude: 35.6893
-          longitude: 139.6917
-        zone:
-        - JPN-1
       KR:
         id: KR
         description: Korea
         location:
-          display: South Korea (Seoul)
+          display: Seoul (South Korea)
           latitude: 37.4754
           longitude: 126.8831
         zone:
         - KR-1
         - KR-2
-      SGN:
-        id: SGN
-        description: Singapore
-        location:
-          display: Singapore
-          latitude: 1.3402
-          longitude: 103.7041
-        zone:
-        - SGN-1
       USWN:
         id: USWN
         description: US West
@@ -1696,6 +1669,33 @@ cloud:
           longitude: 114.17369
         zone:
         - HK-1
+      SGN:
+        id: SGN
+        description: Singapore
+        location:
+          display: Singapore
+          latitude: 1.3402
+          longitude: 103.7041
+        zone:
+        - SGN-1
+      JPN:
+        id: JPN
+        description: Japan
+        location:
+          display: Japan
+          latitude: 35.6893
+          longitude: 139.6917
+        zone:
+        - JPN-1
+      DEN:
+        id: DEN
+        description: Germany
+        location:
+          display: Germany
+          latitude: 50.1108
+          longitude: 8.6821
+        zone:
+        - DEN-1
   ncpvpc:
     description: Naver Cloud Platform (VPC)
     driver: ncpvpc-driver-v1.0.so
@@ -1704,7 +1704,7 @@ cloud:
         id: KR
         description: Korea 1
         location:
-          display: South Korea (Seoul)
+          display: Seoul(Gasan) / Pyeongchon (South Korea)
           latitude: 37.4754
           longitude: 126.8831
         zone:
@@ -1734,36 +1734,36 @@ cloud:
     description: NHN Cloud
     driver: nhncloud-driver-v1.0.so
     region:
-      jp1:
-        id: JP1
-        description: Japan (Tokyo)
-        location:
-          display: Japan (Tokyo)
-          latitude: 35.412
-          longitude: 139.423
-        zone:
-        - jp-pub-a
-        - jp-pub-b
-      kr1:
+      KR1:
         id: KR1
-        description: South Korea (Pangyo)
+        description: Pangyo (South Korea)
         location:
-          display: South Korea (Pangyo)
+          display: Pangyo (South Korea)
           latitude: 37.390889
           longitude: 127.096792
         zone:
         - kr-pub-a
         - kr-pub-b
-      kr2:
+      KR2:
         id: KR2
-        description: South Korea (Pyeongchon)
+        description: Pyeongchon (South Korea)
         location:
-          display: South Korea (Pyeongchon)
+          display: Pyeongchon (South Korea)
           latitude: 37.392584
           longitude: 126.95145
         zone:
         - kr2-pub-a
         - kr2-pub-b
+      JP1:
+        id: JP1
+        description: Tokyo (Japan)
+        location:
+          display: Tokyo (Japan)
+          latitude: 35.412
+          longitude: 139.423
+        zone:
+        - jp-pub-a
+        - jp-pub-b
   openstack:
     description: OpenStack
     driver: openstack-driver-v1.0.so
