@@ -102,11 +102,14 @@ func CheckString(name string) error {
 		return err
 	}
 
-	r, _ := regexp.Compile("[a-z]([-a-z0-9]*[a-z0-9])?")
+	r, _ := regexp.Compile("(?i)[a-z]([-a-z0-9+]*[a-z0-9])?")
 	filtered := r.FindString(name)
 
 	if filtered != name {
-		err := fmt.Errorf(name + ": The first character of name must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.")
+		err := fmt.Errorf(name + ": The name must follow these rules: " +
+			"1. The first character must be a letter (case-insensitive). " +
+			"2. All following characters can be a dash, letter (case-insensitive), digit, or +. " +
+			"3. The last character cannot be a dash.")
 		return err
 	}
 
