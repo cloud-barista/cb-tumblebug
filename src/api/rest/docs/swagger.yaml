@@ -8408,38 +8408,6 @@ paths:
       summary: Check Tumblebug is ready
       tags:
       - '[Admin] System management'
-  /recommendK8sClusterSpec:
-    post:
-      consumes:
-      - application/json
-      description: Recommend K8s Cluster plan (filter and priority) Find details from
-        https://github.com/cloud-barista/cb-tumblebug/discussions/1234
-      parameters:
-      - description: Recommend K8s Cluster plan (filter and priority)
-        in: body
-        name: deploymentPlan
-        schema:
-          $ref: '#/definitions/mcis.DeploymentPlan'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/mcir.TbSpecInfo'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Recommend K8s Cluster plan (filter and priority)
-      tags:
-      - '[Infra service] Cluster Provisioning Management'
   /region:
     get:
       consumes:

@@ -235,9 +235,6 @@ func RunServer(port string) {
 	g.POST("/:nsId/mcisDynamic", rest_mcis.RestPostMcisDynamic)
 	g.POST("/:nsId/mcis/:mcisId/vmDynamic", rest_mcis.RestPostMcisVmDynamic)
 
-	// @Tags [Infra] Cluster Provisioning Management
-	e.POST("/tumblebug/recommendK8sClusterSpec", rest_mcis.RestRecommendK8sClusterSpec)
-
 	//g.GET("/:nsId/mcis/:mcisId", rest_mcis.RestGetMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	//g.GET("/:nsId/mcis", rest_mcis.RestGetAllMcis, middleware.TimeoutWithConfig(middleware.TimeoutConfig{Timeout: 20 * time.Second}), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 	// path specific timeout and ratelimit

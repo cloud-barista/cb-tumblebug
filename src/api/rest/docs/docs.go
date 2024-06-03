@@ -8079,54 +8079,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/recommendK8sClusterSpec": {
-            "post": {
-                "description": "Recommend K8s Cluster plan (filter and priority) Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1234",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra service] Cluster Provisioning Management"
-                ],
-                "summary": "Recommend K8s Cluster plan (filter and priority)",
-                "parameters": [
-                    {
-                        "description": "Recommend K8s Cluster plan (filter and priority)",
-                        "name": "deploymentPlan",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/mcis.DeploymentPlan"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/mcir.TbSpecInfo"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            }
-        },
         "/region": {
             "get": {
                 "description": "List all registered regions",
