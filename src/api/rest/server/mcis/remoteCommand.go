@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostCmdMcis godoc
+// @ID PostCmdMcis
 // @Summary Send a command to specified MCIS
 // @Description Send a command to specified MCIS
 // @Tags [Infra service] MCIS Remote command
@@ -75,6 +76,7 @@ func RestPostCmdMcis(c echo.Context) error {
 }
 
 // RestSetBastionNodes godoc
+// @ID SetBastionNodes
 // @Summary Set bastion nodes for a VM
 // @Description Set bastion nodes for a VM
 // @Tags [Infra service] MCIS Remote command
@@ -103,6 +105,7 @@ func RestSetBastionNodes(c echo.Context) error {
 }
 
 // RestGetBastionNodes godoc
+// @ID GetBastionNodes
 // @Summary Get bastion nodes for a VM
 // @Description Get bastion nodes for a VM
 // @Tags [Infra service] MCIS Remote command
@@ -129,6 +132,7 @@ func RestGetBastionNodes(c echo.Context) error {
 }
 
 // RestRemoveBastionNodes godoc
+// @ID RemoveBastionNodes
 // @Summary Remove a bastion VM from all vNets
 // @Description Remove a bastion VM from all vNets
 // @Tags [Infra service] MCIS Remote command

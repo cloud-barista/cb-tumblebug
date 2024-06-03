@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostSshKey godoc
+// @ID PostSshKey
 // @Summary Create SSH Key
 // @Description Create SSH Key
 // @Tags [Infra resource] MCIR Access key management
@@ -55,6 +56,7 @@ func RestPostSshKey(c echo.Context) error {
 }
 
 // RestPutSshKey godoc
+// @ID PutSshKey
 // @Summary Update SSH Key
 // @Description Update SSH Key
 // @Tags [Infra resource] MCIR Access key management
@@ -85,6 +87,7 @@ func RestPutSshKey(c echo.Context) error {
 }
 
 // RestGetSshKey godoc
+// @ID GetSshKey
 // @Summary Get SSH Key
 // @Description Get SSH Key
 // @Tags [Infra resource] MCIR Access key management
@@ -107,6 +110,7 @@ type RestGetAllSshKeyResponse struct {
 }
 
 // RestGetAllSshKey godoc
+// @ID GetAllSshKey
 // @Summary List all SSH Keys or SSH Keys' ID
 // @Description List all SSH Keys or SSH Keys' ID
 // @Tags [Infra resource] MCIR Access key management
@@ -126,6 +130,7 @@ func RestGetAllSshKey(c echo.Context) error {
 }
 
 // RestDelSshKey godoc
+// @ID DelSshKey
 // @Summary Delete SSH Key
 // @Description Delete SSH Key
 // @Tags [Infra resource] MCIR Access key management
@@ -142,6 +147,7 @@ func RestDelSshKey(c echo.Context) error {
 }
 
 // RestDelAllSshKey godoc
+// @ID DelAllSshKey
 // @Summary Delete all SSH Keys
 // @Description Delete all SSH Keys
 // @Tags [Infra resource] MCIR Access key management

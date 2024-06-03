@@ -32,6 +32,7 @@ import (
 )
 
 // RestGetSitesInMcis godoc
+// @ID GetSitesInMcis
 // @Summary Get sites in MCIS
 // @Description Get sites in MCIS
 // @Tags [VPN] Sites in MCIS (under development)
@@ -188,6 +189,7 @@ func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error)
 }
 
 // RestPostVpnGcpToAws godoc
+// @ID PostVpnGcpToAws
 // @Summary Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
 // @Description Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
 // @Tags [VPN] GCP-AWS VPN tunnel (under development)
@@ -443,6 +445,7 @@ func RestPostVpnGcpToAws(c echo.Context) error {
 }
 
 // RestDeleteVpnGcpToAws godoc
+// @ID DeleteVpnGcpToAws
 // @Summary Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)
 // @Description Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)
 // @Tags [VPN] GCP-AWS VPN tunnel (under development)
@@ -579,6 +582,7 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 }
 
 // RestPutVpnGcpToAws godoc
+// @ID PutVpnGcpToAws
 // @Summary (To be provided) Update VPN tunnels between GCP and AWS
 // @Description Update VPN tunnels between GCP and AWS
 // @Tags [VPN] GCP-AWS VPN tunnel (under development)
@@ -689,6 +693,7 @@ func RestPutVpnGcpToAws(c echo.Context) error {
 }
 
 // RestGetVpnGcpToAws godoc
+// @ID GetVpnGcpToAws
 // @Summary Get resource info of VPN tunnels between GCP and AWS
 // @Description Update VPN tunnels between GCP and AWS
 // @Tags [VPN] GCP-AWS VPN tunnel (under development)
@@ -852,6 +857,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 }
 
 // RestGetRequestStatusOfGcpAwsVpn godoc
+// @ID GetRequestStatusOfGcpAwsVpn
 // @Summary Check the status of a specific request by its ID
 // @Description Check the status of a specific request by its ID
 // @Tags [VPN] GCP-AWS VPN tunnel (under development)

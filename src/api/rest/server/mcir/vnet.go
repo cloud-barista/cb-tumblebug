@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostVNet godoc
+// @ID PostVNet
 // @Summary Create VNet
 // @Description Create VNet
 // @Tags [Infra resource] MCIR Network management
@@ -54,6 +55,7 @@ func RestPostVNet(c echo.Context) error {
 	function RestPutVNet not yet implemented
 
 // RestPutVNet godoc
+// @ID PutVNet
 // @Summary Update VNet
 // @Description Update VNet
 // @Tags [Infra resource] MCIR Network management
@@ -72,6 +74,7 @@ func RestPutVNet(c echo.Context) error {
 }
 
 // RestGetVNet godoc
+// @ID GetVNet
 // @Summary Get VNet
 // @Description Get VNet
 // @Tags [Infra resource] MCIR Network management
@@ -94,6 +97,7 @@ type RestGetAllVNetResponse struct {
 }
 
 // RestGetAllVNet godoc
+// @ID GetAllVNet
 // @Summary List all VNets or VNets' ID
 // @Description List all VNets or VNets' ID
 // @Tags [Infra resource] MCIR Network management
@@ -113,6 +117,7 @@ func RestGetAllVNet(c echo.Context) error {
 }
 
 // RestDelVNet godoc
+// @ID DelVNet
 // @Summary Delete VNet
 // @Description Delete VNet
 // @Tags [Infra resource] MCIR Network management
@@ -129,6 +134,7 @@ func RestDelVNet(c echo.Context) error {
 }
 
 // RestDelAllVNet godoc
+// @ID DelAllVNet
 // @Summary Delete all VNets
 // @Description Delete all VNets
 // @Tags [Infra resource] MCIR Network management

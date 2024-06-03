@@ -27,6 +27,7 @@ import (
 )
 
 // RestPostSpec godoc
+// @ID PostSpec
 // @Summary Register spec
 // @Description Register spec
 // @Tags [Infra resource] MCIR Spec management
@@ -82,6 +83,7 @@ func RestPostSpec(c echo.Context) error {
 }
 
 // RestPutSpec godoc
+// @ID PutSpec
 // @Summary Update spec
 // @Description Update spec
 // @Tags [Infra resource] MCIR Spec management
@@ -120,6 +122,7 @@ type RestLookupSpecRequest struct {
 }
 
 // RestLookupSpec godoc
+// @ID LookupSpec
 // @Summary Lookup spec
 // @Description Lookup spec
 // @Tags [Infra resource] MCIR Common
@@ -147,6 +150,7 @@ func RestLookupSpec(c echo.Context) error {
 }
 
 // RestLookupSpecList godoc
+// @ID LookupSpecList
 // @Summary Lookup spec list
 // @Description Lookup spec list
 // @Tags [Infra resource] MCIR Common
@@ -174,6 +178,7 @@ func RestLookupSpecList(c echo.Context) error {
 }
 
 // RestFetchSpecs godoc
+// @ID FetchSpecs
 // @Summary Fetch specs
 // @Description Fetch specs
 // @Tags [Infra resource] MCIR Spec management
@@ -223,6 +228,7 @@ type RestFilterSpecsResponse struct {
 }
 
 // RestFilterSpecsByRange godoc
+// @ID FilterSpecsByRange
 // @Summary Filter specs by range
 // @Description Filter specs by range
 // @Tags [Infra resource] MCIR Spec management
@@ -254,6 +260,7 @@ func RestFilterSpecsByRange(c echo.Context) error {
 }
 
 // RestGetSpec godoc
+// @ID GetSpec
 // @Summary Get spec
 // @Description Get spec
 // @Tags [Infra resource] MCIR Spec management
@@ -276,6 +283,7 @@ type RestGetAllSpecResponse struct {
 }
 
 // RestGetAllSpec godoc
+// @ID GetAllSpec
 // @Summary List all specs or specs' ID
 // @Description List all specs or specs' ID
 // @Tags [Infra resource] MCIR Spec management
@@ -295,6 +303,7 @@ func RestGetAllSpec(c echo.Context) error {
 }
 
 // RestDelSpec godoc
+// @ID DelSpec
 // @Summary Delete spec
 // @Description Delete spec
 // @Tags [Infra resource] MCIR Spec management
@@ -311,6 +320,7 @@ func RestDelSpec(c echo.Context) error {
 }
 
 // RestDelAllSpec godoc
+// @ID DelAllSpec
 // @Summary Delete all specs
 // @Description Delete all specs
 // @Tags [Infra resource] MCIR Spec management

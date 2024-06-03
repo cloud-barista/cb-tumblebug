@@ -41,6 +41,7 @@ func RestCheckNs(c echo.Context) error {
 }
 
 // RestDelAllNs godoc
+// @ID DelAllNs
 // @Summary Delete all namespaces
 // @Description Delete all namespaces
 // @Tags [Namespace] Namespace management
@@ -60,6 +61,7 @@ func RestDelAllNs(c echo.Context) error {
 }
 
 // RestDelNs godoc
+// @ID DelNs
 // @Summary Delete namespace
 // @Description Delete namespace
 // @Tags [Namespace] Namespace management
@@ -97,6 +99,7 @@ type RestGetAllNsResponse struct {
 }
 
 // RestGetAllNs godoc
+// @ID GetAllNs
 // @Summary List all namespaces or namespaces' ID
 // @Description List all namespaces or namespaces' ID
 // @Tags [Namespace] Namespace management
@@ -128,6 +131,7 @@ func RestGetAllNs(c echo.Context) error {
 }
 
 // RestGetNs godoc
+// @ID GetNs
 // @Summary Get namespace
 // @Description Get namespace
 // @Tags [Namespace] Namespace management
@@ -153,6 +157,7 @@ func RestGetNs(c echo.Context) error {
 }
 
 // RestPostNs godoc
+// @ID PostNs
 // @Summary Create namespace
 // @Description Create namespace
 // @Tags [Namespace] Namespace management
@@ -179,6 +184,7 @@ func RestPostNs(c echo.Context) error {
 }
 
 // RestPutNs godoc
+// @ID PutNs
 // @Summary Update namespace
 // @Description Update namespace
 // @Tags [Namespace] Namespace management

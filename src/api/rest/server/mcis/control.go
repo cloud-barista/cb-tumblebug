@@ -24,6 +24,7 @@ import (
 )
 
 // RestGetControlMcis godoc
+// @ID GetControlMcis
 // @Summary Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)
 // @Description Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)
 // @Tags [Infra service] MCIS Control lifecycle
@@ -69,6 +70,7 @@ func RestGetControlMcis(c echo.Context) error {
 }
 
 // RestGetControlMcisVm godoc
+// @ID GetControlMcisVm
 // @Summary Control the lifecycle of VM (suspend, resume, reboot, terminate)
 // @Description Control the lifecycle of VM (suspend, resume, reboot, terminate)
 // @Tags [Infra service] MCIS Control lifecycle
@@ -117,6 +119,7 @@ func RestGetControlMcisVm(c echo.Context) error {
 }
 
 // RestPostMcisVmSnapshot godoc
+// @ID PostMcisVmSnapshot
 // @Summary Snapshot VM and create a Custom Image Object using the Snapshot
 // @Description Snapshot VM and create a Custom Image Object using the Snapshot
 // @Tags [Infra resource] Snapshot and Custom Image Management

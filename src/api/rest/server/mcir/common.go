@@ -212,6 +212,7 @@ func RestGetResource(c echo.Context) error {
 }
 
 // RestCheckResource godoc
+// @ID CheckResource
 // @Summary Check resources' existence
 // @Description Check resources' existence
 // @Tags [Infra resource] MCIR Common
@@ -306,6 +307,7 @@ func RestTestGetAssociatedObjectCount(c echo.Context) error {
 }
 
 // RestLoadCommonResource godoc
+// @ID LoadCommonResource
 // @Summary Load Common Resources from internal asset files
 // @Description Load Common Resources from internal asset files (Spec, Image)
 // @Tags [Admin] Multi-Cloud environment configuration
@@ -324,6 +326,7 @@ func RestLoadCommonResource(c echo.Context) error {
 }
 
 // RestLoadDefaultResource godoc
+// @ID LoadDefaultResource
 // @Summary Load Default Resource from internal asset file
 // @Description Load Default Resource from internal asset file
 // @Tags [Infra resource] MCIR Common
@@ -352,6 +355,7 @@ func RestLoadDefaultResource(c echo.Context) error {
 }
 
 // RestDelAllDefaultResources godoc
+// @ID DelAllDefaultResources
 // @Summary Delete all Default Resource Objects in the given namespace
 // @Description Delete all Default Resource Objects in the given namespace
 // @Tags [Infra resource] MCIR Common
@@ -379,6 +383,7 @@ type RestRegisterExistingResourcesRequest struct {
 }
 
 // RestRegisterExistingResources godoc
+// @ID RegisterExistingResources
 // @Summary Register resources which are existing in CSP and/or CB-Spider
 // @Description Register resources which are existing in CSP and/or CB-Spider
 // @Tags

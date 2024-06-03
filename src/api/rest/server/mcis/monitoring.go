@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostInstallMonitorAgentToMcis godoc
+// @ID PostInstallMonitorAgentToMcis
 // @Summary Install monitoring agent (CB-Dragonfly agent) to MCIS
 // @Description Install monitoring agent (CB-Dragonfly agent) to MCIS
 // @Tags [Infra service] MCIS Resource monitor (for developer)
@@ -53,6 +54,7 @@ func RestPostInstallMonitorAgentToMcis(c echo.Context) error {
 }
 
 // RestPutMonitorAgentStatusInstalled godoc
+// @ID PutMonitorAgentStatusInstalled
 // @Summary Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
 // @Description Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)
 // @Tags [Infra service] MCIS Resource monitor (for developer)
@@ -85,6 +87,7 @@ func RestPutMonitorAgentStatusInstalled(c echo.Context) error {
 }
 
 // RestGetMonitorData godoc
+// @ID GetMonitorData
 // @Summary Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
 // @Description Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)
 // @Tags [Infra service] MCIS Resource monitor (for developer)

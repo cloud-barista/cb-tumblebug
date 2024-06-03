@@ -25,6 +25,7 @@ import (
 )
 
 // RestPostMcisPolicy godoc
+// @ID PostMcisPolicy
 // @Summary Create MCIS Automation policy
 // @Description Create MCIS Automation policy
 // @Tags [Infra service] MCIS Auto control policy management (WIP)
@@ -55,6 +56,7 @@ func RestPostMcisPolicy(c echo.Context) error {
 }
 
 // RestGetMcisPolicy godoc
+// @ID GetMcisPolicy
 // @Summary Get MCIS Policy
 // @Description Get MCIS Policy
 // @Tags [Infra service] MCIS Auto control policy management (WIP)
@@ -94,6 +96,7 @@ type RestGetAllMcisPolicyResponse struct {
 }
 
 // RestGetAllMcisPolicy godoc
+// @ID GetAllMcisPolicy
 // @Summary List all MCIS policies
 // @Description List all MCIS policies
 // @Tags [Infra service] MCIS Auto control policy management (WIP)
@@ -126,6 +129,7 @@ func RestGetAllMcisPolicy(c echo.Context) error {
 	function RestPutMcisPolicy not yet implemented
 
 // RestPutMcisPolicy godoc
+// @ID PutMcisPolicy
 // @Summary Update MCIS Policy
 // @Description Update MCIS Policy
 // @Tags [Infra service] MCIS Auto control policy management (WIP)
@@ -142,6 +146,7 @@ func RestPutMcisPolicy(c echo.Context) error {
 }
 
 // DelMcisPolicy godoc
+// @ID DelMcisPolicy
 // @Summary Delete MCIS Policy
 // @Description Delete MCIS Policy
 // @Tags [Infra service] MCIS Auto control policy management (WIP)
@@ -166,6 +171,7 @@ func RestDelMcisPolicy(c echo.Context) error {
 }
 
 // RestDelAllMcisPolicy godoc
+// @ID DelAllMcisPolicy
 // @Summary Delete all MCIS policies
 // @Description Delete all MCIS policies
 // @Tags [Infra service] MCIS Auto control policy management (WIP)

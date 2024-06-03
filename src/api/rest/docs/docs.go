@@ -36,6 +36,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Get cloud information",
+                "operationId": "GetCloudInfo",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -71,6 +72,7 @@ const docTemplate = `{
                     "[Admin] System environment"
                 ],
                 "summary": "List all configs",
+                "operationId": "GetAllConfig",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -104,6 +106,7 @@ const docTemplate = `{
                     "[Admin] System environment"
                 ],
                 "summary": "Create or Update config",
+                "operationId": "PostConfig",
                 "parameters": [
                     {
                         "description": "Key and Value for configuration",
@@ -148,6 +151,7 @@ const docTemplate = `{
                     "[Admin] System environment"
                 ],
                 "summary": "Init all configs",
+                "operationId": "InitAllConfig",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -177,6 +181,7 @@ const docTemplate = `{
                     "[Admin] System environment"
                 ],
                 "summary": "Get config",
+                "operationId": "GetConfig",
                 "parameters": [
                     {
                         "type": "string",
@@ -219,6 +224,7 @@ const docTemplate = `{
                     "[Admin] System environment"
                 ],
                 "summary": "Init config",
+                "operationId": "InitConfig",
                 "parameters": [
                     {
                         "type": "string",
@@ -263,6 +269,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "List all registered ConnConfig",
+                "operationId": "GetConnConfigList",
                 "parameters": [
                     {
                         "type": "string",
@@ -329,6 +336,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Get registered ConnConfig info",
+                "operationId": "GetConnConfig",
                 "parameters": [
                     {
                         "type": "string",
@@ -373,6 +381,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Post register Credential info",
+                "operationId": "RegisterCredential",
                 "parameters": [
                     {
                         "description": "Credential request info",
@@ -419,6 +428,7 @@ const docTemplate = `{
                     "[Admin] System utility"
                 ],
                 "summary": "Forward any (GET) request to CB-Spider",
+                "operationId": "ForwardAnyReqToAny",
                 "parameters": [
                     {
                         "type": "string",
@@ -461,6 +471,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Check HTTP version of incoming request",
+                "operationId": "CheckHTTPVersion",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -496,6 +507,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Inspect Resources (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug, CB-Spider, CSP",
+                "operationId": "InspectResources",
                 "parameters": [
                     {
                         "description": "Specify connectionName and resource type",
@@ -542,6 +554,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Inspect Resources Overview (vNet, securityGroup, sshKey, vm) registered in CB-Tumblebug and CSP for all connections",
+                "operationId": "InspectResourcesOverview",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -577,6 +590,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Load Common Resources from internal asset files",
+                "operationId": "LoadCommonResource",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -606,6 +620,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup image",
+                "operationId": "LookupImage",
                 "parameters": [
                     {
                         "description": "Specify connectionName \u0026 cspImageId",
@@ -652,6 +667,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup image list",
+                "operationId": "LookupImageList",
                 "parameters": [
                     {
                         "description": "Specify connectionName",
@@ -698,6 +714,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup spec",
+                "operationId": "LookupSpec",
                 "parameters": [
                     {
                         "description": "Specify connectionName \u0026 cspSpecName",
@@ -744,6 +761,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Lookup spec list",
+                "operationId": "LookupSpecList",
                 "parameters": [
                     {
                         "description": "Specify connectionName",
@@ -790,6 +808,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Check available ConnectionConfig list for creating MCIS Dynamically",
+                "operationId": "PostMcisDynamicCheckRequest",
                 "parameters": [
                     {
                         "description": "Details for MCIS dynamic request information",
@@ -836,6 +855,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Recommend MCIS plan (filter and priority)",
+                "operationId": "RecommendVm",
                 "parameters": [
                     {
                         "description": "Recommend MCIS plan (filter and priority)",
@@ -884,6 +904,7 @@ const docTemplate = `{
                     "[Namespace] Namespace management"
                 ],
                 "summary": "List all namespaces or namespaces' ID",
+                "operationId": "GetAllNs",
                 "parameters": [
                     {
                         "enum": [
@@ -943,6 +964,7 @@ const docTemplate = `{
                     "[Namespace] Namespace management"
                 ],
                 "summary": "Create namespace",
+                "operationId": "PostNs",
                 "parameters": [
                     {
                         "description": "Details for a new namespace",
@@ -987,6 +1009,7 @@ const docTemplate = `{
                     "[Namespace] Namespace management"
                 ],
                 "summary": "Delete all namespaces",
+                "operationId": "DelAllNs",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1016,6 +1039,7 @@ const docTemplate = `{
                     "[Namespace] Namespace management"
                 ],
                 "summary": "Get namespace",
+                "operationId": "GetNs",
                 "parameters": [
                     {
                         "type": "string",
@@ -1059,6 +1083,7 @@ const docTemplate = `{
                     "[Namespace] Namespace management"
                 ],
                 "summary": "Update namespace",
+                "operationId": "PutNs",
                 "parameters": [
                     {
                         "type": "string",
@@ -1111,6 +1136,7 @@ const docTemplate = `{
                     "[Namespace] Namespace management"
                 ],
                 "summary": "Delete namespace",
+                "operationId": "DelNs",
                 "parameters": [
                     {
                         "type": "string",
@@ -1150,6 +1176,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCIS benchmark for a single performance metric and return results",
+                "operationId": "GetBenchmark",
                 "parameters": [
                     {
                         "type": "string",
@@ -1234,6 +1261,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCIS benchmark for all performance metrics and return results",
+                "operationId": "GetAllBenchmark",
                 "parameters": [
                     {
                         "type": "string",
@@ -1296,6 +1324,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Performance benchmarking (WIP)"
                 ],
                 "summary": "Run MCIS benchmark for network latency",
+                "operationId": "GetLatencyBenchmark",
                 "parameters": [
                     {
                         "type": "string",
@@ -1349,6 +1378,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "List all Clusters or Clusters' ID",
+                "operationId": "GetAllCluster",
                 "parameters": [
                     {
                         "type": "string",
@@ -1428,6 +1458,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Create Cluster",
+                "operationId": "PostCluster",
                 "parameters": [
                     {
                         "type": "string",
@@ -1489,6 +1520,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Delete all Clusters",
+                "operationId": "DeleteAllCluster",
                 "parameters": [
                     {
                         "type": "string",
@@ -1535,6 +1567,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Get Cluster",
+                "operationId": "GetCluster",
                 "parameters": [
                     {
                         "type": "string",
@@ -1586,6 +1619,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Delete Cluster",
+                "operationId": "DeleteCluster",
                 "parameters": [
                     {
                         "type": "string",
@@ -1632,6 +1666,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Add a NodeGroup",
+                "operationId": "PostNodeGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -1693,6 +1728,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Remove a NodeGroup",
+                "operationId": "DeleteNodeGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -1746,6 +1782,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Change a NodeGroup's Autoscale Size",
+                "operationId": "PutChangeAutoscaleSize",
                 "parameters": [
                     {
                         "type": "string",
@@ -1805,6 +1842,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Set a NodeGroup's Autoscaling On/Off",
+                "operationId": "PutSetAutoscaling",
                 "parameters": [
                     {
                         "type": "string",
@@ -1864,6 +1902,7 @@ const docTemplate = `{
                     "[Infra resource] Cluster management"
                 ],
                 "summary": "Upgrade a Cluster's version",
+                "operationId": "PutClusterUpgrade",
                 "parameters": [
                     {
                         "type": "string",
@@ -1916,6 +1955,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Remote command"
                 ],
                 "summary": "Send a command to specified MCIS",
+                "operationId": "PostCmdMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -1998,6 +2038,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Control lifecycle"
                 ],
                 "summary": "Control the lifecycle of MCIS (refine, suspend, resume, reboot, terminate)",
+                "operationId": "GetControlMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -2077,6 +2118,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Control lifecycle"
                 ],
                 "summary": "Control the lifecycle of VM (suspend, resume, reboot, terminate)",
+                "operationId": "GetControlMcisVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -2161,6 +2203,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Delete all Default Resource Objects in the given namespace",
+                "operationId": "DelAllDefaultResources",
                 "parameters": [
                     {
                         "type": "string",
@@ -2200,6 +2243,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Performance benchmarking (WIP)"
                 ],
                 "summary": "Install the benchmark agent to specified MCIS",
+                "operationId": "PostInstallBenchmarkAgentToMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -2271,6 +2315,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Load Default Resource from internal asset file",
+                "operationId": "LoadDefaultResource",
                 "parameters": [
                     {
                         "type": "string",
@@ -2330,6 +2375,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "List all MCISs or MCISs' ID",
+                "operationId": "GetAllMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -2405,6 +2451,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create MCIS",
+                "operationId": "PostMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -2457,6 +2504,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Delete all MCISs",
+                "operationId": "DelAllMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -2505,6 +2553,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Get MCIS object (option: status, accessInfo, vmId)",
+                "operationId": "GetMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -2607,6 +2656,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Delete MCIS",
+                "operationId": "DelMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -2664,6 +2714,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Remote command"
                 ],
                 "summary": "Remove a bastion VM from all vNets",
+                "operationId": "RemoveBastionNodes",
                 "parameters": [
                     {
                         "type": "string",
@@ -2725,6 +2776,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management"
                 ],
                 "summary": "Create a special purpose MCIS for NLB and depoly and setting SW NLB",
+                "operationId": "PostMcNLB",
                 "parameters": [
                     {
                         "type": "string",
@@ -2787,6 +2839,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management"
                 ],
                 "summary": "List all NLBs or NLBs' ID",
+                "operationId": "GetAllNLB",
                 "parameters": [
                     {
                         "type": "string",
@@ -2874,6 +2927,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management"
                 ],
                 "summary": "Create NLB",
+                "operationId": "PostNLB",
                 "parameters": [
                     {
                         "type": "string",
@@ -2943,6 +2997,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management"
                 ],
                 "summary": "Delete all NLBs",
+                "operationId": "DelAllNLB",
                 "parameters": [
                     {
                         "type": "string",
@@ -2997,6 +3052,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management"
                 ],
                 "summary": "Get NLB",
+                "operationId": "GetNLB",
                 "parameters": [
                     {
                         "type": "string",
@@ -3056,6 +3112,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management"
                 ],
                 "summary": "Delete NLB",
+                "operationId": "DelNLB",
                 "parameters": [
                     {
                         "type": "string",
@@ -3110,6 +3167,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management"
                 ],
                 "summary": "Get NLB Health",
+                "operationId": "GetNLBHealth",
                 "parameters": [
                     {
                         "type": "string",
@@ -3171,6 +3229,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management (for developer)"
                 ],
                 "summary": "Add VMs to NLB",
+                "operationId": "AddNLBVMs",
                 "parameters": [
                     {
                         "type": "string",
@@ -3239,6 +3298,7 @@ const docTemplate = `{
                     "[Infra resource] NLB management (for developer)"
                 ],
                 "summary": "Delete VMs from NLB",
+                "operationId": "RemoveNLBVMs",
                 "parameters": [
                     {
                         "type": "string",
@@ -3303,6 +3363,7 @@ const docTemplate = `{
                     "[VPN] Sites in MCIS (under development)"
                 ],
                 "summary": "Get sites in MCIS",
+                "operationId": "GetSitesInMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -3362,6 +3423,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "List SubGroup IDs in a specified MCIS",
+                "operationId": "GetMcisGroupIds",
                 "parameters": [
                     {
                         "type": "string",
@@ -3415,6 +3477,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "List VMs with a SubGroup label in a specified MCIS",
+                "operationId": "GetMcisGroupVms",
                 "parameters": [
                     {
                         "type": "string",
@@ -3483,6 +3546,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "ScaleOut subGroup in specified MCIS",
+                "operationId": "PostMcisSubGroupScaleOut",
                 "parameters": [
                     {
                         "type": "string",
@@ -3553,6 +3617,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create and add homogeneous VMs(subGroup) to a specified MCIS (Set subGroupSize for multiple VMs)",
+                "operationId": "PostMcisVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -3615,6 +3680,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Remote command"
                 ],
                 "summary": "Get bastion nodes for a VM",
+                "operationId": "GetBastionNodes",
                 "parameters": [
                     {
                         "type": "string",
@@ -3679,6 +3745,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Remote command"
                 ],
                 "summary": "Set bastion nodes for a VM",
+                "operationId": "SetBastionNodes",
                 "parameters": [
                     {
                         "type": "string",
@@ -3748,6 +3815,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Get VM in specified MCIS",
+                "operationId": "GetMcisVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -3836,6 +3904,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Delete VM in specified MCIS",
+                "operationId": "DelMcisVm",
                 "parameters": [
                     {
                         "type": "string",
@@ -3900,6 +3969,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Get available dataDisks for a VM",
+                "operationId": "GetVmDataDisk",
                 "parameters": [
                     {
                         "type": "string",
@@ -3974,6 +4044,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Attach/Detach available dataDisk",
+                "operationId": "PutVmDataDisk",
                 "parameters": [
                     {
                         "description": "Request body to attach/detach dataDisk",
@@ -4062,6 +4133,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Provisioning (Create and attach) dataDisk",
+                "operationId": "PostVmDataDisk",
                 "parameters": [
                     {
                         "description": "Details for an Data Disk object",
@@ -4126,6 +4198,7 @@ const docTemplate = `{
                     "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Snapshot VM and create a Custom Image Object using the Snapshot",
+                "operationId": "PostMcisVmSnapshot",
                 "parameters": [
                     {
                         "description": "Request body to create VM snapshot",
@@ -4196,6 +4269,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create VM Dynamically and add it to MCIS",
+                "operationId": "PostMcisVmDynamic",
                 "parameters": [
                     {
                         "type": "string",
@@ -4258,6 +4332,7 @@ const docTemplate = `{
                     "[VPN] GCP-AWS VPN tunnel (under development)"
                 ],
                 "summary": "Get resource info of VPN tunnels between GCP and AWS",
+                "operationId": "GetVpnGcpToAws",
                 "parameters": [
                     {
                         "type": "string",
@@ -4330,6 +4405,7 @@ const docTemplate = `{
                     "[VPN] GCP-AWS VPN tunnel (under development)"
                 ],
                 "summary": "(To be provided) Update VPN tunnels between GCP and AWS",
+                "operationId": "PutVpnGcpToAws",
                 "parameters": [
                     {
                         "type": "string",
@@ -4404,6 +4480,7 @@ const docTemplate = `{
                     "[VPN] GCP-AWS VPN tunnel (under development)"
                 ],
                 "summary": "Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
+                "operationId": "PostVpnGcpToAws",
                 "parameters": [
                     {
                         "type": "string",
@@ -4478,6 +4555,7 @@ const docTemplate = `{
                     "[VPN] GCP-AWS VPN tunnel (under development)"
                 ],
                 "summary": "Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
+                "operationId": "DeleteVpnGcpToAws",
                 "parameters": [
                     {
                         "type": "string",
@@ -4545,6 +4623,7 @@ const docTemplate = `{
                     "[VPN] GCP-AWS VPN tunnel (under development)"
                 ],
                 "summary": "Check the status of a specific request by its ID",
+                "operationId": "GetRequestStatusOfGcpAwsVpn",
                 "parameters": [
                     {
                         "type": "string",
@@ -4619,6 +4698,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create MCIS Dynamically",
+                "operationId": "PostMcisDynamic",
                 "parameters": [
                     {
                         "type": "string",
@@ -4682,6 +4762,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Resource monitor (for developer)"
                 ],
                 "summary": "Install monitoring agent (CB-Dragonfly agent) to MCIS",
+                "operationId": "PostInstallMonitorAgentToMcis",
                 "parameters": [
                     {
                         "type": "string",
@@ -4744,6 +4825,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Resource monitor (for developer)"
                 ],
                 "summary": "Get monitoring data of specified MCIS for specified monitoring metric (cpu, memory, disk, network)",
+                "operationId": "GetMonitorData",
                 "parameters": [
                     {
                         "type": "string",
@@ -4804,6 +4886,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Resource monitor (for developer)"
                 ],
                 "summary": "Set monitoring agent (CB-Dragonfly agent) installation status installed (for Windows VM only)",
+                "operationId": "PutMonitorAgentStatusInstalled",
                 "parameters": [
                     {
                         "type": "string",
@@ -4865,6 +4948,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "List all MCIS policies",
+                "operationId": "GetAllMcisPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -4908,6 +4992,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Delete all MCIS policies",
+                "operationId": "DelAllMcisPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -4947,6 +5032,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Get MCIS Policy",
+                "operationId": "GetMcisPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -4998,6 +5084,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Create MCIS Automation policy",
+                "operationId": "PostMcisPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -5058,6 +5145,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Auto control policy management (WIP)"
                 ],
                 "summary": "Delete MCIS Policy",
+                "operationId": "DelMcisPolicy",
                 "parameters": [
                     {
                         "type": "string",
@@ -5105,6 +5193,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Register existing VM in a CSP to Cloud-Barista MCIS",
+                "operationId": "PostRegisterCSPNativeVM",
                 "parameters": [
                     {
                         "type": "string",
@@ -5159,6 +5248,7 @@ const docTemplate = `{
                     "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "List all customImages or customImages' ID",
+                "operationId": "GetAllCustomImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -5238,6 +5328,7 @@ const docTemplate = `{
                     "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Register existing Custom Image in a CSP",
+                "operationId": "PostCustomImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -5300,6 +5391,7 @@ const docTemplate = `{
                     "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Delete all customImages",
+                "operationId": "DelAllCustomImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -5346,6 +5438,7 @@ const docTemplate = `{
                     "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Get customImage",
+                "operationId": "GetCustomImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -5396,6 +5489,7 @@ const docTemplate = `{
                     "[Infra resource] Snapshot and Custom Image Management"
                 ],
                 "summary": "Delete customImage",
+                "operationId": "DelCustomImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -5442,6 +5536,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "List all Data Disks or Data Disks' ID",
+                "operationId": "GetAllDataDisk",
                 "parameters": [
                     {
                         "type": "string",
@@ -5521,6 +5616,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Create Data Disk",
+                "operationId": "PostDataDisk",
                 "parameters": [
                     {
                         "type": "string",
@@ -5582,6 +5678,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Delete all Data Disks",
+                "operationId": "DelAllDataDisk",
                 "parameters": [
                     {
                         "type": "string",
@@ -5628,6 +5725,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Get Data Disk",
+                "operationId": "GetDataDisk",
                 "parameters": [
                     {
                         "type": "string",
@@ -5678,6 +5776,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Upsize Data Disk",
+                "operationId": "PutDataDisk",
                 "parameters": [
                     {
                         "description": "Request body to upsize the dataDisk",
@@ -5737,6 +5836,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Data Disk management"
                 ],
                 "summary": "Delete Data Disk",
+                "operationId": "DelDataDisk",
                 "parameters": [
                     {
                         "type": "string",
@@ -5783,6 +5883,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Fetch images",
+                "operationId": "FetchImages",
                 "parameters": [
                     {
                         "type": "string",
@@ -5828,6 +5929,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Fetch specs",
+                "operationId": "FetchSpecs",
                 "parameters": [
                     {
                         "type": "string",
@@ -5873,6 +5975,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Filter specs by range",
+                "operationId": "FilterSpecsByRange",
                 "parameters": [
                     {
                         "type": "string",
@@ -5926,6 +6029,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "List all images or images' ID",
+                "operationId": "GetAllImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -6005,6 +6109,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Register image",
+                "operationId": "PostImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -6078,6 +6183,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Delete all images",
+                "operationId": "DelAllImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -6124,6 +6230,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Get image",
+                "operationId": "GetImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -6174,6 +6281,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Update image",
+                "operationId": "PutImage",
                 "parameters": [
                     {
                         "description": "Details for an image object",
@@ -6233,6 +6341,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Delete image",
+                "operationId": "DelImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -6279,6 +6388,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Image management"
                 ],
                 "summary": "Search image",
+                "operationId": "SearchImage",
                 "parameters": [
                     {
                         "type": "string",
@@ -6333,6 +6443,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "List all Security Groups or Security Groups' ID",
+                "operationId": "GetAllSecurityGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -6412,6 +6523,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Create Security Group",
+                "operationId": "PostSecurityGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -6473,6 +6585,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Delete all Security Groups",
+                "operationId": "DelAllSecurityGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -6519,6 +6632,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Get Security Group",
+                "operationId": "GetSecurityGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -6569,6 +6683,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Delete Security Group",
+                "operationId": "DelSecurityGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -6615,6 +6730,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Create FirewallRules",
+                "operationId": "PostFirewallRules",
                 "parameters": [
                     {
                         "type": "string",
@@ -6667,6 +6783,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Security group management"
                 ],
                 "summary": "Delete FirewallRules",
+                "operationId": "DelFirewallRules",
                 "parameters": [
                     {
                         "type": "string",
@@ -6715,6 +6832,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "List all specs or specs' ID",
+                "operationId": "GetAllSpec",
                 "parameters": [
                     {
                         "type": "string",
@@ -6794,6 +6912,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Register spec",
+                "operationId": "PostSpec",
                 "parameters": [
                     {
                         "type": "string",
@@ -6867,6 +6986,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Delete all specs",
+                "operationId": "DelAllSpec",
                 "parameters": [
                     {
                         "type": "string",
@@ -6913,6 +7033,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Get spec",
+                "operationId": "GetSpec",
                 "parameters": [
                     {
                         "type": "string",
@@ -6963,6 +7084,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Update spec",
+                "operationId": "PutSpec",
                 "parameters": [
                     {
                         "description": "Details for an spec object",
@@ -7022,6 +7144,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Spec management"
                 ],
                 "summary": "Delete spec",
+                "operationId": "DelSpec",
                 "parameters": [
                     {
                         "type": "string",
@@ -7068,6 +7191,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "List all SSH Keys or SSH Keys' ID",
+                "operationId": "GetAllSshKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -7147,6 +7271,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Create SSH Key",
+                "operationId": "PostSshKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -7208,6 +7333,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Delete all SSH Keys",
+                "operationId": "DelAllSshKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -7254,6 +7380,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Get SSH Key",
+                "operationId": "GetSshKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -7304,6 +7431,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Update SSH Key",
+                "operationId": "PutSshKey",
                 "parameters": [
                     {
                         "description": "Details for an SSH Key object",
@@ -7363,6 +7491,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Access key management"
                 ],
                 "summary": "Delete SSH Key",
+                "operationId": "DelSshKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -7409,6 +7538,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Network management"
                 ],
                 "summary": "List all VNets or VNets' ID",
+                "operationId": "GetAllVNet",
                 "parameters": [
                     {
                         "type": "string",
@@ -7488,6 +7618,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Create VNet",
+                "operationId": "PostVNet",
                 "parameters": [
                     {
                         "type": "string",
@@ -7549,6 +7680,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Delete all VNets",
+                "operationId": "DelAllVNet",
                 "parameters": [
                     {
                         "type": "string",
@@ -7595,6 +7727,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Get VNet",
+                "operationId": "GetVNet",
                 "parameters": [
                     {
                         "type": "string",
@@ -7645,6 +7778,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Delete VNet",
+                "operationId": "DelVNet",
                 "parameters": [
                     {
                         "type": "string",
@@ -7691,6 +7825,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Create Subnet",
+                "operationId": "PostSubnet",
                 "parameters": [
                     {
                         "type": "string",
@@ -7752,6 +7887,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Network management"
                 ],
                 "summary": "Delete Subnet",
+                "operationId": "DelSubnet",
                 "parameters": [
                     {
                         "type": "string",
@@ -7805,6 +7941,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Get value of an object",
+                "operationId": "GetObject",
                 "parameters": [
                     {
                         "type": "string",
@@ -7847,6 +7984,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Delete an object",
+                "operationId": "DeleteObject",
                 "parameters": [
                     {
                         "type": "string",
@@ -7891,6 +8029,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "List all objects for a given key",
+                "operationId": "GetObjects",
                 "parameters": [
                     {
                         "type": "string",
@@ -7933,6 +8072,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Delete child objects along with the given object",
+                "operationId": "DeleteObjects",
                 "parameters": [
                     {
                         "type": "string",
@@ -7977,6 +8117,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "List all registered Providers",
+                "operationId": "GetProviderList",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -8012,6 +8153,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "Get registered region info",
+                "operationId": "GetRegion",
                 "parameters": [
                     {
                         "type": "string",
@@ -8063,6 +8205,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Check Tumblebug is ready",
+                "operationId": "GetReadyz",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -8092,6 +8235,7 @@ const docTemplate = `{
                     "[Admin] Multi-Cloud environment configuration"
                 ],
                 "summary": "List all registered regions",
+                "operationId": "GetRegionList",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -8127,6 +8271,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) to CB-Tumblebug",
+                "operationId": "RegisterCspNativeResources",
                 "parameters": [
                     {
                         "description": "Specify connectionName, NS Id, and MCIS Name",
@@ -8194,6 +8339,7 @@ const docTemplate = `{
                     "[Admin] System management"
                 ],
                 "summary": "Register CSP Native Resources (vNet, securityGroup, sshKey, vm) from all Clouds to CB-Tumblebug",
+                "operationId": "RegisterCspNativeResourcesAll",
                 "parameters": [
                     {
                         "description": "Specify NS Id and MCIS Name",
@@ -8261,6 +8407,7 @@ const docTemplate = `{
                     "[Admin] Request tracking"
                 ],
                 "summary": "Get request details",
+                "operationId": "GetRequest",
                 "parameters": [
                     {
                         "type": "string",
@@ -8303,6 +8450,7 @@ const docTemplate = `{
                     "[Admin] Request tracking"
                 ],
                 "summary": "Delete a specific request's details",
+                "operationId": "DeleteRequest",
                 "parameters": [
                     {
                         "type": "string",
@@ -8335,6 +8483,7 @@ const docTemplate = `{
                     "[Admin] Request tracking"
                 ],
                 "summary": "Get all requests",
+                "operationId": "GetAllRequests",
                 "parameters": [
                     {
                         "type": "string",
@@ -8394,6 +8543,7 @@ const docTemplate = `{
                     "[Admin] Request tracking"
                 ],
                 "summary": "Delete all requests' details",
+                "operationId": "DeleteAllRequests",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -8417,6 +8567,7 @@ const docTemplate = `{
                     "[Infra service] MCIS Provisioning management"
                 ],
                 "summary": "Create System MCIS Dynamically for Special Purpose in NS:system-purpose-common-ns",
+                "operationId": "PostSystemMcis",
                 "parameters": [
                     {
                         "enum": [
@@ -8463,6 +8614,7 @@ const docTemplate = `{
                     "[Utility] Multi-cloud network design"
                 ],
                 "summary": "Design a multi-cloud network configuration",
+                "operationId": "PostUtilToDesignNetwork",
                 "parameters": [
                     {
                         "description": "A root/main network CIDR block and subnetting rules",
@@ -8509,6 +8661,7 @@ const docTemplate = `{
                     "[Utility] Multi-cloud network design"
                 ],
                 "summary": "Validate a multi-cloud network configuration",
+                "operationId": "PostUtilToValidateNetwork",
                 "parameters": [
                     {
                         "description": "A hierarchical network configuration",
@@ -8555,6 +8708,7 @@ const docTemplate = `{
                     "[Infra resource] MCIR Common"
                 ],
                 "summary": "Check resources' existence",
+                "operationId": "CheckResource",
                 "parameters": [
                     {
                         "type": "string",

@@ -23,6 +23,7 @@ import (
 )
 
 // RestPostInstallBenchmarkAgentToMcis godoc
+// @ID PostInstallBenchmarkAgentToMcis
 // @Summary Install the benchmark agent to specified MCIS
 // @Description Install the benchmark agent to specified MCIS
 // @Tags [Infra service] MCIS Performance benchmarking (WIP)
@@ -71,6 +72,7 @@ type RestGetAllBenchmarkRequest struct {
 }
 
 // RestGetAllBenchmark godoc
+// @ID GetAllBenchmark
 // @Summary Run MCIS benchmark for all performance metrics and return results
 // @Description Run MCIS benchmark for all performance metrics and return results
 // @Tags [Infra service] MCIS Performance benchmarking (WIP)
@@ -102,6 +104,7 @@ func RestGetAllBenchmark(c echo.Context) error {
 }
 
 // RestGetLatencyBenchmark godoc
+// @ID GetLatencyBenchmark
 // @Summary Run MCIS benchmark for network latency
 // @Description Run MCIS benchmark for network latency
 // @Tags [Infra service] MCIS Performance benchmarking (WIP)
@@ -130,6 +133,7 @@ type RestGetBenchmarkRequest struct {
 }
 
 // RestGetBenchmark godoc
+// @ID GetBenchmark
 // @Summary Run MCIS benchmark for a single performance metric and return results
 // @Description Run MCIS benchmark for a single performance metric and return results
 // @Tags [Infra service] MCIS Performance benchmarking (WIP)
