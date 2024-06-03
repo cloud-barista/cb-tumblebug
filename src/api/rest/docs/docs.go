@@ -4725,6 +4725,12 @@ const docTemplate = `{
                         "description": "Option for MCIS creation",
                         "name": "option",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Custom request ID",
+                        "name": "x-request-id",
+                        "in": "header"
                     }
                 ],
                 "responses": {
