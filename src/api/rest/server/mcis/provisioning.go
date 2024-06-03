@@ -120,15 +120,14 @@ func RestPostSystemMcis(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisReq body TbMcisDynamicReq true "Request body to provision MCIS dynamically. Must include commonSpec and commonImage info of each VM request.(ex: {name: mcis01,vm: [{commonImage: aws+ap-northeast-2+ubuntu22.04,commonSpec: aws+ap-northeast-2+t2.small}]} ) You can use /mcisRecommendVm and /mcisDynamicCheckRequest to get it) Check the guide: https://github.com/cloud-barista/cb-tumblebug/discussions/1570"
 // @Param option query string false "Option for MCIS creation" Enums(hold)
+// @Param x-request-id header string false "Custom request ID"
 // @Success 200 {object} TbMcisInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/mcisDynamic [post]
 func RestPostMcisDynamic(c echo.Context) error {
-	reqID, idErr := common.StartRequestWithLog(c)
-	if idErr != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
-	}
+	reqID := c.Request().Header.Get(echo.HeaderXRequestID)
+
 	nsId := c.Param("nsId")
 	option := c.QueryParam("option")
 
@@ -137,8 +136,11 @@ func RestPostMcisDynamic(c echo.Context) error {
 		return common.EndRequestWithLog(c, reqID, err, nil)
 	}
 
-	result, err := mcis.CreateMcisDynamic(nsId, req, option)
-	return common.EndRequestWithLog(c, reqID, err, result)
+	result, err := mcis.CreateMcisDynamic(reqID, nsId, req, option)
+	if err != nil {
+		return common.EndRequestWithLog(c, reqID, err, nil)
+	}
+	return c.JSON(http.StatusOK, result)
 }
 
 // RestPostMcisVmDynamic godoc

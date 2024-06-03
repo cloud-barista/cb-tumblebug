@@ -251,6 +251,13 @@ type RequestDetails struct {
 // RequestMap is a map for request details
 var RequestMap = sync.Map{}
 
+// ProgressInfo contains the progress information of a request.
+type ProgressInfo struct {
+	Title string      `json:"title"`
+	Info  interface{} `json:"info"`
+	Time  time.Time   `json:"time"`
+}
+
 // ExtractRequestInfo extracts necessary information from http.Request
 func ExtractRequestInfo(r *http.Request) RequestInfo {
 	headerInfo := make(map[string]string)
@@ -324,6 +331,24 @@ func EndRequestWithLog(c echo.Context, reqID string, err error, responseData int
 	}
 
 	return c.JSON(http.StatusNotFound, map[string]string{"message": "Invalid Request ID"})
+}
+
+// UpdateRequestProgress updates the handling status of the request.
+func UpdateRequestProgress(reqID string, progressData interface{}) {
+	if v, ok := RequestMap.Load(reqID); ok {
+		details := v.(RequestDetails)
+
+		var responseData []interface{}
+		if details.ResponseData != nil {
+			// Convert existing ResponseData to []interface{}
+			responseData = details.ResponseData.([]interface{})
+		}
+		// Append the new progressData to the existing ResponseData
+		responseData = append(responseData, progressData)
+		details.ResponseData = responseData
+
+		RequestMap.Store(reqID, details)
+	}
 }
 
 // ForwardRequestToAny forwards the given request to the specified path

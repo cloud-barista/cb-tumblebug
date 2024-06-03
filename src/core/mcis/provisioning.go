@@ -1255,11 +1255,11 @@ func CreateSystemMcisDynamic(option string) (*TbMcisInfo, error) {
 		return nil, err
 	}
 
-	return CreateMcisDynamic(nsId, req, "")
+	return CreateMcisDynamic("", nsId, req, "")
 }
 
 // CreateMcisDynamic is func to create MCIS obeject and deploy requested VMs in a dynamic way
-func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq, deployOption string) (*TbMcisInfo, error) {
+func CreateMcisDynamic(reqID string, nsId string, req *TbMcisDynamicReq, deployOption string) (*TbMcisInfo, error) {
 
 	mcisReq := TbMcisReq{}
 	mcisReq.Name = req.Name
@@ -1301,7 +1301,7 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq, deployOption string) 
 
 	//If not, generate default resources dynamically.
 	for _, k := range vmRequest {
-		vmReq, err := getVmReqFromDynamicReq(nsId, &k)
+		vmReq, err := getVmReqFromDynamicReq(reqID, nsId, &k)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to prefare resources for dynamic MCIS creation")
 			// Rollback created default resources
@@ -1320,6 +1320,8 @@ func CreateMcisDynamic(nsId string, req *TbMcisDynamicReq, deployOption string) 
 	}
 
 	common.PrintJsonPretty(mcisReq)
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared all resources for provisioning MCIS:" + mcisReq.Name, Info: mcisReq, Time: time.Now()})
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Start provisioning", Time: time.Now()})
 
 	// Run create MCIS with the generated MCIS request (option != register)
 	option := "create"
@@ -1344,7 +1346,7 @@ func CreateMcisVmDynamic(nsId string, mcisId string, req *TbVmDynamicReq) (*TbMc
 		return emptyMcis, err
 	}
 
-	vmReq, err := getVmReqFromDynamicReq(nsId, req)
+	vmReq, err := getVmReqFromDynamicReq("", nsId, req)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyMcis, err
@@ -1408,7 +1410,7 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 }
 
 // getVmReqForDynamicMcis is func to getVmReqFromDynamicReq
-func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) {
+func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*TbVmReq, error) {
 
 	onDemand := true
 
@@ -1464,6 +1466,8 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 		return &TbVmReq{}, err
 	}
 
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
+
 	vmReq.VNetId = resourceName
 	tempInterface, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
 	if err != nil {
@@ -1472,6 +1476,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 			log.Error().Err(err).Msg("Failed to get the vNet")
 			return &TbVmReq{}, err
 		}
+		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default vNet:" + resourceName, Time: time.Now()})
 		err2 := mcir.LoadDefaultResource(nsId, common.StrVNet, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
@@ -1484,6 +1489,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	}
 	vmReq.SubnetId = resourceName
 
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 	vmReq.SshKeyId = resourceName
 	tempInterface, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
 	if err != nil {
@@ -1492,6 +1498,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 			log.Error().Err(err).Msg("Failed to get the SSHKey")
 			return &TbVmReq{}, err
 		}
+		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default SSHKey:" + resourceName, Time: time.Now()})
 		err2 := mcir.LoadDefaultResource(nsId, common.StrSSHKey, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
@@ -1502,6 +1509,8 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	} else {
 		log.Info().Msg("Found and utilize default SSHKey: " + vmReq.VNetId)
 	}
+
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
 	securityGroup := resourceName
 	vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
 	tempInterface, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
@@ -1511,6 +1520,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 			log.Error().Err(err).Msg("Failed to get the securityGroup")
 			return &TbVmReq{}, err
 		}
+		common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Loading default securityGroup:" + resourceName, Time: time.Now()})
 		err2 := mcir.LoadDefaultResource(nsId, common.StrSecurityGroup, vmReq.ConnectionName)
 		if err2 != nil {
 			log.Error().Err(err2).Msg("Failed to create new default securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
@@ -1534,6 +1544,7 @@ func getVmReqFromDynamicReq(nsId string, req *TbVmDynamicReq) (*TbVmReq, error) 
 	vmReq.VmUserPassword = k.VmUserPassword
 
 	common.PrintJsonPretty(vmReq)
+	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Prepared resources for VM:" + vmReq.Name, Info: vmReq, Time: time.Now()})
 
 	return vmReq, nil
 }
