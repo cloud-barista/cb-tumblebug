@@ -155,11 +155,6 @@ type FilterSpecsByRangeRequest struct {
 	EvaluationScore10   Range  `json:"evaluationScore10"`
 }
 
-type FilterK8sClusterByRangeRequest struct {
-	FilterSpecsByRangeRequest
-	Version string `json:"version"`
-}
-
 // ConvertSpiderSpecToTumblebugSpec accepts an Spider spec object, converts to and returns an TB spec object
 func ConvertSpiderSpecToTumblebugSpec(spiderSpec SpiderSpecInfo) (TbSpecInfo, error) {
 	if spiderSpec.Name == "" {

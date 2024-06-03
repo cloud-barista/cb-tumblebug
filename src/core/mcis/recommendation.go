@@ -48,7 +48,7 @@ type FilterInfo struct {
 
 // FilterCondition is struct for .
 type FilterCondition struct {
-	Metric    string      `json:"metric" example:"vCPU" enums:"vCPU,memoryGiB,costPerHour,version"`
+	Metric    string      `json:"metric" example:"vCPU" enums:"vCPU,memoryGiB,costPerHour"`
 	Condition []Operation `json:"condition"`
 }
 
@@ -84,25 +84,6 @@ func toUpperFirst(s string) string {
 	r := []rune(s)
 	r[0] = unicode.ToUpper(r[0])
 	return string(r)
-}
-
-// applyK8sClusterFilterPolicies dynamically sets filters on the request based on the policies.
-func applyK8sClusterFilterPolicies(request *mcir.FilterK8sClusterByRangeRequest, plan *DeploymentPlan) error {
-	val := reflect.ValueOf(request).Elem()
-
-	for _, policy := range plan.Filter.Policy {
-		for _, condition := range policy.Condition {
-			fieldName := toUpperFirst(policy.Metric) // Correctly capitalize the first letter
-			field := val.FieldByName(fieldName)
-			if !field.IsValid() {
-				return fmt.Errorf("invalid metric: %s", policy.Metric)
-			}
-			if err := setFieldCondition(field, condition); err != nil {
-				return fmt.Errorf("setting condition failed: %v", err)
-			}
-		}
-	}
-	return nil
 }
 
 // applyFilterPolicies dynamically sets filters on the request based on the policies.
