@@ -172,6 +172,7 @@ func RunServer(port string) {
 	e.GET("/tumblebug/provider", rest_common.RestGetProviderList)
 	e.GET("/tumblebug/region", rest_common.RestGetRegionList)
 	e.GET("/tumblebug/provider/:providerName/region/:regionName", rest_common.RestGetRegion)
+	e.GET("/tumblebug/k8sClusterInfo", rest_common.RestGetK8sClusterInfo)
 	e.POST("/tumblebug/credential", rest_common.RestRegisterCredential)
 
 	e.POST("/tumblebug/lookupSpecs", rest_mcir.RestLookupSpecList)
@@ -303,6 +304,8 @@ func RunServer(port string) {
 	g.PUT("/:nsId/monitoring/status/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMonitorAgentStatusInstalled)
 
 	// Cluster
+	e.GET("/tumblebug/availableK8sClusterVersion", rest_mcis.RestGetAvailableK8sClusterVersion)
+	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_mcis.RestGetAvailableK8sClusterNodeImage)
 	g.POST("/:nsId/cluster", rest_mcis.RestPostCluster)
 	g.POST("/:nsId/cluster/:clusterId/nodegroup", rest_mcis.RestPostNodeGroup)
 	g.DELETE("/:nsId/cluster/:clusterId/nodegroup/:nodeGroupName", rest_mcis.RestDeleteNodeGroup)

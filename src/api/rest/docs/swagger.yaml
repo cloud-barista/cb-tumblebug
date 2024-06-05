@@ -115,6 +115,93 @@ definitions:
     type: object
   common.JSONResult:
     type: object
+  common.K8sClusterDetail:
+    properties:
+      node_images:
+        items:
+          $ref: '#/definitions/common.K8sClusterNodeImageDetail'
+        type: array
+      nodegroups_with_cluster:
+        type: boolean
+      root_disks:
+        items:
+          $ref: '#/definitions/common.K8sClusterRootDiskDetail'
+        type: array
+      versions:
+        items:
+          $ref: '#/definitions/common.K8sClusterVersionDetail'
+        type: array
+    type: object
+  common.K8sClusterInfo:
+    properties:
+      k8s_cluster:
+        additionalProperties:
+          $ref: '#/definitions/common.K8sClusterDetail'
+        type: object
+    type: object
+  common.K8sClusterNodeImageDetail:
+    properties:
+      availables:
+        items:
+          $ref: '#/definitions/common.K8sClusterNodeImageDetailAvailable'
+        type: array
+      region:
+        items:
+          type: string
+        type: array
+    type: object
+  common.K8sClusterNodeImageDetailAvailable:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  common.K8sClusterRootDiskDetail:
+    properties:
+      region:
+        items:
+          type: string
+        type: array
+      size:
+        $ref: '#/definitions/common.K8sClusterRootDiskDetailSize'
+      type:
+        items:
+          $ref: '#/definitions/common.K8sClusterRootDiskDetailType'
+        type: array
+    type: object
+  common.K8sClusterRootDiskDetailSize:
+    properties:
+      max:
+        type: integer
+      min:
+        type: integer
+    type: object
+  common.K8sClusterRootDiskDetailType:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  common.K8sClusterVersionDetail:
+    properties:
+      availables:
+        items:
+          $ref: '#/definitions/common.K8sClusterVersionDetailAvailable'
+        type: array
+      region:
+        items:
+          type: string
+        type: array
+    type: object
+  common.K8sClusterVersionDetailAvailable:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   common.KeyValue:
     properties:
       key:
@@ -2973,6 +3060,76 @@ paths:
       summary: Check resources' existence
       tags:
       - '[Infra resource] MCIR Common'
+  /availableK8sClusterNodeImage:
+    get:
+      consumes:
+      - application/json
+      description: Get available kubernetes cluster node image
+      operationId: GetAvailableK8sClusterNodeImage
+      parameters:
+      - description: Name of the CSP to retrieve
+        in: query
+        name: providerName
+        required: true
+        type: string
+      - description: Name of region to retrieve
+        in: query
+        name: regionName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.K8sClusterNodeImageDetailAvailable'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get available kubernetes cluster node image
+      tags:
+      - '[Infra resource] Cluster management'
+  /availableK8sClusterVersion:
+    get:
+      consumes:
+      - application/json
+      description: Get available kubernetes cluster version
+      operationId: GetAvailableK8sClusterVersion
+      parameters:
+      - description: Name of the CSP to retrieve
+        in: query
+        name: providerName
+        required: true
+        type: string
+      - description: Name of region to retrieve
+        in: query
+        name: regionName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.K8sClusterVersionDetailAvailable'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get available kubernetes cluster version
+      tags:
+      - '[Infra resource] Cluster management'
   /cloudInfo:
     get:
       consumes:
@@ -3339,6 +3496,30 @@ paths:
         in CB-Tumblebug and CSP for all connections
       tags:
       - '[Admin] System management'
+  /k8sClusterInfo:
+    get:
+      consumes:
+      - application/json
+      description: Get kubernetes cluster information
+      operationId: GetK8sClusterInfo
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.K8sClusterInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get kubernetes cluster information
+      tags:
+      - '[Admin] Multi-Cloud environment configuration'
   /loadCommonResource:
     get:
       consumes:
@@ -3858,6 +4039,7 @@ paths:
       consumes:
       - application/json
       description: Delete all Clusters
+      operationId: DeleteAllCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3888,6 +4070,7 @@ paths:
       consumes:
       - application/json
       description: List all Clusters or Clusters' ID
+      operationId: GetAllCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3938,6 +4121,7 @@ paths:
       consumes:
       - application/json
       description: Create Cluster
+      operationId: PostCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -3981,6 +4165,7 @@ paths:
       consumes:
       - application/json
       description: Delete Cluster
+      operationId: DeleteCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4011,6 +4196,7 @@ paths:
       consumes:
       - application/json
       description: Get Cluster
+      operationId: GetCluster
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4047,6 +4233,7 @@ paths:
       consumes:
       - application/json
       description: Add a NodeGroup
+      operationId: PostNodeGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4088,6 +4275,7 @@ paths:
       consumes:
       - application/json
       description: Remove a NodeGroup
+      operationId: DeleteNodeGroup
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4124,6 +4312,7 @@ paths:
       consumes:
       - application/json
       description: Change a NodeGroup's Autoscale Size
+      operationId: PutChangeAutoscaleSize
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4164,6 +4353,7 @@ paths:
       consumes:
       - application/json
       description: Set a NodeGroup's Autoscaling On/Off
+      operationId: PutSetAutoscaling
       parameters:
       - default: ns01
         description: Namespace ID
@@ -4204,6 +4394,7 @@ paths:
       consumes:
       - application/json
       description: Upgrade a Cluster's version
+      operationId: PutClusterUpgrade
       parameters:
       - default: ns01
         description: Namespace ID

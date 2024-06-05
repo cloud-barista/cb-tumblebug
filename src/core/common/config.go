@@ -72,51 +72,51 @@ type K8sClusterInfo struct {
 
 // K8sClusterDetail is structure for kubernetes cluster detail information
 type K8sClusterDetail struct {
-	NodeGroupsWithCluster bool              `mapstructure:"nodegroupsWithCluster" json:"nodegroups_with_cluster"`
-	Version               []VersionDetail   `mapstructure:"version" json:"versions"`
-	NodeImage             []NodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
-	RootDisk              []RootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
+	NodeGroupsWithCluster bool                        `mapstructure:"nodegroupsWithCluster" json:"nodegroups_with_cluster"`
+	Version               []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
+	NodeImage             []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
+	RootDisk              []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
 }
 
-// VersionDetail is structure for kubernetes cluster version detail information
-type VersionDetail struct {
-	Region    []string                 `mapstructure:"region" json:"region"`
-	Available []VersionDetailAvailable `mapstructure:"available" json:"availables"`
+// K8sClusterVersionDetail is structure for kubernetes cluster version detail information
+type K8sClusterVersionDetail struct {
+	Region    []string                           `mapstructure:"region" json:"region"`
+	Available []K8sClusterVersionDetailAvailable `mapstructure:"available" json:"availables"`
 }
 
-// VersionDetailAvailable is structure for kubernetes cluster version detail's available information
-type VersionDetailAvailable struct {
+// K8sClusterVersionDetailAvailable is structure for kubernetes cluster version detail's available information
+type K8sClusterVersionDetailAvailable struct {
 	Name string `mapstructure:"name" json:"name"`
 	Id   string `mapstructure:"id" json:"id"`
 }
 
-// NodeImageDetail is structure for kubernetes cluster node image detail information
-type NodeImageDetail struct {
-	Region    []string                   `mapstructure:"region" json:"region"`
-	Available []NodeImageDetailAvailable `mapstructure:"available" json:"availables"`
+// K8sClusterNodeImageDetail is structure for kubernetes cluster node image detail information
+type K8sClusterNodeImageDetail struct {
+	Region    []string                             `mapstructure:"region" json:"region"`
+	Available []K8sClusterNodeImageDetailAvailable `mapstructure:"available" json:"availables"`
 }
 
-// NodeImageDetailAvailable is structure for kubernetes cluster node image detail's available information
-type NodeImageDetailAvailable struct {
+// K8sClusterNodeImageDetailAvailable is structure for kubernetes cluster node image detail's available information
+type K8sClusterNodeImageDetailAvailable struct {
 	Name string `mapstructure:"name" json:"name"`
 	Id   string `mapstructure:"id" json:"id"`
 }
 
-// RootDiskDetail is structure for kubernetes cluster root disk detail information
-type RootDiskDetail struct {
-	Region []string             `mapstructure:"region" json:"region"`
-	Type   []RootDiskDetailType `mapstructure:"type" json:"type"`
-	Size   RootDiskDetailSize   `mapstructure:"size" json:"size"`
+// K8sClusterRootDiskDetail is structure for kubernetes cluster root disk detail information
+type K8sClusterRootDiskDetail struct {
+	Region []string                       `mapstructure:"region" json:"region"`
+	Type   []K8sClusterRootDiskDetailType `mapstructure:"type" json:"type"`
+	Size   K8sClusterRootDiskDetailSize   `mapstructure:"size" json:"size"`
 }
 
-// RootDiskDetailType is structure for kubernetes cluster root disk detail's type information
-type RootDiskDetailType struct {
+// K8sClusterRootDiskDetailType is structure for kubernetes cluster root disk detail's type information
+type K8sClusterRootDiskDetailType struct {
 	Name string `mapstructure:"name" json:"name"`
 	Id   string `mapstructure:"id" json:"id"`
 }
 
-// RootDiskDetailSize is structure for kubernetes cluster root disk detail's size information
-type RootDiskDetailSize struct {
+// K8sClusterRootDiskDetailSize is structure for kubernetes cluster root disk detail's size information
+type K8sClusterRootDiskDetailSize struct {
 	Min uint `mapstructure:"min" json:"min"`
 	Max uint `mapstructure:"max" json:"max"`
 }

@@ -1279,3 +1279,170 @@ func GenerateNewRandomString(n int) string {
 	}
 	return string(b)
 }
+
+// GetK8sClusterInfo is func to get all kubernetes cluster info from the asset
+func GetK8sClusterInfo() (K8sClusterInfo, error) {
+	return RuntimeK8sClusterInfo, nil
+}
+
+func getK8sClusterDetail(providerName string) *K8sClusterDetail {
+	// Get K8sClusterDetail for providerName
+	var k8sClusterDetail *K8sClusterDetail = nil
+	for provider, detail := range RuntimeK8sClusterInfo.CSPs {
+		provider = strings.ToLower(provider)
+		if provider == providerName {
+			k8sClusterDetail = &detail
+			break
+		}
+	}
+
+	return k8sClusterDetail
+}
+
+// GetAvailableK8sClusterVersion is func to get available kubernetes cluster versions for provider and region from K8sClusterInfo
+func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K8sClusterVersionDetailAvailable, error) {
+	//
+	// Check available K8sCluster version and node image in k8sclusterinfo.yaml
+	//
+
+	providerName = strings.ToLower(providerName)
+
+	// Get K8sClusterDetail for providerName
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	// Get Available Versions for regionName
+	var availableVersion *[]K8sClusterVersionDetailAvailable = nil
+	for _, versionDetail := range k8sClusterDetail.Version {
+		for _, region := range versionDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				availableVersion = &versionDetail.Available
+				return availableVersion, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no available kubernetes cluster version for region(%s) of provider(%s)", regionName, providerName)
+}
+
+// GetAvailableK8sClusterNodeImage is func to get available kubernetes cluster node images for provider and region from K8sClusterInfo
+func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[]K8sClusterNodeImageDetailAvailable, error) {
+	//
+	// Check available K8sCluster node image in k8sclusterinfo.yaml
+	//
+
+	providerName = strings.ToLower(providerName)
+
+	// Get K8sClusterDetail for providerName
+	k8sClusterDetail := getK8sClusterDetail(providerName)
+	if k8sClusterDetail == nil {
+		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
+	}
+
+	// Get Available Node Image for regionName
+	var availableNodeImage *[]K8sClusterNodeImageDetailAvailable = nil
+	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
+		for _, region := range nodeImageDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				availableNodeImage = &nodeImageDetail.Available
+				return availableNodeImage, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no available kubernetes cluster node image for region(%s) of provider(%s)", regionName, providerName)
+}
+
+/*
+func isValidSpecForK8sCluster(spec *mcir.TbSpecInfo) bool {
+	//
+	// Check for Provider
+	//
+
+	providerName := strings.ToLower(spec.ProviderName)
+
+	var k8sClusterDetail *common.K8sClusterDetail = nil
+	for provider, detail := range common.RuntimeK8sClusterInfo.CSPs {
+		provider = strings.ToLower(provider)
+		if provider == providerName {
+			k8sClusterDetail = &detail
+			break
+		}
+	}
+	if k8sClusterDetail == nil {
+		return false
+	}
+
+	//
+	// Check for Region
+	//
+
+	regionName := strings.ToLower(spec.RegionName)
+
+	// Check for Version
+	isExist := false
+	for _, versionDetail := range k8sClusterDetail.Version {
+		for _, region := range versionDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				if len(versionDetail.Available) > 0 {
+					isExist = true
+					break
+				}
+			}
+		}
+		if isExist == true {
+			break
+		}
+	}
+	if isExist == false {
+		return false
+	}
+
+	// Check for NodeImage
+	isExist = false
+	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
+		for _, region := range nodeImageDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				if len(nodeImageDetail.Available) > 0 {
+					isExist = true
+					break
+				}
+			}
+		}
+		if isExist == true {
+			break
+		}
+	}
+	if isExist == false {
+		return false
+	}
+
+	// Check for RootDisk
+	isExist = false
+	for _, rootDiskDetail := range k8sClusterDetail.RootDisk {
+		for _, region := range rootDiskDetail.Region {
+			region = strings.ToLower(region)
+			if region == "all" || region == regionName {
+				if len(rootDiskDetail.Type) > 0 {
+					isExist = true
+					break
+				}
+			}
+		}
+		if isExist == true {
+			break
+		}
+	}
+	if isExist == false {
+		return false
+	}
+
+	return true
+}
+*/
