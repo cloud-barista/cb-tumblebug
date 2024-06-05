@@ -22,6 +22,12 @@ github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516022714-7bafe50e1df5 h1:4/
 github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516022714-7bafe50e1df5/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
 github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516045927-43023b6a0e18 h1:tsBHD7Gh+Q0jpZ3NCh4jDM+ozlxFCfpMc2gto+G6tZQ=
 github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516045927-43023b6a0e18/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
+github.com/cloud-barista/mc-terrarium v0.0.6 h1:6HKwnzJ1i3xRiFeboJhMMzTq/qvTt11adIBkmJrSV04=
+github.com/cloud-barista/mc-terrarium v0.0.6/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
+github.com/cloud-barista/mc-terrarium v0.0.7-0.20240605063928-b1786b261c06 h1:zAovyT3dYd77t2PkP2IsayYNQ3emxUyldDfmVBvRw6Y=
+github.com/cloud-barista/mc-terrarium v0.0.7-0.20240605063928-b1786b261c06/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
+github.com/cloud-barista/mc-terrarium v0.0.7 h1:rXBbAxZyOuwWx77xekrBylGVj9ZIOmHyYcPZkykpCag=
+github.com/cloud-barista/mc-terrarium v0.0.7/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
 github.com/coreos/go-semver v0.3.1 h1:yi21YpKnrx1gt5R+la8n5WgS0kCrsPp33dmEyHReZr4=
 github.com/coreos/go-semver v0.3.1/go.mod h1:irMmmIw/7yzSRPWryHsK7EYSg09caPQL03VsM8rvUec=

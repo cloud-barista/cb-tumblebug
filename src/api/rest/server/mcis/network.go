@@ -26,6 +26,7 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/core/common/netutil"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcis"
+	terrariumModel "github.com/cloud-barista/mc-terrarium/pkg/api/rest/model"
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -88,15 +89,17 @@ func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error)
 		return nil, err
 	}
 
+	// A map to check if the VPC (site) is already extracted and added or not.
+	checkedVpcs := make(map[string]bool)
+
 	// Newly create the SitesInfo structure
 	sitesInfo := model.NewSiteInfo(nsId, mcisId)
 
+	sitesInAws := []model.SiteDetail{}
+	sitesInAzure := []model.SiteDetail{}
+	sitesInGcp := []model.SiteDetail{}
+
 	for _, vm := range mcisInfo.Vm {
-		providerName := vm.ConnectionConfig.ProviderName
-		if providerName == "" {
-			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
-			continue
-		}
 
 		vNetId := vm.VNetId
 		if vNetId == "" {
@@ -104,106 +107,122 @@ func ExtractSitesInfoFromMcisInfo(nsId, mcisId string) (*model.SitesInfo, error)
 			continue
 		}
 
-		// Add or update the site detail in the map based on the provider
+		if _, exists := checkedVpcs[vNetId]; exists {
+			continue
+		}
+		checkedVpcs[vNetId] = true
+
+		providerName := vm.ConnectionConfig.ProviderName
+		if providerName == "" {
+			log.Warn().Msgf("Provider name is empty for VM ID: %s", vm.Id)
+			continue
+		}
+
+		// Create and set a site details
+		var site = model.SiteDetail{}
+		site.CSP = vm.ConnectionConfig.ProviderName
+		site.Region = vm.CspViewVmDetail.Region.Region
+
+		// Lowercase the provider name
 		providerName = strings.ToLower(providerName)
 
-		// Use vNetId as the site ID
-		if _, exists := sitesInfo.Sites[providerName][vm.VNetId]; !exists {
+		switch providerName {
+		case "aws":
 
-			var site = model.SiteDetail{}
-			site.CSP = vm.ConnectionConfig.ProviderName
-			site.Region = vm.CspViewVmDetail.Region.Region
+			// Get vNet info
+			resourceType := "vNet"
+			resourceId := vm.VNetId
+			result, err := mcir.GetResource(nsId, resourceType, resourceId)
+			if err != nil {
+				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
+				continue
+			}
+			vNetInfo := result.(mcir.TbVNetInfo)
 
-			switch providerName {
-			case "aws":
-				// Get vNet info
-				resourceType := "vNet"
-				resourceId := vm.VNetId
-				result, err := mcir.GetResource(nsId, resourceType, resourceId)
-				if err != nil {
-					log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
-					continue
-				}
-				vNetInfo := result.(mcir.TbVNetInfo)
+			// Get the last subnet
+			subnetCount := len(vNetInfo.SubnetInfoList)
+			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
+			lastSubnetIdFromCSP := lastSubnet.IdFromCsp
 
-				// Get the last subnet
-				subnetCount := len(vNetInfo.SubnetInfoList)
-				lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
-				lastSubnetIdFromCSP := lastSubnet.IdFromCsp
+			// Set VNet and the last subnet IDs
+			site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
+			site.Subnet = lastSubnetIdFromCSP
 
-				// Set VNet and the last subnet IDs
-				site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
-				site.Subnet = lastSubnetIdFromCSP
+			sitesInAws = append(sitesInAws, site)
 
-			case "azure":
-				// Parse vNet and resource group names
-				parts := strings.Split(vm.CspViewVmDetail.VpcIID.SystemId, "/")
-				log.Debug().Msgf("parts: %+v", parts)
-				parsedResourceGroupName := parts[4]
-				parsedVirtualNetworkName := parts[8]
+		case "azure":
+			// Parse vNet and resource group names
+			parts := strings.Split(vm.CspViewVmDetail.VpcIID.SystemId, "/")
+			log.Debug().Msgf("parts: %+v", parts)
+			parsedResourceGroupName := parts[4]
+			parsedVirtualNetworkName := parts[8]
 
-				// Set VNet and resource group names
-				site.VNet = parsedVirtualNetworkName
-				site.ResourceGroup = parsedResourceGroupName
+			// Set VNet and resource group names
+			site.VNet = parsedVirtualNetworkName
+			site.ResourceGroup = parsedResourceGroupName
 
-				// Get vNet info
-				resourceType := "vNet"
-				resourceId := vm.VNetId
-				result, err := mcir.GetResource(nsId, resourceType, resourceId)
-				if err != nil {
-					log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
-					continue
-				}
-				vNetInfo := result.(mcir.TbVNetInfo)
+			// Get vNet info
+			resourceType := "vNet"
+			resourceId := vm.VNetId
+			result, err := mcir.GetResource(nsId, resourceType, resourceId)
+			if err != nil {
+				log.Warn().Msgf("Failed to get the VNet info for ID: %s", resourceId)
+				continue
+			}
+			vNetInfo := result.(mcir.TbVNetInfo)
 
-				// Get the last subnet CIDR block
-				subnetCount := len(vNetInfo.SubnetInfoList)
-				lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
-				lastSubnetCidr := lastSubnet.IPv4_CIDR
+			// Get the last subnet CIDR block
+			subnetCount := len(vNetInfo.SubnetInfoList)
+			lastSubnet := vNetInfo.SubnetInfoList[subnetCount-1]
+			lastSubnetCidr := lastSubnet.IPv4_CIDR
 
-				// (Currently unsafe) Calculate the next subnet CIDR block
-				nextCidr, err := netutil.NextSubnet(lastSubnetCidr, vNetInfo.CidrBlock)
-				if err != nil {
-					log.Warn().Msgf("Failed to get the next subnet CIDR")
-				}
-
-				// Set the site detail
-				site.GatewaySubnetCidr = nextCidr
-
-			case "gcp":
-				// Set vNet ID
-				site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
-
-			default:
-				log.Warn().Msgf("Unsupported provider name: %s", providerName)
+			// (Currently unsafe) Calculate the next subnet CIDR block
+			nextCidr, err := netutil.NextSubnet(lastSubnetCidr, vNetInfo.CidrBlock)
+			if err != nil {
+				log.Warn().Msgf("Failed to get the next subnet CIDR")
 			}
 
-			if site != (model.SiteDetail{}) {
-				sitesInfo.Sites[providerName][vm.VNetId] = site
-				sitesInfo.Count++
-			}
+			// Set the site detail
+			site.GatewaySubnetCidr = nextCidr
+
+			sitesInAzure = append(sitesInAzure, site)
+
+		case "gcp":
+			// Set vNet ID
+			site.VNet = vm.CspViewVmDetail.VpcIID.SystemId
+
+			sitesInGcp = append(sitesInGcp, site)
+
+		default:
+			log.Warn().Msgf("Unsupported provider name: %s", providerName)
 		}
+
+		sitesInfo.Count++
 	}
+
+	sitesInfo.Sites.Aws = sitesInAws
+	sitesInfo.Sites.Azure = sitesInAzure
+	sitesInfo.Sites.Gcp = sitesInGcp
 
 	return sitesInfo, nil
 }
 
 // RestPostVpnGcpToAws godoc
 // @ID PostVpnGcpToAws
-// @Summary Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
-// @Description Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)
-// @Tags [VPN] GCP-AWS VPN tunnel (under development)
+// @Summary Create a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Description Create a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
-// @Param vpnReq body model.RestPostVpnGcpToAwsRequest true "Resources info for VPN tunnel configuration between GCP and AWS"
+// @Param vpnReq body model.RestPostVpnRequest true "Sites info for VPN configuration"
 // @Success 200 {object} common.SimpleMsg "OK"
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
 // @Failure 500 {object} common.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} common.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws [post]
+// @Router /stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [post]
 func RestPostVpnGcpToAws(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -237,12 +256,22 @@ func RestPostVpnGcpToAws(c echo.Context) error {
 	}
 
 	// Bind the request body to RestPostVpnGcpToAwsRequest struct
-	vpnReq := new(model.RestPostVpnGcpToAwsRequest)
+	vpnReq := new(model.RestPostVpnRequest)
 	if err := c.Bind(vpnReq); err != nil {
 		err2 := fmt.Errorf("invalid request format, %v", err)
 		log.Warn().Err(err).Msg("invalid request format")
 		res := common.SimpleMsg{
 			Message: err2.Error(),
+		}
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	// Validate the VPN sites
+	err := validateVPNSites(vpnReq.Site1, vpnReq.Site2)
+	if err != nil {
+		log.Warn().Err(err).Msg("")
+		res := common.SimpleMsg{
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -258,7 +287,7 @@ func RestPostVpnGcpToAws(c echo.Context) error {
 	apiPass := os.Getenv("API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl
@@ -269,7 +298,7 @@ func RestPostVpnGcpToAws(c echo.Context) error {
 	requestBody := common.NoBody
 	resReadyz := new(model.Response)
 
-	err := common.ExecuteHttpRequest(
+	err = common.ExecuteHttpRequest(
 		client,
 		method,
 		url,
@@ -287,168 +316,237 @@ func RestPostVpnGcpToAws(c echo.Context) error {
 		}
 		return c.JSON(http.StatusServiceUnavailable, res)
 	}
-	log.Debug().Msgf("resReadyz: %+v", resReadyz.Text)
+	log.Debug().Msgf("resReadyz: %+v", resReadyz.Message)
 
 	// Flush a response
 	res := common.SimpleMsg{
-		Message: resReadyz.Text,
+		Message: resReadyz.Message,
 	}
 	if err := enc.Encode(res); err != nil {
 		return err
 	}
 	c.Response().Flush()
 
-	// init terrarium
-	method = "POST"
-	url = fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/terrarium", epTerrarium, rgId)
-	requestBody = common.NoBody
-	resInitTerrarium := new(model.Response)
+	// Check the CSPs of the sites
+	if (vpnReq.Site1.CSP == "aws" && vpnReq.Site2.CSP == "gcp") || (vpnReq.Site1.CSP == "gcp" && vpnReq.Site2.CSP == "aws") {
 
-	err = common.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		common.SetUseBody(requestBody),
-		&requestBody,
-		resInitTerrarium,
-		common.VeryShortDuration,
-	)
+		// issue a terrarium
+		method = "POST"
+		url = fmt.Sprintf("%s/tr", epTerrarium)
+		reqTr := new(terrariumModel.TerrariumInfo)
+		reqTr.Id = trId
+		reqTr.Description = "VPN between GCP and AWS"
 
-	if err != nil {
-		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
+		resTrInfo := new(terrariumModel.TerrariumInfo)
+
+		err = common.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			common.SetUseBody(*reqTr),
+			reqTr,
+			resTrInfo,
+			common.VeryShortDuration,
+		)
+
+		if err != nil {
+			log.Err(err).Msg("")
+			res := common.SimpleMsg{Message: err.Error()}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
+		log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
+
+		// Flush a response
+		res = common.SimpleMsg{
+			Message: "successully created a terrarium (trId: " + resTrInfo.Id + ")",
+		}
+		if err := enc.Encode(res); err != nil {
+			return err
+		}
+		c.Response().Flush()
+
+		// init env
+		method = "POST"
+		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/env", epTerrarium, trId)
+		requestBody = common.NoBody
+		resTerrariumEnv := new(model.Response)
+
+		err = common.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			common.SetUseBody(requestBody),
+			&requestBody,
+			resTerrariumEnv,
+			common.VeryShortDuration,
+		)
+
+		if err != nil {
+			log.Err(err).Msg("")
+			res := common.SimpleMsg{Message: err.Error()}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		log.Debug().Msgf("resInit: %+v", resTerrariumEnv.Message)
+		log.Trace().Msgf("resInit: %+v", resTerrariumEnv.Detail)
+
+		// flush a response
+		res = common.SimpleMsg{
+			Message: resTerrariumEnv.Message,
+		}
+		if err := enc.Encode(res); err != nil {
+			return err
+		}
+		c.Response().Flush()
+
+		// generate infracode
+		method = "POST"
+		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/infracode", epTerrarium, trId)
+		reqInfracode := new(terrariumModel.CreateInfracodeOfGcpAwsVpnRequest)
+
+		if vpnReq.Site1.CSP == "aws" {
+			reqInfracode.TfVars.AwsRegion = vpnReq.Site1.Region
+			reqInfracode.TfVars.AwsVpcId = vpnReq.Site1.VNet
+			reqInfracode.TfVars.AwsSubnetId = vpnReq.Site1.Subnet
+			reqInfracode.TfVars.GcpRegion = vpnReq.Site2.Region
+			reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site2.VNet
+		} else {
+			reqInfracode.TfVars.AwsRegion = vpnReq.Site2.Region
+			reqInfracode.TfVars.AwsVpcId = vpnReq.Site2.VNet
+			reqInfracode.TfVars.AwsSubnetId = vpnReq.Site2.Subnet
+			reqInfracode.TfVars.GcpRegion = vpnReq.Site1.Region
+			reqInfracode.TfVars.GcpVpcNetworkName = vpnReq.Site1.VNet
+		}
+
+		resInfracode := new(model.Response)
+
+		err = common.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			common.SetUseBody(*reqInfracode),
+			reqInfracode,
+			resInfracode,
+			common.VeryShortDuration,
+		)
+
+		if err != nil {
+			log.Err(err).Msg("")
+			res := common.SimpleMsg{Message: err.Error()}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		log.Debug().Msgf("resInfracode: %+v", resInfracode.Message)
+		log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
+
+		// Flush a response
+		res = common.SimpleMsg{
+			Message: resInfracode.Message,
+		}
+		if err := enc.Encode(res); err != nil {
+			return err
+		}
+		c.Response().Flush()
+
+		// check the infracode by plan
+		method = "POST"
+		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws/plan", epTerrarium, trId)
+		requestBody = common.NoBody
+		resPlan := new(model.Response)
+
+		err = common.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			common.SetUseBody(requestBody),
+			&requestBody,
+			resPlan,
+			common.VeryShortDuration,
+		)
+
+		if err != nil {
+			log.Err(err).Msg("")
+			res := common.SimpleMsg{Message: err.Error()}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		log.Debug().Msgf("resPlan: %+v", resPlan.Message)
+		log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
+
+		// Flush a response
+		res = common.SimpleMsg{
+			Message: resPlan.Message,
+		}
+		if err := enc.Encode(res); err != nil {
+			return err
+		}
+		c.Response().Flush()
+
+		// apply
+		// wait until the task is completed
+		// or response immediately with requestId as it is a time-consuming task
+		// and provide seperate api to check the status
+		method = "POST"
+		url = fmt.Sprintf("%s/tr/%s/vpn/gcp-aws", epTerrarium, trId)
+		requestBody = common.NoBody
+		resApply := new(model.Response)
+
+		err = common.ExecuteHttpRequest(
+			client,
+			method,
+			url,
+			nil,
+			common.SetUseBody(requestBody),
+			&requestBody,
+			resApply,
+			common.VeryShortDuration,
+		)
+
+		if err != nil {
+			log.Err(err).Msg("")
+			res := common.SimpleMsg{Message: err.Error()}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+
+		log.Debug().Msgf("resApply: %+v", resApply.Message)
+		log.Trace().Msgf("resApply: %+v", resApply.Detail)
+
+		// Flush a response
+		res = common.SimpleMsg{
+			Message: resApply.Message,
+		}
+		if err := enc.Encode(res); err != nil {
+			return err
+		}
+		c.Response().Flush()
+
+	} else if (vpnReq.Site1.CSP == "gcp" && vpnReq.Site2.CSP == "azure") || (vpnReq.Site1.CSP == "azure" && vpnReq.Site2.CSP == "gcp") {
+		// TBD
 	}
-
-	log.Debug().Msgf("resInit: %+v", resInitTerrarium.Text)
-	log.Trace().Msgf("resInit: %+v", resInitTerrarium.Detail)
-
-	// Flush a response
-	res = common.SimpleMsg{
-		Message: resInitTerrarium.Text,
-	}
-	if err := enc.Encode(res); err != nil {
-		return err
-	}
-	c.Response().Flush()
-
-	// infracode
-	method = "POST"
-	url = fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/infracode", epTerrarium, rgId)
-	reqInfracode := *vpnReq
-	resInfracode := new(model.Response)
-
-	err = common.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		common.SetUseBody(reqInfracode),
-		&reqInfracode,
-		resInfracode,
-		common.VeryShortDuration,
-	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-
-	log.Debug().Msgf("resInfracode: %+v", resInfracode.Text)
-	log.Trace().Msgf("resInfracode: %+v", resInfracode.Detail)
-
-	// Flush a response
-	res = common.SimpleMsg{
-		Message: resInfracode.Text,
-	}
-	if err := enc.Encode(res); err != nil {
-		return err
-	}
-	c.Response().Flush()
-
-	// plan
-	method = "POST"
-	url = fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/plan", epTerrarium, rgId)
-	requestBody = common.NoBody
-	resPlan := new(model.Response)
-
-	err = common.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		common.SetUseBody(requestBody),
-		&requestBody,
-		resPlan,
-		common.VeryShortDuration,
-	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-
-	log.Debug().Msgf("resPlan: %+v", resPlan.Text)
-	log.Trace().Msgf("resPlan: %+v", resPlan.Detail)
-
-	// Flush a response
-	res = common.SimpleMsg{
-		Message: resPlan.Text,
-	}
-	if err := enc.Encode(res); err != nil {
-		return err
-	}
-	c.Response().Flush()
-
-	// apply
-	// wait until the task is completed
-	// or response immediately with requestId as it is a time-consuming task
-	// and provide seperate api to check the status
-	method = "POST"
-	url = fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", epTerrarium, rgId)
-	requestBody = common.NoBody
-	resApply := new(model.Response)
-
-	err = common.ExecuteHttpRequest(
-		client,
-		method,
-		url,
-		nil,
-		common.SetUseBody(requestBody),
-		&requestBody,
-		resApply,
-		common.VeryShortDuration,
-	)
-
-	if err != nil {
-		log.Err(err).Msg("")
-		res := common.SimpleMsg{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-
-	log.Debug().Msgf("resApply: %+v", resApply.Text)
-	log.Trace().Msgf("resApply: %+v", resApply.Detail)
-
-	// Flush a response
-	res = common.SimpleMsg{
-		Message: resApply.Text,
-	}
-	if err := enc.Encode(res); err != nil {
-		return err
-	}
-	c.Response().Flush()
 
 	return nil
 }
 
+func validateVPNSites(site1, site2 model.SiteDetail) error {
+	if (site1.CSP == "gcp" && (site2.CSP == "aws" || site2.CSP == "azure")) ||
+		(site1.CSP == "aws" && site2.CSP == "gcp") ||
+		(site1.CSP == "azure" && site2.CSP == "gcp") {
+		return nil
+	}
+	return fmt.Errorf("VPN between %s and %s is not supported yet", site1.CSP, site2.CSP)
+}
+
 // RestDeleteVpnGcpToAws godoc
 // @ID DeleteVpnGcpToAws
-// @Summary Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)
-// @Description Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)
-// @Tags [VPN] GCP-AWS VPN tunnel (under development)
+// @Summary Delete a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Description Delete a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -458,7 +556,7 @@ func RestPostVpnGcpToAws(c echo.Context) error {
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
 // @Failure 500 {object} common.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} common.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws [delete]
+// @Router /stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [delete]
 func RestDeleteVpnGcpToAws(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -502,7 +600,7 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 	apiPass := os.Getenv("API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl
@@ -531,23 +629,23 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 		}
 		return c.JSON(http.StatusServiceUnavailable, res)
 	}
-	log.Debug().Msgf("resReadyz: %+v", resReadyz.Text)
+	log.Debug().Msgf("resReadyz: %+v", resReadyz.Message)
 	log.Trace().Msgf("resReadyz: %+v", resReadyz.Detail)
 
 	// Flush a response
 	res := common.SimpleMsg{
-		Message: resReadyz.Text,
+		Message: resReadyz.Message,
 	}
 	if err := enc.Encode(res); err != nil {
 		return err
 	}
 	c.Response().Flush()
 
-	// delete
-	method = "DELETE"
-	url = fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", epTerrarium, rgId)
+	// Get the terrarium info
+	method = "GET"
+	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
 	requestBody = common.NoBody
-	resDelete := new(model.Response)
+	resTrInfo := new(terrariumModel.TerrariumInfo)
 
 	err = common.ExecuteHttpRequest(
 		client,
@@ -556,7 +654,7 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 		nil,
 		common.SetUseBody(requestBody),
 		&requestBody,
-		resDelete,
+		resTrInfo,
 		common.VeryShortDuration,
 	)
 
@@ -566,12 +664,119 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
-	log.Debug().Msgf("resDelete: %+v", resDelete.Text)
-	log.Trace().Msgf("resDelete: %+v", resDelete.Detail)
+	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
+	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
+	enrichments := resTrInfo.Enrichments
+
+	// Flush a response
+	msg := fmt.Sprintf("successully got the terrarium (trId: %s) for the enrichment (%s)", resTrInfo.Id, enrichments)
+	res = common.SimpleMsg{
+		Message: msg,
+	}
+	if err := enc.Encode(res); err != nil {
+		return err
+	}
+	c.Response().Flush()
+
+	// delete enrichments
+	method = "DELETE"
+	url = fmt.Sprintf("%s/tr/%s/%s", epTerrarium, trId, enrichments)
+	requestBody = common.NoBody
+	resDeleteEnrichments := new(model.Response)
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		resDeleteEnrichments,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Err(err).Msg("")
+		res := common.SimpleMsg{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	log.Debug().Msgf("resDeleteEnrichments: %+v", resDeleteEnrichments.Message)
+	log.Trace().Msgf("resDeleteEnrichments: %+v", resDeleteEnrichments.Detail)
 
 	// Flush a response
 	res = common.SimpleMsg{
-		Message: resDelete.Text,
+		Message: resDeleteEnrichments.Message,
+	}
+	if err := enc.Encode(res); err != nil {
+		return err
+	}
+	c.Response().Flush()
+
+	// delete env
+	method = "DELETE"
+	url = fmt.Sprintf("%s/tr/%s/%s/env", epTerrarium, trId, enrichments)
+	requestBody = common.NoBody
+	resDeleteEnv := new(model.Response)
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		resDeleteEnv,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Err(err).Msg("")
+		res := common.SimpleMsg{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	log.Debug().Msgf("resDeleteEnv: %+v", resDeleteEnv.Message)
+	log.Trace().Msgf("resDeleteEnv: %+v", resDeleteEnv.Detail)
+
+	// Flush a response
+	res = common.SimpleMsg{
+		Message: resDeleteEnrichments.Message,
+	}
+	if err := enc.Encode(res); err != nil {
+		return err
+	}
+	c.Response().Flush()
+
+	// delete terrarium
+	method = "DELETE"
+	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
+	requestBody = common.NoBody
+	resDeleteTr := new(model.Response)
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		resDeleteTr,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Err(err).Msg("")
+		res := common.SimpleMsg{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	log.Debug().Msgf("resDeleteTr: %+v", resDeleteTr.Message)
+	log.Trace().Msgf("resDeleteTr: %+v", resDeleteTr.Detail)
+
+	// Flush a response
+	res = common.SimpleMsg{
+		Message: resDeleteEnrichments.Message,
 	}
 	if err := enc.Encode(res); err != nil {
 		return err
@@ -583,9 +788,9 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 
 // RestPutVpnGcpToAws godoc
 // @ID PutVpnGcpToAws
-// @Summary (To be provided) Update VPN tunnels between GCP and AWS
-// @Description Update VPN tunnels between GCP and AWS
-// @Tags [VPN] GCP-AWS VPN tunnel (under development)
+// @Summary (To be provided) Update a site-to-site VPN
+// @Description (To be provided) Update a site-to-site VPN
+// @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
 // @Produce  json-stream
 // @Param nsId path string true "Namespace ID" default(ns01)
@@ -596,7 +801,7 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 // @Failure 400 {object} common.SimpleMsg "Bad Request"
 // @Failure 500 {object} common.SimpleMsg "Internal Server Error"
 // @Failure 503 {object} common.SimpleMsg "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws [put]
+// @Router /stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [put]
 func RestPutVpnGcpToAws(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -652,13 +857,13 @@ func RestPutVpnGcpToAws(c echo.Context) error {
 	// client.SetBasicAuth(apiUser, apiPass)
 
 	// epTerrarium := "http://localhost:8888/terrarium"
-	// rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	// trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
 
 	// // check readyz
 	// method := "GET"
 	// url := fmt.Sprintf("%s/readyz", epTerrarium)
 	// requestBody := common.NoBody
-	// resReadyz := new(model.ResponseText)
+	// resReadyz := new(model.Response)
 
 	// err := common.ExecuteHttpRequest(
 	// 	client,
@@ -682,7 +887,7 @@ func RestPutVpnGcpToAws(c echo.Context) error {
 
 	// // Flush a response
 	// res := common.SimpleMsg{
-	// 	Message: resReadyz.Text,
+	// 	Message: resReadyz.Message,
 	// }
 	// if err := enc.Encode(res); err != nil {
 	// 	return err
@@ -694,11 +899,11 @@ func RestPutVpnGcpToAws(c echo.Context) error {
 
 // RestGetVpnGcpToAws godoc
 // @ID GetVpnGcpToAws
-// @Summary Get resource info of VPN tunnels between GCP and AWS
-// @Description Update VPN tunnels between GCP and AWS
-// @Tags [VPN] GCP-AWS VPN tunnel (under development)
+// @Summary Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Description Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)
+// @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
-// @Produce  json-stream
+// @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
@@ -707,7 +912,7 @@ func RestPutVpnGcpToAws(c echo.Context) error {
 // @Failure 400 {object} model.Response "Bad Request"
 // @Failure 500 {object} model.Response "Internal Server Error"
 // @Failure 503 {object} model.Response "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws [get]
+// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId} [get]
 func RestGetVpnGcpToAws(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -716,7 +921,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -727,7 +932,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -738,7 +943,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -773,7 +978,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 	apiPass := os.Getenv("API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl
@@ -799,15 +1004,42 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 		log.Err(err).Msg("")
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusServiceUnavailable, res)
 	}
-	log.Debug().Msgf("resReadyz: %+v", resReadyz.Text)
+	log.Debug().Msgf("resReadyz: %+v", resReadyz.Message)
+
+	// Get the terrarium info
+	method = "GET"
+	url = fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
+	requestBody = common.NoBody
+	resTrInfo := new(terrariumModel.TerrariumInfo)
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		resTrInfo,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Err(err).Msg("")
+		res := common.SimpleMsg{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
+	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
+	enrichments := resTrInfo.Enrichments
 
 	// Get resource info
 	method = "GET"
-	url = fmt.Sprintf("%s/rg/%s/vpn/gcp-aws?detail=%s", epTerrarium, rgId, detail)
+	url = fmt.Sprintf("%s/tr/%s/%s?detail=%s", epTerrarium, trId, enrichments, detail)
 	requestBody = common.NoBody
 	resResourceInfo := new(model.Response)
 
@@ -826,7 +1058,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 		log.Err(err).Msg("")
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
@@ -850,7 +1082,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 		log.Warn().Msgf("invalid detail option (%s)", detail)
 		res := model.Response{
 			Success: false,
-			Text:    fmt.Sprintf("invalid detail option (%s)", detail),
+			Message: fmt.Sprintf("invalid detail option (%s)", detail),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -860,9 +1092,9 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 // @ID GetRequestStatusOfGcpAwsVpn
 // @Summary Check the status of a specific request by its ID
 // @Description Check the status of a specific request by its ID
-// @Tags [VPN] GCP-AWS VPN tunnel (under development)
+// @Tags [VPN] Site-to-site VPN (under development)
 // @Accept  json
-// @Produce  json-stream
+// @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param mcisId path string true "MCIS ID" default(mcis01)
 // @Param vpnId path string true "VPN ID" default(vpn01)
@@ -871,7 +1103,7 @@ func RestGetVpnGcpToAws(c echo.Context) error {
 // @Failure 400 {object} model.Response "Bad Request"
 // @Failure 500 {object} model.Response "Internal Server Error"
 // @Failure 503 {object} model.Response "Service Unavailable"
-// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws/request/{requestId} [get]
+// @Router /ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/request/{requestId} [get]
 func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 
 	nsId := c.Param("nsId")
@@ -880,7 +1112,7 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -891,7 +1123,7 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -902,7 +1134,7 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -913,7 +1145,7 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 		log.Warn().Msg(err.Error())
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -924,16 +1156,16 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 	apiPass := os.Getenv("API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
-	rgId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
+	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
 
 	// set endpoint
 	epTerrarium := common.TerrariumRestUrl
 
-	// Get resource info
+	// Get the terrarium info
 	method := "GET"
-	url := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/request/%s", epTerrarium, rgId, reqId)
+	url := fmt.Sprintf("%s/tr/%s", epTerrarium, trId)
 	requestBody := common.NoBody
-	resReqStatus := new(model.Response)
+	resTrInfo := new(terrariumModel.TerrariumInfo)
 
 	err := common.ExecuteHttpRequest(
 		client,
@@ -942,6 +1174,33 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 		nil,
 		common.SetUseBody(requestBody),
 		&requestBody,
+		resTrInfo,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		log.Err(err).Msg("")
+		res := common.SimpleMsg{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	log.Debug().Msgf("resTrInfo.Id: %s", resTrInfo.Id)
+	log.Trace().Msgf("resTrInfo: %+v", resTrInfo)
+	enrichments := resTrInfo.Enrichments
+
+	// Get resource info
+	method = "GET"
+	url = fmt.Sprintf("%s/tr/%s/%s/request/%s", epTerrarium, trId, enrichments, reqId)
+	reqReqStatus := common.NoBody
+	resReqStatus := new(model.Response)
+
+	err = common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(reqReqStatus),
+		&reqReqStatus,
 		resReqStatus,
 		common.VeryShortDuration,
 	)
@@ -950,7 +1209,7 @@ func RestGetRequestStatusOfGcpAwsVpn(c echo.Context) error {
 		log.Err(err).Msg("")
 		res := model.Response{
 			Success: false,
-			Text:    err.Error(),
+			Message: err.Error(),
 		}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
