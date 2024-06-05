@@ -31,12 +31,19 @@ type SiteDetail struct {
 	ResourceGroup     string `json:"resourceGroup,omitempty" example:"rg-xxxxx"`
 }
 
+// Sites struct represents the overall site information
+type sites struct {
+	Aws   []SiteDetail `json:"aws"`
+	Azure []SiteDetail `json:"azure"`
+	Gcp   []SiteDetail `json:"gcp"`
+}
+
 // SitesInfo struct represents the overall site information including namespace and MCIS ID
 type SitesInfo struct {
-	NsId   string                           `json:"nsId" example:"ns-01"`
-	McisId string                           `json:"mcisId" example:"mcis-01"`
-	Count  int                              `json:"count" example:"3"`
-	Sites  map[string]map[string]SiteDetail `json:"sites"`
+	NsId   string `json:"nsId" example:"ns-01"`
+	McisId string `json:"mcisId" example:"mcis-01"`
+	Count  int    `json:"count" example:"3"`
+	Sites  sites  `json:"sites"`
 }
 
 func NewSiteInfo(nsId, mcisId string) *SitesInfo {
@@ -44,22 +51,32 @@ func NewSiteInfo(nsId, mcisId string) *SitesInfo {
 		NsId:   nsId,
 		McisId: mcisId,
 		Count:  0,
-		Sites:  make(map[string]map[string]SiteDetail),
-	}
-
-	for _, providerName := range ProviderNames {
-		siteInfo.Sites[providerName] = make(map[string]SiteDetail)
+		Sites: sites{
+			Aws:   []SiteDetail{},
+			Azure: []SiteDetail{},
+			Gcp:   []SiteDetail{},
+		},
 	}
 
 	return siteInfo
 }
 
+type RestPostVpnRequest struct {
+	Site1 SiteDetail `json:"site1"`
+	Site2 SiteDetail `json:"site2"`
+}
+
 type Response struct {
 	Success bool                   `json:"success" example:"true"`
-	Text    string                 `json:"text" example:"Any text"`
+	Status  int                    `json:"status,omitempty" example:"200"`
+	Message string                 `json:"message" example:"Any message"`
 	Detail  string                 `json:"details,omitempty" example:"Any details"`
 	Object  map[string]interface{} `json:"object,omitempty"`
 	List    []interface{}          `json:"list,omitempty"`
+}
+
+type RestPostVpnGcpToAwsRequest struct {
+	TfVars TfVarsGcpAwsVpnTunnel `json:"tfVars"`
 }
 
 type TfVarsGcpAwsVpnTunnel struct {
@@ -70,10 +87,6 @@ type TfVarsGcpAwsVpnTunnel struct {
 	GcpRegion         string `json:"gcp-region" validate:"required" default:"asia-northeast3" example:"asia-northeast3"`
 	GcpVpcNetworkName string `json:"gcp-vpc-network-name" validate:"required" default:"vpc01" example:"vpc01"`
 	// GcpBgpAsn                   string `json:"gcp-bgp-asn" default:"65530"`
-}
-
-type RestPostVpnGcpToAwsRequest struct {
-	TfVars TfVarsGcpAwsVpnTunnel `json:"tfVars"`
 }
 
 // type TfVarsGcpAzureVpnTunnel struct {

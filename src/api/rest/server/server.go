@@ -216,6 +216,9 @@ func RunServer(port string) {
 	// Route for NameSpace subgroup
 	g := e.Group("/tumblebug/ns", common.NsValidation())
 
+	// Route for stream response subgroup
+	streamResponseGroup := e.Group("/tumblebug/stream-response/ns", common.NsValidation())
+
 	//Namespace Management
 	g.POST("", rest_common.RestPostNs)
 	g.GET("/:nsId", rest_common.RestGetNs)
@@ -284,11 +287,15 @@ func RunServer(port string) {
 	g.GET("/:nsId/mcis/:mcisId/site", rest_mcis.RestGetSitesInMcis)
 
 	// VPN Management
-	g.POST("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestPostVpnGcpToAws)
-	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestGetVpnGcpToAws)
-	g.PUT("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestPutVpnGcpToAws)
-	g.DELETE("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws", rest_mcis.RestDeleteVpnGcpToAws)
-	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId/gcp-aws/request/:requestId", rest_mcis.RestGetRequestStatusOfGcpAwsVpn)
+	streamResponseGroup.POST("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPostVpnGcpToAws)
+	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestGetVpnGcpToAws)
+	streamResponseGroup.PUT("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPutVpnGcpToAws)
+	streamResponseGroup.DELETE("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestDeleteVpnGcpToAws)
+	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId/request/:requestId", rest_mcis.RestGetRequestStatusOfGcpAwsVpn)
+	// TBD
+	// g.POST("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPostVpnGcpToAws)
+	// g.PUT("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPutVpnGcpToAws)
+	// g.DELETE("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestDeleteVpnGcpToAws)
 
 	//MCIS AUTO Policy
 	g.POST("/:nsId/policy/mcis/:mcisId", rest_mcis.RestPostMcisPolicy)

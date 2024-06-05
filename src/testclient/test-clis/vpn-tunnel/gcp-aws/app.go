@@ -87,7 +87,7 @@ func main() {
 	// Command-line flags with shorthand
 	createVpnCmd.Flags().StringP("nsId", "n", "", "Namespace ID")
 	createVpnCmd.Flags().StringP("mcisId", "m", "", "MCIS ID")
-	createVpnCmd.Flags().StringP("rgId", "r", "", "ResourceGroup ID")
+	createVpnCmd.Flags().StringP("trId", "t", "", "Terrarium ID")
 
 	createCmd.AddCommand(
 		createMcisDynamicCmd,
@@ -113,7 +113,7 @@ func main() {
 		Run:   destroyVpnTunnel,
 	}
 	// Command-line flags with shorthand
-	destroyVpnCmd.Flags().StringP("rgId", "r", "", "ResourceGroup ID")
+	destroyVpnCmd.Flags().StringP("trId", "t", "", "Terrarium ID")
 
 	deleteCmd.AddCommand(
 		terminateMcisCmd,
@@ -281,15 +281,15 @@ func createMcis(cmd *cobra.Command, args []string) {
 
 func createVpnTunnel(cmd *cobra.Command, args []string) {
 
-	// Set namespace ID, MCIS ID, and resource group ID
+	// Set namespace ID, MCIS ID, and terrarium ID
 	nsId, _ := cmd.Flags().GetString("namespaceId")
 	mcisId, _ := cmd.Flags().GetString("mcisId")
-	rgId, _ := cmd.Flags().GetString("rgId")
+	trId, _ := cmd.Flags().GetString("trId")
 
 	log.Debug().
 		Str("Namespace ID", nsId).
 		Str("MCIS ID", mcisId).
-		Str("Resource group ID", rgId).
+		Str("Terrarium ID", trId).
 		Msg("[args]")
 
 	if nsId == "" {
@@ -300,22 +300,22 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		mcisId = viper.GetString("tumblebug.demo.mcisId")
 	}
 
-	if rgId == "" {
-		rgId = viper.GetString("terrarium.demo.resourceGroupId")
+	if trId == "" {
+		trId = viper.GetString("terrarium.demo.terrariumId")
 	}
 
 	log.Debug().
 		Str("Namespace ID", nsId).
 		Str("MCIS ID", mcisId).
-		Str("Resource group ID", rgId).
+		Str("Terrarium ID", trId).
 		Msg("[config.yaml]")
 
-	if nsId == "" || mcisId == "" || rgId == "" {
+	if nsId == "" || mcisId == "" || trId == "" {
 		err := fmt.Errorf("bad request: nsId, mcisId, or rgId is not set")
 		log.Fatal().Err(err).
 			Str("Namespace ID", nsId).
 			Str("MCIS ID", mcisId).
-			Str("Resource group ID", rgId).
+			Str("Terrarium ID", trId).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
 	}
@@ -555,12 +555,12 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	}
 	log.Debug().Msgf("[Response] %+v", string(prettyResTerrariumReadiness))
 
-	log.Info().Msg(resTerrariumReadiness.Text)
+	log.Info().Msg(resTerrariumReadiness.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// mc-terrarium: Initialize a multi-cloud terrarium for GCP to AWS VPN tunnel
 
-	urlInitTerrarium := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/terrarium", epTerrarium, rgId)
+	urlInitTerrarium := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/env", epTerrarium, trId)
 
 	// Request init
 	respBytes, err = callApi("POST", urlInitTerrarium, authTerrarium, nil)
@@ -576,15 +576,15 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	log.Trace().Msgf("[Response] %+v", initRes.Text)
+	log.Trace().Msgf("[Response] %+v", initRes.Message)
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// mc-terrarium: Create blueprints of GCP-AWS VPN tunnel
-	urlInfracode := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/infracode", epTerrarium, rgId)
+	urlInfracode := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws/infracode", epTerrarium, trId)
 
 	reqBody := terrariumModel.CreateInfracodeOfGcpAwsVpnRequest{
 		TfVars: terrariumModel.TfVarsGcpAwsVpnTunnel{
-			ResourceGroupId:   rgId,
+			TerrariumId:       trId,
 			AwsRegion:         awsRegion,
 			AwsVpcId:          awsVpcId,
 			AwsSubnetId:       awsSubnetId,
@@ -611,7 +611,7 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// mc-terrarium: Create GCP-AWS VPN tunnel
 
-	urlCreateGcpToAwsVpnTunnel := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", epTerrarium, rgId)
+	urlCreateGcpToAwsVpnTunnel := fmt.Sprintf("%s/rg/%s/vpn/gcp-aws", epTerrarium, trId)
 
 	respBytes, err = callApi("POST", urlCreateGcpToAwsVpnTunnel, authTerrarium, nil)
 	if err != nil {
@@ -646,25 +646,25 @@ func createVpnTunnel(cmd *cobra.Command, args []string) {
 
 func destroyVpnTunnel(cmd *cobra.Command, args []string) {
 
-	// Set resource group ID
-	rgId, _ := cmd.Flags().GetString("rgId")
+	// Set Terrarium ID
+	rgId, _ := cmd.Flags().GetString("trId")
 
 	log.Debug().
-		Str("Resource group ID", rgId).
+		Str("Terrarium ID", rgId).
 		Msg("[args]")
 
 	if rgId == "" {
-		rgId = viper.GetString("terrarium.demo.resourceGroupId")
+		rgId = viper.GetString("terrarium.demo.terrariumId")
 	}
 
 	log.Debug().
-		Str("Resource group ID", rgId).
+		Str("Terrarium ID", rgId).
 		Msg("[config.yaml]")
 
 	if rgId == "" {
 		err := fmt.Errorf("bad request: nsId, mcisId, or rgId is not set")
 		log.Fatal().Err(err).
-			Str("Resource group ID", rgId).
+			Str("Terrarium ID", rgId).
 			Msg("Please set the values in the config file or pass them as arguments")
 		return
 	}
