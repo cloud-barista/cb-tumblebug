@@ -14,4 +14,4 @@ terrarium:
   auth:
     info: auth.json
   demo:
-    resourceGroupId: kdemo-rg01
+    terrariumId: kdemo-rg01

@@ -4319,19 +4319,19 @@ const docTemplate = `{
                 }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws": {
+        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}": {
             "get": {
-                "description": "Update VPN tunnels between GCP and AWS",
+                "description": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "application/x-json-stream"
+                    "application/json"
                 ],
                 "tags": [
-                    "[VPN] GCP-AWS VPN tunnel (under development)"
+                    "[VPN] Site-to-site VPN (under development)"
                 ],
-                "summary": "Get resource info of VPN tunnels between GCP and AWS",
+                "summary": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
                 "operationId": "GetVpnGcpToAws",
                 "parameters": [
                     {
@@ -4392,235 +4392,19 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "put": {
-                "description": "Update VPN tunnels between GCP and AWS",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/x-json-stream"
-                ],
-                "tags": [
-                    "[VPN] GCP-AWS VPN tunnel (under development)"
-                ],
-                "summary": "(To be provided) Update VPN tunnels between GCP and AWS",
-                "operationId": "PutVpnGcpToAws",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vpn01",
-                        "description": "VPN ID",
-                        "name": "vpnId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
-                        "name": "vpnReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RestPostVpnGcpToAwsRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/x-json-stream"
-                ],
-                "tags": [
-                    "[VPN] GCP-AWS VPN tunnel (under development)"
-                ],
-                "summary": "Create VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
-                "operationId": "PostVpnGcpToAws",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vpn01",
-                        "description": "VPN ID",
-                        "name": "vpnId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
-                        "name": "vpnReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RestPostVpnGcpToAwsRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/x-json-stream"
-                ],
-                "tags": [
-                    "[VPN] GCP-AWS VPN tunnel (under development)"
-                ],
-                "summary": "Delete VPN tunnels between GCP and AWS (Note - Streaming JSON response)",
-                "operationId": "DeleteVpnGcpToAws",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "ns01",
-                        "description": "Namespace ID",
-                        "name": "nsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "mcis01",
-                        "description": "MCIS ID",
-                        "name": "mcisId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "vpn01",
-                        "description": "VPN ID",
-                        "name": "vpnId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
-                        }
-                    }
-                }
             }
         },
-        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/gcp-aws/request/{requestId}": {
+        "/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}/request/{requestId}": {
             "get": {
                 "description": "Check the status of a specific request by its ID",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "application/x-json-stream"
+                    "application/json"
                 ],
                 "tags": [
-                    "[VPN] GCP-AWS VPN tunnel (under development)"
+                    "[VPN] Site-to-site VPN (under development)"
                 ],
                 "summary": "Check the status of a specific request by its ID",
                 "operationId": "GetRequestStatusOfGcpAwsVpn",
@@ -8553,6 +8337,224 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/stream-response/ns/{nsId}/mcis/{mcisId}/vpn/{vpnId}": {
+            "put": {
+                "description": "(To be provided) Update a site-to-site VPN",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] Site-to-site VPN (under development)"
+                ],
+                "summary": "(To be provided) Update a site-to-site VPN",
+                "operationId": "PutVpnGcpToAws",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resources info for VPN tunnel configuration between GCP and AWS",
+                        "name": "vpnReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostVpnGcpToAwsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] Site-to-site VPN (under development)"
+                ],
+                "summary": "Create a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "operationId": "PostVpnGcpToAws",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sites info for VPN configuration",
+                        "name": "vpnReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RestPostVpnRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/x-json-stream"
+                ],
+                "tags": [
+                    "[VPN] Site-to-site VPN (under development)"
+                ],
+                "summary": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
+                "operationId": "DeleteVpnGcpToAws",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "ns01",
+                        "description": "Namespace ID",
+                        "name": "nsId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "mcis01",
+                        "description": "MCIS ID",
+                        "name": "mcisId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "vpn01",
+                        "description": "VPN ID",
+                        "name": "vpnId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
                         "schema": {
                             "$ref": "#/definitions/common.SimpleMsg"
                         }
@@ -12756,17 +12758,21 @@ const docTemplate = `{
                     "type": "array",
                     "items": {}
                 },
+                "message": {
+                    "type": "string",
+                    "example": "Any message"
+                },
                 "object": {
                     "type": "object",
                     "additionalProperties": true
                 },
+                "status": {
+                    "type": "integer",
+                    "example": 200
+                },
                 "success": {
                     "type": "boolean",
                     "example": true
-                },
-                "text": {
-                    "type": "string",
-                    "example": "Any text"
                 }
             }
         },
@@ -12775,6 +12781,17 @@ const docTemplate = `{
             "properties": {
                 "tfVars": {
                     "$ref": "#/definitions/model.TfVarsGcpAwsVpnTunnel"
+                }
+            }
+        },
+        "model.RestPostVpnRequest": {
+            "type": "object",
+            "properties": {
+                "site1": {
+                    "$ref": "#/definitions/model.SiteDetail"
+                },
+                "site2": {
+                    "$ref": "#/definitions/model.SiteDetail"
                 }
             }
         },
@@ -12827,13 +12844,7 @@ const docTemplate = `{
                     "example": "ns-01"
                 },
                 "sites": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "$ref": "#/definitions/model.SiteDetail"
-                        }
-                    }
+                    "$ref": "#/definitions/model.sites"
                 }
             }
         },
@@ -12873,6 +12884,29 @@ const docTemplate = `{
                 "resource-group-id": {
                     "type": "string",
                     "example": ""
+                }
+            }
+        },
+        "model.sites": {
+            "type": "object",
+            "properties": {
+                "aws": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
+                "azure": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
+                },
+                "gcp": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.SiteDetail"
+                    }
                 }
             }
         },
