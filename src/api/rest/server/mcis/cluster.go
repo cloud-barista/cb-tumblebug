@@ -76,6 +76,7 @@ func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
 }
 
 // RestPostCluster godoc
+// @ID PostCluster
 // @Summary Create Cluster
 // @Description Create Cluster
 // @Tags [Infra resource] Cluster management
@@ -116,6 +117,7 @@ func RestPostCluster(c echo.Context) error {
 	function RestPutCluster not yet implemented
 
 // RestPutCluster godoc
+// @ID PutCluster
 // @Summary Update Cluster
 // @Description Update Cluster
 // @Tags [Infra resource] Cluster management
@@ -136,6 +138,7 @@ func RestPutCluster(c echo.Context) error {
 }
 
 // RestPostNodeGroup godoc
+// @ID PostNodeGroup
 // @Summary Add a NodeGroup
 // @Description Add a NodeGroup
 // @Tags [Infra resource] Cluster management
@@ -172,6 +175,7 @@ func RestPostNodeGroup(c echo.Context) error {
 }
 
 // RestDeleteNodeGroup godoc
+// @ID DeleteNodeGroup
 // @Summary Remove a NodeGroup
 // @Description Remove a NodeGroup
 // @Tags [Infra resource] Cluster management
@@ -209,6 +213,7 @@ func RestDeleteNodeGroup(c echo.Context) error {
 }
 
 // RestPutSetAutoscaling godoc
+// @ID PutSetAutoscaling
 // @Summary Set a NodeGroup's Autoscaling On/Off
 // @Description Set a NodeGroup's Autoscaling On/Off
 // @Tags [Infra resource] Cluster management
@@ -246,6 +251,7 @@ func RestPutSetAutoscaling(c echo.Context) error {
 }
 
 // RestPutChangeAutoscaleSize godoc
+// @ID PutChangeAutoscaleSize
 // @Summary Change a NodeGroup's Autoscale Size
 // @Description Change a NodeGroup's Autoscale Size
 // @Tags [Infra resource] Cluster management
@@ -283,6 +289,7 @@ func RestPutChangeAutoscaleSize(c echo.Context) error {
 }
 
 // RestGetCluster godoc
+// @ID GetCluster
 // @Summary Get Cluster
 // @Description Get Cluster
 // @Tags [Infra resource] Cluster management
@@ -314,6 +321,7 @@ type RestGetAllClusterResponse struct {
 }
 
 // RestGetAllCluster godoc
+// @ID GetAllCluster
 // @Summary List all Clusters or Clusters' ID
 // @Description List all Clusters or Clusters' ID
 // @Tags [Infra resource] Cluster management
@@ -363,6 +371,7 @@ func RestGetAllCluster(c echo.Context) error {
 }
 
 // RestDeleteCluster godoc
+// @ID DeleteCluster
 // @Summary Delete Cluster
 // @Description Delete Cluster
 // @Tags [Infra resource] Cluster management
@@ -398,6 +407,7 @@ func RestDeleteCluster(c echo.Context) error {
 }
 
 // RestDeleteAllCluster godoc
+// @ID DeleteAllCluster
 // @Summary Delete all Clusters
 // @Description Delete all Clusters
 // @Tags [Infra resource] Cluster management
@@ -426,6 +436,7 @@ func RestDeleteAllCluster(c echo.Context) error {
 }
 
 // RestPutClusterUpgrade godoc
+// @ID PutClusterUpgrade
 // @Summary Upgrade a Cluster's version
 // @Description Upgrade a Cluster's version
 // @Tags [Infra resource] Cluster management
