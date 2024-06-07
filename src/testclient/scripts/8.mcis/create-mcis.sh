@@ -24,6 +24,18 @@ else
 	RootDiskSize="${DISK_SIZE[$INDEX,$REGION]}"
 fi
 
+# Get a Subnet from the vNet
+echo "- Get vNet ${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX} to designate a Subnet"
+VNETINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/resources/vNet/${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX})
+SUBNETARRAY=$(jq -r '.subnetInfoList' <<<"$VNETINFO")
+echo "$SUBNETARRAY"
+SUBNETID=$(jq -r '.subnetInfoList[] | select(.IPv4_CIDR == "10.25.10.1/24") | .Id' <<<"$VNETINFO")
+if [ -z "$SUBNETID" ]; then
+    SUBNETID=$(jq -r '.subnetInfoList[0].Id' <<<"$VNETINFO")
+fi
+echo "Designated Subnet ID (for testing only): $SUBNETID"
+
+
 curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis -H 'Content-Type: application/json' -d \
 		'{
 			"name": "'${MCISID}'",
@@ -43,7 +55,7 @@ curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/mcis -H 'C
 						"'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'"
 					],
 					"vNetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
-					"subnetId": "'${CONN_CONFIG[$INDEX,$REGION]}'-'${POSTFIX}'",
+					"subnetId": "'${SUBNETID}'",
 					"description": "description",
 					"vmUserPassword": "",
 					"rootDiskType": "'${RootDiskType}'",
