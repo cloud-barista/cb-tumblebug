@@ -177,7 +177,31 @@ func setConfig() {
 	// fmt.Printf("%+v\n", common.RuntimeCloudInfo)
 	common.PrintCloudInfoTable(common.RuntimeCloudInfo)
 
+	//
+	// Load k8sclusterinfo
+	//
+	k8sClusterInfoViper := viper.New()
+	fileName = "k8sclusterinfo"
+	k8sClusterInfoViper.AddConfigPath(".")
+	k8sClusterInfoViper.AddConfigPath("./assets/")
+	k8sClusterInfoViper.AddConfigPath("../assets/")
+	k8sClusterInfoViper.SetConfigName(fileName)
+	k8sClusterInfoViper.SetConfigType("yaml")
+	err = k8sClusterInfoViper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error reading cloudinfo config file: %w", err))
+	}
+
+	log.Info().Msg(k8sClusterInfoViper.ConfigFileUsed())
+	err = k8sClusterInfoViper.Unmarshal(&common.RuntimeK8sClusterInfo)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		panic(err)
+	}
+
+	//
 	// Wait until CB-Spider is ready
+	//
 	maxAttempts := 60 // (3 mins)
 	attempt := 0
 

@@ -65,6 +65,65 @@ type Credential struct {
 
 var RuntimeCredential = Credential{}
 
+// K8sClusterInfo is structure for kubernetes cluster information
+type K8sClusterInfo struct {
+	CSPs map[string]K8sClusterDetail `mapstructure:"k8scluster" json:"k8s_cluster"`
+}
+
+// K8sClusterDetail is structure for kubernetes cluster detail information
+type K8sClusterDetail struct {
+	NodeGroupsWithCluster bool                        `mapstructure:"nodegroupsWithCluster" json:"nodegroups_with_cluster"`
+	Version               []K8sClusterVersionDetail   `mapstructure:"version" json:"versions"`
+	NodeImage             []K8sClusterNodeImageDetail `mapstructure:"nodeImage" json:"node_images"`
+	RootDisk              []K8sClusterRootDiskDetail  `mapstructure:"rootDisk" json:"root_disks"`
+}
+
+// K8sClusterVersionDetail is structure for kubernetes cluster version detail information
+type K8sClusterVersionDetail struct {
+	Region    []string                           `mapstructure:"region" json:"region"`
+	Available []K8sClusterVersionDetailAvailable `mapstructure:"available" json:"availables"`
+}
+
+// K8sClusterVersionDetailAvailable is structure for kubernetes cluster version detail's available information
+type K8sClusterVersionDetailAvailable struct {
+	Name string `mapstructure:"name" json:"name"`
+	Id   string `mapstructure:"id" json:"id"`
+}
+
+// K8sClusterNodeImageDetail is structure for kubernetes cluster node image detail information
+type K8sClusterNodeImageDetail struct {
+	Region    []string                             `mapstructure:"region" json:"region"`
+	Available []K8sClusterNodeImageDetailAvailable `mapstructure:"available" json:"availables"`
+}
+
+// K8sClusterNodeImageDetailAvailable is structure for kubernetes cluster node image detail's available information
+type K8sClusterNodeImageDetailAvailable struct {
+	Name string `mapstructure:"name" json:"name"`
+	Id   string `mapstructure:"id" json:"id"`
+}
+
+// K8sClusterRootDiskDetail is structure for kubernetes cluster root disk detail information
+type K8sClusterRootDiskDetail struct {
+	Region []string                       `mapstructure:"region" json:"region"`
+	Type   []K8sClusterRootDiskDetailType `mapstructure:"type" json:"type"`
+	Size   K8sClusterRootDiskDetailSize   `mapstructure:"size" json:"size"`
+}
+
+// K8sClusterRootDiskDetailType is structure for kubernetes cluster root disk detail's type information
+type K8sClusterRootDiskDetailType struct {
+	Name string `mapstructure:"name" json:"name"`
+	Id   string `mapstructure:"id" json:"id"`
+}
+
+// K8sClusterRootDiskDetailSize is structure for kubernetes cluster root disk detail's size information
+type K8sClusterRootDiskDetailSize struct {
+	Min uint `mapstructure:"min" json:"min"`
+	Max uint `mapstructure:"max" json:"max"`
+}
+
+// RuntimeK8sClusterInfo is global variable for K8sClusterInfo
+var RuntimeK8sClusterInfo = K8sClusterInfo{}
+
 // AdjustKeysToLowercase adjusts the keys of nested maps to lowercase.
 func AdjustKeysToLowercase(cloudInfo *CloudInfo) {
 	newCSPs := make(map[string]CSPDetail)

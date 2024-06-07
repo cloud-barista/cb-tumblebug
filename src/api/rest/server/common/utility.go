@@ -327,6 +327,27 @@ func RestGetCloudInfo(c echo.Context) error {
 	return common.EndRequestWithLog(c, reqID, err, content)
 }
 
+// RestGetK8sClusterInfo func is a rest api wrapper for K8sClsuterInfo.
+// RestGetK8sClusterInfo godoc
+// @ID GetK8sClusterInfo
+// @Summary Get kubernetes cluster information
+// @Description Get kubernetes cluster information
+// @Tags [Admin] Multi-Cloud environment configuration
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} common.K8sClusterInfo
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /k8sClusterInfo [get]
+func RestGetK8sClusterInfo(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	content, err := common.GetK8sClusterInfo()
+	return common.EndRequestWithLog(c, reqID, err, content)
+}
+
 // ObjectList struct consists of object IDs
 type ObjectList struct {
 	Object []string `json:"object"`
