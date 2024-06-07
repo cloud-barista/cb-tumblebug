@@ -18,14 +18,6 @@ github.com/cloud-barista/cb-log v0.8.0 h1:ArWCs1EgpoD3ZnBgcC4cAw5ufI/JHmFKfJswlv
 github.com/cloud-barista/cb-log v0.8.0/go.mod h1:nGgfTFMPwl1MpCO3FBjexUkNdOYA0BNJoyM9Pd0lMms=
 github.com/cloud-barista/cb-store v0.8.0 h1:0K47YEf+K3wx18D+m0XirlDbdTz229XxsTXw6WACjRA=
 github.com/cloud-barista/cb-store v0.8.0/go.mod h1:6NuA5TdeVRExd59ULXv6LEhm4EE0ODn9L820g4VqApo=
-github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516022714-7bafe50e1df5 h1:4/OX/AF2/f4vtA4JrmAQKtjTDvZP0dcJjoChLNXAhUk=
-github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516022714-7bafe50e1df5/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
-github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516045927-43023b6a0e18 h1:tsBHD7Gh+Q0jpZ3NCh4jDM+ozlxFCfpMc2gto+G6tZQ=
-github.com/cloud-barista/mc-terrarium v0.0.6-0.20240516045927-43023b6a0e18/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
-github.com/cloud-barista/mc-terrarium v0.0.6 h1:6HKwnzJ1i3xRiFeboJhMMzTq/qvTt11adIBkmJrSV04=
-github.com/cloud-barista/mc-terrarium v0.0.6/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
-github.com/cloud-barista/mc-terrarium v0.0.7-0.20240605063928-b1786b261c06 h1:zAovyT3dYd77t2PkP2IsayYNQ3emxUyldDfmVBvRw6Y=
-github.com/cloud-barista/mc-terrarium v0.0.7-0.20240605063928-b1786b261c06/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
 github.com/cloud-barista/mc-terrarium v0.0.7 h1:rXBbAxZyOuwWx77xekrBylGVj9ZIOmHyYcPZkykpCag=
 github.com/cloud-barista/mc-terrarium v0.0.7/go.mod h1:qey9GFrJidyJ3tVfeL/gcImgWLqsF64j/fVmBfaddDI=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
@@ -295,8 +287,7 @@ github.com/swaggo/swag v1.16.3/go.mod h1:DImHIuOFXKpMFAQjcC7FG4m3Dg4+QuUgUzJmKjI
 github.com/syndtr/goleveldb v1.0.0 h1:fBdIW9lB4Iz0n9khmH8w27SJ3QEJ7+IgjPEwGSZiFdE=
 github.com/syndtr/goleveldb v1.0.0/go.mod h1:ZVVdQEZoIme9iO1Ch2Jdy24qqXrMMOU6lpPAyBWyWuQ=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
-github.com/tidwall/gjson v1.17.0 h1:/Jocvlh98kcTfpN2+JzGQWQcqrPQwDrVEMApx/M5ZwM=
-github.com/tidwall/gjson v1.17.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
+github.com/tidwall/gjson v1.17.1 h1:wlYEnwqAHgzmhNUFfw7Xalt2JzQvsMx2Se4PcoFCT/U=
 github.com/tidwall/gjson v1.17.1/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
 github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
