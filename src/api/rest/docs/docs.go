@@ -23,6 +23,110 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/availableK8sClusterNodeImage": {
+            "get": {
+                "description": "Get available kubernetes cluster node image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Get available kubernetes cluster node image",
+                "operationId": "GetAvailableK8sClusterNodeImage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP to retrieve",
+                        "name": "providerName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of region to retrieve",
+                        "name": "regionName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.K8sClusterNodeImageDetailAvailable"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/availableK8sClusterVersion": {
+            "get": {
+                "description": "Get available kubernetes cluster version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra resource] Cluster management"
+                ],
+                "summary": "Get available kubernetes cluster version",
+                "operationId": "GetAvailableK8sClusterVersion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP to retrieve",
+                        "name": "providerName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of region to retrieve",
+                        "name": "regionName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.K8sClusterVersionDetailAvailable"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
         "/cloudInfo": {
             "get": {
                 "description": "Get cloud information",
@@ -560,6 +664,42 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mcis.InspectResourceAllResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.SimpleMsg"
+                        }
+                    }
+                }
+            }
+        },
+        "/k8sClusterInfo": {
+            "get": {
+                "description": "Get kubernetes cluster information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] Multi-Cloud environment configuration"
+                ],
+                "summary": "Get kubernetes cluster information",
+                "operationId": "GetK8sClusterInfo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.K8sClusterInfo"
                         }
                     },
                     "404": {
@@ -8932,6 +9072,141 @@ const docTemplate = `{
         },
         "common.JSONResult": {
             "type": "object"
+        },
+        "common.K8sClusterDetail": {
+            "type": "object",
+            "properties": {
+                "node_images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.K8sClusterNodeImageDetail"
+                    }
+                },
+                "nodegroups_with_cluster": {
+                    "type": "boolean"
+                },
+                "root_disks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.K8sClusterRootDiskDetail"
+                    }
+                },
+                "versions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.K8sClusterVersionDetail"
+                    }
+                }
+            }
+        },
+        "common.K8sClusterInfo": {
+            "type": "object",
+            "properties": {
+                "k8s_cluster": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/common.K8sClusterDetail"
+                    }
+                }
+            }
+        },
+        "common.K8sClusterNodeImageDetail": {
+            "type": "object",
+            "properties": {
+                "availables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.K8sClusterNodeImageDetailAvailable"
+                    }
+                },
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "common.K8sClusterNodeImageDetailAvailable": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.K8sClusterRootDiskDetail": {
+            "type": "object",
+            "properties": {
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "$ref": "#/definitions/common.K8sClusterRootDiskDetailSize"
+                },
+                "type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.K8sClusterRootDiskDetailType"
+                    }
+                }
+            }
+        },
+        "common.K8sClusterRootDiskDetailSize": {
+            "type": "object",
+            "properties": {
+                "max": {
+                    "type": "integer"
+                },
+                "min": {
+                    "type": "integer"
+                }
+            }
+        },
+        "common.K8sClusterRootDiskDetailType": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.K8sClusterVersionDetail": {
+            "type": "object",
+            "properties": {
+                "availables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.K8sClusterVersionDetailAvailable"
+                    }
+                },
+                "region": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "common.K8sClusterVersionDetailAvailable": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
         },
         "common.KeyValue": {
             "type": "object",

@@ -23,6 +23,58 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// RestGetAvailableK8sClusterVersion func is a rest api wrapper for GetAvailableK8sClusterVersion.
+// RestGetAvailableK8sClusterVersion godoc
+// @ID GetAvailableK8sClusterVersion
+// @Summary Get available kubernetes cluster version
+// @Description Get available kubernetes cluster version
+// @Tags [Infra resource] Cluster management
+// @Accept  json
+// @Produce  json
+// @Param providerName query string true "Name of the CSP to retrieve"
+// @Param regionName query string true "Name of region to retrieve"
+// @Success 200 {object} common.K8sClusterVersionDetailAvailable
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /availableK8sClusterVersion [get]
+func RestGetAvailableK8sClusterVersion(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	providerName := c.QueryParam("providerName")
+	regionName := c.QueryParam("regionName")
+
+	content, err := common.GetAvailableK8sClusterVersion(providerName, regionName)
+	return common.EndRequestWithLog(c, reqID, err, content)
+}
+
+// RestGetAvailableK8sClusterNodeImage func is a rest api wrapper for GetAvailableK8sClusterNodeImage.
+// RestGetAvailableK8sClusterNodeImage godoc
+// @ID GetAvailableK8sClusterNodeImage
+// @Summary Get available kubernetes cluster node image
+// @Description Get available kubernetes cluster node image
+// @Tags [Infra resource] Cluster management
+// @Accept  json
+// @Produce  json
+// @Param providerName query string true "Name of the CSP to retrieve"
+// @Param regionName query string true "Name of region to retrieve"
+// @Success 200 {object} common.K8sClusterNodeImageDetailAvailable
+// @Failure 404 {object} common.SimpleMsg
+// @Failure 500 {object} common.SimpleMsg
+// @Router /availableK8sClusterNodeImage [get]
+func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	providerName := c.QueryParam("providerName")
+	regionName := c.QueryParam("regionName")
+
+	content, err := common.GetAvailableK8sClusterNodeImage(providerName, regionName)
+	return common.EndRequestWithLog(c, reqID, err, content)
+}
+
 // RestPostCluster godoc
 // @ID PostCluster
 // @Summary Create Cluster

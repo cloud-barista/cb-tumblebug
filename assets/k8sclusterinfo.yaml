@@ -1,0 +1,80 @@
+# Configuration for Cluster(Kubernetes) of Cloud Service Providers (CSPs)
+# This file is used to define the feature of clusters
+
+# The file is in YAML format and contains the following fields:
+# k8scluster: Top level key
+#   <csp>: Name of the CSP
+#     nodegroupsWithCluster:
+#     version:
+#       - region: [region1, region2, all(special keyword)]
+
+k8scluster:
+  nhncloud:
+    nodegroupsWithCluster: true
+    version:
+      - region: [kr1, kr2]
+        available:
+          - name: 1.28
+            id: 1.28.9-aliyun.1
+          - name: 1.26
+            id: 1.26.15-aliyun.1
+          - name: 1.24
+            id: 1.24.6-aliyun.1
+      - region: [jp1]
+    nodeImage:
+      - region: [kr1]
+        available:
+          - name: default
+            id: default
+          - name: aliyun 3.9
+            id: aliyun_3_9_x64_20G_alibase_20231219.vhd
+      - region: [kr2]
+        available:
+          - name: default
+            id: default
+          - name: aliyun 3.9
+            id: aliyun_3_9_x64_20G_alibase_20231219.vhd
+      - region: [jp1]
+    rootDisk:
+      - region: [all]
+        type:
+          - name: default
+            id: default
+          - name: basic
+            id: CLOUD_BASIC
+        size:
+          min: 10
+          max: 40
+  alibaba:
+    nodegroupsWithCluster: true
+    version:
+      - region: [all]
+        available:
+          - name: 1.28
+            id: 1.28.9-aliyun.1
+          - name: 1.26
+            id: 1.26.15-aliyun.1
+          - name: 1.24
+            id: 1.24.6-aliyun.1
+    nodeImage:
+      - region: [eu-west-1]
+        #configurable: true
+        available:
+          - name: default
+            id: default
+          - name: aliyun 3.9
+            id: aliyun_3_9_x64_20G_alibase_20231219.vhd
+      - region: [eu-west-2,kr2]
+    rootDisk:
+      - region: [eu-west-1]
+        type:
+          #configurable: true
+          - name: default
+            id: default
+          - name: basic
+            id: CLOUD_BASIC
+        size:
+          #configurable: true
+          min: 10
+          max: 40
+
