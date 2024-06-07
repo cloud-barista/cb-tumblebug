@@ -1698,20 +1698,25 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		// Try lookup customImage
 		requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
 		if requestBody.ReqInfo.ImageName == "" || err != nil {
-			log.Warn().Msgf("Not found the Image: %s in nsId: %s, find it from SystemCommonNs", vmInfoData.ImageId, nsId)
+			log.Warn().Msgf("Not found %s from CustomImage in ns: %s, find it from UserImage", vmInfoData.ImageId, nsId)
 			errAgg := err.Error()
 			// If customImage doesn't exist, then try lookup image
 			requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
+				log.Warn().Msgf("Not found %s from UserImage in ns: %s, find CommonImage from SystemCommonNs", vmInfoData.ImageId, nsId)
 				errAgg += err.Error()
 				// If cannot find the resource, use common resource
 				requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
 				if requestBody.ReqInfo.ImageName == "" || err != nil {
 					errAgg += err.Error()
 					err = fmt.Errorf(errAgg)
-					log.Error().Err(err).Msg("")
+					log.Error().Err(err).Msgf("Not found %s both from ns %s and SystemCommonNs", vmInfoData.ImageId, nsId)
 					return err
+				} else {
+					log.Info().Msgf("Use the CommonImage: %s in SystemCommonNs", requestBody.ReqInfo.ImageName)
 				}
+			} else {
+				log.Info().Msgf("Use the UserImage: %s in ns: %s", requestBody.ReqInfo.ImageName, nsId)
 			}
 		} else {
 			customImageFlag = true
@@ -1807,7 +1812,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Spider returned an error")
 		return err
 	}
 

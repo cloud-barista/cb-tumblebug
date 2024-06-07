@@ -4,6 +4,7 @@ go 1.21.6
 
 require (
 	github.com/cloud-barista/cb-store v0.8.0
+	github.com/cloud-barista/mc-terrarium v0.0.7
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.17.0
 	github.com/go-resty/resty/v2 v2.11.0
@@ -30,7 +31,6 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/cloud-barista/cb-log v0.8.0 // indirect
-	github.com/cloud-barista/mc-terrarium v0.0.7 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
