@@ -69,7 +69,7 @@ function clean_sequence() {
 
 	fi
 
-	if ! [ "${CSP}" == "nhncloud" ]; then
+	#if ! [ "${CSP}" == "nhncloud" ]; then
 		echo '## 3. vNet: Delete'
 		OUTPUT=$(../3.vNet/delete-vNet.sh -c $CSP -r $REGION -n $POSTFIX -f $TestSetFile)
 		echo "${OUTPUT}"
@@ -99,7 +99,7 @@ function clean_sequence() {
 			done
 
 		fi
-	fi
+	#fi
 
 	#../2.configureTumblebug/delete-ns.sh $CSP $REGION $POSTFIX
 
