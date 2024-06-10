@@ -741,7 +741,7 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 
 	// Flush a response
 	res = common.SimpleMsg{
-		Message: resDeleteEnrichments.Message,
+		Message: resDeleteEnv.Message,
 	}
 	if err := enc.Encode(res); err != nil {
 		return err
@@ -776,7 +776,7 @@ func RestDeleteVpnGcpToAws(c echo.Context) error {
 
 	// Flush a response
 	res = common.SimpleMsg{
-		Message: resDeleteEnrichments.Message,
+		Message: resDeleteTr.Message,
 	}
 	if err := enc.Encode(res); err != nil {
 		return err
