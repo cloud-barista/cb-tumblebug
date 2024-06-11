@@ -129,7 +129,7 @@ func ExecuteHttpRequest[B any, T any](
 
 				return nil
 			} else {
-				log.Trace().Msg("Cache item expired!")
+				//log.Trace().Msg("Cache item expired!")
 				clientCache.Delete(requestKey)
 			}
 		}
@@ -223,7 +223,7 @@ func ExecuteHttpRequest[B any, T any](
 			log.Trace().Msg("Fesult is nil, not caching")
 		} else {
 			clientCache.Store(requestKey, CacheItem[T]{Response: *result, ExpiresAt: time.Now().Add(cacheDuration)})
-			log.Trace().Msg("Cached successfully!")
+			//log.Trace().Msg("Cached successfully!")
 		}
 	}
 

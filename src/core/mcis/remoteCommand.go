@@ -18,7 +18,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -510,13 +512,6 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmds []string) (map[int]str
 	client := ssh.NewClient(ncc, chans, reqs)
 	defer client.Close()
 
-	// Create a new SSH session
-	session, err := client.NewSession()
-	if err != nil {
-		return stdoutMap, stderrMap, err
-	}
-	defer session.Close()
-
 	// Run the commands
 	for i, cmd := range cmds {
 		// Create a new SSH session for each command
@@ -524,18 +519,48 @@ func runSSH(bastionInfo sshInfo, targetInfo sshInfo, cmds []string) (map[int]str
 		if err != nil {
 			return stdoutMap, stderrMap, err
 		}
-		defer session.Close()
+		defer session.Close() // Ensure session is closed
 
-		// Capture the output
+		// Get pipes for stdout and stderr
+		stdoutPipe, err := session.StdoutPipe()
+		if err != nil {
+			return stdoutMap, stderrMap, err
+		}
+
+		stderrPipe, err := session.StderrPipe()
+		if err != nil {
+			return stdoutMap, stderrMap, err
+		}
+
+		// Start the command
+		if err := session.Start(cmd); err != nil {
+			return stdoutMap, stderrMap, err
+		}
+
+		// Read stdout and stderr
 		var stdoutBuf, stderrBuf bytes.Buffer
-		session.Stdout = &stdoutBuf
-		session.Stderr = &stderrBuf
+		stdoutDone := make(chan struct{})
+		stderrDone := make(chan struct{})
 
-		// Run the command
-		err = session.Run(cmd)
+		go func() {
+			io.Copy(io.MultiWriter(os.Stdout, &stdoutBuf), stdoutPipe)
+			close(stdoutDone)
+		}()
+
+		go func() {
+			io.Copy(io.MultiWriter(os.Stderr, &stderrBuf), stderrPipe)
+			close(stderrDone)
+		}()
+
+		// Wait for the command to finish
+		err = session.Wait()
+		<-stdoutDone
+		<-stderrDone
+
 		if err != nil {
 			stderrMap[i] = fmt.Sprintf("(%s)\nStderr: %s", err, stderrBuf.String())
-			break // Stop if the command fails
+			stdoutMap[i] = stdoutBuf.String()
+			break
 		}
 
 		stdoutMap[i] = stdoutBuf.String()
