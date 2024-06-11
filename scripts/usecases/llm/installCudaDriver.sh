@@ -57,7 +57,6 @@ echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.5/lib64${LD_LIBRARY_PATH:+:${LD_
 echo "Verifying LD_LIBRARY_PATH..."
 . ~/.bashrc && echo "$LD_LIBRARY_PATH"
 
-# Reboot the system
-echo "Rebooting the system..."
-echo "You need to check [nvcc --version] [nvidia-smi] after rebooting"
-sudo reboot
+# Notify rebooting the system is required
+echo "You need to reboot the system to make driver works. [sudo reboot]"
+echo "You can verify the setup by using [nvidia-smi] and [nvcc --version] after rebooting"
