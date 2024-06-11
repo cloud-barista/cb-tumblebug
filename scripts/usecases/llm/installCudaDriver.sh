@@ -55,7 +55,7 @@ echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.5/lib64${LD_LIBRARY_PATH:+:${LD_
 
 # Print LD_LIBRARY_PATH to verify
 echo "Verifying LD_LIBRARY_PATH..."
-. ~/.bashrc && echo $LD_LIBRARY_PATH
+. ~/.bashrc && echo "$LD_LIBRARY_PATH"
 
 # Reboot the system
 echo "Rebooting the system..."
