@@ -130,11 +130,11 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 
 			// Get the request ID
 			reqID := c.Get("RequestID").(string)
-			log.Trace().Msgf("(BodyDump middleware) Request ID: %s", reqID)
+			//log.Trace().Msgf("(BodyDump middleware) Request ID: %s", reqID)
 
 			// Get the content type
 			contentType := c.Response().Header().Get(echo.HeaderContentType)
-			log.Trace().Msgf("contentType: %s", contentType)
+			//log.Trace().Msgf("contentType: %s", contentType)
 
 			// log.Debug().Msgf("Request body: %s", string(reqBody))
 			// log.Debug().Msgf("Response body: %s", string(resBody))
@@ -143,7 +143,7 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 			if contentType == echo.MIMEApplicationJSONCharsetUTF8 || contentType == echo.MIMEApplicationJSON {
 				// Load or check the request by ID
 				if v, ok := common.RequestMap.Load(reqID); ok {
-					log.Trace().Msg("OK, common.RequestMap.Load(reqID)")
+					//log.Trace().Msg("OK, common.RequestMap.Load(reqID)")
 					details := v.(common.RequestDetails)
 					details.EndTime = time.Now()
 
