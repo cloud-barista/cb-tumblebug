@@ -53,13 +53,9 @@ echo "Setting environment variables..."
 echo 'export PATH=/usr/local/cuda-12.5/bin${PATH:+:${PATH}}' >> ~/.bashrc
 echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.5/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}' >> ~/.bashrc
 
-# Apply environment variables
-echo "Applying environment variables..."
-source ~/.bashrc
-
 # Print LD_LIBRARY_PATH to verify
 echo "Verifying LD_LIBRARY_PATH..."
-echo $LD_LIBRARY_PATH
+. ~/.bashrc && echo $LD_LIBRARY_PATH
 
 # Reboot the system
 echo "Rebooting the system..."
