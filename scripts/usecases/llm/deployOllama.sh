@@ -1,15 +1,7 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status.
-set -e
-
-# Function to display a message
-function echo_message() {
-    echo -e "# $1"
-}
-
 # Check NVIDIA driver
-echo_message "Checking NVIDIA driver with nvidia-smi"
+echo "Checking NVIDIA driver with nvidia-smi"
 nvidia-smi
 
 # Install Ollama
