@@ -14,41 +14,41 @@ k8scluster:
     version:
       - region: [kr1, kr2]
         available:
+          - name: 1.29
+            id: v1.29.3
           - name: 1.28
-            id: 1.28.9-aliyun.1
+            id: v1.28.3
+          - name: 1.27
+            id: v1.27.3
           - name: 1.26
-            id: 1.26.15-aliyun.1
-          - name: 1.24
-            id: 1.24.6-aliyun.1
-      - region: [jp1]
+            id: v1.26.3
     nodeImage:
-      - region: [kr1]
+      - region: [kr1,kr2]
         available:
           - name: default
             id: default
-          - name: aliyun 3.9
-            id: aliyun_3_9_x64_20G_alibase_20231219.vhd
-      - region: [kr2]
-        available:
-          - name: default
-            id: default
-          - name: aliyun 3.9
-            id: aliyun_3_9_x64_20G_alibase_20231219.vhd
-      - region: [jp1]
+          - name: Ubuntu Server 22.04.4 LTS - Container (2024.05.21)
+            id: b70fe2c9-ce55-448b-8e42-bb8f4c862391 
+          - name: Ubuntu Server 20.04.6 LTS - Container (2024.05.21) 
+            id: 4c02a2f3-e9db-49b9-abeb-7ae7c604f24d
+          - name: CentOS 7.9 - Container (2024.05.21)
+            id: d95aeef9-3cd0-4288-8370-b874d64884e7
+          - name: Debian 11.9 Bullseye - Container (2024.05.21)
+            id: 8f4c0ded-501d-410a-a362-a5edd8730e3a
+          - name: Rocky Linux 8.9 - Container (2024.05.21)
+            id: 7bbeb38a-7398-4188-8ccf-1c0ce1776d02
     rootDisk:
       - region: [all]
         type:
           - name: default
             id: default
-          - name: basic
-            id: CLOUD_BASIC
         size:
           min: 10
           max: 40
   alibaba:
-    nodegroupsWithCluster: true
+    nodegroupsWithCluster: false
     version:
-      - region: [all]
+      - region: [ap-northeast-1,ap-northeast-2,ap-southeast-1,ap-southeast-3,ap-southeast-5,us-west-1,us-east-1,eu-central-1,eu-west-1,cn-beijing,cn-hongkong,cn-shanghai,cn-huhehaote,cn-heyuan,cn-wulanchabu,cn-guangzhou]
         available:
           - name: 1.28
             id: 1.28.9-aliyun.1
@@ -57,24 +57,18 @@ k8scluster:
           - name: 1.24
             id: 1.24.6-aliyun.1
     nodeImage:
-      - region: [eu-west-1]
-        #configurable: true
+      - region: [all]
         available:
           - name: default
             id: default
-          - name: aliyun 3.9
+          - name: Alibaba Cloud Linux 3.2104 LTS 64 bit
             id: aliyun_3_9_x64_20G_alibase_20231219.vhd
-      - region: [eu-west-2,kr2]
     rootDisk:
-      - region: [eu-west-1]
+      - region: [all]
         type:
-          #configurable: true
           - name: default
             id: default
-          - name: basic
-            id: CLOUD_BASIC
         size:
-          #configurable: true
           min: 10
           max: 40
 
