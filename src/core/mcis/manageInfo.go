@@ -970,6 +970,10 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil || keyValue == nil {
+		if keyValue == nil {
+			log.Error().Err(err).Msgf("Not found: %s keyValue is nil", key)
+			return errorInfo, fmt.Errorf("Not found: %s keyValue is nil", key)
+		}
 		log.Error().Err(err).Msg("")
 		return errorInfo, err
 	}
