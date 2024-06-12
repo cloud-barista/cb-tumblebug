@@ -58,5 +58,7 @@ echo "Verifying LD_LIBRARY_PATH..."
 . ~/.bashrc && echo "$LD_LIBRARY_PATH"
 
 # Notify rebooting the system is required
-echo "You need to reboot the system to make driver works. [sudo reboot]"
+echo "Going to reboot the system to make driver works. [sudo reboot]"
 echo "You can verify the setup by using [nvidia-smi] and [nvcc --version] after rebooting"
+
+sudo reboot
