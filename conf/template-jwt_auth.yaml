@@ -1,0 +1,5 @@
+auth:
+  jwt:
+    signing:
+      method: xxx (e.g., RS256)
+    publickey: xxx
