@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -200,6 +201,30 @@ func setConfig() {
 	}
 
 	//
+	// JWT
+	//
+
+	jwtConfigfileName := "jwt_auth"
+	viper.SetConfigName(jwtConfigfileName)
+	err = viper.MergeInConfig()
+	if err != nil {
+		log.Error().Err(err).Msgf("fatal error reading jwt_auth info from file: %w", err)
+		panic(err)
+	}
+
+	// Map environment variable names to config file key names
+	replacer := strings.NewReplacer("_", ".")
+	viper.SetEnvKeyReplacer(replacer)
+
+	// NOTE - the environment variable has higher priority than the config file
+	// Automatically recognize environment variables
+	viper.AutomaticEnv()
+
+	if viper.GetString("auth.jwt.publickey") == "" {
+		log.Panic().Msg("auth.jwt.publickey is not set, use the key in jwt_conf.yaml")
+	}
+
+	//
 	// Wait until CB-Spider is ready
 	//
 	maxAttempts := 60 // (3 mins)
@@ -299,7 +324,11 @@ func setConfig() {
 
 // @BasePath /tumblebug
 
-// @securityDefinitions.basic BasicAuth
+// // @securityDefinitions.basic BasicAuth
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token (get token in http://localhost:8056/auth)
 func main() {
 
 	// giving a default value of "1323"

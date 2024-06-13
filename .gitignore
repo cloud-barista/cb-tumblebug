@@ -47,8 +47,14 @@ src/api/rest/docs/swagger.json
 src/api/rest/docs/swagger.yaml
 
 # Config file for CB-Tumblebug
-conf/
+!conf/
+conf/*
 conf/credentials.conf
+!conf/cloud_conf.yaml
+!conf/log_conf.yaml
+!conf/setup.env
+!conf/store_conf.yaml
+!conf/template-*
 
 # Runtime files
 src/benchmarking.csv

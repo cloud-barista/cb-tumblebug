@@ -27,6 +27,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/auth"
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
 	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
@@ -133,32 +134,41 @@ func RunServer(port string) {
 	}))
 
 	// Conditions to prevent abnormal operation due to typos (e.g., ture, falss, etc.)
-	enableAuth := os.Getenv("ENABLE_AUTH") == "true"
+	enableAuth := os.Getenv("AUTH_ENABLED") == "true"
 
 	apiUser := os.Getenv("API_USERNAME")
 	apiPass := os.Getenv("API_PASSWORD")
 
+	authMode := os.Getenv("AUTH_MODE")
+
 	if enableAuth {
-		e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-			Skipper: func(c echo.Context) bool {
-				if c.Path() == "/tumblebug/readyz" ||
-					c.Path() == "/tumblebug/httpVersion" {
-					return true
-				}
-				return false
-			},
-			Validator: func(username, password string, c echo.Context) (bool, error) {
-				// Be careful to use constant time comparison to prevent timing attacks
-				if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
-					subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
-					return true, nil
-				}
-				return false, nil
-			},
-		}))
+		if authMode == "basic" {
+			e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+				Skipper: func(c echo.Context) bool {
+					if c.Path() == "/tumblebug/readyz" ||
+						c.Path() == "/tumblebug/httpVersion" {
+						return true
+					}
+					return false
+				},
+				Validator: func(username, password string, c echo.Context) (bool, error) {
+					// Be careful to use constant time comparison to prevent timing attacks
+					if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
+						subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
+						return true, nil
+					}
+					return false, nil
+				},
+			}))
+		}
 	}
 
-	fmt.Printf(banner)
+	// sample to show and discuss
+	authGroup := e.Group("/tumblebug/auth")
+	authGroup.Use(middlewares.JWTAuth())
+	authGroup.GET("/test", auth.TestJWTAuth)
+
+	fmt.Print(banner)
 	fmt.Println("\n ")
 	fmt.Printf(infoColor, website)
 	fmt.Println("\n \n ")
