@@ -155,14 +155,14 @@ func RemoteCommandToMcis(nsId string, mcisId string, subGroupId string, vmId str
 
 	// Preprocess commands for each VM
 	vmCommands := make(map[string][]string)
-	for _, vmId := range vmList {
+	for i, vmId := range vmList {
 		processedCommands := make([]string, len(req.Command))
-		for i, cmd := range req.Command {
-			processedCmd, err := processCommand(cmd, nsId, mcisId, vmId)
+		for j, cmd := range req.Command {
+			processedCmd, err := processCommand(cmd, nsId, mcisId, vmId, i)
 			if err != nil {
 				return nil, err
 			}
-			processedCommands[i] = processedCmd
+			processedCommands[j] = processedCmd
 		}
 		vmCommands[vmId] = processedCommands
 	}
@@ -809,7 +809,7 @@ func findMatchingParenthesis(command string, start int) int {
 }
 
 // processCommand is function to replace the keywords with actual values
-func processCommand(command, nsId, mcisId, vmId string) (string, error) {
+func processCommand(command, nsId, mcisId, vmId string, vmIndex int) (string, error) {
 	start := 0
 	for {
 		start = strings.Index(command[start:], "$$Func(")
@@ -885,6 +885,13 @@ func processCommand(command, nsId, mcisId, vmId string) (string, error) {
 				return "", fmt.Errorf("Built-in function getPublicIPs error: %s", err.Error())
 			}
 
+		} else if strings.EqualFold(funcName, "AssignTask") {
+			taskListParam, ok := params["task"]
+			if !ok {
+				return "", fmt.Errorf("Built-in function AssignTask error: no task list provided")
+			}
+			tasks := splitParams(taskListParam)
+			replacement = tasks[vmIndex%len(tasks)]
 		} else {
 			return "", fmt.Errorf("Built-in function error in command: Unknown function: %s", funcName)
 		}
