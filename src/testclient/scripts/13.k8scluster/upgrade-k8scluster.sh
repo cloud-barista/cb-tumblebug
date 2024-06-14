@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## 13. CLUSTER: Upgrade"
+echo "## 13. K8SCLUSTER: Upgrade"
 echo "####################################################################"
 
 source ../init.sh
@@ -35,15 +35,15 @@ else
 	exit
 fi
 
-CLUSTERID_ADD=${OPTION03:-1}
+K8SCLUSTERID_ADD=${OPTION03:-1}
 
-CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}${CLUSTERID_ADD}
+K8SCLUSTERID=${K8SCLUSTERID_PREFIX}${INDEX}${REGION}${K8SCLUSTERID_ADD}
 
 echo "NSID: "${NSID}
-echo "CLUSTERID=${CLUSTERID}"
+echo "K8SCLUSTERID=${K8SCLUSTERID}"
 
 resp=$(
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/cluster/${CLUSTERID}/upgrade -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/upgrade -H 'Content-Type: application/json' -d @- <<EOF
 	{
 		"version": "${VERSION}"
 	}

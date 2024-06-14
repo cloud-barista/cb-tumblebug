@@ -1,16 +1,16 @@
 #!/bin/bash
 
 echo "####################################################################"
-echo "## 13. CLUSTER: Change Autoscale Size"
+echo "## 13. K8SCLUSTER: Change Autoscale Size"
 echo "####################################################################"
 
 source ../init.sh
 
 NUMVM=${OPTION01:-1}
-CLUSTERID_ADD=${OPTION03:-1}
+K8SCLUSTERID_ADD=${OPTION03:-1}
 
-CLUSTERID=${CLUSTERID_PREFIX}${INDEX}${REGION}${CLUSTERID_ADD}
-NODEGROUPNAME="ng${INDEX}${REGION}${CLUSTERID_ADD}"
+K8SCLUSTERID=${K8SCLUSTERID_PREFIX}${INDEX}${REGION}${K8SCLUSTERID_ADD}
+K8SNODEGROUPNAME="ng${INDEX}${REGION}${K8SCLUSTERID_ADD}"
 
 DesiredNodeSize=$(($NUMVM+1))
 MinNodeSize=$(($NUMVM+1))
@@ -25,11 +25,11 @@ echo "POSTFIX=${POSTFIX}"
 echo "DesiredNodeSize=${DesiredNodeSize}"
 echo "MinNodeSize=${MinNodeSize}"
 echo "MaxNodeSize=${MaxNodeSize}"
-echo "CLUSTERID=${CLUSTERID}"
+echo "K8SCLUSTERID=${K8SCLUSTERID}"
 echo "===================================================================="
 
 resp=$(
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/cluster/${CLUSTERID}/nodegroup/${NODEGROUPNAME}/autoscalesize -H 'Content-Type: application/json' -d @- <<EOF
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/k8snodegroup/${K8SNODEGROUPNAME}/autoscalesize -H 'Content-Type: application/json' -d @- <<EOF
 	{
 		"desiredNodeSize": "${DesiredNodeSize}",
 		"minNodeSize": "${MinNodeSize}",

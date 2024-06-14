@@ -20,13 +20,13 @@ readonly ENDPOINT_REGEX='^[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\
 SECONDS=0
 
 echo "####################################################################"
-echo "## Command (SSH) to Cluster (deploy-weavescope-to-cluster)"
+echo "## Command (SSH) to K8sCluster (deploy-weavescope-to-k8scluster)"
 echo "####################################################################"
 
 source ../init.sh
 
 KEEP_PREV_KUBECONFIG=${OPTION02:-n}
-CLUSTERID_ADD=${OPTION03:-1}
+K8SCLUSTERID_ADD=${OPTION03:-1}
 
 KUBECTL=kubectl
 if ! kubectl > /dev/null 2>&1; then
@@ -46,19 +46,19 @@ if [ "${INDEX}" == "0" ]; then
 		for ((cspj = 1; cspj <= INDEXY; cspj++)); do
 			REGION=$cspj
 
-			CLUSTERID=${CLUSTERID_PREFIX}${cspi}${cspj}${CLUSTERID_ADD}
+			K8SCLUSTERID=${K8SCLUSTERID_PREFIX}${cspi}${cspj}${K8SCLUSTERID_ADD}
 
-			echo "[Get ClusterInfo for ${CLUSTERID}]"
-			CLUSTERINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/cluster/${CLUSTERID})
+			echo "[Get K8sClusterInfo for ${K8SCLUSTERID}]"
+			K8SCLUSTERINFO=$(curl -H "${AUTH}" -sX GET http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID})
 
-			TMP_FILE_KUBECONFIG=$(mktemp ./${CLUSTERID}-kubeconfig.XXXXXX || exit 1)
+			TMP_FILE_KUBECONFIG=$(mktemp ./${K8SCLUSTERID}-kubeconfig.XXXXXX || exit 1)
 			if [ "${KEEP_PREV_KUBECONFIG}" != "y" ]; then
 			    	echo "Delete Previous Kubeconfig Files"
-				rm -f "${CLUSTERID}-kubeconfig."*
+				rm -f "${K8SCLUSTERID}-kubeconfig."*
 				#trap 'echo "trapped"; rm -f -- "$TMP_FILE_KUBECONFIG"' EXIT
 			fi
 
-			ENDPOINT=$(jq -r '.AccessInfo.endpoint' <<<"$CLUSTERINFO")
+			ENDPOINT=$(jq -r '.AccessInfo.endpoint' <<<"$K8SCLUSTERINFO")
 			if [[ ! $ENDPOINT =~ $ENDPOINT_REGEX ]]; then
 				echo ".AccessInfo.endpoint ($ENDPOINT) is not valid"	
 				echo "Try again after about 5 minutes"		
@@ -66,7 +66,7 @@ if [ "${INDEX}" == "0" ]; then
 			fi
 
 			echo "TMP_FILE_KUBECONFIG="$TMP_FILE_KUBECONFIG
-			jq -r '.AccessInfo.kubeconfig' <<<"$CLUSTERINFO" > $TMP_FILE_KUBECONFIG
+			jq -r '.AccessInfo.kubeconfig' <<<"$K8SCLUSTERINFO" > $TMP_FILE_KUBECONFIG
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG apply -f https://github.com/weaveworks/scope/releases/download/v1.13.2/k8s-scope.yaml
 			dozing 10
 
@@ -75,7 +75,7 @@ if [ "${INDEX}" == "0" ]; then
 			echo "LOCALPORT="$LOCALPORT
 			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG port-forward --address=0.0.0.0 -n weave "$($KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG get -n weave pod --selector=weave-scope-component=app -o jsonpath='{.items..metadata.name}')" $LOCALPORT:4040 &
 
-			echo "[Cluster Weavescope: complete to create a cluster in $CSP[$REGION]]"
+			echo "[K8sCluster Weavescope: complete to create a k8scluster in $CSP[$REGION]]"
 			echo "You can access to http://localhost:"$LOCALPORT "until exiting by Ctrl+C"
 		 done
 	done

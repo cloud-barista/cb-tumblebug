@@ -237,9 +237,9 @@ type Cloud struct {
 
 // CloudSetting is structure for cloud settings per CSP in details
 type CloudSetting struct {
-	Enable  string         `yaml:"enable"`
-	Nlb     NlbSetting     `yaml:"nlb"`
-	Cluster ClusterSetting `yaml:"cluster"`
+	Enable     string            `yaml:"enable"`
+	Nlb        NlbSetting        `yaml:"nlb"`
+	K8sCluster K8sClusterSetting `yaml:"k8scluster"`
 }
 
 // NlbSetting is structure for NLB setting
@@ -263,8 +263,8 @@ type Nlbsw struct {
 	NlbMcisSubGroupSize     string `yaml:"nlbMcisSubGroupSize"`
 }
 
-// ClusterSetting is structure for Cluster setting
-type ClusterSetting struct {
+// K8sClusterSetting is structure for K8sCluster setting
+type K8sClusterSetting struct {
 	Enable string `yaml:"enable"`
 }
 
