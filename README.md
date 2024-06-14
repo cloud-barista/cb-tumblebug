@@ -1,4 +1,4 @@
-# CB-Tumblebug (Multi-Cloud Infra Service Management)
+# Cloud-Barista CB-Tumblebug: Multi-Cloud Infra Management System
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
 [![Build](https://img.shields.io/github/actions/workflow/status/cloud-barista/cb-tumblebug/continuous-integration.yaml)](https://github.com/cloud-barista/cb-tumblebug/actions/workflows/continuous-integration.yaml?query=workflow%3AContinuous-Integration-%28CI%29)
@@ -27,10 +27,10 @@ CB-Tumblebug (CB-TB for short) is a system for deploying and managing multi-clou
 - [CB-Tumblebug Operation Sequence](https://github.com/cloud-barista/cb-tumblebug/tree/main/docs/designUML)
 
 <details>
-<summary>[Note] CB-Tumblebug is currently under development</summary>
+<summary>[Note] Development of CB-Tumblebug is ongoing </summary>
 
 ```
-CB-TB is currently under development. (not v1.0 yet)
+CB-TB is not v1.0 yet.
 We welcome any new suggestions, issues, opinions, and contributors !
 Please note that the functionalities of Cloud-Barista are not stable and secure yet.
 Be careful if you plan to use the current release in production.
@@ -58,7 +58,7 @@ while CB-TB Repo accommodates local languages in the contents of them.
 
 ---
 
-## 목차
+## Index
 
 1. [Prerequisites](#prerequisites)
 1. [How to Download](#how-to-download)
