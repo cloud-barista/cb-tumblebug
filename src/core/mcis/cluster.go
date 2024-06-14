@@ -566,7 +566,9 @@ func CreateCluster(nsId string, u *TbClusterReq, option string) (TbClusterInfo, 
 		}
 
 		spImgName := "" // Some CSPs do not require ImageName for creating a cluster
-		if v.ImageId != "" {
+		if v.ImageId == "" || v.ImageId == "default" {
+			spImgName = ""
+		} else {
 			spImgName, err = common.GetCspResourceId(nsId, common.StrImage, v.ImageId)
 			if spImgName == "" {
 				log.Error().Err(err).Msg("")
