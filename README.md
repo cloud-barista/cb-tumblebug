@@ -19,7 +19,7 @@
 
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructure consists of resources from multi-cloud cloud service providers. (Cloud-Barista)
+CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructure consisting of resources from multiple cloud service providers. (Cloud-Barista)
 
 - [CB-Tumblebug Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Overview)
 - [CB-Tumblebug Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Features)
@@ -31,11 +31,11 @@ CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructu
 
 ```
 CB-TB is not v1.0 yet.
-We welcome any new suggestions, issues, opinions, and contributors !
+We welcome any new suggestions, issues, opinions, and contributors!
 Please note that the functionalities of Cloud-Barista are not stable and secure yet.
 Be careful if you plan to use the current release in production.
 If you have any difficulties in using Cloud-Barista, please let us know.
-(Open an issue or Join the Cloud-Barista Slack)
+(Open an issue or join the Cloud-Barista Slack)
 ```
 
 </details>
@@ -44,17 +44,15 @@ If you have any difficulties in using Cloud-Barista, please let us know.
 <summary>[Note] Localization and Globalization of CB-Tumblebug</summary>
     
 ```
-As an opensource project initiated by Korean members, 
-we would like to promote participation of Korean contributors during initial stage of this project. 
-So, CB-TB Repo will accept use of Korean language in its early stages.
-On the other hand, we hope this project flourishes regardless of contributor's country eventually.
-So, the maintainers recommend using English at least for the title of Issues, Pull Requests, and Commits, 
-while CB-TB Repo accommodates local languages in the contents of them.
+As an open-source project initiated by Korean members, 
+we would like to promote participation of Korean contributors during the initial stage of this project. 
+So, the CB-TB repo will accept the use of the Korean language in its early stages.
+However, we hope this project flourishes regardless of the contributor's country eventually.
+So, the maintainers recommend using English at least for the titles of Issues, Pull Requests, and Commits, 
+while the CB-TB repo accommodates local languages in their contents.
 ```
 
 </details>
-
----
 
 ---
 
@@ -67,23 +65,21 @@ while CB-TB Repo accommodates local languages in the contents of them.
 1. [How to Use](#how-to-use-cb-tb-features)
 1. [How to Contribute](#how-to-contribute)
 
----
 
 ---
 
 ## Prerequisites
 
 ### Envionment
-- Linux (recommended: Ubuntu 22.04)
-- Go (recommended: v1.21.6)
+- Linux (recommended: `Ubuntu 22.04`)
+- Golang (recommended: `v1.21.6`)
 
 ### Dependency
 Open source packages used in this project
 
 - [Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies) 
-- [SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom))
+- [SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
 
----
 
 ---
 
@@ -106,14 +102,16 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug
   ```
 
-  The `--depth 1` option is to reduce the size by limiting the commit history download.
+  The `--depth 1` option reduces the size by limiting the commit history download.
+
   For contributing, it is recommended not to specify this option or to restore the commit history using the following command.
+  
 
   ```bash
   git fetch --unshallow
   ```
 
-  Register alias for the CB-TB directory (optional action for convenience. `cdtb`, `cbtbsrc`, `cdtbtest`).
+  Register alias for the CB-TB directory (optional action for convenience: `cdtb`, `cbtbsrc`, `cdtbtest`).
   ```bash
   echo "alias cdtb='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug'" >> ~/.bashrc
   echo "alias cdtbsrc='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug/src'" >> ~/.bashrc
@@ -127,7 +125,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 ## How to Build and Run
 
-### (1) Setup prerequisites
+### (1) Setup Prerequisites
 
 - Setup required tools
 
@@ -169,7 +167,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   
   The initial build will take some time, but subsequent builds will be faster by the Go build cache.
   
-  (Note) To update the Swagger API documentation, run `make swag` in `cb-tumblebug/src/`
+  **Note** To update the Swagger API documentation, run `make swag` in `cb-tumblebug/src/`
     - API documentation file will be generated at `cb-tumblebug/src/api/rest/docs/swagger.yaml`
     - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/swagger/ (provided when CB-TB is running)
     - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
@@ -178,9 +176,9 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 ### (3) Run CB-TB system
 
 #### (3-1) Run dependant sub-project
-- Run [CB-Spider](https://github.com/cloud-barista/cb-spider)
+- Run CB-Spider
   
-  CB-Tumblebug requires CB-Spider to control multiple cloud service providers.
+  CB-Tumblebug requires [CB-Spider](https://github.com/cloud-barista/cb-spider) to control multiple cloud service providers.
 
   - (Recommended method) Run the CB-Spider container using the CB-TB script (preferably use the specified version)
 
@@ -444,7 +442,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 - You can test the entire process at once by executing `create-all.sh` and `clean-all.sh` included in `src/testclient/scripts/sequentialFullTest/`
 
-  ```
+  ```bash
   └── sequentialFullTest # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCIS creation
       ├── check-test-config.sh # Check the multi-cloud infrastructure configuration specified in the current testSet
       ├── create-all.sh # Automatic testing from cloud information registration to NS creation, MCIR creation, and MCIS creation
@@ -471,7 +469,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - Automatically proceed with the process to check the MCIS creation configuration specified in `../testSetCustom.env`
   - Example of execution result
 
-    ```
+    ```bash
     Table: All VMs in the MCIS : cb-shson
 
     ID              Status   PublicIP       PrivateIP      CloudType  CloudRegion     CreatedTime
@@ -501,7 +499,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 - Generate MCIS SSH access keys and access each VM
   - `./gen-sshKey.sh -n shson -f ../testSetCustom.env` # Return access keys for all VMs configured in MCIS
   - Example of execution result
-    ```
+    ```bash
     ...
     [GENERATED PRIVATE KEY (PEM, PPK)]
     [MCIS INFO: mc-shson]
@@ -523,18 +521,20 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - `./command-mcis.sh -n shson -f ../testSetCustom.env` # Execute IP and hostname retrieval for all VMs in MCIS
 
 - K8s Cluster Test (WIP: Stability work in progress for each CSP)  
-  - `./create-mcir-ns-cloud.sh -n tb -f ../testSet.env` # Create MCIR required for K8s cluster creation
-  - `./create-cluster-only.sh -n tb -f ../testSet.env -x 1 -z 1` # Create K8s cluster (-x maximum number of nodes, -z additional name for node group and cluster)
-  - `./get-cluster.sh -n tb -f ../testSet.env -z 1` # Get K8s cluster information
-  - `./add-nodegroup.sh -n tb -f ../testSet.env -x 1 -z 1` # Add a new node group to the K8s cluster
-  - `./change-nodegroup-autoscalesize.sh -n tb -f ../testSet.env -x 1 -z 1` # Change the autoscale size of the new node group
-  - `./deploy-weavescope-to-cluster.sh -n tb -f ../testSet.env -y n` # Deploy weavescope to the created cluster
-  - `./set-nodegroup-autoscaling.sh -n tb -f ../testSet.env -z 1` # Change the autoscaling setting of the new node group to off
-  - `./remove-nodegroup.sh -n tb -f ../testSet.env -z 1` # Delete the newly created node group
-  - `./clean-cluster-only.sh -n tb -f ../testSet.env -z 1` # Delete the created K8s cluster
-  - `./force-clean-cluster-only.sh -n tb -f ../testSet.env -z 1` # Force delete the created K8s cluster if deletion fails
-  - `./clean-mcir-ns-cloud.h -n tb -f ../testSet.env` # Delete the created MCIR
 
+  ```bash
+  `./create-mcir-ns-cloud.sh -n tb -f ../testSet.env` # Create MCIR required for K8s cluster creation
+  `./create-cluster-only.sh -n tb -f ../testSet.env -x 1 -z 1` # Create K8s cluster (-x maximum number of nodes, -z additional name for node group and cluster)
+  `./get-cluster.sh -n tb -f ../testSet.env -z 1` # Get K8s cluster information
+  `./add-nodegroup.sh -n tb -f ../testSet.env -x 1 -z 1` # Add a new node group to the K8s cluster
+  `./change-nodegroup-autoscalesize.sh -n tb -f ../testSet.env -x 1 -z 1` # Change the autoscale size of the new node group
+  `./deploy-weavescope-to-cluster.sh -n tb -f ../testSet.env -y n` # Deploy weavescope to the created cluster
+  `./set-nodegroup-autoscaling.sh -n tb -f ../testSet.env -z 1` # Change the autoscaling setting of the new node group to off
+  `./remove-nodegroup.sh -n tb -f ../testSet.env -z 1` # Delete the newly created node group
+  `./clean-cluster-only.sh -n tb -f ../testSet.env -z 1` # Delete the created K8s cluster
+  `./force-clean-cluster-only.sh -n tb -f ../testSet.env -z 1` # Force delete the created K8s cluster if deletion fails
+  `./clean-mcir-ns-cloud.h -n tb -f ../testSet.env` # Delete the created MCIR
+  ```
 
 #### Multi-Cloud Infrastructure Use Cases
 
