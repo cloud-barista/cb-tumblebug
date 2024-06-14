@@ -61,10 +61,11 @@ while CB-TB Repo accommodates local languages in the contents of them.
 ## 목차
 
 1. [Prerequisites](#prerequisites)
+1. [How to Download](#how-to-download)
+1. [How to Run](#3-run-cb-tb-system)
+1. [How to Build](#how-to-build-and-run)
+1. [How to Use](#how-to-use-cb-tb-features)
 1. [How to Contribute](#how-to-contribute)
-1. [How to Run](#how-to-run)
-1. [How to Build and Setup](#how-to-build-and-setup)
-1. [How to Use](#cb-tumblebug-기능-사용-방법)
 
 ---
 
@@ -72,10 +73,15 @@ while CB-TB Repo accommodates local languages in the contents of them.
 
 ## Prerequisites
 
+### Envionment
 - Linux (recommended: Ubuntu 22.04)
 - Go (recommended: v1.21.6)
 
-[Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies) (Download: [SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom))
+### Dependency
+Open source packages used in this project
+
+- [Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies) 
+- [SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom))
 
 ---
 
@@ -191,7 +197,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     For installation methods other than the container, refer to [CB-Spider](https://github.com/cloud-barista/cb-spider)
 
 #### (3-2: option 1) Run CB-TB from the source code (recommended)
-- [Download CB-TB repository](#how-to-download)
+- [Clone the repository](#how-to-download)
 - [Build and Setup](#how-to-build-and-setup)
 - Set environment variables required to run CB-TB (in another tab)
   - Check and configure the contents of `cb-tumblebug/conf/setup.env` (CB-TB environment variables, modify as needed)
@@ -392,11 +398,11 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/) provides Bash shell-based scripts that simplify and automate the MCIS (MC-Infra) provisioning procedures, which require complex steps.
 
-- Step 1: [Enter cloud credentials and basic test information](#enter-basic-cloud-test-information)
+- Step 1: [Setup Test Environment](#setup-test-environment)
 - Step 2: [Integrated Tests](#integrated-tests)
-- Step 3: [Experience Use cases](#multi-cloud-infrastructure-use-cases)
+- Step 3: [Experience Use Cases](#multi-cloud-infrastructure-use-cases)
 
-#### Enter Basic Cloud Test Information
+#### Setup Test Environment
 
 1. Go to [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/tree/main/src/testclient/scripts)
 2. Configure [`conf.env`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/conf.env)
