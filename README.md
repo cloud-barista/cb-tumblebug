@@ -21,9 +21,9 @@
 
 CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructure consisting of resources from multiple cloud service providers. (Cloud-Barista)
 
-- [CB-Tumblebug Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Overview)
-- [CB-Tumblebug Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Features)
-- [CB-Tumblebug Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB-Tumblebug-Architecture)
+- [CB-Tumblebug Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview)
+- [CB-Tumblebug Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features)
+- [CB-Tumblebug Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
 - [CB-Tumblebug Operation Sequence](https://github.com/cloud-barista/cb-tumblebug/tree/main/docs/designUML)
 
 <details>
