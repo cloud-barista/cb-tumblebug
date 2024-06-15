@@ -451,7 +451,7 @@ func RunServer(port string) {
 	fmt.Println(" Default CredentialHolder: " + common.DefaultCredentialHolder + "\n")
 
 	if enableAuth {
-		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
+		fmt.Println(" Access to API dashboard" + " (username: $API_USERNAME / password: $API_PASSWORD)")
 	}
 
 	fmt.Printf(noticeColor, apidashboard)
