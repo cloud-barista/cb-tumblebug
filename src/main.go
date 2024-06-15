@@ -246,7 +246,7 @@ func setConfig() {
 			log.Error().Err(err).Msg("")
 			panic(err)
 		}
-		common.PrintCredentialInfo(common.RuntimeCredential)
+		// common.PrintCredentialInfo(common.RuntimeCredential)
 	}
 
 	// err = common.RegisterAllCloudInfo()

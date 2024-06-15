@@ -231,7 +231,7 @@ func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]Param
 			for i, k := range *specList {
 				sumLatancy := 0.0
 				for _, region := range v.Val {
-					l, _ := GetLatency(region, k.RegionName)
+					l, _ := GetLatency(region, k.ProviderName+"-"+k.RegionName)
 					sumLatancy += l
 				}
 
@@ -555,10 +555,11 @@ func getDistance(latitude float64, longitude float64, providerName string, regio
 
 // GetLatency func get latency between given two regions
 func GetLatency(src string, dest string) (float64, error) {
+
 	latencyString := common.RuntimeLatancyMap[common.RuntimeLatancyMapIndex[src]][common.RuntimeLatancyMapIndex[dest]]
 	latency, err := strconv.ParseFloat(strings.ReplaceAll(latencyString, " ", ""), 32)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Info().Err(err).Msgf("Cannot get GetLatency between src: %v, dest: %v (check assets)", src, dest)
 		return 999999, err
 	}
 	return latency, nil

@@ -96,7 +96,7 @@ func RequestIdAndDetailsIssuer(next echo.HandlerFunc) echo.HandlerFunc {
 		// Set Request on the context
 		c.Set("RequestID", reqID)
 
-		log.Trace().Msgf("(Request ID middleware) Request ID: %s", reqID)
+		//log.Trace().Msgf("(Request ID middleware) Request ID: %s", reqID)
 		if _, ok := common.RequestMap.Load(reqID); ok {
 			return fmt.Errorf("the X-Request-Id is already in use")
 		}
