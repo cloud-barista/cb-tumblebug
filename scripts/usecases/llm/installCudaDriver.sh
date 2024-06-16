@@ -38,6 +38,7 @@ fi
 
 echo "Check root disk size"
 df -h / | awk '$NF=="/" {print "Total: "$2, "Available: "$4}'
+du -h cuda-repo-ubuntu2204-12-5-local_12.5.0-555.42.02-1_amd64.deb
 
 if ! sudo dpkg -i cuda-repo-ubuntu2204-12-5-local_12.5.0-555.42.02-1_amd64.deb; then
   echo "Failed to install CUDA repository package. Exiting..."
