@@ -16,6 +16,8 @@ if [ -z "$GPU_INFO" ]; then
 else
   echo "NVIDIA GPU detected:"
   echo "$GPU_INFO"
+  echo "Check root disk size"
+  df -h / | awk '$NF=="/" {print "Total: "$2, "Available: "$4}'
 fi
 
 # Download and install CUDA repository pin file
@@ -24,6 +26,7 @@ if ! sudo wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubunt
   echo "Failed to download CUDA repository pin file. Exiting..."
   exit 1
 fi
+ls -lh cuda-ubuntu2204.pin
 sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
 
 # Download and install CUDA repository package
@@ -32,7 +35,15 @@ if ! sudo wget -q https://developer.download.nvidia.com/compute/cuda/12.5.0/loca
   echo "Failed to download CUDA repository package. Exiting..."
   exit 1
 fi
-sudo dpkg -i cuda-repo-ubuntu2204-12-5-local_12.5.0-555.42.02-1_amd64.deb
+
+echo "Check root disk size"
+df -h / | awk '$NF=="/" {print "Total: "$2, "Available: "$4}'
+du -h cuda-repo-ubuntu2204-12-5-local_12.5.0-555.42.02-1_amd64.deb
+
+if ! sudo dpkg -i cuda-repo-ubuntu2204-12-5-local_12.5.0-555.42.02-1_amd64.deb; then
+  echo "Failed to install CUDA repository package. Exiting..."
+  exit 1
+fi
 sudo cp /var/cuda-repo-ubuntu2204-12-5-local/cuda-*-keyring.gpg /usr/share/keyrings/
 
 # Update package lists
