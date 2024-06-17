@@ -12,7 +12,7 @@ if [ -z "$1" ]; then
     echo "OLLAMA_BASE_URLS is not provided. Using default value: --add-host=host.docker.internal:host-gateway"
     sudo docker run -d -p 80:8080 -e --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
 else
-    echo "$OLLAMA_BASE_URLS"
+    echo "OLLAMA_BASE_URLS=$1"
     sudo docker run -d -p 80:8080 -e OLLAMA_BASE_URLS="$1" -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
 fi
 
