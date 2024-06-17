@@ -5,7 +5,7 @@ if [ -z "$1" ]; then
     echo "OLLAMA_BASE_URLS is not provided. Using default value: --add-host=host.docker.internal:host-gateway"
     OLLAMA_BASE_URLS="--add-host=host.docker.internal:host-gateway"
 else
-    OLLAMA_BASE_URLS="-e OLLAMA_BASE_URLS=$1"
+    OLLAMA_BASE_URLS="-e \"OLLAMA_BASE_URLS=$1\""
 fi
 
 # Install Docker
