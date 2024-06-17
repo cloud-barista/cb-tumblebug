@@ -142,73 +142,86 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 			// Dump the response body if content type is "application/json" or "application/json; charset=UTF-8"
 			if contentType == echo.MIMEApplicationJSONCharsetUTF8 || contentType == echo.MIMEApplicationJSON {
 				// Load or check the request by ID
-				if v, ok := common.RequestMap.Load(reqID); ok {
-					//log.Trace().Msg("OK, common.RequestMap.Load(reqID)")
-					details := v.(common.RequestDetails)
-					details.EndTime = time.Now()
-
-					// Set "X-Request-Id" in response header
-					c.Response().Header().Set(echo.HeaderXRequestID, reqID)
-
-					// Split the response body by newlines to handle multiple JSON objects (i.e., streaming response)
-					parts := bytes.Split(resBody, []byte("\n"))
-					responseJsonLines := parts[:len(parts)-1]
-
-					// Unmarshal the latest response body
-					latestResponse := responseJsonLines[len(responseJsonLines)-1]
-					var resData interface{}
-					if err := json.Unmarshal(latestResponse, &resData); err != nil {
-						log.Error().Err(err).Msg("Error while unmarshaling response body")
-						return
-					}
-
-					// Check and store error response
-					// 1XX: Information responses
-					// 2XX: Successful responses (200 OK, 201 Created, 202 Accepted, 204 No Content)
-					// 3XX: Redirection messages
-					// 4XX: Client error responses (400 Bad Request, 401 Unauthorized, 404 Not Found, 408 Request Timeout)
-					// 5XX: Server error responses (500 Internal Server Error, 501 Not Implemented, 503 Service Unavailable)
-					details.Status = "Success"
-					if c.Response().Status >= 400 {
-						details.Status = "Error"
-						if data, ok := resData.(map[string]interface{}); ok {
-							details.ErrorResponse = data["message"].(string)
-						}
-					}
-
-					// Store the response data
-					if len(responseJsonLines) > 1 {
-						// handle streaming response
-						// convert JSON lines to JSON array
-						var responseJsonArray []interface{}
-						for _, jsonLine := range responseJsonLines {
-							var obj interface{}
-							err := json.Unmarshal(jsonLine, &obj)
-							if err != nil {
-								log.Error().Err(err).Msg("error unmarshalling JSON line")
-								continue
-							}
-							responseJsonArray = append(responseJsonArray, obj)
-						}
-						details.ResponseData = responseJsonArray
-					} else {
-						// single response
-						// type casting is required
-						switch data := resData.(type) {
-						case map[string]interface{}:
-							details.ResponseData = data
-						case []interface{}:
-							details.ResponseData = data
-						case string:
-							details.ResponseData = data
-						default:
-							log.Error().Msg("unexpected response data type")
-						}
-					}
-
-					// Store details of the request
-					common.RequestMap.Store(reqID, details)
+				v, ok := common.RequestMap.Load(reqID)
+				if !ok {
+					log.Error().Msg("Request ID not found in common.RequestMap")
+					return
 				}
+
+				// Ensure the loaded value is of the correct type
+				details, ok := v.(common.RequestDetails)
+				if !ok {
+					log.Error().Msg("Loaded value from common.RequestMap is not of type common.RequestDetails")
+					return
+				}
+				//log.Trace().Msg("OK, common.RequestMap.Load(reqID)")
+				details.EndTime = time.Now()
+
+				// Set "X-Request-Id" in response header
+				c.Response().Header().Set(echo.HeaderXRequestID, reqID)
+
+				// Split the response body by newlines to handle multiple JSON objects (i.e., streaming response)
+				parts := bytes.Split(resBody, []byte("\n"))
+				if len(parts) == 0 {
+					log.Error().Msg("Response body is empty")
+					return
+				}
+				responseJsonLines := parts[:len(parts)-1]
+
+				// Unmarshal the latest response body
+				latestResponse := responseJsonLines[len(responseJsonLines)-1]
+				var resData interface{}
+				if err := json.Unmarshal(latestResponse, &resData); err != nil {
+					log.Error().Err(err).Msg("Error while unmarshaling response body")
+					return
+				}
+
+				// Check and store error response
+				// 1XX: Information responses
+				// 2XX: Successful responses (200 OK, 201 Created, 202 Accepted, 204 No Content)
+				// 3XX: Redirection messages
+				// 4XX: Client error responses (400 Bad Request, 401 Unauthorized, 404 Not Found, 408 Request Timeout)
+				// 5XX: Server error responses (500 Internal Server Error, 501 Not Implemented, 503 Service Unavailable)
+				details.Status = "Success"
+				if c.Response().Status >= 400 {
+					details.Status = "Error"
+					if data, ok := resData.(map[string]interface{}); ok {
+						details.ErrorResponse = data["message"].(string)
+					}
+				}
+
+				// Store the response data
+				if len(responseJsonLines) > 1 {
+					// handle streaming response
+					// convert JSON lines to JSON array
+					var responseJsonArray []interface{}
+					for _, jsonLine := range responseJsonLines {
+						var obj interface{}
+						err := json.Unmarshal(jsonLine, &obj)
+						if err != nil {
+							log.Error().Err(err).Msg("error unmarshalling JSON line")
+							continue
+						}
+						responseJsonArray = append(responseJsonArray, obj)
+					}
+					details.ResponseData = responseJsonArray
+				} else {
+					// single response
+					// type casting is required
+					switch data := resData.(type) {
+					case map[string]interface{}:
+						details.ResponseData = data
+					case []interface{}:
+						details.ResponseData = data
+					case string:
+						details.ResponseData = data
+					default:
+						log.Error().Msg("unexpected response data type")
+					}
+				}
+
+				// Store details of the request
+				common.RequestMap.Store(reqID, details)
 			}
 			// log.Debug().Msg("Start - BodyDump() middleware")
 		},
