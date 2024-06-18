@@ -19,7 +19,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/gookit/goutil"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/lestrrat-go/jwx/jwk"
 )
@@ -314,11 +313,11 @@ func retrospectToken(c echo.Context) {
 
 	// Check this user's role
 	var role = ""
-	if goutil.Contains(roles, "maintainer") {
+	if HasRole(roles, "maintainer") {
 		role = "maintainer"
-	} else if goutil.Contains(roles, "admin") {
+	} else if HasRole(roles, "admin") {
 		role = "admin"
-	} else if goutil.Contains(roles, "user") {
+	} else if HasRole(roles, "user") {
 		role = "user"
 	} else {
 		role = "guest"
@@ -362,4 +361,14 @@ func parseRealmRoles(claims jwt.MapClaims) []string {
 		}
 	}
 	return realmRoles
+}
+
+// HasRole checks if a slice contains a specific element
+func HasRole(roleList []string, role string) bool {
+	for _, s := range roleList {
+		if s == role {
+			return true
+		}
+	}
+	return false
 }
