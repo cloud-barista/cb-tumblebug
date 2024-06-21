@@ -26,7 +26,7 @@ CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructu
 
 **Hot usecase of CB-Tumblebug**
 
-- **Deploy a Multi-Cloud Infra with GPUs and Enjoy muiltple LLMs in parallel**
+- **Deploy a Multi-Cloud Infra with GPUs and Enjoy muiltple LLMs in parallel (YouTube)**
 [![Multi-Cloud LLMs in parallel](https://github.com/cloud-barista/cb-tumblebug/assets/5966944/e15feb67-ba02-4066-af62-d9f8e8330a63)](https://www.youtube.com/watch?v=SD9ZoT_OZpQ)
 
 
