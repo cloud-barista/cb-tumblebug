@@ -21,12 +21,17 @@ echo "K8SNODEGROUPNAME=${K8SNODEGROUPNAME}"
 echo "K8SCLUSTERID=${K8SCLUSTERID}"
 echo "===================================================================="
 
-
-resp=$(
-	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/k8snodegroup/${K8SNODEGROUPNAME}/onautoscaling -H 'Content-Type: application/json' -d @- <<EOF
+req=$(cat << EOF
 	{
 		"onAutoScaling": "false"
 	}
+EOF
+	); echo ${req} | jq ''
+
+
+resp=$(
+	curl -H "${AUTH}" -sX PUT http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/k8snodegroup/${K8SNODEGROUPNAME}/onautoscaling -H 'Content-Type: application/json' -d @- <<EOF
+		${req}
 EOF
     ); echo ${resp} | jq ''
     echo ""

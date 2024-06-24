@@ -106,20 +106,7 @@ EOF
 
 resp=$(
 	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster -H 'Content-Type: application/json' -d @- <<EOF
-	{
-                "connectionName": "${CONN_CONFIG[$INDEX,$REGION]}",
-                "id": "${K8SCLUSTERID}",
-		"version": "${VERSION}",
-                "vNetId": "${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}",
-                "subnetIds": [
-			"${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
-	        ],
-                "securityGroupIds": [
-                	"${CONN_CONFIG[$INDEX,$REGION]}-${POSTFIX}"
-                ],
-                "description": "description"
-		${K8SNODEGROUPLIST}
-	}
+		${req}
 EOF
     ); echo ${resp} | jq ''
     echo ""

@@ -51,8 +51,7 @@ echo "MaxNodeSize=${MaxNodeSize}"
 echo "K8SCLUSTERID=${K8SCLUSTERID}"
 echo "===================================================================="
 
-resp=$(
-	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/k8snodegroup -H 'Content-Type: application/json' -d @- <<EOF
+req=$(cat << EOF
 	{
 		"name": "${K8SNODEGROUPNAME}",
 		"imageId": "${NODEIMAGEID}",
@@ -66,6 +65,12 @@ resp=$(
 		"minNodeSize": "${MinNodeSize}",
 		"maxNodeSize": "${MaxNodeSize}"
 	}
+EOF
+	); echo ${req} | jq ''
+
+resp=$(
+	curl -H "${AUTH}" -sX POST http://$TumblebugServer/tumblebug/ns/$NSID/k8scluster/${K8SCLUSTERID}/k8snodegroup -H 'Content-Type: application/json' -d @- <<EOF
+		${req}
 EOF
     ); echo ${resp} | jq ''
     echo ""
