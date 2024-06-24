@@ -119,7 +119,14 @@ func ExecuteHttpRequest[B any, T any](
 		}
 
 		if item, found := clientCache.Load(requestKey); found {
-			cachedItem := item.(CacheItem[T]) // Generic type
+			// Ensure safe type assertion
+			cachedItem, ok := item.(CacheItem[T])
+			if !ok {
+				log.Error().Msgf("Type assertion failed for cache item: expected CacheItem[%T], got %T", *result, item)
+				clientCache.Delete(requestKey) // Delete invalid cache item
+				return fmt.Errorf("type assertion failed for cache item")
+			}
+
 			if time.Now().Before(cachedItem.ExpiresAt) {
 				log.Trace().Msgf("Cache hit! Expires: %v", time.Now().Sub(cachedItem.ExpiresAt))
 				*result = cachedItem.Response
@@ -139,7 +146,7 @@ func ExecuteHttpRequest[B any, T any](
 		retryWait := 5 * time.Second
 		retryLimit := 3
 		retryCount := 0
-		// try to wait for the upcomming cached result when sending que is full
+		// try to wait for the upcoming cached result when sending queue is full
 		for {
 			if !limitConcurrentRequests(requestKey, concurrencyLimit) {
 				if retryCount >= retryLimit {
@@ -149,7 +156,12 @@ func ExecuteHttpRequest[B any, T any](
 				time.Sleep(retryWait)
 
 				if item, found := clientCache.Load(requestKey); found {
-					cachedItem := item.(CacheItem[T])
+					cachedItem, ok := item.(CacheItem[T])
+					if !ok {
+						log.Error().Msgf("Type assertion failed for cache item while waiting: expected CacheItem[%T], got %T", *result, item)
+						clientCache.Delete(requestKey) // Delete invalid cache item
+						return fmt.Errorf("type assertion failed for cache item while waiting")
+					}
 					*result = cachedItem.Response
 					// release the request count for parallel requests limit
 					requestDone(requestKey)
