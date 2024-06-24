@@ -1346,20 +1346,6 @@ definitions:
         example: Failed because ...
         type: string
     type: object
-  mcis.ClusterStatus:
-    enum:
-    - Creating
-    - Active
-    - Inactive
-    - Updating
-    - Deleting
-    type: string
-    x-enum-varnames:
-    - ClusterCreating
-    - ClusterActive
-    - ClusterInactive
-    - ClusterUpdating
-    - ClusterDeleting
   mcis.DeploymentPlan:
     properties:
       filter:
@@ -1628,20 +1614,6 @@ definitions:
         example: TCP
         type: string
     type: object
-  mcis.NodeGroupStatus:
-    enum:
-    - Creating
-    - Active
-    - Inactive
-    - Updating
-    - Deleting
-    type: string
-    x-enum-varnames:
-    - NodeGroupCreating
-    - NodeGroupActive
-    - NodeGroupInactive
-    - NodeGroupUpdating
-    - NodeGroupDeleting
   mcis.Operation:
     properties:
       operand:
@@ -1758,11 +1730,11 @@ definitions:
       host:
         type: string
     type: object
-  mcis.RestGetAllClusterResponse:
+  mcis.RestGetAllK8sClusterResponse:
     properties:
       cluster:
         items:
-          $ref: '#/definitions/mcis.TbClusterInfo'
+          $ref: '#/definitions/mcis.TbK8sClusterInfo'
         type: array
     type: object
   mcis.RestGetAllMcisPolicyResponse:
@@ -1954,7 +1926,18 @@ definitions:
         description: CountUndefined is for counting Undefined
         type: integer
     type: object
-  mcis.TbClusterAccessInfo:
+  mcis.TbIdNameInDetailInfo:
+    properties:
+      idInCsp:
+        type: string
+      idInSp:
+        type: string
+      idInTb:
+        type: string
+      nameInCsp:
+        type: string
+    type: object
+  mcis.TbK8sAccessInfo:
     properties:
       endpoint:
         example: http://1.2.3.4:6443
@@ -1962,32 +1945,36 @@ definitions:
       kubeconfig:
         type: string
     type: object
-  mcis.TbClusterAddonsInfo:
+  mcis.TbK8sAddonsInfo:
     properties:
       keyValueList:
         items:
           $ref: '#/definitions/common.KeyValue'
         type: array
     type: object
-  mcis.TbClusterInfo:
+  mcis.TbK8sClusterInfo:
     properties:
       accessInfo:
-        $ref: '#/definitions/mcis.TbClusterAccessInfo'
+        $ref: '#/definitions/mcis.TbK8sAccessInfo'
       addons:
-        $ref: '#/definitions/mcis.TbClusterAddonsInfo'
+        $ref: '#/definitions/mcis.TbK8sAddonsInfo'
       connectionName:
         type: string
       createdTime:
         example: "1970-01-01T00:00:00.00Z"
         type: string
-      cspClusterId:
+      cspK8sClusterId:
         type: string
-      cspClusterName:
+      cspK8sClusterName:
         type: string
       description:
         type: string
       id:
         type: string
+      k8sNodeGroupList:
+        items:
+          $ref: '#/definitions/mcis.TbK8sNodeGroupInfo'
+        type: array
       keyValueList:
         items:
           $ref: '#/definitions/common.KeyValue'
@@ -1995,14 +1982,10 @@ definitions:
       name:
         type: string
       network:
-        $ref: '#/definitions/mcis.TbClusterNetworkInfo'
-      nodeGroupList:
-        items:
-          $ref: '#/definitions/mcis.TbClusterNodeGroupInfo'
-        type: array
+        $ref: '#/definitions/mcis.TbK8sClusterNetworkInfo'
       status:
         allOf:
-        - $ref: '#/definitions/mcis.ClusterStatus'
+        - $ref: '#/definitions/mcis.TbK8sClusterStatus'
         description: Creating, Active, Inactive, Updating, Deleting
         example: Creating
       systemLabel:
@@ -2019,7 +2002,7 @@ definitions:
         example: 1.23.3
         type: string
     type: object
-  mcis.TbClusterNetworkInfo:
+  mcis.TbK8sClusterNetworkInfo:
     properties:
       keyValueList:
         items:
@@ -2036,66 +2019,27 @@ definitions:
       vNetId:
         type: string
     type: object
-  mcis.TbClusterNodeGroupInfo:
-    properties:
-      desiredNodeSize:
-        type: integer
-      id:
-        type: string
-      imageId:
-        description: VM config.
-        type: string
-      keyValueList:
-        items:
-          $ref: '#/definitions/common.KeyValue'
-        type: array
-      maxNodeSize:
-        type: integer
-      minNodeSize:
-        type: integer
-      nodes:
-        description: id for nodes
-        items:
-          type: string
-        type: array
-      onAutoScaling:
-        description: Scaling config.
-        type: boolean
-      rootDiskSize:
-        type: string
-      rootDiskType:
-        type: string
-      specId:
-        type: string
-      sshKeyId:
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/mcis.NodeGroupStatus'
-        description: '---'
-        example: Creating
-    type: object
-  mcis.TbClusterReq:
+  mcis.TbK8sClusterReq:
     properties:
       connectionName:
         description: Namespace      string `json:"namespace" validate:"required" example:"ns01"`
         example: testcloud01-seoul
         type: string
-      cspClusterId:
+      cspK8sClusterId:
         description: |-
-          Fields for "Register existing cluster" feature
-          CspClusterId is required to register a cluster from CSP (option=register)
+          Fields for "Register existing K8sCluster" feature
+          CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
         type: string
       description:
         type: string
       id:
-        description: (1) Cluster Info
-        example: testcloud01-seoul-cluster
+        description: (1) K8sCluster Info
+        example: testcloud01-seoul-k8scluster
         type: string
-      nodeGroupList:
+      k8sNodeGroupList:
         description: (3) NodeGroupInfo List
         items:
-          $ref: '#/definitions/mcis.TbNodeGroupReq'
+          $ref: '#/definitions/mcis.TbK8sNodeGroupReq'
         type: array
       securityGroupIds:
         items:
@@ -2118,17 +2062,104 @@ definitions:
     - subnetIds
     - vNetId
     type: object
-  mcis.TbIdNameInDetailInfo:
+  mcis.TbK8sClusterStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - TbK8sClusterCreating
+    - TbK8sClusterActive
+    - TbK8sClusterInactive
+    - TbK8sClusterUpdating
+    - TbK8sClusterDeleting
+  mcis.TbK8sNodeGroupInfo:
     properties:
-      idInCsp:
+      desiredNodeSize:
+        type: integer
+      id:
         type: string
-      idInSp:
+      imageId:
+        description: VM config.
         type: string
-      idInTb:
+      k8sNodes:
+        description: id for nodes
+        items:
+          type: string
+        type: array
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      maxNodeSize:
+        type: integer
+      minNodeSize:
+        type: integer
+      onAutoScaling:
+        description: Scaling config.
+        type: boolean
+      rootDiskSize:
         type: string
-      nameInCsp:
+      rootDiskType:
+        type: string
+      specId:
+        type: string
+      sshKeyId:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/mcis.TbK8sNodeGroupStatus'
+        description: '---'
+        example: Creating
+    type: object
+  mcis.TbK8sNodeGroupReq:
+    properties:
+      desiredNodeSize:
+        type: string
+      imageId:
+        type: string
+      maxNodeSize:
+        type: string
+      minNodeSize:
+        type: string
+      name:
+        type: string
+      onAutoScaling:
+        description: autoscale config.
+        type: string
+      rootDiskSize:
+        description: '"default", Integer (GB): ["50", ..., "1000"]'
+        example: default, 30, 42, ...
+        type: string
+      rootDiskType:
+        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
+          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
+          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
+          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
+        example: default, TYPE1, ...
+        type: string
+      specId:
+        type: string
+      sshKeyId:
         type: string
     type: object
+  mcis.TbK8sNodeGroupStatus:
+    enum:
+    - Creating
+    - Active
+    - Inactive
+    - Updating
+    - Deleting
+    type: string
+    x-enum-varnames:
+    - TbK8sNodeGroupCreating
+    - TbK8sNodeGroupActive
+    - TbK8sNodeGroupInactive
+    - TbK8sNodeGroupUpdating
+    - TbK8sNodeGroupDeleting
   mcis.TbMcisDynamicReq:
     properties:
       description:
@@ -2456,37 +2487,6 @@ definitions:
         type: string
       subGroupId:
         example: g1
-        type: string
-    type: object
-  mcis.TbNodeGroupReq:
-    properties:
-      desiredNodeSize:
-        type: string
-      imageId:
-        type: string
-      maxNodeSize:
-        type: string
-      minNodeSize:
-        type: string
-      name:
-        type: string
-      onAutoScaling:
-        description: autoscale config.
-        type: string
-      rootDiskSize:
-        description: '"default", Integer (GB): ["50", ..., "1000"]'
-        example: default, 30, 42, ...
-        type: string
-      rootDiskType:
-        description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
-          ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
-          "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
-          TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
-        example: default, TYPE1, ...
-        type: string
-      specId:
-        type: string
-      sshKeyId:
         type: string
     type: object
   mcis.TbScaleOutSubGroupReq:
@@ -3116,7 +3116,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get available kubernetes cluster node image
       tags:
-      - '[Infra resource] Cluster management'
+      - '[Infra resource] K8sCluster management'
   /availableK8sClusterVersion:
     get:
       consumes:
@@ -3151,7 +3151,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get available kubernetes cluster version
       tags:
-      - '[Infra resource] Cluster management'
+      - '[Infra resource] K8sCluster management'
   /cloudInfo:
     get:
       consumes:
@@ -4085,397 +4085,6 @@ paths:
       summary: Run MCIS benchmark for network latency
       tags:
       - '[Infra service] MCIS Performance benchmarking (WIP)'
-  /ns/{nsId}/cluster:
-    delete:
-      consumes:
-      - application/json
-      description: Delete all Clusters
-      operationId: DeleteAllCluster
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: ""
-        description: Delete resources containing matched ID-substring only
-        in: query
-        name: match
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.IdList'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete all Clusters
-      tags:
-      - '[Infra resource] Cluster management'
-    get:
-      consumes:
-      - application/json
-      description: List all Clusters or Clusters' ID
-      operationId: GetAllCluster
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Option
-        enum:
-        - id
-        in: query
-        name: option
-        type: string
-      - description: 'Field key for filtering (ex: cspClusterName)'
-        in: query
-        name: filterKey
-        type: string
-      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
-        in: query
-        name: filterVal
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Different return structures by the given option param
-          schema:
-            allOf:
-            - $ref: '#/definitions/mcis.JSONResult'
-            - properties:
-                '[DEFAULT]':
-                  $ref: '#/definitions/mcis.RestGetAllClusterResponse'
-                '[ID]':
-                  $ref: '#/definitions/common.IdList'
-              type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: List all Clusters or Clusters' ID
-      tags:
-      - '[Infra resource] Cluster management'
-    post:
-      consumes:
-      - application/json
-      description: Create Cluster
-      operationId: PostCluster
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: 'Option: [required params for register] connectionName, name,
-          cspClusterId'
-        enum:
-        - register
-        in: query
-        name: option
-        type: string
-      - description: Details of the Cluster object
-        in: body
-        name: clusterReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbClusterReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbClusterInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Create Cluster
-      tags:
-      - '[Infra resource] Cluster management'
-  /ns/{nsId}/cluster/{clusterId}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete Cluster
-      operationId: DeleteCluster
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Cluster ID
-        in: path
-        name: clusterId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Delete Cluster
-      tags:
-      - '[Infra resource] Cluster management'
-    get:
-      consumes:
-      - application/json
-      description: Get Cluster
-      operationId: GetCluster
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - default: c1
-        description: Cluster ID
-        in: path
-        name: clusterId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbClusterInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Get Cluster
-      tags:
-      - '[Infra resource] Cluster management'
-  /ns/{nsId}/cluster/{clusterId}/nodegroup:
-    post:
-      consumes:
-      - application/json
-      description: Add a NodeGroup
-      operationId: PostNodeGroup
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Cluster ID
-        in: path
-        name: clusterId
-        required: true
-        type: string
-      - description: Details of the NodeGroup object
-        in: body
-        name: nodeGroupReq
-        required: true
-        schema:
-          $ref: '#/definitions/mcis.TbNodeGroupReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/mcis.TbClusterInfo'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Add a NodeGroup
-      tags:
-      - '[Infra resource] Cluster management'
-  /ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}:
-    delete:
-      consumes:
-      - application/json
-      description: Remove a NodeGroup
-      operationId: DeleteNodeGroup
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Cluster ID
-        in: path
-        name: clusterId
-        required: true
-        type: string
-      - description: NodeGroup Name
-        in: path
-        name: nodeGroupName
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Remove a NodeGroup
-      tags:
-      - '[Infra resource] Cluster management'
-  /ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}/autoscalesize:
-    put:
-      consumes:
-      - application/json
-      description: Change a NodeGroup's Autoscale Size
-      operationId: PutChangeAutoscaleSize
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Cluster ID
-        in: path
-        name: clusterId
-        required: true
-        type: string
-      - description: NodeGroup Name
-        in: path
-        name: nodeGroupName
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Change a NodeGroup's Autoscale Size
-      tags:
-      - '[Infra resource] Cluster management'
-  /ns/{nsId}/cluster/{clusterId}/nodegroup/{nodeGroupName}/onautoscaling:
-    put:
-      consumes:
-      - application/json
-      description: Set a NodeGroup's Autoscaling On/Off
-      operationId: PutSetAutoscaling
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Cluster ID
-        in: path
-        name: clusterId
-        required: true
-        type: string
-      - description: NodeGroup Name
-        in: path
-        name: nodeGroupName
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Set a NodeGroup's Autoscaling On/Off
-      tags:
-      - '[Infra resource] Cluster management'
-  /ns/{nsId}/cluster/{clusterId}/upgrade:
-    put:
-      consumes:
-      - application/json
-      description: Upgrade a Cluster's version
-      operationId: PutClusterUpgrade
-      parameters:
-      - default: ns01
-        description: Namespace ID
-        in: path
-        name: nsId
-        required: true
-        type: string
-      - description: Cluster ID
-        in: path
-        name: clusterId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/common.SimpleMsg'
-      summary: Upgrade a Cluster's version
-      tags:
-      - '[Infra resource] Cluster management'
   /ns/{nsId}/cmd/mcis/{mcisId}:
     post:
       consumes:
@@ -4727,6 +4336,397 @@ paths:
       summary: Install the benchmark agent to specified MCIS
       tags:
       - '[Infra service] MCIS Performance benchmarking (WIP)'
+  /ns/{nsId}/k8scluster:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all K8sClusters
+      operationId: DeleteAllK8sCluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: ""
+        description: Delete resources containing matched ID-substring only
+        in: query
+        name: match
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.IdList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete all K8sClusters
+      tags:
+      - '[Infra resource] K8sCluster management'
+    get:
+      consumes:
+      - application/json
+      description: List all K8sClusters or K8sClusters' ID
+      operationId: GetAllK8sCluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: Option
+        enum:
+        - id
+        in: query
+        name: option
+        type: string
+      - description: 'Field key for filtering (ex: cspK8sClusterName)'
+        in: query
+        name: filterKey
+        type: string
+      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
+        in: query
+        name: filterVal
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Different return structures by the given option param
+          schema:
+            allOf:
+            - $ref: '#/definitions/mcis.JSONResult'
+            - properties:
+                '[DEFAULT]':
+                  $ref: '#/definitions/mcis.RestGetAllK8sClusterResponse'
+                '[ID]':
+                  $ref: '#/definitions/common.IdList'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: List all K8sClusters or K8sClusters' ID
+      tags:
+      - '[Infra resource] K8sCluster management'
+    post:
+      consumes:
+      - application/json
+      description: Create K8sCluster
+      operationId: PostK8sCluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: 'Option: [required params for register] connectionName, name,
+          cspK8sClusterId'
+        enum:
+        - register
+        in: query
+        name: option
+        type: string
+      - description: Details of the K8sCluster object
+        in: body
+        name: k8sClusterReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbK8sClusterReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbK8sClusterInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Create K8sCluster
+      tags:
+      - '[Infra resource] K8sCluster management'
+  /ns/{nsId}/k8scluster/{k8sClusterId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete K8sCluster
+      operationId: DeleteK8sCluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: K8sCluster ID
+        in: path
+        name: k8sClusterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Delete K8sCluster
+      tags:
+      - '[Infra resource] K8sCluster management'
+    get:
+      consumes:
+      - application/json
+      description: Get K8sCluster
+      operationId: GetK8sCluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - default: c1
+        description: K8sCluster ID
+        in: path
+        name: k8sClusterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbK8sClusterInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Get K8sCluster
+      tags:
+      - '[Infra resource] K8sCluster management'
+  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup:
+    post:
+      consumes:
+      - application/json
+      description: Add a K8sNodeGroup
+      operationId: PostK8sNodeGroup
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: K8sCluster ID
+        in: path
+        name: k8sClusterId
+        required: true
+        type: string
+      - description: Details of the K8sNodeGroup object
+        in: body
+        name: k8sNodeGroupReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbK8sNodeGroupReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mcis.TbK8sClusterInfo'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Add a K8sNodeGroup
+      tags:
+      - '[Infra resource] K8sCluster management'
+  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a K8sNodeGroup
+      operationId: DeleteK8sNodeGroup
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: K8sCluster ID
+        in: path
+        name: k8sClusterId
+        required: true
+        type: string
+      - description: K8sNodeGroup Name
+        in: path
+        name: k8sNodeGroupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Remove a K8sNodeGroup
+      tags:
+      - '[Infra resource] K8sCluster management'
+  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/autoscalesize:
+    put:
+      consumes:
+      - application/json
+      description: Change a K8sNodeGroup's Autoscale Size
+      operationId: PutChangeK8sNodeGroupAutoscaleSize
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: K8sCluster ID
+        in: path
+        name: k8sClusterId
+        required: true
+        type: string
+      - description: K8sNodeGroup Name
+        in: path
+        name: k8sNodeGroupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Change a K8sNodeGroup's Autoscale Size
+      tags:
+      - '[Infra resource] K8sCluster management'
+  /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/onautoscaling:
+    put:
+      consumes:
+      - application/json
+      description: Set a K8sNodeGroup's Autoscaling On/Off
+      operationId: PutSetK8sNodeGroupAutoscaling
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: K8sCluster ID
+        in: path
+        name: k8sClusterId
+        required: true
+        type: string
+      - description: K8sNodeGroup Name
+        in: path
+        name: k8sNodeGroupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Set a K8sNodeGroup's Autoscaling On/Off
+      tags:
+      - '[Infra resource] K8sCluster management'
+  /ns/{nsId}/k8scluster/{k8sClusterId}/upgrade:
+    put:
+      consumes:
+      - application/json
+      description: Upgrade a K8sCluster's version
+      operationId: PutUpgradeK8sCluster
+      parameters:
+      - default: ns01
+        description: Namespace ID
+        in: path
+        name: nsId
+        required: true
+        type: string
+      - description: K8sCluster ID
+        in: path
+        name: k8sClusterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.SimpleMsg'
+      summary: Upgrade a K8sCluster's version
+      tags:
+      - '[Infra resource] K8sCluster management'
   /ns/{nsId}/loadDefaultResource:
     get:
       consumes:
