@@ -310,21 +310,21 @@ func RunServer(port string) {
 	g.GET("/:nsId/monitoring/mcis/:mcisId/metric/:metric", rest_mcis.RestGetMonitorData)
 	g.PUT("/:nsId/monitoring/status/mcis/:mcisId/vm/:vmId", rest_mcis.RestPutMonitorAgentStatusInstalled)
 
-	// Cluster
+	// K8sCluster
 	e.GET("/tumblebug/availableK8sClusterVersion", rest_mcis.RestGetAvailableK8sClusterVersion)
 	e.GET("/tumblebug/availableK8sClusterNodeImage", rest_mcis.RestGetAvailableK8sClusterNodeImage)
-	g.POST("/:nsId/cluster", rest_mcis.RestPostCluster)
-	g.POST("/:nsId/cluster/:clusterId/nodegroup", rest_mcis.RestPostNodeGroup)
-	g.DELETE("/:nsId/cluster/:clusterId/nodegroup/:nodeGroupName", rest_mcis.RestDeleteNodeGroup)
-	g.PUT("/:nsId/cluster/:clusterId/nodegroup/:nodeGroupName/onautoscaling", rest_mcis.RestPutSetAutoscaling)
-	g.PUT("/:nsId/cluster/:clusterId/nodegroup/:nodeGroupName/autoscalesize", rest_mcis.RestPutChangeAutoscaleSize)
-	g.GET("/:nsId/cluster/:clusterId", rest_mcis.RestGetCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	g.POST("/:nsId/k8scluster", rest_mcis.RestPostK8sCluster)
+	g.POST("/:nsId/k8scluster/:k8sClusterId/k8snodegroup", rest_mcis.RestPostK8sNodeGroup)
+	g.DELETE("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName", rest_mcis.RestDeleteK8sNodeGroup)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/onautoscaling", rest_mcis.RestPutSetK8sNodeGroupAutoscaling)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/k8snodegroup/:k8sNodeGroupName/autoscalesize", rest_mcis.RestPutChangeK8sNodeGroupAutoscaleSize)
+	g.GET("/:nsId/k8scluster/:k8sClusterId", rest_mcis.RestGetK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.GET("/:nsId/cluster", rest_mcis.RestGetAllCluster, middleware.TimeoutWithConfig(timeoutConfig),
+	g.GET("/:nsId/k8scluster", rest_mcis.RestGetAllK8sCluster, middleware.TimeoutWithConfig(timeoutConfig),
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(2)))
-	g.DELETE("/:nsId/cluster/:clusterId", rest_mcis.RestDeleteCluster)
-	g.DELETE("/:nsId/cluster", rest_mcis.RestDeleteAllCluster)
-	g.PUT("/:nsId/cluster/:clusterId/upgrade", rest_mcis.RestPutUpgradeCluster)
+	g.DELETE("/:nsId/k8scluster/:k8sClusterId", rest_mcis.RestDeleteK8sCluster)
+	g.DELETE("/:nsId/k8scluster", rest_mcis.RestDeleteAllK8sCluster)
+	g.PUT("/:nsId/k8scluster/:k8sClusterId/upgrade", rest_mcis.RestPutUpgradeK8sCluster)
 
 	// Network Load Balancer
 	g.POST("/:nsId/mcis/:mcisId/mcSwNlb", rest_mcis.RestPostMcNLB)

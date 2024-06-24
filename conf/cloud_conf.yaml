@@ -6,7 +6,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "y"
   aws:
     enable: "y"
@@ -15,7 +15,7 @@ cloud:
       interval: "10"
       timeout: "-1"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "y"
   azure:
     enable: "y"
@@ -24,7 +24,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "y"
   gcp:
     enable: "y"
@@ -33,7 +33,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "y"
   alibaba:
     enable: "y"
@@ -42,7 +42,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "y"
   tencent:
     enable: "y"
@@ -51,7 +51,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "y"
   ibm:
     enable: "y"
@@ -60,7 +60,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "y"
   openstack:
     enable: "y"
@@ -69,7 +69,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "n"
   cloudit	:
     enable: "y"
@@ -78,7 +78,7 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
-    cluster:
+    k8scluster:
       enable: "n"
 nlbsw:
   sw: "HAProxy"
