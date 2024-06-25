@@ -226,6 +226,7 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID"
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name"
+// @Param setK8sNodeGroupAutoscalingReq body mcis.TbSetK8sNodeGroupAutoscalingReq true "Details of the TbSetK8sNodeGroupAutoscalingReq object"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -265,6 +266,7 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID"
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name"
+// @Param changeK8sNodeGroupAutoscaleSizeReq body mcis.TbChangeK8sNodeGroupAutoscaleSizeReq true "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -452,6 +454,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param k8sClusterId path string true "K8sCluster ID"
+// @Param upgradeK8sClusterReq body mcis.TbUpgradeK8sClusterReq true "Details of the TbUpgradeK8sClusterReq object"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
