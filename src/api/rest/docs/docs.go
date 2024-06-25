@@ -2305,6 +2305,15 @@ const docTemplate = `{
                         "name": "k8sNodeGroupName",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object",
+                        "name": "changeK8sNodeGroupAutoscaleSizeReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -2365,6 +2374,15 @@ const docTemplate = `{
                         "name": "k8sNodeGroupName",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Details of the TbSetK8sNodeGroupAutoscalingReq object",
+                        "name": "setK8sNodeGroupAutoscalingReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbSetK8sNodeGroupAutoscalingReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -2418,6 +2436,15 @@ const docTemplate = `{
                         "name": "k8sClusterId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Details of the TbUpgradeK8sClusterReq object",
+                        "name": "upgradeK8sClusterReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mcis.TbUpgradeK8sClusterReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -11732,6 +11759,20 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.TbChangeK8sNodeGroupAutoscaleSizeReq": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "string"
+                },
+                "maxNodeSize": {
+                    "type": "string"
+                },
+                "minNodeSize": {
+                    "type": "string"
+                }
+            }
+        },
         "mcis.TbIdNameInDetailInfo": {
             "type": "object",
             "properties": {
@@ -12510,6 +12551,22 @@ const docTemplate = `{
                     "description": "Define addtional VMs to scaleOut",
                     "type": "string",
                     "example": "2"
+                }
+            }
+        },
+        "mcis.TbSetK8sNodeGroupAutoscalingReq": {
+            "type": "object",
+            "properties": {
+                "onAutoScaling": {
+                    "type": "string"
+                }
+            }
+        },
+        "mcis.TbUpgradeK8sClusterReq": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string"
                 }
             }
         },

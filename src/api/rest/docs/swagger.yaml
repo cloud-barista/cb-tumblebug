@@ -1926,6 +1926,15 @@ definitions:
         description: CountUndefined is for counting Undefined
         type: integer
     type: object
+  mcis.TbChangeK8sNodeGroupAutoscaleSizeReq:
+    properties:
+      desiredNodeSize:
+        type: string
+      maxNodeSize:
+        type: string
+      minNodeSize:
+        type: string
+    type: object
   mcis.TbIdNameInDetailInfo:
     properties:
       idInCsp:
@@ -2497,6 +2506,16 @@ definitions:
         type: string
     required:
     - numVMsToAdd
+    type: object
+  mcis.TbSetK8sNodeGroupAutoscalingReq:
+    properties:
+      onAutoScaling:
+        type: string
+    type: object
+  mcis.TbUpgradeK8sClusterReq:
+    properties:
+      version:
+        type: string
     type: object
   mcis.TbVmDynamicReq:
     properties:
@@ -4632,6 +4651,12 @@ paths:
         name: k8sNodeGroupName
         required: true
         type: string
+      - description: Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object
+        in: body
+        name: changeK8sNodeGroupAutoscaleSizeReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeReq'
       produces:
       - application/json
       responses:
@@ -4673,6 +4698,12 @@ paths:
         name: k8sNodeGroupName
         required: true
         type: string
+      - description: Details of the TbSetK8sNodeGroupAutoscalingReq object
+        in: body
+        name: setK8sNodeGroupAutoscalingReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbSetK8sNodeGroupAutoscalingReq'
       produces:
       - application/json
       responses:
@@ -4709,6 +4740,12 @@ paths:
         name: k8sClusterId
         required: true
         type: string
+      - description: Details of the TbUpgradeK8sClusterReq object
+        in: body
+        name: upgradeK8sClusterReq
+        required: true
+        schema:
+          $ref: '#/definitions/mcis.TbUpgradeK8sClusterReq'
       produces:
       - application/json
       responses:
