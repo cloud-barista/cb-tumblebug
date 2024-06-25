@@ -287,12 +287,12 @@ func RunServer(port string) {
 	// VPN Sites info
 	g.GET("/:nsId/mcis/:mcisId/site", rest_mcis.RestGetSitesInMcis)
 
-	// VPN Management
-	streamResponseGroup.POST("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPostVpnGcpToAws)
-	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestGetVpnGcpToAws)
-	streamResponseGroup.PUT("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPutVpnGcpToAws)
-	streamResponseGroup.DELETE("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestDeleteVpnGcpToAws)
-	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId/request/:requestId", rest_mcis.RestGetRequestStatusOfGcpAwsVpn)
+	// Site-to-stie VPN management
+	streamResponseGroup.POST("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPostSiteToSiteVpn)
+	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestGetSiteToSiteVpn)
+	streamResponseGroup.PUT("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPutSiteToSiteVpn)
+	streamResponseGroup.DELETE("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestDeleteSiteToSiteVpn)
+	g.GET("/:nsId/mcis/:mcisId/vpn/:vpnId/request/:requestId", rest_mcis.RestGetRequestStatusOfSiteToSiteVpn)
 	// TBD
 	// g.POST("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPostVpnGcpToAws)
 	// g.PUT("/:nsId/mcis/:mcisId/vpn/:vpnId", rest_mcis.RestPutVpnGcpToAws)

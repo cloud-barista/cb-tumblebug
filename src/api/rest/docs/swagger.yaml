@@ -5519,7 +5519,7 @@ paths:
             $ref: '#/definitions/common.SimpleMsg'
       summary: Get sites in MCIS
       tags:
-      - '[VPN] Sites in MCIS (under development)'
+      - '[VPN] Sites in MCIS'
   /ns/{nsId}/mcis/{mcisId}/subgroup:
     get:
       consumes:
@@ -6151,7 +6151,7 @@ paths:
       - application/json
       description: Get resource info of a site-to-site VPN (Currently, GCP-AWS is
         supported)
-      operationId: GetVpnGcpToAws
+      operationId: GetSiteToSiteVpn
       parameters:
       - default: ns01
         description: Namespace ID
@@ -6203,7 +6203,7 @@ paths:
       consumes:
       - application/json
       description: Check the status of a specific request by its ID
-      operationId: GetRequestStatusOfGcpAwsVpn
+      operationId: GetRequestStatusOfSiteToSiteVpn
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8878,7 +8878,7 @@ paths:
       consumes:
       - application/json
       description: Delete a site-to-site VPN (Currently, GCP-AWS is supported)
-      operationId: DeleteVpnGcpToAws
+      operationId: DeleteSiteToSiteVpn
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8924,7 +8924,7 @@ paths:
       consumes:
       - application/json
       description: Create a site-to-site VPN (Currently, GCP-AWS is supported)
-      operationId: PostVpnGcpToAws
+      operationId: PostSiteToSiteVpn
       parameters:
       - default: ns01
         description: Namespace ID
@@ -8976,7 +8976,7 @@ paths:
       consumes:
       - application/json
       description: (To be provided) Update a site-to-site VPN
-      operationId: PutVpnGcpToAws
+      operationId: PutSiteToSiteVpn
       parameters:
       - default: ns01
         description: Namespace ID
