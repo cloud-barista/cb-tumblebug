@@ -3527,7 +3527,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[VPN] Sites in MCIS (under development)"
+                    "[VPN] Sites in MCIS"
                 ],
                 "summary": "Get sites in MCIS",
                 "operationId": "GetSitesInMcis",
@@ -4499,7 +4499,7 @@ const docTemplate = `{
                     "[VPN] Site-to-site VPN (under development)"
                 ],
                 "summary": "Get resource info of a site-to-site VPN (Currently, GCP-AWS is supported)",
-                "operationId": "GetVpnGcpToAws",
+                "operationId": "GetSiteToSiteVpn",
                 "parameters": [
                     {
                         "type": "string",
@@ -4574,7 +4574,7 @@ const docTemplate = `{
                     "[VPN] Site-to-site VPN (under development)"
                 ],
                 "summary": "Check the status of a specific request by its ID",
-                "operationId": "GetRequestStatusOfGcpAwsVpn",
+                "operationId": "GetRequestStatusOfSiteToSiteVpn",
                 "parameters": [
                     {
                         "type": "string",
@@ -8524,7 +8524,7 @@ const docTemplate = `{
                     "[VPN] Site-to-site VPN (under development)"
                 ],
                 "summary": "(To be provided) Update a site-to-site VPN",
-                "operationId": "PutVpnGcpToAws",
+                "operationId": "PutSiteToSiteVpn",
                 "parameters": [
                     {
                         "type": "string",
@@ -8599,7 +8599,7 @@ const docTemplate = `{
                     "[VPN] Site-to-site VPN (under development)"
                 ],
                 "summary": "Create a site-to-site VPN (Currently, GCP-AWS is supported)",
-                "operationId": "PostVpnGcpToAws",
+                "operationId": "PostSiteToSiteVpn",
                 "parameters": [
                     {
                         "type": "string",
@@ -8674,7 +8674,7 @@ const docTemplate = `{
                     "[VPN] Site-to-site VPN (under development)"
                 ],
                 "summary": "Delete a site-to-site VPN (Currently, GCP-AWS is supported)",
-                "operationId": "DeleteVpnGcpToAws",
+                "operationId": "DeleteSiteToSiteVpn",
                 "parameters": [
                     {
                         "type": "string",
