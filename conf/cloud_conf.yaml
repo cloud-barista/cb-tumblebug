@@ -16,7 +16,7 @@ cloud:
       timeout: "-1"
       threshold: "3"
     k8scluster:
-      enable: "y"
+      enable: "n"
   azure:
     enable: "y"
     nlb:
@@ -25,7 +25,7 @@ cloud:
       timeout: "9"
       threshold: "3"
     k8scluster:
-      enable: "y"
+      enable: "n"
   gcp:
     enable: "y"
     nlb:
@@ -34,7 +34,7 @@ cloud:
       timeout: "9"
       threshold: "3"
     k8scluster:
-      enable: "y"
+      enable: "n"
   alibaba:
     enable: "y"
     nlb:
@@ -60,6 +60,10 @@ cloud:
       interval: "10"
       timeout: "9"
       threshold: "3"
+    k8scluster:
+      enable: "n"
+  nhncloud:
+    enable: "y"
     k8scluster:
       enable: "y"
   openstack:
