@@ -6069,22 +6069,26 @@ const docTemplate = `{
                 "operationId": "PostImage",
                 "parameters": [
                     {
+                        "enum": [
+                            "registerWithInfo",
+                            "registerWithId"
+                        ],
                         "type": "string",
-                        "description": "registeringMethod (registerWithInfo or registerWithId)",
+                        "description": "registeringMethod",
                         "name": "action",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "default": "ns01",
+                        "default": "system-purpose-common-ns",
                         "description": "Namespace ID",
                         "name": "nsId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Details for an image object",
+                        "description": "Specify details of a image object (cspImageName, guestOS, description, ...) manually",
                         "name": "imageInfo",
                         "in": "body",
                         "schema": {
@@ -6092,7 +6096,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "name, connectionName and cspImageId",
+                        "description": "Specify name, connectionName and cspImageId to register an image object automatically",
                         "name": "imageId",
                         "in": "body",
                         "schema": {
@@ -6872,9 +6876,13 @@ const docTemplate = `{
                 "operationId": "PostSpec",
                 "parameters": [
                     {
+                        "enum": [
+                            "registerWithInfo",
+                            "registerWithCspSpecName"
+                        ],
                         "type": "string",
-                        "description": "registerWithInfo or else",
-                        "name": "registeringMethod",
+                        "description": "registeringMethod",
+                        "name": "action",
                         "in": "query",
                         "required": true
                     },
@@ -6887,7 +6895,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Details for an spec object",
+                        "description": "Specify details of a spec object (vCPU, memoryGiB, ...) manually",
                         "name": "specInfo",
                         "in": "body",
                         "schema": {
@@ -6895,7 +6903,7 @@ const docTemplate = `{
                         }
                     },
                     {
-                        "description": "name, connectionName and cspSpecName",
+                        "description": "Specify name, connectionName and cspSpecName to register a spec object automatically",
                         "name": "specName",
                         "in": "body",
                         "schema": {
