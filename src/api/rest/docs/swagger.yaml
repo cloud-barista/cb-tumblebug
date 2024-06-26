@@ -7251,23 +7251,28 @@ paths:
       description: Register image
       operationId: PostImage
       parameters:
-      - description: registeringMethod (registerWithInfo or registerWithId)
+      - description: registeringMethod
+        enum:
+        - registerWithInfo
+        - registerWithId
         in: query
         name: action
         required: true
         type: string
-      - default: ns01
+      - default: system-purpose-common-ns
         description: Namespace ID
         in: path
         name: nsId
         required: true
         type: string
-      - description: Details for an image object
+      - description: Specify details of a image object (cspImageName, guestOS, description,
+          ...) manually
         in: body
         name: imageInfo
         schema:
           $ref: '#/definitions/mcir.TbImageInfo'
-      - description: name, connectionName and cspImageId
+      - description: Specify name, connectionName and cspImageId to register an image
+          object automatically
         in: body
         name: imageId
         schema:
@@ -7791,9 +7796,12 @@ paths:
       description: Register spec
       operationId: PostSpec
       parameters:
-      - description: registerWithInfo or else
+      - description: registeringMethod
+        enum:
+        - registerWithInfo
+        - registerWithCspSpecName
         in: query
-        name: registeringMethod
+        name: action
         required: true
         type: string
       - default: system-purpose-common-ns
@@ -7802,12 +7810,13 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: Details for an spec object
+      - description: Specify details of a spec object (vCPU, memoryGiB, ...) manually
         in: body
         name: specInfo
         schema:
           $ref: '#/definitions/mcir.TbSpecInfo'
-      - description: name, connectionName and cspSpecName
+      - description: Specify name, connectionName and cspSpecName to register a spec
+          object automatically
         in: body
         name: specName
         schema:

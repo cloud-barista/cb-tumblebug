@@ -33,10 +33,10 @@ import (
 // @Tags [Infra resource] MCIR Image management
 // @Accept  json
 // @Produce  json
-// @Param action query string true "registeringMethod (registerWithInfo or registerWithId)"
-// @Param nsId path string true "Namespace ID" default(ns01)
-// @Param imageInfo body mcir.TbImageInfo false "Details for an image object"
-// @Param imageId body mcir.TbImageReq false "name, connectionName and cspImageId"
+// @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithId)
+// @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
+// @Param imageInfo body mcir.TbImageInfo false "Specify details of a image object (cspImageName, guestOS, description, ...) manually"
+// @Param imageId body mcir.TbImageReq false "Specify name, connectionName and cspImageId to register an image object automatically"
 // @Param update query boolean false "Force update to existing image object" default(false)
 // @Success 200 {object} mcir.TbImageInfo
 // @Failure 404 {object} common.SimpleMsg

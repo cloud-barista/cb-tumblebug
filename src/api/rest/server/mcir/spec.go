@@ -33,10 +33,10 @@ import (
 // @Tags [Infra resource] MCIR Spec management
 // @Accept  json
 // @Produce  json
-// @Param registeringMethod query string true "registerWithInfo or else"
+// @Param action query string true "registeringMethod" Enums(registerWithInfo, registerWithCspSpecName)
 // @Param nsId path string true "Namespace ID" default(system-purpose-common-ns)
-// @Param specInfo body mcir.TbSpecInfo false "Details for an spec object"
-// @Param specName body mcir.TbSpecReq false "name, connectionName and cspSpecName"
+// @Param specInfo body mcir.TbSpecInfo false "Specify details of a spec object (vCPU, memoryGiB, ...) manually"
+// @Param specName body mcir.TbSpecReq false "Specify name, connectionName and cspSpecName to register a spec object automatically"
 // @Param update query boolean false "Force update to existing spec object" default(false)
 // @Success 200 {object} mcir.TbSpecInfo
 // @Failure 404 {object} common.SimpleMsg
