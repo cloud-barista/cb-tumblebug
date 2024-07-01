@@ -34,6 +34,8 @@ import (
 	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares"
 	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
 
+	"github.com/cloud-barista/cb-tumblebug/src/iam"
+
 	"crypto/subtle"
 	"fmt"
 	"os"
@@ -165,7 +167,7 @@ func RunServer(port string) {
 
 	// sample to show and discuss
 	authGroup := e.Group("/tumblebug/auth")
-	authGroup.Use(middlewares.JWTAuth())
+	authGroup.Use(iam.JWTAuthMW())
 	authGroup.GET("/test", auth.TestJWTAuth)
 
 	fmt.Print(banner)
