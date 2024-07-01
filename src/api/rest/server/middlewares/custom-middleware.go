@@ -2,12 +2,8 @@ package middlewares
 
 import (
 	"bytes"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -16,11 +12,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
-
-	"github.com/golang-jwt/jwt/v5"
-	echojwt "github.com/labstack/echo-jwt/v4"
-	"github.com/lestrrat-go/jwx/jwk"
 )
 
 func Zerologger(skipPatterns [][]string) echo.MiddlewareFunc {
@@ -236,139 +227,4 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 			// log.Debug().Msg("Start - BodyDump() middleware")
 		},
 	})
-}
-
-// JWTAuth initializes and returns the JWT middleware.
-func JWTAuth() echo.MiddlewareFunc {
-
-	signingMethod := viper.GetString("auth.jwt.signing.method")
-	config := echojwt.Config{
-		SigningMethod:  signingMethod,
-		KeyFunc:        getKey,
-		SuccessHandler: retrospectToken,
-	}
-
-	return echojwt.WithConfig(config)
-}
-
-// getKey is the KeyFunc for the JWT middleware to supply the key for verification.
-func getKey(token *jwt.Token) (interface{}, error) {
-
-	base64PubKeyStr := viper.GetString("auth.jwt.publickey")
-	if base64PubKeyStr == "" {
-		return nil, fmt.Errorf("public key is not set")
-	}
-
-	publicKey, _ := parseKeycloakRSAPublicKey(base64PubKeyStr)
-
-	key, _ := jwk.New(publicKey)
-
-	var pubkey interface{}
-	if err := key.Raw(&pubkey); err != nil {
-		return nil, fmt.Errorf("unable to get the public key. error: %s", err.Error())
-	}
-
-	log.Debug().Msg("end - getKey")
-
-	return pubkey, nil
-}
-
-// parseKeycloakRSAPublicKey parses a base64 encoded public key into an rsa.PublicKey.
-func parseKeycloakRSAPublicKey(base64Str string) (*rsa.PublicKey, error) {
-	buf, err := base64.StdEncoding.DecodeString(base64Str)
-	if err != nil {
-		return nil, err
-	}
-	parsedKey, err := x509.ParsePKIXPublicKey(buf)
-	if err != nil {
-		return nil, err
-	}
-	publicKey, ok := parsedKey.(*rsa.PublicKey)
-	if ok {
-		return publicKey, nil
-	}
-	return nil, fmt.Errorf("unexpected key type %T", publicKey)
-}
-
-// The SuccessHandler for the JWT middleware
-// It will be called if jwt.Parse succeeds and set the claims in the context.
-// (Briefly, it is the process of checking whether a (previously) issued token is still valid or not.)
-func retrospectToken(c echo.Context) {
-	log.Debug().Msg("start - retrospectToken, which is the SuccessHandler")
-
-	// Get the jwtToken from the context
-	jwtToken, ok := c.Get("user").(*jwt.Token) // by default token is stored under `user` key
-	if !ok {
-		c.String(http.StatusBadRequest, "missing or invalid JWT token")
-	}
-
-	// Get the claims from the token
-	claims, ok := jwtToken.Claims.(jwt.MapClaims) // by default claims is of type `jwt.MapClaims`
-	if !ok {
-		c.String(http.StatusUnauthorized, "failed to type cast claims as jwt.MapClaims")
-	}
-
-	// Get the realm roles from the claims
-	roles := parseRealmRoles(claims)
-
-	// Check this user's role
-	var role = ""
-	if HasRole(roles, "maintainer") {
-		role = "maintainer"
-	} else if HasRole(roles, "admin") {
-		role = "admin"
-	} else if HasRole(roles, "user") {
-		role = "user"
-	} else {
-		role = "guest"
-	}
-
-	// Get expiry time from claims
-	exp, ok := claims["exp"].(float64)
-	if !ok {
-		// If the exp claim is missing or not of the expected type
-		log.Debug().Msgf("unable to find or parse expiry time from token")
-		c.String(http.StatusNotFound, "unable to find or parse expiry time from token")
-	}
-	expiryTime := time.Unix(int64(exp), 0)         // Unix time
-	expiredTime := expiryTime.Format(time.RFC3339) // RFC3339 time
-
-	// log.Trace().Msgf("token: %+v", token)
-	log.Trace().Msgf("token.Raw: %+v", jwtToken.Raw)
-	log.Trace().Msgf("claims: %+v", claims)
-
-	// Set user as authenticated
-	c.Set("authenticated", true)
-	c.Set("token", jwtToken.Raw)
-	// Set user name
-	c.Set("name", claims["name"])
-	c.Set("role", role)
-	c.Set("expired-time", expiredTime)
-	// Set more values here
-	// ...
-
-	log.Debug().Msg("End - retrospectToken, which is the SuccessHandler")
-}
-
-func parseRealmRoles(claims jwt.MapClaims) []string {
-	var realmRoles []string = make([]string, 0)
-
-	if claim, ok := claims["realm_access"]; ok {
-		if roles, ok := claim.(map[string]interface{})["roles"]; ok {
-			for _, role := range roles.([]interface{}) {
-				realmRoles = append(realmRoles, role.(string))
-			}
-		}
-	}
-	return realmRoles
-}
-
-// HasRole checks if a slice contains a specific element
-func HasRole(roleList []string, role string) bool {
-	for _, s := range roleList {
-		if s == role {
-			return true
-		}
-	}
-	return false
 }
