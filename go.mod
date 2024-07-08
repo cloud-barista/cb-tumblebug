@@ -1,8 +1,6 @@
 module github.com/cloud-barista/cb-tumblebug
 
-go 1.22.3
-
-toolchain go1.22.5
+go 1.21.6
 
 require (
 	github.com/cloud-barista/cb-store v0.8.0
@@ -13,7 +11,6 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/jedib0t/go-pretty/v6 v6.5.6
-	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/mattn/go-sqlite3 v1.14.19
 	github.com/raccoon-mh/iamtokenvalidatorpoc v0.1.2
@@ -51,7 +48,6 @@ require (
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
-	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
