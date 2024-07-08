@@ -31,10 +31,9 @@ import (
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
 	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares"
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/authmw"
+	middlewares "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/custom-middleware"
 	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
-
-	"github.com/cloud-barista/cb-tumblebug/src/iam"
 
 	"crypto/subtle"
 	"fmt"
@@ -136,14 +135,13 @@ func RunServer(port string) {
 	}))
 
 	// Conditions to prevent abnormal operation due to typos (e.g., ture, falss, etc.)
-	enableAuth := os.Getenv("AUTH_ENABLED") == "true"
+	authEnabled := os.Getenv("AUTH_ENABLED") == "true"
+	authMode := os.Getenv("AUTH_MODE")
 
 	apiUser := os.Getenv("API_USERNAME")
 	apiPass := os.Getenv("API_PASSWORD")
 
-	authMode := os.Getenv("AUTH_MODE")
-
-	if enableAuth {
+	if authEnabled {
 		if authMode == "basic" {
 			e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 				Skipper: func(c echo.Context) bool {
@@ -167,7 +165,15 @@ func RunServer(port string) {
 
 	// sample to show and discuss
 	authGroup := e.Group("/tumblebug/auth")
-	authGroup.Use(iam.JWTAuthMW())
+	err := authmw.InitJwtAuthMw(os.Getenv("IAM_MANAGER_REST_URL"), "/api/auth/certs")
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize JWT Auth Middleware")
+	}
+	authSkipPatterns := [][]string{
+		{"/tumblebug/readyz"},
+		{"/tumblebug/httpVersion"},
+	}
+	authGroup.Use(authmw.JwtAuthMw(authSkipPatterns))
 	authGroup.GET("/test", auth.TestJWTAuth)
 
 	fmt.Print(banner)
@@ -462,8 +468,8 @@ func RunServer(port string) {
 	fmt.Println(" Default Namespace: " + common.DefaultNamespace)
 	fmt.Println(" Default CredentialHolder: " + common.DefaultCredentialHolder + "\n")
 
-	if enableAuth {
-		fmt.Println(" Access to API dashboard" + " (username: $API_USERNAME / password: $API_PASSWORD)")
+	if authEnabled {
+		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
 	}
 
 	fmt.Printf(noticeColor, apidashboard)
