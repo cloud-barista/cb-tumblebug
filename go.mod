@@ -7,16 +7,16 @@ require (
 	github.com/cloud-barista/mc-terrarium v0.0.7
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.17.0
-	github.com/go-resty/resty/v2 v2.11.0
-	github.com/go-sql-driver/mysql v1.7.1
+	github.com/go-resty/resty/v2 v2.13.1
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/jedib0t/go-pretty/v6 v6.5.6
 	github.com/labstack/echo/v4 v4.11.4
-	github.com/mattn/go-sqlite3 v1.14.19
-	github.com/raccoon-mh/iamtokenvalidatorpoc v0.1.2
+	github.com/m-cmp/mc-iam-manager v0.2.7
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/rs/xid v1.5.0
 	github.com/rs/zerolog v1.32.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/echo-swagger v1.4.1
@@ -30,6 +30,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/cloud-barista/cb-log v0.8.0 // indirect
@@ -99,7 +100,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3 // indirect
-	golang.org/x/net v0.25.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect

@@ -1,23 +1,58 @@
 package authmw
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v4"
 	echojwt "github.com/labstack/echo-jwt"
 	"github.com/labstack/echo/v4"
-	"github.com/raccoon-mh/iamtokenvalidatorpoc"
+	"github.com/m-cmp/mc-iam-manager/iamtokenvalidator"
 	"github.com/rs/zerolog/log"
 )
 
 func InitJwtAuthMw(iamEndpoint string, pubkeyUrl string) error {
-	err := iamtokenvalidatorpoc.GetPubkeyIamManager(iamEndpoint + pubkeyUrl)
+	log.Debug().Msg("Start - InitJwtAuthMw")
+
+	// Check readiness of MC-IAM-Manager
+	client := resty.New()
+
+	method := "GET"
+	url := fmt.Sprintf("%s/alive", iamEndpoint)
+	requestBody := common.NoBody
+	var resReadyz map[string]string
+
+	err := common.ExecuteHttpRequest(
+		client,
+		method,
+		url,
+		nil,
+		common.SetUseBody(requestBody),
+		&requestBody,
+		&resReadyz,
+		common.VeryShortDuration,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// log.Debug().Msgf("resReadyz: %+v", resReadyz["status"])
+	// if resReadyz["status"] != "ok" {
+	// 	return fmt.Errorf("MC-IAM-Manager is not ready")
+	// }
+
+	// Get a public key from MC-IAM-Manager
+	err = iamtokenvalidator.GetPubkeyIamManager(iamEndpoint + pubkeyUrl)
 	if err != nil {
 		log.Debug().Msgf("failed to get public key from IAM Manager: %v", err.Error())
 	}
 
+	log.Debug().Msg("End - InitJwtAuthMw")
 	return nil
 }
 
@@ -45,7 +80,7 @@ func JwtAuthMw(skipPatterns [][]string) echo.MiddlewareFunc {
 			return false
 		},
 		// SigningMethod:  signingMethod,
-		KeyFunc:        iamtokenvalidatorpoc.Keyfunction,
+		KeyFunc:        iamtokenvalidator.Keyfunction,
 		SuccessHandler: retrospectToken,
 	}
 	log.Debug().Msg("End - JWTAuthMW")
@@ -60,7 +95,7 @@ func retrospectToken(c echo.Context) {
 	log.Debug().Msg("start - retrospectToken, which is the SuccessHandler")
 
 	accesstoken := c.Get("user").(*jwt.Token).Raw
-	claims, err := iamtokenvalidatorpoc.GetTokenClaimsByIamManagerClaims(accesstoken)
+	claims, err := iamtokenvalidator.GetTokenClaimsByIamManagerClaims(accesstoken)
 	if err != nil {
 		c.String(http.StatusUnauthorized, "failed to type cast claims as jwt.MapClaims")
 	}

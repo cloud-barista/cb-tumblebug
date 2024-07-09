@@ -141,9 +141,15 @@ func RunServer(port string) {
 	apiUser := os.Getenv("API_USERNAME")
 	apiPass := os.Getenv("API_PASSWORD")
 
+	// Setup Middlewares for auth
+	var basicAuthMw echo.MiddlewareFunc
+	var jwtAuthMw echo.MiddlewareFunc
+
 	if authEnabled {
-		if authMode == "basic" {
-			e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+		switch authMode {
+		case "basic":
+			// Setup Basic Auth Middleware
+			basicAuthMw = middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 				Skipper: func(c echo.Context) bool {
 					if c.Path() == "/tumblebug/readyz" ||
 						c.Path() == "/tumblebug/httpVersion" {
@@ -159,22 +165,40 @@ func RunServer(port string) {
 					}
 					return false, nil
 				},
-			}))
+			})
+			log.Info().Msg("Basic Auth Middleware is initialized successfully")
+		case "jwt":
+			// Setup JWT Auth Middleware
+			err := authmw.InitJwtAuthMw(os.Getenv("IAM_MANAGER_REST_URL"), "/api/auth/certs")
+			if err != nil {
+				log.Fatal().Err(err).Msg("Failed to initialize JWT Auth Middleware")
+			} else {
+				authSkipPatterns := [][]string{
+					{"/tumblebug/readyz"},
+					{"/tumblebug/httpVersion"},
+				}
+				jwtAuthMw = authmw.JwtAuthMw(authSkipPatterns)
+				log.Info().Msg("JWT Auth Middleware is initialized successfully")
+			}
+		default:
+			log.Fatal().Msg("AUTH_MODE is not set properly. Please set it to 'basic' or 'jwt'. EXITING...")
 		}
 	}
 
-	// sample to show and discuss
+	// Set basic auth middleware for root group
+	if authEnabled && authMode == "basic" && basicAuthMw != nil {
+		log.Debug().Msg("Setting up Basic Auth Middleware for root group")
+		e.Use(basicAuthMw)
+	}
+
+	// [Temp - start] For JWT auth test, a route group and an API
 	authGroup := e.Group("/tumblebug/auth")
-	err := authmw.InitJwtAuthMw(os.Getenv("IAM_MANAGER_REST_URL"), "/api/auth/certs")
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to initialize JWT Auth Middleware")
+	if authEnabled && authMode == "jwt" && jwtAuthMw != nil {
+		log.Debug().Msg("Setting up JWT Auth Middleware for /tumblebug/auth group")
+		authGroup.Use(jwtAuthMw)
 	}
-	authSkipPatterns := [][]string{
-		{"/tumblebug/readyz"},
-		{"/tumblebug/httpVersion"},
-	}
-	authGroup.Use(authmw.JwtAuthMw(authSkipPatterns))
 	authGroup.GET("/test", auth.TestJWTAuth)
+	// [Temp - end] For JWT auth test, a route group and an API
 
 	fmt.Print(banner)
 	fmt.Println("\n ")
