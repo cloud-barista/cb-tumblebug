@@ -20,13 +20,6 @@ k8scluster:
             id: 1.28.9-aliyun.1
           - name: 1.26
             id: 1.26.15-aliyun.1
-    nodeImage:
-      - region: [all]
-        available:
-          - name: default
-            id: default
-          - name: Alibaba Cloud Linux 3.2104 LTS 64 bit
-            id: aliyun_3_x64_20G_alibase_20240528.vhd
     rootDisk:
       - region: [all]
         type:
@@ -48,21 +41,6 @@ k8scluster:
             id: v1.27.3
           - name: 1.26
             id: v1.26.3
-    nodeImage:
-      - region: [kr1,kr2]
-        available:
-          - name: default
-            id: default
-          - name: Ubuntu Server 22.04.4 LTS - Container (2024.05.21)
-            id: b70fe2c9-ce55-448b-8e42-bb8f4c862391 
-          - name: Ubuntu Server 20.04.6 LTS - Container (2024.05.21) 
-            id: 4c02a2f3-e9db-49b9-abeb-7ae7c604f24d
-          - name: CentOS 7.9 - Container (2024.05.21)
-            id: d95aeef9-3cd0-4288-8370-b874d64884e7
-          - name: Debian 11.9 Bullseye - Container (2024.05.21)
-            id: 8f4c0ded-501d-410a-a362-a5edd8730e3a
-          - name: Rocky Linux 8.9 - Container (2024.05.21)
-            id: 7bbeb38a-7398-4188-8ccf-1c0ce1776d02
     rootDisk:
       - region: [all]
         type:
@@ -82,24 +60,6 @@ k8scluster:
             id: 1.26.1
           - name: 1.24
             id: 1.24.4
-    nodeImage:
-      # https://www.tencentcloud.com/document/product/457/46750
-      - region: [all]
-        available:
-          - name: default
-            id: default
-          - name:	TencentOS Server 2.4(TK4)
-            id: img-9axl1k53
-          - name:	CentOS 7.8
-            id: img-3la7wgnt
-          - name:	TencentOS Server 3.1(TK4)
-            id: img-eb30mz89
-          - name:	TencentOS Server 2.4
-            id: img-hdt9xxkt
-          - name:	Ubuntu 18.04 LTS 64bit
-            id: img-pi0ii46r
-          - name:	Ubuntu Server 20.04.1 LTS 64bit(beta)
-            id: img-22trbn9x
     rootDisk:
       - region: [all]
         type:

@@ -75,6 +75,7 @@ type TbImageInfo struct {
 	ConnectionName       string            `json:"connectionName,omitempty"`
 	CspImageId           string            `json:"cspImageId,omitempty"`
 	CspImageName         string            `json:"cspImageName,omitempty"`
+	InfraType            string            `json:"infraType,omitempty"` // vm|k8s|kubernetes|container, etc.
 	Description          string            `json:"description,omitempty"`
 	CreationDate         string            `json:"creationDate,omitempty"`
 	GuestOS              string            `json:"guestOS,omitempty"` // Windows7, Ubuntu etc.

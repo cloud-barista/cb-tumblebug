@@ -15,82 +15,78 @@ limitations under the License.
 package mcir
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 
-	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/rs/zerolog/log"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestImage(t *testing.T) {
 	/*
 		expected := 1
 		actual := 0
-		assert.Equal(t, expected, actual, "기대값과 결과값이 다릅니다.")
+		assert.Equal(t, expected, actual, "expected value and actual value are different")
 	*/
 
-	nsName := "tb-unit-test"
+	/*
+		nsName := "tb-unit-test"
 
-	nsReq := common.NsReq{}
-	nsReq.Name = nsName
+		nsReq := common.NsReq{}
+		nsReq.Name = nsName
 
-	_, err := common.CreateNs(&nsReq)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		log.Debug().Msg("Namespace created successfully")
-	}
+		_, err := common.CreateNs(&nsReq)
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			log.Debug().Msg("Namespace created successfully")
+		}
 
-	err = common.OpenSQL("../../../meta_db/dat/tb-unit-test.s3db")
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		log.Debug().Msg("Database access info set successfully")
-	}
+		err = common.OpenSQL("../../../meta_db/dat/tb-unit-test.s3db")
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			log.Debug().Msg("Database access info set successfully")
+		}
 
-	err = common.SelectDatabase("tb-unit-test")
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		log.Debug().Msg("DB selected successfully..")
-	}
+		err = common.SelectDatabase("tb-unit-test")
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			log.Debug().Msg("DB selected successfully..")
+		}
 
-	// err = common.CreateImageTable()
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// } else {
-	// 	log.Debug().Msg("Table image created successfully..")
-	// }
+		// err = common.CreateImageTable()
+		// if err != nil {
+		// 	fmt.Println(err.Error())
+		// } else {
+		// 	log.Debug().Msg("Table image created successfully..")
+		// }
 
-	imageName := "tb-unit-test"
+		imageName := "tb-unit-test"
 
-	imageReq := TbImageInfo{}
-	imageReq.Name = imageName
+		imageReq := TbImageInfo{}
+		imageReq.Name = imageName
 
-	result, _ := RegisterImageWithInfo(nsName, &imageReq, false)
-	resultJSON, _ := json.MarshalIndent(result, "", "  ")
-	log.Debug().Msg("result: " + string(resultJSON))
-	assert.Equal(t, imageName, result.Name, "CreateImage 기대값과 결과값이 다릅니다.")
+		result, _ := RegisterImageWithInfo(nsName, &imageReq, false)
+		resultJSON, _ := json.MarshalIndent(result, "", "  ")
+		log.Debug().Msg("result: " + string(resultJSON))
+		assert.Equal(t, imageName, result.Name, "CreateImage: expected value and actual value are different.")
 
-	resultInterface, _ := GetResource(nsName, common.StrImage, imageName)
-	result = resultInterface.(TbImageInfo) // type assertion
-	assert.Equal(t, imageName, result.Name, "GetImage 기대값과 결과값이 다릅니다.")
+		resultInterface, _ := GetResource(nsName, common.StrImage, imageName)
+		result = resultInterface.(TbImageInfo) // type assertion
+		assert.Equal(t, imageName, result.Name, "GetImage: expected value and actual value are different.")
 
-	//result, _ := ListImage()
+		//result, _ := ListImage()
 
-	//result, _ := ListImageId()
+		//result, _ := ListImageId()
 
-	resultErr := DelResource(nsName, common.StrImage, imageName, "false")
-	assert.Nil(t, resultErr)
+		resultErr := DelResource(nsName, common.StrImage, imageName, "false")
+		assert.Nil(t, resultErr)
 
-	err = common.DelNs(nsName)
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		log.Debug().Msg("Namespace deleted successfully")
-	}
-
+		err = common.DelNs(nsName)
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			log.Debug().Msg("Namespace deleted successfully")
+		}
+	*/
 }

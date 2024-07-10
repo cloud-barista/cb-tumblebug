@@ -1574,6 +1574,7 @@ func LoadCommonResource() (common.IdList, error) {
 			// 18	acceleratorCount
 			// 19	acceleratorMemoryGB
 			// 20	acceleratorDetails
+			// 21	infraType
 
 			providerName := strings.ToLower(row[0])
 			regionName := strings.ToLower(row[1])
@@ -1591,6 +1592,7 @@ func LoadCommonResource() (common.IdList, error) {
 				acceleratorMemoryGB = s
 			}
 			description := row[20]
+			infraType := strings.ToLower(row[21])
 
 			specReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
 
@@ -1659,6 +1661,7 @@ func LoadCommonResource() (common.IdList, error) {
 							log.Error().Msgf("Not valid evaluationScore01 value in the asset: %s", specInfoId)
 							evaluationScore01 = -99.9
 						}
+						expandedInfraType := expandInfraType(infraType)
 						specUpdateRequest :=
 							TbSpecInfo{
 								ProviderName:        providerName,
@@ -1672,6 +1675,7 @@ func LoadCommonResource() (common.IdList, error) {
 								AcceleratorMemoryGB: float32(acceleratorMemoryGB),
 								Description:         description,
 								EvaluationScore01:   float32(evaluationScore01),
+								InfraType:           expandedInfraType,
 							}
 
 						_, err3 := UpdateSpec(common.SystemCommonNs, specInfoId, specUpdateRequest)
@@ -1707,10 +1711,16 @@ func LoadCommonResource() (common.IdList, error) {
 				// row1: regionName
 				// row2: cspImageId
 				// row3: OsType
+				// row4: description
+				// row5: supportedInstance
+				// row6: infraType
 				providerName := strings.ToLower(row[0])
 				regionName := strings.ToLower(row[1])
 				imageReqTmp.CspImageId = row[2]
 				osType := strings.ReplaceAll(row[3], " ", "")
+				description := row[4]
+				infraType := strings.ToLower(row[6])
+
 				// Give a name for spec object by combining ConnectionName and OsType
 				imageReqTmp.Name = GetProviderRegionZoneResourceKey(providerName, regionName, "", osType)
 
@@ -1742,7 +1752,12 @@ func LoadCommonResource() (common.IdList, error) {
 							regiesteredStatus += "  [Failed] " + err1.Error()
 						} else {
 							// Update registered image object with OsType info
-							imageUpdateRequest := TbImageInfo{GuestOS: osType}
+							expandedInfraType := expandInfraType(infraType)
+							imageUpdateRequest := TbImageInfo{
+								GuestOS:     osType,
+								Description: description,
+								InfraType:   expandedInfraType,
+							}
 							_, err2 := UpdateImage(common.SystemCommonNs, imageInfoId, imageUpdateRequest)
 							if err2 != nil {
 								log.Error().Err(err2).Msg("UpdateImage failed")
@@ -2030,6 +2045,24 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 		}
 	}
 
+}
+
+func expandInfraType(infraType string) string {
+	expInfraTypeList := []string{}
+	lowerInfraType := strings.ToLower(infraType)
+
+	if strings.Contains(lowerInfraType, common.StrVM) {
+		expInfraTypeList = append(expInfraTypeList, common.StrVM)
+	}
+	if strings.Contains(lowerInfraType, common.StrK8s) ||
+		strings.Contains(lowerInfraType, common.StrKubernetes) ||
+		strings.Contains(lowerInfraType, common.StrContainer) {
+		expInfraTypeList = append(expInfraTypeList, common.StrK8s)
+		expInfraTypeList = append(expInfraTypeList, common.StrKubernetes)
+		expInfraTypeList = append(expInfraTypeList, common.StrContainer)
+	}
+
+	return strings.Join(expInfraTypeList, "|")
 }
 
 /*
