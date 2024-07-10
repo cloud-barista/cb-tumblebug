@@ -62,3 +62,6 @@ log/
 *.log
 *.history
 
+# Ignore all docker-compose files created by users, except docker-compose.yaml
+*docker-compose*.yaml
+!docker-compose.yaml
