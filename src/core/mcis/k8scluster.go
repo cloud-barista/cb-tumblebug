@@ -512,6 +512,13 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	 */
 
 	spName := fmt.Sprintf("%s-%s", nsId, u.Id)
+
+	// Validate K8sCluster Version
+	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, u.Version)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyObj, err
+	}
 	spVersion := u.Version
 
 	spVPCName, err := common.GetCspResourceId(nsId, common.StrVNet, u.VNetId)
@@ -1671,11 +1678,20 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	/*
 	 * Build RequestBody for SpiderUpgradeClusterReq{}
 	 */
+
+	// Validate K8sCluster Version
+	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, u.Version)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return emptyObj, err
+	}
+	spVersion := u.Version
+
 	requestBody := SpiderUpgradeClusterReq{
 		NameSpace:      "", // should be empty string from Tumblebug
 		ConnectionName: oldTbK8sCInfo.ConnectionName,
 		ReqInfo: SpiderUpgradeClusterReqInfo{
-			Version: u.Version,
+			Version: spVersion,
 		},
 	}
 
@@ -1883,4 +1899,29 @@ func convertSpiderNodeGroupStatusToTbK8sNodeGroupStatus(spNodeGroupStatus Spider
 	}
 
 	return TbK8sNodeGroupInactive
+}
+
+func validateK8sClusterVersion(providerName, regionName, version string) error {
+	availableVersion, err := common.GetAvailableK8sClusterVersion(providerName, regionName)
+	if err != nil {
+		return err
+	}
+
+	valid := false
+	versionIdList := []string{}
+	for _, verDetail := range *availableVersion {
+		if strings.EqualFold(verDetail.Id, version) {
+			valid = true
+			break
+		} else {
+			versionIdList = append(versionIdList, verDetail.Id)
+		}
+	}
+
+	if valid {
+		return nil
+	} else {
+		return fmt.Errorf("Available K8sCluster Version(k8sclusterinfo.yaml) for Provider/Region(%s/%s): %s",
+			providerName, regionName, strings.Join(versionIdList, ", "))
+	}
 }

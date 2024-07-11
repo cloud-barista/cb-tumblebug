@@ -231,6 +231,7 @@ type Cloud struct {
 	Alibaba   CloudSetting `yaml:"alibaba"`
 	Tencent   CloudSetting `yaml:"tencent"`
 	Ibm       CloudSetting `yaml:"ibm"`
+	Nhncloud  CloudSetting `yaml:"nhncloud"`
 	Openstack CloudSetting `yaml:"openstack"`
 	Cloudit   CloudSetting `yaml:"cloudit"`
 }
