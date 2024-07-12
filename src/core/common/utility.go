@@ -1328,7 +1328,7 @@ func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K
 		}
 	}
 
-	return nil, fmt.Errorf("no available kubernetes cluster version for region(%s) of provider(%s)", regionName, providerName)
+	return nil, fmt.Errorf("no available kubernetes cluster version for provider(%s):region(%s)", providerName, regionName)
 }
 
 // GetAvailableK8sClusterNodeImage is func to get available kubernetes cluster node images for provider and region from K8sClusterInfo
