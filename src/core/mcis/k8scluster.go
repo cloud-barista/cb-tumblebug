@@ -452,7 +452,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	err := validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			log.Err(err).Msg("")
+			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
 		}
 
@@ -461,12 +461,13 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	check, err := CheckK8sCluster(nsId, u.Id)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
 	if check {
 		err := fmt.Errorf("The k8s cluster " + u.Id + " already exists.")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -477,6 +478,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	connConfig, err := common.GetConnConfig(u.ConnectionName)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the connConfig " + u.ConnectionName + ": " + err.Error())
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -504,6 +506,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	if cloudSetting.K8sCluster.Enable != "y" {
 		err := fmt.Errorf("The K8sCluster Management function is not enabled for Cloud(" + fnCloudType + ")")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -516,14 +519,14 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	// Validate K8sCluster Version
 	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, u.Version)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msgf("Failed to Create a K8sCluster: Requested K8sVersion(%s)", u.Version)
 		return emptyObj, err
 	}
 	spVersion := u.Version
 
 	spVPCName, err := common.GetCspResourceId(nsId, common.StrVNet, u.VNetId)
 	if spVPCName == "" {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -546,13 +549,13 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	tmpInf, err := mcir.GetResource(nsId, common.StrVNet, u.VNetId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 	tbVNetInfo := mcir.TbVNetInfo{}
 	err = common.CopySrcToDest(&tmpInf, &tbVNetInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -572,6 +575,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 	if len(spSubnetNames) == 0 {
 		err := fmt.Errorf("No valid subnets in VNetId(%s)", u.VNetId)
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -579,7 +583,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	for _, v := range u.SecurityGroupIds {
 		spSgName, err := common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 		if spSgName == "" {
-			log.Error().Err(err).Msg("")
+			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
 		}
 
@@ -590,7 +594,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	for _, v := range u.K8sNodeGroupList {
 		err := common.CheckString(v.Name)
 		if err != nil {
-			log.Error().Err(err).Msg("")
+			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
 		}
 
@@ -600,20 +604,20 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		} else {
 			spImgName, err = common.GetCspResourceId(nsId, common.StrImage, v.ImageId)
 			if spImgName == "" {
-				log.Error().Err(err).Msg("")
+				log.Err(err).Msg("Failed to Create a K8sCluster")
 				return emptyObj, err
 			}
 		}
 
 		spSpecName, err := common.GetCspResourceId(nsId, common.StrSpec, v.SpecId)
 		if spSpecName == "" {
-			log.Error().Err(err).Msg("")
+			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
 		}
 
 		spKpName, err := common.GetCspResourceId(nsId, common.StrSSHKey, v.SshKeyId)
 		if spKpName == "" {
-			log.Error().Err(err).Msg("")
+			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
 		}
 
@@ -672,7 +676,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -697,14 +701,14 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	err = common.CBStore.Put(k, string(Val))
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return tbK8sCInfo, err
 	}
 
 	kv, err := common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In CreateK8sCluster(); CBStore.Get() returned an error: " + err.Error())
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("")
 	}
 
 	log.Debug().Msg("<" + kv.Key + "> \n" + kv.Value)
@@ -712,7 +716,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	storedTbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("")
 	}
 	return storedTbK8sCInfo, nil
 }
@@ -738,7 +742,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	err := validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			log.Err(err).Msg("")
+			log.Err(err).Msg("Failed to Add K8sNodeGroup")
 			return emptyObj, err
 		}
 
@@ -747,12 +751,13 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -764,7 +769,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	kv, err := common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In AddK8sNodeGroup(); CBStore.Get() returned an error: " + err.Error())
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -772,7 +777,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	err = json.Unmarshal([]byte(kv.Value), &oldTbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -782,7 +787,8 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	connConfig, err := common.GetConnConfig(oldTbK8sCInfo.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the connConfig " + oldTbK8sCInfo.ConnectionName + ": " + err.Error())
+		err := fmt.Errorf("failed to get the connConfig " + oldTbK8sCInfo.ConnectionName + ": " + err.Error())
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -810,6 +816,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	if cloudSetting.K8sCluster.Enable != "y" {
 		err := fmt.Errorf("The K8sCluster Management function is not enabled for Cloud(" + fnCloudType + ")")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -820,7 +827,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	spName := u.Name
 	err = common.CheckString(spName)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -828,20 +835,20 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	if u.ImageId != "" {
 		spImgName, err = common.GetCspResourceId(nsId, common.StrImage, u.ImageId)
 		if spImgName == "" {
-			log.Error().Err(err).Msg("")
+			log.Err(err).Msg("Failed to Add K8sNodeGroup")
 			return emptyObj, err
 		}
 	}
 
 	spSpecName, err := common.GetCspResourceId(nsId, common.StrSpec, u.SpecId)
 	if spSpecName == "" {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
 	spKpName, err := common.GetCspResourceId(nsId, common.StrSSHKey, u.SshKeyId)
 	if spKpName == "" {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -884,7 +891,7 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
 
@@ -902,14 +909,14 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	err = common.CBStore.Put(k, string(Val))
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return newTbK8sCInfo, err
 	}
 
 	kv, err = common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In AddK8sNodeGroup(); CBStore.Get() returned an error: " + err.Error())
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -918,10 +925,9 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	storedTbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("")
 	}
 	return storedTbK8sCInfo, nil
-
 }
 
 // RemoveK8sNodeGroup removes a specified NodeGroup
@@ -943,12 +949,13 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Remove K8sNodeGroup")
 		return false, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		log.Err(err).Msg("Failed to Remove K8sNodeGroup")
 		return false, err
 	}
 
@@ -967,7 +974,7 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 	tbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Remove K8sNodeGroup")
 		return false, err
 	}
 
@@ -994,7 +1001,7 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Remove K8sNodeGroup")
 		return false, err
 	}
 
@@ -1029,18 +1036,19 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
 		return false, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
 		return false, err
 	}
 
 	err = common.CheckString(k8sNodeGroupName)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
 		return false, err
 	}
 
@@ -1056,7 +1064,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	tbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
 		return false, err
 	}
 
@@ -1084,7 +1092,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
 		return false, err
 	}
 
@@ -1112,18 +1120,19 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Change K8sNodeGroup AutoscaleSize")
 		return emptyObj, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		log.Err(err).Msg("Failed to Change K8sNodeGroup AutoscaleSize")
 		return emptyObj, err
 	}
 
 	err = common.CheckString(k8sNodeGroupName)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Change K8sNodeGroup AutoscaleSize")
 		return emptyObj, err
 	}
 
@@ -1139,7 +1148,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	tbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Change K8sNodeGroup AutoscaleSize")
 		return emptyObj, err
 	}
 
@@ -1169,7 +1178,7 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Change K8sNodeGroup AutoscaleSize")
 		return emptyObj, err
 	}
 
@@ -1198,12 +1207,13 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	*/
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Get K8sCluster")
 		return emptyObj, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		log.Err(err).Msg("Failed to Get K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1223,12 +1233,13 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	storedTbK8sCInfo := TbK8sClusterInfo{}
 	if kv == nil {
 		err = fmt.Errorf("Cannot get the k8s cluster " + k8sClusterId + ".")
+		log.Err(err).Msg("Failed to Get K8sCluster")
 		return storedTbK8sCInfo, err
 	}
 
 	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Get K8sCluster")
 		return storedTbK8sCInfo, err
 	}
 
@@ -1264,7 +1275,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Get K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1276,6 +1287,7 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	 */
 	if !isEqualTbK8sClusterInfoExceptStatus(storedTbK8sCInfo, tbK8sCInfo) {
 		err := fmt.Errorf("The k8s cluster " + k8sClusterId + " has been changed something.")
+		log.Err(err).Msg("Failed to Get K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1314,13 +1326,13 @@ func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Check K8sCluster")
 		return false, err
 	}
 
 	err = common.CheckString(k8sClusterId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Check K8sCluster")
 		return false, err
 	}
 
@@ -1330,7 +1342,7 @@ func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
 
 	keyValue, err := common.CBStore.Get(key)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Check K8sCluster")
 		return false, err
 	}
 	if keyValue != nil {
@@ -1349,7 +1361,7 @@ func GenK8sClusterKey(nsId string, k8sClusterId string) string {
 
 	err = common.CheckString(k8sClusterId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Generate K8sCluster Key")
 		return "/invalidKey"
 	}
 
@@ -1373,7 +1385,7 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 	kv, err := common.CBStore.GetList(k, true)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Failed to Get K8sClusterId List")
 		return nil, err
 	}
 
@@ -1403,7 +1415,7 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to List K8sCluster")
 		return nil, err
 	}
 
@@ -1419,7 +1431,7 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 	kv = cbstore_utils.GetChildList(kv, k)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to List K8sCluster")
 		return nil, err
 	}
 
@@ -1430,7 +1442,7 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 			tbK8sCInfo := TbK8sClusterInfo{}
 			err = json.Unmarshal([]byte(v.Value), &tbK8sCInfo)
 			if err != nil {
-				log.Error().Err(err).Msg("")
+				log.Err(err).Msg("Failed to List K8sCluster")
 				return nil, err
 			}
 			// Check the JSON body includes both filterKey and filterVal strings. (assume key and value)
@@ -1468,12 +1480,13 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Delete K8sCluster")
 		return false, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		log.Err(err).Msg("Failed to Delete K8sCluster")
 		return false, err
 	}
 
@@ -1496,7 +1509,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	tbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Delete K8sCluster")
 		return false, err
 	}
 
@@ -1525,13 +1538,13 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	if forceFlag == "true" {
 		err = common.CBStore.Delete(k)
 		if err != nil {
-			log.Error().Err(err).Msg("")
+			log.Err(err).Msg("Failed to Delete K8sCluster")
 			return false, err
 		}
 	}
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Delete K8sCluster")
 		return false, err
 	}
 
@@ -1542,7 +1555,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 				if forceFlag != "true" {
 					err = common.CBStore.Delete(k)
 					if err != nil {
-						log.Error().Err(err).Msg("")
+						log.Err(err).Msg("Failed to Delete K8sCluster")
 						return false, err
 					}
 				}
@@ -1563,7 +1576,7 @@ func DeleteAllK8sCluster(nsId string, subString string, forceFlag string) (commo
 
 	err := common.CheckString(nsId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Delete All K8sCluster")
 		return deletedK8sClusters, err
 	}
 
@@ -1600,7 +1613,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	err := validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			log.Err(err).Msg("")
+			log.Err(err).Msg("Failed to Upgrade K8sCluster")
 			return emptyObj, err
 		}
 
@@ -1609,12 +1622,13 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1626,7 +1640,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	kv, err := common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In UpgradeK8sCluster(); CBStore.Get() returned an error: " + err.Error())
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1634,7 +1648,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	err = json.Unmarshal([]byte(kv.Value), &oldTbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1644,7 +1658,8 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	connConfig, err := common.GetConnConfig(oldTbK8sCInfo.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the connConfig " + oldTbK8sCInfo.ConnectionName + ": " + err.Error())
+		err := fmt.Errorf("failed to get the connConfig " + oldTbK8sCInfo.ConnectionName + ": " + err.Error())
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1672,6 +1687,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	if cloudSetting.K8sCluster.Enable != "y" {
 		err := fmt.Errorf("The K8sCluster Management function is not enabled for Cloud(" + fnCloudType + ")")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1682,7 +1698,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	// Validate K8sCluster Version
 	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, u.Version)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 	spVersion := u.Version
@@ -1712,7 +1728,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1730,14 +1746,14 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	err = common.CBStore.Put(k, string(Val))
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("Failed to Upgrade K8sCluster")
 		return emptyObj, err
 	}
 
 	kv, err = common.CBStore.Get(k)
 	if err != nil {
 		err = fmt.Errorf("In UpgradeK8sCluster(); CBStore.Get() returned an error: " + err.Error())
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("")
 		// return nil, err
 	}
 
@@ -1746,7 +1762,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	storedTbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &storedTbK8sCInfo)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Err(err).Msg("")
 	}
 
 	return storedTbK8sCInfo, nil
