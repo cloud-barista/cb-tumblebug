@@ -90,6 +90,9 @@ const (
 	StrNLB                        string = "nlb"
 	StrVM                         string = "vm"
 	StrMCIS                       string = "mcis"
+	StrK8s                        string = "k8s"
+	StrKubernetes                 string = "kubernetes"
+	StrContainer                  string = "container"
 	StrDefaultResourceName        string = "-systemdefault-"
 	// StrFirewallRule               string = "firewallRule"
 

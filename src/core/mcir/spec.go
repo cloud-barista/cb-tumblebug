@@ -89,6 +89,7 @@ type TbSpecInfo struct { // Tumblebug
 	ProviderName          string   `json:"providerName,omitempty"`
 	RegionName            string   `json:"regionName,omitempty"`
 	CspSpecName           string   `json:"cspSpecName,omitempty"`
+	InfraType             string   `json:"infraType,omitempty"` // vm|k8s|kubernetes|container, etc.
 	OsType                string   `json:"osType,omitempty"`
 	VCPU                  uint16   `json:"vCPU,omitempty"`
 	MemoryGiB             float32  `json:"memoryGiB,omitempty"`
@@ -130,6 +131,7 @@ type FilterSpecsByRangeRequest struct {
 	ProviderName        string `json:"providerName"`
 	RegionName          string `json:"regionName"`
 	CspSpecName         string `json:"cspSpecName"`
+	InfraType           string `json:"infraType"`
 	OsType              string `json:"osType"`
 	VCPU                Range  `json:"vCPU"`
 	MemoryGiB           Range  `json:"memoryGiB"`
