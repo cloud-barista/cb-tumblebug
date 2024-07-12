@@ -90,24 +90,24 @@ type SpiderClusterReqInfo struct {
 // TbK8sClusterReq is a struct to handle 'Create K8sCluster' request toward CB-Tumblebug.
 type TbK8sClusterReq struct { // Tumblebug
 	//Namespace      string `json:"namespace" validate:"required" example:"ns01"`
-	ConnectionName string `json:"connectionName" validate:"required" example:"testcloud01-seoul"`
-	Description    string `json:"description"`
+	ConnectionName string `json:"connectionName" validate:"required" example:"alibaba-ap-northeast-2"`
+	Description    string `json:"description" example:"My K8sCluster"`
 
 	// (1) K8sCluster Info
-	Id      string `json:"id" validate:"required" example:"testcloud01-seoul-k8scluster"`
-	Version string `json:"version" example:"1.23.4"`
+	Id      string `json:"id" validate:"required" example:"k8scluster-01"`
+	Version string `json:"version" example:"1.30.1-aliyun.1"`
 
 	// (2) Network Info
-	VNetId           string   `json:"vNetId" validate:"required"`
-	SubnetIds        []string `json:"subnetIds" validate:"required"`
-	SecurityGroupIds []string `json:"securityGroupIds" validate:"required"`
+	VNetId           string   `json:"vNetId" validate:"required" example:"vpc-01"`
+	SubnetIds        []string `json:"subnetIds" validate:"required" example:"subnet-01"`
+	SecurityGroupIds []string `json:"securityGroupIds" validate:"required" example:"sg-01"`
 
 	// (3) NodeGroupInfo List
 	K8sNodeGroupList []TbK8sNodeGroupReq `json:"k8sNodeGroupList"`
 
 	// Fields for "Register existing K8sCluster" feature
-	// CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
-	CspK8sClusterId string `json:"cspK8sClusterId"`
+	// @description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
+	CspK8sClusterId string `json:"cspK8sClusterId" example:"required when option is register"`
 }
 
 // 2023-11-13 https://github.com/cloud-barista/cb-spider/blob/fa4bd91fdaa6bb853ea96eca4a7b4f58a2abebf2/api-runtime/rest-runtime/ClusterRest.go#L441
@@ -137,18 +137,18 @@ type SpiderNodeGroupReqInfo struct {
 
 // TbK8sNodeGroupReq is a struct to handle requests related to K8sNodeGroup toward CB-Tumblebug.
 type TbK8sNodeGroupReq struct {
-	Name         string `json:"name"`
-	ImageId      string `json:"imageId"`
-	SpecId       string `json:"specId"`
-	RootDiskType string `json:"rootDiskType" example:"default, TYPE1, ..."`  // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
-	RootDiskSize string `json:"rootDiskSize" example:"default, 30, 42, ..."` // "default", Integer (GB): ["50", ..., "1000"]
-	SshKeyId     string `json:"sshKeyId"`
+	Name         string `json:"name" example:"ng-01"`
+	ImageId      string `json:"imageId" example:"image-01"`
+	SpecId       string `json:"specId" example:"spec-01"`
+	RootDiskType string `json:"rootDiskType" example:"cloud_essd" enum:"default, TYPE1, ..."` // "", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure: ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced", "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"], TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]
+	RootDiskSize string `json:"rootDiskSize" example:"40" enum:"default, 30, 42, ..."`        // "default", Integer (GB): ["50", ..., "1000"]
+	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
 
 	// autoscale config.
-	OnAutoScaling   string `json:"onAutoScaling"`
-	DesiredNodeSize string `json:"desiredNodeSize"`
-	MinNodeSize     string `json:"minNodeSize"`
-	MaxNodeSize     string `json:"maxNodeSize"`
+	OnAutoScaling   string `json:"onAutoScaling" example:"true"`
+	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
+	MinNodeSize     string `json:"minNodeSize" example:"1"`
+	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
 }
 
 // SpiderSetAutoscalingReq is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' request.
@@ -164,7 +164,7 @@ type SpiderSetAutoscalingReqInfo struct {
 
 // TbSetK8sNodeGroupAutoscalingReq is a struct to handle 'Set K8sNodeGroup's Autoscaling' request toward CB-Tumblebug.
 type TbSetK8sNodeGroupAutoscalingReq struct {
-	OnAutoScaling string `json:"onAutoScaling"`
+	OnAutoScaling string `json:"onAutoScaling" example:"true"`
 }
 
 // SpiderChangeAutoscaleSizeReq is a wrapper struct to create JSON body of 'Change Autoscale Size' request.
@@ -182,9 +182,9 @@ type SpiderChangeAutoscaleSizeReqInfo struct {
 
 // TbChangeK8sNodeGroupAutoscaleSizeReq is a struct to handle 'Change K8sNodeGroup's Autoscale Size' request toward CB-Tumblebug.
 type TbChangeK8sNodeGroupAutoscaleSizeReq struct {
-	DesiredNodeSize string `json:"desiredNodeSize"`
-	MinNodeSize     string `json:"minNodeSize"`
-	MaxNodeSize     string `json:"maxNodeSize"`
+	DesiredNodeSize string `json:"desiredNodeSize" example:"1"`
+	MinNodeSize     string `json:"minNodeSize" example:"1"`
+	MaxNodeSize     string `json:"maxNodeSize" example:"3"`
 }
 
 // SpiderChangeAutoscaleSizeRes is a wrapper struct to get JSON body of 'Change Autoscale Size' response
@@ -212,7 +212,7 @@ type SpiderUpgradeClusterReqInfo struct {
 
 // TbUpgradeK8sClusterReq is a struct to handle 'Upgrade K8sCluster' request toward CB-Tumblebug.
 type TbUpgradeK8sClusterReq struct {
-	Version string `json:"version"`
+	Version string `json:"version" example:"1.30.1-alyun.1"`
 }
 
 // TbK8sClusterReqStructLevelValidation is a function to validate 'TbK8sClusterReq' object.
@@ -306,11 +306,11 @@ type SpiderClusterInfo struct {
 
 // TbK8sClusterInfo is a struct that represents TB K8sCluster object.
 type TbK8sClusterInfo struct { // Tumblebug
-	Id             string `json:"id"`
-	Name           string `json:"name"`
-	ConnectionName string `json:"connectionName"`
+	Id             string `json:"id" example:"k8scluster-01"`
+	Name           string `json:"name" example:"k8scluster-01"`
+	ConnectionName string `json:"connectionName" example:"alibaba-ap-northeast-2"`
 
-	Version string `json:"version" example:"1.23.3"` // Kubernetes Version, ex) 1.23.3
+	Version string `json:"version" example:"1.30.1-aliyun.1"` // Kubernetes Version, ex) 1.23.3
 	Network TbK8sClusterNetworkInfo
 
 	// ---
@@ -324,9 +324,9 @@ type TbK8sClusterInfo struct { // Tumblebug
 	CreatedTime  time.Time         `json:"createdTime" example:"1970-01-01T00:00:00.00Z"`
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 
-	Description       string `json:"description"`
-	CspK8sClusterId   string `json:"cspK8sClusterId"`
-	CspK8sClusterName string `json:"cspK8sClusterName"`
+	Description       string `json:"description" example:"My K8sCluster"`
+	CspK8sClusterId   string `json:"cspK8sClusterId" example:"c123456789012345678901234567890"`
+	CspK8sClusterName string `json:"cspK8sClusterName" example:"ns01-k8scluster-01"`
 
 	// Latest system message such as error message
 	SystemMessage string `json:"systemMessage" example:"Failed because ..." default:""` // systeam-given string message
@@ -350,9 +350,9 @@ type SpiderNetworkInfo struct {
 
 // TbK8sClusterNetworkInfo is a struct to handle K8sCluster Network information from the CB-Tumblebug's REST API response
 type TbK8sClusterNetworkInfo struct {
-	VNetId           string   `json:"vNetId"`
-	SubnetIds        []string `json:"subnetIds"`
-	SecurityGroupIds []string `json:"securityGroupIds"`
+	VNetId           string   `json:"vNetId" example:"vpc-01"`
+	SubnetIds        []string `json:"subnetIds" example:"subnet-01"`
+	SecurityGroupIds []string `json:"securityGroupIds" example:"sg-01"`
 
 	// ---
 
@@ -386,25 +386,25 @@ type SpiderNodeGroupInfo struct {
 
 // TbK8sNodeGroupInfo is a struct to handle K8sCluster's Node Group information from the CB-Tumblebug's REST API response
 type TbK8sNodeGroupInfo struct {
-	Id string `json:"id"`
+	Id string `json:"id" example:"ng-01"`
 	//Name string `json:"name"`
 
 	// VM config.
-	ImageId      string `json:"imageId"`
-	SpecId       string `json:"specId"`
-	RootDiskType string `json:"rootDiskType"`
-	RootDiskSize string `json:"rootDiskSize"`
-	SshKeyId     string `json:"sshKeyId"`
+	ImageId      string `json:"imageId" example:"image-01"`
+	SpecId       string `json:"specId" example:"spec-01"`
+	RootDiskType string `json:"rootDiskType" example:"cloud_essd"`
+	RootDiskSize string `json:"rootDiskSize" example:"40"`
+	SshKeyId     string `json:"sshKeyId" example:"sshkey-01"`
 
 	// Scaling config.
-	OnAutoScaling   bool `json:"onAutoScaling"`
-	DesiredNodeSize int  `json:"desiredNodeSize"`
-	MinNodeSize     int  `json:"minNodeSize"`
-	MaxNodeSize     int  `json:"maxNodeSize"`
+	OnAutoScaling   bool `json:"onAutoScaling" example:"true"`
+	DesiredNodeSize int  `json:"desiredNodeSize" example:"1"`
+	MinNodeSize     int  `json:"minNodeSize" example:"1"`
+	MaxNodeSize     int  `json:"maxNodeSize" example:"3"`
 
 	// ---
-	Status   TbK8sNodeGroupStatus `json:"status" example:"Creating"` // Creating, Active, Inactive, Updating, Deleting
-	K8sNodes []string             `json:"k8sNodes"`                  // id for nodes
+	Status   TbK8sNodeGroupStatus `json:"status" example:"Creating"`  // Creating, Active, Inactive, Updating, Deleting
+	K8sNodes []string             `json:"k8sNodes" example:"node-01"` // id for nodes
 
 	KeyValueList []common.KeyValue `json:"keyValueList"`
 }
@@ -418,7 +418,7 @@ type SpiderAccessInfo struct {
 // TbK8sAccessInfo is a struct to handle K8sCluster Access information from the CB-Tumblebug's REST API response
 type TbK8sAccessInfo struct {
 	Endpoint   string `json:"endpoint" example:"http://1.2.3.4:6443"`
-	Kubeconfig string `json:"kubeconfig"`
+	Kubeconfig string `json:"kubeconfig" example:"apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."`
 }
 
 // SpiderAddonsInfo is a struct to handle Cluster Addons information from the CB-Spider's REST API response

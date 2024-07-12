@@ -1905,7 +1905,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)",
+                        "description": "Field value for filtering (ex: ns01-alibaba-ap-northeast-2-vpc)",
                         "name": "filterVal",
                         "in": "query"
                     }
@@ -1947,7 +1947,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create K8sCluster",
+                "description": "Create K8sCluster\u003cbr\u003eFind details from https://github.com/cloud-barista/cb-tumblebug/discussions/1614",
                 "consumes": [
                     "application/json"
                 ],
@@ -2079,7 +2079,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "c1",
+                        "default": "k8scluster-01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2131,6 +2131,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "k8scluster-01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2178,6 +2179,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "k8scluster-01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2240,6 +2242,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "k8scluster-01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2247,6 +2250,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "ng-01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -2294,6 +2298,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "k8scluster-01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2301,6 +2306,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "ng-01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -2363,6 +2369,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "k8scluster-01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -2370,6 +2377,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "ng-01",
                         "description": "K8sNodeGroup Name",
                         "name": "k8sNodeGroupName",
                         "in": "path",
@@ -2432,6 +2440,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "k8scluster-01",
                         "description": "K8sCluster ID",
                         "name": "k8sClusterId",
                         "in": "path",
@@ -9236,10 +9245,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1.30.1-aliyun.1"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1.30"
                 }
             }
         },
@@ -11782,13 +11793,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1"
                 },
                 "maxNodeSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3"
                 },
                 "minNodeSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1"
                 }
             }
         },
@@ -11817,7 +11831,8 @@ const docTemplate = `{
                     "example": "http://1.2.3.4:6443"
                 },
                 "kubeconfig": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "apiVersion: v1\nclusters:\n- cluster:\n certificate-authority-data: LS0..."
                 }
             }
         },
@@ -11842,23 +11857,28 @@ const docTemplate = `{
                     "$ref": "#/definitions/mcis.TbK8sAddonsInfo"
                 },
                 "connectionName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "alibaba-ap-northeast-2"
                 },
                 "createdTime": {
                     "type": "string",
                     "example": "1970-01-01T00:00:00.00Z"
                 },
                 "cspK8sClusterId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "c123456789012345678901234567890"
                 },
                 "cspK8sClusterName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ns01-k8scluster-01"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "My K8sCluster"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "k8scluster-01"
                 },
                 "k8sNodeGroupList": {
                     "type": "array",
@@ -11873,7 +11893,8 @@ const docTemplate = `{
                     }
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "k8scluster-01"
                 },
                 "network": {
                     "$ref": "#/definitions/mcis.TbK8sClusterNetworkInfo"
@@ -11900,7 +11921,7 @@ const docTemplate = `{
                 "version": {
                     "description": "Kubernetes Version, ex) 1.23.3",
                     "type": "string",
-                    "example": "1.23.3"
+                    "example": "1.30.1-aliyun.1"
                 }
             }
         },
@@ -11917,16 +11938,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
                 },
                 "subnetIds": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
                 },
                 "vNetId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "vpc-01"
                 }
             }
         },
@@ -11943,19 +11971,21 @@ const docTemplate = `{
                 "connectionName": {
                     "description": "Namespace      string ` + "`" + `json:\"namespace\" validate:\"required\" example:\"ns01\"` + "`" + `",
                     "type": "string",
-                    "example": "testcloud01-seoul"
+                    "example": "alibaba-ap-northeast-2"
                 },
                 "cspK8sClusterId": {
-                    "description": "Fields for \"Register existing K8sCluster\" feature\nCspK8sClusterId is required to register a k8s cluster from CSP (option=register)",
-                    "type": "string"
+                    "description": "Fields for \"Register existing K8sCluster\" feature\n@description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)",
+                    "type": "string",
+                    "example": "required when option is register"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "My K8sCluster"
                 },
                 "id": {
                     "description": "(1) K8sCluster Info",
                     "type": "string",
-                    "example": "testcloud01-seoul-k8scluster"
+                    "example": "k8scluster-01"
                 },
                 "k8sNodeGroupList": {
                     "description": "(3) NodeGroupInfo List",
@@ -11968,21 +11998,28 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "sg-01"
+                    ]
                 },
                 "subnetIds": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "subnet-01"
+                    ]
                 },
                 "vNetId": {
                     "description": "(2) Network Info",
-                    "type": "string"
+                    "type": "string",
+                    "example": "vpc-01"
                 },
                 "version": {
                     "type": "string",
-                    "example": "1.23.4"
+                    "example": "1.30.1-aliyun.1"
                 }
             }
         },
@@ -12007,21 +12044,27 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ng-01"
                 },
                 "imageId": {
                     "description": "VM config.",
-                    "type": "string"
+                    "type": "string",
+                    "example": "image-01"
                 },
                 "k8sNodes": {
                     "description": "id for nodes",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "node-01"
+                    ]
                 },
                 "keyValueList": {
                     "type": "array",
@@ -12030,26 +12073,33 @@ const docTemplate = `{
                     }
                 },
                 "maxNodeSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 3
                 },
                 "minNodeSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "onAutoScaling": {
                     "description": "Scaling config.",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "rootDiskSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "40"
                 },
                 "rootDiskType": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "cloud_essd"
                 },
                 "specId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "spec-01"
                 },
                 "sshKeyId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "sshkey-01"
                 },
                 "status": {
                     "description": "---",
@@ -12066,39 +12116,47 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "desiredNodeSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1"
                 },
                 "imageId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "image-01"
                 },
                 "maxNodeSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "3"
                 },
                 "minNodeSize": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ng-01"
                 },
                 "onAutoScaling": {
                     "description": "autoscale config.",
-                    "type": "string"
+                    "type": "string",
+                    "example": "true"
                 },
                 "rootDiskSize": {
                     "description": "\"default\", Integer (GB): [\"50\", ..., \"1000\"]",
                     "type": "string",
-                    "example": "default, 30, 42, ..."
+                    "example": "40"
                 },
                 "rootDiskType": {
                     "description": "\"\", \"default\", \"TYPE1\", AWS: [\"standard\", \"gp2\", \"gp3\"], Azure: [\"PremiumSSD\", \"StandardSSD\", \"StandardHDD\"], GCP: [\"pd-standard\", \"pd-balanced\", \"pd-ssd\", \"pd-extreme\"], ALIBABA: [\"cloud_efficiency\", \"cloud\", \"cloud_ssd\"], TENCENT: [\"CLOUD_PREMIUM\", \"CLOUD_SSD\"]",
                     "type": "string",
-                    "example": "default, TYPE1, ..."
+                    "example": "cloud_essd"
                 },
                 "specId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "spec-01"
                 },
                 "sshKeyId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "sshkey-01"
                 }
             }
         },
@@ -12577,7 +12635,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "onAutoScaling": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "true"
                 }
             }
         },
@@ -12585,7 +12644,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "version": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1.30.1-alyun.1"
                 }
             }
         },

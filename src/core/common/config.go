@@ -86,8 +86,8 @@ type K8sClusterVersionDetail struct {
 
 // K8sClusterVersionDetailAvailable is structure for kubernetes cluster version detail's available information
 type K8sClusterVersionDetailAvailable struct {
-	Name string `mapstructure:"name" json:"name"`
-	Id   string `mapstructure:"id" json:"id"`
+	Name string `mapstructure:"name" json:"name" example:"1.30"`
+	Id   string `mapstructure:"id" json:"id" example:"1.30.1-aliyun.1"`
 }
 
 // K8sClusterNodeImageDetail is structure for kubernetes cluster node image detail information
