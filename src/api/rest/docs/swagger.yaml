@@ -198,8 +198,10 @@ definitions:
   common.K8sClusterVersionDetailAvailable:
     properties:
       id:
+        example: 1.30.1-aliyun.1
         type: string
       name:
+        example: "1.30"
         type: string
     type: object
   common.KeyValue:
@@ -1937,10 +1939,13 @@ definitions:
   mcis.TbChangeK8sNodeGroupAutoscaleSizeReq:
     properties:
       desiredNodeSize:
+        example: "1"
         type: string
       maxNodeSize:
+        example: "3"
         type: string
       minNodeSize:
+        example: "1"
         type: string
     type: object
   mcis.TbIdNameInDetailInfo:
@@ -1960,6 +1965,11 @@ definitions:
         example: http://1.2.3.4:6443
         type: string
       kubeconfig:
+        example: |-
+          apiVersion: v1
+          clusters:
+          - cluster:
+           certificate-authority-data: LS0...
         type: string
     type: object
   mcis.TbK8sAddonsInfo:
@@ -1976,17 +1986,22 @@ definitions:
       addons:
         $ref: '#/definitions/mcis.TbK8sAddonsInfo'
       connectionName:
+        example: alibaba-ap-northeast-2
         type: string
       createdTime:
         example: "1970-01-01T00:00:00.00Z"
         type: string
       cspK8sClusterId:
+        example: c123456789012345678901234567890
         type: string
       cspK8sClusterName:
+        example: ns01-k8scluster-01
         type: string
       description:
+        example: My K8sCluster
         type: string
       id:
+        example: k8scluster-01
         type: string
       k8sNodeGroupList:
         items:
@@ -1997,6 +2012,7 @@ definitions:
           $ref: '#/definitions/common.KeyValue'
         type: array
       name:
+        example: k8scluster-01
         type: string
       network:
         $ref: '#/definitions/mcis.TbK8sClusterNetworkInfo'
@@ -2016,7 +2032,7 @@ definitions:
         type: string
       version:
         description: Kubernetes Version, ex) 1.23.3
-        example: 1.23.3
+        example: 1.30.1-aliyun.1
         type: string
     type: object
   mcis.TbK8sClusterNetworkInfo:
@@ -2026,32 +2042,39 @@ definitions:
           $ref: '#/definitions/common.KeyValue'
         type: array
       securityGroupIds:
+        example:
+        - sg-01
         items:
           type: string
         type: array
       subnetIds:
+        example:
+        - subnet-01
         items:
           type: string
         type: array
       vNetId:
+        example: vpc-01
         type: string
     type: object
   mcis.TbK8sClusterReq:
     properties:
       connectionName:
         description: Namespace      string `json:"namespace" validate:"required" example:"ns01"`
-        example: testcloud01-seoul
+        example: alibaba-ap-northeast-2
         type: string
       cspK8sClusterId:
         description: |-
           Fields for "Register existing K8sCluster" feature
-          CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
+          @description CspK8sClusterId is required to register a k8s cluster from CSP (option=register)
+        example: required when option is register
         type: string
       description:
+        example: My K8sCluster
         type: string
       id:
         description: (1) K8sCluster Info
-        example: testcloud01-seoul-k8scluster
+        example: k8scluster-01
         type: string
       k8sNodeGroupList:
         description: (3) NodeGroupInfo List
@@ -2059,18 +2082,23 @@ definitions:
           $ref: '#/definitions/mcis.TbK8sNodeGroupReq'
         type: array
       securityGroupIds:
+        example:
+        - sg-01
         items:
           type: string
         type: array
       subnetIds:
+        example:
+        - subnet-01
         items:
           type: string
         type: array
       vNetId:
         description: (2) Network Info
+        example: vpc-01
         type: string
       version:
-        example: 1.23.4
+        example: 1.30.1-aliyun.1
         type: string
     required:
     - connectionName
@@ -2096,14 +2124,19 @@ definitions:
   mcis.TbK8sNodeGroupInfo:
     properties:
       desiredNodeSize:
+        example: 1
         type: integer
       id:
+        example: ng-01
         type: string
       imageId:
         description: VM config.
+        example: image-01
         type: string
       k8sNodes:
         description: id for nodes
+        example:
+        - node-01
         items:
           type: string
         type: array
@@ -2112,19 +2145,26 @@ definitions:
           $ref: '#/definitions/common.KeyValue'
         type: array
       maxNodeSize:
+        example: 3
         type: integer
       minNodeSize:
+        example: 1
         type: integer
       onAutoScaling:
         description: Scaling config.
+        example: true
         type: boolean
       rootDiskSize:
+        example: "40"
         type: string
       rootDiskType:
+        example: cloud_essd
         type: string
       specId:
+        example: spec-01
         type: string
       sshKeyId:
+        example: sshkey-01
         type: string
       status:
         allOf:
@@ -2135,32 +2175,40 @@ definitions:
   mcis.TbK8sNodeGroupReq:
     properties:
       desiredNodeSize:
+        example: "1"
         type: string
       imageId:
+        example: image-01
         type: string
       maxNodeSize:
+        example: "3"
         type: string
       minNodeSize:
+        example: "1"
         type: string
       name:
+        example: ng-01
         type: string
       onAutoScaling:
         description: autoscale config.
+        example: "true"
         type: string
       rootDiskSize:
         description: '"default", Integer (GB): ["50", ..., "1000"]'
-        example: default, 30, 42, ...
+        example: "40"
         type: string
       rootDiskType:
         description: '"", "default", "TYPE1", AWS: ["standard", "gp2", "gp3"], Azure:
           ["PremiumSSD", "StandardSSD", "StandardHDD"], GCP: ["pd-standard", "pd-balanced",
           "pd-ssd", "pd-extreme"], ALIBABA: ["cloud_efficiency", "cloud", "cloud_ssd"],
           TENCENT: ["CLOUD_PREMIUM", "CLOUD_SSD"]'
-        example: default, TYPE1, ...
+        example: cloud_essd
         type: string
       specId:
+        example: spec-01
         type: string
       sshKeyId:
+        example: sshkey-01
         type: string
     type: object
   mcis.TbK8sNodeGroupStatus:
@@ -2518,11 +2566,13 @@ definitions:
   mcis.TbSetK8sNodeGroupAutoscalingReq:
     properties:
       onAutoScaling:
+        example: "true"
         type: string
     type: object
   mcis.TbUpgradeK8sClusterReq:
     properties:
       version:
+        example: 1.30.1-alyun.1
         type: string
     type: object
   mcis.TbVmDynamicReq:
@@ -4417,7 +4467,7 @@ paths:
         in: query
         name: filterKey
         type: string
-      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)'
+      - description: 'Field value for filtering (ex: ns01-alibaba-ap-northeast-2-vpc)'
         in: query
         name: filterVal
         type: string
@@ -4449,7 +4499,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create K8sCluster
+      description: Create K8sCluster<br>Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1614
       operationId: PostK8sCluster
       parameters:
       - default: ns01
@@ -4502,7 +4552,8 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: K8sCluster ID
+      - default: k8scluster-01
+        description: K8sCluster ID
         in: path
         name: k8sClusterId
         required: true
@@ -4533,7 +4584,7 @@ paths:
         name: nsId
         required: true
         type: string
-      - default: c1
+      - default: k8scluster-01
         description: K8sCluster ID
         in: path
         name: k8sClusterId
@@ -4570,7 +4621,8 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: K8sCluster ID
+      - default: k8scluster-01
+        description: K8sCluster ID
         in: path
         name: k8sClusterId
         required: true
@@ -4612,12 +4664,14 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: K8sCluster ID
+      - default: k8scluster-01
+        description: K8sCluster ID
         in: path
         name: k8sClusterId
         required: true
         type: string
-      - description: K8sNodeGroup Name
+      - default: ng-01
+        description: K8sNodeGroup Name
         in: path
         name: k8sNodeGroupName
         required: true
@@ -4649,12 +4703,14 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: K8sCluster ID
+      - default: k8scluster-01
+        description: K8sCluster ID
         in: path
         name: k8sClusterId
         required: true
         type: string
-      - description: K8sNodeGroup Name
+      - default: ng-01
+        description: K8sNodeGroup Name
         in: path
         name: k8sNodeGroupName
         required: true
@@ -4696,12 +4752,14 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: K8sCluster ID
+      - default: k8scluster-01
+        description: K8sCluster ID
         in: path
         name: k8sClusterId
         required: true
         type: string
-      - description: K8sNodeGroup Name
+      - default: ng-01
+        description: K8sNodeGroup Name
         in: path
         name: k8sNodeGroupName
         required: true
@@ -4743,7 +4801,8 @@ paths:
         name: nsId
         required: true
         type: string
-      - description: K8sCluster ID
+      - default: k8scluster-01
+        description: K8sCluster ID
         in: path
         name: k8sClusterId
         required: true

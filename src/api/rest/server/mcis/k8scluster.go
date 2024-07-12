@@ -79,7 +79,7 @@ func RestGetAvailableK8sClusterNodeImage(c echo.Context) error {
 // RestPostK8sCluster godoc
 // @ID PostK8sCluster
 // @Summary Create K8sCluster
-// @Description Create K8sCluster
+// @Description Create K8sCluster<br>Find details from https://github.com/cloud-barista/cb-tumblebug/discussions/1614
 // @Tags [Infra resource] K8sCluster management
 // @Accept  json
 // @Produce  json
@@ -125,7 +125,7 @@ func RestPostK8sCluster(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID" default(c1)
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Param k8sClusterInfo body mcis.TbK8sClusterInfo true "Details of the K8sCluster object"
 // @Success 200 {object} mcis.TbK8sClusterInfo
 // @Failure 404 {object} common.SimpleMsg
@@ -147,8 +147,8 @@ func RestPutK8sCluster(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID"
-// @Param k8sNodeGroupReq body mcis.TbK8sNodeGroupReq true "Details of the K8sNodeGroup object"
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
+// @Param k8sNodeGroupReq body mcis.TbK8sNodeGroupReq true "Details of the K8sNodeGroup object" default(ng-01)
 // @Success 200 {object} mcis.TbK8sClusterInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -185,8 +185,8 @@ func RestPostK8sNodeGroup(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID"
-// @Param k8sNodeGroupName path string true "K8sNodeGroup Name"
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
+// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName} [delete]
@@ -224,8 +224,8 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID"
-// @Param k8sNodeGroupName path string true "K8sNodeGroup Name"
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
+// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
 // @Param setK8sNodeGroupAutoscalingReq body mcis.TbSetK8sNodeGroupAutoscalingReq true "Details of the TbSetK8sNodeGroupAutoscalingReq object"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -264,8 +264,8 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID"
-// @Param k8sNodeGroupName path string true "K8sNodeGroup Name"
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
+// @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
 // @Param changeK8sNodeGroupAutoscaleSizeReq body mcis.TbChangeK8sNodeGroupAutoscaleSizeReq true "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
@@ -304,7 +304,7 @@ func RestPutChangeK8sNodeGroupAutoscaleSize(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID" default(c1)
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Success 200 {object} mcis.TbK8sClusterInfo
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -338,7 +338,7 @@ type RestGetAllK8sClusterResponse struct {
 // @Param nsId path string true "Namespace ID" default(ns01)
 // @Param option query string false "Option" Enums(id)
 // @Param filterKey query string false "Field key for filtering (ex: cspK8sClusterName)"
-// @Param filterVal query string false "Field value for filtering (ex: ns01-alibaba-ap-northeast-1-vpc)"
+// @Param filterVal query string false "Field value for filtering (ex: ns01-alibaba-ap-northeast-2-vpc)"
 // @Success 200 {object} JSONResult{[DEFAULT]=RestGetAllK8sClusterResponse,[ID]=common.IdList} "Different return structures by the given option param"
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
@@ -387,7 +387,7 @@ func RestGetAllK8sCluster(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID"
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId} [delete]
@@ -453,7 +453,7 @@ func RestDeleteAllK8sCluster(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param nsId path string true "Namespace ID" default(ns01)
-// @Param k8sClusterId path string true "K8sCluster ID"
+// @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Param upgradeK8sClusterReq body mcis.TbUpgradeK8sClusterReq true "Details of the TbUpgradeK8sClusterReq object"
 // @Success 200 {object} common.SimpleMsg
 // @Failure 404 {object} common.SimpleMsg
