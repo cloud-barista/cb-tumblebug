@@ -217,7 +217,7 @@ func ResponseBodyDump() echo.MiddlewareFunc {
 					case string:
 						details.ResponseData = data
 					default:
-						log.Error().Msg("unexpected response data type")
+						log.Error().Msgf("unexpected response data type (%T)", data)
 					}
 				}
 
