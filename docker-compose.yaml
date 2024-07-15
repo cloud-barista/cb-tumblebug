@@ -60,7 +60,7 @@ services:
       # - DB_USER=cb_tumblebug 
       # - DB_PASSWORD=cb_tumblebug 
       # - ALLOW_ORIGINS=*
-      # - ENABLE_AUTH=true
+      # - AUTH_ENABLED=true
       # - API_USERNAME=default
       # - API_PASSWORD=default
       # - AUTOCONTROL_DURATION_MS=10000
