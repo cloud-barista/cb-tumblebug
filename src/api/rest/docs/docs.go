@@ -13462,8 +13462,11 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
+        },
         "Bearer": {
-            "description": "Type \"Bearer\" followed by a space and JWT token (get token in http://localhost:8056/auth)",
+            "description": "Type \"Bearer\" followed by a space and JWT token ([TBD] Get token in http://xxx.xxx.xxx.xxx:xxx/auth)",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
