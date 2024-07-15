@@ -22,7 +22,6 @@ import (
 	"os"
 	"os/user"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -198,30 +197,6 @@ func setConfig() {
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		panic(err)
-	}
-
-	//
-	// JWT
-	//
-
-	jwtConfigfileName := "jwt_auth"
-	viper.SetConfigName(jwtConfigfileName)
-	err = viper.MergeInConfig()
-	if err != nil {
-		log.Error().Err(err).Msgf("fatal error reading jwt_auth info from file: %w", err)
-		panic(err)
-	}
-
-	// Map environment variable names to config file key names
-	replacer := strings.NewReplacer("_", ".")
-	viper.SetEnvKeyReplacer(replacer)
-
-	// NOTE - the environment variable has higher priority than the config file
-	// Automatically recognize environment variables
-	viper.AutomaticEnv()
-
-	if viper.GetString("auth.jwt.publickey") == "" {
-		log.Panic().Msg("auth.jwt.publickey is not set, use the key in jwt_conf.yaml")
 	}
 
 	//
