@@ -2,13 +2,15 @@
 ## Stage 1 - Go Build
 ##############################################################
 
-# Using a specific version of golang based on alpine for building the application
-FROM golang:1.21.6-alpine AS builder
+# Using a specific version of golang based on bookworm for building the application
+# Debian "bookworm" is the current stable release (checked on 2024-07-15)
+# Debian 12.6 was released on June 29th, 2024.
+FROM golang:1.21.6-bookworm AS builder
 
 # Installing necessary packages
-# sqlite-libs and sqlite-dev for SQLite support
-# build-base for common build requirements
-RUN apk add --no-cache sqlite-libs sqlite-dev build-base
+# sqlite3 and libsqlite3-dev for SQLite support
+# build-essential for common build requirements
+RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev build-essential
 
 # Copying only necessary files for the build
 WORKDIR /go/src/github.com/cloud-barista/cb-tumblebug
@@ -27,7 +29,7 @@ RUN go build -ldflags '-w -extldflags "-static"' -tags cb-tumblebug -v -o src/cb
 ##############################################################
 
 # Using the latest Ubuntu image for the production stage
-FROM ubuntu:latest as prod
+FROM ubuntu:latest AS prod
 
 # Setting the working directory for the application
 WORKDIR /app/src
@@ -64,7 +66,7 @@ ENV CBTUMBLEBUG_ROOT=/app \
     API_DOC_PATH=/app/src/api/rest/docs/swagger.json \
     DEFAULT_NAMESPACE=ns01 \
     DEFAULT_CREDENTIALHOLDER=admin \
-    LOGFILE_PATH=$CBTUMBLEBUG_ROOT/log/tumblebug.log \
+    LOGFILE_PATH=/app/log/tumblebug.log \
     LOGFILE_MAXSIZE=10 \
     LOGFILE_MAXBACKUPS=3 \
     LOGFILE_MAXAGE=30 \
