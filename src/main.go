@@ -299,11 +299,12 @@ func setConfig() {
 
 // @BasePath /tumblebug
 
-// // @securityDefinitions.basic BasicAuth
+// @securityDefinitions.basic BasicAuth
+
 // @securityDefinitions.apikey Bearer
 // @in header
 // @name Authorization
-// @description Type "Bearer" followed by a space and JWT token (get token in http://localhost:8056/auth)
+// @description Type "Bearer" followed by a space and JWT token ([TBD] Get token in http://xxx.xxx.xxx.xxx:xxx/auth)
 func main() {
 
 	// giving a default value of "1323"
