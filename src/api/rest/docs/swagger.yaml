@@ -1,5 +1,18 @@
 basePath: /tumblebug
 definitions:
+  auth.AuthsInfo:
+    properties:
+      authenticated:
+        type: boolean
+      expired-time:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      token:
+        type: string
+    type: object
   common.CSPDetail:
     properties:
       description:
@@ -3159,6 +3172,27 @@ paths:
       summary: Check resources' existence
       tags:
       - '[Infra resource] MCIR Common'
+  /auth/test:
+    get:
+      consumes:
+      - application/json
+      description: Test JWT authentication
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Information of JWT authentication
+          schema:
+            $ref: '#/definitions/auth.AuthsInfo'
+        "400":
+          description: Invalid Request
+          schema:
+            type: object
+      security:
+      - Bearer: []
+      summary: Test JWT authentication
+      tags:
+      - '[Auth] Test JWT authentication'
   /availableK8sClusterNodeImage:
     get:
       consumes:
@@ -9196,6 +9230,9 @@ paths:
       tags:
       - '[Utility] Multi-cloud network design'
 securityDefinitions:
-  BasicAuth:
-    type: basic
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token (get token in http://localhost:8056/auth)
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

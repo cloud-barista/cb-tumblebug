@@ -23,6 +23,40 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/test": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Test JWT authentication",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Auth] Test JWT authentication"
+                ],
+                "summary": "Test JWT authentication",
+                "responses": {
+                    "200": {
+                        "description": "Information of JWT authentication",
+                        "schema": {
+                            "$ref": "#/definitions/auth.AuthsInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Request",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/availableK8sClusterNodeImage": {
             "get": {
                 "description": "Get available kubernetes cluster node image",
@@ -8943,6 +8977,26 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "auth.AuthsInfo": {
+            "type": "object",
+            "properties": {
+                "authenticated": {
+                    "type": "boolean"
+                },
+                "expired-time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "common.CSPDetail": {
             "type": "object",
             "properties": {
@@ -13408,8 +13462,11 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "BasicAuth": {
-            "type": "basic"
+        "Bearer": {
+            "description": "Type \"Bearer\" followed by a space and JWT token (get token in http://localhost:8056/auth)",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

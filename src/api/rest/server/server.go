@@ -27,10 +27,12 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/auth"
 	rest_common "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/common"
 	rest_mcir "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcir"
 	rest_mcis "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/mcis"
-	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares"
+	"github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/authmw"
+	middlewares "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/middlewares/custom-middleware"
 	rest_netutil "github.com/cloud-barista/cb-tumblebug/src/api/rest/server/util"
 
 	"crypto/subtle"
@@ -133,32 +135,72 @@ func RunServer(port string) {
 	}))
 
 	// Conditions to prevent abnormal operation due to typos (e.g., ture, falss, etc.)
-	enableAuth := os.Getenv("ENABLE_AUTH") == "true"
+	authEnabled := os.Getenv("AUTH_ENABLED") == "true"
+	authMode := os.Getenv("AUTH_MODE")
 
 	apiUser := os.Getenv("API_USERNAME")
 	apiPass := os.Getenv("API_PASSWORD")
 
-	if enableAuth {
-		e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-			Skipper: func(c echo.Context) bool {
-				if c.Path() == "/tumblebug/readyz" ||
-					c.Path() == "/tumblebug/httpVersion" {
-					return true
+	// Setup Middlewares for auth
+	var basicAuthMw echo.MiddlewareFunc
+	var jwtAuthMw echo.MiddlewareFunc
+
+	if authEnabled {
+		switch authMode {
+		case "basic":
+			// Setup Basic Auth Middleware
+			basicAuthMw = middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+				Skipper: func(c echo.Context) bool {
+					if c.Path() == "/tumblebug/readyz" ||
+						c.Path() == "/tumblebug/httpVersion" {
+						return true
+					}
+					return false
+				},
+				Validator: func(username, password string, c echo.Context) (bool, error) {
+					// Be careful to use constant time comparison to prevent timing attacks
+					if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
+						subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
+						return true, nil
+					}
+					return false, nil
+				},
+			})
+			log.Info().Msg("Basic Auth Middleware is initialized successfully")
+		case "jwt":
+			// Setup JWT Auth Middleware
+			err := authmw.InitJwtAuthMw(os.Getenv("IAM_MANAGER_REST_URL"), "/api/auth/certs")
+			if err != nil {
+				log.Fatal().Err(err).Msg("Failed to initialize JWT Auth Middleware")
+			} else {
+				authSkipPatterns := [][]string{
+					{"/tumblebug/readyz"},
+					{"/tumblebug/httpVersion"},
 				}
-				return false
-			},
-			Validator: func(username, password string, c echo.Context) (bool, error) {
-				// Be careful to use constant time comparison to prevent timing attacks
-				if subtle.ConstantTimeCompare([]byte(username), []byte(apiUser)) == 1 &&
-					subtle.ConstantTimeCompare([]byte(password), []byte(apiPass)) == 1 {
-					return true, nil
-				}
-				return false, nil
-			},
-		}))
+				jwtAuthMw = authmw.JwtAuthMw(authSkipPatterns)
+				log.Info().Msg("JWT Auth Middleware is initialized successfully")
+			}
+		default:
+			log.Fatal().Msg("AUTH_MODE is not set properly. Please set it to 'basic' or 'jwt'. EXITING...")
+		}
 	}
 
-	fmt.Printf(banner)
+	// Set basic auth middleware for root group
+	if authEnabled && authMode == "basic" && basicAuthMw != nil {
+		log.Debug().Msg("Setting up Basic Auth Middleware for root group")
+		e.Use(basicAuthMw)
+	}
+
+	// [Temp - start] For JWT auth test, a route group and an API
+	authGroup := e.Group("/tumblebug/auth")
+	if authEnabled && authMode == "jwt" && jwtAuthMw != nil {
+		log.Debug().Msg("Setting up JWT Auth Middleware for /tumblebug/auth group")
+		authGroup.Use(jwtAuthMw)
+	}
+	authGroup.GET("/test", auth.TestJWTAuth)
+	// [Temp - end] For JWT auth test, a route group and an API
+
+	fmt.Print(banner)
 	fmt.Println("\n ")
 	fmt.Printf(infoColor, website)
 	fmt.Println("\n \n ")
@@ -450,8 +492,8 @@ func RunServer(port string) {
 	fmt.Println(" Default Namespace: " + common.DefaultNamespace)
 	fmt.Println(" Default CredentialHolder: " + common.DefaultCredentialHolder + "\n")
 
-	if enableAuth {
-		fmt.Println(" Access to API dashboard" + " (username: $API_USERNAME / password: $API_PASSWORD)")
+	if authEnabled {
+		fmt.Println(" Access to API dashboard" + " (username: " + apiUser + " / password: " + apiPass + ")")
 	}
 
 	fmt.Printf(noticeColor, apidashboard)
