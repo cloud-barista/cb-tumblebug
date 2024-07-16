@@ -1961,6 +1961,57 @@ definitions:
         example: "1"
         type: string
     type: object
+  mcis.TbChangeK8sNodeGroupAutoscaleSizeRes:
+    properties:
+      desiredNodeSize:
+        example: 1
+        type: integer
+      id:
+        example: ng-01
+        type: string
+      imageId:
+        description: VM config.
+        example: image-01
+        type: string
+      k8sNodes:
+        description: id for nodes
+        example:
+        - node-01
+        items:
+          type: string
+        type: array
+      keyValueList:
+        items:
+          $ref: '#/definitions/common.KeyValue'
+        type: array
+      maxNodeSize:
+        example: 3
+        type: integer
+      minNodeSize:
+        example: 1
+        type: integer
+      onAutoScaling:
+        description: Scaling config.
+        example: true
+        type: boolean
+      rootDiskSize:
+        example: "40"
+        type: string
+      rootDiskType:
+        example: cloud_essd
+        type: string
+      specId:
+        example: spec-01
+        type: string
+      sshKeyId:
+        example: sshkey-01
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/mcis.TbK8sNodeGroupStatus'
+        description: '---'
+        example: Creating
+    type: object
   mcis.TbIdNameInDetailInfo:
     properties:
       idInCsp:
@@ -2579,6 +2630,12 @@ definitions:
   mcis.TbSetK8sNodeGroupAutoscalingReq:
     properties:
       onAutoScaling:
+        example: "true"
+        type: string
+    type: object
+  mcis.TbSetK8sNodeGroupAutoscalingRes:
+    properties:
+      result:
         example: "true"
         type: string
     type: object
@@ -4761,7 +4818,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeRes'
         "404":
           description: Not Found
           schema:
@@ -4810,7 +4867,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.SimpleMsg'
+            $ref: '#/definitions/mcis.TbSetK8sNodeGroupAutoscalingRes'
         "404":
           description: Not Found
           schema:

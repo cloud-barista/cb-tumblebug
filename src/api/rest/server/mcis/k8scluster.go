@@ -227,7 +227,7 @@ func RestDeleteK8sNodeGroup(c echo.Context) error {
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
 // @Param setK8sNodeGroupAutoscalingReq body mcis.TbSetK8sNodeGroupAutoscalingReq true "Details of the TbSetK8sNodeGroupAutoscalingReq object"
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {object} mcis.TbSetK8sNodeGroupAutoscalingRes
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/onautoscaling [put]
@@ -267,7 +267,7 @@ func RestPutSetK8sNodeGroupAutoscaling(c echo.Context) error {
 // @Param k8sClusterId path string true "K8sCluster ID" default(k8scluster-01)
 // @Param k8sNodeGroupName path string true "K8sNodeGroup Name" default(ng-01)
 // @Param changeK8sNodeGroupAutoscaleSizeReq body mcis.TbChangeK8sNodeGroupAutoscaleSizeReq true "Details of the TbChangeK8sNodeGroupAutoscaleSizeReq object"
-// @Success 200 {object} common.SimpleMsg
+// @Success 200 {object} mcis.TbChangeK8sNodeGroupAutoscaleSizeRes
 // @Failure 404 {object} common.SimpleMsg
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/k8scluster/{k8sClusterId}/k8snodegroup/{k8sNodeGroupName}/autoscalesize [put]

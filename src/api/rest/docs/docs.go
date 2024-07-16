@@ -2360,7 +2360,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/mcis.TbChangeK8sNodeGroupAutoscaleSizeRes"
                         }
                     },
                     "404": {
@@ -2431,7 +2431,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/common.SimpleMsg"
+                            "$ref": "#/definitions/mcis.TbSetK8sNodeGroupAutoscalingRes"
                         }
                     },
                     "404": {
@@ -11860,6 +11860,78 @@ const docTemplate = `{
                 }
             }
         },
+        "mcis.TbChangeK8sNodeGroupAutoscaleSizeRes": {
+            "type": "object",
+            "properties": {
+                "desiredNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ng-01"
+                },
+                "imageId": {
+                    "description": "VM config.",
+                    "type": "string",
+                    "example": "image-01"
+                },
+                "k8sNodes": {
+                    "description": "id for nodes",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "node-01"
+                    ]
+                },
+                "keyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.KeyValue"
+                    }
+                },
+                "maxNodeSize": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "minNodeSize": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "onAutoScaling": {
+                    "description": "Scaling config.",
+                    "type": "boolean",
+                    "example": true
+                },
+                "rootDiskSize": {
+                    "type": "string",
+                    "example": "40"
+                },
+                "rootDiskType": {
+                    "type": "string",
+                    "example": "cloud_essd"
+                },
+                "specId": {
+                    "type": "string",
+                    "example": "spec-01"
+                },
+                "sshKeyId": {
+                    "type": "string",
+                    "example": "sshkey-01"
+                },
+                "status": {
+                    "description": "---",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mcis.TbK8sNodeGroupStatus"
+                        }
+                    ],
+                    "example": "Creating"
+                }
+            }
+        },
         "mcis.TbIdNameInDetailInfo": {
             "type": "object",
             "properties": {
@@ -12689,6 +12761,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "onAutoScaling": {
+                    "type": "string",
+                    "example": "true"
+                }
+            }
+        },
+        "mcis.TbSetK8sNodeGroupAutoscalingRes": {
+            "type": "object",
+            "properties": {
+                "result": {
                     "type": "string",
                     "example": "true"
                 }
