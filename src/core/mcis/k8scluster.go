@@ -162,9 +162,19 @@ type SpiderSetAutoscalingReqInfo struct {
 	OnAutoScaling string
 }
 
+// SpiderSetAutoscalingRes is a wrapper struct to create JSON body of 'Set Autoscaling On/Off' response.
+type SpiderSetAutoscalingRes struct {
+	Result string
+}
+
 // TbSetK8sNodeGroupAutoscalingReq is a struct to handle 'Set K8sNodeGroup's Autoscaling' request toward CB-Tumblebug.
 type TbSetK8sNodeGroupAutoscalingReq struct {
 	OnAutoScaling string `json:"onAutoScaling" example:"true"`
+}
+
+// TbSetK8sNodeGroupAutoscalingRes is a struct to handle 'Set K8sNodeGroup's Autoscaling' response from CB-Tumblebug.
+type TbSetK8sNodeGroupAutoscalingRes struct {
+	Result string `json:"result" example:"true"`
 }
 
 // SpiderChangeAutoscaleSizeReq is a wrapper struct to create JSON body of 'Change Autoscale Size' request.
@@ -1018,8 +1028,10 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 }
 
 // SetK8sNodeGroupAutoscaling set NodeGroup's Autoscaling On/Off
-func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupName string, u *TbSetK8sNodeGroupAutoscalingReq) (bool, error) {
+func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupName string, u *TbSetK8sNodeGroupAutoscalingReq) (TbSetK8sNodeGroupAutoscalingRes, error) {
 	log.Info().Msg("SetK8sNodeGroupAutoscaling")
+
+	emptyObj := TbSetK8sNodeGroupAutoscalingRes{}
 	/*
 		err := common.CheckString(nsId)
 		if err != nil {
@@ -1037,19 +1049,19 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 
 	if err != nil {
 		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
-		return false, err
+		return emptyObj, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
 		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
-		return false, err
+		return emptyObj, err
 	}
 
 	err = common.CheckString(k8sNodeGroupName)
 	if err != nil {
 		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
-		return false, err
+		return emptyObj, err
 	}
 
 	/*
@@ -1065,7 +1077,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
 	if err != nil {
 		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
-		return false, err
+		return emptyObj, err
 	}
 
 	requestBody := SpiderSetAutoscalingReq{
@@ -1079,7 +1091,7 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	url := common.SpiderRestUrl + "/cluster/" + tbK8sCInfo.CspK8sClusterName + "/nodegroup/" + k8sNodeGroupName + "/onautoscaling"
 	method := "PUT"
 
-	var ifRes interface{}
+	var spSetAutoscalingRes SpiderSetAutoscalingRes
 	err = common.ExecuteHttpRequest(
 		client,
 		method,
@@ -1087,16 +1099,19 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 		nil,
 		common.SetUseBody(requestBody),
 		&requestBody,
-		&ifRes,
+		&spSetAutoscalingRes,
 		common.VeryShortDuration,
 	)
 
 	if err != nil {
 		log.Err(err).Msg("Failed to Set K8sNodeGroup Autoscaling")
-		return false, err
+		return emptyObj, err
 	}
 
-	return true, nil
+	var tbK8sSetAutoscalingRes TbSetK8sNodeGroupAutoscalingRes
+	tbK8sSetAutoscalingRes.Result = spSetAutoscalingRes.Result
+
+	return tbK8sSetAutoscalingRes, nil
 }
 
 // ChangeK8sNodeGroupAutoscaleSize change NodeGroup's Autoscaling Size
