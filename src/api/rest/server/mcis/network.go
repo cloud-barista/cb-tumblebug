@@ -1358,7 +1358,7 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 	}
 
 	reqId := c.Param("requestId")
-	if vpnId == "" {
+	if reqId == "" {
 		err := fmt.Errorf("invalid request, request ID (requestId: %s) is required", reqId)
 		log.Warn().Msg(err.Error())
 		res := model.Response{
