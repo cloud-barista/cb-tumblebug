@@ -7,11 +7,12 @@ import sys
 import argparse
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import subprocess
 import requests
 import yaml
 from tqdm import tqdm
 from colorama import Fore, init
+from getpass import getpass
 
 parser = argparse.ArgumentParser(description="Automatically proceed without confirmation.")
 parser.add_argument('-y', '--yes', action='store_true', help='Automatically answer yes to prompts and proceed.')
@@ -21,14 +22,16 @@ args = parser.parse_args()
 init(autoreset=True)
 
 # Configuration
-TUMBLEBUG_SERVER = os.getenv('TUMBLEBUG_SERVER', 'localhost:1323') 
+TUMBLEBUG_SERVER = os.getenv('TUMBLEBUG_SERVER', 'localhost:1323')
 API_USERNAME = os.getenv('API_USERNAME', 'default')
 API_PASSWORD = os.getenv('API_PASSWORD', 'default')
 AUTH = f"Basic {base64.b64encode(f'{API_USERNAME}:{API_PASSWORD}'.encode()).decode()}"
 HEADERS = {'Authorization': AUTH, 'Content-Type': 'application/json'}
 
-CRED_FILE_NAME = "credentials.yaml"
+CRED_FILE_NAME_ENC = "credentials.yaml.enc"
 CRED_PATH = os.path.join(os.path.expanduser('~'), '.cloud-barista')
+ENC_FILE_PATH = os.path.join(CRED_PATH, CRED_FILE_NAME_ENC)
+KEY_FILE = os.path.join(CRED_PATH, "cred_key")
 
 expected_completion_time_seconds = 240
 
@@ -36,8 +39,47 @@ expected_completion_time_seconds = 240
 if not os.path.exists(CRED_PATH):
     print(Fore.RED + "Error: CRED_PATH does not exist. Please run scripts/genCredential.sh first.")
     sys.exit(1)
-elif not os.path.isfile(os.path.join(CRED_PATH, CRED_FILE_NAME)):
-    print(Fore.RED + "Error: CRED_FILE_NAME does not exist. Please check if it has been generated.")
+elif not os.path.isfile(ENC_FILE_PATH):
+    print(Fore.RED + f"Error: {CRED_FILE_NAME_ENC} does not exist. Please check if it has been generated.")
+    print(Fore.RED + f"- This script does not accept 'credentials.yaml'. For your security, it only accepts an encrypted file.")
+    print(Fore.RED + f"- Please generate '{CRED_FILE_NAME_ENC}' using 'scripts/init/encCredential.sh'.")
+    sys.exit(1)
+
+
+# Decrypt credentials.yaml.enc
+def decrypt_credentials(enc_file_path, key):
+    try:
+        result = subprocess.run(
+            ['openssl', 'enc', '-aes-256-cbc', '-d', '-pbkdf2', '-in', enc_file_path, '-pass', f'pass:{key}'],
+            check=True,
+            capture_output=True
+        )
+        if result.returncode != 0:
+            return None, "Decryption failed."
+        return result.stdout.decode('utf-8'), None
+    except subprocess.CalledProcessError as e:
+        return None, f"Decryption error: {e.stderr.decode('utf-8')}"
+
+def get_decryption_key():
+    # Try using the key from the key file
+    if os.path.isfile(KEY_FILE):
+        with open(KEY_FILE, 'r') as kf:
+            key = kf.read().strip()
+            print(Fore.YELLOW + f"Using key from {KEY_FILE} to decrypt the credentials file.")
+            decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, key)
+            if error is None:
+                return decrypted_content
+            print(Fore.RED + error)
+
+    # Prompt for password up to 3 times if the key file is not used or fails
+    for attempt in range(3):
+        password = getpass(f"Enter the password to decrypt the credentials file (attempt {attempt + 1}/3): ")
+        decrypted_content, error = decrypt_credentials(ENC_FILE_PATH, password)
+        if error is None:
+            return decrypted_content
+        print(Fore.RED + error)
+
+    print(Fore.RED + "Failed to decrypt the file after 3 attempts. Exiting.")
     sys.exit(1)
 
 # Print the current configuration
@@ -46,7 +88,7 @@ print(" - " + Fore.CYAN + "TUMBLEBUG_SERVER:" + Fore.RESET + f" {TUMBLEBUG_SERVE
 print(" - " + Fore.CYAN + "API_USERNAME:" + Fore.RESET + f" {API_USERNAME[0]}**********")
 print(" - " + Fore.CYAN + "API_PASSWORD:" + Fore.RESET + f" {API_PASSWORD[0]}**********")
 print(" - " + Fore.CYAN + "CRED_PATH:" + Fore.RESET + f" {CRED_PATH}")
-print(" - " + Fore.CYAN + "CRED_FILE_NAME:" + Fore.RESET + f" {CRED_FILE_NAME}")
+print(" - " + Fore.CYAN + "CRED_FILE_NAME:" + Fore.RESET + f" {CRED_FILE_NAME_ENC}")
 print(" - " + Fore.CYAN + "expected completion time:" + Fore.RESET + f" {expected_completion_time_seconds} seconds\n")
 
 # Check server health before proceeding
@@ -63,7 +105,6 @@ except requests.exceptions.RequestException as e:
     print(Fore.RED + f"Failed to connect to server. Check the server address and try again.")
     sys.exit(1)
 
-
 # Wait for user input to proceed
 print(Fore.YELLOW + "Registering credentials and Loading common Specs and Images takes time")
 if not args.yes:
@@ -72,10 +113,9 @@ if not args.yes:
         print(Fore.GREEN + "See you soon. :)")
         sys.exit(0)
 
-# Load credentials from YAML file
-with open(os.path.join(CRED_PATH, CRED_FILE_NAME), 'r') as file:
-    cred_data = yaml.safe_load(file)['credentialholder']['admin']
-
+# Get the decryption key and decrypt the credentials file
+decrypted_content = get_decryption_key()
+cred_data = yaml.safe_load(decrypted_content)['credentialholder']['admin']
 
 print(Fore.YELLOW + f"\nRegistering all valid credentials for all cloud regions...")
 
@@ -123,7 +163,6 @@ def load_resources():
     finally:
         event.set()  # Signal that the request is complete regardless of success or failure
 
-
 # Start time
 start_time = time.time()
 
@@ -143,7 +182,6 @@ with tqdm(total=expected_completion_time_seconds, desc="Progress", unit='s') as 
 
 # Wait for the thread to complete
 thread.join()
-
 
 # Calculate duration
 end_time = time.time()
