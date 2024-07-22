@@ -317,6 +317,19 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
           ClientSecret:
         ...
     ```
+    - Encrypt `credentials.yaml` into `credentials.yaml.enc`
+      To protect sensitive information, `credentials.yaml` is not used directly. Instead, it must be encrypted using `encCredential.sh`. The encrypted file `credentials.yaml.enc` is then used by `init.py`. This approach ensures that sensitive credentials are not stored in plain text.
+
+      If you need to update your credentials, decrypt the encrypted file using `decCredential.sh`, make the necessary changes to `credentials.yaml`, and then re-encrypt it.
+      - Encrypting Credentials
+        ```bash
+        scripts/init/encCredential.sh
+        ```
+      - Decrypting Credentials
+        ```bash
+        scripts/init/decCredential.sh
+        ```
+
 - Register all multi-cloud connection information and common resources
   - How to register
   

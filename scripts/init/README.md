@@ -15,6 +15,18 @@ The `init.py` script is designed to automate the process of registering credenti
 - The `python3-venv` package should be installed for running the script using `init.sh`.
 
 ## Usage
+
+### Encrypting Credentials
+Before running `init.py`, you must encrypt your `credentials.yaml` file to ensure the security of your sensitive information.
+
+1. Use the `encCredential.sh` script to encrypt your `credentials.yaml` file:
+```bash
+scripts/init/encCredential.sh
+```
+
+The `init.py` script will decrypt the `credentials.yaml.enc` file as needed to read the credentials. You may need to provide a password if the decryption key is not stored.
+
+
 ### Direct Execution
 ```bash
 pip3 install -r requirements.txt
@@ -42,9 +54,25 @@ Before running the script, ensure the following environment variables are set ac
 - `API_USERNAME`: Username for API authentication.
 - `API_PASSWORD`: Password for API authentication.
 
+## Security Considerations
+To protect sensitive information, `credentials.yaml` is not used directly. Instead, it must be encrypted using `encCredential.sh`. The encrypted file `credentials.yaml.enc` is then used by `init.py`. This approach ensures that sensitive credentials are not stored in plain text.
+
+If you need to update your credentials, decrypt the encrypted file using `decCredential.sh`, make the necessary changes to `credentials.yaml`, and then re-encrypt it.
+
+### Encrypting Credentials
+```bash
+scripts/init/encCredential.sh
+```
+
+### Decrypting Credentials
+```bash
+scripts/init/decCredential.sh
+```
 
 ## Related Files
 - `init.py`: Main Python script.
 - `requirements.txt`: Contains all Python dependencies.
 - `init.sh`: Bash script for setting up a Python virtual environment and running `init.py`.
 - `credentials.yaml`: Contains the credentials data to be registered with the Tumblebug server.
+- `encCredential.sh`: Script to encrypt `credentials.yaml`.
+- `decCredential.sh`: Script to decrypt `credentials.yaml.enc`.
