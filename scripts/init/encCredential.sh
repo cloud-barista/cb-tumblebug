@@ -13,7 +13,7 @@ CRED_PATH="$HOME/.cloud-barista"
 FILE_PATH="$CRED_PATH/$CRED_FILE_NAME"
 ENCRYPTED_FILE="$FILE_PATH.enc"
 TEMP_DECRYPTED_FILE="$FILE_PATH.tmp.dec"
-KEY_FILE="$CRED_PATH/cred_key"
+KEY_FILE="$CRED_PATH/.tmp_enc_key"
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 DECRYPT_SCRIPT_PATH="$SCRIPT_DIR/decCredential.sh"
 

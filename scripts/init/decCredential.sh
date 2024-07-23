@@ -13,7 +13,7 @@ CRED_PATH="$HOME/.cloud-barista"
 FILE_PATH="$CRED_PATH/$CRED_FILE_NAME"
 ENCRYPTED_FILE="$FILE_PATH.enc"
 TEMP_DECRYPTED_FILE="$FILE_PATH.tmp"
-KEY_FILE="$CRED_PATH/cred_key"
+KEY_FILE="$CRED_PATH/.tmp_enc_key"
 
 # Check if OpenSSL is installed
 if ! command -v openssl &> /dev/null; then
