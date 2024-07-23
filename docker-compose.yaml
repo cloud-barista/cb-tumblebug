@@ -1,5 +1,46 @@
 version: "3.6"
 services:
+  # etcd
+  etcd:
+    image: gcr.io/etcd-development/etcd:v3.5.14
+    container_name: etcd-gcr-v3.5.14
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes: 
+      - ./container-volume/etcd/data:/etcd-data
+    entrypoint: /usr/local/bin/etcd
+    command:
+      - --name
+      - s1
+      - --data-dir
+      - /etcd-data
+      - --listen-client-urls
+      - http://0.0.0.0:2379
+      - --advertise-client-urls
+      - http://0.0.0.0:2379
+      - --listen-peer-urls
+      - http://0.0.0.0:2380
+      - --initial-advertise-peer-urls
+      - http://0.0.0.0:2380
+      - --initial-cluster
+      - s1=http://0.0.0.0:2380
+      - --initial-cluster-token
+      - tkn
+      - --initial-cluster-state
+      - new
+      - --log-level
+      - info
+      - --logger
+      - zap
+      - --log-outputs
+      - stderr
+    healthcheck:
+      test: [ "/usr/local/bin/etcd", "--version"]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
   # CB-Spider
   cb-spider:
     image: cloudbaristaorg/cb-spider:0.9.0
