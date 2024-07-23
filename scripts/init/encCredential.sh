@@ -58,7 +58,8 @@ while true; do
 done
 
 # Prompt for password
-read -sp "Enter a password (press enter to generate a random key): " PASSWORD
+echo -e "Enter a password (press ${YELLOW}enter${NC} to generate a random key): \c"
+read -sp "" PASSWORD
 echo
 if [ -n "$PASSWORD" ]; then
     read -sp "Confirm the password: " PASSWORD_CONFIRM
@@ -76,9 +77,31 @@ if [ -n "$PASSWORD" ]; then
 else
     # Generate a random key
     TB_CRED_DECRYPT_KEY=$(openssl rand -base64 64 | tr -d '\n')
-    echo "$TB_CRED_DECRYPT_KEY" > "$KEY_FILE"
-    echo -e "\n${YELLOW}A random encryption key was generated and saved to ${CYAN}$KEY_FILE${NC}"
-    echo -e "${YELLOW}This file should be used temporarily. Please store the key securely.${NC}\n"
+    echo -e "${YELLOW}A random key has been generated for encryption.${NC}\n"
+    while true; do
+        echo -e "Do you want to ${YELLOW}save${NC} the key to a temporary file or ${LGREEN}print${NC} it to stdout? (${YELLOW}s${NC}/${LGREEN}p${NC}): \c"
+        read -e OUTPUT_OPTION
+        case $OUTPUT_OPTION in
+            s )
+                echo "$TB_CRED_DECRYPT_KEY" > "$KEY_FILE"
+                echo -e "\n${LGREEN}The encryption key has been saved to: ${CYAN}$KEY_FILE${NC}"
+                echo -e "${RED}Warning: It is not recommended to use this temporary file continuously. Please manage the key securely and delete the file after use.${NC}"
+                break
+                ;;
+            p )
+                echo -e "\n${LGREEN}Encryption Key: ${CYAN}$TB_CRED_DECRYPT_KEY${NC}"
+                echo -e "${RED}Warning: Please copy and manage the key securely. This key will not be shown again.${NC}"
+                # Delete the existing key file if any
+                if [ -f "$KEY_FILE" ]; then
+                    rm "$KEY_FILE"
+                fi
+                break
+                ;;
+            * )
+                echo -e "${RED}Please answer 's' for save or 'p' for print.${NC}"
+                ;;
+        esac
+    done
 fi
 
 # Encrypt the file
@@ -90,8 +113,8 @@ if [ $? -eq 0 ]; then
     if [ $? -eq 0 ] && cmp -s "$FILE_PATH" "$TEMP_DECRYPTED_FILE"; then
         rm "$TEMP_DECRYPTED_FILE"
         rm "$FILE_PATH"
-        echo -e "\n${LGREEN}File successfully encrypted: ${CYAN}$ENCRYPTED_FILE${NC}"
-        echo -e "${LGREEN}Original file deleted: ${CYAN}$FILE_PATH${NC}\n"
+        echo -e "\n${YELLOW}File successfully encrypted${NC}: ${CYAN}$ENCRYPTED_FILE${NC}"
+        echo -e "(Original file deleted: ${CYAN}$FILE_PATH${NC})\n"
         echo -e "${YELLOW}To edit the credentials,${NC}"
         echo -e "Use ${CYAN}$DECRYPT_SCRIPT_PATH${NC} to decrypt the file"
         echo -e "Then edit ${CYAN}$FILE_PATH${NC}\n"

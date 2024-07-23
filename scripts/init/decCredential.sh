@@ -40,6 +40,8 @@ fi
 # Prompt for password or use the key file
 if [ -f "$KEY_FILE" ]; then
     TB_CRED_DECRYPT_KEY=$(cat "$KEY_FILE")
+    echo -e "\n${YELLOW}Using the temporary key file for decryption: ${CYAN}$KEY_FILE${NC}"
+    echo -e "${RED}Warning: It is not recommended to use temporary key file continuously. Please manage the key securely and delete the file after use.${NC}"
 else
     read -sp "Enter the password: " PASSWORD
     echo
@@ -64,6 +66,9 @@ if [ $? -eq 0 ]; then
     echo -e "(Encrypted file deleted: $ENCRYPTED_FILE)\n"
 else
     echo -e "\n${RED}Failed to decrypt the file. Exiting.${NC}\n"
+    if [ -f "$KEY_FILE" ]; then
+        echo -e "${RED}Failed to decrypt the file using the key file. Please delete the key file and retry with manual password input.${NC}"
+    fi
     echo -e "${RED}log: ${DECRYPT_OUTPUT}${NC}\n"
     rm -f "$TEMP_DECRYPTED_FILE"  # Remove the temporary file if decryption failed
     exit 1
