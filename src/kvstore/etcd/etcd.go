@@ -137,9 +137,29 @@ func (s *EtcdStore) GetKvList(keyPrefix string) ([]kvstore.KeyValue, error) {
 func (s *EtcdStore) GetKvListWith(ctx context.Context, keyPrefix string) ([]kvstore.KeyValue, error) {
 	// ascending by key as a default sort order
 	optAscendByKey := clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend)
-
+	
 	// Get all key-value pairs with the given keyPrefix
 	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
+	}
+	
+	kvs := make([]kvstore.KeyValue, len(resp.Kvs))
+	for _, kv := range resp.Kvs {
+		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
+	}
+	return kvs, nil
+}
+
+// GetSortedKvList retrieves multiple values for keys with the given keyPrefix, sortBy, and order from etcd.
+func (s *EtcdStore) GetSortedKvList(keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]kvstore.KeyValue, error) {
+	return s.GetSortedKvListWith(s.ctx, keyPrefix, sortBy, order)
+}
+
+// GetSortedKvListWith retrieves multiple values for keys with  the given keyPrefix, sortBy, and order from etcd using the provided context.
+func (s *EtcdStore) GetSortedKvListWith(ctx context.Context, keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]kvstore.KeyValue, error) {
+	sortOp := clientv3.WithSort(sortBy, order)
+	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), sortOp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
@@ -188,25 +208,6 @@ func (s *EtcdStore) DeleteWith(ctx context.Context, key string) error {
 	return nil
 }
 
-// GetSortedKvList retrieves multiple values for keys with the given keyPrefix, sortBy, and order from etcd.
-func (s *EtcdStore) GetSortedKvList(keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]kvstore.KeyValue, error) {
-	return s.GetSortedKvListWith(s.ctx, keyPrefix, sortBy, order)
-}
-
-// GetSortedKvListWith retrieves multiple values for keys with  the given keyPrefix, sortBy, and order from etcd using the provided context.
-func (s *EtcdStore) GetSortedKvListWith(ctx context.Context, keyPrefix string, sortBy clientv3.SortTarget, order clientv3.SortOrder) ([]kvstore.KeyValue, error) {
-	sortOp := clientv3.WithSort(sortBy, order)
-	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), sortOp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
-	}
-
-	kvs := make([]kvstore.KeyValue, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
-		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
-	}
-	return kvs, nil
-}
 
 // WatchKey watches for changes on the given key.
 func (s *EtcdStore) WatchKey(key string) clientv3.WatchChan {

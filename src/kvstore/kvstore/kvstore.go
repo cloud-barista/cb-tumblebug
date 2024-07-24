@@ -97,6 +97,15 @@ func NewLock(ctx context.Context, session *concurrency.Session, lockKey string) 
 	return store.NewLock(ctx, session, lockKey)
 }
 
+// Put stores a key-value pair
+func Put(key, value string) error {
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+	return store.Put(key, value)
+}
+
 // PutWith stores a key-value pair with context
 func PutWith(ctx context.Context, key, value string) error {
 	store, err := getStore()
@@ -106,6 +115,15 @@ func PutWith(ctx context.Context, key, value string) error {
 	return store.PutWith(ctx, key, value)
 }
 
+// Get retrieves a value for a given key
+func Get(key string) (string, error) {
+	store, err := getStore()
+	if err != nil {
+		return "", err
+	}
+	return store.Get(key)
+}
+
 // GetWith retrieves a value for a given key with context
 func GetWith(ctx context.Context, key string) (string, error) {
 	store, err := getStore()
@@ -113,6 +131,15 @@ func GetWith(ctx context.Context, key string) (string, error) {
 		return "", err
 	}
 	return store.GetWith(ctx, key)
+}
+
+// GetList retrieves multiple values for keys with the given prefix
+func GetList(keyPrefix string) ([]string, error) {
+	store, err := getStore()
+	if err != nil {
+		return nil, err
+	}
+	return store.GetList(keyPrefix)
 }
 
 // GetListWith retrieves multiple values for keys with the given prefix with context
@@ -196,6 +223,15 @@ func GetKvMapWith(ctx context.Context, keyPrefix string) (KeyValueMap, error) {
 	return store.GetKvMapWith(ctx, keyPrefix)
 }
 
+// Detete removes a key-value pair
+func Delete(key string) error {
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+	return store.Delete(key)
+}
+
 // DeleteWith removes a key-value pair with context
 func DeleteWith(ctx context.Context, key string) error {
 	store, err := getStore()
@@ -239,4 +275,13 @@ func WatchKeysWith(ctx context.Context, keyPrefix string) clientv3.WatchChan {
 		return nil
 	}
 	return store.WatchKeysWith(ctx, keyPrefix)
+}
+
+// Close closes the store
+func Close() error {
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+	return store.Close()
 }
