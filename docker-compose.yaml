@@ -36,7 +36,7 @@ services:
       - --log-outputs
       - stderr
     healthcheck:
-      test: [ "/usr/local/bin/etcd", "--version"]
+      test: [ "CMD", "/usr/local/bin/etcd", "--version"]
       interval: 1m
       timeout: 5s
       retries: 3
