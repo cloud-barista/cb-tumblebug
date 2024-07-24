@@ -34,7 +34,7 @@ func NewEtcdStore(ctx context.Context, config Config) (kvstore.Store, error) {
 		return nil, err
 	}
 
-	return &EtcdStore{cli: cli}, nil
+	return &EtcdStore{cli: cli, ctx: ctx}, nil
 }
 
 // OpenSession creates a new etcd session.
@@ -137,13 +137,13 @@ func (s *EtcdStore) GetKvList(keyPrefix string) ([]kvstore.KeyValue, error) {
 func (s *EtcdStore) GetKvListWith(ctx context.Context, keyPrefix string) ([]kvstore.KeyValue, error) {
 	// ascending by key as a default sort order
 	optAscendByKey := clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend)
-	
+
 	// Get all key-value pairs with the given keyPrefix
 	resp, err := s.cli.Get(ctx, keyPrefix, clientv3.WithPrefix(), optAscendByKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list with keyPrefix: %w", err)
 	}
-	
+
 	kvs := make([]kvstore.KeyValue, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
 		kvs = append(kvs, kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)})
@@ -207,7 +207,6 @@ func (s *EtcdStore) DeleteWith(ctx context.Context, key string) error {
 	}
 	return nil
 }
-
 
 // WatchKey watches for changes on the given key.
 func (s *EtcdStore) WatchKey(key string) clientv3.WatchChan {
