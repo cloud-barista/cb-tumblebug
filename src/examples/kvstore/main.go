@@ -8,34 +8,41 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/etcd"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 )
 
 func main() {
 	// EtcdStore configuration
-	config := kvstore.Config{
+	config := etcd.Config{
 		Endpoints:   []string{"localhost:2379"}, // Replace with your etcd server endpoints
 		DialTimeout: 5 * time.Second,
 	}
 
 	// Create EtcdStore instance (singleton)
 	ctx := context.Background()
-	etcd, err := kvstore.NewEtcd(ctx, config)
+	etcd, err := etcd.NewEtcdStore(ctx, config)
 	if err != nil {
 		log.Fatalf("Failed to create EtcdStore: %v", err)
 	}
 	defer etcd.Close()
 
+	// Initialize global Store with EtcdStore
+	err = kvstore.InitializeStore(etcd)
+	if err != nil {
+		log.Fatalf("Failed to initialize global Store: %v", err)
+	}
+
 	ctx2 := context.Background() // Create context for etcd operations
 
 	// Basic CRUD operations test
 	fmt.Println("\n## Basic CRUD operations test")
-	ExampleBasicCRUDTest(ctx2, etcd)
+	ExampleBasicCRUDTest(ctx2)
 
 	// Race condition test
 	fmt.Println("\n## ExampleRaceConditionTest")
-	ExampleRaceConditionTest(ctx2, etcd)
+	ExampleRaceConditionTest(ctx2)
 
 	// FilterKVsBy example
 	fmt.Println("\n## FilterKVsBy example")
@@ -61,15 +68,15 @@ func main() {
 	defer cancel()
 	// goroutine to watch a single key
 	wg.Add(1)
-	go watchSingleKey(ctx3, &wg, etcd)
+	go watchSingleKey(ctx3, &wg)
 
 	// goroutine to watch keys
 	wg.Add(1)
-	go watchMultipleKeys(ctx3, &wg, etcd)
+	go watchMultipleKeys(ctx3, &wg)
 
 	// goroutine to update values
 	wg.Add(1)
-	go changeValues(ctx3, &wg, etcd)
+	go changeValues(ctx3, &wg)
 
 	// Wait for 10 seconds and then cancel the context to stop the goroutines
 	time.Sleep(10 * time.Second)
@@ -81,19 +88,19 @@ func main() {
 	fmt.Println("\nAll operations completed successfully!")
 }
 
-func ExampleBasicCRUDTest(ctx context.Context, etcd kvstore.Store) {
+func ExampleBasicCRUDTest(ctx context.Context) {
 	key := "test_key"
 	value := "Hello, Etcd!"
 
 	// Put (Store) a key-value pair
-	err := etcd.PutWith(ctx, key, value)
+	err := kvstore.PutWith(ctx, key, value)
 	if err != nil {
 		log.Fatalf("Failed to put key-value: %v", err)
 	}
 	fmt.Printf("Successfully put key '%s' with value '%s'\n", key, value)
 
 	// Get (Retrieve) the value
-	retrievedValue, err := etcd.GetWith(ctx, key)
+	retrievedValue, err := kvstore.GetWith(ctx, key)
 	if err != nil {
 		log.Fatalf("Failed to get value: %v", err)
 	}
@@ -101,28 +108,28 @@ func ExampleBasicCRUDTest(ctx context.Context, etcd kvstore.Store) {
 
 	// Update the value
 	newValue := "Updated Etcd Value"
-	err = etcd.PutWith(ctx, key, newValue)
+	err = kvstore.PutWith(ctx, key, newValue)
 	if err != nil {
 		log.Fatalf("Failed to update value: %v", err)
 	}
 	fmt.Printf("Successfully updated key '%s' with new value '%s'\n", key, newValue)
 
 	// Get (Retrieve) the updated value
-	retrievedValue, err = etcd.GetWith(ctx, key)
+	retrievedValue, err = kvstore.GetWith(ctx, key)
 	if err != nil {
 		log.Fatalf("Failed to get updated value: %v", err)
 	}
 	fmt.Printf("Retrieved updated value for key '%s': %s\n", key, retrievedValue)
 
 	// Delete the key-value pair
-	err = etcd.DeleteWith(ctx, key)
+	err = kvstore.DeleteWith(ctx, key)
 	if err != nil {
 		log.Fatalf("Failed to delete key: %v", err)
 	}
 	fmt.Printf("Successfully deleted key '%s'\n", key)
 
 	// Verify deletion
-	_, err = etcd.GetWith(ctx, key)
+	_, err = kvstore.GetWith(ctx, key)
 	if err != nil {
 		fmt.Printf("As expected, failed to get deleted key '%s': %v\n", key, err)
 	} else {
@@ -130,7 +137,7 @@ func ExampleBasicCRUDTest(ctx context.Context, etcd kvstore.Store) {
 	}
 }
 
-func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
+func ExampleRaceConditionTest(ctx context.Context) {
 	fmt.Println("Starting race condition test...")
 
 	key := "race_test_key"
@@ -138,7 +145,7 @@ func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
 	goroutines := 5
 
 	// Initialize the key with 0
-	err := etcd.PutWith(ctx, key, "0")
+	err := kvstore.PutWith(ctx, key, "0")
 	if err != nil {
 		log.Fatalf("Failed to initialize key: %v", err)
 	}
@@ -152,7 +159,7 @@ func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
 			defer wg.Done()
 
 			// Create a persistent session
-			session, err := etcd.NewSession(ctx)
+			session, err := kvstore.NewSession(ctx)
 			if err != nil {
 				log.Fatalf("Failed to create etcd session: %v", err)
 			}
@@ -160,8 +167,8 @@ func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
 
 			// Get Lock
 			lockKey := key
-			// lock, err := etcd.NewLock(ctx, session, lockKey)
-			lock, err := etcd.NewLock(ctx, session, lockKey)
+			// lock, err := kvstore.NewLock(ctx, session, lockKey)
+			lock, err := kvstore.NewLock(ctx, session, lockKey)
 			if err != nil {
 				log.Fatalf("Failed to get lock: %v", err)
 			}
@@ -175,7 +182,7 @@ func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
 				}
 
 				// Get current value, increment, and put new value within the lock
-				value, err := etcd.GetWith(ctx, key)
+				value, err := kvstore.GetWith(ctx, key)
 				if err != nil {
 					log.Printf("Failed to get value: %v", err)
 					// Unlock
@@ -189,7 +196,7 @@ func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
 				intValue, _ := strconv.Atoi(value)
 				newValue := fmt.Sprintf("%d", intValue+1)
 
-				err = etcd.PutWith(ctx, key, newValue)
+				err = kvstore.PutWith(ctx, key, newValue)
 				if err != nil {
 					log.Printf("Failed to put value: %v", err)
 					// Unlock
@@ -214,7 +221,7 @@ func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
 	wg.Wait()
 
 	// Verify the final value
-	finalValue, err := etcd.GetWith(ctx, key)
+	finalValue, err := kvstore.GetWith(ctx, key)
 	if err != nil {
 		log.Fatalf("Failed to get final value: %v", err)
 	}
@@ -228,7 +235,7 @@ func ExampleRaceConditionTest(ctx context.Context, etcd kvstore.Store) {
 	fmt.Printf("Race condition test finished. Final value: %s\n", finalValue)
 
 	// Clean up
-	etcd.DeleteWith(ctx, key)
+	kvstore.DeleteWith(ctx, key)
 }
 
 // ExampleFilterKVsBy demonstrates the usage of the FilterKVsBy function
@@ -338,9 +345,9 @@ func ExampleContainsIDs() {
 // 	// Output: /ns/ns01/mcis/mcis02/vpc/vpc03
 // }
 
-func watchSingleKey(ctx context.Context, wg *sync.WaitGroup, etcd kvstore.Store) {
+func watchSingleKey(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	watchChan := etcd.WatchKeyWith(ctx, "mykey")
+	watchChan := kvstore.WatchKeyWith(ctx, "mykey")
 	for {
 		select {
 		case resp, ok := <-watchChan:
@@ -358,9 +365,9 @@ func watchSingleKey(ctx context.Context, wg *sync.WaitGroup, etcd kvstore.Store)
 	}
 }
 
-func watchMultipleKeys(ctx context.Context, wg *sync.WaitGroup, etcd kvstore.Store) {
+func watchMultipleKeys(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	watchChan := etcd.WatchKeysWith(ctx, "myprefix")
+	watchChan := kvstore.WatchKeysWith(ctx, "myprefix")
 	for {
 		select {
 		case resp, ok := <-watchChan:
@@ -378,7 +385,7 @@ func watchMultipleKeys(ctx context.Context, wg *sync.WaitGroup, etcd kvstore.Sto
 	}
 }
 
-func changeValues(ctx context.Context, wg *sync.WaitGroup, etcd kvstore.Store) {
+func changeValues(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for i := 0; ; i++ {
 		select {
@@ -387,13 +394,13 @@ func changeValues(ctx context.Context, wg *sync.WaitGroup, etcd kvstore.Store) {
 			return
 		default:
 			// Update value with a single key
-			err := etcd.PutWith(ctx, "mykey", fmt.Sprintf("value%d", i))
+			err := kvstore.PutWith(ctx, "mykey", fmt.Sprintf("value%d", i))
 			if err != nil {
 				log.Printf("Error putting mykey: %v", err)
 			}
 
 			// Update values with multiple keys
-			err = etcd.PutWith(ctx, fmt.Sprintf("myprefix/key%d", i), fmt.Sprintf("prefixvalue%d", i))
+			err = kvstore.PutWith(ctx, fmt.Sprintf("myprefix/key%d", i), fmt.Sprintf("prefixvalue%d", i))
 			if err != nil {
 				log.Printf("Error putting myprefix/key%d: %v", i, err)
 			}
