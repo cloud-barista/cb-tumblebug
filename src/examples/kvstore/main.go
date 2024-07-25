@@ -18,6 +18,8 @@ func main() {
 	config := etcd.Config{
 		Endpoints:   []string{"localhost:2379"}, // Replace with your etcd server endpoints
 		DialTimeout: 5 * time.Second,
+		Username:    "default",
+		Password:    "default",
 	}
 
 	// Create EtcdStore instance (singleton)
@@ -86,10 +88,20 @@ func main() {
 	wg.Wait()
 
 	fmt.Println("\nAll operations completed successfully!")
+
+	fmt.Println("\nAfter 10 seconds, delete some example keys and values")
+	time.Sleep(10 * time.Second)
+
+	kvstore.Delete("/mykey")
+	for i := 0; i < 10; i++ {
+		kvstore.Delete("/myprefixkey/key" + strconv.Itoa(i))
+	}
+
+	time.Sleep(5 * time.Second)
 }
 
 func ExampleBasicCRUDTest(ctx context.Context) {
-	key := "test_key"
+	key := "/test_key"
 	value := "Hello, Etcd!"
 
 	// Put (Store) a key-value pair
@@ -140,7 +152,7 @@ func ExampleBasicCRUDTest(ctx context.Context) {
 func ExampleRaceConditionTest(ctx context.Context) {
 	fmt.Println("Starting race condition test...")
 
-	key := "race_test_key"
+	key := "/race_test_key"
 	iterations := 100
 	goroutines := 5
 
@@ -347,7 +359,7 @@ func ExampleContainsIDs() {
 
 func watchSingleKey(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	watchChan := kvstore.WatchKeyWith(ctx, "mykey")
+	watchChan := kvstore.WatchKeyWith(ctx, "/mykey")
 	for {
 		select {
 		case resp, ok := <-watchChan:
@@ -367,7 +379,7 @@ func watchSingleKey(ctx context.Context, wg *sync.WaitGroup) {
 
 func watchMultipleKeys(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	watchChan := kvstore.WatchKeysWith(ctx, "myprefix")
+	watchChan := kvstore.WatchKeysWith(ctx, "/myprefixkey")
 	for {
 		select {
 		case resp, ok := <-watchChan:
@@ -394,15 +406,15 @@ func changeValues(ctx context.Context, wg *sync.WaitGroup) {
 			return
 		default:
 			// Update value with a single key
-			err := kvstore.PutWith(ctx, "mykey", fmt.Sprintf("value%d", i))
+			err := kvstore.PutWith(ctx, "/mykey", fmt.Sprintf("value%d", i))
 			if err != nil {
-				log.Printf("Error putting mykey: %v", err)
+				log.Printf("Error putting /mykey: %v", err)
 			}
 
 			// Update values with multiple keys
-			err = kvstore.PutWith(ctx, fmt.Sprintf("myprefix/key%d", i), fmt.Sprintf("prefixvalue%d", i))
+			err = kvstore.PutWith(ctx, fmt.Sprintf("/myprefixkey/key%d", i), fmt.Sprintf("prefixvalue%d", i))
 			if err != nil {
-				log.Printf("Error putting myprefix/key%d: %v", i, err)
+				log.Printf("Error putting /myprefixkey/key%d: %v", i, err)
 			}
 
 			time.Sleep(1 * time.Second)

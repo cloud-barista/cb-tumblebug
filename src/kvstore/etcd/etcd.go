@@ -21,6 +21,8 @@ type EtcdStore struct {
 type Config struct {
 	Endpoints   []string
 	DialTimeout time.Duration
+	Username    string
+	Password    string
 }
 
 // NewEtcdStore creates a new instance of EtcdStore (singleton).
@@ -29,6 +31,8 @@ func NewEtcdStore(ctx context.Context, config Config) (kvstore.Store, error) {
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   config.Endpoints,
 		DialTimeout: config.DialTimeout,
+		Username:    config.Username,
+		Password:    config.Password,
 	})
 	if err != nil {
 		return nil, err

@@ -16,17 +16,21 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/csv"
 	"flag"
 	"fmt"
 	"os"
 	"os/user"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	// Black import (_) is for running a package's init() function without using its other contents.
 	_ "github.com/cloud-barista/cb-tumblebug/src/core/common/logger"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/etcd"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 
 	//_ "github.com/go-sql-driver/mysql"
@@ -58,6 +62,8 @@ func init() {
 	common.AutocontrolDurationMs = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
 	common.DefaultNamespace = common.NVL(os.Getenv("DEFAULT_NAMESPACE"), "ns01")
 	common.DefaultCredentialHolder = common.NVL(os.Getenv("DEFAULT_CREDENTIALHOLDER"), "admin")
+	// Etcd
+	common.EtcdClusterEndpoints = common.NVL(os.Getenv("ETCD_CLUSTER_ENDPOINTS"), "localhost:2379")
 
 	// load the latest configuration from DB (if exist)
 
@@ -360,6 +366,51 @@ func main() {
 			}
 		})
 	}()
+
+	// Setup etcd and kvstore
+	var etcdAuthEnabled bool
+	var etcdUsername string
+	var etcdPassword string
+	etcdAuthEnabled = os.Getenv("ETCD_AUTH_ENABLED") == "true"
+	if etcdAuthEnabled {
+		etcdUsername = common.NVL(os.Getenv("ETCD_USERNAME"), "default")
+		etcdPassword = common.NVL(os.Getenv("ETCD_PASSWORD"), "default")
+	}
+
+	etcdEndpoints := strings.Split(common.EtcdClusterEndpoints, ",")
+
+	ctx := context.Background()
+	config := etcd.Config{
+		Endpoints:   etcdEndpoints,
+		DialTimeout: 5 * time.Second,
+		Username:    etcdUsername,
+		Password:    etcdPassword,
+	}
+
+	// Wait until etcd is ready
+	var etcdStore kvstore.Store
+	var err error
+	maxAttempts := 10 // (50 sec)
+	attempt := 1
+	for ; attempt <= maxAttempts; attempt++ {
+		etcdStore, err = etcd.NewEtcdStore(ctx, config)
+		if err == nil {
+			log.Info().Msg("etcd is now available.")
+			break
+		}
+		log.Warn().Err(err).Msgf("etcd at %s is not ready. Attempt %d/%d", common.EtcdClusterEndpoints, attempt, maxAttempts)
+		time.Sleep(5 * time.Second)
+	}
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to initialize etcd")
+	}
+
+	err = kvstore.InitializeStore(etcdStore)
+	if err != nil {
+		log.Fatal().Err(err).Msg("")
+	}
+	log.Info().Msg("kvstore is initialized successfully. Initializing CB-Tumblebug...")
 
 	// Launch API servers (REST)
 	wg := new(sync.WaitGroup)
