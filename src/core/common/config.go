@@ -351,6 +351,9 @@ func UpdateGlobalVariable(id string) error {
 	case StrAutocontrolDurationMs:
 		AutocontrolDurationMs = configInfo.Value
 		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
+	case StrEtcdClusterEndpoints:
+		EtcdClusterEndpoints = configInfo.Value
+		log.Debug().Msg("<ETCD_CLUSTER_ENDPOINTS> " + EtcdClusterEndpoints)
 	default:
 
 	}
