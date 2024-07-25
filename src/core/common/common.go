@@ -93,6 +93,8 @@ const (
 	StrK8s                        string = "k8s"
 	StrKubernetes                 string = "kubernetes"
 	StrContainer                  string = "container"
+	StrCommon                     string = "common"
+	StrEmpty                      string = "empty"
 	StrDefaultResourceName        string = "-systemdefault-"
 	// StrFirewallRule               string = "firewallRule"
 

@@ -1305,10 +1305,11 @@ func getK8sClusterDetail(providerName string) *K8sClusterDetail {
 // GetAvailableK8sClusterVersion is func to get available kubernetes cluster versions for provider and region from K8sClusterInfo
 func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K8sClusterVersionDetailAvailable, error) {
 	//
-	// Check available K8sCluster version and node image in k8sclusterinfo.yaml
+	// Check available K8sCluster version in k8sclusterinfo.yaml
 	//
 
 	providerName = strings.ToLower(providerName)
+	regionName = strings.ToLower(regionName)
 
 	// Get K8sClusterDetail for providerName
 	k8sClusterDetail := getK8sClusterDetail(providerName)
@@ -1316,19 +1317,38 @@ func GetAvailableK8sClusterVersion(providerName string, regionName string) (*[]K
 		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
 	}
 
-	// Get Available Versions for regionName
+	// Check if 'regionName' exists
 	var availableVersion *[]K8sClusterVersionDetailAvailable = nil
 	for _, versionDetail := range k8sClusterDetail.Version {
 		for _, region := range versionDetail.Region {
 			region = strings.ToLower(region)
-			if region == "all" || region == regionName {
-				availableVersion = &versionDetail.Available
+			if strings.EqualFold(region, regionName) {
+				if len(versionDetail.Available) == 0 {
+					availableVersion = &[]K8sClusterVersionDetailAvailable{{StrEmpty, StrEmpty}}
+				} else {
+					availableVersion = &versionDetail.Available
+				}
 				return availableVersion, nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("no available kubernetes cluster version for provider(%s):region(%s)", providerName, regionName)
+	// Check if 'common' exists
+	for _, versionDetail := range k8sClusterDetail.Version {
+		for _, region := range versionDetail.Region {
+			region = strings.ToLower(region)
+			if strings.EqualFold(region, StrCommon) {
+				if len(versionDetail.Available) == 0 {
+					availableVersion = &[]K8sClusterVersionDetailAvailable{{StrEmpty, StrEmpty}}
+				} else {
+					availableVersion = &versionDetail.Available
+				}
+				return availableVersion, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no entry for provider(%s):region(%s)", providerName, regionName)
 }
 
 // GetAvailableK8sClusterNodeImage is func to get available kubernetes cluster node images for provider and region from K8sClusterInfo
@@ -1338,6 +1358,7 @@ func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[
 	//
 
 	providerName = strings.ToLower(providerName)
+	regionName = strings.ToLower(regionName)
 
 	// Get K8sClusterDetail for providerName
 	k8sClusterDetail := getK8sClusterDetail(providerName)
@@ -1345,13 +1366,34 @@ func GetAvailableK8sClusterNodeImage(providerName string, regionName string) (*[
 		return nil, fmt.Errorf("unsupported provider(%s) for kubernetes cluster", providerName)
 	}
 
-	// Get Available Node Image for regionName
+	// Check if 'regionName' exists
 	var availableNodeImage *[]K8sClusterNodeImageDetailAvailable = nil
 	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
 		for _, region := range nodeImageDetail.Region {
 			region = strings.ToLower(region)
-			if region == "all" || region == regionName {
-				availableNodeImage = &nodeImageDetail.Available
+			if strings.EqualFold(region, regionName) {
+				if len(nodeImageDetail.Available) == 0 {
+					availableNodeImage = &[]K8sClusterNodeImageDetailAvailable{{StrEmpty, StrEmpty}}
+					break
+				} else {
+					availableNodeImage = &nodeImageDetail.Available
+				}
+				return availableNodeImage, nil
+			}
+		}
+	}
+
+	// Check if 'common' exists
+	for _, nodeImageDetail := range k8sClusterDetail.NodeImage {
+		for _, region := range nodeImageDetail.Region {
+			region = strings.ToLower(region)
+			if strings.EqualFold(region, StrCommon) {
+				if len(nodeImageDetail.Available) == 0 {
+					availableNodeImage = &[]K8sClusterNodeImageDetailAvailable{{StrEmpty, StrEmpty}}
+					break
+				} else {
+					availableNodeImage = &nodeImageDetail.Available
+				}
 				return availableNodeImage, nil
 			}
 		}
