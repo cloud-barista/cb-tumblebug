@@ -317,20 +317,27 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
           ClientSecret:
         ...
     ```
-    - Encrypt `credentials.yaml` into `credentials.yaml.enc`
-      To protect sensitive information, `credentials.yaml` is not used directly. Instead, it must be encrypted using `encCredential.sh`. The encrypted file `credentials.yaml.enc` is then used by `init.py`. This approach ensures that sensitive credentials are not stored in plain text.
+    
+- Encrypt `credentials.yaml` into `credentials.yaml.enc`
+  
+  To protect sensitive information, `credentials.yaml` is not used directly. Instead, it must be encrypted using `encCredential.sh`. The encrypted file `credentials.yaml.enc` is then used by `init.py`. This approach ensures that sensitive credentials are not stored in plain text.
+  - Encrypting Credentials
+    ```bash
+    scripts/init/encCredential.sh
+    ```
+    ![image](https://github.com/user-attachments/assets/5e7a73a6-8746-4be3-9a74-50b051f345bb)
 
-      If you need to update your credentials, decrypt the encrypted file using `decCredential.sh`, make the necessary changes to `credentials.yaml`, and then re-encrypt it.
-      - Encrypting Credentials
-        ```bash
-        scripts/init/encCredential.sh
-        ```
-      - Decrypting Credentials
-        ```bash
-        scripts/init/decCredential.sh
-        ```
+    
+  If you need to update your credentials, decrypt the encrypted file using `decCredential.sh`, make the necessary changes to `credentials.yaml`, and then re-encrypt it.
+  
+  - Decrypting Credentials
+    ```bash
+    scripts/init/decCredential.sh
+    ```
+    ![image](https://github.com/user-attachments/assets/85c91124-317d-4877-a025-a53cfdf2725e)
 
-- Register all multi-cloud connection information and common resources
+
+- (INIT) Register all multi-cloud connection information and common resources
   - How to register
   
     Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/init.py) script. (enter 'y' for confirmation prompts)
@@ -340,7 +347,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     ./scripts/init/init.sh
     ```
     
-    - The credentials in `~/.cloud-barista/credentials.yaml` will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
+    - The credentials in `~/.cloud-barista/credentials.yaml.enc` (encrypted file from the `credentials.yaml`) will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
       - Note: You can check the latest regions and zones of CSP using [`update-cloudinfo.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/misc/update-cloudinfo.py) and review the file for updates. (contributions to updates are welcome)
     - Common images and specifications recorded in the [`cloudimage.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudimage.csv) and [`cloudspec.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudspec.csv) files in the [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets) directory will be automatically registered.
 
