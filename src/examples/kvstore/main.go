@@ -46,9 +46,13 @@ func main() {
 	fmt.Println("\n## ExampleRaceConditionTest")
 	ExampleRaceConditionTest(ctx2)
 
-	// FilterKVsBy example
-	fmt.Println("\n## FilterKVsBy example")
-	ExampleFilterKVsBy()
+	// FilterKvMapBy example
+	fmt.Println("\n## FilterKvListBy example")
+	ExampleFilterKvListBy()
+
+	// FilterKvMapBy example
+	fmt.Println("\n## FilterKvMapBy example")
+	ExampleFilterKvMapBy()
 
 	// ExtractIDsFromKey example
 	fmt.Println("\n## ExtractIDsFromKey example")
@@ -250,9 +254,80 @@ func ExampleRaceConditionTest(ctx context.Context) {
 	kvstore.DeleteWith(ctx, key)
 }
 
-// ExampleFilterKVsBy demonstrates the usage of the FilterKVsBy function
+func ExampleFilterKvListBy() {
+	kvs := []kvstore.KeyValue{
+		{Key: "/ns/ns01/mcis/mcis02", Value: "value1"},
+		{Key: "/ns/ns01/mcis/mcis02/", Value: "value1"},
+		{Key: "/ns/ns01/mcis/mcis03", Value: "value2"},
+		{Key: "/ns/ns01/mcis/mcis03/", Value: "value2"},
+		{Key: "/ns/ns04/mcis/mcis02", Value: "value3"},
+		{Key: "/ns/ns04/mcis/mcis02/", Value: "value3"},
+		{Key: "/ns/ns01", Value: "value4"},
+		{Key: "/ns/ns01/", Value: "value4"},
+		{Key: "/ns/ns04/mcis/mcis05/vpc/vpc01", Value: "value5"},
+		{Key: "/ns/ns04/mcis/mcis05/vpc/vpc01/", Value: "value5"},
+		{Key: "/ns/ns01/mcis/mcis07", Value: "value6"},
+		{Key: "/ns/ns01/mcis/mcis07/", Value: "value6"},
+	}
+
+	// Print all key-value pairs
+	fmt.Println("\nAll key-value pairs:")
+	for _, kv := range kvs {
+		fmt.Println(kv.Key, kv.Value)
+	}
+
+	// Case 1-1: Filter by ns=ns01 and mcis=id2
+	prefixkey11 := "/ns/ns01/mcis"
+	filteredKVs11 := kvutil.FilterKvListBy(kvs, prefixkey11, 1)
+	fmt.Println("\nFiltered by '/ns/ns01/mcis', Output 'ns/ns01/mcis/{mcisId}': ")
+	for _, kv := range filteredKVs11 {
+		fmt.Println(kv.Key, kv.Value)
+	}
+
+	// Case 1-2: Filter by ns=ns01 and mcis=id2
+	prefixkey12 := "/ns/ns01/mcis/"
+	filteredKVs12 := kvutil.FilterKvListBy(kvs, prefixkey12, 1)
+	fmt.Println("\nFiltered by '/ns/ns01/mcis/', Output 'ns/ns01/mcis/{mcisId}': ")
+	for _, kv := range filteredKVs12 {
+		fmt.Println(kv.Key, kv.Value)
+	}
+
+	// Case 2-1: Filter by ns=ns01
+	prefixkey21 := "/ns"
+	filteredKVs21 := kvutil.FilterKvListBy(kvs, prefixkey21, 1)
+	fmt.Println("\nFiltered by '/ns', Output 'ns/{nsId}'")
+	for _, kv := range filteredKVs21 {
+		fmt.Println(kv.Key, kv.Value)
+	}
+
+	// Case 2-2: Filter by ns=ns01
+	prefixkey22 := "/ns/"
+	filteredKVs22 := kvutil.FilterKvListBy(kvs, prefixkey22, 1)
+	fmt.Println("\nFiltered by '/ns/', Output 'ns/{nsId}'")
+	for _, kv := range filteredKVs22 {
+		fmt.Println(kv.Key, kv.Value)
+	}
+
+	// Case 3-1: Filter by ns=ns04, mcis=mcis05, and vpc=vpc01
+	prefixkey31 := "/ns/ns04/mcis/mcis05/vpc"
+	filteredKVs31 := kvutil.FilterKvListBy(kvs, prefixkey31, 1)
+	fmt.Println("\nFiltered by '/ns/ns04/mcis/mcis05/vpc', Output '/ns/ns04/mcis/mcis05/vpc/{vpcId}'")
+	for _, kv := range filteredKVs31 {
+		fmt.Println(kv.Key, kv.Value)
+	}
+
+	// Case 3-2: Filter by ns=ns04, mcis=mcis05, and vpc=vpc01
+	prefixkey32 := "/ns/ns04/mcis/mcis05/vpc/"
+	filteredKVs32 := kvutil.FilterKvListBy(kvs, prefixkey32, 1)
+	fmt.Println("\nFiltered by '/ns/ns04/mcis/mcis05/vpc', Output '/ns/ns04/mcis/mcis05/vpc/{vpcId}'")
+	for _, kv := range filteredKVs32 {
+		fmt.Println(kv.Key, kv.Value)
+	}
+}
+
+// ExampleFilterKvMapBy demonstrates the usage of the FilterKVsBy function
 // with various key values and different levels of depth.
-func ExampleFilterKVsBy() {
+func ExampleFilterKvMapBy() {
 	kvs := kvstore.KeyValueMap{
 		"/ns/ns01/mcis/mcis02":           "value1",
 		"/ns/ns01/mcis/mcis03":           "value2",
@@ -263,7 +338,7 @@ func ExampleFilterKVsBy() {
 	}
 
 	// Print all key-value pairs
-	fmt.Println("All key-value pairs:")
+	fmt.Println("\nAll key-value pairs:")
 	for key, value := range kvs {
 		fmt.Println(key, value)
 	}
@@ -271,7 +346,7 @@ func ExampleFilterKVsBy() {
 	// Case 1: Filter by ns=ns01 and mcis=id2
 	prefixkey1 := "/ns/ns01/mcis"
 	filteredKVs1 := kvutil.FilterKvMapBy(kvs, prefixkey1, 1)
-	fmt.Println("Filtered by '/ns/ns01/mcis', Output 'ns/ns01/mcis/{mcisId}': ")
+	fmt.Println("\nFiltered by '/ns/ns01/mcis', Output 'ns/ns01/mcis/{mcisId}': ")
 	for key, value := range filteredKVs1 {
 		fmt.Println(key, value)
 	}
@@ -282,7 +357,7 @@ func ExampleFilterKVsBy() {
 	// Case 2: Filter by ns=ns01
 	prefixkey2 := "/ns"
 	filteredKVs2 := kvutil.FilterKvMapBy(kvs, prefixkey2, 1)
-	fmt.Println("Filtered by '/ns', Output 'ns/{nsId}'")
+	fmt.Println("\nFiltered by '/ns', Output 'ns/{nsId}'")
 	for key, value := range filteredKVs2 {
 		fmt.Println(key, value)
 	}
@@ -291,7 +366,7 @@ func ExampleFilterKVsBy() {
 	// Case 3: Filter by ns=ns04, mcis=mcis05, and vpc=vpc01
 	prefixkey3 := "/ns/ns04/mcis/mcis05/vpc"
 	filteredKVs3 := kvutil.FilterKvMapBy(kvs, prefixkey3, 1)
-	fmt.Println("Filtered by '/ns/ns04/mcis/mcis05/vpc', Output '/ns/ns04/mcis/mcis05/vpc/{vpcId}'")
+	fmt.Println("\nFiltered by '/ns/ns04/mcis/mcis05/vpc', Output '/ns/ns04/mcis/mcis05/vpc/{vpcId}'")
 	for key, value := range filteredKVs3 {
 		fmt.Println(key, value)
 	}

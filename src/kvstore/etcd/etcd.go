@@ -83,10 +83,16 @@ func (s *EtcdStore) GetWith(ctx context.Context, key string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get key: %w", err)
 	}
-	if len(resp.Kvs) == 0 {
-		return "", fmt.Errorf("key not found: %s", key)
+
+	// Return the value of the first key-value pair found
+	value := ""
+	for _, kv := range resp.Kvs {
+		value = string(kv.Value)
+		return value, nil
 	}
-	return string(resp.Kvs[0].Value), nil
+
+	// Return an empty string if no key-value pair is found
+	return value, nil
 }
 
 // GetListWith retrieves multiple values for keys with the given keyPrefix from etcd.
@@ -123,13 +129,16 @@ func (s *EtcdStore) GetKvWith(ctx context.Context, key string) (kvstore.KeyValue
 	if err != nil {
 		return kvstore.KeyValue{}, fmt.Errorf("failed to get key: %w", err)
 	}
-	if len(resp.Kvs) == 0 {
-		return kvstore.KeyValue{}, fmt.Errorf("key not found: %s", key)
+
+	// Return the first key-value pair found
+	keyValue := kvstore.KeyValue{}
+	for _, kv := range resp.Kvs {
+		keyValue = kvstore.KeyValue{Key: string(kv.Key), Value: string(kv.Value)}
+		return keyValue, nil
 	}
 
-	kv := kvstore.KeyValue{Key: string(resp.Kvs[0].Key), Value: string(resp.Kvs[0].Value)}
-
-	return kv, nil
+	// Return an empty key-value pair if no key-value pair is found
+	return keyValue, nil
 }
 
 // GetKvList retrieves multiple key-value pairs with the given keyPrefix from etcd.
