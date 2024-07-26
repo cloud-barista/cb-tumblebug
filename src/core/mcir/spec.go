@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -390,11 +391,10 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpec
 	//content.StorageGiB = res.StorageGiB
 	//content.Description = res.Description
 
-	// cb-store
 	log.Trace().Msg("PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("Cannot put data to Key Value Store")
 		return content, err
@@ -448,11 +448,10 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpec
 	content.Id = content.Name
 	content.AssociatedObjectList = []string{}
 
-	// cb-store
 	log.Trace().Msg("PUT registerSpec")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return *content, err
@@ -723,10 +722,9 @@ func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecIn
 	toBeSpecJSON, _ := json.Marshal(fieldsToUpdate)
 	err = json.Unmarshal(toBeSpecJSON, &toBeSpec)
 
-	// cb-store
 	Key := common.GenResourceKey(nsId, resourceType, toBeSpec.Id)
 	Val, _ := json.Marshal(toBeSpec)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		temp := TbSpecInfo{}
 		log.Error().Err(err).Msg("")

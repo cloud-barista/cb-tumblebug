@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -81,7 +82,7 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	}
 
 	securityGroupKey := common.GenResourceKey(nsId, common.StrSecurityGroup, securityGroupId)
-	securityGroupKeyValue, _ := common.CBStore.Get(securityGroupKey)
+	securityGroupKeyValue, _ := kvstore.GetKv(securityGroupKey)
 	oldSecurityGroup := TbSecurityGroupInfo{}
 	err = json.Unmarshal([]byte(securityGroupKeyValue.Value), &oldSecurityGroup)
 	if err != nil {
@@ -142,7 +143,6 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	}
 
-	// cb-store
 	log.Info().Msg("POST CreateFirewallRule")
 
 	newSecurityGroup := TbSecurityGroupInfo{}
@@ -154,14 +154,14 @@ func CreateFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	}
 	Val, _ := json.Marshal(newSecurityGroup)
 
-	err = common.CBStore.Put(securityGroupKey, string(Val))
+	err = kvstore.Put(securityGroupKey, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	}
 
 	// securityGroupKey := common.GenResourceKey(nsId, common.StrSecurityGroup, securityGroupId)
-	// keyValue, _ := common.CBStore.Get(securityGroupKey)
+	// keyValue, _ := kvstore.GetKv(securityGroupKey)
 	//
 	//
 	// content := TbSecurityGroupInfo{}
@@ -226,7 +226,7 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	}
 
 	securityGroupKey := common.GenResourceKey(nsId, common.StrSecurityGroup, securityGroupId)
-	securityGroupKeyValue, _ := common.CBStore.Get(securityGroupKey)
+	securityGroupKeyValue, _ := kvstore.GetKv(securityGroupKey)
 	oldSecurityGroup := TbSecurityGroupInfo{}
 	err = json.Unmarshal([]byte(securityGroupKeyValue.Value), &oldSecurityGroup)
 	if err != nil {
@@ -341,7 +341,6 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 
 	tempSpiderSecurityInfo = resp.Result().(*SpiderSecurityInfo)
 
-	// cb-store
 	log.Info().Msg("DELETE FirewallRule")
 
 	newSecurityGroup := TbSecurityGroupInfo{}
@@ -352,14 +351,14 @@ func DeleteFirewallRules(nsId string, securityGroupId string, req []TbFirewallRu
 	}
 	Val, _ := json.Marshal(newSecurityGroup)
 
-	err = common.CBStore.Put(securityGroupKey, string(Val))
+	err = kvstore.Put(securityGroupKey, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return oldSecurityGroup, err
 	}
 
 	// securityGroupKey := common.GenResourceKey(nsId, common.StrSecurityGroup, securityGroupId)
-	// keyValue, _ := common.CBStore.Get(securityGroupKey)
+	// keyValue, _ := kvstore.GetKv(securityGroupKey)
 	//
 	//
 	// content := TbSecurityGroupInfo{}

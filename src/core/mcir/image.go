@@ -25,6 +25,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 
 	validator "github.com/go-playground/validator/v10"
 )
@@ -177,11 +178,10 @@ func RegisterImageWithId(nsId string, u *TbImageReq, update bool) (TbImageInfo, 
 	content.Name = u.Name
 	content.AssociatedObjectList = []string{}
 
-	// cb-store
 	//log.Info().Msg("PUT registerImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
@@ -235,7 +235,7 @@ func RegisterImageWithInfo(nsId string, content *TbImageInfo, update bool) (TbIm
 	log.Info().Msg("PUT registerImage")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return TbImageInfo{}, err
@@ -495,7 +495,7 @@ func UpdateImage(nsId string, imageId string, fieldsToUpdate TbImageInfo) (TbIma
 
 	Key := common.GenResourceKey(nsId, resourceType, toBeImage.Id)
 	Val, _ := json.Marshal(toBeImage)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return temp, err

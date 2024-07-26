@@ -33,6 +33,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
@@ -373,10 +374,10 @@ func ControlVmAsync(wg *sync.WaitGroup, nsId string, mcisId string, vmId string,
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 	log.Debug().Msg("[ControlVmAsync] " + key)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 
-	if keyValue == nil || err != nil {
-		callResult.Error = fmt.Errorf("CBStoreGetErr in ControlVmAsync. key[" + key + "]")
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
+		callResult.Error = fmt.Errorf("kvstore.Get() Err in ControlVmAsync. key[" + key + "]")
 		log.Fatal().Err(callResult.Error).Msg("Error in ControlVmAsync")
 
 		results <- callResult

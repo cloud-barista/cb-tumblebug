@@ -24,6 +24,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -729,17 +730,17 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		subGroupInfoData.SubGroupSize = vmRequest.SubGroupSize
 
 		key := common.GenMcisSubGroupKey(nsId, mcisId, vmRequest.Name)
-		keyValue, err := common.CBStore.Get(key)
+		keyValue, err := kvstore.GetKv(key)
 		if err != nil {
-			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
+			err = fmt.Errorf("In CreateMcisGroupVm(); kvstore.GetKv(): " + err.Error())
 			log.Error().Err(err).Msg("")
 		}
-		if keyValue != nil {
+		if keyValue != (kvstore.KeyValue{}) {
 			if newSubGroup {
 				json.Unmarshal([]byte(keyValue.Value), &subGroupInfoData)
 				existingVmSize, err := strconv.Atoi(subGroupInfoData.SubGroupSize)
 				if err != nil {
-					err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
+					err = fmt.Errorf("In CreateMcisGroupVm(); kvstore.GetKv(): " + err.Error())
 					log.Error().Err(err).Msg("")
 				}
 				// add the number of existing VMs in the SubGroup with requested number for additions
@@ -757,14 +758,14 @@ func CreateMcisGroupVm(nsId string, mcisId string, vmRequest *TbVmReq, newSubGro
 		}
 
 		val, _ := json.Marshal(subGroupInfoData)
-		err = common.CBStore.Put(key, string(val))
+		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
 		// check stored subGroup object
-		keyValue, err = common.CBStore.Get(key)
+		keyValue, err = kvstore.GetKv(key)
 		if err != nil {
-			err = fmt.Errorf("In CreateMcisGroupVm(); CBStore.Get(): " + err.Error())
+			err = fmt.Errorf("In CreateMcisGroupVm(); kvstore.GetKv(): " + err.Error())
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
@@ -942,9 +943,9 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 		return nil, err
 	}
 
-	err = common.CBStore.Put(key, string(val))
+	err = kvstore.Put(key, string(val))
 	if err != nil {
-		err := fmt.Errorf("System Error: CreateMcis CBStore.Put Error")
+		err := fmt.Errorf("System Error: CreateMcis kvstore.Put Error")
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
@@ -1013,7 +1014,7 @@ func CreateMcis(nsId string, req *TbMcisReq, option string) (*TbMcisInfo, error)
 			}
 
 			val, _ := json.Marshal(subGroupInfoData)
-			err := common.CBStore.Put(key, string(val))
+			err := kvstore.Put(key, string(val))
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
@@ -1556,19 +1557,19 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	defer wg.Done()
 
 	key := common.GenMcisKey(nsId, mcisId, "")
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
-		log.Fatal().Err(err).Msg("AddVmToMcis(); CBStore.Get() returned an error.")
+		log.Fatal().Err(err).Msg("AddVmToMcis(); kvstore.GetKv() returned an error.")
 		return err
 	}
-	if keyValue == nil {
+	if keyValue == (kvstore.KeyValue{}) {
 		return fmt.Errorf("AddVmToMcis: Cannot find mcisId. Key: %s", key)
 	}
 
 	// Make VM object
 	key = common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 	val, _ := json.Marshal(vmInfoData)
-	err = common.CBStore.Put(key, string(val))
+	err = kvstore.Put(key, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1584,7 +1585,7 @@ func AddVmToMcis(wg *sync.WaitGroup, nsId string, mcisId string, vmInfoData *TbV
 	//AddVmInfoToMcis(nsId, mcisId, *vmInfoData)
 	// Update VM object
 	val, _ = json.Marshal(vmInfoData)
-	err = common.CBStore.Put(key, string(val))
+	err = kvstore.Put(key, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
