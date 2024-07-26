@@ -22,9 +22,10 @@ import (
 	"strings"
 	"time"
 
-	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -624,21 +625,21 @@ func CreateNLB(nsId string, mcisId string, u *TbNLBReq, option string) (TbNLBInf
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
-	// cb-store
+	// kvstore
 	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
 	Key := GenNLBKey(nsId, mcisId, content.Id)
 	Val, _ := json.Marshal(content)
 
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
-	keyValue, err := common.CBStore.Get(Key)
+	keyValue, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CreateNLB(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CreateNLB(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -690,7 +691,7 @@ func GetNLB(nsId string, mcisId string, resourceId string) (TbNLBInfo, error) {
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
 	key := GenNLBKey(nsId, mcisId, resourceId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
@@ -698,7 +699,7 @@ func GetNLB(nsId string, mcisId string, resourceId string) (TbNLBInfo, error) {
 
 	res := TbNLBInfo{}
 
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		err = json.Unmarshal([]byte(keyValue.Value), &res)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -750,12 +751,12 @@ func CheckNLB(nsId string, mcisId string, resourceId string) (bool, error) {
 	// key := common.GenResourceKey(nsId, resourceType, resourceId)
 	key := GenNLBKey(nsId, mcisId, resourceId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil
@@ -805,7 +806,7 @@ func ListNLBId(nsId string, mcisId string) ([]string, error) {
 	key := fmt.Sprintf("/ns/%s/mcis/%s/", nsId, mcisId)
 	fmt.Println(key)
 
-	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue, err := kvstore.GetKvList(key)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -852,8 +853,8 @@ func ListNLB(nsId string, mcisId string, filterKey string, filterVal string) (in
 	key := fmt.Sprintf("/ns/%s/mcis/%s/nlb", nsId, mcisId)
 	fmt.Println(key)
 
-	keyValue, err := common.CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -927,8 +928,8 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 	key := GenNLBKey(nsId, mcisId, resourceId)
 	fmt.Println("key: " + key)
 
-	keyValue, _ := common.CBStore.Get(key)
-	// In CheckResource() above, calling 'CBStore.Get()' and checking err parts exist.
+	keyValue, _ := kvstore.GetKv(key)
+	// In CheckResource() above, calling 'kvstore.GetKv()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
 	// Deleting NLB should be possible, even if backend VMs still exist.
@@ -1011,7 +1012,7 @@ func DelNLB(nsId string, mcisId string, resourceId string, forceFlag string) err
 
 	}
 
-	err = common.CBStore.Delete(key)
+	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1172,21 +1173,21 @@ func GetNLBHealth(nsId string, mcisId string, nlbId string) (TbNLBHealthInfo, er
 	result.AllVMs = append(result.AllVMs, result.HealthyVMs...)
 	result.AllVMs = append(result.AllVMs, result.UnHealthyVMs...)
 	/*
-		// cb-store
+		// kvstore
 		// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
 		Key := GenNLBKey(nsId, mcisId, content.Id)
 		Val, _ := json.Marshal(content)
 
-		err = common.CBStore.Put(Key, string(Val))
+		err = kvstore.Put(Key, string(Val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return content, err
 		}
 
-		keyValue, err := common.CBStore.Get(Key)
+		keyValue, err := kvstore.GetKv(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			err = fmt.Errorf("In CreateNLB(); CBStore.Get() returned an error.")
+			err = fmt.Errorf("In CreateNLB(); kvstore.GetKv() returned an error.")
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
@@ -1355,21 +1356,21 @@ func AddNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemoveV
 	content.TargetGroup.VMs = append(content.TargetGroup.VMs, nlb.TargetGroup.VMs...)
 	content.TargetGroup.VMs = append(content.TargetGroup.VMs, u.TargetGroup.VMs...)
 
-	// cb-store
+	// kvstore
 	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
 	Key := GenNLBKey(nsId, mcisId, content.Id)
 	Val, _ := json.Marshal(content)
 
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
 
-	keyValue, err := common.CBStore.Get(Key)
+	keyValue, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CreateNLB(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CreateNLB(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -1557,12 +1558,12 @@ func RemoveNLBVMs(nsId string, mcisId string, resourceId string, u *TbNLBAddRemo
 
 	nlb.TargetGroup.VMs = newVMList
 
-	// cb-store
+	// kvstore
 	// Key := common.GenResourceKey(nsId, common.StrNLB, content.Id)
 	Key := GenNLBKey(nsId, mcisId, nlb.Id)
 	Val, _ := json.Marshal(nlb)
 
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err

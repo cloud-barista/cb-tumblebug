@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
@@ -33,8 +34,8 @@ func CreateVmSnapshot(nsId string, mcisId string, vmId string, snapshotName stri
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := common.CBStore.Get(vmKey)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(vmKey)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
 		log.Error().Err(err).Msg("")
 		return mcir.TbCustomImageInfo{}, err

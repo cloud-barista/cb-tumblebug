@@ -35,6 +35,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
 )
@@ -109,7 +110,7 @@ func ListMcisId(nsId string) ([]string, error) {
 	key := common.GenMcisKey(nsId, "", "")
 	key += "/"
 
-	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue, err := kvstore.GetKvList(key)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -150,14 +151,14 @@ func ListVmId(nsId string, mcisId string) ([]string, error) {
 	key := common.GenMcisKey(nsId, mcisId, "")
 	key += "/"
 
-	_, err = common.CBStore.Get(key)
+	_, err = kvstore.GetKv(key)
 	if err != nil {
 		log.Debug().Msg("[Not found] " + mcisId)
 		log.Error().Err(err).Msg("")
 		return vmList, err
 	}
 
-	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue, err := kvstore.GetKvList(key)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -289,7 +290,7 @@ func ListSubGroupId(nsId string, mcisId string) ([]string, error) {
 	key := common.GenMcisKey(nsId, mcisId, "")
 	key += "/"
 
-	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue, err := kvstore.GetKvList(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -501,15 +502,15 @@ func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
 	for _, v := range mcisList {
 
 		key := common.GenMcisKey(nsId, v, "")
-		keyValue, err := common.CBStore.Get(key)
+		keyValue, err := kvstore.GetKv(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			err = fmt.Errorf("In CoreGetAllMcis(); CBStore.Get() returned an error.")
+			err = fmt.Errorf("In CoreGetAllMcis(); kvstore.GetKv() returned an error.")
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
 
-		if keyValue == nil {
+		if keyValue == (kvstore.KeyValue{}) {
 			return nil, fmt.Errorf("in CoreGetAllMcis() mcis loop; Cannot find " + key)
 		}
 		mcisTmp := TbMcisInfo{}
@@ -540,14 +541,14 @@ func ListMcisInfo(nsId string, option string) ([]TbMcisInfo, error) {
 
 		for _, v1 := range vmList {
 			vmKey := common.GenMcisKey(nsId, mcisId, v1)
-			vmKeyValue, err := common.CBStore.Get(vmKey)
+			vmKeyValue, err := kvstore.GetKv(key)
 			if err != nil {
-				err = fmt.Errorf("In CoreGetAllMcis(); CBStore.Get() returned an error")
+				err = fmt.Errorf("In CoreGetAllMcis(); kvstore.GetKv() returned an error")
 				log.Error().Err(err).Msg("")
 				// return nil, err
 			}
 
-			if vmKeyValue == nil {
+			if vmKeyValue == (kvstore.KeyValue{}) {
 				return nil, fmt.Errorf("in CoreGetAllMcis() vm loop; Cannot find " + vmKey)
 			}
 			vmTmp := TbVmInfo{}
@@ -616,15 +617,15 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 	key := common.GenMcisKey(nsId, mcisId, "")
 
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
-	vmKeyValue, err := common.CBStore.Get(vmKey)
+	vmKeyValue, err := kvstore.GetKv(vmKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CoreGetMcisVmInfo(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CoreGetMcisVmInfo(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
-	if vmKeyValue == nil {
+	if vmKeyValue == (kvstore.KeyValue{}) {
 		return nil, fmt.Errorf("Cannot find " + key)
 	}
 	vmTmp := TbVmInfo{}
@@ -648,7 +649,7 @@ func ListVmInfo(nsId string, mcisId string, vmId string) (*TbVmInfo, error) {
 func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 	log.Debug().Msg("[GetMcisObject]" + mcisId)
 	key := common.GenMcisKey(nsId, mcisId, "")
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return TbMcisInfo{}, err
@@ -677,8 +678,8 @@ func GetMcisObject(nsId string, mcisId string) (TbMcisInfo, error) {
 // GetVmObject is func to get VM object
 func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	keyValue, err := common.CBStore.Get(key)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(key)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err = fmt.Errorf("failed to get GetVmObject (ID: %s)", key)
 		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
@@ -696,8 +697,8 @@ func GetVmObject(nsId string, mcisId string, vmId string) (TbVmInfo, error) {
 // GetVmIdNameInDetail is func to get ID and Name details
 func GetVmIdNameInDetail(nsId string, mcisId string, vmId string) (*TbIdNameInDetailInfo, error) {
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	keyValue, err := common.CBStore.Get(key)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(key)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		log.Error().Err(err).Msg("")
 		return &TbIdNameInDetailInfo{}, err
 	}
@@ -770,12 +771,12 @@ func GetMcisStatus(nsId string, mcisId string) (*McisStatusInfo, error) {
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return &McisStatusInfo{}, err
 	}
-	if keyValue == nil {
+	if keyValue == (kvstore.KeyValue{}) {
 		err := fmt.Errorf("Not found [" + key + "]")
 		log.Error().Err(err).Msg("")
 		return &McisStatusInfo{}, err
@@ -968,9 +969,9 @@ func GetVmCurrentPublicIp(nsId string, mcisId string, vmId string) (TbVmStatusIn
 	errorInfo.Status = StatusFailed
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	keyValue, err := common.CBStore.Get(key)
-	if err != nil || keyValue == nil {
-		if keyValue == nil {
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil || keyValue == (kvstore.KeyValue{}) {
+		if keyValue == (kvstore.KeyValue{}) {
 			log.Error().Err(err).Msgf("Not found: %s keyValue is nil", key)
 			return errorInfo, fmt.Errorf("Not found: %s keyValue is nil", key)
 		}
@@ -1055,10 +1056,10 @@ func GetVmSpecId(nsId string, mcisId string, vmId string) string {
 	log.Debug().Msg("[getVmSpecID]" + vmId)
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In GetVmSpecId(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In GetVmSpecId(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -1347,8 +1348,8 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 	key := common.GenMcisKey(nsId, mcisInfoData.Id, "")
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := common.CBStore.Get(key)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(key)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		return
 	}
 
@@ -1357,7 +1358,7 @@ func UpdateMcisInfo(nsId string, mcisInfoData TbMcisInfo) {
 
 	if !reflect.DeepEqual(mcisTmp, mcisInfoData) {
 		val, _ := json.Marshal(mcisInfoData)
-		err = common.CBStore.Put(key, string(val))
+		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
@@ -1369,8 +1370,8 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 	key := common.GenMcisKey(nsId, mcisId, vmInfoData.Id)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := common.CBStore.Get(key)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(key)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		return
 	}
 
@@ -1379,7 +1380,7 @@ func UpdateVmInfo(nsId string, mcisId string, vmInfoData TbVmInfo) {
 
 	if !reflect.DeepEqual(vmTmp, vmInfoData) {
 		val, _ := json.Marshal(vmInfoData)
-		err = common.CBStore.Put(key, string(val))
+		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
@@ -1425,8 +1426,8 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := common.CBStore.Get(vmKey)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(vmKey)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
 		log.Error().Err(err).Msg("")
 		return TbVmInfo{}, err
@@ -1449,8 +1450,8 @@ func AttachDetachDataDisk(nsId string, mcisId string, vmId string, command strin
 	dataDiskKey := common.GenResourceKey(nsId, common.StrDataDisk, dataDiskId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err = common.CBStore.Get(dataDiskKey)
-	if keyValue == nil || err != nil {
+	keyValue, err = kvstore.GetKv(dataDiskKey)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		return TbVmInfo{}, err
 	}
 
@@ -1603,8 +1604,8 @@ func GetAvailableDataDisks(nsId string, mcisId string, vmId string, option strin
 	vmKey := common.GenMcisKey(nsId, mcisId, vmId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := common.CBStore.Get(vmKey)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(vmKey)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		err := fmt.Errorf("Failed to find 'ns/mcis/vm': %s/%s/%s \n", nsId, mcisId, vmId)
 		log.Error().Err(err).Msg("")
 		return nil, err
@@ -1759,7 +1760,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 			return deletedResources, err
 		}
 
-		err = common.CBStore.Delete(vmKey)
+		err = kvstore.Delete(vmKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
@@ -1792,7 +1793,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	}
 	for _, v := range subGroupList {
 		subGroupKey := common.GenMcisSubGroupKey(nsId, mcisId, v)
-		err := common.CBStore.Delete(subGroupKey)
+		err := kvstore.Delete(subGroupKey)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return deletedResources, err
@@ -1825,7 +1826,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 	}
 
 	// delete mcis info
-	err = common.CBStore.Delete(key)
+	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return deletedResources, err
@@ -1892,7 +1893,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 
 	// delete vms info
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	err = common.CBStore.Delete(key)
+	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err

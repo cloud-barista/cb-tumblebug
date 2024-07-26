@@ -24,6 +24,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 
 	validator "github.com/go-playground/validator/v10"
 )
@@ -260,11 +261,10 @@ func CreateDataDisk(nsId string, u *TbDataDiskReq, option string) (TbDataDiskInf
 		}
 	}
 
-	// cb-store
 	log.Info().Msg("PUT CreateDataDisk")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
@@ -380,11 +380,10 @@ func UpsizeDataDisk(nsId string, resourceId string, u *TbDataDiskUpsizeReq) (TbD
 	content.DiskSize = u.DiskSize
 	content.Description = u.Description
 
-	// cb-store
 	log.Info().Msg("PUT UpsizeDataDisk")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err

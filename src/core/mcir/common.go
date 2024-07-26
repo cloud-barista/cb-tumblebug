@@ -29,10 +29,10 @@ import (
 	//uuid "github.com/google/uuid"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	"github.com/go-resty/resty/v2"
 
-	// CB-Store
-	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 
@@ -141,8 +141,8 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	}
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
-	keyValue, _ := common.CBStore.Get(key)
-	// In CheckResource() above, calling 'CBStore.Get()' and checking err parts exist.
+	keyValue, _ := kvstore.GetKv(key)
+	// In CheckResource() above, calling 'kvstore.GetKv()' and checking err parts exist.
 	// So, in here, we don't need to check whether keyValue == nil or err != nil.
 
 	/* Disabled the deletion protection feature
@@ -172,7 +172,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 	switch resourceType {
 	case common.StrImage:
 		// delete image info
-		err := common.CBStore.Delete(key)
+		err := kvstore.Delete(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
@@ -199,7 +199,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		/*
 			// delete image info
-			err := common.CBStore.Delete(key)
+			err := kvstore.Delete(key)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return err
@@ -219,7 +219,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		// delete spec info
 
 		//get related recommend spec
-		//keyValue, err := common.CBStore.Get(key)
+		//keyValue, err := kvstore.GetKv(key)
 		content := TbSpecInfo{}
 		err := json.Unmarshal([]byte(keyValue.Value), &content)
 		if err != nil {
@@ -227,7 +227,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			return err
 		}
 
-		err = common.CBStore.Delete(key)
+		err = kvstore.Delete(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
@@ -330,7 +330,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		for _, v := range subnets {
 			subnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, resourceId, v.Id)
 			// subnetKeys = append(subnetKeys, subnetKey)
-			err = common.CBStore.Delete(subnetKey)
+			err = kvstore.Delete(subnetKey)
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				// return err
@@ -346,7 +346,7 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 		}
 	}
 
-	err = common.CBStore.Delete(key)
+	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -416,7 +416,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 	childResourceKey := common.GenChildResourceKey(nsId, resourceType, parentResourceId, resourceId)
 	log.Debug().Msg("childResourceKey: " + childResourceKey)
 
-	parentKeyValue, _ := common.CBStore.Get(parentResourceKey)
+	parentKeyValue, _ := kvstore.GetKv(parentResourceKey)
 
 	//cspType := common.GetResourcesCspType(nsId, resourceType, resourceId)
 
@@ -467,7 +467,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 		return err
 	}
 
-	err = common.CBStore.Delete(childResourceKey)
+	err = kvstore.Delete(childResourceKey)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -503,7 +503,7 @@ func DelChildResource(nsId string, resourceType string, parentResourceId string,
 		}
 
 		Val, _ := json.Marshal(newVNet)
-		err = common.CBStore.Put(parentResourceKey, string(Val))
+		err = kvstore.Put(parentResourceKey, string(Val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
@@ -554,7 +554,7 @@ func ListResourceId(nsId string, resourceType string) ([]string, error) {
 	}
 
 	key := "/ns/" + nsId + "/resources/"
-	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue, err := kvstore.GetKvList(key)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -612,8 +612,8 @@ func ListResource(nsId string, resourceType string, filterKey string, filterVal 
 	key := "/ns/" + nsId + "/resources/" + resourceType
 	log.Debug().Msg(key)
 
-	keyValue, err := common.CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -845,12 +845,12 @@ func GetAssociatedObjectCount(nsId string, resourceType string, resourceId strin
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return -1, err
 	}
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		inUseCount := int(gjson.Get(keyValue.Value, "associatedObjectList.#").Int())
 		return inUseCount, nil
 	}
@@ -890,12 +890,12 @@ func GetAssociatedObjectList(nsId string, resourceType string, resourceId string
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 
 		type stringList struct {
 			AssociatedObjectList []string `json:"associatedObjectList"`
@@ -947,13 +947,13 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		objList, _ := GetAssociatedObjectList(nsId, resourceType, resourceId)
 		switch cmd {
 		case common.StrAdd:
@@ -1007,7 +1007,7 @@ func UpdateAssociatedObjectList(nsId string, resourceType string, resourceId str
 			log.Error().Err(err).Msg("")
 			return nil, err
 		}
-		err = common.CBStore.Put(key, keyValue.Value)
+		err = kvstore.Put(key, keyValue.Value)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return nil, err
@@ -1051,12 +1051,13 @@ func GetResource(nsId string, resourceType string, resourceId string) (interface
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
+
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return nil, err
 	}
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		switch resourceType {
 		case common.StrImage:
 			res := TbImageInfo{}
@@ -1263,12 +1264,12 @@ func CheckResource(nsId string, resourceType string, resourceId string) (bool, e
 
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil
@@ -1326,12 +1327,12 @@ func CheckChildResource(nsId string, resourceType string, parentResourceId strin
 	key := common.GenResourceKey(nsId, parentResourceType, parentResourceId)
 	key += "/" + resourceType + "/" + resourceId
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false, err
 	}
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil
@@ -2004,8 +2005,8 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 	key := common.GenResourceKey(nsId, resourceType, resourceId)
 
 	// Check existence of the key. If no key, no update.
-	keyValue, err := common.CBStore.Get(key)
-	if keyValue == nil || err != nil {
+	keyValue, err := kvstore.GetKv(key)
+	if keyValue == (kvstore.KeyValue{}) || err != nil {
 		return
 	}
 
@@ -2023,7 +2024,7 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 		}
 
 		if !isEqualJSON {
-			err = common.CBStore.Put(key, string(newJSON))
+			err = kvstore.Put(key, string(newJSON))
 			if err != nil {
 				log.Error().Err(err).Msg("")
 			}
@@ -2039,7 +2040,7 @@ func UpdateResourceObject(nsId string, resourceType string, resourceObject inter
 
 	if !reflect.DeepEqual(oldObject, resourceObject) {
 		val, _ := json.Marshal(resourceObject)
-		err = common.CBStore.Put(key, string(val))
+		err = kvstore.Put(key, string(val))
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}

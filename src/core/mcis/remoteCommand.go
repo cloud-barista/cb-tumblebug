@@ -29,6 +29,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/ssh"
@@ -394,7 +395,7 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		err = fmt.Errorf("Cannot find the key from DB. key: " + key)
@@ -408,8 +409,8 @@ func GetVmSshKey(nsId string, mcisId string, vmId string) (string, string, strin
 	}
 
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
-	keyValue, err = common.CBStore.Get(sshKey)
-	if err != nil || keyValue == nil {
+	keyValue, err = kvstore.GetKv(sshKey)
+	if err != nil || keyValue == (kvstore.KeyValue{}) {
 		log.Error().Err(err).Msg("")
 		return "", "", "", err
 	}
@@ -436,10 +437,10 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	}
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In UpdateVmSshKey(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In UpdateVmSshKey(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -447,7 +448,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	json.Unmarshal([]byte(keyValue.Value), &content)
 
 	sshKey := common.GenResourceKey(nsId, common.StrSSHKey, content.SshKeyId)
-	keyValue, _ = common.CBStore.Get(sshKey)
+	keyValue, _ = kvstore.GetKv(sshKey)
 
 	tmpSshKeyInfo := mcir.TbSshKeyInfo{}
 	json.Unmarshal([]byte(keyValue.Value), &tmpSshKeyInfo)
@@ -455,7 +456,7 @@ func UpdateVmSshKey(nsId string, mcisId string, vmId string, verifiedUserName st
 	tmpSshKeyInfo.VerifiedUsername = verifiedUserName
 
 	val, _ := json.Marshal(tmpSshKeyInfo)
-	err = common.CBStore.Put(keyValue.Key, string(val))
+	err = kvstore.Put(keyValue.Key, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err

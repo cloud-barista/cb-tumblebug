@@ -3,7 +3,7 @@ services:
   # etcd
   etcd:
     image: gcr.io/etcd-development/etcd:v3.5.14
-    container_name: etcd-gcr-v3.5.14
+    container_name: etcd
     ports:
       - "2379:2379"
       - "2380:2380"
@@ -35,12 +35,33 @@ services:
       - zap
       - --log-outputs
       - stderr
-    healthcheck:
+      - --auth-token
+      - simple
+    healthcheck: # for etcd
       test: [ "CMD", "/usr/local/bin/etcd", "--version"]
       interval: 1m
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # etcd-setup-auth
+  etcd-setup-auth:
+    image: alpine:latest
+    container_name: etcd-setup-auth
+    depends_on:
+      - etcd
+    volumes:
+      - ./scripts/etcd/:/scripts/etcd/
+    env_file:
+      - ./scripts/etcd/.env
+    command: sh -c "sh /scripts/etcd/setup-auth.sh"
+    healthcheck: # for etcd-setup-auth
+      test: ["CMD", "test", "-f", "/tmp/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # CB-Spider
   cb-spider:
     image: cloudbaristaorg/cb-spider:0.9.0
@@ -70,6 +91,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
   # CB-Tumblebug
   cb-tumblebug:
     image: cloudbaristaorg/cb-tumblebug:0.9.0
@@ -84,14 +106,13 @@ services:
         protocol: tcp
     depends_on: 
       - cb-spider
+      - etcd-setup-auth
     volumes:
       - ./conf/:/app/conf/
       - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
       - ./container-volume/cb-tumblebug-container/log/:/app/log/
     environment:
       # - CBTUMBLEBUG_ROOT=/app
-      # - CBSTORE_ROOT=/app
-      # - CBLOG_ROOT=/app
       # - SPIDER_CALL_METHOD=REST
       - SPIDER_REST_URL=http://cb-spider:1024/spider
       # - DRAGONFLY_CALL_METHOD=REST
