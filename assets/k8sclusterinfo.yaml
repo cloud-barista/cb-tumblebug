@@ -6,13 +6,66 @@
 #   <csp>: Name of the CSP
 #     nodegroupsWithCluster:
 #     version:
-#       - region: [region1, region2, all(special keyword)]
+#       - region: [region1, region2, common(special keyword: most of regions)]
+#
 
 k8scluster:
+  azure:
+    nodegroupsWithCluster: true
+    nodeImageDesignation: false
+    version:
+      - region: [westeurope,westus]
+        available:
+          - name: 1.29
+            id: 1.29.4
+          - name: 1.28
+            id: 1.28.9
+          - name: 1.27
+            id: 1.27.13
+      - region: [common]
+        available:
+          - name: 1.29
+            id: 1.29.5
+          - name: 1.28
+            id: 1.28.10
+          - name: 1.27
+            id: 1.27.14
+    rootDisk:
+      - region: [common]
+        type:
+          - name: default
+            id: default
+        size:
+          min: 10
+          max: 40
+  gcp:
+    nodegroupsWithCluster: true
+    nodeImageDesignation: true
+    version:
+      - region: [common]
+        available:
+          - name: 1.29
+            id: 1.29.6-gke.1038001
+          - name: 1.28
+            id: 1.28.11-gke.1019001
+          - name: 1.26
+            id: 1.27.14-gke.1059002
+    rootDisk:
+      - region: [common]
+        type:
+          - name: default
+            id: default
+        size:
+          min: 10
+          max: 40
   alibaba:
     nodegroupsWithCluster: false
+    nodeImageDesignation: true
     version:
-      - region: [ap-northeast-1,ap-northeast-2,ap-southeast-1,ap-southeast-3,ap-southeast-5,us-west-1,us-east-1,eu-central-1,eu-west-1,cn-beijing,cn-hongkong,cn-shanghai,cn-huhehaote,cn-heyuan,cn-wulanchabu,cn-guangzhou]
+      # ServiceUnavailable or NotSupportedSLB
+      - region: [me-east-1, cn-zhangjiakou, cn-hangzhou, cn-shenzhen, cn-chengdu, ap-south-1, ap-sourtheast-2]
+      # ap-northeast-1,ap-northeast-2,ap-southeast-1,ap-southeast-3,ap-southeast-5,us-west-1,us-east-1,eu-central-1,eu-west-1,cn-beijing,cn-hongkong,cn-shanghai,cn-huhehaote,cn-heyuan,cn-wulanchabu,cn-guangzhou
+      - region: [common] 
         available:
           - name: 1.30
             id: 1.30.1-aliyun.1
@@ -21,7 +74,7 @@ k8scluster:
           - name: 1.26
             id: 1.26.15-aliyun.1
     rootDisk:
-      - region: [all]
+      - region: [common]
         type:
           - name: cloud_essd
             id: cloud_essd
@@ -30,6 +83,7 @@ k8scluster:
           max: 40
   nhncloud:
     nodegroupsWithCluster: true
+    nodeImageDesignation: true
     version:
       - region: [kr1, kr2]
         available:
@@ -42,7 +96,7 @@ k8scluster:
           - name: 1.26
             id: v1.26.3
     rootDisk:
-      - region: [all]
+      - region: [common]
         type:
           - name: default
             id: default
@@ -51,8 +105,9 @@ k8scluster:
           max: 40
   tencent:
     nodegroupsWithCluster: false
+    nodeImageDesignation: true
     version:
-      - region: [all]
+      - region: [common]
         available:
           - name: 1.28
             id: 1.28.3
@@ -61,7 +116,7 @@ k8scluster:
           - name: 1.24
             id: 1.24.4
     rootDisk:
-      - region: [all]
+      - region: [common]
         type:
           - name: default
             id: default
