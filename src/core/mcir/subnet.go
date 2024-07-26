@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -86,7 +87,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	}
 
 	vNetKey := common.GenResourceKey(nsId, common.StrVNet, vNetId)
-	vNetKeyValue, _ := common.CBStore.Get(vNetKey)
+	vNetKeyValue, _ := kvstore.GetKv(vNetKey)
 	oldVNet := TbVNetInfo{}
 	err = json.Unmarshal([]byte(vNetKeyValue.Value), &oldVNet)
 	if err != nil {
@@ -129,12 +130,11 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 
 	}
 
-	// cb-store
 	log.Info().Msg("POST CreateSubnet")
 	SubnetKey := common.GenChildResourceKey(nsId, common.StrSubnet, vNetId, req.Name)
 	Val, _ := json.Marshal(req)
 
-	err = common.CBStore.Put(SubnetKey, string(Val))
+	err = kvstore.Put(SubnetKey, string(Val))
 	if err != nil {
 		temp := TbVNetInfo{}
 		log.Error().Err(err).Msg("")
@@ -161,7 +161,7 @@ func CreateSubnet(nsId string, vNetId string, req TbSubnetReq, objectOnly bool) 
 	newVNet.SubnetInfoList = append(newVNet.SubnetInfoList, tbSubnetInfo)
 	Val, _ = json.Marshal(newVNet)
 
-	err = common.CBStore.Put(vNetKey, string(Val))
+	err = kvstore.Put(vNetKey, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return oldVNet, err

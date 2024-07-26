@@ -26,7 +26,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
-	cbstore_utils "github.com/cloud-barista/cb-store/utils"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 )
 
 type NsReq struct {
@@ -94,12 +95,12 @@ func CreateNs(u *NsReq) (NsInfo, error) {
 
 	Key := "/ns/" + content.Id
 	Val, _ := json.Marshal(content)
-	err = CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
-	keyValue, _ := CBStore.Get(Key)
+	keyValue, _ := kvstore.GetKv(Key)
 	fmt.Println("CreateNs: Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
 	return content, nil
 }
@@ -129,7 +130,7 @@ func UpdateNs(id string, u *NsReq) (NsInfo, error) {
 	}
 
 	key := "/ns/" + id
-	keyValue, err := CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfo, err
@@ -152,12 +153,12 @@ func UpdateNs(id string, u *NsReq) (NsInfo, error) {
 		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
-	err = CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfo, err
 	}
-	keyValue, err = CBStore.Get(Key)
+	keyValue, err = kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyInfo, err
@@ -200,7 +201,7 @@ func GetNs(id string) (NsInfo, error) {
 	key := "/ns/" + id
 	log.Debug().Msg(key)
 
-	keyValue, err := CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return res, err
@@ -219,8 +220,8 @@ func ListNs() ([]NsInfo, error) {
 	key := "/ns"
 	log.Debug().Msg(key)
 
-	keyValue, err := CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -259,7 +260,7 @@ func ListNsId() ([]string, error) {
 	var nsList []string
 
 	// Implementation Option 1
-	// keyValue, _ := CBStore.GetList(key, true)
+	// keyValue, _ := kvstore.GetKvList(key)
 
 	// r, _ := regexp.Compile("/ns/[a-z]([-a-z0-9]*[a-z0-9])?$")
 
@@ -281,8 +282,8 @@ func ListNsId() ([]string, error) {
 	// EOF of Implementation Option 1
 
 	// Implementation Option 2
-	keyValue, err := CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -359,7 +360,7 @@ func DelNs(id string) error {
 	}
 
 	// delete ns info
-	err = CBStore.Delete(key)
+	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -403,8 +404,8 @@ func CheckNs(id string) (bool, error) {
 
 	key := "/ns/" + id
 
-	keyValue, _ := CBStore.Get(key)
-	if keyValue != nil {
+	keyValue, _ := kvstore.GetKv(key)
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil

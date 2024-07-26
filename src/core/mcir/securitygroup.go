@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -325,11 +326,10 @@ func CreateSecurityGroup(nsId string, u *TbSecurityGroupReq, option string) (TbS
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
-	// cb-store
 	log.Info().Msg("PUT CreateSecurityGroup")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err

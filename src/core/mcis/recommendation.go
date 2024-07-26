@@ -29,9 +29,9 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	"github.com/rs/zerolog/log"
-
-	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 )
 
 // DeploymentPlan is struct for .
@@ -663,8 +663,8 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 
 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
 	log.Debug().Msg(key)
-	keyValue, err := common.CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return []TbVmPriority{}, err
@@ -683,7 +683,7 @@ func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize stri
 		content2 := mcir.TbSpecInfo{}
 		key2 := common.GenResourceKey(nsId, common.StrSpec, content.Id)
 
-		keyValue2, err := common.CBStore.Get(key2)
+		keyValue2, err := kvstore.GetKv(key2)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return []TbVmPriority{}, err
