@@ -63,8 +63,8 @@ log/
 *.history
 
 # Ignore all docker-compose.yaml files created by users, except docker-compose.yaml
-*docker-compose*.yaml
+# *docker-compose*.yaml
 !docker-compose.yaml
 
-# (TBD) .env file for docker-compose
-# 
+# .env file for docker-compose
+# .env
