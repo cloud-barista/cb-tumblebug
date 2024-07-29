@@ -66,5 +66,5 @@ log/
 *docker-compose*.yaml
 !docker-compose.yaml
 
-# (TBD) .env file for docker-compose
-# 
+# .env file for docker-compose
+.env

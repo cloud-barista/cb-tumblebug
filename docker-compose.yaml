@@ -5,8 +5,12 @@ services:
     image: gcr.io/etcd-development/etcd:v3.5.14
     container_name: etcd
     ports:
-      - "2379:2379"
-      - "2380:2380"
+      - target: 2379       # Port assinged to etcd in the container
+        published: 2379   # Port to be exposed to the host
+        protocol: tcp     # Protocol of the port     
+      - target: 2380      # Port assinged to etcd in the container
+        published: 2380   # Port to be exposed to the host
+        protocol: tcp     # Protocol of the port
     volumes: 
       - ./container-volume/etcd/data:/etcd-data
     entrypoint: /usr/local/bin/etcd
@@ -44,18 +48,24 @@ services:
       retries: 3
       start_period: 10s
 
-  # etcd-setup-auth
-  etcd-setup-auth:
+  # etcd-conf
+  etcd-conf:
     image: alpine:latest
-    container_name: etcd-setup-auth
+    container_name: etcd-conf
     depends_on:
       - etcd
     volumes:
       - ./scripts/etcd/:/scripts/etcd/
-    env_file:
-      - ./scripts/etcd/.env
-    command: sh -c "sh /scripts/etcd/setup-auth.sh"
-    healthcheck: # for etcd-setup-auth
+    environment:
+      - ETCD_VERSION_TAG=v3.5.14
+      - ETCD_ENDPOINTS=http://etcd:2379
+      - ETCD_PATH=/tmp/etcd-download-test
+      - ETCD_AUTH_ENABLED=true
+      - ETCD_ROOT_PASSWORD=default
+      - ETCD_ADMIN_USERNAME=default
+      - ETCD_ADMIN_PASSWORD=default
+    command: sh -c "sh /scripts/etcd/etcd-conf.sh"
+    healthcheck: # for etcd-conf
       test: ["CMD", "test", "-f", "/tmp/healthcheck"]
       interval: 30s
       timeout: 10s
@@ -73,7 +83,7 @@ services:
         protocol: tcp  
     volumes:
       # - ./conf/log_conf.yaml:/root/go/src/github.com/cloud-barista/cb-spider/conf/log_conf.yaml
-      - ./conf/store_conf.yaml:/root/go/src/github.com/cloud-barista/cb-spider/conf/store_conf.yaml
+      # - ./conf/store_conf.yaml:/root/go/src/github.com/cloud-barista/cb-spider/conf/store_conf.yaml
       - ./container-volume/cb-spider-container/meta_db/:/root/go/src/github.com/cloud-barista/cb-spider/meta_db/
       - ./container-volume/cb-spider-container/log/:/root/go/src/github.com/cloud-barista/cb-spider/log/
     environment:
@@ -106,7 +116,7 @@ services:
         protocol: tcp
     depends_on: 
       - cb-spider
-      - etcd-setup-auth
+      - etcd-conf
     volumes:
       - ./conf/:/app/conf/
       - ./container-volume/cb-tumblebug-container/meta_db/:/app/meta_db/
