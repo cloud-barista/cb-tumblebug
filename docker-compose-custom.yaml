@@ -18,7 +18,7 @@ services:
       - --name
       - ${COMPOSE_ETCD_NAME_OF_THIS_MEMBER}
       - --data-dir
-      - ${COMPOSE_ETCD_DATA_DIR}
+      - ${COMPOSE_ETCD_VOLUME_CONTAINTER_PATH}
       - --listen-client-urls
       - ${COMPOSE_ETCD_LISTEN_CLIENT_URLS}
       - --advertise-client-urls
@@ -107,9 +107,9 @@ services:
   # CB-Tumblebug
   cb-tumblebug:
     image: cloudbaristaorg/cb-tumblebug:${COMPOSE_TB_VERSION_TAG}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: cb-tumblebug
     platform: linux/amd64
     ports:
