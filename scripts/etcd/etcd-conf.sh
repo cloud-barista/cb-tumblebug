@@ -1,15 +1,17 @@
 #!/bin/bash
 
-ETCD_VER=v3.5.14
+ETCD_VERSION=${ETCD_VERSION_TAG:-v3.5.14}
 
-ENDPOINTS="http://etcd:2379"
-ETCD_PATH="/tmp/etcd-download-test"
-ETCD_CTL="${ETCD_PATH}/etcdctl --endpoints=${ENDPOINTS}"
+ENDPOINTS=${ETCD_ENDPOINTS:-"http://etcd:2379"}
+ETCD_BINS=${ETCD_PATH:-"/tmp/etcd-download-test"}
+ETCD_CTL="${ETCD_BINS}/etcdctl --endpoints=${ENDPOINTS}"
 
+AUTH_ENABLED=${ETCD_AUTH_ENABLED:-true}
 ROOT_USERNAME="root" # Require 'root' to enable authentication
 ROOT_PASSWORD=${ETCD_ROOT_PASSWORD:-default}
 ADMIN_USERNAME=${ETCD_ADMIN_USERNAME:-default}
 ADMIN_PASSWORD=${ETCD_ADMIN_PASSWORD:-default}
+
 
 # Choose either URL
 GOOGLE_URL=https://storage.googleapis.com/etcd
@@ -23,20 +25,20 @@ apk update > /dev/null
 apk add --no-cache curl tar > /dev/null
 
 # Clean up any previous downloads and create the target directory
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-rm -rf ${ETCD_PATH} && mkdir -p ${ETCD_PATH}
+rm -f /tmp/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
+rm -rf ${ETCD_BINS} && mkdir -p ${ETCD_BINS}
 
 # Download the etcd tarball quietly, but show errors
-curl -sSL ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+curl -sSL ${DOWNLOAD_URL}/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
 # Extract the tarball to the target directory quietly, but show errors
-tar xzf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C ${ETCD_PATH} --strip-components=1 2>&1
+tar xzf /tmp/etcd-${ETCD_VERSION}-linux-amd64.tar.gz -C ${ETCD_BINS} --strip-components=1 2>&1
 # Clean up the downloaded tarball
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+rm -f /tmp/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
 
-# Enable auth if ETCD_AUTH_ENABLED is true
-if [ "$ETCD_AUTH_ENABLED" = "true" ]; then
+# Enable auth if AUTH_ENABLED is true
+if [ "$AUTH_ENABLED" = "true" ]; then
 
-    echo "ETCD_AUTH_ENABLED is true"
+    echo "AUTH_ENABLED is true"
 
     # Try to check auth status without authentication
     RET_CHECK_AUTH=$($ETCD_CTL auth status 2>/dev/null)
@@ -86,10 +88,10 @@ if [ "$ETCD_AUTH_ENABLED" = "true" ]; then
 
     fi
 
-# Disable auth if ETCD_AUTH_ENABLED is false
-elif [ "$ETCD_AUTH_ENABLED" = "false" ]; then
+# Disable auth if AUTH_ENABLED is false
+elif [ "$AUTH_ENABLED" = "false" ]; then
     
-    echo "ETCD_AUTH_ENABLED is false"
+    echo "AUTH_ENABLED is false"
     
     # Try to check auth status without authentication
     RET_CHECK_AUTH=$($ETCD_CTL auth status 2>/dev/null)
@@ -136,7 +138,7 @@ elif [ "$ETCD_AUTH_ENABLED" = "false" ]; then
     fi    
 
 else
-    echo "Invalid value for ETCD_AUTH_ENABLED. Please set it to 'true' or 'false'."
+    echo "Invalid value for AUTH_ENABLED. Please set it to 'true' or 'false'."
     exit 1
 fi
 
