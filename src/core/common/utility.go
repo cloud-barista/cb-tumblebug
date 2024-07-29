@@ -1020,17 +1020,13 @@ func GetRegion(ProviderName, RegionName string) (RegionDetail, error) {
 		return RegionDetail{}, fmt.Errorf("cloudType '%s' not found", ProviderName)
 	}
 
-	// using map directly is not working because of the prefix
-	// need to be used after we deprecate zone description in test scripts
+	// directly getting value from the map is disabled because of some possible case mismatches (enhancement needed)
 	// regionDetail, ok := cspDetail.Regions[nativeRegion]
 	// if !ok {
-	// 	return nativeRegion, RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in cloudType '%s'", nativeRegion, cloudType)
+	// 	RegionDetail{}, fmt.Errorf("nativeRegion '%s' not found in Provider '%s'", RegionName, ProviderName)
 	// }
-
-	// return nativeRegion, regionDetail, nil
-
 	for key, regionDetail := range cspDetail.Regions {
-		if strings.HasPrefix(RegionName, key) {
+		if strings.EqualFold(RegionName, key) {
 			return regionDetail, nil
 		}
 	}
