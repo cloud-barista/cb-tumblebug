@@ -675,7 +675,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from kvstore
+	 * Put/Get TbK8sClusterInfo to/from kvstore 
 	 */
 	k := GenK8sClusterKey(nsId, tbK8sCInfo.Id)
 	Val, _ := json.Marshal(tbK8sCInfo)
