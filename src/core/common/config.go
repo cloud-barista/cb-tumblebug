@@ -22,7 +22,8 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 
-	cbstore_utils "github.com/cloud-barista/cb-store/utils"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 
 	"github.com/rs/zerolog/log"
 )
@@ -303,12 +304,13 @@ func UpdateConfig(u *ConfigReq) (ConfigInfo, error) {
 	key := "/config/" + content.Id
 	//mapA := map[string]string{"name": content.Name, "description": content.Description}
 	val, _ := json.Marshal(content)
-	err := CBStore.Put(key, string(val))
+	err := kvstore.Put(key, string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
-	keyValue, _ := CBStore.Get(key)
+	keyValue, _ := kvstore.GetKv(key)
+
 	fmt.Println("UpdateConfig(); ===========================")
 	fmt.Println("UpdateConfig(); Key: " + keyValue.Key + "\nValue: " + keyValue.Value)
 	fmt.Println("UpdateConfig(); ===========================")
@@ -351,6 +353,9 @@ func UpdateGlobalVariable(id string) error {
 	case StrAutocontrolDurationMs:
 		AutocontrolDurationMs = configInfo.Value
 		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
+	case StrEtcdEndpoints:
+		EtcdEndpoints = configInfo.Value
+		log.Debug().Msg("<TB_ETCD_ENDPOINTS> " + EtcdEndpoints)
 	default:
 
 	}
@@ -395,7 +400,7 @@ func InitConfig(id string) error {
 		log.Debug().Msg("[Init config] " + id)
 		key := "/config/" + id
 
-		CBStore.Delete(key)
+		kvstore.Delete(key)
 		// if err != nil {
 		// 	log.Error().Err(err).Msg("")
 		// 	return err
@@ -424,7 +429,7 @@ func GetConfig(id string) (ConfigInfo, error) {
 
 	key := "/config/" + id
 
-	keyValue, err := CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		err := fmt.Errorf(errString)
 		return res, err
@@ -445,8 +450,8 @@ func ListConfig() ([]ConfigInfo, error) {
 	key := "/config"
 	log.Debug().Msg(key)
 
-	keyValue, err := CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -475,7 +480,7 @@ func ListConfigId() []string {
 	key := "/config"
 	log.Debug().Msg(key)
 
-	keyValue, _ := CBStore.GetList(key, true)
+	keyValue, _ := kvstore.GetKvList(key)
 
 	var configList []string
 	for _, v := range keyValue {
@@ -495,14 +500,14 @@ func DelAllConfig() error {
 
 	key := "/config"
 	log.Debug().Msg(key)
-	keyValue, _ := CBStore.GetList(key, true)
+	keyValue, _ := kvstore.GetKvList(key)
 
 	if len(keyValue) == 0 {
 		return nil
 	}
 
 	for _, v := range keyValue {
-		err = CBStore.Delete(v.Key)
+		err = kvstore.Delete(v.Key)
 		if err != nil {
 			return err
 		}
@@ -528,8 +533,8 @@ func CheckConfig(id string) (bool, error) {
 
 	key := "/config/" + id
 
-	keyValue, _ := CBStore.Get(key)
-	if keyValue != nil {
+	keyValue, _ := kvstore.GetKv(key)
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil

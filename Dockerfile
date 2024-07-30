@@ -44,8 +44,6 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumbleb
 
 # Setting various environment variables required by the application
 ENV CBTUMBLEBUG_ROOT=/app \
-    CBSTORE_ROOT=/app \
-    CBLOG_ROOT=/app \
     SPIDER_CALL_METHOD=REST \
     DRAGONFLY_CALL_METHOD=REST \
     SPIDER_REST_URL=http://cb-spider:1024/spider \
@@ -54,6 +52,10 @@ ENV CBTUMBLEBUG_ROOT=/app \
     DB_DATABASE=cb_tumblebug \
     DB_USER=cb_tumblebug \
     DB_PASSWORD=cb_tumblebug \
+    TB_ETCD_ENDPOINTS=http://etcd:2379 \
+    TB_ETCD_AUTH_ENABLED=true \
+    TB_ETCD_USERNAME=default \
+    TB_ETCD_PASSWORD=default \
     ALLOW_ORIGINS=* \
     AUTH_ENABLED=true \
     AUTH_MODE=basic \

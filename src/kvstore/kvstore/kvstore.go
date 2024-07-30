@@ -44,8 +44,8 @@ type Store interface {
 }
 
 type KeyValue struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // KeyValueMap represents a key-value pair.

@@ -1,0 +1,179 @@
+services:
+  # etcd
+  etcd:
+    image: gcr.io/etcd-development/etcd:${COMPOSE_ETCD_VERSION_TAG}
+    container_name: etcd
+    ports:
+      - target: 2379                                    # Port assinged to etcd in the container
+        published: ${COMPOSE_ETCD_LISTEN_CLIENT_PORT}   # Port to be exposed to the host
+        protocol: tcp                                   # Protocol of the port     
+      - target: 2380                                    # Port assinged to etcd in the container
+        published: ${COMPOSE_ETCD_LISTEN_PEER_PORT}     # Port to be exposed to the host
+        protocol: tcp                                   # Protocol of the port
+    volumes: 
+      - ${COMPOSE_ETCD_VOLUME_HOST_PATH}:${COMPOSE_ETCD_VOLUME_CONTAINTER_PATH}
+    entrypoint: /usr/local/bin/etcd
+    command:
+      - --name
+      - ${COMPOSE_ETCD_NAME_OF_THIS_MEMBER}
+      - --data-dir
+      - ${COMPOSE_ETCD_VOLUME_CONTAINTER_PATH}
+      - --listen-client-urls
+      - ${COMPOSE_ETCD_LISTEN_CLIENT_URLS}
+      - --advertise-client-urls
+      - ${COMPOSE_ETCD_ADVERTISE_CLIENT_URLS}
+      - --listen-peer-urls
+      - ${COMPOSE_ETCD_LISTEN_PEER_URLS}
+      - --initial-advertise-peer-urls
+      - ${COMPOSE_ETCD_INITIAL_ADVERTISE_PEER_URLS}
+      - --initial-cluster
+      - ${COMPOSE_ETCD_INITIAL_CLUSTER}
+      - --initial-cluster-token
+      - ${COMPOSE_ETCD_INITIAL_CLUSTER_TOKEN}
+      - --initial-cluster-state
+      - ${COMPOSE_ETCD_INITIAL_CLUSTER_STATE}
+      - --log-level
+      - ${COMPOSE_ETCD_LOG_LEVEL}
+      - --logger
+      - ${COMPOSE_ETCD_LOGGER}
+      - --log-outputs
+      - ${COMPOSE_ETCD_LOG_OUTPUTS}
+      - --auth-token
+      - ${COMPOSE_ETCD_AUTH_TOKEN}
+    healthcheck: # for etcd
+      test: [ "CMD", "/usr/local/bin/etcd", "--version"]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # etcd-conf
+  etcd-conf:
+    image: alpine:latest
+    container_name: etcd-conf
+    depends_on:
+      - etcd
+    volumes:
+      - ./scripts/etcd/:/scripts/etcd/
+    # env_file:
+    #   - ./scripts/etcd/.env
+    environment:
+      - ETCD_VERSION_TAG=${COMPOSE_ETCD_CONF_VERSION_TAG}
+      - ETCD_ENDPOINTS=${COMPOSE_ETCD_CONF_ENDPOINTS}
+      - ETCD_PATH=${COMPOSE_ETCD_CONF_ETCD_PATH}
+      - ETCD_AUTH_ENABLED=${COMPOSE_ETCD_CONF_AUTH_ENABLED}
+      - ETCD_ROOT_PASSWORD=${COMPOSE_ETCD_CONF_ROOT_PASSWORD}
+      - ETCD_ADMIN_USERNAME=${COMPOSE_ETCD_CONF_ADMIN_USERNAME}
+      - ETCD_ADMIN_PASSWORD=${COMPOSE_ETCD_CONF_ADMIN_PASSWORD}
+    command: sh -c "sh /scripts/etcd/etcd-conf.sh"
+    healthcheck: # for etcd-conf
+      test: ["CMD", "test", "-f", "/tmp/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # CB-Spider
+  cb-spider:
+    image: cloudbaristaorg/cb-spider:${COMPOSE_SP_VERSION_TAG}
+    container_name: cb-spider
+    platform: linux/amd64
+    ports:
+      - target: 1024
+        published: ${COMPOSE_SP_REST_PORT}
+        protocol: tcp  
+    volumes:
+      # - ./conf/log_conf.yaml:/root/go/src/github.com/cloud-barista/cb-spider/conf/log_conf.yaml
+      # - ./conf/store_conf.yaml:/root/go/src/github.com/cloud-barista/cb-spider/conf/store_conf.yaml
+      - ${COMPOSE_SP_VOLUME_HOST_PATH}/meta_db/:${COMPOSE_SP_VOLUME_CONTAINTER_PATH}/meta_db/
+      - ${COMPOSE_SP_VOLUME_HOST_PATH}/log/:${COMPOSE_SP_VOLUME_CONTAINTER_PATH}/log/
+    environment:
+      - PLUGIN_SW=${COMPOSE_SP_PLUGSIN_SW}
+      - SERVER_ADDRESS=${COMPOSE_SP_SERVER_ADDRESS}
+      # if you leave these values empty, REST Auth will be disabled.
+      # - API_USERNAME=${COMPOSE_SP_API_USERNAME}
+      # - API_PASSWORD=${COMPOSE_SP_API_PASSWORD}
+      - SPIDER_LOG_LEVEL=${COMPOSE_SP_LOG_LEVEL}
+      - SPIDER_HISCALL_LOG_LEVEL=${COMPOSE_SP_HISCALL_LOG_LEVEL}
+      - ID_TRANSFORM_MODE=${COMPOSE_SP_ID_TRANSFORM_MODE}
+    healthcheck: # for CB-Spider
+      test: [ "CMD", "curl", "-f", "http://localhost:1024/spider/readyz" ]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # CB-Tumblebug
+  cb-tumblebug:
+    image: cloudbaristaorg/cb-tumblebug:${COMPOSE_TB_VERSION_TAG}
+    pull_policy: missing
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cb-tumblebug
+    platform: linux/amd64
+    ports:
+      - target: 1323
+        published: ${COMPOSE_TB_REST_PORT}
+        protocol: tcp
+    depends_on: 
+      - cb-spider
+      - etcd-conf
+    volumes:
+      # - ./conf/:/app/conf/
+      - ${COMPOSE_TB_VOLUME_HOST_PATH}/meta_db/:${COMPOSE_TB_VOLUME_CONTAINTER_PATH}/meta_db/
+      - ${COMPOSE_TB_VOLUME_HOST_PATH}/log/:${COMPOSE_TB_VOLUME_CONTAINTER_PATH}/log/
+    environment:
+      - CBTUMBLEBUG_ROOT=${COMPOSE_TB_CBTUMBLEBUG_ROOT}
+      - SPIDER_CALL_METHOD=${COMPOSE_TB_SPIDER_CALL_METHOD}
+      - SPIDER_REST_URL=${COMPOSE_TB_SPIDER_REST_URL}
+      - DRAGONFLY_CALL_METHOD=${COMPOSE_TB_DRAGONFLY_CALL_METHOD}
+      - DRAGONFLY_REST_URL=${COMPOSE_TB_DRAGONFLY_REST_URL}
+      - DB_URL=${COMPOSE_TB_DB_URL}
+      - DB_DATABASE=${COMPOSE_TB_DB_DATABASE}
+      - DB_USER=${COMPOSE_TB_DB_USER}
+      - DB_PASSWORD=${COMPOSE_TB_DB_PASSWORD}
+      - TB_ETCD_ENDPOINTS=${COMPOSE_TB_ETCD_ENDPOINTS}
+      - TB_ETCD_AUTH_ENABLED=${COMPOSE_TB_ETCD_AUTH_ENABLED}
+      - TB_ETCD_USERNAME=${COMPOSE_TB_ETCD_USERNAME}
+      - TB_ETCD_PASSWORD=${COMPOSE_TB_ETCD_PASSWORD}
+      - ALLOW_ORIGINS=${COMPOSE_TB_ALLOW_ORIGINS}
+      - AUTH_ENABLED=${COMPOSE_TB_AUTH_ENABLED}
+      - API_USERNAME=${COMPOSE_TB_API_USERNAME}
+      - API_PASSWORD=${COMPOSE_TB_API_PASSWORD}
+      - AUTOCONTROL_DURATION_MS=${COMPOSE_TB_AUTOCONTROL_DURATION_MS}
+      - SELF_ENDPOINT=${COMPOSE_TB_SELF_ENDPOINT}
+      - API_DOC_PATH=${COMPOSE_TB_API_DOC_PATH}
+      - DEFAULT_NAMESPACE=${COMPOSE_TB_DEFAULT_NAMESPACE}
+      - DEFAULT_CREDENTIALHOLDER=${COMPOSE_TB_DEFAULT_CREDENTIALHOLDER}
+      - LOGFILE_PATH=${COMPOSE_TB_LOGFILE_PATH}
+      - LOGFILE_MAXSIZE=${COMPOSE_TB_LOGFILE_MAXSIZE}
+      - LOGFILE_MAXBACKUPS=${COMPOSE_TB_LOGFILE_MAXBACKUPS}
+      - LOGFILE_MAXAGE=${COMPOSE_TB_LOGFILE_MAXAGE}
+      - LOGFILE_COMPRESS=${COMPOSE_TB_LOGFILE_COMPRESS}
+      - LOGLEVEL=${COMPOSE_TB_LOGLEVEL}
+      - LOGWRITER=${COMPOSE_TB_LOGWRITER}
+      - NODE_ENV=${COMPOSE_TB_NODE_ENV}
+    healthcheck: # for CB-Tumblebug
+      test: [ "CMD", "curl", "-f", "http://localhost:1323/tumblebug/readyz" ]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # cb-mapui
+  cb-mapui:
+    image: cloudbaristaorg/cb-mapui:${COMPOSE_MAP_VERSION_TAG}
+    container_name: cb-mapui
+    ports:
+      - target: 1324
+        published: ${COMPOSE_MAP_PORT}
+        protocol: tcp
+    # depends_on:
+    #   - cb-tumblebug
+    healthcheck: # for cb-mapui
+      test: ["CMD", "nc", "-vz", "localhost", "1324"]
+      interval: 1m
+      timeout: 5s
+      retries: 3
+      start_period: 10s

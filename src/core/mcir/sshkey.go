@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -227,15 +228,15 @@ func CreateSshKey(nsId string, u *TbSshKeyReq, option string) (TbSshKeyInfo, err
 		content.PrivateKey = u.PrivateKey
 	}
 
-	// cb-store
 	log.Info().Msg("PUT CreateSshKey")
 	Key := common.GenResourceKey(nsId, resourceType, content.Id)
 	Val, _ := json.Marshal(content)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
 	}
+
 	return content, nil
 }
 
@@ -288,19 +289,19 @@ func UpdateSshKey(nsId string, sshKeyId string, fieldsToUpdate TbSshKeyInfo) (Tb
 	toBeSshKeyJSON, _ := json.Marshal(fieldsToUpdate)
 	err = json.Unmarshal(toBeSshKeyJSON, &toBeSshKey)
 
-	// cb-store
 	log.Info().Msg("PUT UpdateSshKey")
 	Key := common.GenResourceKey(nsId, resourceType, toBeSshKey.Id)
 	Val, _ := json.Marshal(toBeSshKey)
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
+
+	keyValue, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In UpdateSshKey(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In UpdateSshKey(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}

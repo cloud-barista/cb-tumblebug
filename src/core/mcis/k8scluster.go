@@ -21,9 +21,10 @@ import (
 	"strings"
 	"time"
 
-	cbstore_utils "github.com/cloud-barista/cb-store/utils"
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -674,20 +675,20 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from cb-store
+	 * Put/Get TbK8sClusterInfo to/from kvstore 
 	 */
 	k := GenK8sClusterKey(nsId, tbK8sCInfo.Id)
 	Val, _ := json.Marshal(tbK8sCInfo)
 
-	err = common.CBStore.Put(k, string(Val))
+	err = kvstore.Put(k, string(Val))
 	if err != nil {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return tbK8sCInfo, err
 	}
 
-	kv, err := common.CBStore.Get(k)
+	kv, err := kvstore.GetKv(k)
 	if err != nil {
-		err = fmt.Errorf("In CreateK8sCluster(); CBStore.Get() returned an error: " + err.Error())
+		err = fmt.Errorf("In CreateK8sCluster(); kvstore.GetKv() returned an error: " + err.Error())
 		log.Err(err).Msg("")
 	}
 
@@ -742,13 +743,13 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	}
 
 	/*
-	 * Get TbK8sClusterInfo from cb-store
+	 * Get TbK8sClusterInfo from kvstore
 	 */
 	oldTbK8sCInfo := TbK8sClusterInfo{}
 	k := GenK8sClusterKey(nsId, k8sClusterId)
-	kv, err := common.CBStore.Get(k)
+	kv, err := kvstore.GetKv(k)
 	if err != nil {
-		err = fmt.Errorf("In AddK8sNodeGroup(); CBStore.Get() returned an error: " + err.Error())
+		err = fmt.Errorf("In AddK8sNodeGroup(); kvstore.GetKv() returned an error: " + err.Error())
 		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
@@ -853,20 +854,20 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	newTbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, oldTbK8sCInfo.Id, oldTbK8sCInfo.ConnectionName, oldTbK8sCInfo.Description)
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from cb-store
+	 * Put/Get TbK8sClusterInfo to/from kvstore
 	 */
 	k = GenK8sClusterKey(nsId, newTbK8sCInfo.Id)
 	Val, _ := json.Marshal(newTbK8sCInfo)
 
-	err = common.CBStore.Put(k, string(Val))
+	err = kvstore.Put(k, string(Val))
 	if err != nil {
 		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return newTbK8sCInfo, err
 	}
 
-	kv, err = common.CBStore.Get(k)
+	kv, err = kvstore.GetKv(k)
 	if err != nil {
-		err = fmt.Errorf("In AddK8sNodeGroup(); CBStore.Get() returned an error: " + err.Error())
+		err = fmt.Errorf("In AddK8sNodeGroup(); kvstore.GetKv() returned an error: " + err.Error())
 		log.Err(err).Msg("")
 		// return nil, err
 	}
@@ -913,7 +914,7 @@ func RemoveK8sNodeGroup(nsId string, k8sClusterId string, k8sNodeGroupName strin
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 	log.Debug().Msg("key: " + k)
 
-	kv, _ := common.CBStore.Get(k)
+	kv, _ := kvstore.GetKv(k)
 
 	// Create Req body
 	type JsonTemplate struct {
@@ -1006,13 +1007,13 @@ func SetK8sNodeGroupAutoscaling(nsId string, k8sClusterId string, k8sNodeGroupNa
 	}
 
 	/*
-	 * Get TbK8sClusterInfo object from cb-store
+	 * Get TbK8sClusterInfo object from kvstore
 	 */
 
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 	log.Debug().Msg("key: " + k)
 
-	kv, _ := common.CBStore.Get(k)
+	kv, _ := kvstore.GetKv(k)
 
 	tbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
@@ -1093,13 +1094,13 @@ func ChangeK8sNodeGroupAutoscaleSize(nsId string, k8sClusterId string, k8sNodeGr
 	}
 
 	/*
-	 * Get TbK8sClusterInfo object from cb-store
+	 * Get TbK8sClusterInfo object from kvstore
 	 */
 
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 	log.Debug().Msg("key: " + k)
 
-	kv, _ := common.CBStore.Get(k)
+	kv, _ := kvstore.GetKv(k)
 
 	tbK8sCInfo := TbK8sClusterInfo{}
 	err = json.Unmarshal([]byte(kv.Value), &tbK8sCInfo)
@@ -1176,18 +1177,18 @@ func GetK8sCluster(nsId string, k8sClusterId string) (TbK8sClusterInfo, error) {
 	log.Debug().Msg("[Get K8sCluster] " + k8sClusterId)
 
 	/*
-	 * Get TbK8sClusterInfo object from cb-store
+	 * Get TbK8sClusterInfo object from kvstore
 	 */
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 
-	kv, err := common.CBStore.Get(k)
+	kv, err := kvstore.GetKv(k)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return emptyObj, err
 	}
 
 	storedTbK8sCInfo := TbK8sClusterInfo{}
-	if kv == nil {
+	if kv == (kvstore.KeyValue{}) {
 		err = fmt.Errorf("Cannot get the k8s cluster " + k8sClusterId + ".")
 		log.Err(err).Msg("Failed to Get K8sCluster")
 		return storedTbK8sCInfo, err
@@ -1296,12 +1297,12 @@ func CheckK8sCluster(nsId string, k8sClusterId string) (bool, error) {
 
 	key := GenK8sClusterKey(nsId, k8sClusterId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Err(err).Msg("Failed to Check K8sCluster")
 		return false, err
 	}
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil
@@ -1338,7 +1339,7 @@ func ListK8sClusterId(nsId string) ([]string, error) {
 	k := fmt.Sprintf("/ns/%s/", nsId)
 	log.Debug().Msg(k)
 
-	kv, err := common.CBStore.GetList(k, true)
+	kv, err := kvstore.GetKvList(k)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to Get K8sClusterId List")
@@ -1380,11 +1381,11 @@ func ListK8sCluster(nsId string, filterKey string, filterVal string) (interface{
 	log.Debug().Msg(k)
 
 	/*
-	 * Get TbK8sClusterInfo objects from cb-store
+	 * Get TbK8sClusterInfo objects from kvstore
 	 */
 
-	kv, err := common.CBStore.GetList(k, true)
-	kv = cbstore_utils.GetChildList(kv, k)
+	kv, err := kvstore.GetKvList(k)
+	kv = kvutil.FilterKvListBy(kv, k, 1)
 
 	if err != nil {
 		log.Err(err).Msg("Failed to List K8sCluster")
@@ -1447,13 +1448,13 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	}
 
 	/*
-	 * Get TbK8sClusterInfo object from cb-store
+	 * Get TbK8sClusterInfo object from kvstore
 	 */
 
 	k := GenK8sClusterKey(nsId, k8sClusterId)
 	log.Debug().Msg("key: " + k)
 
-	kv, _ := common.CBStore.Get(k)
+	kv, _ := kvstore.GetKv(k)
 
 	// Create Req body
 	type JsonTemplate struct {
@@ -1492,7 +1493,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 	)
 
 	if forceFlag == "true" {
-		err = common.CBStore.Delete(k)
+		err = kvstore.Delete(k)
 		if err != nil {
 			log.Err(err).Msg("Failed to Delete K8sCluster")
 			return false, err
@@ -1509,7 +1510,7 @@ func DeleteK8sCluster(nsId string, k8sClusterId string, forceFlag string) (bool,
 			result := mapRes["Result"]
 			if result == "true" {
 				if forceFlag != "true" {
-					err = common.CBStore.Delete(k)
+					err = kvstore.Delete(k)
 					if err != nil {
 						log.Err(err).Msg("Failed to Delete K8sCluster")
 						return false, err
@@ -1589,13 +1590,13 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	}
 
 	/*
-	 * Get TbK8sClusterInfo from cb-store
+	 * Get TbK8sClusterInfo from kvstore
 	 */
 	oldTbK8sCInfo := TbK8sClusterInfo{}
 	k := GenK8sClusterKey(nsId, k8sClusterId)
-	kv, err := common.CBStore.Get(k)
+	kv, err := kvstore.GetKv(k)
 	if err != nil {
-		err = fmt.Errorf("In UpgradeK8sCluster(); CBStore.Get() returned an error: " + err.Error())
+		err = fmt.Errorf("In UpgradeK8sCluster(); kvstore.GetKv() returned an error: " + err.Error())
 		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
@@ -1666,20 +1667,20 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	newTbK8sCInfo := convertSpiderClusterInfoToTbK8sClusterInfo(&spClusterRes.ClusterInfo, oldTbK8sCInfo.Id, oldTbK8sCInfo.ConnectionName, oldTbK8sCInfo.Description)
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from cb-store
+	 * Put/Get TbK8sClusterInfo to/from kvstore
 	 */
 	k = GenK8sClusterKey(nsId, newTbK8sCInfo.Id)
 	Val, _ := json.Marshal(newTbK8sCInfo)
 
-	err = common.CBStore.Put(k, string(Val))
+	err = kvstore.Put(k, string(Val))
 	if err != nil {
 		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
-	kv, err = common.CBStore.Get(k)
+	kv, err = kvstore.GetKv(k)
 	if err != nil {
-		err = fmt.Errorf("In UpgradeK8sCluster(); CBStore.Get() returned an error: " + err.Error())
+		err = fmt.Errorf("In UpgradeK8sCluster(); kvstore.GetKv() returned an error: " + err.Error())
 		log.Err(err).Msg("")
 		// return nil, err
 	}

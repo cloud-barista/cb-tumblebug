@@ -24,6 +24,7 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 
 	"github.com/go-resty/resty/v2"
@@ -118,15 +119,15 @@ func CheckMcis(nsId string, mcisId string) (bool, error) {
 
 	key := common.GenMcisKey(nsId, mcisId, "")
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckMcis(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CheckMcis(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil
@@ -195,15 +196,15 @@ func CheckVm(nsId string, mcisId string, vmId string) (bool, error) {
 
 	key := common.GenMcisKey(nsId, mcisId, vmId)
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckVm(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CheckVm(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil
@@ -236,15 +237,15 @@ func CheckMcisPolicy(nsId string, mcisId string) (bool, error) {
 
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CheckMcisPolicy(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CheckMcisPolicy(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
 
-	if keyValue != nil {
+	if keyValue != (kvstore.KeyValue{}) {
 		return true, nil
 	}
 	return false, nil

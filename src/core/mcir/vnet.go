@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -254,11 +255,10 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		content.SystemLabel = "Registered from CSP resource"
 	}
 
-	// cb-store
 	Key := common.GenResourceKey(nsId, common.StrVNet, content.Id)
 	Val, _ := json.Marshal(content)
 
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
@@ -284,10 +284,10 @@ func CreateVNet(nsId string, u *TbVNetReq, option string) (TbVNetInfo, error) {
 		}
 	}
 
-	keyValue, err := common.CBStore.Get(Key)
+	keyValue, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CreateVNet(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CreateVNet(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}

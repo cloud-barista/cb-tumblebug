@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	"github.com/rs/zerolog/log"
 )
 
@@ -126,15 +127,15 @@ func OrchestrationController() {
 		for _, v := range mcisPolicyList {
 
 			key := common.GenMcisPolicyKey(nsId, v, "")
-			keyValue, err := common.CBStore.Get(key)
+			keyValue, err := kvstore.GetKv(key)
 			if err != nil {
 				log.Error().Err(err).Msg("")
-				err = fmt.Errorf("In OrchestrationController(); CBStore.Get() returned an error.")
+				err = fmt.Errorf("In OrchestrationController(); kvstore.GetKv() returned an error.")
 				log.Error().Err(err).Msg("")
 				// return nil, err
 			}
 
-			if keyValue == nil {
+			if keyValue == (kvstore.KeyValue{}) {
 				log.Debug().Msg("keyValue is nil")
 			}
 			mcisPolicyTmp := McisPolicyInfo{}
@@ -163,7 +164,7 @@ func OrchestrationController() {
 					log.Debug().Msg("[Check MCIS Policy] " + mcisPolicyTmp.Id)
 					check, err := CheckMcis(nsId, mcisPolicyTmp.Id)
 					log.Debug().Msg("[Check existence of MCIS] " + mcisPolicyTmp.Id)
-					//keyValueMcis, _ := common.CBStore.Get(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
+					//keyValueMcis, _ := common.Ckvstore.GetKv(common.GenMcisKey(nsId, mcisPolicyTmp.Id, ""))
 
 					if !check || err != nil {
 						mcisPolicyTmp.Policy[policyIndex].Status = AutoStatusError
@@ -427,8 +428,8 @@ func OrchestrationController() {
 func UpdateMcisPolicyInfo(nsId string, mcisPolicyInfoData McisPolicyInfo) {
 	key := common.GenMcisPolicyKey(nsId, mcisPolicyInfoData.Id, "")
 	val, _ := json.Marshal(mcisPolicyInfoData)
-	err := common.CBStore.Put(key, string(val))
-	if err != nil && !strings.Contains(err.Error(), common.CbStoreKeyNotFoundErrorString) {
+	err := kvstore.Put(key, string(val))
+	if err != nil && !strings.Contains(err.Error(), common.ErrStrKeyNotFound) {
 		log.Error().Err(err).Msg("")
 	}
 }
@@ -470,19 +471,19 @@ func CreateMcisPolicy(nsId string, mcisId string, u *McisPolicyReq) (McisPolicyI
 	obj.Policy = req.Policy
 	obj.Description = req.Description
 
-	// cb-store
+	// kvstore
 	Key := common.GenMcisPolicyKey(nsId, obj.Id, "")
 	Val, _ := json.Marshal(obj)
 
-	err = common.CBStore.Put(Key, string(Val))
+	err = kvstore.Put(Key, string(Val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return obj, err
 	}
-	keyValue, err := common.CBStore.Get(Key)
+	keyValue, err := kvstore.GetKv(Key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In CreateMcisPolicy(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In CreateMcisPolicy(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -498,12 +499,12 @@ func GetMcisPolicyObject(nsId string, mcisId string) (McisPolicyInfo, error) {
 
 	key := common.GenMcisPolicyKey(nsId, mcisId, "")
 	log.Debug().Msgf("Key: %v", key)
-	keyValue, err := common.CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return McisPolicyInfo{}, err
 	}
-	if keyValue == nil {
+	if keyValue == (kvstore.KeyValue{}) {
 		return McisPolicyInfo{}, err
 	}
 
@@ -528,15 +529,15 @@ func GetAllMcisPolicyObject(nsId string) ([]McisPolicyInfo, error) {
 	for _, v := range mcisList {
 
 		key := common.GenMcisPolicyKey(nsId, v, "")
-		keyValue, err := common.CBStore.Get(key)
+		keyValue, err := kvstore.GetKv(key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
-			err = fmt.Errorf("In GetAllMcisPolicyObject(); CBStore.Get() returned an error.")
+			err = fmt.Errorf("In GetAllMcisPolicyObject(); kvstore.GetKv() returned an error.")
 			log.Error().Err(err).Msg("")
 			// return nil, err
 		}
 
-		if keyValue == nil {
+		if keyValue == (kvstore.KeyValue{}) {
 			return nil, fmt.Errorf("Cannot find " + key)
 		}
 		mcisTmp := McisPolicyInfo{}
@@ -557,10 +558,10 @@ func ListMcisPolicyId(nsId string) []string {
 	}
 
 	key := "/ns/" + nsId + "/policy/mcis"
-	keyValue, err := common.CBStore.GetList(key, true)
+	keyValue, err := kvstore.GetKvList(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
-		err = fmt.Errorf("In ListMcisPolicyId(); CBStore.Get() returned an error.")
+		err = fmt.Errorf("In ListMcisPolicyId(); kvstore.GetKv() returned an error.")
 		log.Error().Err(err).Msg("")
 		// return nil, err
 	}
@@ -601,7 +602,7 @@ func DelMcisPolicy(nsId string, mcisId string) error {
 	log.Debug().Msg(key)
 
 	// delete mcis Policy info
-	err = common.CBStore.Delete(key)
+	err = kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err

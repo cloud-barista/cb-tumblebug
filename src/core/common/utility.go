@@ -23,7 +23,8 @@ import (
 	"sync"
 	"time"
 
-	cbstore_utils "github.com/cloud-barista/cb-store/utils"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
+	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	uid "github.com/rs/xid"
 	"github.com/rs/zerolog/log"
 
@@ -259,12 +260,13 @@ func GetCspResourceId(nsId string, resourceType string, resourceId string) (stri
 	if key == "/invalidKey" {
 		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
 	}
-	keyValue, err := CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	if keyValue == nil {
+
+	if keyValue == (kvstore.KeyValue{}) {
 		//log.Error().Err(err).Msg("")
 		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
 		return "", fmt.Errorf("cannot find the key " + key)
@@ -374,12 +376,12 @@ func GetConnConfig(ConnConfigName string) (ConnConfig, error) {
 	connConfig := ConnConfig{}
 
 	key := GenConnectionKey(ConnConfigName)
-	keyValue, err := CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return ConnConfig{}, err
 	}
-	if keyValue == nil {
+	if keyValue == (kvstore.KeyValue{}) {
 		return ConnConfig{}, fmt.Errorf("Cannot find the ConnConfig " + key)
 	}
 	err = json.Unmarshal([]byte(keyValue.Value), &connConfig)
@@ -459,8 +461,8 @@ func GetConnConfigList(filterCredentialHolder string, filterVerified bool, filte
 	var tmpConnections ConnConfigList
 
 	key := "/connection"
-	keyValue, err := CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, err := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -806,7 +808,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 				if err != nil {
 					return CredentialInfo{}, err
 				}
-				err = CBStore.Put(string(key), string(val))
+				err = kvstore.Put(string(key), string(val))
 				if err != nil {
 					return callResult, err
 				}
@@ -845,7 +847,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 			if err != nil {
 				return callResult, err
 			}
-			err = CBStore.Put(string(key), string(val))
+			err = kvstore.Put(string(key), string(val))
 			if err != nil {
 				return callResult, err
 			}
@@ -883,7 +885,7 @@ func RegisterCredential(req CredentialReq) (CredentialInfo, error) {
 					if err != nil {
 						return callResult, err
 					}
-					err = CBStore.Put(string(key), string(val))
+					err = kvstore.Put(string(key), string(val))
 					if err != nil {
 						return callResult, err
 					}
@@ -995,7 +997,7 @@ func RegisterConnectionConfig(connConfig ConnConfig) (ConnConfig, error) {
 	if err != nil {
 		return ConnConfig{}, err
 	}
-	err = CBStore.Put(string(key), string(val))
+	err = kvstore.Put(string(key), string(val))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return ConnConfig{}, err
@@ -1176,8 +1178,8 @@ func NVL(str string, def string) string {
 // GetChildIdList is func to get child id list from given key
 func GetChildIdList(key string) []string {
 
-	keyValue, _ := CBStore.GetList(key, true)
-	keyValue = cbstore_utils.GetChildList(keyValue, key)
+	keyValue, _ := kvstore.GetKvList(key)
+	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
 
 	var childIdList []string
 	for _, v := range keyValue {
@@ -1195,7 +1197,7 @@ func GetChildIdList(key string) []string {
 // GetObjectList is func to return IDs of each child objects that has the same key
 func GetObjectList(key string) []string {
 
-	keyValue, _ := CBStore.GetList(key, true)
+	keyValue, _ := kvstore.GetKvList(key)
 
 	var childIdList []string
 	for _, v := range keyValue {
@@ -1209,12 +1211,12 @@ func GetObjectList(key string) []string {
 // GetObjectValue is func to return the object value
 func GetObjectValue(key string) (string, error) {
 
-	keyValue, err := CBStore.Get(key)
+	keyValue, err := kvstore.GetKv(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return "", err
 	}
-	if keyValue == nil {
+	if keyValue == (kvstore.KeyValue{}) {
 		return "", nil
 	}
 	return keyValue.Value, nil
@@ -1223,7 +1225,7 @@ func GetObjectValue(key string) (string, error) {
 // DeleteObject is func to delete the object
 func DeleteObject(key string) error {
 
-	err := CBStore.Delete(key)
+	err := kvstore.Delete(key)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return err
@@ -1233,9 +1235,9 @@ func DeleteObject(key string) error {
 
 // DeleteObjects is func to delete objects
 func DeleteObjects(key string) error {
-	keyValue, _ := CBStore.GetList(key, true)
+	keyValue, _ := kvstore.GetKvList(key)
 	for _, v := range keyValue {
-		err := CBStore.Delete(v.Key)
+		err := kvstore.Delete(v.Key)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err

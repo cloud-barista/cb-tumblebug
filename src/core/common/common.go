@@ -19,8 +19,6 @@ import (
 	"sync"
 	"time"
 
-	cbstore "github.com/cloud-barista/cb-store"
-	icbs "github.com/cloud-barista/cb-store/interfaces"
 	"xorm.io/xorm"
 )
 
@@ -51,8 +49,6 @@ type OptionalParameter struct {
 // SystemReady is global variable for checking SystemReady status
 var SystemReady bool
 
-// CB-Store
-var CBStore icbs.Store
 var SpiderRestUrl string
 var DragonflyRestUrl string
 var TerrariumRestUrl string
@@ -63,39 +59,41 @@ var DBPassword string
 var AutocontrolDurationMs string
 var DefaultNamespace string
 var DefaultCredentialHolder string
+var EtcdEndpoints string
 var MyDB *sql.DB
 var err error
 var ORM *xorm.Engine
 
 const (
-	StrSpiderRestUrl              string = "SPIDER_REST_URL"
-	StrDragonflyRestUrl           string = "DRAGONFLY_REST_URL"
-	StrTerrariumRestUrl           string = "TERRARIUM_REST_URL"
-	StrDBUrl                      string = "DB_URL"
-	StrDBDatabase                 string = "DB_DATABASE"
-	StrDBUser                     string = "DB_USER"
-	StrDBPassword                 string = "DB_PASSWORD"
-	StrAutocontrolDurationMs      string = "AUTOCONTROL_DURATION_MS"
-	CbStoreKeyNotFoundErrorString string = "key not found"
-	StrAdd                        string = "add"
-	StrDelete                     string = "delete"
-	StrSSHKey                     string = "sshKey"
-	StrImage                      string = "image"
-	StrCustomImage                string = "customImage"
-	StrSecurityGroup              string = "securityGroup"
-	StrSpec                       string = "spec"
-	StrVNet                       string = "vNet"
-	StrSubnet                     string = "subnet"
-	StrDataDisk                   string = "dataDisk"
-	StrNLB                        string = "nlb"
-	StrVM                         string = "vm"
-	StrMCIS                       string = "mcis"
-	StrK8s                        string = "k8s"
-	StrKubernetes                 string = "kubernetes"
-	StrContainer                  string = "container"
-	StrCommon                     string = "common"
-	StrEmpty                      string = "empty"
-	StrDefaultResourceName        string = "-systemdefault-"
+	StrSpiderRestUrl         string = "SPIDER_REST_URL"
+	StrDragonflyRestUrl      string = "DRAGONFLY_REST_URL"
+	StrTerrariumRestUrl      string = "TERRARIUM_REST_URL"
+	StrDBUrl                 string = "DB_URL"
+	StrDBDatabase            string = "DB_DATABASE"
+	StrDBUser                string = "DB_USER"
+	StrDBPassword            string = "DB_PASSWORD"
+	StrAutocontrolDurationMs string = "AUTOCONTROL_DURATION_MS"
+	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
+	ErrStrKeyNotFound        string = "key not found"
+	StrAdd                   string = "add"
+	StrDelete                string = "delete"
+	StrSSHKey                string = "sshKey"
+	StrImage                 string = "image"
+	StrCustomImage           string = "customImage"
+	StrSecurityGroup         string = "securityGroup"
+	StrSpec                  string = "spec"
+	StrVNet                  string = "vNet"
+	StrSubnet                string = "subnet"
+	StrDataDisk              string = "dataDisk"
+	StrNLB                   string = "nlb"
+	StrVM                    string = "vm"
+	StrMCIS                  string = "mcis"
+	StrK8s                   string = "k8s"
+	StrKubernetes            string = "kubernetes"
+	StrContainer             string = "container"
+	StrCommon                string = "common"
+	StrEmpty                 string = "empty"
+	StrDefaultResourceName   string = "-systemdefault-"
 	// StrFirewallRule               string = "firewallRule"
 
 	// SystemCommonNs is const for SystemCommon NameSpace ID
@@ -105,7 +103,6 @@ const (
 var StartTime string
 
 func init() {
-	CBStore = cbstore.GetStore()
 
 	StartTime = time.Now().Format("2006.01.02 15:04:05 Mon")
 }

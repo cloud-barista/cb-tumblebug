@@ -14,7 +14,9 @@
 [![Slack](https://img.shields.io/badge/Slack-SIG--TB-brightgreen)](https://cloud-barista.slack.com/archives/CJQ7575PU)
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-43-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructure consisting of resources from multiple cloud service providers. (Cloud-Barista)
@@ -27,7 +29,6 @@ CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructu
   - **Deploy a Multi-Cloud Infra with GPUs and Enjoy muiltple LLMs in parallel (YouTube)**
     [![Multi-Cloud LLMs in parallel](https://github.com/cloud-barista/cb-tumblebug/assets/5966944/e15feb67-ba02-4066-af62-d9f8e8330a63)](https://www.youtube.com/watch?v=SD9ZoT_OZpQ)
   - [LLM-related scripts](https://github.com/cloud-barista/cb-tumblebug/tree/main/scripts/usecases/llm)
-
 
 <details>
 <summary>[Note] Development of CB-Tumblebug is ongoing </summary>
@@ -68,21 +69,21 @@ while the CB-TB repo accommodates local languages in their contents.
 1. [How to Use](#how-to-use-cb-tb-features)
 1. [How to Contribute](#how-to-contribute)
 
-
 ---
 
 ## Prerequisites
 
 ### Envionment
+
 - Linux (recommended: `Ubuntu 22.04`)
 - Golang (recommended: `v1.21.6`)
 
 ### Dependency
+
 Open source packages used in this project
 
-- [Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies) 
+- [Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies)
 - [SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
-
 
 ---
 
@@ -108,13 +109,13 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   The `--depth 1` option reduces the size by limiting the commit history download.
 
   For contributing, it is recommended not to specify this option or to restore the commit history using the following command.
-  
 
   ```bash
   git fetch --unshallow
   ```
 
   Register alias for the CB-TB directory (optional action for convenience: `cdtb`, `cbtbsrc`, `cdtbtest`).
+
   ```bash
   echo "alias cdtb='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug'" >> ~/.bashrc
   echo "alias cdtbsrc='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug/src'" >> ~/.bashrc
@@ -138,7 +139,9 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     sudo apt install make gcc git
     ```
   - Install: Golang
+
     - Check https://golang.org/dl/ and setup Go
+
       - Download
         ```bash
         wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz;
@@ -161,26 +164,28 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 ### (2) Build CB-TB
 
 - Build the Golang source code using the Makefile
+
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
   make
   ```
-  
-  All dependencies will be downloaded automatically by Go.
-  
-  The initial build will take some time, but subsequent builds will be faster by the Go build cache.
-  
-  **Note** To update the Swagger API documentation, run `make swag` in `cb-tumblebug/src/`
-    - API documentation file will be generated at `cb-tumblebug/src/api/rest/docs/swagger.yaml`
-    - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/swagger/ (provided when CB-TB is running)
-    - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
 
+  All dependencies will be downloaded automatically by Go.
+
+  The initial build will take some time, but subsequent builds will be faster by the Go build cache.
+
+  **Note** To update the Swagger API documentation, run `make swag` in `cb-tumblebug/src/`
+
+  - API documentation file will be generated at `cb-tumblebug/src/api/rest/docs/swagger.yaml`
+  - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/swagger/ (provided when CB-TB is running)
+  - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
 
 ### (3) Run CB-TB system
 
 #### (3-1) Run dependant sub-project
+
 - Run CB-Spider
-  
+
   CB-Tumblebug requires [CB-Spider](https://github.com/cloud-barista/cb-spider) to control multiple cloud service providers.
 
   - (Recommended method) Run the CB-Spider container using the CB-TB script (preferably use the specified version)
@@ -200,9 +205,11 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
     For installation methods other than the container, refer to [CB-Spider](https://github.com/cloud-barista/cb-spider)
 
 #### (3-2: option 1) Run CB-TB from the source code (recommended)
+
 - [Clone the repository](#how-to-download)
 - [Build and Setup](#how-to-build-and-setup)
 - Set environment variables required to run CB-TB (in another tab)
+
   - Check and configure the contents of `cb-tumblebug/conf/setup.env` (CB-TB environment variables, modify as needed)
     - Apply the environment variables to the system
       ```bash
@@ -215,9 +222,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
       source ./scripts/setPublicIP.sh
       ```
-  - Check and configure the contents of `store_conf.yaml` in `cb-tumblebug/conf` (cb-store environment variables, modify as needed)
-    - Specify storetype (NUTSDB or ETCD)
-    - When setting NUTSDB (local DB), it is necessary to specify the path (by default, `cb-tumblebug/meta_db/dat`)
+
 - Execute the built cb-tumblebug binary by using `make run`
   ```bash
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
@@ -228,6 +233,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 - Check CB-TB available docker image tags(https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
 - Run the container image (two options)
+
   - Run a script to excute CB-TB docker image (recommended)
 
     ```bash
@@ -244,40 +250,40 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
 
 #### (3-3) Check the system is ready
 
-  You will see the following messages..
+You will see the following messages..
 
-  ```
-    ██████╗██████╗    ████████╗██████╗
-   ██╔════╝██╔══██╗   ╚══██╔══╝██╔══██╗
-   ██║     ██████╔╝█████╗██║   ██████╔╝
-   ██║     ██╔══██╗╚════╝██║   ██╔══██╗
-   ╚██████╗██████╔╝      ██║   ██████╔╝
-    ╚═════╝╚═════╝       ╚═╝   ╚═════╝
+```
+  ██████╗██████╗    ████████╗██████╗
+ ██╔════╝██╔══██╗   ╚══██╔══╝██╔══██╗
+ ██║     ██████╔╝█████╗██║   ██████╔╝
+ ██║     ██╔══██╗╚════╝██║   ██╔══██╗
+ ╚██████╗██████╔╝      ██║   ██████╔╝
+  ╚═════╝╚═════╝       ╚═╝   ╚═════╝
 
-   ██████╗ ███████╗ █████╗ ██████╗ ██╗   ██╗
-   ██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
-   ██████╔╝█████╗  ███████║██║  ██║ ╚████╔╝
-   ██╔══██╗██╔══╝  ██╔══██║██║  ██║  ╚██╔╝
-   ██║  ██║███████╗██║  ██║██████╔╝   ██║
-   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝
+ ██████╗ ███████╗ █████╗ ██████╗ ██╗   ██╗
+ ██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+ ██████╔╝█████╗  ███████║██║  ██║ ╚████╔╝
+ ██╔══██╗██╔══╝  ██╔══██║██║  ██║  ╚██╔╝
+ ██║  ██║███████╗██║  ██║██████╔╝   ██║
+ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝
 
-   Multi-cloud infrastructure managemenet framework
-   ________________________________________________
+ Multi-cloud infrastructure managemenet framework
+ ________________________________________________
 
-   https://github.com/cloud-barista/cb-tumblebug
+ https://github.com/cloud-barista/cb-tumblebug
 
 
-   Access to API dashboard (username: default / password: default)
-   http://xxx.xxx.xxx.xxx:1323/tumblebug/api
+ Access to API dashboard (username: default / password: default)
+ http://xxx.xxx.xxx.xxx:1323/tumblebug/api
 
-  ⇨ http server started on [::]:1323
-  ```
+⇨ http server started on [::]:1323
+```
 
-  - In default (`cb-tumblebug/conf/setup.env`),
-    you can find the system log in `cb-tumblebug/log/tumblebug.log` (log is based on `zerolog`)
-
+- In default (`cb-tumblebug/conf/setup.env`),
+  you can find the system log in `cb-tumblebug/log/tumblebug.log` (log is based on `zerolog`)
 
 ### (4) Configure Multi-Cloud info
+
 To provisioning multi-cloud infrastructures with CB-TB, it is necessary to register the connection information (credentials) for clouds, as well as commonly used images and specifications.
 
 - Create `credentials.yaml` file and input your cloud credentials
@@ -286,17 +292,18 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - It should be located in the `~/.cloud-barista/` directory and securely managed.
     - Refer to the [`template.credentials.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/template.credentials.yaml) for the template
   - Create `credentials.yaml` the file
-    
+
     Automatically generate the `credentials.yaml` file in the `~/.cloud-barista/` directory using the CB-TB script
-    
+
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
     ./scripts/init/genCredential.sh
     ```
+
   - Input credential data
-    
+
     Put credential data to `~/.cloud-barista/credentials.yaml` ([Reference: How to obtain a credential for each CSP](https://github.com/cloud-barista/cb-tumblebug/wiki/How-to-get-public-cloud-credentials))
-    
+
     ```example
     ### Cloud credentials for credential holders (default: admin)
     credentialholder:
@@ -317,40 +324,38 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
           ClientSecret:
         ...
     ```
-    
 - Encrypt `credentials.yaml` into `credentials.yaml.enc`
-  
+
   To protect sensitive information, `credentials.yaml` is not used directly. Instead, it must be encrypted using `encCredential.sh`. The encrypted file `credentials.yaml.enc` is then used by `init.py`. This approach ensures that sensitive credentials are not stored in plain text.
+
   - Encrypting Credentials
     ```bash
     scripts/init/encCredential.sh
     ```
     ![image](https://github.com/user-attachments/assets/5e7a73a6-8746-4be3-9a74-50b051f345bb)
 
-    
   If you need to update your credentials, decrypt the encrypted file using `decCredential.sh`, make the necessary changes to `credentials.yaml`, and then re-encrypt it.
-  
+
   - Decrypting Credentials
     ```bash
     scripts/init/decCredential.sh
     ```
     ![image](https://github.com/user-attachments/assets/85c91124-317d-4877-a025-a53cfdf2725e)
 
-
 - (INIT) Register all multi-cloud connection information and common resources
+
   - How to register
-  
+
     Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/init.py) script. (enter 'y' for confirmation prompts)
-    
+
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
     ./scripts/init/init.sh
     ```
-    
+
     - The credentials in `~/.cloud-barista/credentials.yaml.enc` (encrypted file from the `credentials.yaml`) will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
       - Note: You can check the latest regions and zones of CSP using [`update-cloudinfo.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/misc/update-cloudinfo.py) and review the file for updates. (contributions to updates are welcome)
     - Common images and specifications recorded in the [`cloudimage.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudimage.csv) and [`cloudspec.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudspec.csv) files in the [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets) directory will be automatically registered.
-
 
 ### (5) Shutting down and Version Upgrade
 
@@ -367,9 +372,9 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
       ```
 
 - Upgrading the CB-TB & CB-Spider versions
-  
+
   The following cleanup steps are unnecessary if you clearly understand the impact of the upgrade
-  
+
   - Check and delete resources created through CB-TB
   - Delete CB-TB & CB-Spider metadata
     ```bash
@@ -377,7 +382,6 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     ./scripts/cleanDB.sh
     ```
   - Restart with the upgraded version
-
 
 ---
 
@@ -403,13 +407,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 ### Using CB-TB REST API
 
-- Access to REST API dashboard 
+- Access to REST API dashboard
+
   - http://[IP]:1323/tumblebug/api
     - Upsteam online API document: [![Swagger API Doc](https://img.shields.io/badge/API%20Doc-Swagger-brightgreen)](https://cloud-barista.github.io/api/?url=https://raw.githubusercontent.com/cloud-barista/cb-tumblebug/main/src/api/rest/docs/swagger.yaml)
   - REST API AUTH
-    
+
     CB-TB API is encoded with `basic access authentication` by default. (not fully secured yet!)
-    
+
     You need to encode the `Username` and `Password` entered during server startup in Base64 and include it in the API header.
 
 - [A guide to quickly create a Multi-Cloud Infra](https://github.com/cloud-barista/cb-tumblebug/discussions/1570)
@@ -488,6 +493,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   ```
 
 - MCIS Creation Test
+
   - `./create-all.sh -n shson -f ../testSetCustom.env` # Create MCIS with the cloud combination configured in ../testSetCustom.env
   - Automatically proceed with the process to check the MCIS creation configuration specified in `../testSetCustom.env`
   - Example of execution result
@@ -513,6 +519,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     ```
 
 - MCIS Removal Test (Use the input parameters used in creation for deletion)
+
   - `./clean-all.sh -n shson -f ../testSetCustom.env` # Perform removal of created resources according to `../testSetCustom.env`
   - **Be aware!**
     - If you created MCIS (VMs) for testing in public clouds, the VMs may incur charges.
@@ -520,8 +527,10 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     - Anyway, please be aware of cloud usage costs when using public CSPs.
 
 - Generate MCIS SSH access keys and access each VM
+
   - `./gen-sshKey.sh -n shson -f ../testSetCustom.env` # Return access keys for all VMs configured in MCIS
   - Example of execution result
+
     ```bash
     ...
     [GENERATED PRIVATE KEY (PEM, PPK)]
@@ -543,7 +552,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - `./command-mcis.sh -n shson -f ../testSetCustom.env` # Execute IP and hostname retrieval for all VMs in MCIS
 
-- K8s Cluster Test (WIP: Stability work in progress for each CSP)  
+- K8s Cluster Test (WIP: Stability work in progress for each CSP)
 
   ```bash
   ./create-mcir-ns-cloud.sh -n tb -f ../testSet.env` # Create MCIR required for K8s cluster creation
