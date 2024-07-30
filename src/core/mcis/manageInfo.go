@@ -1899,6 +1899,28 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 		return err
 	}
 
+	// remove empty SubGroups
+	subGroup, err := ListSubGroupId(nsId, mcisId)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list subGroup to remove")
+		return err
+	}
+	for _, v := range subGroup {
+		vmListInSubGroup, err := ListVmBySubGroup(nsId, mcisId, v)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to list vm in subGroup to remove")
+			return err
+		}
+		if len(vmListInSubGroup) == 0 {
+			subGroupKey := common.GenMcisSubGroupKey(nsId, mcisId, v)
+			err := kvstore.Delete(subGroupKey)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to remove the empty subGroup")
+				return err
+			}
+		}
+	}
+
 	_, err = mcir.UpdateAssociatedObjectList(nsId, common.StrImage, vmInfo.ImageId, common.StrDelete, key)
 	if err != nil {
 		mcir.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfo.ImageId, common.StrDelete, key)
