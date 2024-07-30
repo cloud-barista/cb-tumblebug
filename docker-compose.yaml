@@ -1,4 +1,3 @@
-version: "3.6"
 services:
   # etcd
   etcd:
@@ -104,7 +103,8 @@ services:
 
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.9.0
+    image: cloudbaristaorg/cb-tumblebug:0.9.1
+    pull_policy: missing
     build:
       context: .
       dockerfile: Dockerfile
@@ -131,6 +131,10 @@ services:
       # - DB_DATABASE=cb_tumblebug 
       # - DB_USER=cb_tumblebug 
       # - DB_PASSWORD=cb_tumblebug 
+      - TB_ETCD_ENDPOINTS=http://etcd:2379
+      # - TB_ETCD_AUTH_ENABLED=true
+      # - TB_ETCD_USERNAME=default
+      # - TB_ETCD_PASSWORD=default
       # - ALLOW_ORIGINS=*
       # - AUTH_ENABLED=true
       # - API_USERNAME=default

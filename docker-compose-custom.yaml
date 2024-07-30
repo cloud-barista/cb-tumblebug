@@ -1,4 +1,3 @@
-version: "3.6"
 services:
   # etcd
   etcd:
@@ -107,9 +106,10 @@ services:
   # CB-Tumblebug
   cb-tumblebug:
     image: cloudbaristaorg/cb-tumblebug:${COMPOSE_TB_VERSION_TAG}
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    pull_policy: missing
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: cb-tumblebug
     platform: linux/amd64
     ports:
@@ -133,6 +133,10 @@ services:
       - DB_DATABASE=${COMPOSE_TB_DB_DATABASE}
       - DB_USER=${COMPOSE_TB_DB_USER}
       - DB_PASSWORD=${COMPOSE_TB_DB_PASSWORD}
+      - TB_ETCD_ENDPOINTS=${COMPOSE_TB_ETCD_ENDPOINTS}
+      - TB_ETCD_AUTH_ENABLED=${COMPOSE_TB_ETCD_AUTH_ENABLED}
+      - TB_ETCD_USERNAME=${COMPOSE_TB_ETCD_USERNAME}
+      - TB_ETCD_PASSWORD=${COMPOSE_TB_ETCD_PASSWORD}
       - ALLOW_ORIGINS=${COMPOSE_TB_ALLOW_ORIGINS}
       - AUTH_ENABLED=${COMPOSE_TB_AUTH_ENABLED}
       - API_USERNAME=${COMPOSE_TB_API_USERNAME}
