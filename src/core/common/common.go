@@ -59,7 +59,7 @@ var DBPassword string
 var AutocontrolDurationMs string
 var DefaultNamespace string
 var DefaultCredentialHolder string
-var EtcdClusterEndpoints string
+var EtcdEndpoints string
 var MyDB *sql.DB
 var err error
 var ORM *xorm.Engine
@@ -73,7 +73,7 @@ const (
 	StrDBUser                string = "DB_USER"
 	StrDBPassword            string = "DB_PASSWORD"
 	StrAutocontrolDurationMs string = "AUTOCONTROL_DURATION_MS"
-	StrEtcdClusterEndpoints  string = "ETCD_CLUSTER_ENDPOINTS"
+	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
 	ErrStrKeyNotFound        string = "key not found"
 	StrAdd                   string = "add"
 	StrDelete                string = "delete"

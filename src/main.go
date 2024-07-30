@@ -63,7 +63,7 @@ func init() {
 	common.DefaultNamespace = common.NVL(os.Getenv("DEFAULT_NAMESPACE"), "ns01")
 	common.DefaultCredentialHolder = common.NVL(os.Getenv("DEFAULT_CREDENTIALHOLDER"), "admin")
 	// Etcd
-	common.EtcdClusterEndpoints = common.NVL(os.Getenv("ETCD_CLUSTER_ENDPOINTS"), "localhost:2379")
+	common.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
 
 	// load the latest configuration from DB (if exist)
 
@@ -229,20 +229,22 @@ func setConfig() {
 	var etcdAuthEnabled bool
 	var etcdUsername string
 	var etcdPassword string
-	etcdAuthEnabled = os.Getenv("ETCD_AUTH_ENABLED") == "true"
+	etcdAuthEnabled = os.Getenv("TB_ETCD_AUTH_ENABLED") == "true"
 	if etcdAuthEnabled {
-		etcdUsername = common.NVL(os.Getenv("ETCD_USERNAME"), "default")
-		etcdPassword = common.NVL(os.Getenv("ETCD_PASSWORD"), "default")
+		etcdUsername = os.Getenv("TB_ETCD_USERNAME")
+		etcdPassword = os.Getenv("TB_ETCD_PASSWORD")
 	}
 
-	etcdEndpoints := strings.Split(common.EtcdClusterEndpoints, ",")
+	etcdEndpoints := strings.Split(common.EtcdEndpoints, ",")
 
 	ctx := context.Background()
 	config := etcd.Config{
 		Endpoints:   etcdEndpoints,
 		DialTimeout: 5 * time.Second,
-		Username:    etcdUsername,
-		Password:    etcdPassword,
+	}
+	if etcdAuthEnabled && etcdUsername != "" && etcdPassword != "" {
+		config.Username = etcdUsername
+		config.Password = etcdPassword
 	}
 
 	// Wait until etcd is ready
@@ -256,7 +258,7 @@ func setConfig() {
 			log.Info().Msg("etcd is now available.")
 			break
 		}
-		log.Warn().Err(err2).Msgf("etcd at %s is not ready. Attempt %d/%d", common.EtcdClusterEndpoints, etcdAttempt, maxAttempts)
+		log.Warn().Err(err2).Msgf("etcd at %s is not ready. Attempt %d/%d", common.EtcdEndpoints, etcdAttempt, maxAttempts)
 		time.Sleep(5 * time.Second)
 	}
 
