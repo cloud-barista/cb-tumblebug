@@ -1,7 +1,19 @@
-documentation:
+docs:
 - changed-files:
   - any-glob-to-any-file: '*.md'
 
 api:
 - changed-files:
-  - any-glob-to-any-file: 'src/api/*'
+  - any-glob-to-any-file: 'src/api/rest/*'
+
+src:
+- changed-files:
+  - any-glob-to-any-file: 'src/*'
+
+script:
+- changed-files:
+  - any-glob-to-any-file: 'scripts/*'
+
+asset:
+- changed-files:
+  - any-glob-to-any-file: 'assets/*'
