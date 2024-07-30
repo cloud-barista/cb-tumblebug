@@ -485,38 +485,8 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	/*
 	 * Check for K8sCluster Enablement from K8sClusterSetting
 	 */
-
-	connConfig, err := common.GetConnConfig(u.ConnectionName)
+	err = checkK8sClusterEnablement(u.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the connConfig " + u.ConnectionName + ": " + err.Error())
-		log.Err(err).Msg("Failed to Create a K8sCluster")
-		return emptyObj, err
-	}
-
-	cloudType := connConfig.ProviderName
-
-	// Convert cloud type to field name (e.g., AWS to Aws, OPENSTACK to Openstack)
-	lowercase := strings.ToLower(cloudType)
-	fnCloudType := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
-
-	// Get cloud setting with field name
-	cloudSetting := common.CloudSetting{}
-
-	getCloudSetting := func() {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Error().Msgf("%v", err)
-				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
-			}
-		}()
-
-		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(common.CloudSetting)
-	}
-
-	getCloudSetting()
-
-	if cloudSetting.K8sCluster.Enable != "y" {
-		err := fmt.Errorf("The K8sCluster Management function is not enabled for Cloud(" + fnCloudType + ")")
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
 	}
@@ -527,8 +497,8 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	spName := fmt.Sprintf("%s-%s", nsId, u.Id)
 
-	// Validate K8sCluster Version
-	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, u.Version)
+	// Validate
+	err = validateAtCreateK8sCluster(u)
 	if err != nil {
 		log.Err(err).Msgf("Failed to Create a K8sCluster: Requested K8sVersion(%s)", u.Version)
 		return emptyObj, err
@@ -796,37 +766,8 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 	 * Check for K8sCluster Enablement from ClusterSetting
 	 */
 
-	connConfig, err := common.GetConnConfig(oldTbK8sCInfo.ConnectionName)
+	err = checkK8sClusterEnablement(oldTbK8sCInfo.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("failed to get the connConfig " + oldTbK8sCInfo.ConnectionName + ": " + err.Error())
-		log.Err(err).Msg("Failed to Add K8sNodeGroup")
-		return emptyObj, err
-	}
-
-	cloudType := connConfig.ProviderName
-
-	// Convert cloud type to field name (e.g., AWS to Aws, OPENSTACK to Openstack)
-	lowercase := strings.ToLower(cloudType)
-	fnCloudType := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
-
-	// Get cloud setting with field name
-	cloudSetting := common.CloudSetting{}
-
-	getCloudSetting := func() {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Error().Msgf("%v", err)
-				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
-			}
-		}()
-
-		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(common.CloudSetting)
-	}
-
-	getCloudSetting()
-
-	if cloudSetting.K8sCluster.Enable != "y" {
-		err := fmt.Errorf("The K8sCluster Management function is not enabled for Cloud(" + fnCloudType + ")")
 		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err
 	}
@@ -1629,7 +1570,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	err := validate.Struct(u)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			log.Err(err).Msg("Failed to Upgrade K8sCluster")
+			log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 			return emptyObj, err
 		}
 
@@ -1638,13 +1579,13 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	check, err := CheckK8sCluster(nsId, k8sClusterId)
 	if err != nil {
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
 	if !check {
 		err := fmt.Errorf("The K8sCluster " + k8sClusterId + " does not exist.")
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1656,7 +1597,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	kv, err := kvstore.GetKv(k)
 	if err != nil {
 		err = fmt.Errorf("In UpgradeK8sCluster(); kvstore.GetKv() returned an error: " + err.Error())
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1664,7 +1605,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	err = json.Unmarshal([]byte(kv.Value), &oldTbK8sCInfo)
 	if err != nil {
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1672,38 +1613,9 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	 * Check for K8sCluster Enablement from K8sClusterSetting
 	 */
 
-	connConfig, err := common.GetConnConfig(oldTbK8sCInfo.ConnectionName)
+	err = checkK8sClusterEnablement(oldTbK8sCInfo.ConnectionName)
 	if err != nil {
-		err := fmt.Errorf("failed to get the connConfig " + oldTbK8sCInfo.ConnectionName + ": " + err.Error())
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
-		return emptyObj, err
-	}
-
-	cloudType := connConfig.ProviderName
-
-	// Convert cloud type to field name (e.g., AWS to Aws, OPENSTACK to Openstack)
-	lowercase := strings.ToLower(cloudType)
-	fnCloudType := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
-
-	// Get cloud setting with field name
-	cloudSetting := common.CloudSetting{}
-
-	getCloudSetting := func() {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Error().Msgf("%v", err)
-				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
-			}
-		}()
-
-		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(common.CloudSetting)
-	}
-
-	getCloudSetting()
-
-	if cloudSetting.K8sCluster.Enable != "y" {
-		err := fmt.Errorf("The K8sCluster Management function is not enabled for Cloud(" + fnCloudType + ")")
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1711,10 +1623,10 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	 * Build RequestBody for SpiderUpgradeClusterReq{}
 	 */
 
-	// Validate K8sCluster Version
-	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, u.Version)
+	// Validate
+	err = validateAtUpgradeK8sCluster(oldTbK8sCInfo.ConnectionName, u)
 	if err != nil {
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 	spVersion := u.Version
@@ -1744,7 +1656,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 	)
 
 	if err != nil {
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1762,7 +1674,7 @@ func UpgradeK8sCluster(nsId string, k8sClusterId string, u *TbUpgradeK8sClusterR
 
 	err = kvstore.Put(k, string(Val))
 	if err != nil {
-		log.Err(err).Msg("Failed to Upgrade K8sCluster")
+		log.Err(err).Msg("Failed to Upgrade a K8sCluster")
 		return emptyObj, err
 	}
 
@@ -1931,6 +1843,70 @@ func convertSpiderNodeGroupStatusToTbK8sNodeGroupStatus(spNodeGroupStatus Spider
 	}
 
 	return TbK8sNodeGroupInactive
+}
+
+// checkK8sClusterEnablement returns the enablement status(nil or error) for K8sCluster related to Connection.
+func checkK8sClusterEnablement(connectionName string) error {
+	connConfig, err := common.GetConnConfig(connectionName)
+	if err != nil {
+		err := fmt.Errorf("failed to get the connConfig " + connectionName + ": " + err.Error())
+		return err
+	}
+
+	cloudType := connConfig.ProviderName
+
+	// Convert cloud type to field name (e.g., AWS to Aws, OPENSTACK to Openstack)
+	lowercase := strings.ToLower(cloudType)
+	fnCloudType := strings.ToUpper(string(lowercase[0])) + lowercase[1:]
+
+	// Get cloud setting with field name
+	cloudSetting := common.CloudSetting{}
+
+	getCloudSetting := func() {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Error().Msgf("%v", err)
+				cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName("Common").Interface().(common.CloudSetting)
+			}
+		}()
+
+		cloudSetting = reflect.ValueOf(&common.RuntimeConf.Cloud).Elem().FieldByName(fnCloudType).Interface().(common.CloudSetting)
+	}
+
+	getCloudSetting()
+
+	if cloudSetting.K8sCluster.Enable != "y" {
+		err := fmt.Errorf("k8scluster management function is not enabled for cloud(" + fnCloudType + ")")
+		return err
+	}
+
+	return nil
+}
+
+func validateAtCreateK8sCluster(tbK8sClusterReq *TbK8sClusterReq) error {
+	connConfig, err := common.GetConnConfig(tbK8sClusterReq.ConnectionName)
+
+	// Validate K8sCluster Version
+	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, tbK8sClusterReq.Version)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Create a K8sCluster: Requested K8sVersion(%s)", tbK8sClusterReq.Version)
+		return err
+	}
+
+	return nil
+}
+
+func validateAtUpgradeK8sCluster(connectionName string, tbUpgradeK8sClusterReq *TbUpgradeK8sClusterReq) error {
+	connConfig, err := common.GetConnConfig(connectionName)
+
+	// Validate K8sCluster Version
+	err = validateK8sClusterVersion(connConfig.ProviderName, connConfig.RegionDetail.RegionName, tbUpgradeK8sClusterReq.Version)
+	if err != nil {
+		log.Err(err).Msgf("Failed to Create a K8sCluster: Requested K8sVersion(%s)", tbUpgradeK8sClusterReq.Version)
+		return err
+	}
+
+	return nil
 }
 
 func validateK8sClusterVersion(providerName, regionName, version string) error {
