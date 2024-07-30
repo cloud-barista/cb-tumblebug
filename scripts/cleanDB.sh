@@ -11,7 +11,9 @@ fi
 
 
 TBMETAPATH="$CBTUMBLEBUG_ROOT/meta_db/dat"
-SPMETAPATH="$CBTUMBLEBUG_ROOT/container-volume/cb-spider-container"
+VOL_TB_META_PATH="$CBTUMBLEBUG_ROOT/container-volume/cb-tumblebug-container"
+VOL_SP_META_PATH="$CBTUMBLEBUG_ROOT/container-volume/cb-spider-container"
+VOL_ETC_DATA_PATH="$CBTUMBLEBUG_ROOT/container-volume/etcd"
 
 echo
 echo ==========================================================
@@ -24,9 +26,15 @@ echo -e "Will remove following directories and files"
 echo
 echo -e "Path:${RED}${TBMETAPATH} ${NC}"
 ls $TBMETAPATH
+echo
+echo -e "Path:${RED}${VOL_TB_META_PATH} ${NC}"
+ls $VOL_TB_META_PATH
 echo 
-echo -e "Path:${RED}${SPMETAPATH} ${NC}"
-ls $SPMETAPATH
+echo -e "Path:${RED}${VOL_SP_META_PATH} ${NC}"
+ls $VOL_SP_META_PATH
+echo
+echo -e "Path:${RED}${VOL_ETC_DATA_PATH} ${NC}"
+ls $VOL_ETC_DATA_PATH
 echo
 
 while true; do
@@ -49,11 +57,15 @@ done
 echo
 
 ls $TBMETAPATH
-ls $SPMETAPATH
+ls $VOL_TB_META_PATH
+ls $VOL_SP_META_PATH
+ls $VOL_ETC_DATA_PATH
 
 echo
 
 sudo rm -rf $TBMETAPATH
-sudo rm -rf $SPMETAPATH
+sudo rm -rf $VOL_TB_META_PATH
+sudo rm -rf $VOL_SP_META_PATH
+sudo rm -rf $VOL_ETC_DATA_PATH
 
 echo -e "${LGREEN} Done! ${NC}"
