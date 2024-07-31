@@ -114,37 +114,6 @@ func RestCheckHTTPVersion(c echo.Context) error {
 	return c.JSON(http.StatusOK, &okMessage)
 }
 
-/*
-// RestGetSwagger func is to get API document web.
-// RestGetSwagger godoc
-// @Summary Get API document web
-// @Description Get API document web
-// @Tags [Admin] System management
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} common.SimpleMsg
-// @Failure 404 {object} common.SimpleMsg
-// @Failure 500 {object} common.SimpleMsg
-// @Router /swaggerActive [get]
-func RestGetSwagger(c echo.Context) error {
-	docFile := os.Getenv("API_DOC_PATH")
-
-	f, err := os.Open(docFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	dec := json.NewDecoder(f)
-	data := make(map[string]interface{}, 0)
-	if err := dec.Decode(&data); err != nil {
-		return err
-	}
-	data["host"] = os.Getenv("SELF_ENDPOINT")
-	return c.JSON(http.StatusOK, data)
-}
-*/
-
 // RestRegisterCredential func is a rest api wrapper for RegisterCredential.
 // RestRegisterCredential godoc
 // @ID RegisterCredential

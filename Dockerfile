@@ -65,7 +65,6 @@ ENV CBTUMBLEBUG_ROOT=/app \
     API_PASSWORD=default \
     AUTOCONTROL_DURATION_MS=10000 \
     SELF_ENDPOINT=localhost:1323 \
-    API_DOC_PATH=/app/src/api/rest/docs/swagger.json \
     DEFAULT_NAMESPACE=ns01 \
     DEFAULT_CREDENTIALHOLDER=admin \
     LOGFILE_PATH=/app/log/tumblebug.log \
