@@ -78,12 +78,15 @@ while the CB-TB repo accommodates local languages in their contents.
 - Docker and Docker Compose 
 - Golang (recommend: `v1.21.6`) to build the source
 
+---
+
 ### Dependency
 
 Open source packages used in this project
 
 - [Dependencies](https://github.com/cloud-barista/cb-tumblebug/network/dependencies)
 - [SBOM](https://github.com/cloud-barista/cb-tumblebug/dependency-graph/sbom)
+
 
 ---
 
@@ -106,6 +109,8 @@ Open source packages used in this project
   echo "alias cdtbtest='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug/src/testclient/scripts'" >> ~/.bashrc
   source ~/.bashrc
   ```
+
+---
 
 ### (2) Run CB-TB and All Related Components
 
@@ -144,7 +149,9 @@ Open source packages used in this project
   Now, the CB-Tumblebug API server is accessible at: http://localhost:1323/tumblebug/api
   Additionally, CB-MapUI is accessible at: http://localhost:1324
 
-  *Note*: Before using CB-Tumblebug, you need to initialize it.
+  **Note**: Before using CB-Tumblebug, you need to initialize it.
+
+---
   
 ### (3) Initialize CB-Tumblebug to configure Multi-Cloud info
 
@@ -221,6 +228,8 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
       - Note: You can check the latest regions and zones of CSP using [`update-cloudinfo.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/misc/update-cloudinfo.py) and review the file for updates. (contributions to updates are welcome)
     - Common images and specifications recorded in the [`cloudimage.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudimage.csv) and [`cloudspec.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudspec.csv) files in the [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets) directory will be automatically registered.
 
+---
+
 ### (4) Shutting down and Version Upgrade
 
 - Shutting down CB-TB and related components
@@ -253,8 +262,6 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 ---
 
----
-
 ## How to Use CB-TB Features
 
 1. [Using CB-TB MapUI](#using-cb-tb-mapui) (recommended)
@@ -272,6 +279,8 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     ```
   - Access via web browser at http://{HostIP}:1324
     ![image](https://github.com/cloud-barista/cb-mapui/assets/5966944/2423fbcd-0fdb-4511-85e2-488ba15ae8c0)
+
+---
 
 ### Using CB-TB REST API
 
@@ -302,13 +311,18 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - CB-TB optimal and dynamic provisioning
     - [CB-TB optimal and dynamic provisioning](https://github.com/cloud-barista/cb-tumblebug/wiki/Dynamic-and-optimal-mcis-provisioning-guide)
 
+---
+
 ### Using CB-TB Scripts
 
 [`src/testclient/scripts/`](https://github.com/cloud-barista/cb-tumblebug/blob/main/src/testclient/scripts/) provides Bash shell-based scripts that simplify and automate the MCIS (MC-Infra) provisioning procedures, which require complex steps.
 
+<details>
+<summary>[Note] Details </summary>
+  
 - Step 1: [Setup Test Environment](#setup-test-environment)
 - Step 2: [Integrated Tests](#integrated-tests)
-- Step 3: [Experience Use Cases](#multi-cloud-infrastructure-use-cases)
+
 
 #### Setup Test Environment
 
@@ -436,25 +450,28 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   ./clean-mcir-ns-cloud.h -n tb -f ../testSet.env` # Delete the created MCIR
   ```
 
-#### Multi-Cloud Infrastructure Use Cases
 
-##### Deploying an MCIS Xonotic (3D FPS) Game Server
+</details>
+
+---
+
+### Multi-Cloud Infrastructure Use Cases
+
+#### Deploying an MCIS Xonotic (3D FPS) Game Server
 
 - [Deploy Xonotic game servers on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/Deploy-Xonotic-game-sever-in-a-Cloud-via-CB-Tumblebug)
 
-##### Distributed Deployment of MCIS Weave Scope Cluster Monitoring
+#### Distributed Deployment of MCIS Weave Scope Cluster Monitoring
 
 - [Install Weave Scope cluster on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-WeaveScope-deployment)
 
-##### Deploying MCIS Jitsi Video Conferencing
+#### Deploying MCIS Jitsi Video Conferencing
 
 - [Install Jitsi video conferencing on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Jitsi-deployment)
 
-##### Automatic Configuration of MCIS Ansible Execution Environment
+#### Automatic Configuration of MCIS Ansible Execution Environment
 
 - [Automatically configure Ansible execution environment on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
-
----
 
 
 ---
@@ -493,8 +510,9 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
         go version
         ```
 
-### (2) Build and Run CB-Tumblebug
+---
 
+### (2) Build and Run CB-Tumblebug
 
 #### (2-1) Option 1: Run CB-Tumblebug with Docker Compose (Recommended)
 
@@ -550,8 +568,8 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   make run
   ```
 
----
 
+---
 
 ## How to Contribute
 
@@ -559,9 +577,8 @@ CB-TB welcomes improvements from both new and experienced contributors!
 
 Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main/CONTRIBUTING.md).
 
----
 
-## Contributors ✨
+### Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
