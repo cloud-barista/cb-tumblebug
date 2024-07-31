@@ -38,10 +38,10 @@ definitions:
   common.ConfigInfo:
     properties:
       id:
-        example: SPIDER_REST_URL
+        example: TB_SPIDER_REST_URL
         type: string
       name:
-        example: SPIDER_REST_URL
+        example: TB_SPIDER_REST_URL
         type: string
       value:
         example: http://localhost:1024/spider
@@ -50,7 +50,7 @@ definitions:
   common.ConfigReq:
     properties:
       name:
-        example: SPIDER_REST_URL
+        example: TB_SPIDER_REST_URL
         type: string
       value:
         example: http://localhost:1024/spider
@@ -3390,7 +3390,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)
+      description: Create or Update config (TB_SPIDER_REST_URL, TB_DRAGONFLY_REST_URL,
+        ...)
       operationId: PostConfig
       parameters:
       - description: Key and Value for configuration
