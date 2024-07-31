@@ -11,15 +11,15 @@ This test CLI includes to:
 #### Getting started
 
 ##### Setup environment variables
-Note - `$CBTUMBLEBUG_ROOT` means your root directory of CB-Tumblebug
+Note - `$TB_ROOT_PATH` means your root directory of CB-Tumblebug
 ```bash
-cd $CBTUMBLEBUG_ROOT
+cd $TB_ROOT_PATH
 source conf/setup.env
 ```
 
 ##### Build the app
 ```bash
-cd $CBTUMBLEBUG_ROOT/testclient/test-clis/vpn-tunnel/gcp-aws
+cd $TB_ROOT_PATH/testclient/test-clis/vpn-tunnel/gcp-aws
 go build -o app
 ```
 

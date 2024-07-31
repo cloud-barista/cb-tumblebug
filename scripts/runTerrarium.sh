@@ -5,16 +5,16 @@ CONTAINER_VERSION="0.0.6"
 CONTAINER_PORT="-p 8888:8888"
 CONTAINER_DATA_PATH="/app/.tofu"
 
-if [ -z "$CBTUMBLEBUG_ROOT" ]; then
+if [ -z "$TB_ROOT_PATH" ]; then
     SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
-    export CBTUMBLEBUG_ROOT=$(cd "$SCRIPT_DIR" && cd .. && pwd)
+    export TB_ROOT_PATH=$(cd "$SCRIPT_DIR" && cd .. && pwd)
 fi
 
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path"
 
 # The credential directory and file path
-credential_dir="$CBTUMBLEBUG_ROOT/conf/.credtmp"
+credential_dir="$TB_ROOT_PATH/conf/.credtmp"
 aws_credential="$credential_dir/credentials"
 azure_credential="$credential_dir/credential-azure.env"
 gcp_credential="$credential_dir/credential-gcp.json"

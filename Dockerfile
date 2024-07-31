@@ -43,9 +43,9 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/conf/ /app/con
 COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumblebug /app/src/
 
 # Setting various environment variables required by the application
-ENV CBTUMBLEBUG_ROOT=/app \
-    SPIDER_REST_URL=http://cb-spider:1024/spider \
-    DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly \
+ENV TB_ROOT_PATH=/app \
+    TB_SPIDER_REST_URL=http://cb-spider:1024/spider \
+    TB_DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly \
     TB_SQLITE_URL=localhost:3306 \
     TB_SQLITE_DATABASE=cb_tumblebug \
     TB_SQLITE_USER=cb_tumblebug \
@@ -54,25 +54,25 @@ ENV CBTUMBLEBUG_ROOT=/app \
     TB_ETCD_AUTH_ENABLED=true \
     TB_ETCD_USERNAME=default \
     TB_ETCD_PASSWORD=default \
-    ALLOW_ORIGINS=* \
-    AUTH_ENABLED=true \
-    AUTH_MODE=basic \
-    AUTH_JWT_SIGNING_METHOD=RS256 \
-    AUTH_JWT_PUBLICKEY= \    
-    API_USERNAME=default \
-    API_PASSWORD=default \
-    AUTOCONTROL_DURATION_MS=10000 \
-    SELF_ENDPOINT=localhost:1323 \
-    DEFAULT_NAMESPACE=ns01 \
-    DEFAULT_CREDENTIALHOLDER=admin \
-    LOGFILE_PATH=/app/log/tumblebug.log \
-    LOGFILE_MAXSIZE=10 \
-    LOGFILE_MAXBACKUPS=3 \
-    LOGFILE_MAXAGE=30 \
-    LOGFILE_COMPRESS=false \
-    LOGLEVEL=debug \
-    LOGWRITER=both \
-    NODE_ENV=development
+    TB_ALLOW_ORIGINS=* \
+    TB_AUTH_ENABLED=true \
+    TB_AUTH_MODE=basic \
+    TB_AUTH_JWT_SIGNING_METHOD=RS256 \
+    TB_AUTH_JWT_PUBLICKEY= \    
+    TB_API_USERNAME=default \
+    TB_API_PASSWORD=default \
+    TB_AUTOCONTROL_DURATION_MS=10000 \
+    TB_SELF_ENDPOINT=localhost:1323 \
+    TB_DEFAULT_NAMESPACE=ns01 \
+    TB_DEFAULT_CREDENTIALHOLDER=admin \
+    TB_LOGFILE_PATH=/app/log/tumblebug.log \
+    TB_LOGFILE_MAXSIZE=10 \
+    TB_LOGFILE_MAXBACKUPS=3 \
+    TB_LOGFILE_MAXAGE=30 \
+    TB_LOGFILE_COMPRESS=false \
+    TB_LOGLEVEL=debug \
+    TB_LOGWRITER=both \
+    TB_NODE_ENV=development
 
 # Setting the entrypoint for the application
 ENTRYPOINT [ "/app/src/cb-tumblebug" ]

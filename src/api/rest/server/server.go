@@ -123,9 +123,9 @@ func RunServer(port string) {
 	e.GET("/tumblebug/readyz", rest_common.RestGetReadyz)
 	e.GET("/tumblebug/httpVersion", rest_common.RestCheckHTTPVersion)
 
-	allowedOrigins := os.Getenv("ALLOW_ORIGINS")
+	allowedOrigins := os.Getenv("TB_ALLOW_ORIGINS")
 	if allowedOrigins == "" {
-		log.Fatal().Msgf("ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +
+		log.Fatal().Msgf("TB_ALLOW_ORIGINS env variable for CORS is " + allowedOrigins +
 			". Please provide a proper value and source setup.env again. EXITING...")
 		// allowedOrigins = "*"
 	}
@@ -135,11 +135,11 @@ func RunServer(port string) {
 	}))
 
 	// Conditions to prevent abnormal operation due to typos (e.g., ture, falss, etc.)
-	authEnabled := os.Getenv("AUTH_ENABLED") == "true"
-	authMode := os.Getenv("AUTH_MODE")
+	authEnabled := os.Getenv("TB_AUTH_ENABLED") == "true"
+	authMode := os.Getenv("TB_AUTH_MODE")
 
-	apiUser := os.Getenv("API_USERNAME")
-	apiPass := os.Getenv("API_PASSWORD")
+	apiUser := os.Getenv("TB_API_USERNAME")
+	apiPass := os.Getenv("TB_API_PASSWORD")
 
 	// Setup Middlewares for auth
 	var basicAuthMw echo.MiddlewareFunc
@@ -169,7 +169,7 @@ func RunServer(port string) {
 			log.Info().Msg("Basic Auth Middleware is initialized successfully")
 		case "jwt":
 			// Setup JWT Auth Middleware
-			err := authmw.InitJwtAuthMw(os.Getenv("IAM_MANAGER_REST_URL"), "/api/auth/certs")
+			err := authmw.InitJwtAuthMw(os.Getenv("TB_IAM_MANAGER_REST_URL"), "/api/auth/certs")
 			if err != nil {
 				log.Fatal().Err(err).Msg("Failed to initialize JWT Auth Middleware")
 			} else {
@@ -181,7 +181,7 @@ func RunServer(port string) {
 				log.Info().Msg("JWT Auth Middleware is initialized successfully")
 			}
 		default:
-			log.Fatal().Msg("AUTH_MODE is not set properly. Please set it to 'basic' or 'jwt'. EXITING...")
+			log.Fatal().Msg("TB_AUTH_MODE is not set properly. Please set it to 'basic' or 'jwt'. EXITING...")
 		}
 	}
 
@@ -486,7 +486,7 @@ func RunServer(port string) {
 	g.PUT("/:nsId/testDeleteObjectAssociation/:resourceType/:resourceId", rest_mcir.RestTestDeleteObjectAssociation)
 	g.GET("/:nsId/testGetAssociatedObjectCount/:resourceType/:resourceId", rest_mcir.RestTestGetAssociatedObjectCount)
 
-	selfEndpoint := os.Getenv("SELF_ENDPOINT")
+	selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")
 	apidashboard := " http://" + selfEndpoint + "/tumblebug/api"
 
 	fmt.Println(" Default Namespace: " + common.DefaultNamespace)
@@ -499,7 +499,7 @@ func RunServer(port string) {
 	fmt.Printf(noticeColor, apidashboard)
 	fmt.Println("\n ")
 
-	// A context for graceful shutdown (It is based on the signal package)selfEndpoint := os.Getenv("SELF_ENDPOINT")
+	// A context for graceful shutdown (It is based on the signal package)selfEndpoint := os.Getenv("TB_SELF_ENDPOINT")
 	// NOTE -
 	// Use os.Interrupt Ctrl+C or Ctrl+Break on Windows
 	// Use syscall.KILL for Kill(can't be caught or ignored) (POSIX)

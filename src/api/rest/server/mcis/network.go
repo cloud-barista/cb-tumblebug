@@ -284,8 +284,8 @@ func RestPostSiteToSiteVpn(c echo.Context) error {
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("API_USERNAME")
-	apiPass := os.Getenv("API_PASSWORD")
+	apiUser := os.Getenv("TB_API_USERNAME")
+	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
@@ -814,8 +814,8 @@ func RestDeleteSiteToSiteVpn(c echo.Context) error {
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("API_USERNAME")
-	apiPass := os.Getenv("API_PASSWORD")
+	apiUser := os.Getenv("TB_API_USERNAME")
+	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
@@ -1070,8 +1070,8 @@ func RestPutSiteToSiteVpn(c echo.Context) error {
 
 	// Initialize resty client with basic auth
 	// client := resty.New()
-	// apiUser := os.Getenv("API_USERNAME")
-	// apiPass := os.Getenv("API_PASSWORD")
+	// apiUser := os.Getenv("TB_API_USERNAME")
+	// apiPass := os.Getenv("TB_API_PASSWORD")
 	// client.SetBasicAuth(apiUser, apiPass)
 
 	// epTerrarium := "http://localhost:8888/terrarium"
@@ -1192,8 +1192,8 @@ func RestGetSiteToSiteVpn(c echo.Context) error {
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("API_USERNAME")
-	apiPass := os.Getenv("API_PASSWORD")
+	apiUser := os.Getenv("TB_API_USERNAME")
+	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)
@@ -1370,8 +1370,8 @@ func RestGetRequestStatusOfSiteToSiteVpn(c echo.Context) error {
 
 	// Initialize resty client with basic auth
 	client := resty.New()
-	apiUser := os.Getenv("API_USERNAME")
-	apiPass := os.Getenv("API_PASSWORD")
+	apiUser := os.Getenv("TB_API_USERNAME")
+	apiPass := os.Getenv("TB_API_PASSWORD")
 	client.SetBasicAuth(apiUser, apiPass)
 
 	trId := fmt.Sprintf("%s-%s-%s", nsId, mcisId, vpnId)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source $CBTUMBLEBUG_ROOT/src/testclient/scripts/common-functions.sh
+source $TB_ROOT_PATH/src/testclient/scripts/common-functions.sh
 readParametersByName "$@"
 set -- "$CSP" "$REGION" "$POSTFIX" "$TestSetFile" "$OPTION01" "$OPTION02" "$OPTION03"
 
@@ -9,7 +9,7 @@ if [ ! -f "$TestSetFile" ]; then
 	exit
 fi
 source $TestSetFile
-source $CBTUMBLEBUG_ROOT/src/testclient/scripts/conf.env
+source $TB_ROOT_PATH/src/testclient/scripts/conf.env
 
 getCloudIndex $CSP
 MCISID=${POSTFIX}

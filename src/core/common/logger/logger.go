@@ -61,7 +61,7 @@ func init() {
 	case "panic":
 		level = zerolog.PanicLevel
 	default:
-		log.Warn().Msgf("Invalid LOGLEVEL value: %s. Using default value: info", logLevel)
+		log.Warn().Msgf("Invalid TB_LOGLEVEL value: %s. Using default value: info", logLevel)
 		level = zerolog.InfoLevel
 	}
 
@@ -108,7 +108,7 @@ func NewLogger(level zerolog.Level) *zerolog.Logger {
 		// Apply ConsoleWriter to the global logger
 		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).Level(level).With().Timestamp().Caller().Logger()
 	} else {
-		log.Warn().Msgf("Invalid LOGWRITER value: %s. Using default value: both", logwriter)
+		log.Warn().Msgf("Invalid TB_LOGWRITER value: %s. Using default value: both", logwriter)
 		// Apply multi-writer to the global logger
 		logger = zerolog.New(multi).Level(level).With().Timestamp().Caller().Logger()
 	}
@@ -145,35 +145,35 @@ func getLogFileConfig() (string, int, int, int, bool) {
 
 	// Default: ./log/tumblebug.log
 	if logFilePath == "" {
-		log.Warn().Msg("LOGFILE_PATH is not set. Using default value: ./log/tumblebug.log")
+		log.Warn().Msg("TB_LOGFILE_PATH is not set. Using default value: ./log/tumblebug.log")
 		logFilePath = "./log/tumblebug.log"
 	}
 
 	// Default: 10 MB
 	maxSize, err := strconv.Atoi(viper.GetString("logfile.maxsize"))
 	if err != nil {
-		log.Warn().Msgf("Invalid LOGFILE_MAXSIZE value: %s. Using default value: 10 MB", viper.GetString("logfile.maxsize"))
+		log.Warn().Msgf("Invalid TB_LOGFILE_MAXSIZE value: %s. Using default value: 10 MB", viper.GetString("logfile.maxsize"))
 		maxSize = 10
 	}
 
 	// Default: 3 backups
 	maxBackups, err := strconv.Atoi(viper.GetString("logfile.maxbackups"))
 	if err != nil {
-		log.Warn().Msgf("Invalid LOGFILE_MAXBACKUPS value: %s. Using default value: 3 backups", viper.GetString("logfile.maxbackups"))
+		log.Warn().Msgf("Invalid TB_LOGFILE_MAXBACKUPS value: %s. Using default value: 3 backups", viper.GetString("logfile.maxbackups"))
 		maxBackups = 3
 	}
 
 	// Default: 30 days
 	maxAge, err := strconv.Atoi(viper.GetString("logfile.maxage"))
 	if err != nil {
-		log.Warn().Msgf("Invalid LOGFILE_MAXAGE value: %s. Using default value: 30 days", viper.GetString("logfile.maxage"))
+		log.Warn().Msgf("Invalid TB_LOGFILE_MAXAGE value: %s. Using default value: 30 days", viper.GetString("logfile.maxage"))
 		maxAge = 30
 	}
 
 	// Default: false
 	compress, err := strconv.ParseBool(viper.GetString("logfile.compress"))
 	if err != nil {
-		log.Warn().Msgf("Invalid LOGFILE_COMPRESS value: %s. Using default value: false", viper.GetString("logfile.compress"))
+		log.Warn().Msgf("Invalid TB_LOGFILE_COMPRESS value: %s. Using default value: false", viper.GetString("logfile.compress"))
 		compress = false
 	}
 

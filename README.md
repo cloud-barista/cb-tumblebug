@@ -216,7 +216,7 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
       source conf/setup.env
       ```
-    - (Note) Automatically set the SELF_ENDPOINT environment variable (an externally accessible address) using a script if needed
+    - (Note) Automatically set the TB_SELF_ENDPOINT environment variable (an externally accessible address) using a script if needed
       - This is necessary if you want to access and control the Swagger API Dashboard from outside when CB-TB is running
       ```bash
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug

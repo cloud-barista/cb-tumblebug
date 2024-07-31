@@ -4,16 +4,16 @@ RED='\033[0;31m'
 LGREEN='\033[1;32m'
 NC='\033[0m' # No Color
 
-if [ -z "$CBTUMBLEBUG_ROOT" ]; then
+if [ -z "$TB_ROOT_PATH" ]; then
     SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
-    export CBTUMBLEBUG_ROOT=`cd $SCRIPT_DIR && cd .. && pwd`
+    export TB_ROOT_PATH=`cd $SCRIPT_DIR && cd .. && pwd`
 fi
 
 
-TBMETAPATH="$CBTUMBLEBUG_ROOT/meta_db/dat"
-VOL_TB_META_PATH="$CBTUMBLEBUG_ROOT/container-volume/cb-tumblebug-container"
-VOL_SP_META_PATH="$CBTUMBLEBUG_ROOT/container-volume/cb-spider-container"
-VOL_ETC_DATA_PATH="$CBTUMBLEBUG_ROOT/container-volume/etcd"
+TBMETAPATH="$TB_ROOT_PATH/meta_db/dat"
+VOL_TB_META_PATH="$TB_ROOT_PATH/container-volume/cb-tumblebug-container"
+VOL_SP_META_PATH="$TB_ROOT_PATH/container-volume/cb-spider-container"
+VOL_ETC_DATA_PATH="$TB_ROOT_PATH/container-volume/etcd"
 
 echo
 echo ==========================================================

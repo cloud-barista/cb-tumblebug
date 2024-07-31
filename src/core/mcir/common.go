@@ -288,12 +288,12 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 			temp := publicIpInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
 			requestBody.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpName
+			url = common.TB_SPIDER_REST_URL + "/publicip/" + temp.CspPublicIpName
 		case "vNic":
 			temp := vNicInfo{}
 			json.Unmarshal([]byte(keyValue.Value), &temp)
 			requestBody.ConnectionName = temp.ConnectionName
-			url = common.SPIDER_REST_URL + "/vnic/" + temp.CspVNicName
+			url = common.TB_SPIDER_REST_URL + "/vnic/" + temp.CspVNicName
 	*/
 	default:
 		err := fmt.Errorf("invalid resourceType")

@@ -3,7 +3,7 @@
 #function get_config() {
 
     echo "####################################################################"
-    echo "## 0. Config: Get (option: SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)"
+    echo "## 0. Config: Get (option: TB_SPIDER_REST_URL, TB_DRAGONFLY_REST_URL, ...)"
     echo "####################################################################"
 
     source ../init.sh

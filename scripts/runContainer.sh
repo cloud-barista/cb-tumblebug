@@ -10,13 +10,13 @@ CONTAINER_PORT=$3
 CONTAINER_DATA_PATH=$4
 CONTAINER_ENV=$5
 
-if [ -z "$CBTUMBLEBUG_ROOT" ]; then
+if [ -z "$TB_ROOT_PATH" ]; then
     SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
-    export CBTUMBLEBUG_ROOT=`cd $SCRIPT_DIR && cd .. && pwd`
+    export TB_ROOT_PATH=`cd $SCRIPT_DIR && cd .. && pwd`
 fi
 
 CONTAINER_NAME=`echo $CONTAINER_NAME_READ | tr [:upper:] [:lower:]`
-CONTAINER_VOLUME_PATH="$CBTUMBLEBUG_ROOT/container-volume/${CONTAINER_NAME}-container"
+CONTAINER_VOLUME_PATH="$TB_ROOT_PATH/container-volume/${CONTAINER_NAME}-container"
 CONTAINER_VOLUME_OPTION="-v $CONTAINER_VOLUME_PATH:$CONTAINER_DATA_PATH"
 # If CONTAINER_DATA_PATH is not used, disable -v option 
 if [ -z "$CONTAINER_DATA_PATH" ]; then
@@ -54,14 +54,14 @@ while true; do
     esac
 done
 
-if [ -z "$CBTUMBLEBUG_ROOT" ]; then
+if [ -z "$TB_ROOT_PATH" ]; then
     echo 
     echo ==========================================================
     echo "[Warning]"
     echo ==========================================================
     echo
-    echo "The environment variable for \$CBTUMBLEBUG_ROOT is empty."
-    echo "\$CBTUMBLEBUG_ROOT is the base path of persistent volume for $CONTAINER_NAME_READ."
+    echo "The environment variable for \$TB_ROOT_PATH is empty."
+    echo "\$TB_ROOT_PATH is the base path of persistent volume for $CONTAINER_NAME_READ."
     echo "(to show persistent volumes of the containers related to CB-Tumblebug in CB-Tumblebug directory)"
     echo
     echo "You need to execute [source conf/setup.env] before run $CONTAINER_NAME_READ container."

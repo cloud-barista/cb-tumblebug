@@ -65,14 +65,14 @@ var err error
 var ORM *xorm.Engine
 
 const (
-	StrSpiderRestUrl         string = "SPIDER_REST_URL"
-	StrDragonflyRestUrl      string = "DRAGONFLY_REST_URL"
-	StrTerrariumRestUrl      string = "TERRARIUM_REST_URL"
+	StrSpiderRestUrl         string = "TB_SPIDER_REST_URL"
+	StrDragonflyRestUrl      string = "TB_DRAGONFLY_REST_URL"
+	StrTerrariumRestUrl      string = "TB_TERRARIUM_REST_URL"
 	StrDBUrl                 string = "TB_SQLITE_URL"
 	StrDBDatabase            string = "TB_SQLITE_DATABASE"
 	StrDBUser                string = "TB_SQLITE_USER"
 	StrDBPassword            string = "TB_SQLITE_PASSWORD"
-	StrAutocontrolDurationMs string = "AUTOCONTROL_DURATION_MS"
+	StrAutocontrolDurationMs string = "TB_AUTOCONTROL_DURATION_MS"
 	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
 	ErrStrKeyNotFound        string = "key not found"
 	StrAdd                   string = "add"

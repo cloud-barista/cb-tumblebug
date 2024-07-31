@@ -3,7 +3,7 @@
 #function init_config() {
 
     echo "####################################################################"
-    echo "## 0. Config: Init (option: SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)"
+    echo "## 0. Config: Init (option: TB_SPIDER_REST_URL, TB_DRAGONFLY_REST_URL, ...)"
     echo "####################################################################"
 
     source ../init.sh
