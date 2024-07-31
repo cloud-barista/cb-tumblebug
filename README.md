@@ -1,4 +1,4 @@
-# CB-Tumblebug: Multi-Cloud Infra Management System (of Cloud-Barista)
+# CB-Tumblebug: Multi-Cloud Infra Management System
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
 [![Build](https://img.shields.io/github/actions/workflow/status/cloud-barista/cb-tumblebug/continuous-integration.yaml)](https://github.com/cloud-barista/cb-tumblebug/actions/workflows/continuous-integration.yaml?query=workflow%3AContinuous-Integration-%28CI%29)
@@ -24,7 +24,7 @@ CB-Tumblebug (CB-TB for short) is a system for managing multi-cloud infrastructu
 - [CB-Tumblebug Overview](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Overview)
 - [CB-Tumblebug Features](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Features)
 - [CB-Tumblebug Architecture](https://github.com/cloud-barista/cb-tumblebug/wiki/CB‐Tumblebug-Architecture)
-- [CB-Tumblebug Operation Sequence](https://github.com/cloud-barista/cb-tumblebug/tree/main/docs/designUML)
+
 - **Hot usecase of CB-Tumblebug**
   - **Deploy a Multi-Cloud Infra with GPUs and Enjoy muiltple LLMs in parallel (YouTube)**
     [![Multi-Cloud LLMs in parallel](https://github.com/cloud-barista/cb-tumblebug/assets/5966944/e15feb67-ba02-4066-af62-d9f8e8330a63)](https://www.youtube.com/watch?v=SD9ZoT_OZpQ)
@@ -63,10 +63,9 @@ while the CB-TB repo accommodates local languages in their contents.
 ## Index
 
 1. [Prerequisites](#prerequisites)
-1. [How to Download](#how-to-download)
-1. [How to Run](#3-run-cb-tb-system)
-1. [How to Build](#how-to-build-and-run)
+1. [How to Run](#how-to-run)
 1. [How to Use](#how-to-use-cb-tb-features)
+1. [How to Build](#how-to-build)
 1. [How to Contribute](#how-to-contribute)
 
 ---
@@ -75,8 +74,9 @@ while the CB-TB repo accommodates local languages in their contents.
 
 ### Envionment
 
-- Linux (recommended: `Ubuntu 22.04`)
-- Golang (recommended: `v1.21.6`)
+- Linux (recommend: `Ubuntu 22.04`)
+- Docker and Docker Compose 
+- Golang (recommend: `v1.21.6`) to build the source
 
 ### Dependency
 
@@ -87,34 +87,18 @@ Open source packages used in this project
 
 ---
 
-## How to Contribute
+## How to Run
 
-CB-TB welcomes improvements from both new and experienced contributors!
+### (1) Download CB-Tumblebug
 
-Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main/CONTRIBUTING.md).
-
----
-
----
-
-## How to Download
-
-- Clone CB-TB repository
+- Clone the CB-Tumblebug repository:
 
   ```bash
-  git clone --depth 1 https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
+  git clone https://github.com/cloud-barista/cb-tumblebug.git $HOME/go/src/github.com/cloud-barista/cb-tumblebug
   cd ~/go/src/github.com/cloud-barista/cb-tumblebug
   ```
 
-  The `--depth 1` option reduces the size by limiting the commit history download.
-
-  For contributing, it is recommended not to specify this option or to restore the commit history using the following command.
-
-  ```bash
-  git fetch --unshallow
-  ```
-
-  Register alias for the CB-TB directory (optional action for convenience: `cdtb`, `cbtbsrc`, `cdtbtest`).
+  Optionally, you can register aliases for the CB-Tumblebug directory to simplify navigation:
 
   ```bash
   echo "alias cdtb='cd $HOME/go/src/github.com/cloud-barista/cb-tumblebug'" >> ~/.bashrc
@@ -123,166 +107,46 @@ Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main
   source ~/.bashrc
   ```
 
----
+### (2) Run CB-TB and All Related Components
 
----
-
-## How to Build and Run
-
-### (1) Setup Prerequisites
-
-- Setup required tools
-
-  - Install: git, gcc, make
-    ```bash
-    sudo apt update
-    sudo apt install make gcc git
-    ```
-  - Install: Golang
-
-    - Check https://golang.org/dl/ and setup Go
-
-      - Download
-        ```bash
-        wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz;
-        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
-        ```
-      - Setup environment
-
-        ```bash
-        echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
-        echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-        ```
-
-        ```bash
-        source ~/.bashrc
-        echo $GOPATH
-        go env
-        go version
-        ```
-
-### (2) Build CB-TB
-
-- Build the Golang source code using the Makefile
+- Check Docker Compose Installation:
+  
+  Ensure that Docker Engine and Docker Compose are installed on your system.
+  If not, you can use the following script to install them (note: this script is not intended for production environments):
 
   ```bash
-  cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
-  make
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+  ./scripts/installDocker.sh
   ```
+    
+- Start All Components Using Docker Compose:
 
-  All dependencies will be downloaded automatically by Go.
-
-  The initial build will take some time, but subsequent builds will be faster by the Go build cache.
-
-  **Note** To update the Swagger API documentation, run `make swag` in `cb-tumblebug/src/`
-
-  - API documentation file will be generated at `cb-tumblebug/src/api/rest/docs/swagger.yaml`
-  - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/swagger/ (provided when CB-TB is running)
-  - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
-
-### (3) Run CB-TB system
-
-#### (3-1) Run dependant sub-project
-
-- Run CB-Spider
-
-  CB-Tumblebug requires [CB-Spider](https://github.com/cloud-barista/cb-spider) to control multiple cloud service providers.
-
-  - (Recommended method) Run the CB-Spider container using the CB-TB script (preferably use the specified version)
-
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/runSpider.sh
-    ```
-
-    Docker must be installed. If it is not installed, you can use the following script (not for production setup)
-
-    ```
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/installDocker.sh
-    ```
-
-    For installation methods other than the container, refer to [CB-Spider](https://github.com/cloud-barista/cb-spider)
-
-#### (3-2: option 1) Run CB-TB from the source code (recommended)
-
-- [Clone the repository](#how-to-download)
-- [Build and Setup](#how-to-build-and-setup)
-- Set environment variables required to run CB-TB (in another tab)
-
-  - Check and configure the contents of `cb-tumblebug/conf/setup.env` (CB-TB environment variables, modify as needed)
-    - Apply the environment variables to the system
-      ```bash
-      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-      source conf/setup.env
-      ```
-    - (Note) Automatically set the TB_SELF_ENDPOINT environment variable (an externally accessible address) using a script if needed
-      - This is necessary if you want to access and control the Swagger API Dashboard from outside when CB-TB is running
-      ```bash
-      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-      source ./scripts/setPublicIP.sh
-      ```
-
-- Execute the built cb-tumblebug binary by using `make run`
+  To run all components, use the following command:
+  
   ```bash
-  cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
-  make run
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+  sudo docker compose up
   ```
+  
+  This command will start all components as defined in the preconfigured [docker-compose.yaml](https://github.com/cloud-barista/cb-tumblebug/blob/main/docker-compose.yaml) file. For configuration customization, please refer to the [guide](https://github.com/cloud-barista/cb-tumblebug/discussions/1669).
 
-#### (3-2: option 2) Run CB-TB from container images
+  The following components will be started:
+  - ETCD: CB-Tumblebug KeyValue DB
+  - CB-Spider: a Cloud API controller
+  - CB-MapUI: a simple Map-based GUI web server
+  - CB-Tumblebug: the system with API server
 
-- Check CB-TB available docker image tags(https://hub.docker.com/r/cloudbaristaorg/cb-tumblebug/tags)
-- Run the container image (two options)
+  ![image](https://github.com/user-attachments/assets/4466b6ff-6566-4ee0-ae60-d57e3d152821)
+  
+  After running the command, you should see output similar to the following:
+  ![image](https://github.com/user-attachments/assets/1861edfd-411f-4c43-ab62-fa3658b8a1e9)
 
-  - Run a script to excute CB-TB docker image (recommended)
+  Now, the CB-Tumblebug API server is accessible at: http://localhost:1323/tumblebug/api
+  Additionally, CB-MapUI is accessible at: http://localhost:1324
 
-    ```bash
-    ./scripts/runTumblebug.sh
-    ```
-
-  - Run docker direclty
-    ```bash
-    docker run -p 1323:1323 \
-    -v ${HOME}/go/src/github.com/cloud-barista/cb-tumblebug/meta_db:/app/meta_db \
-    --name cb-tumblebug \
-    cloudbaristaorg/cb-tumblebug:x.x.x
-    ```
-
-#### (3-3) Check the system is ready
-
-You will see the following messages..
-
-```
-  ██████╗██████╗    ████████╗██████╗
- ██╔════╝██╔══██╗   ╚══██╔══╝██╔══██╗
- ██║     ██████╔╝█████╗██║   ██████╔╝
- ██║     ██╔══██╗╚════╝██║   ██╔══██╗
- ╚██████╗██████╔╝      ██║   ██████╔╝
-  ╚═════╝╚═════╝       ╚═╝   ╚═════╝
-
- ██████╗ ███████╗ █████╗ ██████╗ ██╗   ██╗
- ██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
- ██████╔╝█████╗  ███████║██║  ██║ ╚████╔╝
- ██╔══██╗██╔══╝  ██╔══██║██║  ██║  ╚██╔╝
- ██║  ██║███████╗██║  ██║██████╔╝   ██║
- ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝
-
- Multi-cloud infrastructure managemenet framework
- ________________________________________________
-
- https://github.com/cloud-barista/cb-tumblebug
-
-
- Access to API dashboard (username: default / password: default)
- http://xxx.xxx.xxx.xxx:1323/tumblebug/api
-
-⇨ http server started on [::]:1323
-```
-
-- In default (`cb-tumblebug/conf/setup.env`),
-  you can find the system log in `cb-tumblebug/log/tumblebug.log` (log is based on `zerolog`)
-
-### (4) Configure Multi-Cloud info
+  *Note*: Before using CB-Tumblebug, you need to initialize it.
+  
+### (3) Initialize CB-Tumblebug to configure Multi-Cloud info
 
 To provisioning multi-cloud infrastructures with CB-TB, it is necessary to register the connection information (credentials) for clouds, as well as commonly used images and specifications.
 
@@ -290,14 +154,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - Overview
     - `credentials.yaml` is a file that includes multiple credentials to use API of Clouds supported by CB-TB (AWS, GCP, AZURE, ALIBABA, etc.)
     - It should be located in the `~/.cloud-barista/` directory and securely managed.
-    - Refer to the [`template.credentials.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/template.credentials.yaml) for the template
+    - Refer to the [`template.credentials.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/template.credentials.yaml) for the template
   - Create `credentials.yaml` the file
 
     Automatically generate the `credentials.yaml` file in the `~/.cloud-barista/` directory using the CB-TB script
 
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/init/genCredential.sh
+    ./init/genCredential.sh
     ```
 
   - Input credential data
@@ -330,7 +194,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - Encrypting Credentials
     ```bash
-    scripts/init/encCredential.sh
+    init/encCredential.sh
     ```
     ![image](https://github.com/user-attachments/assets/5e7a73a6-8746-4be3-9a74-50b051f345bb)
 
@@ -338,7 +202,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - Decrypting Credentials
     ```bash
-    scripts/init/decCredential.sh
+    init/decCredential.sh
     ```
     ![image](https://github.com/user-attachments/assets/85c91124-317d-4877-a025-a53cfdf2725e)
 
@@ -346,23 +210,26 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - How to register
 
-    Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/init.py) script. (enter 'y' for confirmation prompts)
+    Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py) script. (enter 'y' for confirmation prompts)
 
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/init/init.sh
+    ./init/init.sh
     ```
 
     - The credentials in `~/.cloud-barista/credentials.yaml.enc` (encrypted file from the `credentials.yaml`) will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
       - Note: You can check the latest regions and zones of CSP using [`update-cloudinfo.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/misc/update-cloudinfo.py) and review the file for updates. (contributions to updates are welcome)
     - Common images and specifications recorded in the [`cloudimage.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudimage.csv) and [`cloudspec.csv`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudspec.csv) files in the [`assets`](https://github.com/cloud-barista/cb-tumblebug/tree/main/assets) directory will be automatically registered.
 
-### (5) Shutting down and Version Upgrade
+### (4) Shutting down and Version Upgrade
 
-- Shutting down the CB-TB & CB-Spider servers
+- Shutting down CB-TB and related components
 
-  - CB-Spider: Shut down the server using `ctrl` + `c`
-  - CB-TB: Shut down the server using `ctrl` + `c` (When a shutdown event occurs, the system will be shutting down gracefully: API requests that can be processed within 10 seconds will be completed)
+  - Stop all containers by `ctrl` + `c` or type the command `sudo docker compose stop` / `sudo docker compose down`
+    (When a shutdown event occurs to CB-TB, the system will be shutting down gracefully: API requests that can be processed within 10 seconds will be completed)
+    
+    ![image](https://github.com/user-attachments/assets/009e5df6-93cb-4ff7-93c0-62458341c78b)
+
   - In case of cleanup is needed due to internal system errors
     - Check and delete resources created through CB-TB
     - Delete CB-TB & CB-Spider metadata using the provided script
@@ -382,6 +249,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
     ./scripts/cleanDB.sh
     ```
   - Restart with the upgraded version
+
 
 ---
 
@@ -587,6 +455,109 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 - [Automatically configure Ansible execution environment on MCIS](https://github.com/cloud-barista/cb-tumblebug/wiki/MCIS-Ansible-deployment)
 
 ---
+
+
+---
+
+## How to Build
+
+### (1) Setup Prerequisites
+
+- Setup required tools
+
+  - Install: git, gcc, make
+    ```bash
+    sudo apt update
+    sudo apt install make gcc git
+    ```
+  - Install: Golang
+
+    - Check https://golang.org/dl/ and setup Go
+
+      - Download
+        ```bash
+        wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz;
+        sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
+        ```
+      - Setup environment
+
+        ```bash
+        echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
+        echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+        ```
+
+        ```bash
+        source ~/.bashrc
+        echo $GOPATH
+        go env
+        go version
+        ```
+
+### (2) Build and Run CB-Tumblebug
+
+
+#### (2-1) Option 1: Run CB-Tumblebug with Docker Compose (Recommended)
+
+- Run Docker Compose with the build option
+
+  To build the current CB-Tumblebug source code into a container image and run it along with the other containers, use the following command:
+  
+  ```bash
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+  sudo docker compose up --build
+  ```
+
+  This command will automatically build the CB-Tumblebug from the local source code
+  and start it within a Docker container, along with any other necessary services as defined in the `docker-compose.yml` file.
+
+#### (2-2) Option 2: Run CB-Tumblebug from the Makefile
+
+- Build the Golang source code using the Makefile
+
+  ```bash
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
+  make
+  ```
+
+  All dependencies will be downloaded automatically by Go.
+
+  The initial build will take some time, but subsequent builds will be faster by the Go build cache.
+
+  **Note** To update the Swagger API documentation, run `make swag`
+
+  - API documentation file will be generated at `cb-tumblebug/src/api/rest/docs/swagger.yaml`
+  - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/api (provided when CB-TB is running)
+  - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
+
+- Set environment variables required to run CB-TB (in another tab)
+
+  - Check and configure the contents of `cb-tumblebug/conf/setup.env` (CB-TB environment variables, modify as needed)
+    - Apply the environment variables to the system
+      ```bash
+      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+      source conf/setup.env
+      ```
+    - (Optional) Automatically set the TB_SELF_ENDPOINT environment variable (an externally accessible address) using a script if needed
+      - This is necessary if you want to access and control the Swagger API Dashboard from outside when CB-TB is running
+      ```bash
+      cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+      source ./scripts/setPublicIP.sh
+      ```
+
+- Execute the built cb-tumblebug binary by using `make run`
+  ```bash
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug/src
+  make run
+  ```
+
+---
+
+
+## How to Contribute
+
+CB-TB welcomes improvements from both new and experienced contributors!
+
+Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main/CONTRIBUTING.md).
 
 ---
 

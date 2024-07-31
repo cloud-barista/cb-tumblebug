@@ -42,7 +42,7 @@ if not os.path.exists(CRED_PATH):
 elif not os.path.isfile(ENC_FILE_PATH):
     print(Fore.RED + f"Error: {CRED_FILE_NAME_ENC} does not exist. Please check if it has been generated.")
     print(Fore.RED + f"- This script does not accept 'credentials.yaml'. For your security, it only accepts an encrypted file.")
-    print(Fore.RED + f"- Please generate '{CRED_FILE_NAME_ENC}' using 'scripts/init/encCredential.sh'.")
+    print(Fore.RED + f"- Please generate '{CRED_FILE_NAME_ENC}' using 'init/encCredential.sh'.")
     sys.exit(1)
 
 

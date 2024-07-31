@@ -21,7 +21,7 @@ Before running `init.py`, you must encrypt your `credentials.yaml` file to ensur
 
 1. Use the `encCredential.sh` script to encrypt your `credentials.yaml` file:
 ```bash
-scripts/init/encCredential.sh
+init/encCredential.sh
 ```
 
 The `init.py` script will decrypt the `credentials.yaml.enc` file as needed to read the credentials. You may need to provide a password if the decryption key is not stored.
@@ -61,12 +61,12 @@ If you need to update your credentials, decrypt the encrypted file using `decCre
 
 ### Encrypting Credentials
 ```bash
-scripts/init/encCredential.sh
+init/encCredential.sh
 ```
 
 ### Decrypting Credentials
 ```bash
-scripts/init/decCredential.sh
+init/decCredential.sh
 ```
 
 ## Related Files
