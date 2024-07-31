@@ -103,7 +103,7 @@ services:
 
   # CB-Tumblebug
   cb-tumblebug:
-    image: cloudbaristaorg/cb-tumblebug:0.9.1
+    image: cloudbaristaorg/cb-tumblebug:0.9.2
     pull_policy: missing
     build:
       context: .
