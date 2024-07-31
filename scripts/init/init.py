@@ -23,9 +23,9 @@ init(autoreset=True)
 
 # Configuration
 TUMBLEBUG_SERVER = os.getenv('TUMBLEBUG_SERVER', 'localhost:1323')
-API_USERNAME = os.getenv('API_USERNAME', 'default')
-API_PASSWORD = os.getenv('API_PASSWORD', 'default')
-AUTH = f"Basic {base64.b64encode(f'{API_USERNAME}:{API_PASSWORD}'.encode()).decode()}"
+TB_API_USERNAME = os.getenv('TB_API_USERNAME', 'default')
+TB_API_PASSWORD = os.getenv('TB_API_PASSWORD', 'default')
+AUTH = f"Basic {base64.b64encode(f'{TB_API_USERNAME}:{TB_API_PASSWORD}'.encode()).decode()}"
 HEADERS = {'Authorization': AUTH, 'Content-Type': 'application/json'}
 
 CRED_FILE_NAME_ENC = "credentials.yaml.enc"
@@ -85,8 +85,8 @@ def get_decryption_key():
 # Print the current configuration
 print(Fore.YELLOW + "Current Configuration\nPlease set the corresponding environment variables to make changes.")
 print(" - " + Fore.CYAN + "TUMBLEBUG_SERVER:" + Fore.RESET + f" {TUMBLEBUG_SERVER}")
-print(" - " + Fore.CYAN + "API_USERNAME:" + Fore.RESET + f" {API_USERNAME[0]}**********")
-print(" - " + Fore.CYAN + "API_PASSWORD:" + Fore.RESET + f" {API_PASSWORD[0]}**********")
+print(" - " + Fore.CYAN + "TB_API_USERNAME:" + Fore.RESET + f" {TB_API_USERNAME[0]}**********")
+print(" - " + Fore.CYAN + "TB_API_PASSWORD:" + Fore.RESET + f" {TB_API_PASSWORD[0]}**********")
 print(" - " + Fore.CYAN + "CRED_PATH:" + Fore.RESET + f" {CRED_PATH}")
 print(" - " + Fore.CYAN + "CRED_FILE_NAME:" + Fore.RESET + f" {CRED_FILE_NAME_ENC}")
 print(" - " + Fore.CYAN + "expected completion time:" + Fore.RESET + f" {expected_completion_time_seconds} seconds\n")

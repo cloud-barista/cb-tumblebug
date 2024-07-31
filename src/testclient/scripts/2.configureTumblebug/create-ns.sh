@@ -7,7 +7,7 @@ echo "####################################################################"
 SCRIPT_DIR=`dirname ${BASH_SOURCE[0]-$0}`
 cd $SCRIPT_DIR
 
-source $CBTUMBLEBUG_ROOT/src/testclient/scripts/init.sh
+source $TB_ROOT_PATH/src/testclient/scripts/init.sh
 
 if [ ! -z "$OPTION01" ]; then
 	NSID=$OPTION01

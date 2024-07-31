@@ -52,16 +52,16 @@ import (
 func init() {
 	common.SystemReady = false
 
-	common.SpiderRestUrl = common.NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-	common.DragonflyRestUrl = common.NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-	common.TerrariumRestUrl = common.NVL(os.Getenv("TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
-	common.DBUrl = common.NVL(os.Getenv("DB_URL"), "localhost:3306")
-	common.DBDatabase = common.NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-	common.DBUser = common.NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-	common.DBPassword = common.NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-	common.AutocontrolDurationMs = common.NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
-	common.DefaultNamespace = common.NVL(os.Getenv("DEFAULT_NAMESPACE"), "ns01")
-	common.DefaultCredentialHolder = common.NVL(os.Getenv("DEFAULT_CREDENTIALHOLDER"), "admin")
+	common.SpiderRestUrl = common.NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
+	common.DragonflyRestUrl = common.NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+	common.TerrariumRestUrl = common.NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
+	common.DBUrl = common.NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
+	common.DBDatabase = common.NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
+	common.DBUser = common.NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
+	common.DBPassword = common.NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
+	common.AutocontrolDurationMs = common.NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
+	common.DefaultNamespace = common.NVL(os.Getenv("TB_DEFAULT_NAMESPACE"), "ns01")
+	common.DefaultCredentialHolder = common.NVL(os.Getenv("TB_DEFAULT_CREDENTIALHOLDER"), "admin")
 	// Etcd
 	common.EtcdEndpoints = common.NVL(os.Getenv("TB_ETCD_ENDPOINTS"), "localhost:2379")
 
@@ -134,7 +134,7 @@ func init() {
 			}
 		} else {
 			log.Error().Msg("Default namespace is not set")
-			panic("Default namespace is not set, please set DEFAULT_NAMESPACE in setup.env or environment variable")
+			panic("Default namespace is not set, please set TB_DEFAULT_NAMESPACE in setup.env or environment variable")
 		}
 	}
 }

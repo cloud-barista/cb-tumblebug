@@ -65,14 +65,14 @@ var err error
 var ORM *xorm.Engine
 
 const (
-	StrSpiderRestUrl         string = "SPIDER_REST_URL"
-	StrDragonflyRestUrl      string = "DRAGONFLY_REST_URL"
-	StrTerrariumRestUrl      string = "TERRARIUM_REST_URL"
-	StrDBUrl                 string = "DB_URL"
-	StrDBDatabase            string = "DB_DATABASE"
-	StrDBUser                string = "DB_USER"
-	StrDBPassword            string = "DB_PASSWORD"
-	StrAutocontrolDurationMs string = "AUTOCONTROL_DURATION_MS"
+	StrSpiderRestUrl         string = "TB_SPIDER_REST_URL"
+	StrDragonflyRestUrl      string = "TB_DRAGONFLY_REST_URL"
+	StrTerrariumRestUrl      string = "TB_TERRARIUM_REST_URL"
+	StrDBUrl                 string = "TB_SQLITE_URL"
+	StrDBDatabase            string = "TB_SQLITE_DATABASE"
+	StrDBUser                string = "TB_SQLITE_USER"
+	StrDBPassword            string = "TB_SQLITE_PASSWORD"
+	StrAutocontrolDurationMs string = "TB_AUTOCONTROL_DURATION_MS"
 	StrEtcdEndpoints         string = "TB_ETCD_ENDPOINTS"
 	ErrStrKeyNotFound        string = "key not found"
 	StrAdd                   string = "add"
@@ -120,10 +120,10 @@ type SpiderConnectionName struct {
 func OpenSQL(path string) error {
 	/*
 		common.MYDB, err = sql.Open("mysql", //"root:pwd@tcp(127.0.0.1:3306)/testdb")
-			common.DB_USER+":"+
-				common.DB_PASSWORD+"@tcp("+
-				common.DB_URL+")/"+
-				common.DB_DATABASE)
+			common.TB_SQLITE_USER+":"+
+				common.TB_SQLITE_PASSWORD+"@tcp("+
+				common.TB_SQLITE_URL+")/"+
+				common.TB_SQLITE_DATABASE)
 	*/
 
 	fullPathString := "file:" + path

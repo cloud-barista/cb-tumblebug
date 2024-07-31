@@ -51,8 +51,8 @@ init.sh
 ## Configuration
 Before running the script, ensure the following environment variables are set according to your Tumblebug server configuration:
 - `TUMBLEBUG_SERVER`: The address of the Tumblebug server.
-- `API_USERNAME`: Username for API authentication.
-- `API_PASSWORD`: Password for API authentication.
+- `TB_API_USERNAME`: Username for API authentication.
+- `TB_API_PASSWORD`: Password for API authentication.
 
 ## Security Considerations
 To protect sensitive information, `credentials.yaml` is not used directly. Instead, it must be encrypted using `encCredential.sh`. The encrypted file `credentials.yaml.enc` is then used by `init.py`. This approach ensures that sensitive credentials are not stored in plain text.

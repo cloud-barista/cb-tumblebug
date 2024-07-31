@@ -279,14 +279,14 @@ const (
 
 // swagger:request ConfigReq
 type ConfigReq struct {
-	Name  string `json:"name" example:"SPIDER_REST_URL"`
+	Name  string `json:"name" example:"TB_SPIDER_REST_URL"`
 	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
 // swagger:response ConfigInfo
 type ConfigInfo struct {
-	Id    string `json:"id" example:"SPIDER_REST_URL"`
-	Name  string `json:"name" example:"SPIDER_REST_URL"`
+	Id    string `json:"id" example:"TB_SPIDER_REST_URL"`
+	Name  string `json:"name" example:"TB_SPIDER_REST_URL"`
 	Value string `json:"value" example:"http://localhost:1024/spider"`
 }
 
@@ -331,28 +331,28 @@ func UpdateGlobalVariable(id string) error {
 	switch id {
 	case StrSpiderRestUrl:
 		SpiderRestUrl = configInfo.Value
-		log.Debug().Msg("<SPIDER_REST_URL> " + SpiderRestUrl)
+		log.Debug().Msg("<TB_SPIDER_REST_URL> " + SpiderRestUrl)
 	case StrDragonflyRestUrl:
 		DragonflyRestUrl = configInfo.Value
-		log.Debug().Msg("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+		log.Debug().Msg("<TB_DRAGONFLY_REST_URL> " + DragonflyRestUrl)
 	case StrTerrariumRestUrl:
 		TerrariumRestUrl = configInfo.Value
-		log.Debug().Msg("<TERRARIUM_REST_URL> " + TerrariumRestUrl)
+		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + TerrariumRestUrl)
 	case StrDBUrl:
 		DBUrl = configInfo.Value
-		log.Debug().Msg("<DB_URL> " + DBUrl)
+		log.Debug().Msg("<TB_SQLITE_URL> " + DBUrl)
 	case StrDBDatabase:
 		DBDatabase = configInfo.Value
-		log.Debug().Msg("<DB_DATABASE> " + DBDatabase)
+		log.Debug().Msg("<TB_SQLITE_DATABASE> " + DBDatabase)
 	case StrDBUser:
 		DBUser = configInfo.Value
-		log.Debug().Msg("<DB_USER> " + DBUser)
+		log.Debug().Msg("<TB_SQLITE_USER> " + DBUser)
 	case StrDBPassword:
 		DBPassword = configInfo.Value
-		log.Debug().Msg("<DB_PASSWORD> " + DBPassword)
+		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + DBPassword)
 	case StrAutocontrolDurationMs:
 		AutocontrolDurationMs = configInfo.Value
-		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
+		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
 	case StrEtcdEndpoints:
 		EtcdEndpoints = configInfo.Value
 		log.Debug().Msg("<TB_ETCD_ENDPOINTS> " + EtcdEndpoints)
@@ -367,29 +367,29 @@ func InitConfig(id string) error {
 
 	switch id {
 	case StrSpiderRestUrl:
-		SpiderRestUrl = NVL(os.Getenv("SPIDER_REST_URL"), "http://localhost:1024/spider")
-		log.Debug().Msg("<SPIDER_REST_URL> " + SpiderRestUrl)
+		SpiderRestUrl = NVL(os.Getenv("TB_SPIDER_REST_URL"), "http://localhost:1024/spider")
+		log.Debug().Msg("<TB_SPIDER_REST_URL> " + SpiderRestUrl)
 	case StrDragonflyRestUrl:
-		DragonflyRestUrl = NVL(os.Getenv("DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
-		log.Debug().Msg("<DRAGONFLY_REST_URL> " + DragonflyRestUrl)
+		DragonflyRestUrl = NVL(os.Getenv("TB_DRAGONFLY_REST_URL"), "http://localhost:9090/dragonfly")
+		log.Debug().Msg("<TB_DRAGONFLY_REST_URL> " + DragonflyRestUrl)
 	case StrTerrariumRestUrl:
-		TerrariumRestUrl = NVL(os.Getenv("TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
-		log.Debug().Msg("<TERRARIUM_REST_URL> " + TerrariumRestUrl)
+		TerrariumRestUrl = NVL(os.Getenv("TB_TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
+		log.Debug().Msg("<TB_TERRARIUM_REST_URL> " + TerrariumRestUrl)
 	case StrDBUrl:
-		DBUrl = NVL(os.Getenv("DB_URL"), "localhost:3306")
-		log.Debug().Msg("<DB_URL> " + DBUrl)
+		DBUrl = NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
+		log.Debug().Msg("<TB_SQLITE_URL> " + DBUrl)
 	case StrDBDatabase:
-		DBDatabase = NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-		log.Debug().Msg("<DB_DATABASE> " + DBDatabase)
+		DBDatabase = NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_DATABASE> " + DBDatabase)
 	case StrDBUser:
-		DBUser = NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-		log.Debug().Msg("<DB_USER> " + DBUser)
+		DBUser = NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_USER> " + DBUser)
 	case StrDBPassword:
-		DBPassword = NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-		log.Debug().Msg("<DB_PASSWORD> " + DBPassword)
+		DBPassword = NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + DBPassword)
 	case StrAutocontrolDurationMs:
-		AutocontrolDurationMs = NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
-		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
+		AutocontrolDurationMs = NVL(os.Getenv("TB_AUTOCONTROL_DURATION_MS"), "10000")
+		log.Debug().Msg("<TB_AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
 	default:
 
 	}

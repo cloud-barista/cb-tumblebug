@@ -126,7 +126,7 @@ func RestGetAllConfig(c echo.Context) error {
 // RestPostConfig godoc
 // @ID PostConfig
 // @Summary Create or Update config
-// @Description Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)
+// @Description Create or Update config (TB_SPIDER_REST_URL, TB_DRAGONFLY_REST_URL, ...)
 // @Tags [Admin] System environment
 // @Accept  json
 // @Produce  json
@@ -237,7 +237,7 @@ func RestGetAllRequests(c echo.Context) error {
 
 	// Option to save the result to a file
 	if c.QueryParam("savefile") == "true" {
-		cbTumblebugRoot := os.Getenv("CBTUMBLEBUG_ROOT")
+		cbTumblebugRoot := os.Getenv("TB_ROOT_PATH")
 		logPath := filepath.Join(cbTumblebugRoot, "log", "request_log_"+time.Now().Format("20060102_150405")+".log")
 		file, err := os.Create(logPath)
 		if err != nil {

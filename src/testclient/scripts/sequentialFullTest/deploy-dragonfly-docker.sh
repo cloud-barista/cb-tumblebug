@@ -61,7 +61,7 @@ echo "CMD: $CMD"
 	echo ""
 
 	echo "[Update Tumblebug Environment for Dragonfly with following command]"
-	PARAM="-x DRAGONFLY_REST_URL -y http://${MASTERIP}:9090/dragonfly"
+	PARAM="-x TB_DRAGONFLY_REST_URL -y http://${MASTERIP}:9090/dragonfly"
 	echo $PARAM
 	../2.configureTumblebug/update-config.sh $PARAM
 

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-if [ -z "$CBTUMBLEBUG_ROOT" ]; then
+if [ -z "$TB_ROOT_PATH" ]; then
     SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]-$0}")
-    export CBTUMBLEBUG_ROOT=$(cd "$SCRIPT_DIR" && cd .. && pwd)
+    export TB_ROOT_PATH=$(cd "$SCRIPT_DIR" && cd .. && pwd)
 fi
 
-credentialDir="$CBTUMBLEBUG_ROOT/conf"
+credentialDir="$TB_ROOT_PATH/conf"
 credentialFile="$credentialDir/credentials.conf"
 saveTo="$credentialDir/.credtmp"
 

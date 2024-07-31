@@ -1,10 +1,10 @@
 #!/bin/bash
 
 echo ""
-echo "Get IP of the current host and set SELF_ENDPOINT environment variable"
+echo "Get IP of the current host and set TB_SELF_ENDPOINT environment variable"
 echo "(Default setting is in conf/setup.env)"
 echo ""
-echo "Setting SELF_ENDPOINT allows outside users access to CB-Tumblebug Swagger API Dashboard."
+echo "Setting TB_SELF_ENDPOINT allows outside users access to CB-Tumblebug Swagger API Dashboard."
 echo ""
 
 if [[ "$(basename -- "$0")" == "setPublicIP.sh" ]]; then
@@ -23,13 +23,13 @@ str=$(curl https://api.ipify.org)
 if [ -z "$str" ]
 then
     echo "The result for IP lookup is empty."
-    echo "Set SELF_ENDPOINT=localhost:1323"
+    echo "Set TB_SELF_ENDPOINT=localhost:1323"
     str=localhost
 fi
 
-export SELF_ENDPOINT=$str:1323
+export TB_SELF_ENDPOINT=$str:1323
 
 echo ""
-echo "SELF_ENDPOINT (CB-TB Swagger API Dashboard): $SELF_ENDPOINT"
-echo "[Note] To apply \$SELF_ENDPOINT, CB-TB restart is required."
+echo "TB_SELF_ENDPOINT (CB-TB Swagger API Dashboard): $TB_SELF_ENDPOINT"
+echo "[Note] To apply \$TB_SELF_ENDPOINT, CB-TB restart is required."
 echo ""
