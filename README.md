@@ -1,4 +1,4 @@
-# CB-Tumblebug: Multi-Cloud Infra Management System
+# CB-Tumblebug (Multi-Cloud Infra Management System) 👋
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cloud-barista/cb-tumblebug)](https://goreportcard.com/report/github.com/cloud-barista/cb-tumblebug)
 [![Build](https://img.shields.io/github/actions/workflow/status/cloud-barista/cb-tumblebug/continuous-integration.yaml)](https://github.com/cloud-barista/cb-tumblebug/actions/workflows/continuous-integration.yaml?query=workflow%3AContinuous-Integration-%28CI%29)
@@ -60,17 +60,17 @@ while the CB-TB repo accommodates local languages in their contents.
 
 ---
 
-## Index
+## Index 🔗
 
-1. [Prerequisites](#prerequisites)
-1. [How to Run](#how-to-run)
-1. [How to Use](#how-to-use-cb-tb-features)
-1. [How to Build](#how-to-build)
-1. [How to Contribute](#how-to-contribute)
+1. [Prerequisites](#prerequisites-)
+1. [How to Run](#how-to-run-)
+1. [How to Use](#how-to-use-cb-tb-features-)
+1. [How to Build](#how-to-build-%EF%B8%8F)
+1. [How to Contribute](#how-to-contribute-)
 
 ---
 
-## Prerequisites
+## Prerequisites 🌍
 
 ### Envionment
 
@@ -90,7 +90,7 @@ Open source packages used in this project
 
 ---
 
-## How to Run
+## How to Run 🚀
 
 ### (1) Download CB-Tumblebug
 
@@ -262,7 +262,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 ---
 
-## How to Use CB-TB Features
+## How to Use CB-TB Features 🌟
 
 1. [Using CB-TB MapUI](#using-cb-tb-mapui) (recommended)
 2. [Using CB-TB REST API](#using-cb-tb-rest-api) (recommended)
@@ -476,7 +476,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 ---
 
-## How to Build
+## How to Build 🛠️
 
 ### (1) Setup Prerequisites
 
@@ -571,14 +571,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
 ---
 
-## How to Contribute
+## How to Contribute 🙏
 
 CB-TB welcomes improvements from both new and experienced contributors!
 
 Check out [CONTRIBUTING](https://github.com/cloud-barista/cb-tumblebug/blob/main/CONTRIBUTING.md).
 
 
-### Contributors ✨
+## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
