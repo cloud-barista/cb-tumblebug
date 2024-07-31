@@ -19,6 +19,8 @@ var (
 func init() {
 
 	// Map environment variable names to config file key names
+	envPrefix := "TB"
+	viper.SetEnvPrefix(envPrefix)
 	replacer := strings.NewReplacer(".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 
