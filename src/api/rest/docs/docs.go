@@ -233,7 +233,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create or Update config (SPIDER_REST_URL, DRAGONFLY_REST_URL, ...)",
+                "description": "Create or Update config (TB_SPIDER_REST_URL, TB_DRAGONFLY_REST_URL, ...)",
                 "consumes": [
                     "application/json"
                 ],
@@ -9036,11 +9036,11 @@ const docTemplate = `{
             "properties": {
                 "id": {
                     "type": "string",
-                    "example": "SPIDER_REST_URL"
+                    "example": "TB_SPIDER_REST_URL"
                 },
                 "name": {
                     "type": "string",
-                    "example": "SPIDER_REST_URL"
+                    "example": "TB_SPIDER_REST_URL"
                 },
                 "value": {
                     "type": "string",
@@ -9053,7 +9053,7 @@ const docTemplate = `{
             "properties": {
                 "name": {
                     "type": "string",
-                    "example": "SPIDER_REST_URL"
+                    "example": "TB_SPIDER_REST_URL"
                 },
                 "value": {
                     "type": "string",
