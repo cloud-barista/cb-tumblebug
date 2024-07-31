@@ -290,14 +290,14 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
   - Overview
     - `credentials.yaml` is a file that includes multiple credentials to use API of Clouds supported by CB-TB (AWS, GCP, AZURE, ALIBABA, etc.)
     - It should be located in the `~/.cloud-barista/` directory and securely managed.
-    - Refer to the [`template.credentials.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/template.credentials.yaml) for the template
+    - Refer to the [`template.credentials.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/template.credentials.yaml) for the template
   - Create `credentials.yaml` the file
 
     Automatically generate the `credentials.yaml` file in the `~/.cloud-barista/` directory using the CB-TB script
 
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/init/genCredential.sh
+    ./init/genCredential.sh
     ```
 
   - Input credential data
@@ -330,7 +330,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - Encrypting Credentials
     ```bash
-    scripts/init/encCredential.sh
+    init/encCredential.sh
     ```
     ![image](https://github.com/user-attachments/assets/5e7a73a6-8746-4be3-9a74-50b051f345bb)
 
@@ -338,7 +338,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - Decrypting Credentials
     ```bash
-    scripts/init/decCredential.sh
+    init/decCredential.sh
     ```
     ![image](https://github.com/user-attachments/assets/85c91124-317d-4877-a025-a53cfdf2725e)
 
@@ -346,11 +346,11 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   - How to register
 
-    Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/scripts/init/init.py) script. (enter 'y' for confirmation prompts)
+    Refer to [README.md for init.py](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/README.md), and execute the [`init.py`](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/init.py) script. (enter 'y' for confirmation prompts)
 
     ```bash
     cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/init/init.sh
+    ./init/init.sh
     ```
 
     - The credentials in `~/.cloud-barista/credentials.yaml.enc` (encrypted file from the `credentials.yaml`) will be automatically registered (all CSP and region information recorded in [`cloudinfo.yaml`](https://github.com/cloud-barista/cb-tumblebug/blob/main/assets/cloudinfo.yaml) will be automatically registered in the system)
