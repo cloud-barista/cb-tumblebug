@@ -340,16 +340,16 @@ func UpdateGlobalVariable(id string) error {
 		log.Debug().Msg("<TERRARIUM_REST_URL> " + TerrariumRestUrl)
 	case StrDBUrl:
 		DBUrl = configInfo.Value
-		log.Debug().Msg("<DB_URL> " + DBUrl)
+		log.Debug().Msg("<TB_SQLITE_URL> " + DBUrl)
 	case StrDBDatabase:
 		DBDatabase = configInfo.Value
-		log.Debug().Msg("<DB_DATABASE> " + DBDatabase)
+		log.Debug().Msg("<TB_SQLITE_DATABASE> " + DBDatabase)
 	case StrDBUser:
 		DBUser = configInfo.Value
-		log.Debug().Msg("<DB_USER> " + DBUser)
+		log.Debug().Msg("<TB_SQLITE_USER> " + DBUser)
 	case StrDBPassword:
 		DBPassword = configInfo.Value
-		log.Debug().Msg("<DB_PASSWORD> " + DBPassword)
+		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + DBPassword)
 	case StrAutocontrolDurationMs:
 		AutocontrolDurationMs = configInfo.Value
 		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)
@@ -376,17 +376,17 @@ func InitConfig(id string) error {
 		TerrariumRestUrl = NVL(os.Getenv("TERRARIUM_REST_URL"), "http://localhost:8888/terrarium")
 		log.Debug().Msg("<TERRARIUM_REST_URL> " + TerrariumRestUrl)
 	case StrDBUrl:
-		DBUrl = NVL(os.Getenv("DB_URL"), "localhost:3306")
-		log.Debug().Msg("<DB_URL> " + DBUrl)
+		DBUrl = NVL(os.Getenv("TB_SQLITE_URL"), "localhost:3306")
+		log.Debug().Msg("<TB_SQLITE_URL> " + DBUrl)
 	case StrDBDatabase:
-		DBDatabase = NVL(os.Getenv("DB_DATABASE"), "cb_tumblebug")
-		log.Debug().Msg("<DB_DATABASE> " + DBDatabase)
+		DBDatabase = NVL(os.Getenv("TB_SQLITE_DATABASE"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_DATABASE> " + DBDatabase)
 	case StrDBUser:
-		DBUser = NVL(os.Getenv("DB_USER"), "cb_tumblebug")
-		log.Debug().Msg("<DB_USER> " + DBUser)
+		DBUser = NVL(os.Getenv("TB_SQLITE_USER"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_USER> " + DBUser)
 	case StrDBPassword:
-		DBPassword = NVL(os.Getenv("DB_PASSWORD"), "cb_tumblebug")
-		log.Debug().Msg("<DB_PASSWORD> " + DBPassword)
+		DBPassword = NVL(os.Getenv("TB_SQLITE_PASSWORD"), "cb_tumblebug")
+		log.Debug().Msg("<TB_SQLITE_PASSWORD> " + DBPassword)
 	case StrAutocontrolDurationMs:
 		AutocontrolDurationMs = NVL(os.Getenv("AUTOCONTROL_DURATION_MS"), "10000")
 		log.Debug().Msg("<AUTOCONTROL_DURATION_MS> " + AutocontrolDurationMs)

@@ -44,14 +44,12 @@ COPY --from=builder /go/src/github.com/cloud-barista/cb-tumblebug/src/cb-tumbleb
 
 # Setting various environment variables required by the application
 ENV CBTUMBLEBUG_ROOT=/app \
-    SPIDER_CALL_METHOD=REST \
-    DRAGONFLY_CALL_METHOD=REST \
     SPIDER_REST_URL=http://cb-spider:1024/spider \
     DRAGONFLY_REST_URL=http://cb-dragonfly:9090/dragonfly \
-    DB_URL=localhost:3306 \
-    DB_DATABASE=cb_tumblebug \
-    DB_USER=cb_tumblebug \
-    DB_PASSWORD=cb_tumblebug \
+    TB_SQLITE_URL=localhost:3306 \
+    TB_SQLITE_DATABASE=cb_tumblebug \
+    TB_SQLITE_USER=cb_tumblebug \
+    TB_SQLITE_PASSWORD=cb_tumblebug \
     TB_ETCD_ENDPOINTS=http://etcd:2379 \
     TB_ETCD_AUTH_ENABLED=true \
     TB_ETCD_USERNAME=default \
