@@ -493,7 +493,24 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
         go version
         ```
 
-### (2) Build CB-TB
+### (2) Build and Run CB-Tumblebug
+
+
+#### (2-1) Option 1: Run CB-Tumblebug with Docker Compose (Recommended)
+
+- Run Docker Compose with the build option
+
+  To build the current CB-Tumblebug source code into a container image and run it along with the other containers, use the following command:
+  
+  ```bash
+  cd ~/go/src/github.com/cloud-barista/cb-tumblebug
+  sudo docker compose up --build
+  ```
+
+  This command will automatically build the CB-Tumblebug from the local source code
+  and start it within a Docker container, along with any other necessary services as defined in the `docker-compose.yml` file.
+
+#### (2-2) Option 2: Run CB-Tumblebug from the Makefile
 
 - Build the Golang source code using the Makefile
 
@@ -506,57 +523,11 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
 
   The initial build will take some time, but subsequent builds will be faster by the Go build cache.
 
-  **Note** To update the Swagger API documentation, run `make swag` in `cb-tumblebug/src/`
+  **Note** To update the Swagger API documentation, run `make swag`
 
   - API documentation file will be generated at `cb-tumblebug/src/api/rest/docs/swagger.yaml`
   - API documentation can be viewed in a web browser at http://localhost:1323/tumblebug/api (provided when CB-TB is running)
   - Detailed information on [how to update the API](https://github.com/cloud-barista/cb-tumblebug/wiki/API-Document-Update)
-
-### (3) Run CB-TB system
-
-#### (3-2: option 1) Run CB-TB by the Docker comopse (recommended)
-
-- Run CB-Spider
-
-  CB-Tumblebug requires [CB-Spider](https://github.com/cloud-barista/cb-spider) to control multiple cloud service providers.
-
-  - (Recommended method) Run the CB-Spider container using the CB-TB script (preferably use the specified version)
-
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/runSpider.sh
-    ```
-
-    Docker must be installed. If it is not installed, you can use the following script (not for production setup)
-
-    ```
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/installDocker.sh
-    ```
-
-    For installation methods other than the container, refer to [CB-Spider](https://github.com/cloud-barista/cb-spider)
-
-#### (3-2: option 2) Run CB-TB from the makefile
-
-- Run CB-Spider
-
-  CB-Tumblebug requires [CB-Spider](https://github.com/cloud-barista/cb-spider) to control multiple cloud service providers.
-
-  - (Recommended method) Run the CB-Spider container using the CB-TB script (preferably use the specified version)
-
-    ```bash
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/runSpider.sh
-    ```
-
-    Docker must be installed. If it is not installed, you can use the following script (not for production setup)
-
-    ```
-    cd ~/go/src/github.com/cloud-barista/cb-tumblebug
-    ./scripts/installDocker.sh
-    ```
-
-    For installation methods other than the container, refer to [CB-Spider](https://github.com/cloud-barista/cb-spider)
 
 - Set environment variables required to run CB-TB (in another tab)
 
@@ -566,7 +537,7 @@ To provisioning multi-cloud infrastructures with CB-TB, it is necessary to regis
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
       source conf/setup.env
       ```
-    - (Note) Automatically set the TB_SELF_ENDPOINT environment variable (an externally accessible address) using a script if needed
+    - (Optional) Automatically set the TB_SELF_ENDPOINT environment variable (an externally accessible address) using a script if needed
       - This is necessary if you want to access and control the Swagger API Dashboard from outside when CB-TB is running
       ```bash
       cd ~/go/src/github.com/cloud-barista/cb-tumblebug
