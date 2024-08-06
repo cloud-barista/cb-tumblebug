@@ -1452,10 +1452,26 @@ func LoadCommonResource() (common.IdList, error) {
 			log.Info().Msgf("[%s] #Spec: %d", connConfig.ConfigName, len(specsInConnection.Vmspec))
 			validRepresentativeConnectionMap.Store(connConfig.ProviderName+"-"+connConfig.RegionDetail.RegionName, connConfig)
 			for _, spec := range specsInConnection.Vmspec {
-				key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
-				// instead of connConfig.RegionName, spec.Region will be used in the future
-				//log.Info().Msgf("specMap.Store(%s, spec)", key)
-				specMap.Store(key, spec)
+				spiderSpec := spec
+				//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+				tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+				if errConvert != nil {
+					log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
+				} else {
+					key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
+					tumblebugSpec.Name = key
+					tumblebugSpec.ConnectionName = connConfig.ConfigName
+					tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
+					tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
+					tumblebugSpec.InfraType = "vm" // default value
+					tumblebugSpec.SystemLabel = "auto-gen"
+					tumblebugSpec.CostPerHour = 99999999.9
+					tumblebugSpec.EvaluationScore01 = -99.9
+
+					// instead of connConfig.RegionName, spec.Region will be used in the future
+					//log.Info().Msgf("specMap.Store(%s, spec)", key)
+					specMap.Store(key, tumblebugSpec)
+				}
 			}
 		}(connConfig)
 	}
@@ -1481,6 +1497,17 @@ func LoadCommonResource() (common.IdList, error) {
 	totalDuration := endTime.Sub(startTime)
 
 	log.Info().Msgf("LookupSpecList in parallel: %s", totalDuration)
+
+	specMap.Range(func(key, value interface{}) bool {
+		specInfo := value.(TbSpecInfo)
+		//log.Info().Msgf("specMap.Range: %s value: %v", key, specInfo)
+
+		_, errRegisterSpec := RegisterSpecWithInfo(common.SystemCommonNs, &specInfo, true)
+		if errRegisterSpec != nil {
+			log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
+		}
+		return true
+	})
 
 	// Read common specs and register spec objects
 	file, fileErr := os.Open("../assets/cloudspec.csv")
@@ -1622,21 +1649,21 @@ func LoadCommonResource() (common.IdList, error) {
 
 					// Register Spec object
 					searchKey := GetProviderRegionZoneResourceKey(providerName, regionName, "", specReqTmp.CspSpecName)
-					value, ok := specMap.Load(searchKey)
+					_, ok := specMap.Load(searchKey)
 					if ok {
-						spiderSpec := value.(SpiderSpecInfo)
-						//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
-						tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
-						if errConvert != nil {
-							log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
-						}
+						// spiderSpec := value.(SpiderSpecInfo)
+						// //log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+						// tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+						// if errConvert != nil {
+						// 	log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
+						// }
 
-						tumblebugSpec.Name = specInfoId
-						tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
-						_, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
-						if errRegisterSpec != nil {
-							log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
-						}
+						// tumblebugSpec.Name = specInfoId
+						// tumblebugSpec.ConnectionName = specReqTmp.ConnectionName
+						// // _, errRegisterSpec = RegisterSpecWithInfo(common.SystemCommonNs, &tumblebugSpec, true)
+						// // if errRegisterSpec != nil {
+						// // 	log.Info().Err(errRegisterSpec).Msg("RegisterSpec WithInfo failed")
+						// // }
 
 					} else {
 						errRegisterSpec = fmt.Errorf("Not Found spec from the fetched spec list: %s", searchKey)
@@ -1676,6 +1703,7 @@ func LoadCommonResource() (common.IdList, error) {
 								AcceleratorMemoryGB: float32(acceleratorMemoryGB),
 								Description:         description,
 								EvaluationScore01:   float32(evaluationScore01),
+								SystemLabel:         "from-assets",
 								InfraType:           expandedInfraType,
 							}
 

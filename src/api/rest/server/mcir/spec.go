@@ -102,7 +102,7 @@ func RestPutSpec(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
 	}
 	nsId := c.Param("nsId")
-	specId := c.Param("specId")
+	specId := c.Param("resourceId")
 	specId = strings.ReplaceAll(specId, " ", "+")
 	specId = strings.ReplaceAll(specId, "%2B", "+")
 
@@ -273,8 +273,19 @@ func RestFilterSpecsByRange(c echo.Context) error {
 // @Failure 500 {object} common.SimpleMsg
 // @Router /ns/{nsId}/resources/spec/{specId} [get]
 func RestGetSpec(c echo.Context) error {
-	// This is a dummy function for Swagger.
-	return nil
+	reqID, idErr := common.StartRequestWithLog(c)
+	if idErr != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": idErr.Error()})
+	}
+	nsId := c.Param("nsId")
+	specId := c.Param("resourceId")
+	// make " " and "+" to be "+" (web utilizes "+" for " " in URL)
+	specId = strings.ReplaceAll(specId, " ", "+")
+	specId = strings.ReplaceAll(specId, "%2B", "+")
+
+	log.Debug().Msg("[Get spec]" + specId)
+	result, err := mcir.GetSpec(nsId, specId)
+	return common.EndRequestWithLog(c, reqID, err, result)
 }
 
 // Response structure for RestGetAllSpec
