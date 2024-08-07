@@ -1364,16 +1364,9 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 	k := vmRequest
 
 	vmReq := &TbVmReq{}
-	tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k.CommonSpec)
+
+	specInfo, err := mcir.GetSpec(common.SystemCommonNs, req.CommonSpec)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the spec " + k.CommonSpec)
-		log.Error().Err(err).Msg("")
-		return err
-	}
-	specInfo := mcir.TbSpecInfo{}
-	err = common.CopySrcToDest(&tempInterface, &specInfo)
-	if err != nil {
-		err := fmt.Errorf("Failed to CopySrcToDest() " + k.CommonSpec)
 		log.Error().Err(err).Msg("")
 		return err
 	}
@@ -1400,7 +1393,7 @@ func checkCommonResAvailable(req *TbVmDynamicReq) error {
 	if strings.Contains(k.CommonImage, "+") {
 		vmReq.ImageId = k.CommonImage
 	}
-	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
+	_, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get Image " + k.CommonImage + " from " + vmReq.ConnectionName)
 		log.Error().Err(err).Msg("")
@@ -1420,16 +1413,9 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	k := vmRequest
 
 	vmReq := &TbVmReq{}
-	tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k.CommonSpec)
+
+	specInfo, err := mcir.GetSpec(common.SystemCommonNs, req.CommonSpec)
 	if err != nil {
-		err := fmt.Errorf("Failed to get the spec " + k.CommonSpec)
-		log.Error().Err(err).Msg("")
-		return &TbVmReq{}, err
-	}
-	specInfo := mcir.TbSpecInfo{}
-	err = common.CopySrcToDest(&tempInterface, &specInfo)
-	if err != nil {
-		err := fmt.Errorf("Failed to CopySrcToDest() " + k.CommonSpec)
 		log.Error().Err(err).Msg("")
 		return &TbVmReq{}, err
 	}
@@ -1460,7 +1446,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	if strings.Contains(k.CommonImage, "+") {
 		vmReq.ImageId = k.CommonImage
 	}
-	tempInterface, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
+	_, err = mcir.GetResource(common.SystemCommonNs, common.StrImage, vmReq.ImageId)
 	if err != nil {
 		err := fmt.Errorf("Failed to get the Image " + vmReq.ImageId + " from " + vmReq.ConnectionName)
 		log.Error().Err(err).Msg("")
@@ -1470,7 +1456,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting vNet:" + resourceName, Time: time.Now()})
 
 	vmReq.VNetId = resourceName
-	tempInterface, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
+	_, err = mcir.GetResource(nsId, common.StrVNet, vmReq.VNetId)
 	if err != nil {
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the vNet " + vmReq.VNetId + " from " + vmReq.ConnectionName)
@@ -1492,7 +1478,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting SSHKey:" + resourceName, Time: time.Now()})
 	vmReq.SshKeyId = resourceName
-	tempInterface, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
+	_, err = mcir.GetResource(nsId, common.StrSSHKey, vmReq.SshKeyId)
 	if err != nil {
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the SSHKey " + vmReq.SshKeyId + " from " + vmReq.ConnectionName)
@@ -1514,7 +1500,7 @@ func getVmReqFromDynamicReq(reqID string, nsId string, req *TbVmDynamicReq) (*Tb
 	common.UpdateRequestProgress(reqID, common.ProgressInfo{Title: "Setting securityGroup:" + resourceName, Time: time.Now()})
 	securityGroup := resourceName
 	vmReq.SecurityGroupIds = append(vmReq.SecurityGroupIds, securityGroup)
-	tempInterface, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
+	_, err = mcir.GetResource(nsId, common.StrSecurityGroup, securityGroup)
 	if err != nil {
 		if !onDemand {
 			err := fmt.Errorf("Failed to get the securityGroup " + securityGroup + " from " + vmReq.ConnectionName)
