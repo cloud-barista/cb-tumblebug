@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 	"unicode"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
@@ -305,8 +304,6 @@ func RecommendVmLatency(nsId string, specList *[]mcir.TbSpecInfo, param *[]Param
 // RecommendVmLocation func prioritize specs based on given location
 func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]ParameterKeyVal) ([]mcir.TbSpecInfo, error) {
 
-	result := []mcir.TbSpecInfo{}
-
 	for _, v := range *param {
 
 		switch v.Key {
@@ -512,10 +509,7 @@ func RecommendVmLocation(nsId string, specList *[]mcir.TbSpecInfo, param *[]Para
 
 	}
 
-	for i := range *specList {
-		result = append(result, (*specList)[i])
-		//result[i].OrderInFilteredResult = uint16(i + 1)
-	}
+	result := append([]mcir.TbSpecInfo{}, (*specList)...)
 
 	// if evaluations for distance are same, low cost will have priolity
 	sort.Slice(result, func(i, j int) bool {
@@ -581,13 +575,8 @@ func getHaversineDistance(a1 float64, b1 float64, a2 float64, b2 float64) (dista
 // RecommendVmRandom func prioritize specs randomly
 func RecommendVmRandom(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInfo, error) {
 
-	result := []mcir.TbSpecInfo{}
+	result := append([]mcir.TbSpecInfo{}, (*specList)...)
 
-	for i := range *specList {
-		result = append(result, (*specList)[i])
-	}
-
-	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(result), func(i, j int) { result[i], result[j] = result[j], result[i] })
 
 	Max := float32(result[len(result)-1].CostPerHour)
@@ -598,19 +587,13 @@ func RecommendVmRandom(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecI
 		result[i].EvaluationScore09 = float32((Max - result[i].CostPerHour) / (Max - Min + 0.0000001)) // Add small value to avoid NaN by division
 	}
 
-	fmt.Printf("\n result : %v \n", result)
-
 	return result, nil
 }
 
 // RecommendVmCost func prioritize specs based on given Cost
 func RecommendVmCost(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInfo, error) {
 
-	result := []mcir.TbSpecInfo{}
-
-	for i := range *specList {
-		result = append(result, (*specList)[i])
-	}
+	result := append([]mcir.TbSpecInfo{}, (*specList)...)
 
 	sort.Slice(result, func(i, j int) bool { return result[i].CostPerHour < result[j].CostPerHour })
 
@@ -630,11 +613,7 @@ func RecommendVmCost(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInf
 // RecommendVmPerformance func prioritize specs based on given Performance condition
 func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.TbSpecInfo, error) {
 
-	result := []mcir.TbSpecInfo{}
-
-	for i := range *specList {
-		result = append(result, (*specList)[i])
-	}
+	result := append([]mcir.TbSpecInfo{}, (*specList)...)
 
 	sort.Slice(result, func(i, j int) bool { return result[i].EvaluationScore01 > result[j].EvaluationScore01 })
 

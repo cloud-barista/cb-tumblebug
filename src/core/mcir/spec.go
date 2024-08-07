@@ -15,16 +15,13 @@ limitations under the License.
 package mcir
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
-	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
 	validator "github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog/log"
@@ -335,36 +332,12 @@ func FetchSpecsForAllConnConfigs(nsId string) (connConfigCount uint, specCount u
 // RegisterSpecWithCspSpecName accepts spec creation request, creates and returns an TB spec object
 func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpecInfo, error) {
 
-	resourceType := common.StrSpec
 	content := TbSpecInfo{}
 
 	err := common.CheckString(nsId)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return content, err
-	}
-
-	err = validate.Struct(u)
-	if err != nil {
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			log.Err(err).Msg("")
-			return content, err
-		}
-		return content, err
-	}
-
-	check, err := CheckResource(nsId, resourceType, u.Name)
-
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return content, err
-	}
-
-	if !update {
-		if check {
-			err := fmt.Errorf("The spec " + u.Name + " already exists.")
-			return content, err
-		}
 	}
 
 	res, err := LookupSpec(u.ConnectionName, u.CspSpecName)
@@ -379,26 +352,22 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpec
 	content.CspSpecName = res.Name
 	content.ConnectionName = u.ConnectionName
 	content.AssociatedObjectList = []string{}
-
 	tempUint64, _ := strconv.ParseUint(res.VCpu.Count, 10, 16)
 	content.VCPU = uint16(tempUint64)
-
-	//content.Num_core = res.Num_core
-
 	tempFloat64, _ := strconv.ParseFloat(res.Mem, 32)
 	content.MemoryGiB = float32(tempFloat64 / 1024)
 
 	//content.StorageGiB = res.StorageGiB
 	//content.Description = res.Description
 
-	log.Trace().Msg("PUT registerSpec")
-	Key := common.GenResourceKey(nsId, resourceType, content.Id)
-	Val, _ := json.Marshal(content)
-	err = kvstore.Put(Key, string(Val))
-	if err != nil {
-		log.Error().Err(err).Msg("Cannot put data to Key Value Store")
-		return content, err
-	}
+	// log.Trace().Msg("PUT registerSpec")
+	// Key := common.GenResourceKey(nsId, resourceType, content.Id)
+	// Val, _ := json.Marshal(content)
+	// err = kvstore.Put(Key, string(Val))
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("Cannot put data to Key Value Store")
+	// 	return content, err
+	// }
 
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
 	_, err = common.ORM.Insert(&content)
@@ -414,53 +383,34 @@ func RegisterSpecWithCspSpecName(nsId string, u *TbSpecReq, update bool) (TbSpec
 // RegisterSpecWithInfo accepts spec creation request, creates and returns an TB spec object
 func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpecInfo, error) {
 
-	resourceType := common.StrSpec
-
 	err := common.CheckString(nsId)
 	if err != nil {
 		temp := TbSpecInfo{}
 		log.Error().Err(err).Msg("")
 		return temp, err
 	}
-	// err = common.CheckString(content.Name)
-	// if err != nil {
-	// 	temp := TbSpecInfo{}
-	// 	log.Error().Err(err).Msg("")
-	// 	return temp, err
-	// }
-	check, err := CheckResource(nsId, resourceType, content.Name)
-
-	if err != nil {
-		temp := TbSpecInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
-
-	if !update {
-		if check {
-			temp := TbSpecInfo{}
-			err := fmt.Errorf("The spec " + content.Name + " already exists.")
-			return temp, err
-		}
-	}
 
 	content.Namespace = nsId
 	content.Id = content.Name
 	content.AssociatedObjectList = []string{}
 
-	log.Trace().Msg("PUT registerSpec")
-	Key := common.GenResourceKey(nsId, resourceType, content.Id)
-	Val, _ := json.Marshal(content)
-	err = kvstore.Put(Key, string(Val))
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return *content, err
-	}
-
 	// "INSERT INTO `spec`(`namespace`, `id`, ...) VALUES ('nsId', 'content.Id', ...);
+	// Attempt to insert the new record
 	_, err = common.ORM.Insert(content)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		if update {
+			// If insert fails and update is true, attempt to update the existing record
+			_, updateErr := common.ORM.Update(content, &TbSpecInfo{Namespace: content.Namespace, Id: content.Id})
+			if updateErr != nil {
+				log.Error().Err(updateErr).Msg("Error updating spec after insert failure")
+				return *content, updateErr
+			} else {
+				log.Trace().Msg("SQL: Update success after insert failure")
+			}
+		} else {
+			log.Error().Err(err).Msg("Error inserting spec and update flag is false")
+			return *content, err
+		}
 	} else {
 		log.Trace().Msg("SQL: Insert success")
 	}
@@ -472,6 +422,29 @@ func RegisterSpecWithInfo(nsId string, content *TbSpecInfo, update bool) (TbSpec
 type Range struct {
 	Min float32 `json:"min"`
 	Max float32 `json:"max"`
+}
+
+// GetSpec accepts namespace ID and spec ID, and returns the TB spec object
+func GetSpec(nsId string, specId string) (TbSpecInfo, error) {
+	if err := common.CheckString(nsId); err != nil {
+		log.Error().Err(err).Msg("Invalid namespace ID")
+		return TbSpecInfo{}, err
+	}
+
+	log.Debug().Msg("[Get spec]" + specId)
+
+	spec := TbSpecInfo{Namespace: nsId, Id: specId}
+	has, err := common.ORM.Where("Namespace = ? AND Id = ?", nsId, specId).Get(&spec)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to get spec %s", specId)
+		return TbSpecInfo{}, err
+	}
+
+	if !has {
+		return TbSpecInfo{}, fmt.Errorf("spec with ID %s not found", specId)
+	}
+
+	return spec, nil
 }
 
 // FilterSpecsByRange accepts criteria ranges for filtering, and returns the list of filtered TB spec objects
@@ -527,217 +500,204 @@ func FilterSpecsByRange(nsId string, filter FilterSpecsByRangeRequest) ([]TbSpec
 	return specs, nil
 }
 
-// SortSpecs accepts the list of TB spec objects, criteria and sorting direction,
-// sorts and returns the sorted list of TB spec objects
-func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpecInfo, error) {
-	var err error = nil
+// // SortSpecs accepts the list of TB spec objects, criteria and sorting direction,
+// // sorts and returns the sorted list of TB spec objects
+// func SortSpecs(specList []TbSpecInfo, orderBy string, direction string) ([]TbSpecInfo, error) {
+// 	var err error = nil
 
-	sort.Slice(specList, func(i, j int) bool {
-		if orderBy == "vCPU" {
-			if direction == "descending" {
-				return specList[i].VCPU > specList[j].VCPU
-			} else if direction == "ascending" {
-				return specList[i].VCPU < specList[j].VCPU
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "memoryGiB" {
-			if direction == "descending" {
-				return specList[i].MemoryGiB > specList[j].MemoryGiB
-			} else if direction == "ascending" {
-				return specList[i].MemoryGiB < specList[j].MemoryGiB
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "storageGiB" {
-			if direction == "descending" {
-				return specList[i].StorageGiB > specList[j].StorageGiB
-			} else if direction == "ascending" {
-				return specList[i].StorageGiB < specList[j].StorageGiB
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore01" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore01 > specList[j].EvaluationScore01
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore01 < specList[j].EvaluationScore01
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore02" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore02 > specList[j].EvaluationScore02
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore02 < specList[j].EvaluationScore02
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore03" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore03 > specList[j].EvaluationScore03
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore03 < specList[j].EvaluationScore03
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore04" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore04 > specList[j].EvaluationScore04
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore04 < specList[j].EvaluationScore04
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore05" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore05 > specList[j].EvaluationScore05
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore05 < specList[j].EvaluationScore05
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore06" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore06 > specList[j].EvaluationScore06
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore06 < specList[j].EvaluationScore06
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore07" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore07 > specList[j].EvaluationScore07
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore07 < specList[j].EvaluationScore07
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore08" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore08 > specList[j].EvaluationScore08
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore08 < specList[j].EvaluationScore08
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore09" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore09 > specList[j].EvaluationScore09
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore09 < specList[j].EvaluationScore09
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else if orderBy == "evaluationScore10" {
-			if direction == "descending" {
-				return specList[i].EvaluationScore10 > specList[j].EvaluationScore10
-			} else if direction == "ascending" {
-				return specList[i].EvaluationScore10 < specList[j].EvaluationScore10
-			} else {
-				err = fmt.Errorf("'direction' should one of these: ascending, descending")
-				return true
-			}
-		} else {
-			err = fmt.Errorf("'orderBy' should one of these: vCPU, memoryGiB, storageGiB")
-			return true
-		}
-	})
+// 	sort.Slice(specList, func(i, j int) bool {
+// 		if orderBy == "vCPU" {
+// 			if direction == "descending" {
+// 				return specList[i].VCPU > specList[j].VCPU
+// 			} else if direction == "ascending" {
+// 				return specList[i].VCPU < specList[j].VCPU
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "memoryGiB" {
+// 			if direction == "descending" {
+// 				return specList[i].MemoryGiB > specList[j].MemoryGiB
+// 			} else if direction == "ascending" {
+// 				return specList[i].MemoryGiB < specList[j].MemoryGiB
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "storageGiB" {
+// 			if direction == "descending" {
+// 				return specList[i].StorageGiB > specList[j].StorageGiB
+// 			} else if direction == "ascending" {
+// 				return specList[i].StorageGiB < specList[j].StorageGiB
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore01" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore01 > specList[j].EvaluationScore01
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore01 < specList[j].EvaluationScore01
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore02" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore02 > specList[j].EvaluationScore02
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore02 < specList[j].EvaluationScore02
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore03" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore03 > specList[j].EvaluationScore03
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore03 < specList[j].EvaluationScore03
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore04" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore04 > specList[j].EvaluationScore04
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore04 < specList[j].EvaluationScore04
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore05" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore05 > specList[j].EvaluationScore05
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore05 < specList[j].EvaluationScore05
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore06" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore06 > specList[j].EvaluationScore06
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore06 < specList[j].EvaluationScore06
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore07" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore07 > specList[j].EvaluationScore07
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore07 < specList[j].EvaluationScore07
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore08" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore08 > specList[j].EvaluationScore08
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore08 < specList[j].EvaluationScore08
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore09" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore09 > specList[j].EvaluationScore09
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore09 < specList[j].EvaluationScore09
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else if orderBy == "evaluationScore10" {
+// 			if direction == "descending" {
+// 				return specList[i].EvaluationScore10 > specList[j].EvaluationScore10
+// 			} else if direction == "ascending" {
+// 				return specList[i].EvaluationScore10 < specList[j].EvaluationScore10
+// 			} else {
+// 				err = fmt.Errorf("'direction' should one of these: ascending, descending")
+// 				return true
+// 			}
+// 		} else {
+// 			err = fmt.Errorf("'orderBy' should one of these: vCPU, memoryGiB, storageGiB")
+// 			return true
+// 		}
+// 	})
 
-	for i := range specList {
-		specList[i].OrderInFilteredResult = uint16(i + 1)
-	}
+// 	for i := range specList {
+// 		specList[i].OrderInFilteredResult = uint16(i + 1)
+// 	}
 
-	return specList, err
-}
+// 	return specList, err
+// }
 
 // UpdateSpec accepts to-be TB spec objects,
 // updates and returns the updated TB spec objects
 func UpdateSpec(nsId string, specId string, fieldsToUpdate TbSpecInfo) (TbSpecInfo, error) {
-	resourceType := common.StrSpec
+	// resourceType := common.StrSpec
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		temp := TbSpecInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+	// err := common.CheckString(nsId)
+	// if err != nil {
+	// 	temp := TbSpecInfo{}
+	// 	log.Error().Err(err).Msg("")
+	// 	return temp, err
+	// }
 
-	if len(fieldsToUpdate.Namespace) > 0 {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("You should not specify 'namespace' in the JSON request body.")
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+	// check, err := CheckResource(nsId, resourceType, specId)
 
-	if len(fieldsToUpdate.Id) > 0 {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("You should not specify 'id' in the JSON request body.")
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+	// if err != nil {
+	// 	temp := TbSpecInfo{}
+	// 	log.Error().Err(err).Msg("")
+	// 	return temp, err
+	// }
 
-	check, err := CheckResource(nsId, resourceType, specId)
+	// if !check {
+	// 	temp := TbSpecInfo{}
+	// 	err := fmt.Errorf("The spec " + specId + " does not exist.")
+	// 	return temp, err
+	// }
 
-	if err != nil {
-		temp := TbSpecInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+	// tempInterface, err := GetResource(nsId, resourceType, specId)
+	// if err != nil {
+	// 	temp := TbSpecInfo{}
+	// 	err := fmt.Errorf("Failed to get the spec " + specId + ".")
+	// 	return temp, err
+	// }
+	// asIsSpec := TbSpecInfo{}
+	// err = common.CopySrcToDest(&tempInterface, &asIsSpec)
+	// if err != nil {
+	// 	temp := TbSpecInfo{}
+	// 	err := fmt.Errorf("Failed to CopySrcToDest() " + specId + ".")
+	// 	return temp, err
+	// }
 
-	if !check {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("The spec " + specId + " does not exist.")
-		return temp, err
-	}
+	// // Update specified fields only
+	// toBeSpec := asIsSpec
+	// toBeSpecJSON, _ := json.Marshal(fieldsToUpdate)
+	// err = json.Unmarshal(toBeSpecJSON, &toBeSpec)
 
-	tempInterface, err := GetResource(nsId, resourceType, specId)
-	if err != nil {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("Failed to get the spec " + specId + ".")
-		return temp, err
-	}
-	asIsSpec := TbSpecInfo{}
-	err = common.CopySrcToDest(&tempInterface, &asIsSpec)
-	if err != nil {
-		temp := TbSpecInfo{}
-		err := fmt.Errorf("Failed to CopySrcToDest() " + specId + ".")
-		return temp, err
-	}
-
-	// Update specified fields only
-	toBeSpec := asIsSpec
-	toBeSpecJSON, _ := json.Marshal(fieldsToUpdate)
-	err = json.Unmarshal(toBeSpecJSON, &toBeSpec)
-
-	Key := common.GenResourceKey(nsId, resourceType, toBeSpec.Id)
-	Val, _ := json.Marshal(toBeSpec)
-	err = kvstore.Put(Key, string(Val))
-	if err != nil {
-		temp := TbSpecInfo{}
-		log.Error().Err(err).Msg("")
-		return temp, err
-	}
+	// Key := common.GenResourceKey(nsId, resourceType, toBeSpec.Id)
+	// Val, _ := json.Marshal(toBeSpec)
+	// err = kvstore.Put(Key, string(Val))
+	// if err != nil {
+	// 	temp := TbSpecInfo{}
+	// 	log.Error().Err(err).Msg("")
+	// 	return temp, err
+	// }
 
 	// "UPDATE `spec` SET `id`='" + specId + "', ... WHERE `namespace`='" + nsId + "' AND `id`='" + specId + "';"
-	_, err = common.ORM.Update(&toBeSpec, &TbSpecInfo{Namespace: nsId, Id: specId})
+	_, err := common.ORM.Update(&fieldsToUpdate, &TbSpecInfo{Namespace: nsId, Id: specId})
 	if err != nil {
 		log.Error().Err(err).Msg("")
+		return fieldsToUpdate, err
 	} else {
 		log.Trace().Msg("SQL: Update success")
 	}
 
-	return toBeSpec, nil
+	return fieldsToUpdate, nil
 }

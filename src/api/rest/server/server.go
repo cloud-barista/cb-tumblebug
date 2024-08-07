@@ -418,7 +418,7 @@ func RunServer(port string) {
 	g.DELETE("/:nsId/resources/sshKey", rest_mcir.RestDelAllResources)
 
 	g.POST("/:nsId/resources/spec", rest_mcir.RestPostSpec)
-	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetResource)
+	g.GET("/:nsId/resources/spec/:resourceId", rest_mcir.RestGetSpec)
 	g.GET("/:nsId/resources/spec", rest_mcir.RestGetAllResources)
 	g.PUT("/:nsId/resources/spec/:resourceId", rest_mcir.RestPutSpec)
 	g.DELETE("/:nsId/resources/spec/:resourceId", rest_mcir.RestDelResource)
