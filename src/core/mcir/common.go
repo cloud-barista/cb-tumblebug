@@ -220,18 +220,18 @@ func DelResource(nsId string, resourceType string, resourceId string, forceFlag 
 
 		//get related recommend spec
 		//keyValue, err := kvstore.GetKv(key)
-		content := TbSpecInfo{}
-		err := json.Unmarshal([]byte(keyValue.Value), &content)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
+		// content := TbSpecInfo{}
+		// err := json.Unmarshal([]byte(keyValue.Value), &content)
+		// if err != nil {
+		// 	log.Error().Err(err).Msg("")
+		// 	return err
+		// }
 
-		err = kvstore.Delete(key)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return err
-		}
+		// err = kvstore.Delete(key)
+		// if err != nil {
+		// 	log.Error().Err(err).Msg("")
+		// 	return err
+		// }
 
 		// "DELETE FROM `spec` WHERE `id` = '" + resourceId + "';"
 		_, err = common.ORM.Delete(&TbSpecInfo{Namespace: nsId, Id: resourceId})
@@ -2092,6 +2092,108 @@ func expandInfraType(infraType string) string {
 	}
 
 	return strings.Join(expInfraTypeList, "|")
+}
+
+// mcirIds is struct for containing id and name of each MCIR type
+type mcirIds struct { // Tumblebug
+	CspImageId           string
+	CspImageName         string
+	CspCustomImageId     string
+	CspCustomImageName   string
+	CspSshKeyName        string
+	CspSpecName          string
+	CspVNetId            string
+	CspVNetName          string
+	CspSecurityGroupId   string
+	CspSecurityGroupName string
+	CspPublicIpId        string
+	CspPublicIpName      string
+	CspVNicId            string
+	CspVNicName          string
+	CspDataDiskId        string
+	CspDataDiskName      string
+
+	ConnectionName string
+}
+
+// GetCspResourceId is func to retrieve CSP native resource ID
+func GetCspResourceId(nsId string, resourceType string, resourceId string) (string, error) {
+
+	if resourceType == common.StrSpec {
+		specInfo, err := GetSpec(nsId, resourceId)
+		if err != nil {
+			return "", err
+		}
+		return specInfo.CspSpecName, nil
+	}
+
+	key := common.GenResourceKey(nsId, resourceType, resourceId)
+	if key == "/invalidKey" {
+		return "", fmt.Errorf("invalid nsId or resourceType or resourceId")
+	}
+	keyValue, err := kvstore.GetKv(key)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return "", err
+	}
+
+	if keyValue == (kvstore.KeyValue{}) {
+		//log.Error().Err(err).Msg("")
+		// if there is no matched value for the key, return empty string. Error will be handled in a parent function
+		return "", fmt.Errorf("cannot find the key " + key)
+	}
+
+	switch resourceType {
+	case common.StrImage:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspImageId, nil
+	case common.StrCustomImage:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspCustomImageName, nil
+	case common.StrSSHKey:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspSshKeyName, nil
+	// case StrSpec:
+	// 	content := mcirIds{}
+	// 	json.Unmarshal([]byte(keyValue.Value), &content)
+	// 	return content.CspSpecName, nil
+	case common.StrVNet:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspVNetName, nil // contains CspSubnetId
+	// case "subnet":
+	// 	content := subnetInfo{}
+	// 	json.Unmarshal([]byte(keyValue.Value), &content)
+	// 	return content.CspSubnetId
+	case common.StrSecurityGroup:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspSecurityGroupName, nil
+	case common.StrDataDisk:
+		content := mcirIds{}
+		json.Unmarshal([]byte(keyValue.Value), &content)
+		return content.CspDataDiskName, nil
+	/*
+		case "publicIp":
+			content := mcirIds{}
+			json.Unmarshal([]byte(keyValue.Value), &content)
+			return content.CspPublicIpName
+		case "vNic":
+			content := mcirIds{}
+			err = json.Unmarshal([]byte(keyValue.Value), &content)
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				// if there is no matched value for the key, return empty string. Error will be handled in a parent function
+				return ""
+			}
+			return content.CspVNicName
+	*/
+	default:
+		return "", fmt.Errorf("invalid resourceType")
+	}
 }
 
 /*

@@ -381,10 +381,10 @@ func RunAllBenchmarks(nsId string, mcisId string, host string) (*BenchmarkInfoAr
 		if targetSpecId == empty {
 			break
 		}
-		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, targetSpecId)
+		specInfo := mcir.TbSpecInfo{}
+		specInfo, err = mcir.GetSpec(common.SystemCommonNs, targetSpecId)
 		if err == nil {
-			specInfo := mcir.TbSpecInfo{}
-			err = common.CopySrcToDest(&tempInterface, &specInfo)
+
 			mrttArray[0][i] = specInfo.RegionName
 			mrttArray[i][0] = specInfo.RegionName
 		}
@@ -518,10 +518,9 @@ func RunLatencyBenchmark(nsId string, mcisId string, host string) (*BenchmarkInf
 		if targetSpecId == empty {
 			break
 		}
-		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, targetSpecId)
+		specInfo := mcir.TbSpecInfo{}
+		specInfo, err = mcir.GetSpec(common.SystemCommonNs, targetSpecId)
 		if err == nil {
-			specInfo := mcir.TbSpecInfo{}
-			err = common.CopySrcToDest(&tempInterface, &specInfo)
 			mrttArray[0][i] = specInfo.RegionName
 			mrttArray[i][0] = specInfo.RegionName
 		}

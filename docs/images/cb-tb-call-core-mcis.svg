@@ -1481,16 +1481,16 @@
 <path fill="none" stroke="#8b4513" d="M1998.7702,-13201.9203C2026.6975,-13202.2971 2065.8602,-13201.8338 2099.9709,-13197.8 2273.9885,-13177.2215 2475.1025,-13125.7588 2571.8815,-13099.2116"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="2573.048,-13102.5207 2581.7585,-13096.4893 2571.1879,-13095.7724 2573.048,-13102.5207"/>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GetCspResourceId -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcir.GetCspResourceId -->
 <g id="node26" class="node">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GetCspResourceId</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcir.GetCspResourceId</title>
 <ellipse fill="#ffe4b5" stroke="#000000" stroke-width="1.5" cx="2287.7618" cy="-8024.8" rx="80.3516" ry="23.52"/>
 <text text-anchor="middle" x="2287.7618" y="-8029" font-family="Verdana" font-size="14.00" fill="#000000">common</text>
 <text text-anchor="middle" x="2287.7618" y="-8012.2" font-family="Verdana" font-size="14.00" fill="#000000">GetCspResourceId</text>
 </g>
-<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GetCspResourceId -->
+<!-- github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcir.GetCspResourceId -->
 <g id="edge93" class="edge">
-<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/common.GetCspResourceId</title>
+<title>github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcis.CreateVm&#45;&gt;github.com/cloud&#45;barista/cb&#45;tumblebug/src/core/mcir.GetCspResourceId</title>
 <path fill="none" stroke="#8b4513" d="M1977.4642,-13184.4193C2001.3694,-13158.4108 2045.7418,-13104.9444 2062.9709,-13049.8 2065.5505,-13041.5434 2130.7036,-8074.6616 2135.9709,-8067.8 2151.0691,-8048.1318 2174.4704,-8036.9967 2198.4146,-8030.8192"/>
 <polygon fill="#8b4513" stroke="#8b4513" points="2199.362,-8034.1928 2208.3221,-8028.5388 2197.7918,-8027.3711 2199.362,-8034.1928"/>
 </g>

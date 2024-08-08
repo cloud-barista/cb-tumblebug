@@ -266,34 +266,38 @@ func LookupSpec(connConfig string, specName string) (SpiderSpecInfo, error) {
 }
 
 // FetchSpecsForConnConfig lookups all specs for region of conn config, and saves into TB spec objects
-func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, err error) {
-	log.Debug().Msg("FetchSpecsForConnConfig(" + connConfig + ")")
+func FetchSpecsForConnConfig(connConfigName string, nsId string) (uint, error) {
+	log.Debug().Msg("FetchSpecsForConnConfig(" + connConfigName + ")")
+	specCount := uint(0)
 
-	spiderSpecList, err := LookupSpecList(connConfig)
+	connConfig, err := common.GetConnConfig(connConfigName)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return 0, err
+		log.Error().Err(err).Msgf("Cannot GetConnConfig in %s", connConfigName)
+		return specCount, err
 	}
 
-	for _, spiderSpec := range spiderSpecList.Vmspec {
-		tumblebugSpec, err := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return 0, err
-		}
+	specsInConnection, err := LookupSpecList(connConfigName)
+	if err != nil {
+		log.Error().Err(err).Msgf("Cannot LookupSpecList in %s", connConfigName)
+		return specCount, err
+	}
 
-		tumblebugSpecId := connConfig + "-" + ToNamingRuleCompatible(tumblebugSpec.Name)
-
-		check, err := CheckResource(nsId, common.StrSpec, tumblebugSpecId)
-		if check {
-			log.Info().Msgf("The spec %s already exists in TB; continue", tumblebugSpecId)
-			continue
-		} else if err != nil {
-			log.Info().Msgf("Cannot check the existence of %s in TB; continue", tumblebugSpecId)
-			continue
+	for _, spec := range specsInConnection.Vmspec {
+		spiderSpec := spec
+		//log.Info().Msgf("Found spec in the map: %s", spiderSpec.Name)
+		tumblebugSpec, errConvert := ConvertSpiderSpecToTumblebugSpec(spiderSpec)
+		if errConvert != nil {
+			log.Error().Err(errConvert).Msg("Cannot ConvertSpiderSpecToTumblebugSpec")
 		} else {
-			tumblebugSpec.Name = tumblebugSpecId
-			tumblebugSpec.ConnectionName = connConfig
+			key := GetProviderRegionZoneResourceKey(connConfig.ProviderName, connConfig.RegionDetail.RegionName, "", spec.Name)
+			tumblebugSpec.Name = key
+			tumblebugSpec.ConnectionName = connConfig.ConfigName
+			tumblebugSpec.ProviderName = strings.ToLower(connConfig.ProviderName)
+			tumblebugSpec.RegionName = connConfig.RegionDetail.RegionName
+			tumblebugSpec.InfraType = "vm" // default value
+			tumblebugSpec.SystemLabel = "auto-gen"
+			tumblebugSpec.CostPerHour = 99999999.9
+			tumblebugSpec.EvaluationScore01 = -99.9
 
 			_, err := RegisterSpecWithInfo(nsId, &tumblebugSpec, true)
 			if err != nil {
@@ -302,6 +306,7 @@ func FetchSpecsForConnConfig(connConfig string, nsId string) (specCount uint, er
 			}
 			specCount++
 		}
+
 	}
 	return specCount, nil
 }

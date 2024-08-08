@@ -1771,7 +1771,7 @@ func DelMcis(nsId string, mcisId string, option string) (common.IdList, error) {
 			mcir.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfo.ImageId, common.StrDelete, vmKey)
 		}
 
-		mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, vmKey)
+		//mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfo.VNetId, common.StrDelete, vmKey)
 
@@ -1926,7 +1926,7 @@ func DelMcisVm(nsId string, mcisId string, vmId string, option string) error {
 		mcir.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfo.ImageId, common.StrDelete, key)
 	}
 
-	mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, key)
+	//mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfo.SpecId, common.StrDelete, key)
 	mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfo.SshKeyId, common.StrDelete, key)
 	mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfo.VNetId, common.StrDelete, key)
 
