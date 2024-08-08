@@ -505,7 +505,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 	spVersion := u.Version
 
-	spVPCName, err := common.GetCspResourceId(nsId, common.StrVNet, u.VNetId)
+	spVPCName, err := mcir.GetCspResourceId(nsId, common.StrVNet, u.VNetId)
 	if spVPCName == "" {
 		log.Err(err).Msg("Failed to Create a K8sCluster")
 		return emptyObj, err
@@ -514,7 +514,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	/*
 		var spSubnetNames []string
 		for _, v := range u.SubnetIds {
-			spSnName, err := common.GetCspResourceId(nsId, common.StrSubnet, v)
+			spSnName, err := mcir.GetCspResourceId(nsId, common.StrSubnet, v)
 			if spSnName == "" {
 				log.Error().Err(err).Msg("")
 				return emptyObj, err
@@ -562,7 +562,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 
 	var spSecurityGroupNames []string
 	for _, v := range u.SecurityGroupIds {
-		spSgName, err := common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
+		spSgName, err := mcir.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 		if spSgName == "" {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
@@ -583,20 +583,22 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 		if v.ImageId == "" || v.ImageId == "default" {
 			spImgName = ""
 		} else {
-			spImgName, err = common.GetCspResourceId(nsId, common.StrImage, v.ImageId)
+			spImgName, err = mcir.GetCspResourceId(nsId, common.StrImage, v.ImageId)
 			if spImgName == "" {
 				log.Err(err).Msg("Failed to Create a K8sCluster")
 				return emptyObj, err
 			}
 		}
 
-		spSpecName, err := common.GetCspResourceId(nsId, common.StrSpec, v.SpecId)
-		if spSpecName == "" {
-			log.Err(err).Msg("Failed to Create a K8sCluster")
-			return emptyObj, err
-		}
+		// specInfo, err := mcir.GetSpec(common.SystemCommonNs, v.SpecId)
+		// if err != nil {
+		// 	log.Err(err).Msg("Failed to Create a K8sCluster")
+		// 	return emptyObj, err
+		// }
+		// spSpecName := specInfo.CspSpecName
+		spSpecName := v.SpecId
 
-		spKpName, err := common.GetCspResourceId(nsId, common.StrSSHKey, v.SshKeyId)
+		spKpName, err := mcir.GetCspResourceId(nsId, common.StrSSHKey, v.SshKeyId)
 		if spKpName == "" {
 			log.Err(err).Msg("Failed to Create a K8sCluster")
 			return emptyObj, err
@@ -675,7 +677,7 @@ func CreateK8sCluster(nsId string, u *TbK8sClusterReq, option string) (TbK8sClus
 	}
 
 	/*
-	 * Put/Get TbK8sClusterInfo to/from kvstore 
+	 * Put/Get TbK8sClusterInfo to/from kvstore
 	 */
 	k := GenK8sClusterKey(nsId, tbK8sCInfo.Id)
 	Val, _ := json.Marshal(tbK8sCInfo)
@@ -785,20 +787,22 @@ func AddK8sNodeGroup(nsId string, k8sClusterId string, u *TbK8sNodeGroupReq) (Tb
 
 	spImgName := "" // Some CSPs do not require ImageName for creating a cluster
 	if u.ImageId != "" {
-		spImgName, err = common.GetCspResourceId(nsId, common.StrImage, u.ImageId)
+		spImgName, err = mcir.GetCspResourceId(nsId, common.StrImage, u.ImageId)
 		if spImgName == "" {
 			log.Err(err).Msg("Failed to Add K8sNodeGroup")
 			return emptyObj, err
 		}
 	}
 
-	spSpecName, err := common.GetCspResourceId(nsId, common.StrSpec, u.SpecId)
-	if spSpecName == "" {
-		log.Err(err).Msg("Failed to Add K8sNodeGroup")
-		return emptyObj, err
-	}
+	// specInfo, err := mcir.GetSpec(common.SystemCommonNs, u.SpecId)
+	// if err != nil {
+	// 	log.Err(err).Msg("Failed to Add K8sNodeGroup")
+	// 	return emptyObj, err
+	// }
+	// spSpecName := specInfo.CspSpecName
+	spSpecName := u.SpecId
 
-	spKpName, err := common.GetCspResourceId(nsId, common.StrSSHKey, u.SshKeyId)
+	spKpName, err := mcir.GetCspResourceId(nsId, common.StrSSHKey, u.SshKeyId)
 	if spKpName == "" {
 		log.Err(err).Msg("Failed to Add K8sNodeGroup")
 		return emptyObj, err

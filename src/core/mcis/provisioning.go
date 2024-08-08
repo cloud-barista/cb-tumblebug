@@ -1157,15 +1157,10 @@ func CheckMcisDynamicReq(req *McisConnectionConfigCandidatesReq) (*CheckMcisDyna
 
 		vmReqInfo := CheckVmDynamicReqInfo{}
 
-		tempInterface, err := mcir.GetResource(common.SystemCommonNs, common.StrSpec, k)
+		specInfo, err := mcir.GetSpec(common.SystemCommonNs, k)
 		if err != nil {
-			errMessage += "//Failed to get the spec " + k
-		}
-
-		specInfo := mcir.TbSpecInfo{}
-		err = common.CopySrcToDest(&tempInterface, &specInfo)
-		if err != nil {
-			errMessage += "//Failed to CopySrcToDest() " + k
+			log.Error().Err(err).Msg("")
+			errMessage += "//Failed to get Spec (" + k + ")."
 		}
 
 		regionInfo, err := common.GetRegion(specInfo.ProviderName, specInfo.RegionName)
@@ -1683,17 +1678,17 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 	} else {
 		// Try lookup customImage
-		requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
+		requestBody.ReqInfo.ImageName, err = mcir.GetCspResourceId(nsId, common.StrCustomImage, vmInfoData.ImageId)
 		if requestBody.ReqInfo.ImageName == "" || err != nil {
 			log.Warn().Msgf("Not found %s from CustomImage in ns: %s, find it from UserImage", vmInfoData.ImageId, nsId)
 			errAgg := err.Error()
 			// If customImage doesn't exist, then try lookup image
-			requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
+			requestBody.ReqInfo.ImageName, err = mcir.GetCspResourceId(nsId, common.StrImage, vmInfoData.ImageId)
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
 				log.Warn().Msgf("Not found %s from UserImage in ns: %s, find CommonImage from SystemCommonNs", vmInfoData.ImageId, nsId)
 				errAgg += err.Error()
 				// If cannot find the resource, use common resource
-				requestBody.ReqInfo.ImageName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
+				requestBody.ReqInfo.ImageName, err = mcir.GetCspResourceId(common.SystemCommonNs, common.StrImage, vmInfoData.ImageId)
 				if requestBody.ReqInfo.ImageName == "" || err != nil {
 					errAgg += err.Error()
 					err = fmt.Errorf(errAgg)
@@ -1714,12 +1709,12 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			requestBody.ReqInfo.RootDiskSize = ""
 		}
 
-		requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
+		requestBody.ReqInfo.VMSpecName, err = mcir.GetCspResourceId(nsId, common.StrSpec, vmInfoData.SpecId)
 		if requestBody.ReqInfo.VMSpecName == "" || err != nil {
 			log.Warn().Msgf("Not found the Spec: %s in nsId: %s, find it from SystemCommonNs", vmInfoData.SpecId, nsId)
 			errAgg := err.Error()
 			// If cannot find the resource, use common resource
-			requestBody.ReqInfo.VMSpecName, err = common.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
+			requestBody.ReqInfo.VMSpecName, err = mcir.GetCspResourceId(common.SystemCommonNs, common.StrSpec, vmInfoData.SpecId)
 			log.Info().Msgf("Use the common VMSpecName: %s", requestBody.ReqInfo.VMSpecName)
 
 			if requestBody.ReqInfo.ImageName == "" || err != nil {
@@ -1730,14 +1725,14 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			}
 		}
 
-		requestBody.ReqInfo.VPCName, err = common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
+		requestBody.ReqInfo.VPCName, err = mcir.GetCspResourceId(nsId, common.StrVNet, vmInfoData.VNetId)
 		if requestBody.ReqInfo.VPCName == "" {
 			log.Error().Err(err).Msg("")
 			return err
 		}
 
 		// TODO: needs to be enhnaced to use GetCspResourceId (GetCspResourceId needs to be updated as well)
-		requestBody.ReqInfo.SubnetName = vmInfoData.SubnetId //common.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
+		requestBody.ReqInfo.SubnetName = vmInfoData.SubnetId //mcir.GetCspResourceId(nsId, common.StrVNet, vmInfoData.SubnetId)
 		if requestBody.ReqInfo.SubnetName == "" {
 			log.Error().Err(err).Msg("")
 			return err
@@ -1745,7 +1740,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 
 		var SecurityGroupIdsTmp []string
 		for _, v := range vmInfoData.SecurityGroupIds {
-			CspSgId, err := common.GetCspResourceId(nsId, common.StrSecurityGroup, v)
+			CspSgId, err := mcir.GetCspResourceId(nsId, common.StrSecurityGroup, v)
 			if CspSgId == "" {
 				log.Error().Err(err).Msg("")
 				return err
@@ -1759,7 +1754,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		for _, v := range vmInfoData.DataDiskIds {
 			// ignore DataDiskIds == "", assume it is ignorable mistake
 			if v != "" {
-				CspDataDiskId, err := common.GetCspResourceId(nsId, common.StrDataDisk, v)
+				CspDataDiskId, err := mcir.GetCspResourceId(nsId, common.StrDataDisk, v)
 				if err != nil || CspDataDiskId == "" {
 					log.Error().Err(err).Msg("")
 					return err
@@ -1769,7 +1764,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 		}
 		requestBody.ReqInfo.DataDiskNames = DataDiskIdsTmp
 
-		requestBody.ReqInfo.KeyPairName, err = common.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
+		requestBody.ReqInfo.KeyPairName, err = mcir.GetCspResourceId(nsId, common.StrSSHKey, vmInfoData.SshKeyId)
 		if requestBody.ReqInfo.KeyPairName == "" {
 			log.Error().Err(err).Msg("")
 			return err
@@ -1860,7 +1855,7 @@ func CreateVm(nsId string, mcisId string, vmInfoData *TbVmInfo, option string) e
 			mcir.UpdateAssociatedObjectList(nsId, common.StrCustomImage, vmInfoData.ImageId, common.StrAdd, vmKey)
 		}
 
-		mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
+		//mcir.UpdateAssociatedObjectList(nsId, common.StrSpec, vmInfoData.SpecId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrSSHKey, vmInfoData.SshKeyId, common.StrAdd, vmKey)
 		mcir.UpdateAssociatedObjectList(nsId, common.StrVNet, vmInfoData.VNetId, common.StrAdd, vmKey)
 

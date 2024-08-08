@@ -15,7 +15,6 @@ limitations under the License.
 package mcis
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -28,8 +27,6 @@ import (
 
 	"github.com/cloud-barista/cb-tumblebug/src/core/common"
 	"github.com/cloud-barista/cb-tumblebug/src/core/mcir"
-	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvstore"
-	"github.com/cloud-barista/cb-tumblebug/src/kvstore/kvutil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -629,102 +626,102 @@ func RecommendVmPerformance(nsId string, specList *[]mcir.TbSpecInfo) ([]mcir.Tb
 	return result, nil
 }
 
-// GetRecommendList is func to get recommendation list
-func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
+// // GetRecommendList is func to get recommendation list
+// func GetRecommendList(nsId string, cpuSize string, memSize string, diskSize string) ([]TbVmPriority, error) {
 
-	log.Debug().Msg("GetRecommendList")
+// 	log.Debug().Msg("GetRecommendList")
 
-	var content struct {
-		Id             string
-		Price          string
-		ConnectionName string
-	}
+// 	var content struct {
+// 		Id             string
+// 		Price          string
+// 		ConnectionName string
+// 	}
 
-	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
-	log.Debug().Msg(key)
-	keyValue, err := kvstore.GetKvList(key)
-	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return []TbVmPriority{}, err
-	}
+// 	key := common.GenMcisKey(nsId, "", "") + "/cpuSize/" + cpuSize + "/memSize/" + memSize + "/diskSize/" + diskSize
+// 	log.Debug().Msg(key)
+// 	keyValue, err := kvstore.GetKvList(key)
+// 	keyValue = kvutil.FilterKvListBy(keyValue, key, 1)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return []TbVmPriority{}, err
+// 	}
 
-	var vmPriorityList []TbVmPriority
+// 	var vmPriorityList []TbVmPriority
 
-	for cnt, v := range keyValue {
-		log.Debug().Msg("getRecommendList1: " + v.Key)
-		err = json.Unmarshal([]byte(v.Value), &content)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return []TbVmPriority{}, err
-		}
+// 	for cnt, v := range keyValue {
+// 		log.Debug().Msg("getRecommendList1: " + v.Key)
+// 		err = json.Unmarshal([]byte(v.Value), &content)
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			return []TbVmPriority{}, err
+// 		}
 
-		content2 := mcir.TbSpecInfo{}
-		key2 := common.GenResourceKey(nsId, common.StrSpec, content.Id)
+// 		content2 := mcir.TbSpecInfo{}
+// 		key2 := common.GenResourceKey(nsId, common.StrSpec, content.Id)
 
-		keyValue2, err := kvstore.GetKv(key2)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return []TbVmPriority{}, err
-		}
-		json.Unmarshal([]byte(keyValue2.Value), &content2)
-		content2.Id = content.Id
+// 		keyValue2, err := kvstore.GetKv(key2)
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			return []TbVmPriority{}, err
+// 		}
+// 		json.Unmarshal([]byte(keyValue2.Value), &content2)
+// 		content2.Id = content.Id
 
-		vmPriorityTmp := TbVmPriority{}
-		vmPriorityTmp.Priority = strconv.Itoa(cnt)
-		vmPriorityTmp.VmSpec = content2
-		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
-	}
+// 		vmPriorityTmp := TbVmPriority{}
+// 		vmPriorityTmp.Priority = strconv.Itoa(cnt)
+// 		vmPriorityTmp.VmSpec = content2
+// 		vmPriorityList = append(vmPriorityList, vmPriorityTmp)
+// 	}
 
-	return vmPriorityList, err
+// 	return vmPriorityList, err
 
-	//requires error handling
+// 	//requires error handling
 
-}
+// }
 
-// CorePostMcisRecommend is func to command to all VMs in MCIS with SSH
-func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
+// // CorePostMcisRecommend is func to command to all VMs in MCIS with SSH
+// func CorePostMcisRecommend(nsId string, req *McisRecommendReq) ([]TbVmRecommendInfo, error) {
 
-	err := common.CheckString(nsId)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return nil, err
-	}
+// 	err := common.CheckString(nsId)
+// 	if err != nil {
+// 		log.Error().Err(err).Msg("")
+// 		return nil, err
+// 	}
 
-	/*
-		var content struct {
-			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
-			VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
-			PlacementAlgo  string                   `json:"placementAlgo"`
-			PlacementParam []common.KeyValue        `json:"placementParam"`
-		}
-	*/
-	//content := RestPostMcisRecommendResponse{}
-	//content.VmReq = req.VmReq
-	//content.PlacementAlgo = req.PlacementAlgo
-	//content.PlacementParam = req.PlacementParam
+// 	/*
+// 		var content struct {
+// 			//VmReq          []TbVmRecommendReq    `json:"vmReq"`
+// 			VmRecommend    []mcis.TbVmRecommendInfo `json:"vmRecommend"`
+// 			PlacementAlgo  string                   `json:"placementAlgo"`
+// 			PlacementParam []common.KeyValue        `json:"placementParam"`
+// 		}
+// 	*/
+// 	//content := RestPostMcisRecommendResponse{}
+// 	//content.VmReq = req.VmReq
+// 	//content.PlacementAlgo = req.PlacementAlgo
+// 	//content.PlacementParam = req.PlacementParam
 
-	VmRecommend := []TbVmRecommendInfo{}
+// 	VmRecommend := []TbVmRecommendInfo{}
 
-	vmList := req.VmReq
+// 	vmList := req.VmReq
 
-	for i, v := range vmList {
-		vmTmp := TbVmRecommendInfo{}
-		//vmTmp.RequestName = v.RequestName
-		vmTmp.VmReq = req.VmReq[i]
-		vmTmp.PlacementAlgo = v.PlacementAlgo
-		vmTmp.PlacementParam = v.PlacementParam
+// 	for i, v := range vmList {
+// 		vmTmp := TbVmRecommendInfo{}
+// 		//vmTmp.RequestName = v.RequestName
+// 		vmTmp.VmReq = req.VmReq[i]
+// 		vmTmp.PlacementAlgo = v.PlacementAlgo
+// 		vmTmp.PlacementParam = v.PlacementParam
 
-		var err error
-		vmTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
+// 		var err error
+// 		vmTmp.VmPriority, err = GetRecommendList(nsId, v.VcpuSize, v.MemorySize, v.DiskSize)
 
-		if err != nil {
-			log.Error().Err(err).Msg("")
-			return nil, fmt.Errorf("Failed to recommend MCIS")
-		}
+// 		if err != nil {
+// 			log.Error().Err(err).Msg("")
+// 			return nil, fmt.Errorf("Failed to recommend MCIS")
+// 		}
 
-		VmRecommend = append(VmRecommend, vmTmp)
-	}
+// 		VmRecommend = append(VmRecommend, vmTmp)
+// 	}
 
-	return VmRecommend, nil
-}
+// 	return VmRecommend, nil
+// }
