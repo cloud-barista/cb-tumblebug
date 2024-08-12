@@ -22,6 +22,8 @@ k8scluster:
             id: 1.28.9
           - name: 1.27
             id: 1.27.13
+      - region: [westindia]
+        # no available version
       - region: [common]
         available:
           - name: 1.29

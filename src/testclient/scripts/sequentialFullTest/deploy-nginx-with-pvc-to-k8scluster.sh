@@ -20,13 +20,14 @@ readonly ENDPOINT_REGEX='^[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\
 SECONDS=0
 
 echo "####################################################################"
-echo "## Command (SSH) to K8sCluster (deploy-weavescope-to-k8scluster)"
+echo "## Command (SSH) to K8sCluster (deploy-nginx-with-pvc-to-k8scluster)"
 echo "####################################################################"
 
 source ../init.sh
 
 KEEP_PREV_KUBECONFIG=${OPTION02:-n}
 K8SCLUSTERID_ADD=${OPTION03:-1}
+LOCALIP=`hostname -I | cut -d' ' -f1`
 
 KUBECTL=kubectl
 if ! kubectl > /dev/null 2>&1; then
@@ -67,23 +68,19 @@ if [ "${INDEX}" == "0" ]; then
 
 			echo "TMP_FILE_KUBECONFIG="$TMP_FILE_KUBECONFIG
 			jq -r '.AccessInfo.kubeconfig' <<<"$K8SCLUSTERINFO" > $TMP_FILE_KUBECONFIG
-			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG apply -f https://github.com/weaveworks/scope/releases/download/v1.13.2/k8s-scope.yaml
+			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG apply -f ./nginx-with-pvc.yaml
 			dozing 1
 
 			# max(cspi)=17, max(cspj)=40
 			LOCALPORT=$((4000+$cspi*64+$cspj))
 			echo "LOCALPORT="$LOCALPORT
-			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG port-forward --address=0.0.0.0 -n weave "$($KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG get -n weave pod --selector=weave-scope-component=app -o jsonpath='{.items..metadata.name}')" $LOCALPORT:4040 &
-			dozing 1
+			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG port-forward --address=0.0.0.0 pod/nginx $LOCALPORT:80 &
+			dozing 1 
 
-			echo "[K8sCluster Weavescope: complete to create a k8scluster in $CSP[$REGION]]"
-			echo "You can access to http://localhost:"$LOCALPORT "until exiting by Ctrl+C"
+			echo "[K8sCluster Nginx for PV/PVC Test: complete to create a k8scluster in $CSP[$REGION]]"
+			echo "You can access to http://"$LOCALIP":"$LOCALPORT "until exiting by Ctrl+C"
 
-			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG patch svc -n weave weave-scope-app -p '{"spec": {"type": "LoadBalancer"}}' &
-			dozing 1
-
-			echo "You can access to EXTERNAL-IP(LoadBalancer)until exiting by Ctrl+C"
-			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG get svc -n weave weave-scope-app &
+			$KUBECTL --kubeconfig $TMP_FILE_KUBECONFIG get pv,pvc &
 		 done
 	done
 	wait

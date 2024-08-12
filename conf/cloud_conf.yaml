@@ -25,7 +25,7 @@ cloud:
       timeout: "9"
       threshold: "3"
     k8scluster:
-      enable: "n"
+      enable: "y"
   gcp:
     enable: "y"
     nlb:
